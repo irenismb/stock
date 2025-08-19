@@ -2,42 +2,80 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Comparador de Precios — 2 Tiendas</title>
+<title>Comparador (Móvil, paso a paso)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
-  :root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--card:#ffffff;--best:#e8fff0;--worst:#ffecec;}
-  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Arial,sans-serif}
-  header{padding:16px 20px;background:#fff;border-bottom:1px solid var(--line)}
-  h1{margin:0;font-size:20px}
-  main{padding:20px;max-width:1000px;margin:auto;display:grid;gap:16px}
+  :root{
+    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
+    --best:#e8fff0; --worst:#ffecec; --accent:#4f46e5; --accent-ink:#fff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
+  header{padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  h1{margin:0;font-size:16px}
+  main{margin:auto;max-width:480px;padding:16px;display:grid;gap:12px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
-  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .kpi{background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .step-title{font-weight:600;margin:0 0 8px}
+  .help{color:var(--muted);font-size:12px;margin-top:6px}
+  .field{display:grid;gap:6px;margin-top:6px}
+  label{font-size:13px;color:#334155}
+  input,select,button{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;outline:none}
+  input:focus,select:focus{border-color:#94a3b8;box-shadow:0 0 0 3px #e2e8f0}
+  .nav{display:flex;gap:8px;margin-top:12px}
+  .nav button{flex:1}
+  .primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .ghost{background:#fff}
+  .dots{display:flex;gap:6px;justify-content:center;margin-top:6px}
+  .dot{width:7px;height:7px;border-radius:999px;background:#cbd5e1;opacity:.6}
+  .dot.on{background:#475569;opacity:1}
+  .kpis{display:grid;grid-template-columns:1fr;gap:10px}
+  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px;background:#f9fafb}
   .kpi .t{font-size:12px;color:var(--muted)}
-  .kpi .v{font-weight:700;font-size:16px}
-  table{border-collapse:collapse;width:100%}
-  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+  .kpi .v{font-weight:700}
+  .toggle{display:flex;justify-content:center}
+  .link{background:#eef2ff;border-color:#eef2ff;color:#3730a3}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
   thead th{background:#f1f5ff}
   .best{background:var(--best)}
-  .worst{background:var(--worst)}
   .diff{background:#fff8e7;font-weight:600}
-  input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font:inherit}
-  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef2ff;font-size:12px}
+  .hidden{display:none}
+  .err{color:#b91c1c;font-size:12px;margin-top:4px}
+  @media(min-width:430px){ .kpis{grid-template-columns:repeat(3,1fr)} }
 </style>
 </head>
 <body>
-<header><h1>Comparador de precios — 2 tiendas</h1></header>
+<header><h1>Comparador de precios — asistente</h1></header>
 
 <main>
-  <!-- KPIs -->
-  <div class="row">
-    <div class="kpi"><div class="t">mejor precio por unidad</div><div class="v" id="kpi_best">—</div></div>
-    <div class="kpi"><div class="t">diferencia vs 2.º</div><div class="v" id="kpi_gap">—</div></div>
-    <div class="kpi"><div class="t">ahorro en referencia</div><div class="v" id="kpi_save">—</div></div>
-  </div>
+  <!-- Paso a paso -->
+  <section id="wizard" class="card" aria-live="polite">
+    <h2 class="step-title" id="stepTitle">—</h2>
+    <div id="stepBody"></div>
+    <div class="err" id="err"></div>
+    <div class="nav">
+      <button id="btnBack" class="ghost" type="button">Atrás</button>
+      <button id="btnNext" class="primary" type="button">Siguiente</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </section>
 
-  <!-- Tabla -->
-  <div class="card">
+  <!-- Resultado compacto -->
+  <section id="result" class="card hidden">
+    <strong>Resumen</strong>
+    <div class="kpis" style="margin-top:8px">
+      <div class="kpi"><div class="t">Mejor precio por unidad</div><div class="v" id="kpi_best">—</div></div>
+      <div class="kpi"><div class="t">Diferencia vs 2.º</div><div class="v" id="kpi_gap">—</div></div>
+      <div class="kpi"><div class="t">Ahorro en referencia</div><div class="v" id="kpi_save">—</div></div>
+    </div>
+    <div class="help" id="refInfo">Referencia: 1000 g/ml • Moneda: $</div>
+    <div class="toggle" style="margin-top:10px">
+      <button id="btnToggle" type="button" class="link">Ver desglose</button>
+    </div>
+  </section>
+
+  <!-- Desglose completo -->
+  <section id="details" class="card hidden" aria-hidden="true">
     <table>
       <thead>
         <tr>
@@ -51,7 +89,7 @@
       </thead>
       <tbody>
         <tr>
-          <td><input id="n1" value="Éxito"></td>
+          <td><output id="n1_o"></output></td>
           <td><output id="eq1"></output></td>
           <td><output id="ppu1"></output></td>
           <td><output id="p100_1"></output></td>
@@ -59,7 +97,7 @@
           <td><output id="ref1"></output></td>
         </tr>
         <tr>
-          <td><input id="n2" value="Uho"></td>
+          <td><output id="n2_o"></output></td>
           <td><output id="eq2"></output></td>
           <td><output id="ppu2"></output></td>
           <td><output id="p100_2"></output></td>
@@ -84,37 +122,19 @@
         </tr>
       </tbody>
     </table>
-  </div>
-
-  <!-- Datos entrada -->
-  <div class="card">
-    <strong>Datos de entrada</strong>
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
-      <div><label>T1 cantidad</label><input id="c1" value="0,5"></div>
-      <div><label>T1 unidad</label><input id="u1" value="kg"></div>
-      <div><label>T1 precio total</label><input id="p1" value="2400"></div>
-      <div><label>T2 cantidad</label><input id="c2" value="500"></div>
-      <div><label>T2 unidad</label><input id="u2" value="g"></div>
-      <div><label>T2 precio total</label><input id="p2" value="2500"></div>
-    </div>
-    <div style="margin-top:10px">
-      <label>Cantidad de referencia</label>
-      <input id="ref" value="1000" style="max-width:120px"> 
-      <span id="ref_u" class="pill">g/ml</span>
-      <label style="margin-left:12px">Moneda</label>
-      <input id="moneda" value="$" style="max-width:60px;text-align:center">
-    </div>
-  </div>
+  </section>
 </main>
 
 <script>
   const G_POR_LB=453.59237, ML_POR_L=1000;
   const $=id=>document.getElementById(id);
-  const clean=s=>{const t=String(s||"").replace(/\s+/g,"").replace(/\./g,"").replace(/,/g,".");return t===""?NaN:Number(t)};
+  const clean=s=>{
+    const t=String(s??"").trim().replace(/\s+/g,"").replace(/\./g,"").replace(/,/g,".");
+    return t===""?NaN:Number(t);
+  };
   const money=(n,sym)=>`${sym}${Number(n).toLocaleString("es-CO",{maximumFractionDigits:2})}`;
-  function pct(v1,v2){return v2!==0?((v1-v2)/v2*100).toFixed(2)+" %":"—";}
-
-  function canon(c,u){
+  const pct=(v1,v2)=>v2!==0?((v1-v2)/v2*100).toFixed(2)+" %":"—";
+  const canon=(c,u)=>{
     u=String(u||"").toLowerCase().trim();
     if(u==="g") return {v:c,t:"g"};
     if(u==="kg") return {v:c*1000,t:"g"};
@@ -122,58 +142,163 @@
     if(u==="ml") return {v:c,t:"ml"};
     if(u==="l") return {v:c*ML_POR_L,t:"ml"};
     return {v:NaN,t:""};
+  };
+
+  const state={
+    s1:{name:"Tienda 1",qty:500,unit:"g",price:undefined},
+    s2:{name:"Tienda 2",qty:500,unit:"g",price:undefined},
+    refQty:1000,
+    currency:"$"
+  };
+
+  const steps=[
+    { key:"s1.qty",    title:"Tienda 1 — cantidad",     render:() => inputNumber("s1.qty","Cantidad (ej: 500)") },
+    { key:"s1.unit",   title:"Tienda 1 — unidad",       render:() => selectUnit("s1.unit") },
+    { key:"s1.price",  title:"Tienda 1 — precio total", render:() => inputNumber("s1.price","Precio total (ej: 2400)", true) },
+
+    { key:"s2.qty",    title:"Tienda 2 — cantidad",     render:() => inputNumber("s2.qty","Cantidad (ej: 500)") },
+    { key:"s2.unit",   title:"Tienda 2 — unidad",       render:() => selectUnit("s2.unit") },
+    { key:"s2.price",  title:"Tienda 2 — precio total", render:() => inputNumber("s2.price","Precio total (ej: 2500)", true) },
+  ];
+  let step=0;
+
+  function inputNumber(path,placeholder,allowEmpty=false){
+    const val=get(path);
+    const shown = (allowEmpty && (val===undefined||val===null)) ? "" : (val ?? "");
+    const el=document.createElement("div");
+    el.className="field";
+    el.innerHTML=`
+      <label>${placeholder}</label>
+      <input id="fld" type="text" inputmode="decimal" placeholder="${allowEmpty?"(puede ir vacío)":"0,00"}" value="${shown}">
+    `;
+    return el;
+  }
+  function selectUnit(path){
+    const val=String(get(path)||"g").toLowerCase();
+    const el=document.createElement("div");
+    el.className="field";
+    el.innerHTML=`
+      <label>Unidad</label>
+      <select id="fld">
+        <option value="g">g (gramos)</option>
+        <option value="kg">kg (kilogramos)</option>
+        <option value="lb">lb (libras)</option>
+        <option value="ml">ml (mililitros)</option>
+        <option value="l">l (litros)</option>
+      </select>
+    `;
+    setTimeout(()=>{ const s=el.querySelector("#fld"); s.value=val; },0);
+    return el;
   }
 
-  function calc(){
-    const sym=$("moneda").value||"$";
-    const n1=$("n1").value,n2=$("n2").value;
-    const c1=clean($("c1").value),u1=$("u1").value,p1=clean($("p1").value);
-    const c2=clean($("c2").value),u2=$("u2").value,p2=clean($("p2").value);
-    const ref=clean($("ref").value);
+  function get(path){ return path.split(".").reduce((o,k)=>o?.[k],state); }
+  function set(path,value){
+    const keys=path.split(".");
+    let o=state;
+    for(let i=0;i<keys.length-1;i++) o=o[keys[i]];
+    o[keys.at(-1)]=value;
+  }
 
-    const a1=canon(c1,u1),a2=canon(c2,u2);
-    $("ref_u").textContent=a1.t||a2.t||"g/ml";
-    if(a1.t!==a2.t||!a1.t||!a2.t){return;}
+  function render(){
+    $("err").textContent="";
+    const s=steps[step];
+    $("stepTitle").textContent=s.title;
+    const body=s.render();
+    $("stepBody").replaceChildren(body);
+    const fld=$("stepBody").querySelector("#fld");
+    if(fld){ setTimeout(()=>fld.focus(),50); fld.addEventListener("keydown",e=>{ if(e.key==="Enter") next(); }); }
+    $("btnBack").disabled=step===0;
+    $("btnNext").textContent=step===steps.length-1?"Calcular":"Siguiente";
+    $("dots").innerHTML=steps.map((_,i)=>`<span class="dot ${i===step?"on":""}"></span>`).join("");
+  }
 
-    const ppu1=p1/a1.v,ppu2=p2/a2.v;
-    const ref1=ppu1*ref,ref2=ppu2*ref;
+  function validate(){
+    const s=steps[step].key;
+    const fld=$("stepBody").querySelector("#fld");
+    if(!fld) return true;
+    if(s.endsWith(".qty")){
+      const num=clean(fld.value);
+      if(Number.isNaN(num)||num<=0){ $("err").textContent="Número inválido."; return false; }
+      set(s,num); return true;
+    }
+    if(s.endsWith(".price")){
+      const val=fld.value.trim();
+      if(val===""){ set(s, undefined); return true; }
+      const num=clean(val);
+      if(Number.isNaN(num)||num<=0){ $("err").textContent="Precio inválido."; return false; }
+      set(s,num); return true;
+    }
+    if(s.endsWith(".unit")){ set(s, String(fld.value).toLowerCase()); return true; }
+    return true;
+  }
 
+  function back(){ if(step>0){ step--; render(); } }
+  function next(){
+    if(!validate()) return;
+    if(step<steps.length-1){ step++; render(); return; }
+    if(!(state.s1.price>0) || !(state.s2.price>0)){
+      step = !(state.s1.price>0) ? 2 : 5;
+      render();
+      $("err").textContent="Debes ingresar el precio total.";
+      return;
+    }
+    computeAndShow();
+  }
+
+  $("btnBack").addEventListener("click", back);
+  $("btnNext").addEventListener("click", next);
+
+  function computeAndShow(){
+    const {s1,s2,refQty,currency}=state;
+    const a1=canon(Number(s1.qty),s1.unit);
+    const a2=canon(Number(s2.qty),s2.unit);
+    if(!a1.t||!a2.t||a1.t!==a2.t){ step=1; render(); $("err").textContent="Las unidades deben coincidir."; return; }
+    const ppu1=s1.price/a1.v, ppu2=s2.price/a2.v;
+    const ref1=ppu1*refQty, ref2=ppu2*refQty;
+
+    const mejor=ppu1<ppu2?{n:s1.name,ppu:ppu1}:{n:s2.name,ppu:ppu2};
+    $("kpi_best").textContent=`${mejor.n}: ${money(mejor.ppu,currency)} / ${a1.t}`;
+    $("kpi_gap").textContent=`${money(Math.abs(ppu1-ppu2),currency)} por ${a1.t} (${pct(ppu1,ppu2)})`;
+    $("kpi_save").textContent=money(Math.abs(ref1-ref2),currency);
+
+    $("n1_o").textContent=s1.name;
+    $("n2_o").textContent=s2.name;
     $("eq1").textContent=`${a1.v.toFixed(2)} ${a1.t}`;
     $("eq2").textContent=`${a2.v.toFixed(2)} ${a2.t}`;
-    $("ppu1").textContent=`${money(ppu1,sym)}/${a1.t}`;
-    $("ppu2").textContent=`${money(ppu2,sym)}/${a2.t}`;
-    $("p100_1").textContent=money(ppu1*100,sym);
-    $("p100_2").textContent=money(ppu2*100,sym);
-    $("p1000_1").textContent=money(ppu1*1000,sym);
-    $("p1000_2").textContent=money(ppu2*1000,sym);
-    $("ref1").textContent=money(ref1,sym);
-    $("ref2").textContent=money(ref2,sym);
+    $("ppu1").textContent=`${money(ppu1,currency)}/${a1.t}`;
+    $("ppu2").textContent=`${money(ppu2,currency)}/${a1.t}`;
+    $("p100_1").textContent=money(ppu1*100,currency);
+    $("p100_2").textContent=money(ppu2*100,currency);
+    $("p1000_1").textContent=money(ppu1*1000,currency);
+    $("p1000_2").textContent=money(ppu2*1000,currency);
+    $("ref1").textContent=money(ref1,currency);
+    $("ref2").textContent=money(ref2,currency);
 
-    // diferencias absolutas (T1 − T2)
     $("eq_d").textContent=`${(a1.v-a2.v).toFixed(2)} ${a1.t}`;
-    $("ppu_d").textContent=`${money(ppu1-ppu2,sym)}/${a1.t}`;
-    $("p100_d").textContent=money(ppu1*100-ppu2*100,sym);
-    $("p1000_d").textContent=money(ppu1*1000-ppu2*1000,sym);
-    $("ref_d").textContent=money(ref1-ref2,sym);
+    $("ppu_d").textContent=`${money(ppu1-ppu2,currency)}/${a1.t}`;
+    $("p100_d").textContent=money(ppu1*100-ppu2*100,currency);
+    $("p1000_d").textContent=money(ppu1*1000-ppu2*1000,currency);
+    $("ref_d").textContent=money(ref1-ref2,currency);
 
-    // diferencias porcentuales
     $("ppu_pct").textContent=pct(ppu1,ppu2);
     $("p100_pct").textContent=pct(ppu1*100,ppu2*100);
     $("p1000_pct").textContent=pct(ppu1*1000,ppu2*1000);
     $("ref_pct").textContent=pct(ref1,ref2);
 
-    // KPIs
-    const mejor=ppu1<ppu2?{n:n1,ppu:ppu1}:{n:n2,ppu:ppu2};
-    const segundo=ppu1<ppu2?ppu2:ppu1;
-    $("kpi_best").textContent=`${mejor.n}: ${money(mejor.ppu,sym)} / ${a1.t}`;
-    $("kpi_gap").textContent=`${money(Math.abs(ppu1-ppu2),sym)} por ${a1.t} (${pct(ppu1,ppu2)})`;
-    $("kpi_save").textContent=money(Math.abs(ref1-ref2),sym);
+    $("wizard").classList.add("hidden");
+    $("result").classList.remove("hidden");
+    window.scrollTo({top:0,behavior:"smooth"});
   }
 
-  ["n1","n2","c1","u1","p1","c2","u2","p2","ref","moneda"].forEach(id=>{
-    $(id).addEventListener("input",calc);$(id).addEventListener("change",calc);
+  $("btnToggle").addEventListener("click", ()=>{
+    const d=$("details");
+    const isHidden=d.classList.contains("hidden");
+    d.classList.toggle("hidden");
+    d.setAttribute("aria-hidden", isHidden?"false":"true");
+    $("btnToggle").textContent=isHidden?"Ocultar desglose":"Ver desglose";
   });
-  calc();
+
+  render();
 </script>
 </body>
 </html>

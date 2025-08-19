@@ -122,10 +122,10 @@
   const kindOf=u=> (u==="g"||u==="kg"||u==="lb") ? "mass"
                    : (u==="ml"||u==="l") ? "vol" : "";
 
-  // Estado (Cantidad a llevar = 1000 por defecto, editable)
+  // Estado (precio total = 1000 por defecto; editable)
   const defaults=()=>({
-    s1:{name:"Tienda 1",qty:500,unit:"g",price:undefined},
-    s2:{name:"Tienda 2",qty:500,unit:"g",price:undefined},
+    s1:{name:"Tienda 1",qty:500,unit:"g",price:1000},
+    s2:{name:"Tienda 2",qty:500,unit:"g",price:1000},
     buyQty:1000
   });
   let state = defaults();
@@ -134,11 +134,11 @@
   const steps=[
     { key:"s1.qty",    title:"Tienda 1 — cantidad",     render:() => inputNumber("s1.qty","Cantidad (ej: 500)") },
     { key:"s1.unit",   title:"Tienda 1 — unidad",       render:() => selectUnit("s1.unit") },
-    { key:"s1.price",  title:"Tienda 1 — precio total", render:() => inputNumber("s1.price","Precio total (ej: 2400)", true) },
+    { key:"s1.price",  title:"Tienda 1 — precio total", render:() => inputNumber("s1.price","Precio total (ej: 2400)") },
 
     { key:"s2.qty",    title:"Tienda 2 — cantidad",     render:() => inputNumber("s2.qty","Cantidad (ej: 500)") },
     { key:"s2.unit",   title:"Tienda 2 — unidad",       render:() => selectUnit("s2.unit") },
-    { key:"s2.price",  title:"Tienda 2 — precio total", render:() => inputNumber("s2.price","Precio total (ej: 2500)", true) },
+    { key:"s2.price",  title:"Tienda 2 — precio total", render:() => inputNumber("s2.price","Precio total (ej: 2500)") },
 
     { key:"buyQty",    title:"Cantidad a llevar",       render:() => inputNumber("buyQty","Cantidad (ej: 1000)", false, 1000) }
   ];
@@ -198,23 +198,15 @@
     $("dots").innerHTML=steps.map((_,i)=>`<span class="dot ${i===step?"on":""}"></span>`).join("");
   }
 
-  // Validación con control de tipo de unidad en el momento
+  // Validación (incluye tipo de unidad)
   function validate(){
     const s=steps[step].key;
     const fld=$("stepBody").querySelector("#fld");
     if(!fld) return true;
 
-    if(s.endsWith(".qty") || s==="buyQty"){
+    if(s.endsWith(".qty") || s==="buyQty" || s.endsWith(".price")){
       const num=clean(fld.value);
       if(Number.isNaN(num)||num<=0){ $("err").textContent="Número inválido."; return false; }
-      set(s,num); return true;
-    }
-
-    if(s.endsWith(".price")){
-      const val=fld.value.trim();
-      if(val===""){ set(s, undefined); return true; }
-      const num=clean(val);
-      if(Number.isNaN(num)||num<=0){ $("err").textContent="Precio inválido."; return false; }
       set(s,num); return true;
     }
 
@@ -237,19 +229,13 @@
   function next(){
     if(!validate()) return;
     if(step<steps.length-1){ step++; render(); return; }
-    if(!(state.s1.price>0) || !(state.s2.price>0)){
-      step = !(state.s1.price>0) ? 2 : 5;
-      render();
-      $("err").textContent="Debes ingresar el precio total.";
-      return;
-    }
     computeAndShow();
   }
 
   $("btnBack").addEventListener("click", back);
   $("btnNext").addEventListener("click", next);
 
-  // Cálculo y mostrador de desglose
+  // Cálculo y tabla
   function computeAndShow(){
     const {s1,s2,buyQty}=state;
     const a1=canon(Number(s1.qty),s1.unit);
@@ -260,7 +246,6 @@
     const ppu1=s1.price/a1.v, ppu2=s2.price/a2.v;
     const total1=ppu1*buyQty, total2=ppu2*buyQty;
 
-    // rellenar tabla
     $("buyInfo").textContent=`Cantidad a llevar: ${buyQty} ${a1.t}`;
     $("n1_o").textContent=s1.name; $("n2_o").textContent=s2.name;
     $("eq1").textContent=`${a1.v.toFixed(2)} ${a1.t}`; $("eq2").textContent=`${a2.v.toFixed(2)} ${a2.t}`;
@@ -268,18 +253,15 @@
     $("qty1").textContent=`${buyQty} ${a1.t}`;        $("qty2").textContent=`${buyQty} ${a1.t}`;
     $("total1").textContent=money(total1);            $("total2").textContent=money(total2);
 
-    // fila de diferencias
     $("eq_d").textContent=`${(a1.v-a2.v).toFixed(2)} ${a1.t}`;
     $("ppu_d").textContent=`${money(ppu1-ppu2)}/${a1.t}`;
     $("total_d").textContent=money(total1-total2);
 
-    // destacar mejor precio por unidad
     const row1 = $("ppu1").closest("tr");
     const row2 = $("ppu2").closest("tr");
     row1.classList.remove("best"); row2.classList.remove("best");
-    if(ppu1 < ppu2) row1.classList.add("best"); else row2.classList.add("best");
+    if(ppu1 < ppu2) row1.classList.add("best"); else if(ppu2 < ppu1) row2.classList.add("best");
 
-    // mostrar desglose
     $("wizard").classList.add("hidden");
     $("details").classList.remove("hidden");
     $("details").setAttribute("aria-hidden","false");
@@ -287,8 +269,7 @@
   }
 
   // Reiniciar sin recargar
-  $("btnReset").addEventListener("click", resetWizard);
-  function resetWizard(){
+  $("btnReset").addEventListener("click", ()=>{
     state = defaults();
     step = 0;
     $("details").classList.add("hidden");
@@ -297,7 +278,7 @@
     $("err").textContent="";
     render();
     window.scrollTo({top:0,behavior:"smooth"});
-  }
+  });
 
   // Inicio
   render();

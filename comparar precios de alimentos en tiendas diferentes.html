@@ -7,7 +7,7 @@
 <style>
   :root{
     --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
-    --best:#e8fff0; --worst:#ffecec; --accent:#4f46e5; --accent-ink:#fff;
+    --accent:#4f46e5; --accent-ink:#fff; --best:#e8fff0; --warn:#fff8e7;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
@@ -28,20 +28,15 @@
   .dots{display:flex;gap:6px;justify-content:center;margin-top:6px}
   .dot{width:7px;height:7px;border-radius:999px;background:#cbd5e1;opacity:.6}
   .dot.on{background:#475569;opacity:1}
-  .kpis{display:grid;grid-template-columns:1fr;gap:10px}
-  .kpi{border:1px solid var(--line);border-radius:10px;padding:10px;background:#f9fafb}
-  .kpi .t{font-size:12px;color:var(--muted)}
-  .kpi .v{font-weight:700}
-  .toggle{display:flex;justify-content:center}
-  .link{background:#eef2ff;border-color:#eef2ff;color:#3730a3}
   table{border-collapse:collapse;width:100%;font-size:13px}
   th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
   thead th{background:#f1f5ff}
   .best{background:var(--best)}
-  .diff{background:#fff8e7;font-weight:600}
+  .diff{background:var(--warn);font-weight:600}
   .hidden{display:none}
   .err{color:#b91c1c;font-size:12px;margin-top:4px}
-  @media(min-width:430px){ .kpis{grid-template-columns:repeat(3,1fr)} }
+  .headrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .small{font-size:12px;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -60,31 +55,23 @@
     <div class="dots" id="dots"></div>
   </section>
 
-  <!-- Resultado compacto -->
-  <section id="result" class="card hidden">
-    <strong>Resumen</strong>
-    <div class="kpis" style="margin-top:8px">
-      <div class="kpi"><div class="t">Mejor precio por unidad</div><div class="v" id="kpi_best">—</div></div>
-      <div class="kpi"><div class="t">Diferencia vs 2.º</div><div class="v" id="kpi_gap">—</div></div>
-      <div class="kpi"><div class="t">Ahorro en referencia</div><div class="v" id="kpi_save">—</div></div>
-    </div>
-    <div class="help" id="refInfo">Referencia: 1000 g/ml • Moneda: $</div>
-    <div class="toggle" style="margin-top:10px">
-      <button id="btnToggle" type="button" class="link">Ver desglose</button>
-    </div>
-  </section>
-
-  <!-- Desglose completo -->
+  <!-- Desglose directo (sin resumen) -->
   <section id="details" class="card hidden" aria-hidden="true">
+    <div class="headrow">
+      <strong>Desglose</strong>
+      <div>
+        <span id="buyInfo" class="small">Cantidad a llevar: —</span>
+        <button id="btnReset" type="button" class="ghost" style="margin-left:8px">Analizar otro producto</button>
+      </div>
+    </div>
     <table>
       <thead>
         <tr>
           <th>tienda</th>
           <th>equivalente (g/ml)</th>
           <th>precio / unidad</th>
-          <th>precio x100</th>
-          <th>precio x1000</th>
-          <th>costo referencia</th>
+          <th>cantidad a llevar</th>
+          <th>total a pagar</th>
         </tr>
       </thead>
       <tbody>
@@ -92,33 +79,22 @@
           <td><output id="n1_o"></output></td>
           <td><output id="eq1"></output></td>
           <td><output id="ppu1"></output></td>
-          <td><output id="p100_1"></output></td>
-          <td><output id="p1000_1"></output></td>
-          <td><output id="ref1"></output></td>
+          <td><output id="qty1"></output></td>
+          <td><output id="total1"></output></td>
         </tr>
         <tr>
           <td><output id="n2_o"></output></td>
           <td><output id="eq2"></output></td>
           <td><output id="ppu2"></output></td>
-          <td><output id="p100_2"></output></td>
-          <td><output id="p1000_2"></output></td>
-          <td><output id="ref2"></output></td>
+          <td><output id="qty2"></output></td>
+          <td><output id="total2"></output></td>
         </tr>
         <tr class="diff">
           <td>diferencia (T1 − T2)</td>
           <td><output id="eq_d"></output></td>
           <td><output id="ppu_d"></output></td>
-          <td><output id="p100_d"></output></td>
-          <td><output id="p1000_d"></output></td>
-          <td><output id="ref_d"></output></td>
-        </tr>
-        <tr class="diff">
-          <td>diferencia % (T1 vs T2)</td>
           <td>—</td>
-          <td><output id="ppu_pct"></output></td>
-          <td><output id="p100_pct"></output></td>
-          <td><output id="p1000_pct"></output></td>
-          <td><output id="ref_pct"></output></td>
+          <td><output id="total_d"></output></td>
         </tr>
       </tbody>
     </table>
@@ -126,31 +102,35 @@
 </main>
 
 <script>
+  // Utilidades
   const G_POR_LB=453.59237, ML_POR_L=1000;
   const $=id=>document.getElementById(id);
   const clean=s=>{
     const t=String(s??"").trim().replace(/\s+/g,"").replace(/\./g,"").replace(/,/g,".");
     return t===""?NaN:Number(t);
   };
-  const money=(n,sym)=>`${sym}${Number(n).toLocaleString("es-CO",{maximumFractionDigits:2})}`;
-  const pct=(v1,v2)=>v2!==0?((v1-v2)/v2*100).toFixed(2)+" %":"—";
+  const money=(n)=>`$${Number(n).toLocaleString("es-CO",{maximumFractionDigits:2})}`;
   const canon=(c,u)=>{
     u=String(u||"").toLowerCase().trim();
-    if(u==="g") return {v:c,t:"g"};
-    if(u==="kg") return {v:c*1000,t:"g"};
-    if(u==="lb") return {v:c*G_POR_LB,t:"g"};
-    if(u==="ml") return {v:c,t:"ml"};
-    if(u==="l") return {v:c*ML_POR_L,t:"ml"};
-    return {v:NaN,t:""};
+    if(u==="g")  return {v:c,t:"g",  kind:"mass"};
+    if(u==="kg") return {v:c*1000,t:"g",  kind:"mass"};
+    if(u==="lb") return {v:c*G_POR_LB,t:"g",  kind:"mass"};
+    if(u==="ml") return {v:c,t:"ml", kind:"vol"};
+    if(u==="l")  return {v:c*ML_POR_L,t:"ml", kind:"vol"};
+    return {v:NaN,t:"",kind:""};
   };
+  const kindOf=u=> (u==="g"||u==="kg"||u==="lb") ? "mass"
+                   : (u==="ml"||u==="l") ? "vol" : "";
 
-  const state={
+  // Estado (Cantidad a llevar = 1000 por defecto, editable)
+  const defaults=()=>({
     s1:{name:"Tienda 1",qty:500,unit:"g",price:undefined},
     s2:{name:"Tienda 2",qty:500,unit:"g",price:undefined},
-    refQty:1000,
-    currency:"$"
-  };
+    buyQty:1000
+  });
+  let state = defaults();
 
+  // Pasos (sin nombres de tiendas)
   const steps=[
     { key:"s1.qty",    title:"Tienda 1 — cantidad",     render:() => inputNumber("s1.qty","Cantidad (ej: 500)") },
     { key:"s1.unit",   title:"Tienda 1 — unidad",       render:() => selectUnit("s1.unit") },
@@ -159,17 +139,21 @@
     { key:"s2.qty",    title:"Tienda 2 — cantidad",     render:() => inputNumber("s2.qty","Cantidad (ej: 500)") },
     { key:"s2.unit",   title:"Tienda 2 — unidad",       render:() => selectUnit("s2.unit") },
     { key:"s2.price",  title:"Tienda 2 — precio total", render:() => inputNumber("s2.price","Precio total (ej: 2500)", true) },
+
+    { key:"buyQty",    title:"Cantidad a llevar",       render:() => inputNumber("buyQty","Cantidad (ej: 1000)", false, 1000) }
   ];
   let step=0;
 
-  function inputNumber(path,placeholder,allowEmpty=false){
+  // Renderizadores
+  function inputNumber(path,placeholder,allowEmpty=false,defVal){
     const val=get(path);
-    const shown = (allowEmpty && (val===undefined||val===null)) ? "" : (val ?? "");
+    const shown = (allowEmpty && (val===undefined||val===null)) ? "" : (val ?? (defVal ?? ""));
     const el=document.createElement("div");
     el.className="field";
     el.innerHTML=`
       <label>${placeholder}</label>
       <input id="fld" type="text" inputmode="decimal" placeholder="${allowEmpty?"(puede ir vacío)":"0,00"}" value="${shown}">
+      ${allowEmpty?'<div class="help">Puedes dejarlo vacío ahora; se exigirá antes de calcular.</div>':'<div class="help">Usa coma o punto. Ej: 0,5 • 500</div>'}
     `;
     return el;
   }
@@ -186,11 +170,13 @@
         <option value="ml">ml (mililitros)</option>
         <option value="l">l (litros)</option>
       </select>
+      <div class="help">Ambas tiendas deben ser del mismo tipo: peso (g/kg/lb) o volumen (ml/l).</div>
     `;
-    setTimeout(()=>{ const s=el.querySelector("#fld"); s.value=val; },0);
+    setTimeout(()=>{ el.querySelector("#fld").value=val; },0);
     return el;
   }
 
+  // Acceso a estado
   function get(path){ return path.split(".").reduce((o,k)=>o?.[k],state); }
   function set(path,value){
     const keys=path.split(".");
@@ -199,12 +185,12 @@
     o[keys.at(-1)]=value;
   }
 
+  // Render de paso
   function render(){
     $("err").textContent="";
     const s=steps[step];
     $("stepTitle").textContent=s.title;
-    const body=s.render();
-    $("stepBody").replaceChildren(body);
+    $("stepBody").replaceChildren(s.render());
     const fld=$("stepBody").querySelector("#fld");
     if(fld){ setTimeout(()=>fld.focus(),50); fld.addEventListener("keydown",e=>{ if(e.key==="Enter") next(); }); }
     $("btnBack").disabled=step===0;
@@ -212,15 +198,18 @@
     $("dots").innerHTML=steps.map((_,i)=>`<span class="dot ${i===step?"on":""}"></span>`).join("");
   }
 
+  // Validación con control de tipo de unidad en el momento
   function validate(){
     const s=steps[step].key;
     const fld=$("stepBody").querySelector("#fld");
     if(!fld) return true;
-    if(s.endsWith(".qty")){
+
+    if(s.endsWith(".qty") || s==="buyQty"){
       const num=clean(fld.value);
       if(Number.isNaN(num)||num<=0){ $("err").textContent="Número inválido."; return false; }
       set(s,num); return true;
     }
+
     if(s.endsWith(".price")){
       const val=fld.value.trim();
       if(val===""){ set(s, undefined); return true; }
@@ -228,7 +217,19 @@
       if(Number.isNaN(num)||num<=0){ $("err").textContent="Precio inválido."; return false; }
       set(s,num); return true;
     }
-    if(s.endsWith(".unit")){ set(s, String(fld.value).toLowerCase()); return true; }
+
+    if(s.endsWith(".unit")){
+      const chosen=String(fld.value).toLowerCase();
+      const thisKind=kindOf(chosen);
+      const otherUnit = s.startsWith("s1.") ? state.s2.unit : state.s1.unit;
+      const otherKind = kindOf(String(otherUnit||""));
+      if(otherKind && thisKind && thisKind!==otherKind){
+        $("err").textContent="Tipo de unidad incompatible (peso vs volumen). Cambia la unidad.";
+        return false;
+      }
+      set(s, chosen);
+      return true;
+    }
     return true;
   }
 
@@ -248,56 +249,57 @@
   $("btnBack").addEventListener("click", back);
   $("btnNext").addEventListener("click", next);
 
+  // Cálculo y mostrador de desglose
   function computeAndShow(){
-    const {s1,s2,refQty,currency}=state;
+    const {s1,s2,buyQty}=state;
     const a1=canon(Number(s1.qty),s1.unit);
     const a2=canon(Number(s2.qty),s2.unit);
-    if(!a1.t||!a2.t||a1.t!==a2.t){ step=1; render(); $("err").textContent="Las unidades deben coincidir."; return; }
+    if(!a1.t||!a2.t||a1.t!==a2.t){
+      step=1; render(); $("err").textContent="Las unidades deben coincidir (mismo tipo)."; return;
+    }
     const ppu1=s1.price/a1.v, ppu2=s2.price/a2.v;
-    const ref1=ppu1*refQty, ref2=ppu2*refQty;
+    const total1=ppu1*buyQty, total2=ppu2*buyQty;
 
-    const mejor=ppu1<ppu2?{n:s1.name,ppu:ppu1}:{n:s2.name,ppu:ppu2};
-    $("kpi_best").textContent=`${mejor.n}: ${money(mejor.ppu,currency)} / ${a1.t}`;
-    $("kpi_gap").textContent=`${money(Math.abs(ppu1-ppu2),currency)} por ${a1.t} (${pct(ppu1,ppu2)})`;
-    $("kpi_save").textContent=money(Math.abs(ref1-ref2),currency);
+    // rellenar tabla
+    $("buyInfo").textContent=`Cantidad a llevar: ${buyQty} ${a1.t}`;
+    $("n1_o").textContent=s1.name; $("n2_o").textContent=s2.name;
+    $("eq1").textContent=`${a1.v.toFixed(2)} ${a1.t}`; $("eq2").textContent=`${a2.v.toFixed(2)} ${a2.t}`;
+    $("ppu1").textContent=`${money(ppu1)}/${a1.t}`;   $("ppu2").textContent=`${money(ppu2)}/${a1.t}`;
+    $("qty1").textContent=`${buyQty} ${a1.t}`;        $("qty2").textContent=`${buyQty} ${a1.t}`;
+    $("total1").textContent=money(total1);            $("total2").textContent=money(total2);
 
-    $("n1_o").textContent=s1.name;
-    $("n2_o").textContent=s2.name;
-    $("eq1").textContent=`${a1.v.toFixed(2)} ${a1.t}`;
-    $("eq2").textContent=`${a2.v.toFixed(2)} ${a2.t}`;
-    $("ppu1").textContent=`${money(ppu1,currency)}/${a1.t}`;
-    $("ppu2").textContent=`${money(ppu2,currency)}/${a1.t}`;
-    $("p100_1").textContent=money(ppu1*100,currency);
-    $("p100_2").textContent=money(ppu2*100,currency);
-    $("p1000_1").textContent=money(ppu1*1000,currency);
-    $("p1000_2").textContent=money(ppu2*1000,currency);
-    $("ref1").textContent=money(ref1,currency);
-    $("ref2").textContent=money(ref2,currency);
-
+    // fila de diferencias
     $("eq_d").textContent=`${(a1.v-a2.v).toFixed(2)} ${a1.t}`;
-    $("ppu_d").textContent=`${money(ppu1-ppu2,currency)}/${a1.t}`;
-    $("p100_d").textContent=money(ppu1*100-ppu2*100,currency);
-    $("p1000_d").textContent=money(ppu1*1000-ppu2*1000,currency);
-    $("ref_d").textContent=money(ref1-ref2,currency);
+    $("ppu_d").textContent=`${money(ppu1-ppu2)}/${a1.t}`;
+    $("total_d").textContent=money(total1-total2);
 
-    $("ppu_pct").textContent=pct(ppu1,ppu2);
-    $("p100_pct").textContent=pct(ppu1*100,ppu2*100);
-    $("p1000_pct").textContent=pct(ppu1*1000,ppu2*1000);
-    $("ref_pct").textContent=pct(ref1,ref2);
+    // destacar mejor precio por unidad
+    const row1 = $("ppu1").closest("tr");
+    const row2 = $("ppu2").closest("tr");
+    row1.classList.remove("best"); row2.classList.remove("best");
+    if(ppu1 < ppu2) row1.classList.add("best"); else row2.classList.add("best");
 
+    // mostrar desglose
     $("wizard").classList.add("hidden");
-    $("result").classList.remove("hidden");
+    $("details").classList.remove("hidden");
+    $("details").setAttribute("aria-hidden","false");
     window.scrollTo({top:0,behavior:"smooth"});
   }
 
-  $("btnToggle").addEventListener("click", ()=>{
-    const d=$("details");
-    const isHidden=d.classList.contains("hidden");
-    d.classList.toggle("hidden");
-    d.setAttribute("aria-hidden", isHidden?"false":"true");
-    $("btnToggle").textContent=isHidden?"Ocultar desglose":"Ver desglose";
-  });
+  // Reiniciar sin recargar
+  $("btnReset").addEventListener("click", resetWizard);
+  function resetWizard(){
+    state = defaults();
+    step = 0;
+    $("details").classList.add("hidden");
+    $("details").setAttribute("aria-hidden","true");
+    $("wizard").classList.remove("hidden");
+    $("err").textContent="";
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
 
+  // Inicio
   render();
 </script>
 </body>

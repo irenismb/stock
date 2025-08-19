@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comparador de Precios — 2 Tiendas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--bg:#f8fafc;--card:#ffffff;--best:#e8fff0;--worst:#ffecec;}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,Segoe UI,Arial,sans-serif}
+  header{padding:16px 20px;background:#fff;border-bottom:1px solid var(--line)}
+  h1{margin:0;font-size:20px}
+  main{padding:20px;max-width:1000px;margin:auto;display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .kpi{background:#f9fafb;border:1px solid var(--line);border-radius:10px;padding:10px;text-align:center}
+  .kpi .t{font-size:12px;color:var(--muted)}
+  .kpi .v{font-weight:700;font-size:16px}
+  table{border-collapse:collapse;width:100%}
+  th,td{border:1px solid var(--line);padding:8px 10px;text-align:center}
+  thead th{background:#f1f5ff}
+  .best{background:var(--best)}
+  .worst{background:var(--worst)}
+  .diff{background:#fff8e7;font-weight:600}
+  input{width:100%;padding:6px 8px;border:1px solid var(--line);border-radius:6px;font:inherit}
+  .pill{display:inline-block;padding:2px 8px;border-radius:999px;background:#eef2ff;font-size:12px}
+</style>
+</head>
+<body>
+<header><h1>Comparador de precios — 2 tiendas</h1></header>
+
+<main>
+  <!-- KPIs -->
+  <div class="row">
+    <div class="kpi"><div class="t">mejor precio por unidad</div><div class="v" id="kpi_best">—</div></div>
+    <div class="kpi"><div class="t">diferencia vs 2.º</div><div class="v" id="kpi_gap">—</div></div>
+    <div class="kpi"><div class="t">ahorro en referencia</div><div class="v" id="kpi_save">—</div></div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>tienda</th>
+          <th>equivalente (g/ml)</th>
+          <th>precio / unidad</th>
+          <th>precio x100</th>
+          <th>precio x1000</th>
+          <th>costo referencia</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><input id="n1" value="Éxito"></td>
+          <td><output id="eq1"></output></td>
+          <td><output id="ppu1"></output></td>
+          <td><output id="p100_1"></output></td>
+          <td><output id="p1000_1"></output></td>
+          <td><output id="ref1"></output></td>
+        </tr>
+        <tr>
+          <td><input id="n2" value="Uho"></td>
+          <td><output id="eq2"></output></td>
+          <td><output id="ppu2"></output></td>
+          <td><output id="p100_2"></output></td>
+          <td><output id="p1000_2"></output></td>
+          <td><output id="ref2"></output></td>
+        </tr>
+        <tr class="diff">
+          <td>diferencia (T1 − T2)</td>
+          <td><output id="eq_d"></output></td>
+          <td><output id="ppu_d"></output></td>
+          <td><output id="p100_d"></output></td>
+          <td><output id="p1000_d"></output></td>
+          <td><output id="ref_d"></output></td>
+        </tr>
+        <tr class="diff">
+          <td>diferencia % (T1 vs T2)</td>
+          <td>—</td>
+          <td><output id="ppu_pct"></output></td>
+          <td><output id="p100_pct"></output></td>
+          <td><output id="p1000_pct"></output></td>
+          <td><output id="ref_pct"></output></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Datos entrada -->
+  <div class="card">
+    <strong>Datos de entrada</strong>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px">
+      <div><label>T1 cantidad</label><input id="c1" value="0,5"></div>
+      <div><label>T1 unidad</label><input id="u1" value="kg"></div>
+      <div><label>T1 precio total</label><input id="p1" value="2400"></div>
+      <div><label>T2 cantidad</label><input id="c2" value="500"></div>
+      <div><label>T2 unidad</label><input id="u2" value="g"></div>
+      <div><label>T2 precio total</label><input id="p2" value="2500"></div>
+    </div>
+    <div style="margin-top:10px">
+      <label>Cantidad de referencia</label>
+      <input id="ref" value="1000" style="max-width:120px"> 
+      <span id="ref_u" class="pill">g/ml</span>
+      <label style="margin-left:12px">Moneda</label>
+      <input id="moneda" value="$" style="max-width:60px;text-align:center">
+    </div>
+  </div>
+</main>
+
+<script>
+  const G_POR_LB=453.59237, ML_POR_L=1000;
+  const $=id=>document.getElementById(id);
+  const clean=s=>{const t=String(s||"").replace(/\s+/g,"").replace(/\./g,"").replace(/,/g,".");return t===""?NaN:Number(t)};
+  const money=(n,sym)=>`${sym}${Number(n).toLocaleString("es-CO",{maximumFractionDigits:2})}`;
+  function pct(v1,v2){return v2!==0?((v1-v2)/v2*100).toFixed(2)+" %":"—";}
+
+  function canon(c,u){
+    u=String(u||"").toLowerCase().trim();
+    if(u==="g") return {v:c,t:"g"};
+    if(u==="kg") return {v:c*1000,t:"g"};
+    if(u==="lb") return {v:c*G_POR_LB,t:"g"};
+    if(u==="ml") return {v:c,t:"ml"};
+    if(u==="l") return {v:c*ML_POR_L,t:"ml"};
+    return {v:NaN,t:""};
+  }
+
+  function calc(){
+    const sym=$("moneda").value||"$";
+    const n1=$("n1").value,n2=$("n2").value;
+    const c1=clean($("c1").value),u1=$("u1").value,p1=clean($("p1").value);
+    const c2=clean($("c2").value),u2=$("u2").value,p2=clean($("p2").value);
+    const ref=clean($("ref").value);
+
+    const a1=canon(c1,u1),a2=canon(c2,u2);
+    $("ref_u").textContent=a1.t||a2.t||"g/ml";
+    if(a1.t!==a2.t||!a1.t||!a2.t){return;}
+
+    const ppu1=p1/a1.v,ppu2=p2/a2.v;
+    const ref1=ppu1*ref,ref2=ppu2*ref;
+
+    $("eq1").textContent=`${a1.v.toFixed(2)} ${a1.t}`;
+    $("eq2").textContent=`${a2.v.toFixed(2)} ${a2.t}`;
+    $("ppu1").textContent=`${money(ppu1,sym)}/${a1.t}`;
+    $("ppu2").textContent=`${money(ppu2,sym)}/${a2.t}`;
+    $("p100_1").textContent=money(ppu1*100,sym);
+    $("p100_2").textContent=money(ppu2*100,sym);
+    $("p1000_1").textContent=money(ppu1*1000,sym);
+    $("p1000_2").textContent=money(ppu2*1000,sym);
+    $("ref1").textContent=money(ref1,sym);
+    $("ref2").textContent=money(ref2,sym);
+
+    // diferencias absolutas (T1 − T2)
+    $("eq_d").textContent=`${(a1.v-a2.v).toFixed(2)} ${a1.t}`;
+    $("ppu_d").textContent=`${money(ppu1-ppu2,sym)}/${a1.t}`;
+    $("p100_d").textContent=money(ppu1*100-ppu2*100,sym);
+    $("p1000_d").textContent=money(ppu1*1000-ppu2*1000,sym);
+    $("ref_d").textContent=money(ref1-ref2,sym);
+
+    // diferencias porcentuales
+    $("ppu_pct").textContent=pct(ppu1,ppu2);
+    $("p100_pct").textContent=pct(ppu1*100,ppu2*100);
+    $("p1000_pct").textContent=pct(ppu1*1000,ppu2*1000);
+    $("ref_pct").textContent=pct(ref1,ref2);
+
+    // KPIs
+    const mejor=ppu1<ppu2?{n:n1,ppu:ppu1}:{n:n2,ppu:ppu2};
+    const segundo=ppu1<ppu2?ppu2:ppu1;
+    $("kpi_best").textContent=`${mejor.n}: ${money(mejor.ppu,sym)} / ${a1.t}`;
+    $("kpi_gap").textContent=`${money(Math.abs(ppu1-ppu2),sym)} por ${a1.t} (${pct(ppu1,ppu2)})`;
+    $("kpi_save").textContent=money(Math.abs(ref1-ref2),sym);
+  }
+
+  ["n1","n2","c1","u1","p1","c2","u2","p2","ref","moneda"].forEach(id=>{
+    $(id).addEventListener("input",calc);$(id).addEventListener("change",calc);
+  });
+  calc();
+</script>
+</body>
+</html>

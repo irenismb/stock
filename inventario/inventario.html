@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo de Productos - Irenis Mendoza</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            margin: 0; padding: 20px; background-color: #f4f4f9; color: #333;
+        }
+        
+        h1, h2, h3, h4 { margin-top: 0; }
+        h1 { text-align: center; margin-bottom: 25px;}
+        h2 { font-size: 20px; color: #555; border-bottom: 2px solid #007bff; padding-bottom: 5px; margin-bottom: 15px; }
+        h3 { font-size: 18px; color: #0056b3; }
+
+        /* --- ESTILOS PARA EL PANEL SUPERIOR --- */
+        .top-panel {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            margin-bottom: 30px;
+        }
+
+        .categories-panel {
+            flex: 3; /* Ocupa más espacio */
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            border: 1px solid #ddd;
+        }
+        
+        .cart-container {
+            flex: 1; /* Ocupa menos espacio */
+            min-width: 280px; /* Ancho mínimo */
+            background-color: #e9f5ff; padding: 20px; border-radius: 8px;
+            border: 1px solid #bde0fe; 
+            position: sticky; 
+            top: 20px;
+        }
+
+        #categoryList {
+            list-style-type: none; 
+            padding: 0; 
+            margin: 0;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 10px;
+        }
+
+        .category-item {
+            padding: 12px;
+            cursor: pointer;
+            font-weight: 500;
+            border: 1px solid #eee;
+            border-radius: 5px;
+            text-align: center;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .category-item:hover { 
+            background-color: #e9f5ff;
+            border-color: #007bff;
+            color: #0056b3;
+        }
+        .category-item.active { 
+            background-color: #0056b3; 
+            color: white; 
+            border-color: #0056b3;
+        }
+        
+        #searchInput {
+            width: 100%; box-sizing: border-box; padding: 10px; margin-bottom: 15px;
+            border: 1px solid #ccc; border-radius: 5px; font-size: 16px;
+        }
+        
+        .product-table {
+            width: 100%; border-collapse: collapse; background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .product-table th, .product-table td {
+            border: 1px solid #ddd; padding: 12px; text-align: left;
+        }
+        .product-table th {
+            background-color: #007bff; color: white; font-size: 14px;
+            position: sticky;
+            top: 0; /* Fija la cabecera al hacer scroll en la tabla */
+            z-index: 1;
+        }
+        .product-table td { font-size: 15px; }
+        .product-table tr:nth-child(even) { background-color: #f8f9fa; }
+        
+        .quantity-input {
+            width: 60px; padding: 5px; text-align: center; border: 1px solid #ccc; border-radius: 4px;
+        }
+        .price-cell { font-weight: bold; color: #2a9d8f; }
+
+        #whatsappBtn {
+            background-color: #25D366; color: white; width: 100%; border: none;
+            padding: 12px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-top: 15px;
+        }
+        #whatsappBtn:hover { background-color: #1DA851; }
+
+        #cartList { list-style-type: none; padding-left: 0; }
+        #cartList li { margin-bottom: 8px; border-bottom: 1px solid #ccc; padding-bottom: 5px; }
+        #totalPrice { margin-top: 20px; font-size: 18px; font-weight: bold; text-align: right; }
+        
+        /* --- ESTILOS PARA EL FOOTER --- */
+        footer {
+            width: 100%;
+            margin-top: 40px;
+            padding: 30px 20px;
+            background-color: #f8f9fa;
+            border-top: 2px solid #007bff;
+            border-radius: 8px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .footer-container h3 {
+            font-size: 24px; color: #333; margin-bottom: 10px;
+        }
+        .footer-container .tagline {
+            font-size: 16px; color: #555; max-width: 600px; margin: 0 auto 25px auto;
+        }
+        .footer-sections {
+            display: flex; justify-content: center; gap: 30px; flex-wrap: wrap; margin-bottom: 25px;
+        }
+        .footer-section {
+            background-color: #fff; padding: 20px; border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05); flex: 1; min-width: 250px;
+        }
+        .footer-section h4 {
+            font-size: 18px; color: #0056b3; margin-top: 0; margin-bottom: 15px;
+        }
+        .footer-section ul {
+            list-style: none; padding: 0; margin: 0; color: #333; line-height: 1.6;
+        }
+        .footer-section ul li {
+            margin-bottom: 8px;
+        }
+        .connect-section h4 {
+            font-size: 18px; color: #333; margin-bottom: 15px;
+        }
+        .social-links a {
+            color: #fff; background-color: #007bff; padding: 8px 15px; border-radius: 5px;
+            text-decoration: none; font-weight: 500; margin: 0 5px; transition: background-color 0.3s;
+        }
+        .social-links a:hover {
+            background-color: #0056b3;
+        }
+        .closing-message {
+            margin-top: 20px; font-weight: 500; color: #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>Catálogo Interactivo de Productos</h1>
+    
+    <div class="top-panel">
+        <div class="categories-panel">
+            <h2>Categorías</h2>
+            <ul id="categoryList"></ul>
+        </div>
+        
+        <div class="cart-container">
+            <h3>🛒 Carrito de Compras</h3>
+            <ul id="cartList">
+                <li>El carrito está vacío.</li>
+            </ul>
+            <div id="totalPrice">Total: 0</div>
+            <button id="whatsappBtn">Comprar por WhatsApp</button>
+        </div>
+    </div>
+
+    <div class="products-container">
+        <h2>Productos</h2>
+        <input type="text" id="searchInput" placeholder="🔍 Buscar por una o más palabras...">
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Nombre Producto</th>
+                    <th>Categoría</th>
+                    <th>Marca</th>
+                    <th>Valor Unitario</th>
+                    <th>Stock</th>
+                    <th>Cantidad Requerida</th>
+                    <th>Valor a Pagar</th>
+                </tr>
+            </thead>
+            <tbody id="productTableBody"></tbody>
+        </table>
+    </div>
+
+    <footer>
+        <div class="footer-container">
+            <h3>Irenis Mendoza | Tu Consultora Natura en Santa Marta 🌴</h3>
+            <p class="tagline">¡Bienestar y belleza a tu alcance! 👋 Encuentra tus productos favoritos de Natura conmigo y recíbelos sin demoras.</p>
+            
+            <div class="footer-sections">
+                <div class="footer-section">
+                    <h4>💜 Beneficios Exclusivos</h4>
+                    <ul>
+                        <li>✅ <strong>Entrega Inmediata:</strong> Amplio stock disponible.</li>
+                        <li>🔥 <strong>Ofertas y Rifas:</strong> Accede a promociones únicas 🎟️.</li>
+                        <li>👩‍💼 <strong>Asesoría personalizada.</strong></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>🛵 Opciones de Entrega Flexibles</h4>
+                    <ul>
+                        <li><strong>A domicilio:</strong> Recibe en la comodidad de tu casa.</li>
+                        <li><strong>Punto de retiro:</strong> Agenda tu recogida en Los Almendros.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="connect-section">
+                <h4>Conéctate y no te pierdas las novedades:</h4>
+                <div class="social-links">
+                    <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank">Instagram</a>
+                    <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank">TikTok</a>
+                    <a href="https://www.facebook.com/marketplace/profile/100084865295132/" target="_blank">Facebook Marketplace</a>
+                </div>
+                <p class="closing-message">¡Espero tu mensaje para asesorarte! 😊</p>
+            </div>
+        </div>
+    </footer>
+
+<script src="products.js"></script>
+
+<script>
+    const categoryList = document.getElementById('categoryList');
+    const searchInput = document.getElementById('searchInput');
+    const productTableBody = document.getElementById('productTableBody');
+    const cartList = document.getElementById('cartList');
+    const totalPriceElement = document.getElementById('totalPrice');
+    const whatsappBtn = document.getElementById('whatsappBtn');
+    
+    searchInput.addEventListener('input', filterAndDisplayProducts);
+    
+    // La variable "products" ya existe porque se cargó desde "products.js"
+    const categories = ['Todas', ...[...new Set(products.map(p => p.category))].sort()];
+    let activeCategory = 'Todas';
+    let whatsappWindow = null;
+
+    const currencyFormatter = new Intl.NumberFormat('es-CO', {
+        style: 'decimal', minimumFractionDigits: 0
+    });
+
+    function normalizeText(text) {
+        return text.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
+    function filterAndDisplayProducts() {
+        const normalizedQuery = normalizeText(searchInput.value);
+        const searchTerms = normalizedQuery.split(/\s+/).filter(term => term);
+        let filteredProducts = products;
+
+        if (activeCategory !== 'Todas') {
+            filteredProducts = filteredProducts.filter(p => p.category === activeCategory);
+        }
+        if (searchTerms.length > 0) {
+            filteredProducts = filteredProducts.filter(product => {
+                const normalizedProductName = normalizeText(product.name);
+                return searchTerms.every(term => normalizedProductName.includes(term));
+            });
+        }
+        displayProducts(filteredProducts);
+    }
+    
+    function displayProducts(productsToDisplay) {
+        productTableBody.innerHTML = '';
+        if (productsToDisplay.length === 0) {
+            productTableBody.innerHTML = `<tr><td colspan="7" style="text-align:center;">No se encontraron productos.</td></tr>`;
+            return;
+        }
+        productsToDisplay.forEach((product, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${product.name}</td>
+                <td>${product.category}</td>
+                <td>${product.marca}</td>
+                <td class="price-cell">${currencyFormatter.format(product.valor_unitario)}</td>
+                <td>${product.stock}</td>
+                <td>
+                    <input 
+                        type="number" 
+                        class="quantity-input" 
+                        min="0" 
+                        max="${product.stock}" 
+                        value="0"
+                        data-price="${product.valor_unitario}"
+                        data-name="${product.name}"
+                    >
+                </td>
+                <td class="price-cell total-pay">
+                    ${currencyFormatter.format(0)}
+                </td>
+            `;
+            productTableBody.appendChild(row);
+        });
+    }
+
+    function updateCart() {
+        let grandTotal = 0;
+        let cartItems = [];
+        const quantityInputs = document.querySelectorAll('.quantity-input');
+
+        quantityInputs.forEach(input => {
+            const quantity = parseInt(input.value, 10);
+            if (quantity > 0) {
+                const name = input.dataset.name;
+                const price = parseFloat(input.dataset.price);
+                const subtotal = quantity * price;
+                grandTotal += subtotal;
+                cartItems.push({ name, quantity, subtotal });
+            }
+        });
+
+        if (cartItems.length === 0) {
+            cartList.innerHTML = '<li>El carrito está vacío.</li>';
+        } else {
+            cartList.innerHTML = cartItems.map(item => 
+                `<li>${item.quantity} x ${item.name} (${currencyFormatter.format(item.subtotal)})</li>`
+            ).join('');
+        }
+        totalPriceElement.textContent = `Total: ${currencyFormatter.format(grandTotal)}`;
+    }
+
+    productTableBody.addEventListener('input', (event) => {
+        if (event.target.classList.contains('quantity-input')) {
+            const input = event.target;
+            const quantity = parseInt(input.value, 10) || 0;
+            const maxStock = parseInt(input.max, 10);
+            
+            if (quantity > maxStock) {
+                input.value = maxStock;
+                alert(`El stock máximo para este producto es ${maxStock}.`);
+            }
+
+            const price = parseFloat(input.dataset.price);
+            const totalPayCell = input.parentElement.nextElementSibling;
+            
+            const totalValue = (input.value >= 0 ? input.value : 0) * price;
+            totalPayCell.textContent = currencyFormatter.format(totalValue);
+            updateCart();
+        }
+    });
+
+    function populateCategories() {
+        categories.forEach(category => {
+            const li = document.createElement('li');
+            li.textContent = category;
+            li.classList.add('category-item');
+            if (category === 'Todas') li.classList.add('active');
+            li.addEventListener('click', () => {
+                document.querySelectorAll('.category-item').forEach(item => item.classList.remove('active'));
+                li.classList.add('active');
+                activeCategory = category;
+                filterAndDisplayProducts();
+            });
+            categoryList.appendChild(li);
+        });
+    }
+    
+    whatsappBtn.addEventListener('click', () => {
+        let message = 'Hola, deseo comprar los siguientes productos:\n';
+        let itemsAdded = 0;
+        
+        document.querySelectorAll('.quantity-input').forEach(input => {
+            const quantity = parseInt(input.value, 10);
+            if (quantity > 0) {
+                const name = input.dataset.name;
+                message += `- ${name} (Cantidad: ${quantity})\n`;
+                itemsAdded++;
+            }
+        });
+
+        if (itemsAdded === 0) {
+            alert('El carrito está vacío. Por favor, añade una cantidad a los productos que deseas comprar.');
+            return;
+        }
+        
+        const phoneNumber = '573042088961';
+        const encodedMessage = encodeURIComponent(message);
+        const whatsappURL = `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+        
+        if (whatsappWindow && !whatsappWindow.closed) {
+            whatsappWindow.close();
+        }
+
+        whatsappWindow = window.open(whatsappURL, 'whatsapp_tab');
+        
+        if (whatsappWindow) {
+            whatsappWindow.focus();
+        }
+    });
+
+    // Carga inicial
+    populateCategories();
+    filterAndDisplayProducts();
+    updateCart();
+</script>
+</body>
+</html>

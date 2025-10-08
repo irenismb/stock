@@ -66,6 +66,9 @@
         .right-panel {
             flex: 1 1 280px;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
         }
 
         .cart-container {
@@ -73,6 +76,37 @@
             padding: 20px;
             border-radius: 8px;
             border: 1px solid #bde0fe;
+        }
+        
+        /* Estilos para la sección de contacto */
+        .contact-info {
+            padding: 20px;
+            background-color: var(--card-bg-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .contact-info h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            font-size: 16px;
+            text-align: center;
+        }
+        .contact-info p {
+            margin: 8px 0; /* Espacio sencillo entre líneas */
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .contact-info a {
+            color: var(--primary-color);
+            text-decoration: none;
+        }
+        .contact-info a:hover {
+            text-decoration: underline;
+        }
+        .contact-info hr {
+            border: none;
+            border-top: 1px solid var(--border-color);
+            margin: 15px 0;
         }
 
         .category-container {
@@ -99,7 +133,6 @@
             cursor: pointer;
         }
 
-        /* Wrapper de la tabla que tendrá el scroll en desktop */
         .table-wrapper {
             flex-grow: 1;
             overflow-y: auto;
@@ -167,7 +200,7 @@
         #cartList {
             list-style-type: none;
             padding-left: 0;
-            max-height: 250px; /* Limita altura del carrito en desktop */
+            max-height: 250px;
             overflow-y: auto;
         }
         #cartList li {
@@ -213,18 +246,16 @@
 
         footer { display: none; }
 
-
-        /* --- OPTIMIZACIÓN PARA MÓVILES --- */
         @media (max-width: 768px) {
             body {
-                overflow: auto; /* Permitir scroll vertical en la página */
+                overflow: auto;
                 padding: 10px;
             }
 
             h1 { font-size: 20px; }
 
             .container {
-                flex-direction: column; /* Apilar los paneles verticalmente */
+                flex-direction: column;
                 height: auto;
                 gap: 20px;
             }
@@ -236,12 +267,11 @@
             }
 
             .table-wrapper {
-                overflow-y: visible; /* Quitar scroll interno de la tabla */
+                overflow-y: visible;
             }
 
-            /* --- Transformar tabla en tarjetas --- */
             .product-table thead {
-                display: none; /* Ocultar encabezados de la tabla */
+                display: none;
             }
 
             .product-table tr {
@@ -258,12 +288,12 @@
 
             .product-table td {
                 display: block;
-                text-align: right; /* Valor a la derecha */
+                text-align: right;
                 font-size: 15px;
                 border: none;
                 border-bottom: 1px dotted #ccc;
                 padding: 10px;
-                padding-left: 50%; /* Espacio para la etiqueta */
+                padding-left: 50%;
                 position: relative;
             }
 
@@ -272,7 +302,7 @@
             }
 
             .product-table td::before {
-                content: attr(data-label); /* Añadir la etiqueta desde el atributo */
+                content: attr(data-label);
                 position: absolute;
                 left: 10px;
                 width: 45%;
@@ -284,7 +314,7 @@
                 width: 80px;
             }
             #cartList {
-                max-height: none; /* Altura automática en móvil */
+                max-height: none;
             }
         }
     </style>
@@ -330,6 +360,22 @@
                 <button id="clearCartBtn">Vaciar Carrito</button>
                 <button id="whatsappBtn">Comprar por WhatsApp</button>
             </div>
+            
+            <div class="contact-info">
+                <h3>✨ Contacto y Ubicación ✨</h3>
+                <p>📱 WhatsApp y llamadas: <a href="https://web.whatsapp.com/send?phone=573042088961&text=Hola me interesan tus productos" target="_blank" rel="noopener noreferrer">3042088961</a></p>
+                <p>📍 Ubicación: Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia!</p>
+                <p>🗺️ Visítanos (GPS): <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">Ver en Google Maps</a></p>
+                
+                <hr>
+          
+                <h3>🌐 ¡Síguenos en Nuestras Redes! 🌐</h3>
+                <p>👍 <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer">Facebook</a></p>
+                <p>📸 <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer">Instagram</a></p>
+                <p>🎵 <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer">TikTok</a></p>
+                <p>✉️ Correo Electrónico: <a href="mailto:irenis@irenisnatura.com">irenis@irenisnatura.com</a></p>
+            </div>
+
         </div>
     </div>
 
@@ -337,7 +383,6 @@
 
 <script>
     const products = [
-        // ... (Tu lista de productos completa aquí, sin cambios) ...
         { name: 'Aguas Citrico 150 ml', category: 'Perfumes femeninos', marca: 'Natura', valor_unitario: 38000, stock: 1 },
         { name: 'Aguas Jabuticaba 150 ml', category: 'Perfumes femeninos', marca: 'Natura', valor_unitario: 38000, stock: 2 },
         { name: 'Aguas Lirio 150 ml', category: 'Perfumes femeninos', marca: 'Natura', valor_unitario: 38000, stock: 2 },
@@ -668,7 +713,6 @@
         { name: 'Regalo Femenino Combinado Splash Perfumado + Jabon Liquido Corporal 200 ml y Crema Perfumada 100 g', category: 'Regalos', marca: 'Natura', valor_unitario: 60000, stock: 1 }
     ];
 
-    // ... El resto del script ...
     const categorySelect = document.getElementById('categorySelect');
     const searchInput = document.getElementById('searchInput');
     const productTableBody = document.getElementById('productTableBody');
@@ -677,11 +721,10 @@
     const whatsappBtn = document.getElementById('whatsappBtn');
     const clearCartBtn = document.getElementById('clearCartBtn');
 
-    searchInput.addEventListener('input', filterAndDisplayProducts);
+    let cart = {};
 
     const categories = ['Todas', ...[...new Set(products.map(p => p.category))].sort()];
     let activeCategory = 'Todas';
-    let whatsappWindow = null;
 
     const currencyFormatter = new Intl.NumberFormat('es-CO', {
         style: 'currency',
@@ -719,7 +762,9 @@
         productsToDisplay.forEach((product) => {
             const row = document.createElement('tr');
             
-            // **CAMBIO CLAVE**: Se añaden los atributos data-label para el CSS móvil
+            const quantityInCart = cart[product.name] ? cart[product.name].quantity : 0;
+            const subtotal = quantityInCart * product.valor_unitario;
+
             row.innerHTML = `
                 <td data-label="Producto">${product.name}</td>
                 <td data-label="Categoría">${product.category}</td>
@@ -730,14 +775,13 @@
                         type="number" 
                         class="quantity-input" 
                         min="0" 
-                        max="${product.stock}" 
-                        value="0"
+                        value="${quantityInCart}"
                         data-price="${product.valor_unitario}"
                         data-name="${product.name}"
                     >
                 </td>
                 <td data-label="Valor a Pagar" class="price-cell total-pay">
-                    ${currencyFormatter.format(0)}
+                    ${currencyFormatter.format(subtotal)}
                 </td>
             `;
             productTableBody.appendChild(row);
@@ -746,30 +790,19 @@
 
     function updateCart() {
         let grandTotal = 0;
-        let cartItems = [];
-        // Se buscan los inputs en todo el documento para que funcione después de filtrar
-        const allQuantityInputs = document.querySelectorAll('.quantity-input');
-
-        allQuantityInputs.forEach(input => {
-            const quantity = parseInt(input.value, 10);
-            if (quantity > 0) {
-                const name = input.dataset.name;
-                const price = parseFloat(input.dataset.price);
-                const subtotal = quantity * price;
-                grandTotal += subtotal;
-                cartItems.push({ name, quantity, subtotal });
-            }
-        });
+        const cartItems = Object.values(cart);
 
         if (cartItems.length === 0) {
             cartList.innerHTML = '<li>El carrito está vacío.</li>';
         } else {
-            cartList.innerHTML = cartItems.map(item =>
-                `<li>
-                    <span>${item.quantity} x ${item.name} (${currencyFormatter.format(item.subtotal)})</span>
+            cartList.innerHTML = cartItems.map(item => {
+                const subtotal = item.quantity * item.price;
+                grandTotal += subtotal;
+                return `<li>
+                    <span>${item.quantity} x ${item.name} (${currencyFormatter.format(subtotal)})</span>
                     <button class="remove-item-btn" data-name="${item.name}">X</button>
                 </li>`
-            ).join('');
+            }).join('');
         }
         totalPriceElement.textContent = `Total: ${currencyFormatter.format(grandTotal)}`;
     }
@@ -778,22 +811,24 @@
         if (event.target.classList.contains('quantity-input')) {
             const input = event.target;
             let quantity = parseInt(input.value, 10) || 0;
-            const maxStock = parseInt(input.max, 10);
+            const name = input.dataset.name;
+            const price = parseFloat(input.dataset.price);
 
             if (quantity < 0) {
                 quantity = 0;
                 input.value = 0;
             }
-            if (quantity > maxStock) {
-                quantity = maxStock;
-                input.value = maxStock;
-                alert(`El stock máximo para este producto es ${maxStock}.`);
-            }
-
-            const price = parseFloat(input.dataset.price);
-            const totalPayCell = input.parentElement.nextElementSibling;
+            
+            const totalPayCell = input.closest('tr').querySelector('.total-pay');
             const totalValue = quantity * price;
             totalPayCell.textContent = currencyFormatter.format(totalValue);
+
+            if (quantity > 0) {
+                cart[name] = { name, quantity, price };
+            } else {
+                delete cart[name];
+            }
+            
             updateCart();
         }
     });
@@ -812,32 +847,28 @@
         filterAndDisplayProducts();
     });
 
+    searchInput.addEventListener('input', filterAndDisplayProducts);
+    
     whatsappBtn.addEventListener('click', () => {
-        let message = 'Hola, deseo comprar los siguientes productos:\n';
-        let itemsAdded = 0;
-        let total = 0;
+        const cartItems = Object.values(cart);
 
-        document.querySelectorAll('.quantity-input').forEach(input => {
-            const quantity = parseInt(input.value, 10);
-            if (quantity > 0) {
-                const name = input.dataset.name;
-                const price = parseFloat(input.dataset.price);
-                total += quantity * price;
-                message += `- ${quantity} x ${name} \n`;
-                itemsAdded++;
-            }
-        });
-
-        if (itemsAdded === 0) {
+        if (cartItems.length === 0) {
             alert('El carrito está vacío. Por favor, añade una cantidad a los productos que deseas comprar.');
             return;
         }
+
+        let message = 'Hola, deseo comprar los siguientes productos:\n';
+        let total = 0;
+
+        cartItems.forEach(item => {
+            message += `- ${item.quantity} x ${item.name} \n`;
+            total += item.quantity * item.price;
+        });
         
         message += `\n*Total: ${currencyFormatter.format(total)}*`;
 
         const phoneNumber = '573042088961';
         const encodedMessage = encodeURIComponent(message);
-        // Usa la API correcta para móviles
         const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
         const whatsappURL = isMobile 
             ? `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`
@@ -849,23 +880,30 @@
     cartList.addEventListener('click', (event) => {
         if (event.target.classList.contains('remove-item-btn')) {
             const productName = event.target.dataset.name;
-            const inputToReset = document.querySelector(`.quantity-input[data-name="${productName}"]`);
-            if (inputToReset) {
-                inputToReset.value = 0;
-                // Dispara el evento 'input' para que se actualice la tabla y el carrito
-                inputToReset.dispatchEvent(new Event('input', { bubbles: true }));
+            
+            delete cart[productName];
+
+            const inputInTable = productTableBody.querySelector(`.quantity-input[data-name="${productName}"]`);
+            if (inputInTable) {
+                inputInTable.value = 0;
+                inputInTable.dispatchEvent(new Event('input', { bubbles: true }));
+            } else {
+                updateCart();
             }
         }
     });
 
     clearCartBtn.addEventListener('click', () => {
-        const allQuantityInputs = document.querySelectorAll('.quantity-input');
-        allQuantityInputs.forEach(input => {
+        cart = {};
+        
+        productTableBody.querySelectorAll('.quantity-input').forEach(input => {
             if (parseInt(input.value) > 0) {
                 input.value = 0;
                 input.dispatchEvent(new Event('input', { bubbles: true }));
             }
         });
+        
+        updateCart();
     });
 
     // Carga inicial

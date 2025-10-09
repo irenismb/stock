@@ -255,7 +255,8 @@
             h1 { font-size: 20px; }
 
             .container {
-                flex-direction: column;
+                /* ESTE ES EL CAMBIO: invierte el orden de las columnas */
+                flex-direction: column-reverse;
                 height: auto;
                 gap: 20px;
             }
@@ -342,7 +343,7 @@
                             <th>Marca</th>
                             <th>Valor Unitario</th>
                             <th>Cantidad</th>
-                            <th>Valor a Pagar</th>
+                            <th>Total a Pagar</th>
                         </tr>
                     </thead>
                     <tbody id="productTableBody"></tbody>
@@ -363,17 +364,16 @@
             
             <div class="contact-info">
                 <h3>✨ Contacto y Ubicación ✨</h3>
-                <p>📱 WhatsApp y llamadas: <a href="https://web.whatsapp.com/send?phone=573042088961&text=Hola me interesan tus productos" target="_blank" rel="noopener noreferrer">3042088961</a></p>
+                <p>📱 WhatsApp y llamadas: <a href="#" id="contactWhatsappLink">3042088961</a></p>
                 <p>📍 Ubicación: Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia!</p>
                 <p>🗺️ Visítanos (GPS): <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">Ver en Google Maps</a></p>
                 
                 <hr>
-          
+        
                 <h3>🌐 ¡Síguenos en Nuestras Redes! 🌐</h3>
                 <p>👍 <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer">Facebook</a></p>
                 <p>📸 <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer">Instagram</a></p>
                 <p>🎵 <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer">TikTok</a></p>
-                <p>✉️ Correo Electrónico: <a href="mailto:irenis@irenisnatura.com">irenis@irenisnatura.com</a></p>
             </div>
 
         </div>
@@ -720,6 +720,7 @@
     const totalPriceElement = document.getElementById('totalPrice');
     const whatsappBtn = document.getElementById('whatsappBtn');
     const clearCartBtn = document.getElementById('clearCartBtn');
+    const contactWhatsappLink = document.getElementById('contactWhatsappLink');
 
     let cart = {};
 
@@ -780,7 +781,7 @@
                         data-name="${product.name}"
                     >
                 </td>
-                <td data-label="Valor a Pagar" class="price-cell total-pay">
+                <td data-label="Total a Pagar" class="price-cell total-pay">
                     ${currencyFormatter.format(subtotal)}
                 </td>
             `;
@@ -849,6 +850,17 @@
 
     searchInput.addEventListener('input', filterAndDisplayProducts);
     
+    function openWhatsApp(message) {
+        const phoneNumber = '573042088961';
+        const encodedMessage = encodeURIComponent(message);
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const whatsappURL = isMobile 
+            ? `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`
+            : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
+        
+        window.open(whatsappURL, '_blank');
+    }
+
     whatsappBtn.addEventListener('click', () => {
         const cartItems = Object.values(cart);
 
@@ -866,15 +878,13 @@
         });
         
         message += `\n*Total: ${currencyFormatter.format(total)}*`;
+        openWhatsApp(message);
+    });
 
-        const phoneNumber = '573042088961';
-        const encodedMessage = encodeURIComponent(message);
-        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-        const whatsappURL = isMobile 
-            ? `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`
-            : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
-        
-        window.open(whatsappURL, '_blank');
+    contactWhatsappLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        const message = 'Hola, me interesan tus productos.';
+        openWhatsApp(message);
     });
 
     cartList.addEventListener('click', (event) => {

@@ -754,7 +754,7 @@
         { name: 'Regalo Tododia Cereza y Avellana Femenino Crema 400 ml + Splash', category: 'Regalos', marca: 'Natura', valor_unitario: 75000 },
         { name: 'Regalo Femenino Combinado Splash Perfumado + Jabon Liquido Corporal 200 ml y Crema Perfumada 100 g', category: 'Regalos', marca: 'Natura', valor_unitario: 60000 }
     ];
-
+products.sort((a, b) => a.name.localeCompare(b.name));
     const categorySelect = document.getElementById('categorySelect');
     const searchInput = document.getElementById('searchInput');
     const productTableBody = document.getElementById('productTableBody');
@@ -999,3 +999,4 @@
 </script>
 </body>
 </html>
+

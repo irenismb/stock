@@ -757,7 +757,36 @@
         { name: 'Regalo Femenino Combinado Splash Perfumado + Jabon Liquido Corporal 200 ml y Crema Perfumada 100 g', category: 'Regalos', marca: 'Natura', valor_unitario: 60000 }
     ];
 
-products.sort((a, b) => a.name.localeCompare(b.name));
+    // --- CÓDIGO MODIFICADO ---
+    // Objeto para definir el orden personalizado de las marcas
+    const brandOrder = {
+        'Natura': 1,
+        'Avon': 2,
+        'Esika': 3
+    };
+
+    products.sort((a, b) => {
+        // 1. Obtener el valor de orden para cada marca.
+        // Si una marca no está en 'brandOrder', se le asigna un número alto (99) para que vaya al final.
+        const brandAOrder = brandOrder[a.marca] || 99;
+        const brandBOrder = brandOrder[b.marca] || 99;
+
+        // 2. Comparar por el orden de la marca.
+        if (brandAOrder !== brandBOrder) {
+            return brandAOrder - brandBOrder;
+        }
+
+        // 3. Si las marcas son iguales, comparar por categoría alfabéticamente.
+        const categoryComparison = a.category.localeCompare(b.category);
+        if (categoryComparison !== 0) {
+            return categoryComparison;
+        }
+
+        // 4. Si la categoría también es igual, comparar por nombre de producto alfabéticamente.
+        return a.name.localeCompare(b.name);
+    });
+    // --- FIN DEL CÓDIGO MODIFICADO ---
+
 
     const categorySelect = document.getElementById('categorySelect');
     const searchInput = document.getElementById('searchInput');

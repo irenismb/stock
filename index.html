@@ -255,7 +255,6 @@
             h1 { font-size: 20px; }
 
             .container {
-                /* ESTE ES EL CAMBIO: invierte el orden de las columnas */
                 flex-direction: column-reverse;
                 height: auto;
                 gap: 20px;
@@ -265,6 +264,11 @@
                 flex: 1 1 100%;
                 width: 100%;
                 height: auto;
+            }
+            
+            /* ESTE ES EL NUEVO CAMBIO: invierte el orden del carrito y la info de contacto */
+            .right-panel {
+                flex-direction: column-reverse;
             }
 
             .table-wrapper {

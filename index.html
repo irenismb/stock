@@ -372,7 +372,9 @@
                     <select id="categorySelect"></select>
                 </div>
                 <h2>Productos</h2>
-                <input type="text" id="searchInput" placeholder="🔍 Buscar por una o más palabras...">
+
+				<input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca o categoría o una combinación de estos...">
+				
             </div>
 
             <div class="table-wrapper">
@@ -754,7 +756,9 @@
         { name: 'Regalo Tododia Cereza y Avellana Femenino Crema 400 ml + Splash', category: 'Regalos', marca: 'Natura', valor_unitario: 75000 },
         { name: 'Regalo Femenino Combinado Splash Perfumado + Jabon Liquido Corporal 200 ml y Crema Perfumada 100 g', category: 'Regalos', marca: 'Natura', valor_unitario: 60000 }
     ];
+
 products.sort((a, b) => a.name.localeCompare(b.name));
+
     const categorySelect = document.getElementById('categorySelect');
     const searchInput = document.getElementById('searchInput');
     const productTableBody = document.getElementById('productTableBody');
@@ -798,10 +802,9 @@ products.sort((a, b) => a.name.localeCompare(b.name));
             filteredProducts = filteredProducts.filter(p => p.category === activeCategory);
         }
         if (searchTerms.length > 0) {
-            filteredProducts = filteredProducts.filter(product => {
-                const normalizedProductName = normalizeText(product.name);
-                return searchTerms.every(term => normalizedProductName.includes(term));
-            });
+			filteredProducts = filteredProducts.filter(product => {
+				const searchableText = normalizeText(`${product.name} ${product.category} ${product.marca}`);
+				return searchTerms.every(term => searchableText.includes(term));            });
         }
         displayProducts(filteredProducts);
     }
@@ -999,4 +1002,3 @@ products.sort((a, b) => a.name.localeCompare(b.name));
 </script>
 </body>
 </html>
-

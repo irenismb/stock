@@ -6,7 +6,7 @@
     <title>Catálogo de Productos - Irenis Mendoza</title>
     <style>
         :root {
-            --primary-color: #007bff;
+            --primary-color: #007bff; /* Color revertido al azul original */
             --secondary-color: #25D366;
             --background-color: #f4f4f9;
             --text-color: #333;
@@ -17,15 +17,14 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             margin: 0;
-            padding: 20px;
+            padding: 10px;
             background-color: var(--background-color);
             color: var(--text-color);
-            overflow: hidden;
         }
 
         h1 {
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             margin-top: 0;
             font-size: 24px;
         }
@@ -35,7 +34,7 @@
             color: #555;
             border-bottom: 2px solid var(--primary-color);
             padding-bottom: 5px;
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
 
         h3 {
@@ -45,16 +44,14 @@
 
         .container {
             display: flex;
-            gap: 20px;
+            gap: 15px;
             align-items: flex-start;
-            height: calc(100vh - 80px);
         }
 
         .left-panel {
             flex: 3 1 700px;
             display: flex;
             flex-direction: column;
-            height: 100%;
         }
 
         .controls-panel {
@@ -63,33 +60,34 @@
 
         .right-panel {
             flex: 1 1 280px;
-            height: 100%;
+            position: sticky;
+            top: 10px;
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 15px;
         }
 
         .cart-container {
             background-color: #e9f5ff;
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             border: 1px solid #bde0fe;
         }
         
         .contact-info {
-            padding: 20px;
+            padding: 15px;
             background-color: var(--card-bg-color);
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.05);
         }
         .contact-info h3 {
             margin-top: 0;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             font-size: 16px;
             text-align: center;
         }
         .contact-info p {
-            margin: 8px 0;
+            margin: 6px 0;
             font-size: 14px;
             line-height: 1.5;
             text-align: center;
@@ -104,18 +102,18 @@
         .contact-info hr {
             border: none;
             border-top: 1px solid var(--border-color);
-            margin: 15px 0;
+            margin: 10px 0;
         }
 
         .category-container {
             background-color: var(--card-bg-color);
-            padding: 20px;
+            padding: 15px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
-
-        #categorySelect, #searchInput {
+        
+        #searchInput {
             width: 100%;
             padding: 12px;
             border: 1px solid #ccc;
@@ -123,18 +121,79 @@
             background-color: var(--card-bg-color);
             font-size: 16px;
             box-sizing: border-box;
+            margin-bottom: 10px;
         }
-        #searchInput {
-            margin-bottom: 15px;
+
+        #categoryCheckboxes, #brandCheckboxes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding-top: 5px;
         }
-        #categorySelect {
+        .category-checkbox-item {
+            display: block;  
+        }
+        .category-checkbox-item input[type="checkbox"] {
+            display: none;
+        }
+        .category-checkbox-item span {
+            display: block;
+            padding: 4px 15px;
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            border-radius: 20px;
             cursor: pointer;
+            font-size: 14px;
+            user-select: none;
+            transition: background-color 0.2s, color 0.2s, border-color 0.2s;
+        }
+        .category-checkbox-item span:hover {
+            background-color: #dee2e6;
+        }
+        .category-checkbox-item input:checked + span {
+            background-color: var(--primary-color);
+            color: white; /* Color revertido al blanco original */
+            border-color: var(--primary-color);
+        }
+        
+        .products-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .products-header label {
+            font-size: 20px;
+            color: #555;
+            font-weight: normal;
+            margin: 0;
+            padding-bottom: 5px;
+            border-bottom: 2px solid var(--primary-color);
+        }
+
+        #sortPriceBtn {
+            padding: 8px 12px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.2s, border-color 0.2s;
+            white-space: nowrap;
+        }
+        #sortPriceBtn:hover {
+            background-color: #e9ecef;
+        }
+        #sortPriceBtn.active {
+            background-color: var(--primary-color);
+            color: white; /* Color revertido al blanco original */
+            border-color: var(--primary-color);
         }
 
         .table-wrapper {
-            flex-grow: 1;
-            overflow-y: auto;
             border-radius: 8px;
+            overflow: hidden;
         }
 
         .product-table {
@@ -146,18 +205,16 @@
         .product-table th,
         .product-table td {
             border: 1px solid var(--border-color);
-            padding: 12px;
+            padding: 10px;
             text-align: left;
             vertical-align: middle;
         }
 
         .product-table th {
-            position: sticky;
-            top: 0;
-            z-index: 1;
             background-color: var(--primary-color);
-            color: white;
+            color: white; /* Color revertido al blanco original */
             font-size: 14px;
+            text-align: center;
         }
 
         .product-table td {
@@ -167,8 +224,6 @@
         .product-table tr:nth-child(even) {
             background-color: #f8f9fa;
         }
-
-        /* --- NUEVOS ESTILOS: Contenedor para los botones y el input --- */
         .quantity-control {
             display: flex;
             align-items: center;
@@ -185,7 +240,7 @@
             height: 30px;
             line-height: 28px;
             text-align: center;
-            user-select: none; /* Evita la selección de texto en los botones */
+            user-select: none;
         }
         .quantity-btn:hover {
             background-color: #dee2e6;
@@ -205,16 +260,13 @@
             border-left: none;
             border-right: none;
             border-radius: 0;
-            -moz-appearance: textfield; /* Para Firefox */
+            -moz-appearance: textfield;
         }
-        /* Oculta las flechas por defecto en todos los navegadores */
         .quantity-input::-webkit-outer-spin-button,
         .quantity-input::-webkit-inner-spin-button {
             -webkit-appearance: none;
             margin: 0;
         }
-        /* --- FIN DE NUEVOS ESTILOS --- */
-
 
         .price-cell {
             font-weight: bold;
@@ -230,7 +282,7 @@
             font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
-            margin-top: 15px;
+            margin-top: 10px;
         }
         #whatsappBtn:hover {
             background-color: #1DA851;
@@ -253,7 +305,7 @@
         }
 
         #totalPrice {
-            margin-top: 20px;
+            margin-top: 15px;
             font-size: 18px;
             font-weight: bold;
             text-align: right;
@@ -296,7 +348,7 @@
             .container {
                 flex-direction: column-reverse;
                 height: auto;
-                gap: 20px;
+                gap: 15px;
             }
 
             .left-panel, .right-panel {
@@ -307,6 +359,7 @@
             
             .right-panel {
                 flex-direction: column-reverse;
+                position: static;  
             }
 
             .table-wrapper {
@@ -319,25 +372,25 @@
 
             .product-table tr {
                 display: block;
-                margin-bottom: 20px;
+                margin-bottom: 15px;
                 border: 1px solid var(--border-color);
                 border-radius: 8px;
                 box-shadow: 0 2px 4px rgba(0,0,0,0.05);
                 padding: 10px;
             }
-             .product-table tr:nth-child(even) {
+            .product-table tr:nth-child(even) {
                 background-color: var(--card-bg-color);
             }
 
             .product-table td {
-                display: flex; /* Para alinear mejor en móvil */
-                justify-content: space-between; /* Alinea label y contenido */
+                display: flex;
+                justify-content: space-between;
                 align-items: center;
                 text-align: right;
                 font-size: 15px;
                 border: none;
                 border-bottom: 1px dotted #ccc;
-                padding: 10px 10px 10px 0; /* Ajuste de padding */
+                padding: 8px 8px 8px 0;
                 position: relative;
             }
             .product-table td:last-child {
@@ -348,7 +401,7 @@
                 content: attr(data-label);
                 text-align: left;
                 font-weight: bold;
-                position: static; /* Quita la posición absoluta */
+                position: static;
                 width: auto;
             }
 
@@ -368,12 +421,21 @@
         <div class="left-panel">
             <div class="controls-panel">
                 <div class="category-container">
-                    <h2>Categorías</h2>
-                    <select id="categorySelect"></select>
+                    <h2>Filtro de categorias</h2>
+                    <div id="categoryCheckboxes"></div>
                 </div>
-                <h2>Productos</h2>
 
-				<input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca o categoría o una combinación de estos...">
+                <div class="category-container">
+                    <h2>Filtro de marcas</h2>
+                    <div id="brandCheckboxes"></div>
+                </div>
+
+                <div class="products-header">
+                    <label for="searchInput">Escribe el nombre del producto que buscas</label>
+                    <button id="sortPriceBtn">Ordenar por precio</button>
+                </div>
+
+				<input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca, categoría o una combinación de estos...">
 				
             </div>
 
@@ -381,12 +443,12 @@
                 <table class="product-table">
                     <thead>
                         <tr>
-                            <th>Nombre Producto</th>
+                            <th>Nombre producto</th>
                             <th>Categoría</th>
                             <th>Marca</th>
-                            <th>Valor Unitario</th>
+                            <th>Valor unitario</th>
                             <th>Cantidad</th>
-                            <th>Total a Pagar</th>
+                            <th>Total a pagar</th>
                         </tr>
                     </thead>
                     <tbody id="productTableBody"></tbody>
@@ -408,7 +470,7 @@
             <div class="contact-info">
                 <h3>✨ Contacto y Ubicación ✨</h3>
                 <p>📱 WhatsApp y llamadas: <a href="#" id="contactWhatsappLink">3042088961</a></p>
-                <p>📍 Ubicación: Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia!</p>
+                <p>📍 Ubicación: Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia y pagos contra entrega en Santa Marta!</p>
                 <p>🗺️ Visítanos (GPS): <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">Ver en Google Maps</a></p>
                 
                 <hr>
@@ -426,7 +488,6 @@
 
 <script>
     const products = [
-        // ... (La lista de productos sigue siendo la misma, sin el dato 'stock')
         { name: 'Aguas Citrico 150 ml', category: 'Perfumes femeninos', marca: 'Natura', valor_unitario: 40000 },
         { name: 'Aguas Jabuticaba 150 ml', category: 'Perfumes femeninos', marca: 'Natura', valor_unitario: 40000 },
         { name: 'Aguas Lirio 150 ml', category: 'Perfumes femeninos', marca: 'Natura', valor_unitario: 40000 },
@@ -584,10 +645,10 @@
         { name: 'Chronos Gel Crema Antiseñales Renovacion y Prevencion Dia Repuesto 30+ 30 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 70000 },
         { name: 'Chronos Gel Crema Antiseñales Firmeza y Luminosidad Noche Repuesto 45+ 30 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 70000 },
         { name: 'Chronos Essencia De Tratamiento 100 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 75000 },
-        { name: 'Chronos Mousse De Limpieza Intensiva 85 g', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 50000 },
+        { name: 'Chronos Mousse De Limpeza Intensiva 85 g', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 50000 },
         { name: 'Chronos Agua Micelar Desmaquillante Suave 150 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 40000 },
         { name: 'Chronos Agua Micelar Desmaquillante Repuesto 150 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 35000 },
-        { name: 'Chronos Gel De Limpieza Purificante Antioleosidad 130 g', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 30000 },
+        { name: 'Chronos Gel De Limpeza Purificante Antioleosidad 130 g', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 30000 },
         { name: 'Chronos Triple Exfoliante Peeling Antiseñales 50 g', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 35000 },
         { name: 'Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50+ Tono Claro Medio 50 ml', category: 'Bloqueadores', marca: 'Natura', valor_unitario: 75000 },
         { name: 'Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50+ Medio Oscuro Nuevo 50 ml', category: 'Bloqueadores', marca: 'Natura', valor_unitario: 80000 },
@@ -602,7 +663,7 @@
         { name: 'Chronos Super Serum Reductor De Arrugas y Flacidez Ojos Repuesto 30 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 65000 },
         { name: 'Chronos Serum Intensivo Antioxidante 15 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 90000 },
         { name: 'Chronos Serum Intensivo Multiaclarador De Manchas Repuesto 30 ml', category: 'Cuidado facial', marca: 'Natura', valor_unitario: 70000 },
-        { name: 'Combo Faces Facial Jabon De Limpieza + Hidratante Piel Oleosa 120 ml 50 ml', category: 'Combos cuidado facial', marca: 'Natura', valor_unitario: 45000 },
+        { name: 'Combo Faces Facial Jabon De Limpeza + Hidratante Piel Oleosa 120 ml 50 ml', category: 'Combos cuidado facial', marca: 'Natura', valor_unitario: 45000 },
         { name: 'Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 50 50 g', category: 'Bloqueadores', marca: 'Natura', valor_unitario: 45000 },
         { name: 'Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 30 50 g', category: 'Bloqueadores', marca: 'Natura', valor_unitario: 35000 },
         { name: 'Solar Protector Solar Facial Hidrtante Fps 70 50 ml', category: 'Bloqueadores', marca: 'Natura', valor_unitario: 48000 },
@@ -684,7 +745,7 @@
         { name: 'Homem Sin Perfume Masculino Desodorante En Roll-On 75 ml', category: 'Desodorantes y antitranspirantes', marca: 'Natura', valor_unitario: 20000 },
         { name: 'Homem Masculino Desodorante En Roll-On 75 ml', category: 'Desodorantes y antitranspirantes', marca: 'Natura', valor_unitario: 20000 },
         { name: 'Miss Sexy Femenino Crema Corporal Perfumada 130 ml', category: 'Cremas hidratantes corporales', marca: 'Esika', valor_unitario: 18000 },
-        { name: 'Simply Delicate Extracto De Avena Femenino Gel De Limpieza Intima 250 ml', category: 'Cuidado intimo', marca: 'Avon', valor_unitario: 15000 },
+        { name: 'Simply Delicate Extracto De Avena Femenino Gel De Limpeza Intima 250 ml', category: 'Cuidado intimo', marca: 'Avon', valor_unitario: 15000 },
         { name: 'Kaiak Clasico Masculino Shampoo Refrescante 125 ml', category: 'Cuidado capilar', marca: 'Natura', valor_unitario: 15000 },
         { name: 'Kaiak Clasico Masculino Shampoo Refrescante Perfumado 125 ml', category: 'Cuidado capilar', marca: 'Natura', valor_unitario: 15000 },
         { name: 'Kaiak K Noite Masculino Shampoo Perfumado 125 ml', category: 'Cuidado capilar', marca: 'Natura', valor_unitario: 15000 },
@@ -757,38 +818,52 @@
         { name: 'Regalo Femenino Combinado Splash Perfumado + Jabon Liquido Corporal 200 ml y Crema Perfumada 100 g', category: 'Regalos', marca: 'Natura', valor_unitario: 60000 }
     ];
 
-    // --- CÓDIGO MODIFICADO ---
-    // Objeto para definir el orden personalizado de las marcas
-    const brandOrder = {
-        'Natura': 1,
-        'Avon': 2,
-        'Esika': 3
+    // --- INICIO DE LA ACTUALIZACIÓN ---
+    const brandOrder = { 'Natura': 1, 'Avon': 2, 'Esika': 3 };
+    const categoryOrder = {
+        'Perfumes femeninos': 1,
+        'Perfumes masculinos': 2,
+        'Perfumes unisex': 3,
+        'Colonias': 4,
+        'Combos perfumes': 5,
+        'Regalos': 6,
+        'Combos regalos': 7,
+        'Combos cuidado corporal': 8,
+        'Cremas hidratantes corporales': 9,
+        'Combos cuidado capilar': 10,
+        'Jabones': 11,
+        'Cremas hidratantes para manos': 12,
+        'Cuidado capilar': 13,
+        'Bloqueadores': 14,
+        'Cuidado facial': 15,
+        'Combos cuidado facial': 16,
+        'Desodorantes y antitranspirantes': 17,
+        'Exfoliantes': 18,
+        'Maquillaje': 19,
+        'Aceites': 20,
+        'Cremas y bálsamos para afeitar': 21,
+        'Cuidado del bebe': 22,
+        'Cuidado intimo': 23
     };
 
     products.sort((a, b) => {
-        // 1. Obtener el valor de orden para cada marca.
-        // Si una marca no está en 'brandOrder', se le asigna un número alto (99) para que vaya al final.
+        // 1. Ordenar por Marca
         const brandAOrder = brandOrder[a.marca] || 99;
         const brandBOrder = brandOrder[b.marca] || 99;
+        if (brandAOrder !== brandBOrder) return brandAOrder - brandBOrder;
 
-        // 2. Comparar por el orden de la marca.
-        if (brandAOrder !== brandBOrder) {
-            return brandAOrder - brandBOrder;
-        }
-
-        // 3. Si las marcas son iguales, comparar por categoría alfabéticamente.
-        const categoryComparison = a.category.localeCompare(b.category);
-        if (categoryComparison !== 0) {
-            return categoryComparison;
-        }
-
-        // 4. Si la categoría también es igual, comparar por nombre de producto alfabéticamente.
+        // 2. Ordenar por Categoría (según el orden personalizado)
+        const categoryAOrder = categoryOrder[a.category] || 999;
+        const categoryBOrder = categoryOrder[b.category] || 999;
+        if (categoryAOrder !== categoryBOrder) return categoryAOrder - categoryBOrder;
+        
+        // 3. Ordenar por Nombre del producto
         return a.name.localeCompare(b.name);
     });
-    // --- FIN DEL CÓDIGO MODIFICADO ---
-
-
-    const categorySelect = document.getElementById('categorySelect');
+    // --- FIN DE LA ACTUALIZACIÓN ---
+    
+    const categoryCheckboxesContainer = document.getElementById('categoryCheckboxes');
+    const brandCheckboxesContainer = document.getElementById('brandCheckboxes');
     const searchInput = document.getElementById('searchInput');
     const productTableBody = document.getElementById('productTableBody');
     const cartList = document.getElementById('cartList');
@@ -796,13 +871,15 @@
     const whatsappBtn = document.getElementById('whatsappBtn');
     const clearCartBtn = document.getElementById('clearCartBtn');
     const contactWhatsappLink = document.getElementById('contactWhatsappLink');
+    const sortPriceBtn = document.getElementById('sortPriceBtn');
 
     let cart = {};
+    let currentSortOrder = 'default';
 
     const savedCart = localStorage.getItem('shoppingCart');
     if (savedCart) {
         try {
-            cart = JSON.parse(savedCart) || {}; 
+            cart = JSON.parse(savedCart) || {};  
         } catch (e) {
             console.error("Error al leer el carrito guardado:", e);
             cart = {};
@@ -810,7 +887,7 @@
     }
 
     const categories = ['Todas', ...[...new Set(products.map(p => p.category))].sort()];
-    let activeCategory = 'Todas';
+    const brands = ['Todas', ...[...new Set(products.map(p => p.marca))].sort()];
 
     const currencyFormatter = new Intl.NumberFormat('es-CO', {
         style: 'currency',
@@ -823,18 +900,34 @@
     }
 
     function filterAndDisplayProducts() {
+        const selectedCategories = Array.from(document.querySelectorAll('#categoryCheckboxes input:checked')).map(cb => cb.value);
+        const selectedBrands = Array.from(document.querySelectorAll('#brandCheckboxes input:checked')).map(cb => cb.value);
+
         const normalizedQuery = normalizeText(searchInput.value);
         const searchTerms = normalizedQuery.split(/\s+/).filter(term => term);
-        let filteredProducts = products;
+        let filteredProducts = [...products];
 
-        if (activeCategory !== 'Todas') {
-            filteredProducts = filteredProducts.filter(p => p.category === activeCategory);
+        if (selectedBrands.length > 0 && !selectedBrands.includes('Todas')) {
+            filteredProducts = filteredProducts.filter(p => selectedBrands.includes(p.marca));
         }
+
+        if (selectedCategories.length > 0 && !selectedCategories.includes('Todas')) {
+            filteredProducts = filteredProducts.filter(p => selectedCategories.includes(p.category));
+        }
+        
         if (searchTerms.length > 0) {
 			filteredProducts = filteredProducts.filter(product => {
 				const searchableText = normalizeText(`${product.name} ${product.category} ${product.marca}`);
-				return searchTerms.every(term => searchableText.includes(term));            });
+				return searchTerms.every(term => searchableText.includes(term));
+            });
         }
+        
+        if (currentSortOrder === 'asc') {
+            filteredProducts.sort((a, b) => a.valor_unitario - b.valor_unitario);
+        } else if (currentSortOrder === 'desc') {
+            filteredProducts.sort((a, b) => b.valor_unitario - a.valor_unitario);
+        }
+
         displayProducts(filteredProducts);
     }
 
@@ -846,11 +939,8 @@
         }
         productsToDisplay.forEach((product) => {
             const row = document.createElement('tr');
-            
             const quantityInCart = cart[product.name] ? cart[product.name].quantity : 0;
             const subtotal = quantityInCart * product.valor_unitario;
-
-            // --- CAMBIO: Nueva estructura HTML para la cantidad con botones ---
             row.innerHTML = `
                 <td data-label="Producto">${product.name}</td>
                 <td data-label="Categoría">${product.category}</td>
@@ -859,20 +949,11 @@
                 <td data-label="Cantidad">
                     <div class="quantity-control">
                         <button type="button" class="quantity-btn decrease-btn">-</button>
-                        <input 
-                            type="number" 
-                            class="quantity-input" 
-                            min="0" 
-                            value="${quantityInCart}"
-                            data-price="${product.valor_unitario}"
-                            data-name="${product.name}"
-                        >
+                        <input type="number" class="quantity-input" min="0" value="${quantityInCart}" data-price="${product.valor_unitario}" data-name="${product.name}">
                         <button type="button" class="quantity-btn increase-btn">+</button>
                     </div>
                 </td>
-                <td data-label="Total a Pagar" class="price-cell total-pay">
-                    ${currencyFormatter.format(subtotal)}
-                </td>
+                <td data-label="Total a Pagar" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
             `;
             productTableBody.appendChild(row);
         });
@@ -898,72 +979,74 @@
         localStorage.setItem('shoppingCart', JSON.stringify(cart));
     }
 
-    // Evento para cuando se escribe directamente en el input
     productTableBody.addEventListener('input', (event) => {
         if (event.target.classList.contains('quantity-input')) {
             const input = event.target;
             let quantity = parseInt(input.value, 10) || 0;
             const name = input.dataset.name;
             const price = parseFloat(input.dataset.price);
-
-            if (quantity < 0) {
-                quantity = 0;
-                input.value = 0;
-            }
-            
+            if (quantity < 0) { quantity = 0; input.value = 0; }
             const totalPayCell = input.closest('tr').querySelector('.total-pay');
             totalPayCell.textContent = currencyFormatter.format(quantity * price);
-
-            if (quantity > 0) {
-                cart[name] = { name, quantity, price };
-            } else {
-                delete cart[name];
-            }
-            
+            if (quantity > 0) { cart[name] = { name, quantity, price }; } 
+            else { delete cart[name]; }
             updateCart();
         }
     });
 
-    // --- NUEVO EVENTO: Para los botones de + y - ---
     productTableBody.addEventListener('click', (event) => {
         const target = event.target;
         if (target.classList.contains('quantity-btn')) {
             const controlDiv = target.closest('.quantity-control');
             const input = controlDiv.querySelector('.quantity-input');
             let currentValue = parseInt(input.value, 10) || 0;
-
-            if (target.classList.contains('increase-btn')) {
-                currentValue++;
-            } else if (target.classList.contains('decrease-btn')) {
-                currentValue--;
-            }
-
-            if (currentValue < 0) {
-                currentValue = 0;
-            }
-
+            if (target.classList.contains('increase-btn')) { currentValue++; } 
+            else if (target.classList.contains('decrease-btn')) { currentValue--; }
+            if (currentValue < 0) { currentValue = 0; }
             input.value = currentValue;
-
-            // Dispara el evento 'input' para que la lógica de actualización se ejecute
             input.dispatchEvent(new Event('input', { bubbles: true }));
         }
     });
     
-    function populateCategories() {
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category;
-            option.textContent = category;
-            categorySelect.appendChild(option);
+    function populateCheckboxes(container, items) {
+        container.innerHTML = items.map(item => `
+            <label class="category-checkbox-item">
+                <input type="checkbox" name="category" value="${item}" ${item === 'Todas' ? 'checked' : ''}>
+                <span>${item}</span>
+            </label>
+        `).join('');
+    }
+
+    function setupCheckboxListener(container) {
+        container.addEventListener('change', (event) => {
+            const targetCheckbox = event.target;
+            if (targetCheckbox.type !== 'checkbox') return;
+            const allCheckbox = container.querySelector('input[value="Todas"]');
+            if (targetCheckbox.value === 'Todas' && targetCheckbox.checked) {
+                container.querySelectorAll('input:not([value="Todas"])').forEach(cb => cb.checked = false);
+            } else if (targetCheckbox.value !== 'Todas' && targetCheckbox.checked) {
+                if (allCheckbox) allCheckbox.checked = false;
+            }
+            if (!container.querySelector('input:checked') && allCheckbox) {
+                allCheckbox.checked = true;
+            }
+            filterAndDisplayProducts();
         });
     }
 
-    categorySelect.addEventListener('change', (e) => {
-        activeCategory = e.target.value;
+    searchInput.addEventListener('input', filterAndDisplayProducts);
+    
+    sortPriceBtn.addEventListener('click', () => {
+        if (currentSortOrder === 'default' || currentSortOrder === 'desc') {
+            currentSortOrder = 'asc';
+            sortPriceBtn.textContent = 'Precio $↓';
+            sortPriceBtn.classList.add('active');
+        } else if (currentSortOrder === 'asc') {
+            currentSortOrder = 'desc';
+            sortPriceBtn.textContent = 'Precio $↑';
+        }
         filterAndDisplayProducts();
     });
-
-    searchInput.addEventListener('input', filterAndDisplayProducts);
     
     function openWhatsApp(message) {
         const phoneNumber = '573042088961';
@@ -972,7 +1055,6 @@
         const whatsappURL = isMobile 
             ? `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`
             : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`;
-        
         window.open(whatsappURL, '_blank');
     }
 
@@ -982,13 +1064,14 @@
             alert('El carrito está vacío. Por favor, añade una cantidad a los productos que deseas comprar.');
             return;
         }
-        let message = 'Hola, deseo comprar los siguientes productos:\n';
+        let message = 'Hola, deseo comprar los siguientes productos:\n\n';
         let total = 0;
         cartItems.forEach(item => {
-            message += `- ${item.quantity} x ${item.name} \n`;
-            total += item.quantity * item.price;
+            const subtotal = item.quantity * item.price;
+            message += `- ${item.quantity} x *${item.name}* (${currencyFormatter.format(item.price)} c/u) - Subtotal: ${currencyFormatter.format(subtotal)}\n`;
+            total += subtotal;
         });
-        message += `\n*Total: ${currencyFormatter.format(total)}*`;
+        message += `\n*Total del pedido: ${currencyFormatter.format(total)}*`;
         openWhatsApp(message);
     });
 
@@ -1024,8 +1107,11 @@
         updateCart();
     });
 
-    // Carga inicial
-    populateCategories();
+    populateCheckboxes(categoryCheckboxesContainer, categories);
+    populateCheckboxes(brandCheckboxesContainer, brands);
+    setupCheckboxListener(categoryCheckboxesContainer);
+    setupCheckboxListener(brandCheckboxesContainer);
+
     filterAndDisplayProducts();
     updateCart();
 </script>

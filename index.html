@@ -57,8 +57,8 @@
                 return {
                     name: columns[0] ? columns[0].trim() : '',
                     category: columns[1] ? columns[1].trim() : '',
-                    marca: columns[2] ? columns[2].trim() : '',
-                    valor_unitario: parseInt(columns[3], 10) || 0
+                    marca: columns[2] ? columns[2].trim() : '',                    
+					valor_unitario: parseInt(String(columns[3] || '0').replace(/[^0-9]/g, ''), 10) || 0
                 };
             }).filter(p => p.name && p.name.trim() !== ''); // Filtra filas vacías
             
@@ -304,3 +304,4 @@
 
 </body>
 </html>
+

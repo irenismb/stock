@@ -11,13 +11,12 @@
   gtag('config', 'G-GYVVFP8XCK');
 </script>
 
-	
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catálogo de Productos - Irenis Mendoza</title>
     <style>
         :root {
-            --primary-color: #007bff; /* Color revertido al azul original */
+            --primary-color: #007bff;
             --secondary-color: #25D366;
             --background-color: #f4f4f9;
             --text-color: #333;
@@ -163,7 +162,7 @@
         }
         .category-checkbox-item input:checked + span {
             background-color: var(--primary-color);
-            color: white; /* Color revertido al blanco original */
+            color: white;
             border-color: var(--primary-color);
         }
         
@@ -198,7 +197,7 @@
         }
         #sortPriceBtn.active {
             background-color: var(--primary-color);
-            color: white; /* Color revertido al blanco original */
+            color: white;
             border-color: var(--primary-color);
         }
 
@@ -223,7 +222,7 @@
 
         .product-table th {
             background-color: var(--primary-color);
-            color: white; /* Color revertido al blanco original */
+            color: white;
             font-size: 14px;
             text-align: center;
         }
@@ -446,8 +445,8 @@
                     <button id="sortPriceBtn">Ordenar por precio</button>
                 </div>
 
-				<input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca, categoría o una combinación de estos...">
-				
+                <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca, categoría o una combinación de estos...">
+                
             </div>
 
             <div class="table-wrapper">
@@ -600,9 +599,9 @@
         }
         
         if (searchTerms.length > 0) {
-			filteredProducts = filteredProducts.filter(product => {
-				const searchableText = normalizeText(`${product.name} ${product.category} ${product.marca}`);
-				return searchTerms.every(term => searchableText.includes(term));
+            filteredProducts = filteredProducts.filter(product => {
+                const searchableText = normalizeText(`${product.name} ${product.category} ${product.marca}`);
+                return searchTerms.every(term => searchableText.includes(term));
             });
         }
         

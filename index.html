@@ -14,7 +14,63 @@
     </script>
     
     <style>
-        :root{--primary-color:#007bff;--secondary-color:#25D366;--background-color:#f4f4f9;--text-color:#333;--card-bg-color:#fff;--border-color:#ddd}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:0;padding:10px;background-color:var(--background-color);color:var(--text-color)}h1{text-align:center;margin-bottom:15px;margin-top:0;font-size:24px}h2{font-size:20px;color:#555;border-bottom:2px solid var(--primary-color);padding-bottom:5px;margin-bottom:10px}h3{font-size:18px;color:#0056b3}.container{display:flex;gap:15px;align-items:flex-start}.left-panel{flex:3 1 700px;display:flex;flex-direction:column}.controls-panel{flex-shrink:0}.right-panel{flex:1 1 280px;position:sticky;top:10px;display:flex;flex-direction:column;gap:15px}.cart-container{background-color:#e9f5ff;padding:15px;border-radius:8px;border:1px solid #bde0fe}.contact-info{padding:15px;background-color:var(--card-bg-color);border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.05)}.contact-info h3{margin-top:0;margin-bottom:10px;font-size:16px;text-align:center}.contact-info p{margin:6px 0;font-size:14px;line-height:1.5;text-align:center}.contact-info a{color:var(--primary-color);text-decoration:none}.contact-info a:hover{text-decoration:underline}.contact-info hr{border:none;border-top:1px solid var(--border-color);margin:10px 0}.category-container{background-color:var(--card-bg-color);padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.1);margin-bottom:15px}#searchInput,.custom-select{width:100%;padding:12px;border:1px solid #ccc;border-radius:5px;background-color:var(--card-bg-color);font-size:16px;box-sizing:border-box;margin-bottom:10px}#categoryCheckboxes,#brandCheckboxes{display:flex;flex-wrap:wrap;gap:8px;padding-top:5px}.category-checkbox-item{display:block}.category-checkbox-item input[type=checkbox]{display:none}.category-checkbox-item span{display:block;padding:4px 15px;background-color:#e9ecef;border:1px solid #ced4da;border-radius:20px;cursor:pointer;font-size:14px;-webkit-user-select:none;user-select:none;transition:background-color .2s,color .2s,border-color .2s}.category-checkbox-item span:hover{background-color:#dee2e6}.category-checkbox-item input:checked+span{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}.products-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.products-header label{font-size:20px;color:#555;font-weight:400;margin:0;padding-bottom:5px;border-bottom:2px solid var(--primary-color)}#sortPriceBtn{padding:8px 12px;font-size:14px;border:1px solid #ccc;background-color:#f8f9fa;border-radius:5px;cursor:pointer;transition:background-color .2s,border-color .2s;white-space:nowrap}#sortPriceBtn:hover{background-color:#e9ecef}#sortPriceBtn.active{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}.table-wrapper{border-radius:8px;overflow:hidden}.product-table{width:100%;border-collapse:collapse;background-color:var(--card-bg-color)}.product-table td,.product-table th{border:1px solid var(--border-color);padding:10px;text-align:left;vertical-align:middle}.product-table th{background-color:var(--primary-color);color:#fff;font-size:14px;text-align:center}.product-table td{font-size:15px}.product-table tr:nth-child(even){background-color:#f8f9fa}.quantity-control{display:flex;align-items:center;justify-content:center}.quantity-btn{background-color:#e9ecef;border:1px solid #ced4da;color:#495057;cursor:pointer;font-size:1.2rem;font-weight:700;width:30px;height:30px;line-height:28px;text-align:center;-webkit-user-select:none;user-select:none}.quantity-btn:hover{background-color:#dee2e6}.decrease-btn{border-radius:4px 0 0 4px}.increase-btn{border-radius:0 4px 4px 0}.quantity-input{width:45px;height:28px;padding:5px;text-align:center;border:1px solid #ced4da;border-left:none;border-right:none;border-radius:0;-moz-appearance:textfield}.quantity-input::-webkit-inner-spin-button,.quantity-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}.price-cell{font-weight:700;color:#2a9d8f}#whatsappBtn{background-color:var(--secondary-color);color:#fff;width:100%;border:none;padding:12px 20px;font-size:16px;border-radius:5px;cursor:pointer;margin-top:10px}#whatsappBtn:hover{background-color:#1da851}#cartList{list-style-type:none;padding-left:0;max-height:250px;overflow-y:auto}#cartList li{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #ccc;padding-bottom:5px;font-size:14px}#totalPrice{margin-top:15px;font-size:18px;font-weight:700;text-align:right}.remove-item-btn{background:0 0;border:none;color:#dc3545;cursor:pointer;font-weight:700;font-size:16px;padding:5px}.remove-item-btn:hover{color:#a71d2a}#clearCartBtn{background-color:#6c757d;color:#fff;width:100%;border:none;padding:8px 15px;font-size:14px;border-radius:5px;cursor:pointer;margin-top:10px}#clearCartBtn:hover{background-color:#5a6268}footer{display:none}@media (max-width:768px){body{overflow:auto;padding:10px}h1{font-size:20px}.container{flex-direction:column-reverse;height:auto;gap:15px}.left-panel,.right-panel{flex:1 1 100%;width:100%;height:auto}.right-panel{flex-direction:column-reverse;position:static}.table-wrapper{overflow-y:visible}.product-table thead{display:none}.product-table tr{display:block;margin-bottom:15px;border:1px solid var(--border-color);border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.05);padding:10px}.product-table tr:nth-child(even){background-color:var(--card-bg-color)}.product-table td{display:flex;justify-content:space-between;align-items:center;text-align:right;font-size:15px;border:none;border-bottom:1px dotted #ccc;padding:8px 8px 8px 0;position:relative}.product-table td:last-child{border-bottom:0}.product-table td::before{content:attr(data-label);text-align:left;font-weight:700;position:static;width:auto}.quantity-control{justify-content:flex-end}#cartList{max-height:none}}
+        /* SE HAN REALIZADO CAMBIOS EN ESTA SECCIÓN DE ESTILOS */
+        :root{--primary-color:#007bff;--secondary-color:#25D366;--background-color:#f4f4f9;--text-color:#333;--card-bg-color:#fff;--border-color:#ddd}
+        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:0;padding:10px;background-color:var(--background-color);color:var(--text-color)}
+        h1{text-align:center;margin-bottom:15px;margin-top:0;font-size:24px}
+        /* CAMBIO: Se redujo el margen inferior para compactar el espacio */
+        h2{font-size:20px;color:#555;border-bottom:2px solid var(--primary-color);padding-bottom:5px;margin-bottom:8px}
+        h3{font-size:18px;color:#0056b3}
+        .container{display:flex;gap:15px;align-items:flex-start}
+        .left-panel{flex:3 1 700px;display:flex;flex-direction:column}
+        .controls-panel{flex-shrink:0}
+        .right-panel{flex:1 1 280px;position:sticky;top:10px;display:flex;flex-direction:column;gap:15px}
+        .cart-container{background-color:#e9f5ff;padding:15px;border-radius:8px;border:1px solid #bde0fe}
+        .contact-info{padding:15px;background-color:var(--card-bg-color);border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.05)}
+        .contact-info h3{margin-top:0;margin-bottom:10px;font-size:16px;text-align:center}
+        .contact-info p{margin:6px 0;font-size:14px;line-height:1.5;text-align:center}
+        .contact-info a{color:var(--primary-color);text-decoration:none}
+        .contact-info a:hover{text-decoration:underline}
+        .contact-info hr{border:none;border-top:1px solid var(--border-color);margin:10px 0}
+        /* CAMBIO: Se redujo el padding y el margen inferior para compactar el espacio */
+        .category-container{background-color:var(--card-bg-color);padding:10px 15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.1);margin-bottom:10px}
+        #searchInput,.custom-select{width:100%;padding:12px;border:1px solid #ccc;border-radius:5px;background-color:var(--card-bg-color);font-size:16px;box-sizing:border-box;margin-bottom:10px}
+        #categoryCheckboxes,#brandCheckboxes{display:flex;flex-wrap:wrap;gap:8px;padding-top:5px}
+        .category-checkbox-item{display:block}
+        .category-checkbox-item input[type=checkbox]{display:none}
+        .category-checkbox-item span{display:block;padding:4px 15px;background-color:#e9ecef;border:1px solid #ced4da;border-radius:20px;cursor:pointer;font-size:14px;-webkit-user-select:none;user-select:none;transition:background-color .2s,color .2s,border-color .2s}
+        .category-checkbox-item span:hover{background-color:#dee2e6}
+        .category-checkbox-item input:checked+span{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+        .products-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+        .products-header label{font-size:20px;color:#555;font-weight:400;margin:0;padding-bottom:5px;border-bottom:2px solid var(--primary-color)}
+        #sortPriceBtn{padding:8px 12px;font-size:14px;border:1px solid #ccc;background-color:#f8f9fa;border-radius:5px;cursor:pointer;transition:background-color .2s,border-color .2s;white-space:nowrap}
+        #sortPriceBtn:hover{background-color:#e9ecef}
+        #sortPriceBtn.active{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}
+        .table-wrapper{border-radius:8px;overflow:hidden}
+        .product-table{width:100%;border-collapse:collapse;background-color:var(--card-bg-color)}
+        .product-table td,.product-table th{border:1px solid var(--border-color);padding:10px;text-align:left;vertical-align:middle}
+        .product-table th{background-color:var(--primary-color);color:#fff;font-size:14px;text-align:center}
+        .product-table td{font-size:15px}
+        .product-table tr:nth-child(even){background-color:#f8f9fa}
+        .quantity-control{display:flex;align-items:center;justify-content:center}
+        .quantity-btn{background-color:#e9ecef;border:1px solid #ced4da;color:#495057;cursor:pointer;font-size:1.2rem;font-weight:700;width:30px;height:30px;line-height:28px;text-align:center;-webkit-user-select:none;user-select:none}
+        .quantity-btn:hover{background-color:#dee2e6}
+        .decrease-btn{border-radius:4px 0 0 4px}
+        .increase-btn{border-radius:0 4px 4px 0}
+        .quantity-input{width:45px;height:28px;padding:5px;text-align:center;border:1px solid #ced4da;border-left:none;border-right:none;border-radius:0;-moz-appearance:textfield}
+        .quantity-input::-webkit-inner-spin-button,.quantity-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+        .price-cell{font-weight:700;color:#2a9d8f}
+        #whatsappBtn{background-color:var(--secondary-color);color:#fff;width:100%;border:none;padding:12px 20px;font-size:16px;border-radius:5px;cursor:pointer;margin-top:10px}
+        #whatsappBtn:hover{background-color:#1da851}
+        #cartList{list-style-type:none;padding-left:0;max-height:250px;overflow-y:auto}
+        #cartList li{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #ccc;padding-bottom:5px;font-size:14px}
+        #totalPrice{margin-top:15px;font-size:18px;font-weight:700;text-align:right}
+        .remove-item-btn{background:0 0;border:none;color:#dc3545;cursor:pointer;font-weight:700;font-size:16px;padding:5px}
+        .remove-item-btn:hover{color:#a71d2a}
+        #clearCartBtn{background-color:#6c757d;color:#fff;width:100%;border:none;padding:8px 15px;font-size:14px;border-radius:5px;cursor:pointer;margin-top:10px}
+        #clearCartBtn:hover{background-color:#5a6268}
+        footer{display:none}
+        @media (max-width:768px){body{overflow:auto;padding:10px}h1{font-size:20px}.container{flex-direction:column-reverse;height:auto;gap:15px}.left-panel,.right-panel{flex:1 1 100%;width:100%;height:auto}.right-panel{flex-direction:column-reverse;position:static}.table-wrapper{overflow-y:visible}.product-table thead{display:none}.product-table tr{display:block;margin-bottom:15px;border:1px solid var(--border-color);border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.05);padding:10px}.product-table tr:nth-child(even){background-color:var(--card-bg-color)}.product-table td{display:flex;justify-content:space-between;align-items:center;text-align:right;font-size:15px;border:none;border-bottom:1px dotted #ccc;padding:8px 8px 8px 0;position:relative}.product-table td:last-child{border-bottom:0}.product-table td::before{content:attr(data-label);text-align:left;font-weight:700;position:static;width:auto}.quantity-control{justify-content:flex-end}#cartList{max-height:none}}
     </style>
 </head>
 <body>
@@ -81,7 +137,6 @@
     const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQJYAdkA45yJtvF2RCD8s4WZIcctuJ0vDhAEGnvgF_t1Fh2Hu51zYfkqYGxLUAT5A/pub?gid=732037573&single=true&output=csv';
 
     let products = [];
-    // CAMBIO: Se obtiene el nuevo elemento <select>
     const categorySelect = document.getElementById('categorySelect');
     const brandCheckboxesContainer = document.getElementById('brandCheckboxes');
     const searchInput = document.getElementById('searchInput');
@@ -95,6 +150,11 @@
     let cart = {};
     let currentSortOrder = 'default';
 
+    function toTitleCase(str) {
+        if (!str) return "";
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
     fetch(googleSheetURL)
         .then(response => {
             if (!response.ok) throw new Error('Error en la red al cargar los datos.');
@@ -107,7 +167,7 @@
                 return {
                     name: columns[0] ? columns[0].trim() : '',
                     category: columns[1] ? columns[1].trim() : '',
-                    marca: columns[2] ? columns[2].trim() : '',
+                    marca: columns[2] ? toTitleCase(columns[2].trim()) : '',
                     valor_unitario: parseInt(String(columns[3] || '0').replace(/[^0-9]/g, ''), 10) || 0
                 };
             }).filter(p => p.name && p.name.trim() !== '');
@@ -142,7 +202,7 @@
                 cart = {};
             }
         }
-
+        
         const categories = ["Todas", ...new Set(products.map(p => p.category))].sort();
         const brands = ["Todas", ...new Set(products.map(p => p.marca))].sort();
         const currencyFormatter = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
@@ -154,7 +214,6 @@
         function filterAndDisplayProducts() {
             let filteredProducts = [...products];
 
-            // CAMBIO: Se lee el valor de la lista desplegable
             const selectedCategory = categorySelect.value;
             if (selectedCategory && selectedCategory !== "Todas") {
                 filteredProducts = filteredProducts.filter(p => p.category === selectedCategory);
@@ -262,7 +321,6 @@
             container.innerHTML = items.map(item => `<label class="category-checkbox-item"><input type="checkbox" name="category" value="${item}" ${"Todas" === item ? "checked" : ""}><span>${item}</span></label>`).join("");
         }
 
-        // CAMBIO: Nueva función para poblar la lista desplegable
         function populateCategorySelect(selectElement, items) {
             selectElement.innerHTML = items.map(item => `<option value="${item}">${item}</option>`).join("");
         }
@@ -293,7 +351,6 @@
 
         searchInput.addEventListener("input", filterAndDisplayProducts);
         
-        // CAMBIO: Se añade el event listener para la lista desplegable
         categorySelect.addEventListener("change", filterAndDisplayProducts);
 
         sortPriceBtn.addEventListener("click", () => {
@@ -355,11 +412,8 @@
             updateCart();
         });
 
-        // CAMBIO: Se llama a la nueva función para la lista desplegable
         populateCategorySelect(categorySelect, categories);
-        // Se mantiene la función original para las marcas
         populateCheckboxes(brandCheckboxesContainer, brands);
-        // CAMBIO: El listener para los checkboxes de categorías se elimina
         setupCheckboxListener(brandCheckboxesContainer);
 
         filterAndDisplayProducts();

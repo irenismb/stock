@@ -19,8 +19,8 @@
             --dark-gray: #333;
             --white-color: #fff;
             --border-color: #ccc;
-            --border-radius: 6px;
-            --box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+            --border-radius: 6px; /* Reducido */
+            --box-shadow: 0 1px 4px rgba(0,0,0,0.1); /* Reducido */
         }
 
         /* --- Estilos Generales y Reset --- */
@@ -33,35 +33,16 @@
             background-color: var(--light-gray);
             color: var(--dark-gray);
             margin: 0;
-            padding: 8px;
-            line-height: 1.4;
+            padding: 8px; /* Reducido */
+            line-height: 1.4; /* Reducido */
         }
 
-        /* --- Contenedor de Login --- */
-        #login-container {
-            max-width: 400px;
-            margin: 80px auto;
-            padding: 25px;
-            background: var(--white-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            text-align: center;
-        }
-        #login-container h2 {
-            margin-top: 0;
-            color: var(--primary-color);
-        }
-        #login-container .form-group {
-            text-align: left;
-            margin-bottom: 15px;
-        }
-
-        /* --- Contenedor Principal de la App --- */
+        /* --- Contenedor Principal --- */
         .container {
             max-width: 1400px;
             margin: auto;
             background: var(--white-color);
-            padding: 15px;
+            padding: 15px; /* Reducido */
             border-radius: var(--border-radius);
             box-shadow: var(--box-shadow);
         }
@@ -71,40 +52,37 @@
             color: var(--primary-color);
             text-align: center;
             margin-top: 0;
-            margin-bottom: 10px;
+            margin-bottom: 10px; /* Reducido */
         }
-        h1 { font-size: 1.8em; }
-        h2 { font-size: 1.4em; }
-        h3 { margin-bottom: 8px; font-size: 1.2em;}
+        h1 { font-size: 1.8em; } /* Reducido */
+        h2 { font-size: 1.4em; } /* Reducido */
+        h3 { margin-bottom: 8px; font-size: 1.2em;} /* Reducido */
 
         /* --- Barra de Sesión --- */
         #session-info {
             background-color: #e9ecef;
-            padding: 6px 10px;
+            padding: 6px 10px; /* Reducido */
             border-radius: var(--border-radius);
-            margin-bottom: 12px;
+            margin-bottom: 12px; /* Reducido */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.95em;
-            flex-wrap: wrap;
-            gap: 10px;
+            font-size: 0.95em; /* Reducido */
         }
         #session-info span { font-weight: bold; color: var(--primary-color); }
-        #session-info .session-buttons { display: flex; gap: 8px; }
-        #session-info button { font-size: 13px; padding: 4px 8px; width: auto; margin: 0; }
+        #session-info button { background: var(--secondary-color); font-size: 13px; padding: 4px 8px; } /* Reducido */
 
         /* --- Contenedor de Selección --- */
         .selection-container {
             display: flex;
             justify-content: center;
-            gap: 10px;
-            margin: 15px 0;
+            gap: 10px; /* Reducido */
+            margin: 15px 0; /* Reducido */
             flex-wrap: wrap;
         }
         .selection-btn {
-            padding: 8px 18px;
-            font-size: 1em;
+            padding: 8px 18px; /* Reducido */
+            font-size: 1em; /* Reducido */
             font-weight: bold;
             color: var(--white-color);
             transition: transform 0.2s, box-shadow 0.2s;
@@ -125,35 +103,35 @@
         .form-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 10px;
-            margin-bottom: 12px;
+            gap: 10px; /* Reducido */
+            margin-bottom: 12px; /* Reducido */
         }
         .form-group { display: flex; flex-direction: column; }
-        label { margin-bottom: 3px; font-weight: bold; font-size: 13px; }
+        label { margin-bottom: 3px; font-weight: bold; font-size: 13px; } /* Reducido */
         input, select {
             width: 100%;
-            padding: 6px;
+            padding: 6px; /* Reducido */
             border: 1px solid var(--border-color);
             border-radius: 4px;
-            font-size: 14px;
+            font-size: 14px; /* Reducido */
         }
         
         /* --- Botones --- */
         .btn {
-            padding: 8px 12px;
+            padding: 8px 12px; /* Reducido */
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 14px; /* Reducido */
             font-weight: bold;
             display: block;
             width: 100%;
-            margin-top: 6px;
+            margin-top: 6px; /* Reducido */
             color: var(--white-color);
             transition: background-color 0.2s;
         }
         .btn:disabled {
-            background-color: #cccccc !important;
+            background-color: #cccccc !important; /* Usa !important para sobreescribir otros estilos */
             cursor: not-allowed;
             opacity: 0.7;
         }
@@ -162,7 +140,7 @@
         .btn-back { background-color: var(--secondary-color); margin-top: 5px; }
         .btn-clear { background-color: var(--danger-color); }
         .btn-whatsapp { background-color: var(--whatsapp-color); }
-        .btn-delete { background: #ff4d4d; padding: 3px 6px; font-size: 12px; }
+        .btn-delete { background: #ff4d4d; padding: 3px 6px; font-size: 12px; } /* Reducido */
         
         .action-buttons-container {
             display: grid;
@@ -172,18 +150,18 @@
         }
 
         /* --- Tabla de Registros --- */
-        hr { margin: 15px 0; border: 0; border-top: 1px solid #eee; }
+        hr { margin: 15px 0; border: 0; border-top: 1px solid #eee; } /* Reducido */
         .records-container { width: 100%; overflow-x: auto; }
         .records-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            margin-top: 10px; /* Reducido */
         }
         .records-table th, .records-table td {
             border: 1px solid #dee2e6;
-            padding: 5px;
+            padding: 5px; /* Reducido */
             text-align: left;
-            font-size: 13px;
+            font-size: 13px; /* Reducido */
             white-space: nowrap;
         }
         .records-table thead { background-color: #e9ecef; color: #495057; }
@@ -209,35 +187,16 @@
     </style>
 </head>
 <body>
-
-    <section id="login-container">
-        <h2>Iniciar Sesión</h2>
-        <form id="login-form" novalidate>
-            <div class="form-group">
-                <label for="username">Usuario</label>
-                <input type="text" id="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Ingresar</button>
-        </form>
-    </section>
     
-    <main id="app-container" class="container hidden">
+    <main class="container">
         <h1>Reporte Diario de Caja</h1>
         
         <section id="session-info" class="hidden">
             <div>
-                <span>Usuario:</span> <span id="session-user-display"></span> |
                 <span>Fecha:</span> <span id="session-date-display"></span> | 
                 <span>Punto:</span> <span id="session-pos-display"></span>
             </div>
-            <div class="session-buttons">
-                <button id="change-session-btn" class="btn">Cambiar Sesión</button>
-                <button id="logout-btn" class="btn btn-clear">Cerrar Sesión</button>
-            </div>
+            <button id="change-session-btn" class="btn">Cambiar Sesión</button>
         </section>
 
         <section id="selection-container" class="selection-container">
@@ -331,23 +290,6 @@
         document.addEventListener('DOMContentLoaded', () => {
             // --- CONFIGURACIÓN ---
             const CONFIG = {
-                // --- LISTA DE USUARIOS AUTORIZADOS ---
-                // --- Puede añadir más en el formato 'usuario': 'contraseña' ---
-USERS: {
-                    'Almendros': '9451',
-                    'Ferrocarril': '7060',
-                    'Flora': '4592',
-                    'Irotama': '8911',
-                    'Libertador': '6980',
-                    'Neguanje': '4783',
-                    'Playa': '5124',
-                    'Reserva': '5146',
-                    'Aroma': '5289',
-                    'Minca': '2168',
-                    'Rodadero': '5129',
-                    'Orient': '8868',
-                    'admin': '4721' // Se actualiza la contraseña del admin
-                },
                 LS_RECORDS_KEY: 'salesRecords_v6',
                 LS_SESSION_KEY: 'session_v6',
                 WHATSAPP_PHONE: '573114040809', // Número único de destino
@@ -357,18 +299,13 @@ USERS: {
             // --- ESTADO DE LA APLICACIÓN ---
             const state = {
                 records: [],
-                session: { user: null, date: null, pos: null },
+                session: { date: null, pos: null },
                 activeView: 'selection',
             };
 
             // --- SELECTORES DEL DOM ---
             const UI = {
-                loginContainer: document.getElementById('login-container'),
-                appContainer: document.getElementById('app-container'),
-                loginForm: document.getElementById('login-form'),
-                logoutBtn: document.getElementById('logout-btn'),
                 sessionInfo: document.getElementById('session-info'),
-                sessionUserDisplay: document.getElementById('session-user-display'),
                 sessionDateDisplay: document.getElementById('session-date-display'),
                 sessionPosDisplay: document.getElementById('session-pos-display'),
                 changeSessionBtn: document.getElementById('change-session-btn'),
@@ -394,33 +331,6 @@ USERS: {
                 rowTemplate: document.getElementById('record-row-template'),
             };
 
-            // --- LÓGICA DE LOGIN ---
-            const Auth = {
-                init() {
-                    UI.loginForm.addEventListener('submit', this.handleLogin);
-                },
-                handleLogin(e) {
-                    e.preventDefault();
-                    const user = document.getElementById('username').value;
-                    const pass = document.getElementById('password').value;
-
-                    if (CONFIG.USERS[user] && CONFIG.USERS[user] === pass) {
-                        UI.loginContainer.classList.add('hidden');
-                        UI.appContainer.classList.remove('hidden');
-                        state.session.user = user; // Guardar usuario en el estado
-                        App.init(); // Iniciar la aplicación principal
-                    } else {
-                        alert('Usuario o contraseña incorrectos.');
-                        document.getElementById('password').value = '';
-                    }
-                },
-                handleLogout() {
-                    if (confirm('¿Desea cerrar la sesión?')) {
-                        location.reload();
-                    }
-                }
-            };
-            
             // --- FUNCIÓN UTILITARIA ---
             const Utils = {
                 toTitleCase(str) {
@@ -434,18 +344,12 @@ USERS: {
             // --- MÓDULO DE MANEJO DE DATOS (STORE) ---
             const Store = {
                 load() {
-                    const storedRecords = localStorage.getItem(CONFIG.LS_RECORDS_KEY);
-                    const storedSession = localStorage.getItem(CONFIG.LS_SESSION_KEY);
-                    state.records = storedRecords ? JSON.parse(storedRecords) : [];
-                    // Mantener el usuario actual y cargar solo fecha y punto
-                    const savedSession = storedSession ? JSON.parse(storedSession) : { date: null, pos: null };
-                    state.session.date = savedSession.date;
-                    state.session.pos = savedSession.pos;
+                    state.records = JSON.parse(localStorage.getItem(CONFIG.LS_RECORDS_KEY)) || [];
+                    state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null };
                 },
                 save() {
                     localStorage.setItem(CONFIG.LS_RECORDS_KEY, JSON.stringify(state.records));
-                    // Guardar solo fecha y punto, no el usuario.
-                    localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify({ date: state.session.date, pos: state.session.pos }));
+                    localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify(state.session));
                 },
                 addTransactions(transactions) {
                     state.records.push(...transactions);
@@ -457,11 +361,10 @@ USERS: {
                 },
                 clearAllRecords() {
                     state.records = [];
-                    localStorage.removeItem(CONFIG.LS_RECORDS_KEY);
+                    this.save();
                 },
-                clearSessionData() {
-                    state.session.date = null;
-                    state.session.pos = null;
+                clearSession() {
+                    state.session = { date: null, pos: null };
                     localStorage.removeItem(CONFIG.LS_SESSION_KEY);
                 }
             };
@@ -547,15 +450,14 @@ USERS: {
                     const sessionActive = !!state.session.date;
                     UI.sessionInfo.classList.toggle('hidden', !sessionActive);
                     if (sessionActive) {
-                        UI.sessionUserDisplay.textContent = state.session.user;
                         UI.sessionDateDisplay.textContent = state.session.date;
                         UI.sessionPosDisplay.textContent = state.session.pos;
                     }
-                    UI.navButtons.forEach(btn => btn.disabled = !sessionActive);
+                    UI.navButtons.forEach(btn => btn.disabled = !sessionActive && btn.id !== 'btn-show-ventas');
                 }
             };
             
-            // --- LÓGICA PRINCIPAL DE LA APP ---
+            // --- LÓGICA PRINCIPAL Y MANEJO DE EVENTOS ---
             const App = {
                 init() {
                     Store.load();
@@ -575,7 +477,6 @@ USERS: {
                     UI.sendWhatsAppBtn.addEventListener('click', () => this.handleSendWhatsApp());
                     UI.changeSessionBtn.addEventListener('click', () => this.handleChangeSession());
                     UI.sendAllBtn.addEventListener('click', () => this.handleSendAll());
-                    UI.logoutBtn.addEventListener('click', Auth.handleLogout);
                 },
                 handleNavClick(viewId) {
                     const viewMap = { 'btn-show-ventas': 'ventas', 'btn-show-pagos': 'pagos', 'btn-show-descuentos': 'descuentos', 'selection': 'selection' };
@@ -604,13 +505,7 @@ USERS: {
                     const newTransactions = [];
                     const addTransaction = (tipo, valor, tercero = '', detalle = '') => {
                         if (valor !== 0 && !isNaN(valor)) {
-                            const transactionData = { 
-                                fecha: state.session.date, 
-                                puntoVenta: state.session.pos, 
-                                tipo, valor, tercero, detalle,
-                                usuario: state.session.user // Añadir usuario a cada registro
-                            };
-                            newTransactions.push(transactionData);
+                            newTransactions.push({ fecha: state.session.date, puntoVenta: state.session.pos, tipo, valor, tercero, detalle });
                         }
                     };
                     if (state.activeView === 'ventas') {
@@ -650,7 +545,12 @@ USERS: {
                     btn.disabled = true;
                     btn.textContent = 'Guardando en la nube...';
         
+                    // --- INICIO DE LA MODIFICACIÓN ---
+        
+                    // 1. Crear una copia de los registros para no modificar la vista del usuario.
                     const recordsToSend = [...state.records];
+        
+                    // 2. Calcular el total de efectivo esperado.
                     const totalEfectivo = state.records.reduce((total, rec) => {
                         if (['Venta en Efectivo', 'Pago en Efectivo'].includes(rec.tipo)) {
                             return total + rec.valor;
@@ -658,17 +558,22 @@ USERS: {
                         return total;
                     }, 0);
         
+                    // 3. Crear el nuevo objeto de registro con el resumen.
                     const summaryRecord = {
                         fecha: state.session.date,
                         puntoVenta: state.session.pos,
                         tipo: 'Valor Esperado por Tesoreria',
                         tercero: '',
                         detalle: '',
-                        valor: totalEfectivo,
-                        usuario: state.session.user
+                        valor: totalEfectivo
                     };
+        
+                    // 4. Añadir el registro de resumen al final de la lista que se va a enviar.
                     recordsToSend.push(summaryRecord);
         
+                    // --- FIN DE LA MODIFICACIÓN ---
+                    
+                    // 5. Enviar la lista MODIFICADA (con la línea de resumen) a la nube.
                     const success = await Backend.sendData(recordsToSend); 
                     
                     if (success) {
@@ -695,7 +600,7 @@ USERS: {
                 handleClearAll() {
                     if (confirm('¿Finalizar el reporte? Se limpiará la vista actual y podrá iniciar un nuevo reporte para otra fecha o punto de venta.')) {
                         Store.clearAllRecords();
-                        Store.clearSessionData();
+                        Store.clearSession();
                         location.reload();
                     }
                 },
@@ -725,7 +630,7 @@ USERS: {
                         detailBlock += entry + '\n';
                     });
                     
-                    const summaryBlock = `*Resumen de Caja - ${state.session.pos}*\n*Fecha:* ${state.session.date}\n*Usuario:* ${state.session.user}\n\n*------ TOTALES ------*\n*Total Ventas:* ${View.formatNumber(totalVentas)}\n*Total Pagos:* ${View.formatNumber(Math.abs(totalPagos))}\n*Total Efectivo Esperado por Tesoreria:* ${View.formatNumber(totalEfectivo)}`;
+                    const summaryBlock = `*Resumen de Caja - ${state.session.pos}*\n*Fecha:* ${state.session.date}\n\n*------ TOTALES ------*\n*Total Ventas:* ${View.formatNumber(totalVentas)}\n*Total Pagos:* ${View.formatNumber(Math.abs(totalPagos))}\n*Total Efectivo Esperado por Tesoreria:* ${View.formatNumber(totalEfectivo)}`;
                     
                     const finalMessage = `${summaryBlock}\n\n${detailBlock.trim()}`;
                     const encodedMessage = encodeURIComponent(finalMessage);
@@ -735,17 +640,13 @@ USERS: {
                 handleChangeSession() {
                      if (confirm('¿Desea cambiar la sesión? Se borrarán TODOS los registros de la vista actual y deberá elegir una nueva fecha y punto de venta.')) {
                           Store.clearAllRecords();
-                          Store.clearSessionData();
-                          // Recargamos la parte de la app, sin desloguear
-                          View.updateSessionDisplay();
-                          View.renderRecords();
-                          View.updateView();
+                          Store.clearSession();
+                          location.reload();
                      }
                 }
             };
             
-            // Iniciar solo el módulo de autenticación al cargar la página
-            Auth.init();
+            App.init();
         });
     </script>
 </body>

@@ -1,752 +1,545 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reporte Diario de Ventas</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Reporte Diario de Caja — Cuadrícula Editable</title>
+  <meta name="description" content="Aplicación para registrar operaciones de caja directamente en una cuadrícula. Guardado local y envío a la nube." />
+
+  <style>
+    :root{
+      --primary:#0056b3; --success:#28a745; --danger:#dc3545;
+      --warning:#ffc107; --info:#007bff; --muted:#6c757d;
+      --purple:#6f42c1;
+      --bg:#f4f7f9; --card:#fff; --radius:8px; --shadow:0 6px 18px rgba(9,30,66,0.08);
+      --whatsapp:#25D366; --border:#e6eaee;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{margin:0;font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;background:var(--bg);color:#222;line-height:1.45;padding:12px;}
+    .container{max-width:1200px;margin:0 auto;background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px; position: relative;}
+    header h1{margin:0 0 8px 0;color:var(--primary);font-size:1.6rem}
+    header p{margin:0 0 14px 0;color:var(--muted);font-size:0.95rem}
+    #session-info{display:flex;gap:12px;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:6px;background:#eef3fb;margin-bottom:14px;font-size:0.95rem;}
+    .actions-bar {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
+    .btn {padding:10px 14px;border-radius:6px;border:0;cursor:pointer;color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:transform .12s, box-shadow .12s, opacity .12s;justify-content:center;}
+    .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:var(--primary)} .btn-success{background:var(--success)}
+    .btn-info{background:var(--info)} .btn-warning{background:var(--warning); color:#222}
+    .btn-danger{background:var(--danger)} .btn-whatsapp{background:var(--whatsapp)}
+    .btn-purple{background:var(--purple)}
+    .btn-small{padding: 4px 8px; font-size: 0.8rem;}
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px;}
+    label{font-weight:600;font-size:0.88rem;margin-bottom:4px;display:block}
+    input, select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.95rem;background:#fff;}
     
-    <style>
-        /* --- Variables de Estilo (Custom Properties) --- */
-        :root {
-            --primary-color: #0056b3;
-            --success-color: #28a745;
-            --danger-color: #dc3545;
-            --warning-color: #ffc107;
-            --info-color: #007bff;
-            --secondary-color: #6c757d;
-            --whatsapp-color: #25D366;
-            --light-gray: #f4f7f9;
-            --dark-gray: #333;
-            --white-color: #fff;
-            --border-color: #ccc;
-            --border-radius: 6px;
-            --box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        }
+    .table-input {
+      border: 1px solid #dde2e7; background-color: #fdfdfd; width: 100%; padding: 4px;
+      border-radius: 4px; font-size: inherit; box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .table-input:focus {
+      background-color: #fff; border-color: var(--primary); outline: none; box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    }
+    
+    hr{border:0;border-top:1px solid #eef2f5;margin:16px 0}
+    .records-container{overflow:auto;border-radius:6px;border:1px solid var(--border)}
+    table{width:100%;border-collapse:collapse;min-width:900px}
+    th, td{padding:8px;border-top:1px solid #f4f7fb;font-size:0.95rem; text-align: left; vertical-align: middle;}
+    
+    .truncate {
+      white-space: normal;
+      word-break: break-word;
+    }
+    
+    thead th{background:#f1f6fb;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)}
+    tbody tr:nth-child(odd){background:#fbfdff}
+    tbody tr:hover { background-color: #e7f1ff !important; }
 
-        /* --- Estilos Generales y Reset --- */
-        *, *::before, *::after {
-            box-sizing: border-box;
-        }
+    .row-style-efectivo { background-color: #e9f7ec; }
+    .row-style-electronica { background-color: #f8f9fa; }
+    .row-style-credito-nomina { background-color: #e6eef9; }
+    .row-style-credito-formulas { background-color: #e0f2ff; }
+    .row-style-gasto { background-color: #fff8e7; }
+    .row-style-interco { background-color: #f3e5f5; }
+    
+    tbody tr.row-style-efectivo:nth-child(odd) { background-color: #dff2e3; }
+    tbody tr.row-style-electronica:nth-child(odd) { background-color: #f0f1f2; }
+    tbody tr.row-style-credito-nomina:nth-child(odd) { background-color: #dce5f0; }
+    tbody tr.row-style-credito-formulas:nth-child(odd) { background-color: #d5e9f5; }
+    tbody tr.row-style-gasto:nth-child(odd) { background-color: #fcf3d7; }
+    tbody tr.row-style-interco:nth-child(odd) { background-color: #e1bee7; }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background-color: var(--light-gray);
-            color: var(--dark-gray);
-            margin: 0;
-            padding: 8px;
-            line-height: 1.4;
-        }
+    tfoot td { padding: 10px; background: #fafcfe; font-weight: 700; border-top: 1px solid #eef2f5; }
+    tfoot tr.grand-total td { background-color: #e7f1ff; font-weight: bold; }
+    tfoot tr.sub-grand-total td { background-color: #e9ecef; font-weight: bold; }
 
-        /* --- Contenedor de Login --- */
-        #login-container {
-            max-width: 400px;
-            margin: 80px auto;
-            padding: 25px;
-            background: var(--white-color);
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-            text-align: center;
-        }
-        #login-container h2 {
-            margin-top: 0;
-            color: var(--primary-color);
-        }
-        #login-container .form-group {
-            text-align: left;
-            margin-bottom: 15px;
-        }
-
-        /* --- Contenedor Principal de la App --- */
-        .container {
-            max-width: 1400px;
-            margin: auto;
-            background: var(--white-color);
-            padding: 15px;
-            border-radius: var(--border-radius);
-            box-shadow: var(--box-shadow);
-        }
-
-        /* --- Encabezados --- */
-        h1, h2, h3 {
-            color: var(--primary-color);
-            text-align: center;
-            margin-top: 0;
-            margin-bottom: 10px;
-        }
-        h1 { font-size: 1.8em; }
-        h2 { font-size: 1.4em; }
-        h3 { margin-bottom: 8px; font-size: 1.2em;}
-
-        /* --- Barra de Sesión --- */
-        #session-info {
-            background-color: #e9ecef;
-            padding: 6px 10px;
-            border-radius: var(--border-radius);
-            margin-bottom: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.95em;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-        #session-info span { font-weight: bold; color: var(--primary-color); }
-        #session-info .session-buttons { display: flex; gap: 8px; }
-        #session-info button { font-size: 13px; padding: 4px 8px; width: auto; margin: 0; }
-
-        /* --- Contenedor de Selección --- */
-        .selection-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin: 15px 0;
-            flex-wrap: wrap;
-        }
-        .selection-btn {
-            padding: 8px 18px;
-            font-size: 1em;
-            font-weight: bold;
-            color: var(--white-color);
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .selection-btn:hover:not(:disabled) { 
-            transform: scale(1.03);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        }
-        .selection-btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-        #btn-show-ventas { background-color: var(--success-color); }
-        #btn-show-pagos { background-color: var(--info-color); }
-        #btn-show-descuentos { background-color: var(--warning-color); color: var(--dark-gray);}
-        
-        /* --- Formularios --- */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 10px;
-            margin-bottom: 12px;
-        }
-        .form-group { display: flex; flex-direction: column; }
-        label { margin-bottom: 3px; font-weight: bold; font-size: 13px; }
-        input, select {
-            width: 100%;
-            padding: 6px;
-            border: 1px solid var(--border-color);
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        
-        /* --- Botones --- */
-        .btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            display: block;
-            width: 100%;
-            margin-top: 6px;
-            color: var(--white-color);
-            transition: background-color 0.2s;
-        }
-        .btn:disabled {
-            background-color: #cccccc !important;
-            cursor: not-allowed;
-            opacity: 0.7;
-        }
-        .btn-add { background-color: var(--success-color); }
-        .btn-primary { background-color: var(--primary-color); }
-        .btn-back { background-color: var(--secondary-color); margin-top: 5px; }
-        .btn-clear { background-color: var(--danger-color); }
-        .btn-whatsapp { background-color: var(--whatsapp-color); }
-        .btn-delete { background: #ff4d4d; padding: 3px 6px; font-size: 12px; }
-        
-        .action-buttons-container {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        /* --- Tabla de Registros --- */
-        hr { margin: 15px 0; border: 0; border-top: 1px solid #eee; }
-        .records-container { width: 100%; overflow-x: auto; }
-        .records-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-        }
-        .records-table th, .records-table td {
-            border: 1px solid #dee2e6;
-            padding: 5px;
-            text-align: left;
-            font-size: 13px;
-            white-space: nowrap;
-        }
-        .records-table thead { background-color: #e9ecef; color: #495057; }
-        .records-table tbody tr:nth-child(odd) { background-color: #f8f9fa; }
-        .records-table .col-number { text-align: right; }
-        .records-table .col-action { text-align: center; }
-        .records-table tfoot td {
-            background-color: #f0f3f5;
-            font-weight: bold;
-        }
-        .records-table tfoot .total-label {
-            text-align: right;
-            color: var(--dark-gray);
-        }
-        .records-table tfoot .final-total td {
-            background-color: #e7f1ff; 
-            color: var(--primary-color); 
-            font-weight: bold;
-        }
-        
-        /* --- Clases de Utilidad --- */
-        .hidden { display: none !important; }
-    </style>
+    .col-number, .col-total {text-align:right} .col-action{text-align:center;white-space:nowrap}
+    .hidden{display:none !important}
+    .status-pill{display:inline-flex;gap:8px;align-items:center;padding:6px 10px;border-radius:999px;font-weight:700;font-size:0.9rem}
+    .status-online{background:#e6f7ee;color:var(--success)}
+    .status-offline{background:#fff0f0;color:var(--danger)}
+    .actions-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-top:6px;}
+  </style>
 </head>
 <body>
+  <main class="container" id="app">
+    <header>
+      <h1>Reporte de Caja (Cuadrícula)</h1>
+      <p>Diligencie los valores directamente en las casillas del siguiente cuadro.</p>
+    </header>
 
-    <section id="login-container">
-        <h2>Iniciar Sesión</h2>
-        <form id="login-form" novalidate>
-            <div class="form-group">
-                <label for="username">Usuario</label>
-                <input type="text" id="username" required>
-            </div>
-            <div class="form-group">
-                <label for="password">Contraseña</label>
-                <input type="password" id="password" required>
-            </div>
-            <button type="submit" class="btn btn-primary">Ingresar</button>
-        </form>
-    </section>
-    
-    <main id="app-container" class="container hidden">
-        <h1>Reporte Diario de Caja</h1>
-        
-        <section id="session-info" class="hidden">
+    <section id="session-info-container">
+        <div id="session-setup-fields" class="form-grid">
+            <div><label for="fecha">Fecha del reporte</label><input id="fecha" type="date" required /></div>
             <div>
-                <span>Usuario:</span> <span id="session-user-display"></span> |
-                <span>Fecha:</span> <span id="session-date-display"></span> | 
-                <span>Punto:</span> <span id="session-pos-display"></span>
+                <label for="puntoVenta">Punto de venta</label>
+                <select id="puntoVenta" required></select>
             </div>
-            <div class="session-buttons">
-                <button id="change-session-btn" class="btn">Cambiar Sesión</button>
-                <button id="logout-btn" class="btn btn-clear">Cerrar Sesión</button>
+            <div style="align-self: end;"><button id="start-session-btn" class="btn btn-success" style="width: 100%;">Iniciar / Cambiar Sesión</button></div>
+        </div>
+        <div id="session-info" class="hidden">
+            <div><strong>Fecha:</strong> <span id="session-date-display"></span> — <strong>Punto:</strong> <span id="session-pos-display"></span></div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <div id="network-status" class="status-pill status-offline">Offline</div>
             </div>
-        </section>
+        </div>
+    </section>
 
-        <section id="selection-container" class="selection-container">
-            <button id="btn-show-ventas" class="selection-btn">📈 Ingresar Ventas</button>
-            <button id="btn-show-descuentos" class="selection-btn">🪙 Venta (Descuento Nómina)</button>
-            <button id="btn-show-pagos" class="selection-btn">💸 Ingresar Pagos</button>
-        </section>
+    <hr/>
 
-        <section id="form-container" class="hidden">
-            <h3 id="form-title"></h3>
-            <form id="data-form" novalidate>
-                <div id="session-setup-fields" class="form-grid">
-                    <div class="form-group">
-                        <label for="fecha">Fecha del reporte</label>
-                        <input type="date" id="fecha" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="puntoVenta">Punto de venta</label>
-                        <select id="puntoVenta" required>
-                            <option value="" disabled selected>Seleccione...</option>
-                            <option value="Almendros">Almendros</option>
-                            <option value="Aroma">Aroma</option>
-                            <option value="Ferrocarril">Ferrocarril</option>
-                            <option value="Flora">Flora</option>
-                            <option value="Irotama">Irotama</option>
-                            <option value="Libertador">Libertador</option>
-                            <option value="Minca">Minca</option>
-                            <option value="Neguanje">Neguanje</option>
-                            <option value="Orient">Orient</option>
-                            <option value="Playa">Playa</option>
-                            <option value="Reserva">Reserva</option>
-                            <option value="Rodadero">Rodadero</option>
-                        </select>
-                    </div>
-                </div>
-                <div id="sales-fields" class="form-grid hidden">
-                    <div class="form-group"><label for="ventasEfectivo">Ventas en efectivo</label><input type="number" id="ventasEfectivo" placeholder="0" step="0.01" min="0"></div>
-                    <div class="form-group"><label for="ventasQR">Ventas con QR</label><input type="number" id="ventasQR" placeholder="0" step="0.01" min="0"></div>
-                    <div class="form-group"><label for="ventasTarjeta">Ventas con tarjeta</label><input type="number" id="ventasTarjeta" placeholder="0" step="0.01" min="0"></div>
-                    <div class="form-group"><label for="ventasBreB">Ventas con Bre-B</label><input type="number" id="ventasBreB" placeholder="0" step="0.01" min="0"></div>
-                </div>
-                <div id="payment-fields" class="form-grid hidden">
-                    <div class="form-group"><label for="pagoEfectivo">Pago en efectivo</label><input type="number" id="pagoEfectivo" placeholder="0" step="0.01" min="0" required></div>
-                    <div class="form-group"><label for="beneficiarioPago">Nombre del beneficiario</label><input type="text" id="beneficiarioPago" required></div>
-                    <div class="form-group"><label for="motivoPago">Motivo del pago</label><input type="text" id="motivoPago"></div>
-                </div>
-                <div id="discount-fields" class="form-grid hidden">
-                    <div class="form-group"><label for="descuentoNomina">Valor de la Venta (Descuento Nómina)</label><input type="number" id="descuentoNomina" placeholder="0" step="0.01" min="0" required></div>
-                    <div class="form-group"><label for="nombreTrabajador">Nombre del trabajador</label><input type="text" id="nombreTrabajador" required></div>
-                </div>
-                
-                <button type="submit" class="btn btn-add">Añadir Registro</button>
-                <button type="button" id="btn-back" class="btn btn-back">Volver a la selección</button>
-            </form>
-        </section>
+    <section id="main-content" class="hidden">
+        <div class="actions-bar">
+            <button id="add-nomina-btn" class="btn btn-primary">Añadir Venta a Crédito (Nómina)</button>
+            <button id="add-formulas-btn" class="btn btn-info">Añadir Venta a Crédito (Fórmulas)</button>
+            <button id="add-interco-btn" class="btn btn-purple">Añadir Ventas a crédito a empresas del grupo</button>
+            <button id="add-gasto-btn" class="btn btn-warning">Añadir Gasto en Efectivo</button>
+        </div>
 
-        <hr>
-        
-        <section>
-            <h2>Registros de la Sesión Actual</h2>
-            <div class="records-container">
-                <table class="records-table" id="recordsTable">
-                    <thead><tr><th>Fecha</th><th>Punto</th><th>Tipo</th><th>Tercero</th><th>Detalle</th><th class="col-number">Valor</th><th class="col-action">Acción</th></tr></thead>
-                    <tbody id="recordsListBody"></tbody>
-                    <tfoot id="recordsTableFooter"></tfoot>
-                </table>
-            </div>
-             <div id="action-buttons-container" class="action-buttons-container hidden">
-                <button id="sendAllBtn" class="btn btn-primary">📤 Guardar Todo en la Nube</button>
-                <button id="sendWhatsAppBtn" class="btn btn-whatsapp">✔️ Enviar Resumen por WhatsApp</button>
-                <button id="clearAllBtn" class="btn btn-clear">🗑️ Limpiar y Finalizar Reporte</button>
-            </div>
-        </section>
-    </main>
+        <div class="records-container">
+            <table id="recordsTable">
+                <thead>
+                    <tr>
+                        <th style="width: 32%;">Tipo de Operación</th>
+                        <th class="col-number" style="width: 12%;">Valor</th>
+                        <th class="col-number" style="width: 12%;">Devoluciones</th>
+                        <th class="col-number" style="width: 13%;">Total</th>
+                        <th style="width: 15%;">Tercero / Destino</th>
+                        <th style="width: 11%;">Detalle</th>
+                        <th class="col-action" style="width: 5%;">Acción</th>
+                    </tr>
+                </thead>
+                <tbody id="recordsListBody"></tbody>
+                <tfoot id="recordsTableFooter">
+                    <tr data-summary-id="total_ventas_efectivo"><td>Total ventas en efectivo</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+                    <tr data-summary-id="total_ventas_electronicas"><td>Total ventas por medios electronicos</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+                    <tr data-summary-id="total_ventas_credito"><td>Total ventas a credito</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+                    <tr class="sub-grand-total" data-summary-id="total_ventas_global"><td>Total ventas</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+                    <tr data-summary-id="total_gastos_efectivo"><td>Total gastos en efectivo</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+                    <tr class="grand-total" data-summary-id="total_esperado_tesoreria"><td>Total dinero a recibir por tesoreria</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <div id="action-buttons-container" class="actions-grid" style="margin-top:12px">
+            <button id="sendAllBtn" class="btn btn-primary">📤 Guardar Todo en la Nube</button>
+            <button id="sendWhatsAppBtn" class="btn btn-whatsapp">✔️ Enviar Resumen por WhatsApp</button>
+            <button id="clearAllBtn" class="btn btn-danger">🗑️ Limpiar y Finalizar Reporte</button>
+        </div>
+    </section>
+
+  </main>
+
+  <script>
+  (function(){
+    'use strict';
+
+    const CONFIG = {
+      LS_RECORDS_KEY: 'salesGridRecords_v2',
+      LS_SESSION_KEY: 'sessionGrid_v2',
+      WHATSAPP_PHONE: '573114040809',
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx-_O7ZMuWAZKZppxFa0_cOd4yTI5wiqJuMVjIqRoJEucqjFbL4Jlri57OoYXNIFykouA/exec',
+      PUNTOS_VENTA: ['Almendros', 'Aroma', 'Ferrocarril', 'Flora', 'Irotama', 'Libertador', 'Minca', 'Neguanje', 'Orient', 'Playa', 'Reserva', 'Rodadero'],
+      EMPRESAS_GRUPO: ['Unidad Hemato O.', 'Sembrando Esperanza', 'Inversiones ARCADIA', 'Doctor Ahorro', 'Heritage', 'Distribuidora'],
+    };
+
+    const Utils = {
+      safeNumber(val){ 
+        const cleanStr = String(val || '0').replace(/\./g, '').replace(/,/g, '.');
+        const n = parseFloat(cleanStr); 
+        return isFinite(n) ? n : 0; 
+      },
+      formatCurrency(num){ return new Intl.NumberFormat('es-CO',{ style:'currency', currency:'COP', minimumFractionDigits:0, maximumFractionDigits:0 }).format(Math.round(num)); },
+      nowDateISO(){ return new Date().toISOString().slice(0,10); },
+      uuidv4(){ return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.random()*16|0, v = c==='x' ? r : (r&0x3|0x8); return v.toString(16); }); },
+    };
+
+    const UI = {
+        mainContent: document.getElementById('main-content'),
+        sessionSetup: document.getElementById('session-setup-fields'),
+        sessionInfo: document.getElementById('session-info'),
+        sessionDate: document.getElementById('session-date-display'),
+        sessionPos: document.getElementById('session-pos-display'),
+        networkStatus: document.getElementById('network-status'),
+        recordsBody: document.getElementById('recordsListBody'),
+        recordsFooter: document.getElementById('recordsTableFooter'),
+        fechaInput: document.getElementById('fecha'),
+        puntoVentaInput: document.getElementById('puntoVenta'),
+    };
     
-    <template id="record-row-template">
-        <tr>
-            <td data-cell="fecha"></td>
-            <td data-cell="puntoVenta"></td>
-            <td data-cell="tipo"></td>
-            <td data-cell="tercero"></td>
-            <td data-cell="detalle"></td>
-            <td class="col-number" data-cell="valor"></td>
-            <td class="col-action">
-                <button class="btn btn-delete" data-action="delete" aria-label="Borrar registro">Borrar</button>
-            </td>
-        </tr>
-    </template>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- CONFIGURACIÓN ---
-            const CONFIG = {
-                // --- LISTA DE USUARIOS AUTORIZADOS ---
-                // --- Puede añadir más en el formato 'usuario': 'contraseña' ---
-USERS: {
-                    'Almendros': '9451',
-                    'Ferrocarril': '7060',
-                    'Flora': '4592',
-                    'Irotama': '8911',
-                    'Libertador': '6980',
-                    'Neguanje': '4783',
-                    'Playa': '5124',
-                    'Reserva': '5146',
-                    'Aroma': '5289',
-                    'Minca': '2168',
-                    'Rodadero': '5129',
-                    'Orient': '8868',
-                    'admin': '4721' // Se actualiza la contraseña del admin
-                },
-                LS_RECORDS_KEY: 'salesRecords_v6',
-                LS_SESSION_KEY: 'session_v6',
-                WHATSAPP_PHONE: '573114040809', // Número único de destino
-                SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx-_O7ZMuWAZKZppxFa0_cOd4yTI5wiqJuMVjIqRoJEucqjFbL4Jlri57OoYXNIFykouA/exec' 
-            };
+    const state = {
+        session: { date: null, pos: null },
+    };
 
-            // --- ESTADO DE LA APLICACIÓN ---
-            const state = {
-                records: [],
-                session: { user: null, date: null, pos: null },
-                activeView: 'selection',
-            };
+    const App = {
+      init() {
+        this.populatePuntoVentaSelect();
+        this.loadSession();
+        this.bindEvents();
+        this.updateNetworkStatus();
+        window.addEventListener('online', () => this.updateNetworkStatus());
+        window.addEventListener('offline', () => this.updateNetworkStatus());
 
-            // --- SELECTORES DEL DOM ---
-            const UI = {
-                loginContainer: document.getElementById('login-container'),
-                appContainer: document.getElementById('app-container'),
-                loginForm: document.getElementById('login-form'),
-                logoutBtn: document.getElementById('logout-btn'),
-                sessionInfo: document.getElementById('session-info'),
-                sessionUserDisplay: document.getElementById('session-user-display'),
-                sessionDateDisplay: document.getElementById('session-date-display'),
-                sessionPosDisplay: document.getElementById('session-pos-display'),
-                changeSessionBtn: document.getElementById('change-session-btn'),
-                selectionContainer: document.getElementById('selection-container'),
-                formContainer: document.getElementById('form-container'),
-                formTitle: document.getElementById('form-title'),
-                mainForm: document.getElementById('data-form'),
-                btnBack: document.getElementById('btn-back'),
-                navButtons: document.querySelectorAll('.selection-btn'),
-                formSections: {
-                    ventas: document.getElementById('sales-fields'),
-                    pagos: document.getElementById('payment-fields'),
-                    descuentos: document.getElementById('discount-fields'),
-                    session: document.getElementById('session-setup-fields'),
-                },
-                recordsTable: document.getElementById('recordsTable'),
-                recordsBody: document.getElementById('recordsListBody'),
-                recordsFooter: document.getElementById('recordsTableFooter'),
-                actionButtonsContainer: document.getElementById('action-buttons-container'),
-                clearAllBtn: document.getElementById('clearAllBtn'),
-                sendWhatsAppBtn: document.getElementById('sendWhatsAppBtn'),
-                sendAllBtn: document.getElementById('sendAllBtn'),
-                rowTemplate: document.getElementById('record-row-template'),
-            };
+        if (state.session.date && state.session.pos) {
+            this.startSession(state.session.date, state.session.pos, true);
+        } else {
+            UI.fechaInput.value = Utils.nowDateISO();
+        }
+      },
 
-            // --- LÓGICA DE LOGIN ---
-            const Auth = {
-                init() {
-                    UI.loginForm.addEventListener('submit', this.handleLogin);
-                },
-                handleLogin(e) {
-                    e.preventDefault();
-                    const user = document.getElementById('username').value;
-                    const pass = document.getElementById('password').value;
-
-                    if (CONFIG.USERS[user] && CONFIG.USERS[user] === pass) {
-                        UI.loginContainer.classList.add('hidden');
-                        UI.appContainer.classList.remove('hidden');
-                        state.session.user = user; // Guardar usuario en el estado
-                        App.init(); // Iniciar la aplicación principal
-                    } else {
-                        alert('Usuario o contraseña incorrectos.');
-                        document.getElementById('password').value = '';
-                    }
-                },
-                handleLogout() {
-                    if (confirm('¿Desea cerrar la sesión?')) {
-                        location.reload();
-                    }
-                }
-            };
-            
-            // --- FUNCIÓN UTILITARIA ---
-            const Utils = {
-                toTitleCase(str) {
-                    if (!str) return '';
-                    return str.toLowerCase().split(' ').map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1)
-                    ).join(' ');
-                }
-            };
-
-            // --- MÓDULO DE MANEJO DE DATOS (STORE) ---
-            const Store = {
-                load() {
-                    const storedRecords = localStorage.getItem(CONFIG.LS_RECORDS_KEY);
-                    const storedSession = localStorage.getItem(CONFIG.LS_SESSION_KEY);
-                    state.records = storedRecords ? JSON.parse(storedRecords) : [];
-                    // Mantener el usuario actual y cargar solo fecha y punto
-                    const savedSession = storedSession ? JSON.parse(storedSession) : { date: null, pos: null };
-                    state.session.date = savedSession.date;
-                    state.session.pos = savedSession.pos;
-                },
-                save() {
-                    localStorage.setItem(CONFIG.LS_RECORDS_KEY, JSON.stringify(state.records));
-                    // Guardar solo fecha y punto, no el usuario.
-                    localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify({ date: state.session.date, pos: state.session.pos }));
-                },
-                addTransactions(transactions) {
-                    state.records.push(...transactions);
-                    this.save();
-                },
-                deleteRecord(index) {
-                    state.records.splice(index, 1);
-                    this.save();
-                },
-                clearAllRecords() {
-                    state.records = [];
-                    localStorage.removeItem(CONFIG.LS_RECORDS_KEY);
-                },
-                clearSessionData() {
-                    state.session.date = null;
-                    state.session.pos = null;
-                    localStorage.removeItem(CONFIG.LS_SESSION_KEY);
-                }
-            };
-
-            // --- MÓDULO DE COMUNICACIÓN CON EL BACKEND ---
-            const Backend = {
-                async sendData(records) {
-                    try {
-                        const response = await fetch(CONFIG.SCRIPT_URL, {
-                            method: 'POST',
-                            body: JSON.stringify(records),
-                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                        });
-                        const result = await response.json();
-                        if (result.result !== 'success') {
-                           throw new Error(result.error || 'Error desconocido del servidor.');
-                        }
-                        return true;
-                    } catch (error) {
-                        console.error("Error al enviar datos:", error);
-                        return false;
-                    }
-                }
-            };
-            
-            // --- MÓDULO DE RENDERIZADO Y UI ---
-            const View = {
-                formatCurrency(num) {
-                    return new Intl.NumberFormat('es-CO', {
-                        style: 'currency', currency: 'COP',
-                        minimumFractionDigits: 0, maximumFractionDigits: 0
-                    }).format(num || 0);
-                },
-                formatNumber(num) {
-                    return new Intl.NumberFormat('es-CO', {
-                        minimumFractionDigits: 0, maximumFractionDigits: 0
-                    }).format(num || 0);
-                },
-                renderRecords() {
-                    UI.recordsBody.innerHTML = '';
-                    UI.recordsFooter.innerHTML = '';
-                    const hasRecords = state.records.length > 0;
-                    UI.recordsTable.classList.toggle('hidden', !hasRecords);
-                    UI.actionButtonsContainer.classList.toggle('hidden', !hasRecords);
-                    if (!hasRecords) return;
-                    let totalVentas = 0, totalPagos = 0, totalEfectivo = 0;
-                    state.records.forEach((rec, index) => {
-                        const row = UI.rowTemplate.content.cloneNode(true);
-                        row.querySelector('tr').dataset.index = index;
-                        row.querySelector('[data-cell="fecha"]').textContent = rec.fecha;
-                        row.querySelector('[data-cell="puntoVenta"]').textContent = rec.puntoVenta;
-                        row.querySelector('[data-cell="tipo"]').textContent = rec.tipo;
-                        row.querySelector('[data-cell="tercero"]').textContent = rec.tercero || 'N/A';
-                        row.querySelector('[data-cell="detalle"]').textContent = rec.detalle || 'N/A';
-                        row.querySelector('[data-cell="valor"]').textContent = this.formatCurrency(rec.valor);
-                        UI.recordsBody.appendChild(row);
-                        if (rec.tipo.includes('Venta')) totalVentas += rec.valor;
-                        else if (rec.tipo.includes('Pago')) totalPagos += rec.valor;
-                        if (['Venta en Efectivo', 'Pago en Efectivo'].includes(rec.tipo)) totalEfectivo += rec.valor;
-                    });
-                    UI.recordsFooter.innerHTML = `<tr><td colspan="5" class="total-label">TOTAL VENTAS:</td><td class="col-number">${this.formatCurrency(totalVentas)}</td><td></td></tr><tr><td colspan="5" class="total-label">TOTAL PAGOS:</td><td class="col-number">${this.formatCurrency(Math.abs(totalPagos))}</td><td></td></tr><tr class="final-total"><td colspan="5" style="text-align: right;">TOTAL EFECTIVO ESPERADO POR TESORERIA:</td><td class="col-number">${this.formatCurrency(totalEfectivo)}</td><td></td></tr>`;
-                },
-                updateView() {
-                    UI.selectionContainer.classList.toggle('hidden', state.activeView !== 'selection');
-                    UI.formContainer.classList.toggle('hidden', state.activeView === 'selection');
-                    if (state.activeView === 'selection') {
-                        Object.values(UI.formSections).forEach(s => s.querySelectorAll('input, select').forEach(i => i.disabled = true));
-                        return;
-                    }
-                    const titles = { ventas: '📈 Ingresar Nuevas Ventas', pagos: '💸 Ingresar Nuevo Pago', descuentos: '🪙 Ingresar Venta (Descuento de Nómina)' };
-                    UI.formTitle.textContent = titles[state.activeView];
-                    for (const key in UI.formSections) {
-                        const section = UI.formSections[key];
-                        const isActive = key === state.activeView;
-                        section.classList.toggle('hidden', !isActive);
-                        section.querySelectorAll('input, select').forEach(input => input.disabled = !isActive);
-                    }
-                    const sessionActive = !!state.session.date;
-                    UI.formSections.session.classList.toggle('hidden', sessionActive);
-                    UI.formSections.session.querySelectorAll('input, select').forEach(i => i.disabled = sessionActive);
-                },
-                updateSessionDisplay() {
-                    const sessionActive = !!state.session.date;
-                    UI.sessionInfo.classList.toggle('hidden', !sessionActive);
-                    if (sessionActive) {
-                        UI.sessionUserDisplay.textContent = state.session.user;
-                        UI.sessionDateDisplay.textContent = state.session.date;
-                        UI.sessionPosDisplay.textContent = state.session.pos;
-                    }
-                    UI.navButtons.forEach(btn => btn.disabled = !sessionActive);
-                }
-            };
-            
-            // --- LÓGICA PRINCIPAL DE LA APP ---
-            const App = {
-                init() {
-                    Store.load();
-                    this.bindEvents();
-                    View.updateSessionDisplay();
-                    View.renderRecords();
-                    View.updateView();
-                    const fechaInput = document.getElementById('fecha');
-                    if (!fechaInput.value) fechaInput.valueAsDate = new Date();
-                },
-                bindEvents() {
-                    UI.navButtons.forEach(btn => btn.addEventListener('click', e => this.handleNavClick(e.currentTarget.id)));
-                    UI.btnBack.addEventListener('click', () => this.handleNavClick('selection'));
-                    UI.mainForm.addEventListener('submit', e => this.handleFormSubmit(e));
-                    UI.recordsBody.addEventListener('click', e => this.handleTableClick(e));
-                    UI.clearAllBtn.addEventListener('click', () => this.handleClearAll());
-                    UI.sendWhatsAppBtn.addEventListener('click', () => this.handleSendWhatsApp());
-                    UI.changeSessionBtn.addEventListener('click', () => this.handleChangeSession());
-                    UI.sendAllBtn.addEventListener('click', () => this.handleSendAll());
-                    UI.logoutBtn.addEventListener('click', Auth.handleLogout);
-                },
-                handleNavClick(viewId) {
-                    const viewMap = { 'btn-show-ventas': 'ventas', 'btn-show-pagos': 'pagos', 'btn-show-descuentos': 'descuentos', 'selection': 'selection' };
-                    state.activeView = viewMap[viewId];
-                    UI.mainForm.reset();
-                    View.updateView();
-                },
-                handleFormSubmit(e) {
-                    e.preventDefault();
-                    if (!e.target.checkValidity()) {
-                        e.target.reportValidity();
-                        return;
-                    }
-                    if (!state.session.date || !state.session.pos) {
-                        const fechaInput = document.getElementById('fecha').value;
-                        const puntoVentaInput = document.getElementById('puntoVenta').value;
-                        if (state.records.length > 0 && (state.records[0].fecha !== fechaInput || state.records[0].puntoVenta !== puntoVentaInput)) {
-                            alert('Error: No puede registrar una fecha o punto de venta diferente al de los registros existentes. Finalice el reporte actual para iniciar uno nuevo.');
-                            return;
-                        }
-                        state.session.date = fechaInput;
-                        state.session.pos = puntoVentaInput;
-                        Store.save();
-                        View.updateSessionDisplay();
-                    }
-                    const newTransactions = [];
-                    const addTransaction = (tipo, valor, tercero = '', detalle = '') => {
-                        if (valor !== 0 && !isNaN(valor)) {
-                            const transactionData = { 
-                                fecha: state.session.date, 
-                                puntoVenta: state.session.pos, 
-                                tipo, valor, tercero, detalle,
-                                usuario: state.session.user // Añadir usuario a cada registro
-                            };
-                            newTransactions.push(transactionData);
-                        }
-                    };
-                    if (state.activeView === 'ventas') {
-                        addTransaction('Venta en Efectivo', parseFloat(document.getElementById('ventasEfectivo').value));
-                        addTransaction('Venta con QR', parseFloat(document.getElementById('ventasQR').value));
-                        addTransaction('Venta con Tarjeta', parseFloat(document.getElementById('ventasTarjeta').value));
-                        addTransaction('Venta con Bre-B', parseFloat(document.getElementById('ventasBreB').value));
-                    } else if (state.activeView === 'pagos') {
-                        addTransaction('Pago en Efectivo', parseFloat(document.getElementById('pagoEfectivo').value) * -1, Utils.toTitleCase(document.getElementById('beneficiarioPago').value), Utils.toTitleCase(document.getElementById('motivoPago').value));
-                    } else if (state.activeView === 'descuentos') {
-                        addTransaction('Venta (Descuento Nómina)', parseFloat(document.getElementById('descuentoNomina').value), Utils.toTitleCase(document.getElementById('nombreTrabajador').value));
-                    }
-                    const existingTypes = state.records.map(r => r.tipo);
-                    const allowedDuplicates = ['Pago en Efectivo', 'Venta (Descuento Nómina)'];
-                    for (const t of newTransactions) {
-                        if (!allowedDuplicates.includes(t.tipo) && existingTypes.includes(t.tipo)) {
-                            alert(`El tipo de registro "${t.tipo}" ya ha sido añadido. No se pueden agregar duplicados.`);
-                            return;
-                        }
-                    }
-                    if (newTransactions.length > 0) {
-                        Store.addTransactions(newTransactions);
-                        View.renderRecords();
-                        UI.sendAllBtn.disabled = false;
-                        UI.sendAllBtn.textContent = '📤 Guardar Todo en la Nube';
-                        this.handleNavClick('selection');
-                    } else {
-                         this.handleNavClick('selection');
-                    }
-                },
-                async handleSendAll() {
-                    if (state.records.length === 0) {
-                        alert('No hay registros para guardar.');
-                        return;
-                    }
-                    const btn = UI.sendAllBtn;
-                    btn.disabled = true;
-                    btn.textContent = 'Guardando en la nube...';
-        
-                    const recordsToSend = [...state.records];
-                    const totalEfectivo = state.records.reduce((total, rec) => {
-                        if (['Venta en Efectivo', 'Pago en Efectivo'].includes(rec.tipo)) {
-                            return total + rec.valor;
-                        }
-                        return total;
-                    }, 0);
-        
-                    const summaryRecord = {
-                        fecha: state.session.date,
-                        puntoVenta: state.session.pos,
-                        tipo: 'Valor Esperado por Tesoreria',
-                        tercero: '',
-                        detalle: '',
-                        valor: totalEfectivo,
-                        usuario: state.session.user
-                    };
-                    recordsToSend.push(summaryRecord);
-        
-                    const success = await Backend.sendData(recordsToSend); 
-                    
-                    if (success) {
-                        btn.textContent = '✔️ Guardado en la Nube';
-                        alert('¡Todos los registros han sido guardados en la nube con éxito!');
-                    } else {
-                        btn.disabled = false;
-                        btn.textContent = '📤 Guardar Todo en la Nube';
-                        alert('Error: No se pudieron guardar los registros. Por favor, revisa tu conexión e inténtalo de nuevo.');
-                    }
-                },
-                handleTableClick(e) {
-                    const target = e.target.closest('[data-action="delete"]');
-                    if (target) {
-                        const index = target.closest('tr').dataset.index;
-                        if (confirm(`¿Borrar registro #${parseInt(index, 10) + 1} de la vista actual?`)) {
-                            Store.deleteRecord(index);
-                            View.renderRecords();
-                            UI.sendAllBtn.disabled = false;
-                            UI.sendAllBtn.textContent = '📤 Guardar Todo en la Nube';
-                        }
-                    }
-                },
-                handleClearAll() {
-                    if (confirm('¿Finalizar el reporte? Se limpiará la vista actual y podrá iniciar un nuevo reporte para otra fecha o punto de venta.')) {
-                        Store.clearAllRecords();
-                        Store.clearSessionData();
-                        location.reload();
-                    }
-                },
-                handleSendWhatsApp() {
-                    if (!state.session.date || state.records.length === 0) {
-                        alert('No hay registros para enviar.');
-                        return;
-                    }
-                    
-                    let totalVentas = 0, totalPagos = 0, totalEfectivo = 0;
-                    let detailBlock = "*------ DETALLE ------*\n";
-
-                    state.records.forEach((rec, index) => {
-                        if (rec.valor === 0) return;
-                        
-                        if (rec.tipo.includes('Venta')) totalVentas += rec.valor;
-                        if (rec.tipo.includes('Pago')) totalPagos += rec.valor;
-                        if (['Venta en Efectivo', 'Pago en Efectivo'].includes(rec.tipo)) totalEfectivo += rec.valor;
-
-                        let entry = `*${rec.tipo}:* ${View.formatNumber(rec.valor)}`;
-                        if (rec.tercero) {
-                            entry += ` - _${rec.tercero}_`;
-                            if (rec.detalle) {
-                                entry += ` (${rec.detalle})`;
-                            }
-                        }
-                        detailBlock += entry + '\n';
-                    });
-                    
-                    const summaryBlock = `*Resumen de Caja - ${state.session.pos}*\n*Fecha:* ${state.session.date}\n*Usuario:* ${state.session.user}\n\n*------ TOTALES ------*\n*Total Ventas:* ${View.formatNumber(totalVentas)}\n*Total Pagos:* ${View.formatNumber(Math.abs(totalPagos))}\n*Total Efectivo Esperado por Tesoreria:* ${View.formatNumber(totalEfectivo)}`;
-                    
-                    const finalMessage = `${summaryBlock}\n\n${detailBlock.trim()}`;
-                    const encodedMessage = encodeURIComponent(finalMessage);
-                    
-                    window.open(`https://web.whatsapp.com/send?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodedMessage}`, '_blank');
-                },
-                handleChangeSession() {
-                     if (confirm('¿Desea cambiar la sesión? Se borrarán TODOS los registros de la vista actual y deberá elegir una nueva fecha y punto de venta.')) {
-                          Store.clearAllRecords();
-                          Store.clearSessionData();
-                          // Recargamos la parte de la app, sin desloguear
-                          View.updateSessionDisplay();
-                          View.renderRecords();
-                          View.updateView();
-                     }
-                }
-            };
-            
-            // Iniciar solo el módulo de autenticación al cargar la página
-            Auth.init();
+      populatePuntoVentaSelect() {
+        const select = UI.puntoVentaInput;
+        select.innerHTML = '<option value="">Seleccione...</option>';
+        CONFIG.PUNTOS_VENTA.forEach(pv => {
+            select.innerHTML += `<option value="${pv}">${pv}</option>`;
         });
-    </script>
+      },
+
+      bindEvents() {
+        document.getElementById('start-session-btn').addEventListener('click', () => {
+            const fecha = UI.fechaInput.value;
+            const puntoVenta = UI.puntoVentaInput.value;
+            if (!fecha || !puntoVenta) {
+                alert('Por favor, seleccione fecha y punto de venta.');
+                return;
+            }
+            if (localStorage.getItem(this.getStorageKey()) && !confirm('¿Iniciar nueva sesión? Se borrarán los datos no guardados de la sesión anterior.')) {
+                return;
+            }
+            this.startSession(fecha, puntoVenta);
+        });
+        
+        document.getElementById('add-nomina-btn').addEventListener('click', () => this.addRow({ tipo: 'Ventas a crédito (descuentos por nómina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' }));
+        document.getElementById('add-formulas-btn').addEventListener('click', () => this.addRow({ tipo: 'Ventas a crédito (fórmulas)', category: 'credito', isRemovable: true, styleHint: 'credito-formulas' }));
+        document.getElementById('add-gasto-btn').addEventListener('click', () => this.addRow({ tipo: 'Gasto en efectivo', category: 'gasto', isRemovable: true, styleHint: 'gasto' }));
+        document.getElementById('add-interco-btn').addEventListener('click', () => this.addRow({ tipo: 'Ventas a crédito a empresas del grupo', category: 'credito', isRemovable: true, styleHint: 'interco' }));
+        
+        UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
+        UI.recordsBody.addEventListener('click', (e) => this.handleTableClick(e));
+        UI.recordsBody.addEventListener('blur', (e) => this.handleTableBlur(e), true);
+
+        document.getElementById('sendAllBtn').addEventListener('click', () => this.handleSendAll());
+        document.getElementById('sendWhatsAppBtn').addEventListener('click', () => this.handleSendWhatsApp());
+        document.getElementById('clearAllBtn').addEventListener('click', () => this.handleClearAll());
+      },
+
+      startSession(date, pos, fromStorage = false) {
+        state.session.date = date;
+        state.session.pos = pos;
+        this.saveSession();
+
+        UI.sessionDate.textContent = date;
+        UI.sessionPos.textContent = pos;
+        UI.sessionSetup.classList.add('hidden');
+        UI.sessionInfo.classList.remove('hidden');
+        UI.mainContent.classList.remove('hidden');
+
+        if (!fromStorage) {
+            localStorage.removeItem(this.getStorageKey());
+            this.createInitialRows();
+        } else {
+            this.loadRecords();
+        }
+        this.updateTotalsDisplay();
+      },
+
+      createInitialRows() {
+          UI.recordsBody.innerHTML = '';
+          const initialData = [
+              { tipo: 'Efectivo POS del comprobante diario', category: 'efectivo', styleHint: 'efectivo' },
+              { tipo: 'Ventas con QR', category: 'electronica', styleHint: 'electronica' },
+              { tipo: 'Ventas con tarjeta debito', category: 'electronica', styleHint: 'electronica' },
+              { tipo: 'Ventas con tarjeta credito', category: 'electronica', styleHint: 'electronica' },
+          ];
+          initialData.forEach(data => this.addRow(data, true));
+          this.saveRecords();
+      },
+
+      addRow(data = {}, skipSave = false) {
+          const defaults = { id: Utils.uuidv4(), tipo: '', valor: 0, devoluciones: 0, tercero: '', detalle: '', isRemovable: false, category: 'default', styleHint: 'electronica' };
+          const record = { ...defaults, ...data };
+          
+          const tr = document.createElement('tr');
+          tr.dataset.id = record.id;
+          tr.dataset.category = record.category;
+          tr.dataset.styleHint = record.styleHint;
+          tr.classList.add(`row-style-${record.styleHint}`);
+
+          const total = Utils.safeNumber(record.valor) - Utils.safeNumber(record.devoluciones);
+
+          let terceroCellHtml = `<input type="text" class="table-input" data-field="tercero" value="${record.tercero || ''}">`;
+          if (record.tipo === 'Ventas a crédito a empresas del grupo') {
+              const optionsHtml = CONFIG.EMPRESAS_GRUPO
+                  .map(empresa => `<option value="${empresa}" ${record.tercero === empresa ? 'selected' : ''}>${empresa}</option>`)
+                  .join('');
+              terceroCellHtml = `<select class="table-input" data-field="tercero"><option value="">Seleccione empresa...</option>${optionsHtml}</select>`;
+          }
+
+          tr.innerHTML = `
+              <td class="truncate" title="${record.tipo}">${record.tipo}</td>
+              <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="valor" value="${record.valor || ''}" placeholder="0"></td>
+              <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="devoluciones" value="${record.devoluciones || ''}" placeholder="0"></td>
+              <td class="col-total" data-field="total">${Utils.formatCurrency(total)}</td>
+              <td>${terceroCellHtml}</td>
+              <td><input type="text" class="table-input" data-field="detalle" value="${record.detalle || ''}"></td>
+              <td class="col-action">${record.isRemovable ? '<button class="btn btn-danger btn-small" data-action="delete">Borrar</button>' : ''}</td>
+          `;
+          UI.recordsBody.appendChild(tr);
+
+          const firstInput = tr.querySelector('[data-field="valor"]');
+          if (firstInput) {
+              firstInput.focus();
+          }
+
+          if (!skipSave) {
+              this.saveRecords();
+              this.updateTotalsDisplay();
+          }
+          return tr;
+      },
+
+      handleTableInput(e) {
+          if (e.target.classList.contains('table-input')) {
+              this.updateTotalsDisplay();
+              this.saveRecords();
+          }
+      },
+      
+      handleTableBlur(e) {
+          if (e.target.classList.contains('table-input') && e.target.inputMode === 'decimal') {
+              const value = Utils.safeNumber(e.target.value);
+              e.target.value = value !== 0 ? new Intl.NumberFormat('es-CO').format(value) : '';
+          }
+      },
+
+      handleTableClick(e) {
+        const deleteBtn = e.target.closest('[data-action="delete"]');
+        if (deleteBtn) {
+            const row = deleteBtn.closest('tr');
+            if (row) {
+                row.remove();
+                this.updateTotalsDisplay();
+                this.saveRecords();
+            }
+        }
+      },
+      
+      getCalculatedState() {
+          const totals = { efectivo: 0, electronica: 0, credito: 0, gasto: 0 };
+          
+          UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
+              const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
+              const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
+              const currentTotal = valor - devoluciones;
+              
+              tr.querySelector('[data-field="total"]').textContent = Utils.formatCurrency(currentTotal);
+              
+              const category = tr.dataset.category;
+              if (totals.hasOwnProperty(category)) {
+                  totals[category] += currentTotal;
+              }
+          });
+
+          const totalVentasNetoEfectivo = totals.efectivo;
+          const totalDineroTesoreria = totalVentasNetoEfectivo - totals.gasto;
+          const totalVentasGeneral = totalVentasNetoEfectivo + totals.electronica + totals.credito;
+
+          return {
+              summary: {
+                  ventasNetoEfectivo: totalVentasNetoEfectivo,
+                  ventasElectronicas: totals.electronica,
+                  ventasCredito: totals.credito,
+                  gastosEfectivo: totals.gasto,
+                  ventasGlobal: totalVentasGeneral,
+                  esperadoTesoreria: totalDineroTesoreria,
+              }
+          };
+      },
+
+      updateTotalsDisplay() {
+          const state = this.getCalculatedState();
+          const summary = state.summary;
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total').textContent = Utils.formatCurrency(summary.ventasNetoEfectivo);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total').textContent = Utils.formatCurrency(summary.ventasElectronicas);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_credito"] .col-total').textContent = Utils.formatCurrency(summary.ventasCredito);
+          UI.recordsFooter.querySelector('[data-summary-id="total_gastos_efectivo"] .col-total').textContent = Utils.formatCurrency(summary.gastosEfectivo);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_global"] .col-total').textContent = Utils.formatCurrency(summary.ventasGlobal);
+          UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total').textContent = Utils.formatCurrency(summary.esperadoTesoreria);
+      },
+
+      getRecordsFromTable() {
+          const records = [];
+          UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
+              const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
+              const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
+
+              if (valor !== 0 || devoluciones !== 0) {
+                  records.push({
+                      id: tr.dataset.id,
+                      tipo: tr.cells[0].title,
+                      total: valor - devoluciones,
+                      tercero: tr.querySelector('[data-field="tercero"]').value,
+                      detalle: tr.querySelector('[data-field="detalle"]').value,
+                      category: tr.dataset.category,
+                  });
+              }
+          });
+          return records;
+      },
+      
+      async handleSendAll() {
+          const records = this.getRecordsFromTable();
+          if (records.length === 0) {
+              alert('No hay registros con valores para guardar.');
+              return;
+          }
+
+          const btn = document.getElementById('sendAllBtn');
+          btn.disabled = true;
+          btn.textContent = 'Guardando...';
+
+          const detailData = records.map(r => ({
+              fecha: state.session.date,
+              puntoVenta: state.session.pos,
+              tipo: r.tipo,
+              tercero: r.tercero,
+              detalle: r.detalle,
+              valor: r.total,
+          }));
+          
+          const calculated = this.getCalculatedState().summary;
+          const summaryData = [
+              { tipo: 'Total ventas en efectivo', valor: calculated.ventasNetoEfectivo },
+              { tipo: 'Total ventas por medios electronicos', valor: calculated.ventasElectronicas },
+              { tipo: 'Total ventas a credito', valor: calculated.ventasCredito },
+              { tipo: 'Total ventas', valor: calculated.ventasGlobal },
+              { tipo: 'Total gastos en efectivo', valor: calculated.gastosEfectivo },
+              { tipo: 'Total dinero a recibir por tesoreria', valor: calculated.esperadoTesoreria },
+          ].map(item => ({
+              fecha: state.session.date,
+              puntoVenta: state.session.pos,
+              tipo: item.tipo,
+              tercero: '', // Modificado para que esté en blanco
+              detalle: '', // Modificado para que esté en blanco
+              valor: item.valor,
+          }));
+
+          const dataToSend = [...detailData, ...summaryData];
+
+          try {
+              const response = await fetch(CONFIG.SCRIPT_URL, {
+                  method: 'POST',
+                  body: JSON.stringify(dataToSend),
+                  headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              });
+              const result = await response.json();
+              if (result.result !== 'success') throw new Error(result.error || 'Error del servidor.');
+              
+              alert('¡Registros guardados con éxito!');
+              btn.textContent = '✔️ Guardado';
+          } catch (error) {
+              console.error("Error al enviar datos:", error);
+              alert('Error: No se pudieron guardar los registros.');
+              btn.disabled = false;
+              btn.textContent = '📤 Guardar Todo en la Nube';
+          }
+      },
+      
+      handleSendWhatsApp() {
+        if (!state.session.date) return;
+        const records = this.getRecordsFromTable();
+        const calculated = this.getCalculatedState().summary;
+        
+        let detailLines = records.map(r => {
+            return `*${r.tipo}:* ${Utils.formatCurrency(r.total)}${r.tercero ? ' - _' + r.tercero + '_' : ''}`;
+        }).join('\n');
+
+        const summary = `*Resumen de Caja - ${state.session.pos}*\n*Fecha:* ${state.session.date}\n\n*------ TOTALES ------*\n` +
+            `*Total Ventas en Efectivo:* ${Utils.formatCurrency(calculated.ventasNetoEfectivo)}\n` +
+            `*Total Ventas Electrónicas:* ${Utils.formatCurrency(calculated.ventasElectronicas)}\n` +
+            `*Total Ventas a Crédito:* ${Utils.formatCurrency(calculated.ventasCredito)}\n` +
+            `*Total Ventas:* ${Utils.formatCurrency(calculated.ventasGlobal)}\n` +
+            `*Total Gastos en Efectivo:* ${Utils.formatCurrency(calculated.gastosEfectivo)}\n\n` +
+            `*TOTAL DINERO A RECIBIR:* ${Utils.formatCurrency(calculated.esperadoTesoreria)}`;
+        
+        const finalMessage = `${summary}\n\n*------ DETALLE ------*\n${detailLines}`;
+        window.open(`https://web.whatsapp.com/send?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`, '_blank');
+      },
+
+      handleClearAll() {
+          if(confirm('¿Finalizar el reporte? Se limpiarán todos los registros y la sesión.')) {
+              localStorage.removeItem(this.getStorageKey());
+              localStorage.removeItem(CONFIG.LS_SESSION_KEY);
+              location.reload();
+          }
+      },
+      
+      updateNetworkStatus() {
+          const online = navigator.onLine;
+          UI.networkStatus.classList.toggle('status-online', online);
+          UI.networkStatus.classList.toggle('status-offline', !online);
+          UI.networkStatus.textContent = online ? 'Online' : 'Offline';
+      },
+      
+      getStorageKey() {
+        if (!state.session.date || !state.session.pos) return null;
+        return `${CONFIG.LS_RECORDS_KEY}_${state.session.date}_${state.session.pos}`;
+      },
+      saveSession() { localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify(state.session)); },
+      loadSession() { state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null }; },
+      saveRecords() {
+        const key = this.getStorageKey();
+        if (!key) return;
+        const records = [];
+        UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
+            records.push({
+                id: tr.dataset.id,
+                tipo: tr.cells[0].title,
+                valor: tr.querySelector('[data-field="valor"]').value,
+                devoluciones: tr.querySelector('[data-field="devoluciones"]').value,
+                tercero: tr.querySelector('[data-field="tercero"]').value,
+                detalle: tr.querySelector('[data-field="detalle"]').value,
+                category: tr.dataset.category,
+                styleHint: tr.dataset.styleHint,
+                isRemovable: !!tr.querySelector('[data-action="delete"]'),
+            });
+        });
+        localStorage.setItem(key, JSON.stringify(records));
+      },
+      loadRecords() {
+        const key = this.getStorageKey();
+        if (!key) return;
+        const savedRecords = JSON.parse(localStorage.getItem(key)) || [];
+        UI.recordsBody.innerHTML = '';
+        if (savedRecords.length > 0) {
+            savedRecords.forEach(rec => this.addRow(rec, true));
+        } else {
+            this.createInitialRows();
+        }
+      }
+    };
+
+    App.init();
+  })();
+  </script>
 </body>
 </html>

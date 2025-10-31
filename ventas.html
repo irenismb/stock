@@ -360,7 +360,7 @@
           });
 
           const totalVentasNetoEfectivo = totals.efectivo;
-          const totalDineroTesoreria = totalVentasNetoEfectivo - totals.gasto;
+          const totalDineroTesoreria = totalVentasNetoEfectivo - totals.gasto - totals.credito;
           const totalVentasGeneral = totalVentasNetoEfectivo + totals.electronica + totals.credito;
 
           return {
@@ -543,3 +543,4 @@
   </script>
 </body>
 </html>
+

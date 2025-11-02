@@ -502,10 +502,10 @@
   const SELLER_NAME = "Irenis Stock Natura";
   const SELLER_PHONE = "3042088961";
 
-  // 🔍 detectar si es móvil
+  // detectar móvil
   const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
-  // correos autorizados
+  // admins
   const ALLOWED_ADMIN_EMAILS = [
     "irenismendoza@gmail.com",
     "marllerpar@gmail.com",
@@ -516,12 +516,10 @@
   const MODE_ADMIN_EDIT = "admin_edit";
   const MODE_ADMIN_SALE = "admin_sale";
 
-  // 🔐 clave para guardar la sesión
   const SESSION_KEY = "naturaAdminGoogleSession";
+  const MOBILE_ADMIN_FLAG = "naturaMobileAdminAllowed";
 
-  // 👇 SI ES MÓVIL, arranca en cliente sí o sí
-  let currentMode = IS_MOBILE ? MODE_CLIENT : MODE_CLIENT;
-
+  let currentMode = MODE_CLIENT;
   let products = [];
   let allCategories = [];
   let allBrands = [];
@@ -548,9 +546,74 @@
   const categoryToggleBtn = document.getElementById('categoryToggleBtn');
   const brandToggleBtn = document.getElementById('brandToggleBtn');
 
+  // botón flotante para entrar a admin en móvil
+  const mobileAdminBtn = document.createElement("button");
+  mobileAdminBtn.textContent = "🔐 Admin móvil";
+  mobileAdminBtn.style.position = "fixed";
+  mobileAdminBtn.style.bottom = "16px";
+  mobileAdminBtn.style.right = "16px";
+  mobileAdminBtn.style.zIndex = "999";
+  mobileAdminBtn.style.background = "#0d6efd";
+  mobileAdminBtn.style.color = "#fff";
+  mobileAdminBtn.style.border = "none";
+  mobileAdminBtn.style.borderRadius = "999px";
+  mobileAdminBtn.style.padding = "8px 14px";
+  mobileAdminBtn.style.fontSize = "13px";
+  mobileAdminBtn.style.boxShadow = "0 4px 12px rgba(0,0,0,.25)";
+  mobileAdminBtn.style.display = "none";
+
+  // barrita cuando ya eres admin en móvil
+  const mobileAdminBar = document.createElement("div");
+  mobileAdminBar.style.position = "fixed";
+  mobileAdminBar.style.left = "0";
+  mobileAdminBar.style.right = "0";
+  mobileAdminBar.style.bottom = "0";
+  mobileAdminBar.style.background = "rgba(255,255,255,.95)";
+  mobileAdminBar.style.borderTop = "1px solid rgba(0,0,0,.08)";
+  mobileAdminBar.style.display = "none";
+  mobileAdminBar.style.zIndex = "998";
+  mobileAdminBar.style.padding = "6px 10px";
+  mobileAdminBar.style.display = "none";
+  mobileAdminBar.style.gap = "8px";
+  mobileAdminBar.style.justifyContent = "center";
+  mobileAdminBar.style.alignItems = "center";
+  mobileAdminBar.style.flexWrap = "wrap";
+  mobileAdminBar.style.boxShadow = "0 -4px 12px rgba(0,0,0,.08)";
+  mobileAdminBar.style.display = "none";
+  mobileAdminBar.style.display = "none";
+  mobileAdminBar.style.display = "none";
+  mobileAdminBar.style.flexDirection = "row";
+  mobileAdminBar.style.display = "none";
+
+  const mobileEditBtn = document.createElement("button");
+  mobileEditBtn.textContent = "✏️ Editar";
+  mobileEditBtn.style.background = "#198754";
+  mobileEditBtn.style.color = "#fff";
+  mobileEditBtn.style.border = "none";
+  mobileEditBtn.style.borderRadius = "6px";
+  mobileEditBtn.style.padding = "6px 10px";
+  mobileEditBtn.style.fontSize = "13px";
+
+  const mobileSellBtn = document.createElement("button");
+  mobileSellBtn.textContent = "🧾 Vender";
+  mobileSellBtn.style.background = "#0d6efd";
+  mobileSellBtn.style.color = "#fff";
+  mobileSellBtn.style.border = "none";
+  mobileSellBtn.style.borderRadius = "6px";
+  mobileSellBtn.style.padding = "6px 10px";
+  mobileSellBtn.style.fontSize = "13px";
+
+  mobileAdminBar.appendChild(mobileEditBtn);
+  mobileAdminBar.appendChild(mobileSellBtn);
+
+  document.body.appendChild(mobileAdminBtn);
+  document.body.appendChild(mobileAdminBar);
+
   let cart = {};
   let currentSortOrder = 'default';
   const currencyFormatter = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
+
+  const canMobileAdmin = () => IS_MOBILE && localStorage.getItem(MOBILE_ADMIN_FLAG) === "1" && !!googleUserToken;
 
   // ===== CARGA DE PRODUCTOS =====
   fetch(googleSheetURL)
@@ -583,21 +646,19 @@
 
   // ===== Google Sign-In =====
   window.onload = function () {
-    // 👇 en móvil no mostramos el botón de google
-    if (IS_MOBILE) {
-      if (googleSignInContainer) googleSignInContainer.style.display = "none";
-      return;
-    }
     if (typeof google === 'undefined') return;
     try {
       google.accounts.id.initialize({
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn
       });
-      google.accounts.id.renderButton(
-        googleSignInContainer,
-        { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
-      );
+      // en desktop sí lo pinto de una
+      if (!IS_MOBILE) {
+        google.accounts.id.renderButton(
+          googleSignInContainer,
+          { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
+        );
+      }
     } catch (e) { console.warn(e); }
   };
 
@@ -614,23 +675,24 @@
     }
   }
 
-  // 🟢 restaurar sesión guardada, PERO no en móvil
   function restoreAdminSession() {
-    if (IS_MOBILE) {
-      // en móvil siempre cliente
-      currentMode = MODE_CLIENT;
-      return;
-    }
     try {
       const raw = localStorage.getItem(SESSION_KEY);
-      if (!raw) return;
+      const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
+      if (!raw) {
+        currentMode = MODE_CLIENT;
+        return;
+      }
       const saved = JSON.parse(raw);
       if (!saved || !saved.token || !saved.email) return;
       googleUserToken = saved.token;
       currentAdminName = saved.name || "Admin";
       currentAdminEmail = saved.email;
-      currentMode = saved.mode || MODE_ADMIN_EDIT;
-      googleSignInContainer.style.display = "none";
+      if (IS_MOBILE && !mobileOverride) {
+        currentMode = MODE_CLIENT;
+      } else {
+        currentMode = saved.mode || MODE_ADMIN_EDIT;
+      }
     } catch (e) {
       console.warn("No se pudo restaurar la sesión:", e);
     }
@@ -662,31 +724,26 @@
       token: googleUserToken,
       name: currentAdminName,
       email: currentAdminEmail,
-      mode: modeSelector.value === MODE_ADMIN_SALE ? MODE_ADMIN_SALE : MODE_ADMIN_EDIT
+      mode: MODE_ADMIN_EDIT
     }));
 
-    if (modeSelector.value === MODE_ADMIN_SALE) {
-      enterAdminMode(name, email, MODE_ADMIN_SALE);
+    if (IS_MOBILE) {
+      localStorage.setItem(MOBILE_ADMIN_FLAG, "1");
+      enterAdminMode(name, email, MODE_ADMIN_EDIT);
+      showMobileAdminBar();
     } else {
       enterAdminMode(name, email, MODE_ADMIN_EDIT);
     }
   }
 
   function enterAdminMode(name, email, modeWanted) {
-    // 👇 si es móvil, NO dejamos entrar a admin
-    if (IS_MOBILE) {
-      currentMode = MODE_CLIENT;
-      applyUIMode();
-      filterAndDisplayProducts();
-      return;
-    }
     currentMode = modeWanted || MODE_ADMIN_EDIT;
-    googleSignInContainer.style.display = "none";
-    modeSelector.value = currentMode;
+    if (!IS_MOBILE) {
+      googleSignInContainer.style.display = "none";
+    }
     applyUIMode();
     filterAndDisplayProducts();
     updateInventoryTotalDisplay();
-
     try {
       const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (saved) {
@@ -698,48 +755,74 @@
 
   function exitAdminMode() {
     currentMode = MODE_CLIENT;
-    googleUserToken = null;
-    currentAdminName = null;
-    currentAdminEmail = null;
-    if (!IS_MOBILE) {
-      googleSignInContainer.style.display = "none";
-    }
-    modeSelector.value = MODE_CLIENT;
     applyUIMode();
     filterAndDisplayProducts();
     updateInventoryTotalDisplay();
+    hideMobileAdminBar();
   }
 
-  // selector de modo
+  // selector de modo (desktop)
   modeSelector.addEventListener("change", () => {
-    // 👇 en móvil ignoramos cambios de modo
     if (IS_MOBILE) {
-      modeSelector.value = MODE_CLIENT;
-      currentMode = MODE_CLIENT;
-      applyUIMode();
-      filterAndDisplayProducts();
+      modeSelector.value = currentMode;
       return;
     }
-
     const selected = modeSelector.value;
     if (selected === MODE_CLIENT) {
       exitAdminMode();
       return;
     }
     if (!googleUserToken) {
-      alert("Inicia sesión con un correo autorizado para usar ese modo.");
+      alert("Inicia sesión con un correo autorizado.");
       googleSignInContainer.style.display = "block";
       modeSelector.value = MODE_CLIENT;
-      currentMode = MODE_CLIENT;
-      applyUIMode();
-      filterAndDisplayProducts();
       return;
     }
     currentMode = selected;
-    modeSelector.value = currentMode;
     applyUIMode();
     filterAndDisplayProducts();
+  });
 
+  // botón flotante móvil
+  mobileAdminBtn.addEventListener("click", () => {
+    if (canMobileAdmin()) {
+      // ya está logueado → muestra barra
+      showMobileAdminBar();
+      return;
+    }
+    // renderizo botón de google solo ahora (para no ocupar arriba)
+    if (googleSignInContainer) {
+      googleSignInContainer.style.display = "block";
+      // si no hay botón todavía, lo pinto
+      try {
+        if (typeof google !== "undefined") {
+          google.accounts.id.renderButton(
+            googleSignInContainer,
+            { theme: "outline", size: "large", text: "signin_with", shape: "rectangular" }
+          );
+        }
+      } catch (e) {}
+    }
+    alert("Inicia sesión con tu cuenta de admin y vuelve a tocar “Admin móvil”.");
+  });
+
+  function showMobileAdminBar() {
+    if (IS_MOBILE && canMobileAdmin()) {
+      mobileAdminBar.style.display = "flex";
+    }
+  }
+  function hideMobileAdminBar() {
+    mobileAdminBar.style.display = "none";
+  }
+
+  // botones de la barrita móvil
+  mobileEditBtn.addEventListener("click", () => {
+    if (!canMobileAdmin()) return;
+    currentMode = MODE_ADMIN_EDIT;
+    applyUIMode();
+    filterAndDisplayProducts();
+    updateInventoryTotalDisplay();
+    // guarda
     try {
       const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (saved) {
@@ -748,14 +831,26 @@
       }
     } catch (e) {}
   });
+  mobileSellBtn.addEventListener("click", () => {
+    if (!canMobileAdmin()) return;
+    currentMode = MODE_ADMIN_SALE;
+    applyUIMode();
+    filterAndDisplayProducts();
+    updateInventoryTotalDisplay();
+  });
 
   // ===== MODO → UI =====
   function applyUIMode() {
-    // 👇 en móvil, siempre cliente
     if (IS_MOBILE) {
-      currentMode = MODE_CLIENT;
-      modeSelector.value = MODE_CLIENT;
-      modeSelector.disabled = true;
+      mobileAdminBtn.style.display = "block";
+      if (canMobileAdmin()) {
+        mobileAdminBar.style.display = "flex";
+      } else {
+        mobileAdminBar.style.display = "none";
+      }
+    } else {
+      mobileAdminBtn.style.display = "none";
+      mobileAdminBar.style.display = "none";
     }
 
     document.querySelectorAll('.only-client').forEach(el => el.style.display = 'none');
@@ -767,13 +862,15 @@
       document.querySelectorAll('.only-client').forEach(el => el.style.display = 'block');
       if (sortPriceBtn) sortPriceBtn.style.display = "inline-block";
       inventoryTotalElement.style.display = "none";
-      if (cartContainer) cartContainer.style.display = "block"; // 👈 mostrar carrito
+      if (cartContainer) cartContainer.style.display = "block";
       if (invoiceBtn) invoiceBtn.disabled = true;
+      if (IS_MOBILE) modeSelector.disabled = true;
     } else if (currentMode === MODE_ADMIN_EDIT) {
       document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
       document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
       if (sortPriceBtn) sortPriceBtn.style.display = "none";
-      if (cartContainer) cartContainer.style.display = "none";
+      if (!IS_MOBILE && cartContainer) cartContainer.style.display = "none";
+      // en móvil dejamos ver carrito
       inventoryTotalElement.style.display = "inline-block";
       if (invoiceBtn) invoiceBtn.disabled = true;
     } else if (currentMode === MODE_ADMIN_SALE) {
@@ -796,13 +893,13 @@
     }
   }
 
-  // ===== helpers =====
+  // helpers
   function toTitleCase(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : ""; }
   function calculateInventoryTotal() {
     return products.reduce((acc, p) => acc + ((p.valor_unitario || 0) * (p.stock || 0)), 0);
   }
   function updateInventoryTotalDisplay() {
-    if ((currentMode === MODE_ADMIN_EDIT || currentMode === MODE_ADMIN_SALE) && !IS_MOBILE) {
+    if (currentMode === MODE_ADMIN_EDIT || currentMode === MODE_ADMIN_SALE) {
       inventoryTotalElement.style.display = "inline-block";
       inventoryTotalElement.textContent = `Total: ${currencyFormatter.format(calculateInventoryTotal())}`;
     } else {
@@ -816,7 +913,7 @@
     return `${dd}/${mm}/${yy}`;
   }
 
-  // ===== init =====
+  // init
   function initializeApp() {
     restoreAdminSession();
     products.sort((a, b) => a.name.localeCompare(b.name));
@@ -836,7 +933,6 @@
 
   function normalizeText(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 
-  // ===== filters =====
   function refreshFilters() {
     allCategories = [...new Set(products.map(p => p.category))].sort();
     allBrands = [...new Set(products.map(p => p.marca))].sort();
@@ -905,7 +1001,6 @@
     }
   });
 
-  // ===== filter & display =====
   function filterAndDisplayProducts() {
     let list = [...products];
 
@@ -934,16 +1029,15 @@
     updateInventoryTotalDisplay();
   }
 
-  // ===== display =====
   function displayProducts(list) {
     if (list.length === 0) {
       productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
       return;
     }
+    const isMobileAdminNow = canMobileAdmin();
     const rows = list.map(p => {
       const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
-      // 👇 si es móvil, tratamos SIEMPRE como cliente
-      const isEditing = (!IS_MOBILE && currentMode === MODE_ADMIN_EDIT);
+      const isEditing = (currentMode === MODE_ADMIN_EDIT && (!IS_MOBILE || isMobileAdminNow));
       const valueToShow = isEditing ? p.stock : qtyInCart;
       const dataLabel = isEditing ? "Stock" : "Cantidad";
       let subtotal;
@@ -952,14 +1046,14 @@
       } else {
         subtotal = qtyInCart * p.valor_unitario;
       }
-      const readOnlyAttr = (isEditing || IS_MOBILE || currentMode === MODE_CLIENT) ? 'readonly' : '';
+      const readOnlyAttr = isEditing ? "" : "readonly";
 
       let nameCell, catCell, brandCell, priceCell;
       if (isEditing) {
-        nameCell = `<input type="text" class="admin-input admin-col-name" data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}">`;
-        catCell = `<input type="text" class="admin-input admin-col-cat" data-id="${p.id}" data-field="category" value="${escapeHtml(p.category)}">`;
-        brandCell = `<input type="text" class="admin-input admin-col-brand" data-id="${p.id}" data-field="marca" value="${escapeHtml(p.marca)}">`;
-        priceCell = `<input type="text" class="admin-input admin-col-price" data-id="${p.id}" data-field="valor_unitario" value="${p.valor_unitario}" placeholder="0">`;
+        nameCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}">`;
+        catCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="category" value="${escapeHtml(p.category)}">`;
+        brandCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="marca" value="${escapeHtml(p.marca)}">`;
+        priceCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="valor_unitario" value="${p.valor_unitario}" placeholder="0">`;
       } else {
         nameCell = `<span>${escapeHtml(p.name)}</span>`;
         catCell = escapeHtml(p.category);
@@ -968,30 +1062,28 @@
       }
 
       return `
-          <tr>
-            <td class="col-name" data-label="Nombre">${nameCell}</td>
-            <td class="col-cat" data-label="Categoría">${catCell}</td>
-            <td class="col-brand" data-label="Marca">${brandCell}</td>
-            <td class="col-price price-cell" data-label="Valor unitario">${priceCell}</td>
-            <td class="col-qty" data-label="${dataLabel}">
-              <div class="quantity-control">
-                <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir cantidad">-</button>
-                <input type="number" class="quantity-input" min="0" value="${valueToShow}"
-                  data-price="${p.valor_unitario}"
-                  data-id="${p.id}"
-                  data-name="${escapeHtml(p.name)}"
-                  ${readOnlyAttr}>
-                <button type="button" class="quantity-btn increase-btn" aria-label="Aumentar cantidad">+</button>
-              </div>
-            </td>
-            <td class="col-total price-cell total-pay" data-label="Total">${currencyFormatter.format(subtotal)}</td>
-          </tr>
-        `;
+        <tr>
+          <td data-label="Nombre">${nameCell}</td>
+          <td data-label="Categoría">${catCell}</td>
+          <td data-label="Marca">${brandCell}</td>
+          <td class="price-cell" data-label="Valor unitario">${priceCell}</td>
+          <td data-label="${dataLabel}">
+            <div class="quantity-control">
+              <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir cantidad">-</button>
+              <input type="number" class="quantity-input" min="0" value="${valueToShow}"
+                data-price="${p.valor_unitario}"
+                data-id="${p.id}"
+                data-name="${escapeHtml(p.name)}"
+                ${readOnlyAttr}>
+              <button type="button" class="quantity-btn increase-btn" aria-label="Aumentar cantidad">+</button>
+            </div>
+          </td>
+          <td class="price-cell total-pay" data-label="Total">${currencyFormatter.format(subtotal)}</td>
+        </tr>`;
     }).join("");
     productTableBody.innerHTML = rows;
   }
 
-  // ===== carrito =====
   function updateCart() {
     let total = 0;
     const items = Object.values(cart);
@@ -1013,12 +1105,23 @@
     return String(t).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
   }
 
-  // ===== eventos de tabla =====
+  // eventos de tabla
   productTableBody.addEventListener("input", (e) => {
-    const inputIsQty = e.target.classList && e.target.classList.contains("quantity-input");
-    if (!inputIsQty) return;
+    if (e.target.classList.contains("admin-input")) {
+      // edición de texto → solo si es admin
+      if (!(currentMode === MODE_ADMIN_EDIT && ( !IS_MOBILE || canMobileAdmin()))) return;
+      const input = e.target;
+      const id = input.dataset.id;
+      const field = input.dataset.field;
+      const value = input.value;
+      const product = products.find(p => p.id === id);
+      if (!product) return;
+      if (String(product[field]) === String(value)) return;
+      updateProductFieldInGoogleSheet(id, field, value, input);
+      return;
+    }
 
-    // 👇 en cliente (y en móvil) esto es compra, no edición
+    if (!e.target.classList.contains("quantity-input")) return;
     const input = e.target;
     let qty = parseInt(input.value, 10) || 0;
     if (qty < 0) qty = 0;
@@ -1028,6 +1131,19 @@
     const price = parseInt(input.dataset.price, 10) || 0;
     const tr = input.closest("tr");
     if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty * price);
+
+    // admin de escritorio editando stock
+    if (currentMode === MODE_ADMIN_EDIT && !IS_MOBILE) {
+      updateStockInGoogleSheet(id, qty, input);
+      return;
+    }
+    // admin móvil editando stock
+    if (currentMode === MODE_ADMIN_EDIT && canMobileAdmin()) {
+      updateStockInGoogleSheet(id, qty, input);
+      return;
+    }
+
+    // cliente o vendedor → carrito
     if (qty > 0) {
       cart[id] = { id, name, quantity: qty, price };
     } else {
@@ -1047,49 +1163,49 @@
     if (val < 0) val = 0;
     input.value = val;
 
-    // 👇 en cliente y en móvil: sumar al carrito
-    if (IS_MOBILE || currentMode === MODE_CLIENT) {
-      const id = input.dataset.id;
-      const name = input.dataset.name;
-      const price = parseInt(input.dataset.price, 10) || 0;
-      const tr = input.closest("tr");
-      if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val * price);
-      if (val > 0) {
-        cart[id] = { id, name, quantity: val, price };
-      } else {
-        delete cart[id];
-      }
-      updateCart();
+    const id = input.dataset.id;
+    const name = input.dataset.name;
+    const price = parseInt(input.dataset.price, 10) || 0;
+    const tr = input.closest("tr");
+    if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val * price);
+
+    // admin escritorio
+    if (currentMode === MODE_ADMIN_EDIT && !IS_MOBILE) {
+      updateStockInGoogleSheet(id, val, input);
+      return;
+    }
+    // admin móvil
+    if (currentMode === MODE_ADMIN_EDIT && canMobileAdmin()) {
+      updateStockInGoogleSheet(id, val, input);
       return;
     }
 
-    // admin edit
-    if (currentMode === MODE_ADMIN_EDIT) {
-      const id = input.dataset.id;
-      updateStockInGoogleSheet(id, val, input);
+    // cliente / vendedor
+    if (val > 0) {
+      cart[id] = { id, name, quantity: val, price };
+    } else {
+      delete cart[id];
     }
+    updateCart();
   });
 
-  productTableBody.addEventListener("change", (e) => {
-    // si es móvil, no guardamos nada en sheets
-    if (IS_MOBILE) return;
-    if (currentMode !== MODE_ADMIN_EDIT) return;
-    if (!e.target.classList.contains("admin-input")) return;
-    const input = e.target;
-    const id = input.dataset.id;
-    const field = input.dataset.field;
-    const value = input.value;
-    const product = products.find(p => p.id === id);
-    if (!product) return;
-    if (String(product[field]) === String(value)) return;
-    updateProductFieldInGoogleSheet(id, field, value, input);
+  cartList.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("remove-item-btn")) return;
+    const id = e.target.dataset.id;
+    delete cart[id];
+    const input = productTableBody.querySelector(`.quantity-input[data-id="${id}"]`);
+    if (input) {
+      input.value = 0;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    } else {
+      updateCart();
+    }
   });
 
   // ===== actualizar en sheets =====
   async function updateStockInGoogleSheet(id, newStock, input) {
     if (!googleUserToken) {
-      alert("No estás autenticado. Vuelve a iniciar sesión (pero tu sesión guardada sigue ahí).");
-      if (!IS_MOBILE) googleSignInContainer.style.display = "block";
+      alert("No estás autenticado.");
       return;
     }
     const p = products.find(p => p.id === id);
@@ -1125,8 +1241,7 @@
 
   async function updateProductFieldInGoogleSheet(id, field, value, input) {
     if (!googleUserToken) {
-      alert("No estás autenticado. Vuelve a iniciar sesión (pero tu sesión guardada sigue ahí).");
-      if (!IS_MOBILE) googleSignInContainer.style.display = "block";
+      alert("No estás autenticado.");
       return;
     }
     const p = products.find(p => p.id === id);
@@ -1162,7 +1277,7 @@
       alert("Error al guardar: " + err.message);
       input.value = original;
     } finally {
-      input.disabled = false;
+      if (input) input.disabled = false;
     }
   }
 
@@ -1211,36 +1326,16 @@
     openWhatsApp("Hola, me interesan los productos de Irenismb Natura Stock.");
   });
 
-  cartList.addEventListener("click", (e) => {
-    if (!e.target.classList.contains("remove-item-btn")) return;
-    const id = e.target.dataset.id;
-    delete cart[id];
-    const input = productTableBody.querySelector(`.quantity-input[data-id="${id}"]`);
-    if (input) {
-      input.value = 0;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-    } else {
-      updateCart();
-    }
-  });
-
-  // ===== VENDER (admin venta) =====
+  // ===== VENDER (ahora también en móvil admin) =====
   invoiceBtn.addEventListener("click", () => {
-    if (IS_MOBILE) return; // en móvil no
     if (currentMode !== MODE_ADMIN_SALE) return;
     if (!googleUserToken) {
       alert("Inicia sesión con Google primero.");
-      googleSignInContainer.style.display = "block";
+      if (!IS_MOBILE) googleSignInContainer.style.display = "block";
       return;
     }
     startSellFlow();
   });
-
-  function openInvoiceWindow(html) {
-    const w = window.open("", "_blank");
-    w.document.write(html);
-    w.document.close();
-  }
 
   function startSellFlow() {
     const items = Object.values(cart);
@@ -1248,12 +1343,6 @@
       alert("No hay productos en el carrito.");
       return;
     }
-
-    const action = prompt(
-      "Seleccione la acción:\n1. Generar factura (predeterminado)\n2. Enviar por WhatsApp",
-      "1"
-    );
-    const actionNum = (action || "1").trim();
 
     const cliente = prompt("Nombre del cliente:", "Cliente contado");
     if (cliente === null) return;
@@ -1283,62 +1372,48 @@
       vence = formatDateDDMMYYYY(d);
     }
 
-    if (actionNum === "1" || actionNum === "") {
-      const html = `
-          <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
-          <h2>Irenismb Natura Stock</h2>
-          <p><strong>Cliente:</strong> ${cliente}</p>
-          <p><strong>Fecha:</strong> ${fecha}</p>
-          <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
-          <table border="1" cellspacing="0" cellpadding="5">
-            <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
-            ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity * it.price)}</td></tr>`).join("")}
-            <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
-            <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
-            <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
-            ${saldo > 0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
-          </table>
-          <p>Gracias por su compra.</p>
-          </body></html>
-        `;
-      openInvoiceWindow(html);
-    } else if (actionNum === "2") {
-      let msg = `Venta para ${cliente}\nFecha: ${fecha}\n\n`;
-      items.forEach(it => {
-        const sub = it.quantity * it.price;
-        msg += `• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
-      });
-      msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
-      msg += `Abonado/Pagado: ${currencyFormatter.format(abonado)}\n`;
-      msg += `Saldo: ${currencyFormatter.format(saldo)}\n`;
-      if (saldo > 0) msg += `Vence: ${vence}\n`;
-      msg += `\nVendedor: ${SELLER_NAME} - ${SELLER_PHONE}`;
-      const encoded = encodeURIComponent(msg);
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const url = isMobile ? `https://api.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`
-        : `https://web.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`;
-      window.open(url, "_blank");
-    } else {
-      const html = `
-          <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
-          <h2>Irenismb Natura Stock</h2>
-          <p><strong>Cliente:</strong> ${cliente}</p>
-          <p><strong>Fecha:</strong> ${fecha}</p>
-          <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
-          <table border="1" cellspacing="0" cellpadding="5">
-            <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
-            ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity * it.price)}</td></tr>`).join("")}
-            <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
-            <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
-            <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
-            ${saldo > 0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
-          </table>
-          <p>Gracias por su compra.</p>
-          </body></html>
-        `;
-      openInvoiceWindow(html);
-    }
+    // manda venta al script (opcional)
+    try {
+      fetch(APPS_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify({
+          action: "registerSale",
+          token: googleUserToken,
+          adminEmail: currentAdminEmail,
+          cliente,
+          fecha,
+          items,
+          total,
+          abonado,
+          saldo,
+          vence
+        })
+      }).catch(()=>{});
+    } catch(e){}
 
+    // factura rápida
+    const w = window.open("", "_blank");
+    w.document.write(`
+      <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
+      <h2>Irenismb Natura Stock</h2>
+      <p><strong>Cliente:</strong> ${cliente}</p>
+      <p><strong>Fecha:</strong> ${fecha}</p>
+      <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
+      <table border="1" cellspacing="0" cellpadding="5">
+        <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
+        ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity * it.price)}</td></tr>`).join("")}
+        <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
+        <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
+        <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
+        ${saldo>0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
+      </table>
+      <p>Gracias por su compra.</p>
+      </body></html>
+    `);
+    w.document.close();
+
+    // actualizar stock
     items.forEach(it => {
       const prod = products.find(p => p.id === it.id);
       if (prod) {
@@ -1347,6 +1422,7 @@
       }
     });
 
+    // limpiar carrito
     cart = {};
     localStorage.removeItem("shoppingCart");
     productTableBody.querySelectorAll(".quantity-input").forEach(input => {

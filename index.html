@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Irenismb Natura Stock - Catálogo</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <!-- Google Identity -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <style>
@@ -15,18 +15,24 @@
       --card-bg-color:#fff;
       --border-color:#ddd;
       --toolbar-h:70px;
+      --radius:10px;
+      --gap:15px;
+    }
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
     }
     body{
       font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
       margin:0;
       padding:10px;
       background-color:var(--background-color);
-      color:var(--text-color)
+      color:var(--text-color);
     }
     .container{
       display:flex;
       gap:15px;
-      align-items:flex-start
+      align-items:flex-start;
     }
     .left-panel{
       flex:3 1 700px;
@@ -40,6 +46,7 @@
       z-index:40;
       background:var(--background-color);
       padding-bottom:6px;
+      padding-top:4px;
     }
     .products-header{
       display:flex;
@@ -48,41 +55,46 @@
       gap:10px;
       border-bottom:1px solid rgba(0,0,0,.05);
       padding-bottom:6px;
+      flex-wrap:wrap;
     }
     .left-controls{
       display:flex;
       align-items:center;
       gap:10px;
       flex:1;
-      min-width:0
+      min-width:0;
     }
     .search-filters{
       display:flex;
       align-items:center;
       gap:8px;
       flex:1;
-      min-width:0
+      min-width:0;
+      flex-wrap:wrap;
     }
     #searchInput{
-      flex:1;
+      flex:1 1 180px;
       min-width:0;
       padding:10px 12px;
       border:1px solid #ccc;
       border-radius:5px;
       background-color:var(--card-bg-color);
       font-size:16px;
-      box-sizing:border-box
     }
     .custom-dropdown{position:relative}
     .dropdown-toggle-btn{
-      padding:10px 12px;
+      padding:8px 10px;
       border:1px solid #ccc;
       border-radius:5px;
       background:var(--card-bg-color);
       cursor:pointer;
       white-space:nowrap;
       font-size:14px;
-      color:var(--text-color)
+      color:var(--text-color);
+      min-height:38px;
+      display:flex;
+      align-items:center;
+      gap:4px;
     }
     .custom-menu{
       position:absolute;
@@ -98,7 +110,7 @@
       z-index:50;
       max-height:220px;
       overflow:auto;
-      min-width:200px
+      min-width:200px;
     }
     .custom-dropdown.open .custom-menu{display:block}
     #categoryMenu{right:auto;left:0}
@@ -108,15 +120,16 @@
       border:1px solid #ccc;
       background-color:#f8f9fa;
       border-radius:5px;
-      cursor:pointer
+      cursor:pointer;
+      min-height:38px;
     }
-    /* selector de modo */
     #modeSelector{
       padding:6px 10px;
       border:1px solid #ccc;
       border-radius:5px;
       background:var(--card-bg-color);
       font-size:14px;
+      min-height:36px;
     }
     #googleSignInContainer{display:none; margin-left: 8px;}
     #inventoryTotal{
@@ -130,21 +143,21 @@
     .table-wrapper{
       border-radius:8px;
       overflow:hidden;
+      background:#fff;
       max-height:calc(100vh - 140px);
       overflow-y:auto;
-      background:#fff;
     }
     .product-table{
       width:100%;
       border-collapse:collapse;
-      background-color:var(--card-bg-color)
+      background-color:var(--card-bg-color);
     }
     .product-table th,
     .product-table td{
       border:1px solid var(--border-color);
       padding:10px;
       text-align:left;
-      vertical-align:middle
+      vertical-align:middle;
     }
     .product-table thead th{
       background-color:var(--primary-color);
@@ -159,29 +172,33 @@
     .quantity-control{
       display:flex;
       align-items:center;
-      justify-content:center
+      justify-content:center;
+      gap:0;
     }
     .quantity-btn{
       background-color:#e9ecef;
       border:1px solid #ced4da;
       color:#495057;
       cursor:pointer;
-      font-size:1.2rem;
+      font-size:1.3rem;
       font-weight:700;
-      width:30px;
-      height:30px;
-      line-height:28px;
-      text-align:center
+      width:34px;
+      height:34px;
+      line-height:32px;
+      text-align:center;
+      border-radius:6px;
+      touch-action:manipulation;
     }
     .quantity-input{
-      width:45px;
-      height:28px;
+      width:55px;
+      height:34px;
       padding:5px;
       text-align:center;
       border:1px solid #ced4da;
-      border-left:none;
-      border-right:none;
-      background-color:#fff
+      background-color:#fff;
+      font-size:15px;
+      margin:0 3px;
+      border-radius:6px;
     }
     .price-cell{font-weight:700;color:#2a9d8f}
 
@@ -193,7 +210,7 @@
       flex-direction:column;
       gap:15px;
       max-height:calc(100vh - 20px);
-      overflow-y:auto
+      overflow-y:auto;
     }
 
     .cart-container{
@@ -244,6 +261,7 @@
       cursor:pointer;
       font-weight:600;
       font-size:12px;
+      touch-action:manipulation;
     }
     .remove-item-btn:hover{background:#f5c2c7;}
     #totalPrice{
@@ -260,12 +278,13 @@
       color:#fff;
       width:100%;
       border:none;
-      padding:9px 14px;
-      font-size:14px;
-      border-radius:5px;
+      padding:11px 14px;
+      font-size:15px;
+      border-radius:8px;
       cursor:pointer;
       margin-top:8px;
       transition:opacity .2s ease;
+      touch-action:manipulation;
     }
     #invoiceBtn{background-color:#0d6efd}
     .disabled-btn{
@@ -298,14 +317,120 @@
     .only-admin-edit{display:none;}
     .only-admin-sale{display:none;}
 
+    /* ====== RESPONSIVE ====== */
+    @media (max-width:992px){
+      .container{
+        gap:10px;
+      }
+      .right-panel{
+        position:static;
+        max-height:none;
+      }
+    }
+
     @media (max-width:768px){
+      body{padding:6px;}
       .container{flex-direction:column-reverse}
       .right-panel{position:static;max-height:none}
-      .product-table thead{display:none}
-      .product-table tr{display:block;margin-bottom:15px}
-      .product-table td{display:flex;justify-content:space-between;border:none;border-bottom:1px dotted #ccc}
-      .controls-panel{top:-1px;}
-      .table-wrapper{max-height:none;}
+      .products-header{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      .left-controls{
+        width:100%;
+      }
+      .search-filters{
+        width:100%;
+        flex-direction:row;
+        flex-wrap:wrap;
+      }
+      .dropdown-toggle-btn,
+      #sortPriceBtn,
+      #modeSelector{
+        width:auto;
+      }
+      .table-wrapper{
+        max-height:none;
+        overflow:visible;
+      }
+
+      /* Tabla → tarjetas */
+      .product-table{
+        border:0;
+      }
+      .product-table thead{
+        display:none;
+      }
+      .product-table tr{
+        display:block;
+        background:#fff;
+        margin-bottom:12px;
+        border:1px solid #eee;
+        border-radius:8px;
+        overflow:hidden;
+      }
+      .product-table td{
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        border:none;
+        border-bottom:1px solid #f1f1f1;
+        padding:8px 10px;
+        font-size:14px;
+      }
+      .product-table td:last-child{
+        border-bottom:none;
+      }
+      .product-table td::before{
+        content:attr(data-label);
+        font-weight:600;
+        color:#555;
+      }
+      .quantity-control{
+        justify-content:flex-end;
+      }
+      .quantity-btn{
+        width:34px;
+        height:34px;
+      }
+      .quantity-input{
+        width:60px;
+      }
+      /* dropdowns ocupan todo el ancho para que sea fácil tocar */
+      .custom-menu{
+        width: min(300px, 96vw);
+      }
+    }
+
+    @media (max-width:480px){
+      .products-header{
+        gap:6px;
+      }
+      #searchInput{
+        width:100%;
+        font-size:15px;
+      }
+      .dropdown-toggle-btn,
+      #sortPriceBtn,
+      #modeSelector{
+        width:100%;
+        justify-content:space-between;
+      }
+      .quantity-control{
+        gap:4px;
+      }
+      .quantity-input{
+        height:34px;
+      }
+      .cart-container{
+        padding:12px;
+      }
+      #whatsappBtn,#invoiceBtn{
+        font-size:14px;
+      }
+      .product-table td{
+        padding:7px 9px;
+      }
     }
   </style>
 </head>
@@ -317,7 +442,7 @@
         <div class="products-header">
           <div class="left-controls">
             <div class="search-filters">
-              <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca, categoría...">
+              <input type="text" id="searchInput" autocomplete="off" inputmode="search" placeholder="🔍 Buscar por nombre, marca, categoría...">
               <div class="custom-dropdown" id="categoryDropdown">
                 <button type="button" id="categoryToggleBtn" class="dropdown-toggle-btn">Categorías ▾</button>
                 <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
@@ -505,14 +630,10 @@
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (!saved || !saved.token || !saved.email) return;
-
-      // dejar todo como si acabara de loguearse
       googleUserToken = saved.token;
       currentAdminName = saved.name || "Admin";
       currentAdminEmail = saved.email;
       currentMode = saved.mode || MODE_ADMIN_EDIT;
-
-      // ocultar botón
       googleSignInContainer.style.display = "none";
     } catch (e) {
       console.warn("No se pudo restaurar la sesión:", e);
@@ -541,7 +662,6 @@
     currentAdminName = name;
     currentAdminEmail = email;
 
-    // 🟣 guardar sesión para que no se pierda al recargar
     localStorage.setItem(SESSION_KEY, JSON.stringify({
       token: googleUserToken,
       name: currentAdminName,
@@ -564,7 +684,6 @@
     filterAndDisplayProducts();
     updateInventoryTotalDisplay();
 
-    // 🔄 actualizar modo en la sesión guardada
     try {
       const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (saved) {
@@ -575,7 +694,6 @@
   }
 
   function exitAdminMode() {
-    // 👇 ya NO borramos el localStorage, para que no “se salga” del todo
     currentMode = MODE_CLIENT;
     googleUserToken = null;
     currentAdminName = null;
@@ -608,7 +726,6 @@
     applyUIMode();
     filterAndDisplayProducts();
 
-    // actualizar modo guardado
     try {
       const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (saved) {
@@ -680,9 +797,7 @@
 
   // ===== init =====
   function initializeApp() {
-    // 🔄 primero intentar restaurar sesión
     restoreAdminSession();
-
     products.sort((a, b) => a.name.localeCompare(b.name));
     const savedCart = localStorage.getItem("shoppingCart");
     try {
@@ -840,22 +955,22 @@
 
       return `
           <tr>
-            <td style="min-width:210px;">${nameCell}</td>
-            <td style="width:125px;">${catCell}</td>
-            <td style="width:110px;">${brandCell}</td>
-            <td class="price-cell" style="width:110px;">${priceCell}</td>
+            <td style="min-width:210px;" data-label="Nombre">${nameCell}</td>
+            <td style="width:125px;" data-label="Categoría">${catCell}</td>
+            <td style="width:110px;" data-label="Marca">${brandCell}</td>
+            <td class="price-cell" style="width:110px;" data-label="Valor unitario">${priceCell}</td>
             <td data-label="${dataLabel}">
               <div class="quantity-control">
-                <button type="button" class="quantity-btn decrease-btn">-</button>
+                <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir cantidad">-</button>
                 <input type="number" class="quantity-input" min="0" value="${valueToShow}"
                   data-price="${p.valor_unitario}"
                   data-id="${p.id}"
                   data-name="${escapeHtml(p.name)}"
                   ${readOnlyAttr}>
-                <button type="button" class="quantity-btn increase-btn">+</button>
+                <button type="button" class="quantity-btn increase-btn" aria-label="Aumentar cantidad">+</button>
               </div>
             </td>
-            <td class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
+            <td class="price-cell total-pay" data-label="Total">${currencyFormatter.format(subtotal)}</td>
           </tr>
         `;
     }).join("");
@@ -1189,7 +1304,6 @@
       openInvoiceWindow(html);
     }
 
-    // actualizar stocks
     items.forEach(it => {
       const prod = products.find(p => p.id === it.id);
       if (prod) {
@@ -1198,7 +1312,6 @@
       }
     });
 
-    // limpiar carrito
     cart = {};
     localStorage.removeItem("shoppingCart");
     productTableBody.querySelectorAll(".quantity-input").forEach(input => {
@@ -1209,3 +1322,5 @@
     updateCart();
   }
 </script>
+</body>
+</html>

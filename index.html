@@ -483,7 +483,6 @@
   const SELLER_NAME = "Irenis Stock Natura";
   const SELLER_PHONE = "3042088961";
 
-  // detectar móvil
   const IS_MOBILE = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
 
   const ALLOWED_ADMIN_EMAILS = [
@@ -497,7 +496,6 @@
   const MODE_ADMIN_SALE = "admin_sale";
 
   const SESSION_KEY = "naturaAdminGoogleSession";
-  const MOBILE_ADMIN_FLAG = "naturaMobileAdminAllowed";
 
   let currentMode = MODE_CLIENT;
   let products = [];
@@ -529,23 +527,6 @@
   let cart = {};
   let currentSortOrder = 'default';
   const currencyFormatter = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
-
-  // botón admin móvil
-  const mobileAdminBtn = document.createElement("button");
-  mobileAdminBtn.textContent = "🔐 Admin móvil";
-  mobileAdminBtn.style.position = "fixed";
-  mobileAdminBtn.style.bottom = "16px";
-  mobileAdminBtn.style.right = "16px";
-  mobileAdminBtn.style.zIndex = "999";
-  mobileAdminBtn.style.background = "#0d6efd";
-  mobileAdminBtn.style.color = "#fff";
-  mobileAdminBtn.style.border = "none";
-  mobileAdminBtn.style.borderRadius = "999px";
-  mobileAdminBtn.style.padding = "8px 14px";
-  mobileAdminBtn.style.fontSize = "13px";
-  mobileAdminBtn.style.boxShadow = "0 4px 12px rgba(0,0,0,.2)";
-  mobileAdminBtn.style.display = IS_MOBILE ? "block" : "none";
-  document.body.appendChild(mobileAdminBtn);
 
   // ===== CARGA DE PRODUCTOS =====
   fetch(googleSheetURL)
@@ -584,6 +565,7 @@
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn
       });
+      // solo lo mostramos fijo en escritorio
       if (!IS_MOBILE) {
         google.accounts.id.renderButton(
           googleSignInContainer,
@@ -609,7 +591,6 @@
   function restoreAdminSession() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
-      const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
       if (!raw) {
         currentMode = MODE_CLIENT;
         return;
@@ -619,11 +600,8 @@
       googleUserToken = saved.token;
       currentAdminName = saved.name || "Admin";
       currentAdminEmail = saved.email;
-      if (IS_MOBILE && !mobileOverride) {
-        currentMode = MODE_CLIENT;
-      } else {
-        currentMode = saved.mode || MODE_ADMIN_EDIT;
-      }
+      // en móvil ahora sí respetamos el modo guardado si hay sesión
+      currentMode = saved.mode || MODE_ADMIN_EDIT;
       if (!IS_MOBILE) {
         googleSignInContainer.style.display = "none";
       }
@@ -661,9 +639,6 @@
       mode: MODE_ADMIN_EDIT
     }));
 
-    if (IS_MOBILE) {
-      localStorage.setItem(MOBILE_ADMIN_FLAG, "1");
-    }
     enterAdminMode(name, email, MODE_ADMIN_EDIT);
   }
 
@@ -691,32 +666,28 @@
   }
 
   modeSelector.addEventListener("change", () => {
-    // en móvil: si no hay admin, no dejar
-    const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
-    if (IS_MOBILE && (!mobileOverride || !googleUserToken)) {
+    const selected = modeSelector.value;
+
+    // si no hay sesión de admin, en cualquier dispositivo → solo cliente
+    if (!googleUserToken && (selected === MODE_ADMIN_EDIT || selected === MODE_ADMIN_SALE)) {
+      alert("Inicia sesión con un correo autorizado para usar ese modo.");
+      if (!IS_MOBILE) googleSignInContainer.style.display = "block";
       modeSelector.value = MODE_CLIENT;
       currentMode = MODE_CLIENT;
       applyUIMode();
       filterAndDisplayProducts();
       return;
     }
-    const selected = modeSelector.value;
+
     if (selected === MODE_CLIENT) {
       exitAdminMode();
       return;
     }
-    if (!googleUserToken) {
-      alert("Inicia sesión con un correo autorizado para usar ese modo.");
-      googleSignInContainer.style.display = "block";
-      modeSelector.value = MODE_CLIENT;
-      currentMode = MODE_CLIENT;
-      applyUIMode();
-      filterAndDisplayProducts();
-      return;
-    }
+
     currentMode = selected;
     applyUIMode();
     filterAndDisplayProducts();
+
     try {
       const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
       if (saved) {
@@ -726,21 +697,7 @@
     } catch (e) {}
   });
 
-  // botón flotante
-  mobileAdminBtn.addEventListener("click", () => {
-    if (googleUserToken) {
-      localStorage.setItem(MOBILE_ADMIN_FLAG, "1");
-      enterAdminMode(currentAdminName || "Admin", currentAdminEmail || "", MODE_ADMIN_EDIT);
-      return;
-    }
-    // mostrar login
-    alert("Inicia sesión con tu Google de admin para editar y vender desde el celular.");
-    googleSignInContainer.style.display = "block";
-  });
-
   function applyUIMode() {
-    const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
-
     document.querySelectorAll('.only-client').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'none');
@@ -752,14 +709,11 @@
       inventoryTotalElement.style.display = "none";
       cartContainer.style.display = "block";
       invoiceBtn.disabled = true;
-      if (IS_MOBILE) {
-        modeSelector.disabled = false; // lo dejamos tocar, pero lo controlamos arriba
-      }
     } else if (currentMode === MODE_ADMIN_EDIT) {
       document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
       document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
       sortPriceBtn.style.display = "none";
-      // en móvil que no se oculte el carrito
+      // en móvil seguimos mostrando el carrito
       cartContainer.style.display = "block";
       inventoryTotalElement.style.display = "inline-block";
       invoiceBtn.disabled = true;
@@ -798,7 +752,7 @@
   }
   function formatDateDDMMYYYY(d) {
     const dd = String(d.getDate()).padStart(2, "0");
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const mm = String(d.getMonth() + 1).toString().padStart(2, "0");
     const yy = d.getFullYear();
     return `${dd}/${mm}/${yy}`;
   }
@@ -921,58 +875,57 @@
   function displayProducts(list) {
     if (list.length === 0) {
       productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
-    } else {
-      const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
-      const rows = list.map(p => {
-        const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
-        const canEditOnMobile = IS_MOBILE && mobileOverride && googleUserToken;
-        const isEditing = (currentMode === MODE_ADMIN_EDIT && (!IS_MOBILE || canEditOnMobile));
-        const valueToShow = isEditing ? p.stock : qtyInCart;
-        const dataLabel = isEditing ? "Stock" : "Cantidad";
-        let subtotal;
-        if (isEditing) {
-          subtotal = (p.stock || 0) * (p.valor_unitario || 0);
-        } else {
-          subtotal = qtyInCart * (p.valor_unitario || 0);
-        }
-        const readOnlyAttr = isEditing ? "" : "readonly";
-
-        let nameCell, catCell, brandCell, priceCell;
-        if (isEditing) {
-          nameCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}">`;
-          catCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="category" value="${escapeHtml(p.category)}">`;
-          brandCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="marca" value="${escapeHtml(p.marca)}">`;
-          priceCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="valor_unitario" value="${p.valor_unitario}" placeholder="0">`;
-        } else {
-          nameCell = `<span>${escapeHtml(p.name)}</span>`;
-          catCell = escapeHtml(p.category);
-          brandCell = escapeHtml(p.marca);
-          priceCell = currencyFormatter.format(p.valor_unitario || 0);
-        }
-
-        return `
-          <tr>
-            <td data-label="Nombre">${nameCell}</td>
-            <td data-label="Categoría">${catCell}</td>
-            <td data-label="Marca">${brandCell}</td>
-            <td data-label="Valor unitario" class="price-cell">${priceCell}</td>
-            <td data-label="${dataLabel}">
-              <div class="quantity-control">
-                <button type="button" class="quantity-btn decrease-btn">-</button>
-                <input type="number" class="quantity-input" min="0" value="${valueToShow}"
-                  data-price="${p.valor_unitario || 0}"
-                  data-id="${p.id}"
-                  data-name="${escapeHtml(p.name)}"
-                  ${readOnlyAttr}>
-                <button type="button" class="quantity-btn increase-btn">+</button>
-              </div>
-            </td>
-            <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
-          </tr>
-        `;
-      }).join("");
-      productTableBody.innerHTML = rows;
+      return;
     }
+    const rows = list.map(p => {
+      const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
+      // si hay sesión de admin, incluso en móvil puede editar
+      const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken);
+      const valueToShow = isEditing ? p.stock : qtyInCart;
+      const dataLabel = isEditing ? "Stock" : "Cantidad";
+      let subtotal;
+      if (isEditing) {
+        subtotal = (p.stock || 0) * (p.valor_unitario || 0);
+      } else {
+        subtotal = qtyInCart * (p.valor_unitario || 0);
+      }
+      const readOnlyAttr = isEditing ? "" : "readonly";
+
+      let nameCell, catCell, brandCell, priceCell;
+      if (isEditing) {
+        nameCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}">`;
+        catCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="category" value="${escapeHtml(p.category)}">`;
+        brandCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="marca" value="${escapeHtml(p.marca)}">`;
+        priceCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="valor_unitario" value="${p.valor_unitario}" placeholder="0">`;
+      } else {
+        nameCell = `<span>${escapeHtml(p.name)}</span>`;
+        catCell = escapeHtml(p.category);
+        brandCell = escapeHtml(p.marca);
+        priceCell = currencyFormatter.format(p.valor_unitario || 0);
+      }
+
+      return `
+        <tr>
+          <td data-label="Nombre">${nameCell}</td>
+          <td data-label="Categoría">${catCell}</td>
+          <td data-label="Marca">${brandCell}</td>
+          <td data-label="Valor unitario" class="price-cell">${priceCell}</td>
+          <td data-label="${dataLabel}">
+            <div class="quantity-control">
+              <button type="button" class="quantity-btn decrease-btn">-</button>
+              <input type="number" class="quantity-input" min="0" value="${valueToShow}"
+                data-price="${p.valor_unitario || 0}"
+                data-id="${p.id}"
+                data-name="${escapeHtml(p.name)}"
+                ${readOnlyAttr}>
+              <button type="button" class="quantity-btn increase-btn">+</button>
+            </div>
+          </td>
+          <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
+        </tr>
+      `;
+    }).join("");
+    productTableBody.innerHTML = rows;
   }
 
   function updateCart() {
@@ -1000,10 +953,9 @@
   productTableBody.addEventListener("input", (e) => {
     const isQty = e.target.classList && e.target.classList.contains("quantity-input");
     const isAdminInput = e.target.classList && e.target.classList.contains("admin-input");
-    const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
 
-    // admin edición (desktop o móvil con override)
-    if (isAdminInput && currentMode === MODE_ADMIN_EDIT && (!IS_MOBILE || (IS_MOBILE && mobileOverride && googleUserToken))) {
+    // admin edición
+    if (isAdminInput && currentMode === MODE_ADMIN_EDIT && googleUserToken) {
       const input = e.target;
       const id = input.dataset.id;
       const field = input.dataset.field;
@@ -1023,13 +975,13 @@
     const tr = input.closest("tr");
     if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty * price);
 
-    // si estamos en admin_edit y NO es móvil → guardar stock
-    if (currentMode === MODE_ADMIN_EDIT && !IS_MOBILE) {
+    // admin edit en escritorio → guardar en sheet
+    if (currentMode === MODE_ADMIN_EDIT && googleUserToken && !IS_MOBILE) {
       updateStockInGoogleSheet(id, qty, input);
       return;
     }
 
-    // cliente o móvil
+    // cliente / móvil → carrito
     if (qty > 0) {
       cart[id] = { id, name, quantity: qty, price };
     } else {
@@ -1055,7 +1007,7 @@
     const tr = input.closest("tr");
     if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val * price);
 
-    if (currentMode === MODE_ADMIN_EDIT && !IS_MOBILE) {
+    if (currentMode === MODE_ADMIN_EDIT && googleUserToken && !IS_MOBILE) {
       updateStockInGoogleSheet(id, val, input);
       return;
     }
@@ -1070,9 +1022,7 @@
 
   productTableBody.addEventListener("change", (e) => {
     if (!e.target.classList.contains("admin-input")) return;
-    const mobileOverride = localStorage.getItem(MOBILE_ADMIN_FLAG) === "1";
-    if (IS_MOBILE && (!mobileOverride || !googleUserToken)) return;
-    if (currentMode !== MODE_ADMIN_EDIT) return;
+    if (currentMode !== MODE_ADMIN_EDIT || !googleUserToken) return;
     const input = e.target;
     const id = input.dataset.id;
     const field = input.dataset.field;
@@ -1215,7 +1165,7 @@
     }
   });
 
-  // VENDER (ahora sí también en móvil si estás en modo vendedor)
+  // VENDER
   invoiceBtn.addEventListener("click", () => {
     if (currentMode !== MODE_ADMIN_SALE) return;
     if (!googleUserToken) {
@@ -1329,7 +1279,7 @@
       openInvoiceWindow(html);
     }
 
-    // descuenta stock
+    // descontar stock también en la hoja
     items.forEach(it => {
       const prod = products.find(p => p.id === it.id);
       if (prod) {

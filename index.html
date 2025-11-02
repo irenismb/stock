@@ -1,554 +1,1314 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo de Productos - Irenis Mendoza</title>
-    
-    <!-- LIBRERÍA DE GOOGLE SIGN-IN -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-GYVVFP8XCK"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-GYVVFP8XCK');
-    </script>
-    
-    <style>
-        /* ... (CSS para el diseño responsive y estética) ... */
-        :root{--primary-color:#007bff;--secondary-color:#25D366;--background-color:#f4f4f9;--text-color:#333;--card-bg-color:#fff;--border-color:#ddd}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;margin:0;padding:10px;background-color:var(--background-color);color:var(--text-color)}
-        h1{text-align:center;margin-bottom:15px;margin-top:0;font-size:24px}
-        h2{font-size:20px;color:#555;border-bottom:2px solid var(--primary-color);padding-bottom:5px;margin-bottom:8px}
-        h3{font-size:18px;color:#0056b3}
-        .container{display:flex;gap:15px;align-items:flex-start}
-        .left-panel{flex:3 1 700px;display:flex;flex-direction:column}
-        .controls-panel{flex-shrink:0}
-        .right-panel{flex:1 1 280px;position:sticky;top:10px;display:flex;flex-direction:column;gap:15px;max-height:calc(100vh - 20px);overflow-y:auto}
-        .cart-container{background-color:#e9f5ff;padding:15px;border-radius:8px;border:1px solid #bde0fe}
-        .contact-info{padding:15px;background-color:var(--card-bg-color);border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.05)}
-        .contact-info h3{margin-top:0;margin-bottom:10px;font-size:16px;text-align:center}
-        .contact-info p{margin:6px 0;font-size:14px;line-height:1.5;text-align:center}
-        .contact-info a{color:var(--primary-color);text-decoration:none}
-        .contact-info a:hover{text-decoration:underline}
-        .category-container{background-color:var(--card-bg-color);padding:10px 15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.1);margin-bottom:10px}
-        .products-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;gap:10px}
-        .left-controls{display:flex;align-items:center;gap:10px;flex:1;min-width:0}
-        .search-filters{display:flex;align-items:center;gap:8px;flex:1;min-width:0}
-        #searchInput{flex:1;min-width:0;padding:10px 12px;border:1px solid #ccc;border-radius:5px;background-color:var(--card-bg-color);font-size:16px;box-sizing:border-box}
-        .dropdown-toggle-btn{padding:10px 12px;border:1px solid #ccc;border-radius:5px;background:var(--card-bg-color);cursor:pointer;white-space:nowrap;font-size:14px;color:var(--text-color)}
-        .custom-dropdown{position:relative}
-        .custom-menu{position:absolute;top:calc(100% + 6px);right:0;left:auto;background:var(--card-bg-color);border:1px solid var(--border-color);padding:8px;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.08);display:none;z-index:50;max-height:220px;overflow:auto;min-width:200px}
-        #categoryMenu{right:auto;left:0}
-        .custom-dropdown.open .custom-menu{display:block}
-        .custom-menu label{display:block;margin-bottom:6px;cursor:pointer;font-size:14px}
-        .custom-menu input[type="checkbox"],.custom-menu input[type="radio"]{margin-right:8px}
-        #sortPriceBtn{padding:8px 12px;font-size:14px;border:1px solid #ccc;background-color:#f8f9fa;border-radius:5px;cursor:pointer;transition:background-color .2s,border-color .2s;white-space:nowrap}
-        #sortPriceBtn:hover{background-color:#e9ecef}
-        #sortPriceBtn.active{background-color:var(--primary-color);color:#fff;border-color:var(--primary-color)}
-        #adminModeBtn{padding:8px 12px;font-size:14px;border:none;border-radius:5px;cursor:pointer;transition:background-color .2s;background-color:#6c757d;color:white}
-        #adminModeBtn.active{background-color:#dc3545}
-        /* Contenedor para el botón de Google */
-        #googleSignInContainer{display:none; margin-left: 8px;}
-
-        .table-wrapper{border-radius:8px;overflow:hidden}
-        .product-table{width:100%;border-collapse:collapse;background-color:var(--card-bg-color)}
-        .product-table td,.product-table th{border:1px solid var(--border-color);padding:10px;text-align:left;vertical-align:middle}
-        .product-table th{background-color:var(--primary-color);color:#fff;font-size:14px;text-align:center}
-        .product-table td{font-size:15px}
-        .product-table tr:nth-child(even){background-color:#f8f9fa}
-        .quantity-control{display:flex;align-items:center;justify-content:center}
-        .quantity-btn{background-color:#e9ecef;border:1px solid #ced4da;color:#495057;cursor:pointer;font-size:1.2rem;font-weight:700;width:30px;height:30px;line-height:28px;text-align:center;-webkit-user-select:none;user-select:none}
-        .quantity-btn:hover{background-color:#dee2e6}
-        .decrease-btn{border-radius:4px 0 0 4px}
-        .increase-btn{border-radius:0 4px 4px 0}
-        .quantity-input{width:45px;height:28px;padding:5px;text-align:center;border:1px solid #ced4da;border-left:none;border-right:none;border-radius:0;-moz-appearance:textfield;background-color:#fff}
-        .quantity-input:read-only{background-color:#f8f9fa}
-        .quantity-input[disabled]{background-color:#fefde8}
-        .quantity-input::-webkit-inner-spin-button,.quantity-input::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
-        .price-cell{font-weight:700;color:#2a9d8f}
-        #whatsappBtn{background-color:var(--secondary-color);color:#fff;width:100%;border:none;padding:12px 20px;font-size:16px;border-radius:5px;cursor:pointer;margin-top:10px}
-        #whatsappBtn:hover{background-color:#1da851}
-        #cartList{list-style-type:none;padding-left:0;max-height:250px;overflow-y:auto}
-        #cartList li{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;border-bottom:1px solid #ccc;padding-bottom:5px;font-size:14px}
-        #totalPrice{margin-top:15px;font-size:18px;font-weight:700;text-align:right}
-        .remove-item-btn{background:0 0;border:none;color:#dc3545;cursor:pointer;font-weight:700;font-size:16px;padding:5px}
-        .remove-item-btn:hover{color:#a71d2a}
-        #clearCartBtn{background-color:#6c757d;color:#fff;width:100%;border:none;padding:8px 15px;font-size:14px;border-radius:5px;cursor:pointer;margin-top:10px}
-        #clearCartBtn:hover{background-color:#5a6268}
-        footer{display:none}
-        .product-name-clickable{color:var(--primary-color);cursor:pointer;font-weight:500}
-        .product-name-clickable:hover{text-decoration:underline}
-        .product-image-display{background-color:var(--card-bg-color);padding:15px;border-radius:8px;box-shadow:0 2px 5px rgba(0,0,0,.05);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:150px;text-align:center;gap:10px}
-        #displayedProductImage{max-width:100%;max-height:200px;height:auto;border-radius:5px;object-fit:contain}
-        .image-caption{font-size:1.1em;font-weight:700;color:var(--text-color);margin:0}
-        @media (max-width:768px){body{overflow:auto;padding:10px}h1{font-size:20px}.container{flex-direction:column-reverse;height:auto;gap:15px}.left-panel,.right-panel{flex:1 1 100%;width:100%;height:auto}.right-panel{flex-direction:column-reverse;position:static;max-height:none;overflow-y:visible}.table-wrapper{overflow-y:visible}.product-table thead{display:none}.product-table tr{display:block;margin-bottom:15px;border:1px solid var(--border-color);border-radius:8px;box-shadow:0 2px 4px rgba(0,0,0,.05);padding:10px}.product-table tr:nth-child(even){background-color:var(--card-bg-color)}.product-table td{display:flex;justify-content:space-between;align-items:center;text-align:right;font-size:15px;border:none;border-bottom:1px dotted #ccc;padding:8px 8px 8px 0;position:relative}.product-table td:last-child{border-bottom:0}.product-table td::before{content:attr(data-label);text-align:left;font-weight:700;position:static;width:auto}.quantity-control{justify-content:flex-end}#cartList{max-height:none}.product-image-display{order:-1;margin-bottom:15px}#displayedProductImage{max-height:150px}.left-controls{flex-direction:column;align-items:stretch;gap:8px}.search-filters{flex-direction:column;align-items:stretch}.custom-dropdown .custom-menu{left:0;right:auto}}
-    </style>
+  <meta charset="UTF-8" />
+  <title>Irenismb Natura Stock - Catálogo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <!-- Google Identity -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+  <style>
+    :root{
+      --primary:#007bff;
+      --secondary:#25D366;
+      --bg:#f4f4f9;
+      --text:#333;
+      --card:#fff;
+      --border:#ddd;
+      --danger:#dc3545;
+      --radius:8px;
+      --gap:8px;
+    }
+    *{
+      box-sizing:border-box;
+      -webkit-tap-highlight-color:transparent;
+    }
+    html,body{
+      max-width:100%;
+      overflow-x:hidden;
+    }
+    body{
+      margin:0;
+      padding:10px;
+      background:var(--bg);
+      color:var(--text);
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    }
+    .container{
+      display:flex;
+      gap:15px;
+      align-items:flex-start;
+      width:100%;
+    }
+    .left-panel{
+      flex:3 1 700px;
+      display:flex;
+      flex-direction:column;
+      min-width:0;
+    }
+    .right-panel{
+      flex:1 1 280px;
+      position:sticky;
+      top:10px;
+      display:flex;
+      flex-direction:column;
+      gap:15px;
+      max-height:calc(100vh - 20px);
+      overflow-y:auto;
+    }
+    .controls-panel{
+      position:sticky;
+      top:0;
+      z-index:40;
+      background:var(--bg);
+      padding-bottom:6px;
+      padding-top:4px;
+    }
+    .products-header{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      border-bottom:1px solid rgba(0,0,0,.05);
+      padding-bottom:6px;
+    }
+    .controls-top{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    .controls-bottom{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+    #searchInput{
+      flex:1 1 220px;
+      min-width:180px;
+      padding:10px 12px;
+      border:1px solid #ccc;
+      border-radius:5px;
+      background:var(--card);
+      font-size:16px;
+    }
+    #modeSelector{
+      padding:6px 10px;
+      border:1px solid #ccc;
+      border-radius:5px;
+      background:var(--card);
+      font-size:14px;
+      min-height:36px;
+    }
+    #inventoryTotal{
+      font-weight:bold;
+      color:var(--danger);
+      white-space:nowrap;
+      display:none;
+    }
+    #saveEditsBtn,
+    #logoutBtn{
+      border:none;
+      border-radius:6px;
+      padding:8px 12px;
+      font-size:14px;
+      cursor:pointer;
+    }
+    #saveEditsBtn{
+      background:#198754;
+      color:#fff;
+      display:none;
+    }
+    #saveEditsBtn[disabled]{
+      opacity:.55;
+      cursor:not-allowed;
+    }
+    #logoutBtn{
+      background:var(--danger);
+      color:#fff;
+      display:none;
+    }
+    #googleSignInContainer{
+      display:block;
+    }
+    .custom-dropdown{position:relative}
+    .dropdown-toggle-btn{
+      padding:8px 10px;
+      border:1px solid #ccc;
+      border-radius:5px;
+      background:var(--card);
+      cursor:pointer;
+      white-space:nowrap;
+      font-size:14px;
+      min-height:38px;
+      display:flex;
+      align-items:center;
+      gap:4px;
+    }
+    .custom-menu{
+      position:absolute;
+      top:calc(100% + 6px);
+      right:0;
+      background:var(--card);
+      border:1px solid var(--border);
+      padding:8px;
+      border-radius:6px;
+      box-shadow:0 4px 12px rgba(0,0,0,.08);
+      display:none;
+      z-index:50;
+      max-height:220px;
+      overflow:auto;
+      min-width:200px;
+    }
+    .custom-dropdown.open .custom-menu{display:block}
+    #categoryMenu{right:auto;left:0}
+    #sortPriceBtn{
+      padding:8px 12px;
+      font-size:14px;
+      border:1px solid #ccc;
+      background:#f8f9fa;
+      border-radius:5px;
+      cursor:pointer;
+      min-height:38px;
+    }
+    .table-wrapper{
+      border-radius:8px;
+      overflow:hidden;
+      background:#fff;
+      max-height:calc(100vh - 140px);
+      overflow-y:auto;
+    }
+    .product-table{
+      width:100%;
+      border-collapse:collapse;
+      background:var(--card);
+    }
+    .product-table th,
+    .product-table td{
+      border:1px solid var(--border);
+      padding:10px;
+      text-align:left;
+      vertical-align:middle;
+    }
+    .product-table thead th{
+      background:var(--primary);
+      color:#fff;
+      font-size:14px;
+      text-align:center;
+      position:sticky;
+      top:0;
+      z-index:30;
+    }
+    .product-table tr:nth-child(even){background:#f8f9fa}
+    .quantity-control{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:4px;
+    }
+    .quantity-btn{
+      background:#e9ecef;
+      border:1px solid #ced4da;
+      color:#495057;
+      cursor:pointer;
+      font-size:1.2rem;
+      font-weight:700;
+      width:34px;
+      height:34px;
+      line-height:32px;
+      text-align:center;
+      border-radius:6px;
+      touch-action:manipulation;
+    }
+    .quantity-input{
+      width:55px;
+      height:34px;
+      padding:5px;
+      text-align:center;
+      border:1px solid #ced4da;
+      background:#fff;
+      font-size:15px;
+      border-radius:6px;
+    }
+    .price-cell{font-weight:700;color:#2a9d8f}
+    .cart-container{
+      background:#e9f5ff;
+      padding:15px;
+      border-radius:10px;
+      border:1px solid #bde0fe;
+      box-shadow:0 6px 16px rgba(13,110,253,0.08);
+    }
+    .cart-container h3{
+      margin-top:0;
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-size:16px;
+      border-bottom:1px solid rgba(0,0,0,.05);
+      padding-bottom:6px;
+    }
+    #cartList{
+      list-style:none;
+      padding:0;
+      margin:10px 0;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      max-height:220px;
+      overflow-y:auto;
+    }
+    .cart-item{
+      display:flex;
+      justify-content:space-between;
+      gap:8px;
+      background:#fff;
+      border:1px solid rgba(0,0,0,.03);
+      border-radius:6px;
+      padding:6px 8px 6px 10px;
+      font-size:13px;
+    }
+    .remove-item-btn{
+      border:none;
+      background:#f8d7da;
+      color:#842029;
+      border-radius:4px;
+      padding:1px 6px;
+      cursor:pointer;
+      font-weight:600;
+      font-size:12px;
+      touch-action:manipulation;
+    }
+    #totalPrice{
+      font-weight:700;
+      font-size:15px;
+      text-align:right;
+      margin-top:4px;
+      background:#fff;
+      border-radius:6px;
+      padding:5px 8px;
+    }
+    #whatsappBtn,#invoiceBtn{
+      background:var(--secondary);
+      color:#fff;
+      width:100%;
+      border:none;
+      padding:11px 14px;
+      font-size:15px;
+      border-radius:8px;
+      cursor:pointer;
+      margin-top:8px;
+      touch-action:manipulation;
+    }
+    #invoiceBtn{background:#0d6efd}
+    .contact-info{
+      padding:15px;
+      background:var(--card);
+      border-radius:8px;
+      box-shadow:0 2px 5px rgba(0,0,0,.05);
+      font-size:14px;
+      text-align:center;
+    }
+    .only-client{display:block;}
+    .only-admin{display:none;}
+    .only-admin-edit{display:none;}
+    .only-admin-sale{display:none;}
+    /* marcar fila con cambios pendientes */
+    .row-pending-edit{
+      outline:2px dashed rgba(25,135,84,.5);
+      background:rgba(25,135,84,.04);
+    }
+    @media (max-width:768px){
+      body{padding:6px;}
+      .container{
+        flex-direction:column-reverse;
+        gap:10px;
+      }
+      .controls-panel{position:static;}
+      .right-panel{
+        position:static;
+        max-height:none;
+        width:100%;
+        overflow:visible;
+      }
+      .cart-container,
+      .contact-info{
+        width:100%;
+      }
+      .table-wrapper{
+        max-height:none;
+        overflow:visible;
+        width:100%;
+      }
+      #searchInput{
+        width:100%;
+        padding:6px 10px;
+        height:auto;
+        min-height:36px;
+      }
+      .controls-top,
+      .controls-bottom{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      #modeSelector,
+      #inventoryTotal,
+      #saveEditsBtn,
+      #logoutBtn,
+      #googleSignInContainer,
+      #sortPriceBtn,
+      .dropdown-toggle-btn{
+        width:100%;
+        text-align:left;
+      }
+      .custom-menu{
+        width:min(310px,96vw);
+        left:0;
+        right:auto;
+      }
+      .product-table{border:0;}
+      .product-table thead{display:none;}
+      .product-table tr{
+        display:block;
+        background:#fff;
+        margin-bottom:12px;
+        border:1px solid #eee;
+        border-radius:8px;
+        overflow:hidden;
+      }
+      .product-table td{
+        display:flex;
+        justify-content:space-between;
+        gap:12px;
+        border:none;
+        border-bottom:1px solid #f1f1f1;
+        padding:8px 10px;
+        font-size:14px;
+        width:100% !important;
+        max-width:100% !important;
+      }
+      .product-table td:last-child{border-bottom:none;}
+      .product-table td::before{
+        content:attr(data-label);
+        font-weight:600;
+        color:#555;
+        margin-right:8px;
+        flex:1;
+      }
+      .quantity-control{justify-content:flex-end;}
+    }
+  </style>
 </head>
 <body>
-    <h1>Catálogo Interactivo de Productos</h1>
-    <div class="container">
-        <div class="left-panel">
-            <div class="controls-panel">
-                <div class="products-header">
-                    <div class="left-controls">
-                        <div class="search-filters">
-                            <input type="text" id="searchInput" placeholder="🔍 Buscar por nombre, marca, categoría...">
-                            <!-- Dropdowns de filtro (sin cambios) -->
-                            <div class="custom-dropdown" id="categoryDropdown">
-                                <button type="button" id="categoryToggleBtn" class="dropdown-toggle-btn">Categorías ▾</button>
-                                <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
-                            </div>
-                            <div class="custom-dropdown" id="brandDropdown">
-                                <button type="button" id="brandToggleBtn" class="dropdown-toggle-btn">Marcas ▾</button>
-                                <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <button id="sortPriceBtn">Ordenar por precio</button>
-                    
-                    <!-- --- INICIO CAMBIO HTML --- -->
-                    <!-- Botón de admin (Ahora es para Salir / Mostrar login) -->
-                    <button id="adminModeBtn">🔑 Admin</button>
-                    <!-- Contenedor para el botón oficial de Google -->
-                    <div id="googleSignInContainer"></div>
-                    <!-- --- FIN CAMBIO HTML --- -->
-
-                </div>
+  <div class="container">
+    <div class="left-panel">
+      <div class="controls-panel">
+        <div class="products-header">
+          <div class="controls-top">
+            <input id="searchInput" type="text" autocomplete="off" inputmode="search" placeholder="🔍 Buscar por nombre, marca, categoría...">
+            <select id="modeSelector" title="Seleccionar modo">
+              <option value="client" selected>Cliente</option>
+              <option value="admin_edit">Edición</option>
+              <option value="admin_sale">Vendedor</option>
+            </select>
+            <span id="inventoryTotal">Total: $0</span>
+            <button id="saveEditsBtn" class="only-admin-edit" disabled>💾 Guardar cambios (0)</button>
+            <button id="logoutBtn" class="only-admin">🚪 Cerrar sesión</button>
+            <div id="googleSignInContainer"></div>
+          </div>
+          <div class="controls-bottom">
+            <button id="sortPriceBtn" class="only-client">Ordenar por precio</button>
+            <div class="custom-dropdown" id="categoryDropdown">
+              <button type="button" id="categoryToggleBtn" class="dropdown-toggle-btn">Categorías ▾</button>
+              <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
             </div>
-            <div class="table-wrapper">
-                <table class="product-table">
-                    <thead>
-                        <tr>
-                            <th>Nombre producto</th>
-                            <th>Categoría</th>
-                            <th>Marca</th>
-                            <th>Valor unitario</th>
-                            <th>Cantidad</th>
-                            <th>Total a pagar</th>
-                        </tr>
-                    </thead>
-                    <tbody id="productTableBody">
-                        <tr id="loading-row"><td colspan="6" style="text-align:center;">Cargando productos...</td></tr>
-                    </tbody>
-                </table>
+            <div class="custom-dropdown" id="brandDropdown">
+              <button type="button" id="brandToggleBtn" class="dropdown-toggle-btn">Marcas ▾</button>
+              <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
             </div>
+          </div>
         </div>
-        <div class="right-panel">
-            <!-- Panel derecho (sin cambios) -->
-            <div id="productImageDisplay" class="product-image-display">
-                <img id="displayedProductImage" src="" alt="Imagen del producto" style="display:none;">
-                <p id="displayedProductCaption" class="image-caption">Haz clic en un producto para ver su imagen</p>
-            </div>
-            <div class="cart-container">
-                <h3>🛒 Carrito de Compras</h3>
-                <ul id="cartList"><li>El carrito está vacío.</li></ul>
-                <div id="totalPrice">Total: 0</div>
-                <button id="clearCartBtn">Vaciar Carrito</button>
-                <button id="whatsappBtn">Comprar por WhatsApp</button>
-            </div>
-            <div class="contact-info">
-                <h3>✨ Contacto y Ubicación ✨</h3>
-                <p>📱 WhatsApp y llamadas: <a href="#" id="contactWhatsappLink">3042088961</a></p>
-                <p>📍 Ubicación: Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia y pagos contra entrega en Santa Marta!</p>
-                <p>🗺️ Visítanos (GPS): <a href="https://www.google.com/maps" target="_blank" rel="noopener noreferrer">Ver en Google Maps</a></p>
-                <hr>
-                <h3>🌐 ¡Síguenos en Nuestras Redes! 🌐</h3>
-                <p>👍 <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer">Facebook</a></p>
-                <p>📸 <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer">Instagram</a></p>
-                <p>🎵 <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer">TikTok</a></p>
-            </div>
-        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="product-table" aria-label="Listado de productos">
+          <thead>
+            <tr>
+              <th>Nombre producto</th>
+              <th>Categoría</th>
+              <th>Marca</th>
+              <th>Valor unitario</th>
+              <th id="qtyHeader">Cantidad</th>
+              <th>Total a pagar</th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody">
+            <tr><td colspan="6" style="text-align:center;">Cargando productos...</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <footer></footer>
+    <div class="right-panel">
+      <div class="cart-container" id="cartContainer">
+        <h3>🛒 Carrito de Compras</h3>
+        <ul id="cartList">
+          <li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>
+        </ul>
+        <div id="totalPrice">Total: 0</div>
+        <button id="whatsappBtn" class="only-client">Comprar por WhatsApp (cliente)</button>
+        <button id="invoiceBtn" class="only-admin-sale" style="display:none;" disabled>Vender</button>
+      </div>
+      <div class="contact-info">
+        <h3>✨ Contacto y Ubicación ✨</h3>
+        <p class="small-gap">📱 <strong>WhatsApp y llamadas:</strong> <a href="https://wa.me/573042088961" target="_blank" rel="noopener" id="contactWhatsappLink">3042088961</a></p>
+        <p class="small-gap">📍 <strong>Ubicación:</strong> Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia y pagos contra entrega en Santa Marta!</p>
+        <p class="small-gap">🗺️ <strong>Visítanos (GPS):</strong> <a href="https://www.google.com/maps" target="_blank" rel="noopener">Ver en Google Maps</a></p>
+        <hr>
+        <h3>🌐 ¡Síguenos en Nuestras Redes! 🌐</h3>
+        <p class="small-gap">👍 <a href="#" target="_blank" rel="noopener">Facebook</a></p>
+        <p class="small-gap">📸 <a href="#" target="_blank" rel="noopener">Instagram</a></p>
+        <p class="small-gap">🎵 <a href="#" target="_blank" rel="noopener">TikTok</a></p>
+      </div>
+    </div>
+  </div>
 
-<script>
-    // --- URL DE DATOS (lectura) ---
-    // URL de la hoja publicada como TSV.
+  <script>
     const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBTeqbaoB-5-b_h98cslcSic_6QcA1lCkCQagpF8q-yxcr1okC9TEuIYAZDgTL1DSCvdPtwBrApGj6/pub?gid=732037573&single=true&output=tsv';
+    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
+    const GOOGLE_CLIENT_ID = "575624026373-nm1ienpvaaa4its9070pv182quqf544m.apps.googleusercontent.com";
+    const DEFAULT_WHATSAPP = "573042088961";
+    const SELLER_NAME = "Irenis Stock Natura";
+    const SELLER_PHONE = "3042088961";
 
-    // --- CONFIGURACIÓN DE IMAGEN ---
-    const imageBaseUrl = "https://irenismb.github.io/stock/imagenes/"; 
-    const imageExtension = ".jpg"; 
-    // ---------------------------------
+    /* correos admin autorizados */
+    const ALLOWED_ADMIN_EMAILS = [
+      "irenismendoza@gmail.com",
+      "marllerpar@gmail.com"
+    ];
 
-    // --- ¡¡¡CONFIGURACIÓN DE ADMIN!!! ---
-    
-    // 1. URL de la App Script que modifica el stock (la que obtuviste de la implementación)
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzfK4aeNJAJxfLg4Pav0A6J3nOExJssVieG-dPD6OV-mNL55fY7imS61RRrn0v-9V1I/exec"; 
-    
-    // 2. Client ID de Google Cloud Console
-    const GOOGLE_CLIENT_ID = "575624026373-nm1ienpvaaa4its9070pv182quqf544m.apps.googleusercontent.com"; 
-    // ---------------------------------
+    const MODE_CLIENT = "client";
+    const MODE_ADMIN_EDIT = "admin_edit";
+    const MODE_ADMIN_SALE = "admin_sale";
+    const SESSION_KEY = "naturaAdminGoogleSession";
 
+    let currentMode = MODE_CLIENT;
     let products = [];
-    let isAdminMode = false;
-    let googleUserToken = null; // Almacenará el token de ID de Google
-    
-    // --- (Selectores de DOM) ---
-    const categoryDropdown = document.getElementById('categoryDropdown');
-    const categoryToggleBtn = document.getElementById('categoryToggleBtn');
-    const categoryMenuContainer = document.getElementById('categoryMenu');
-    const brandMenuContainer = document.getElementById('brandMenu'); 
-    const brandDropdown = document.getElementById('brandDropdown');
-    const brandToggleBtn = document.getElementById('brandToggleBtn');
+    let cart = {};
+    let allCategories = [];
+    let allBrands = [];
+    let currentSortOrder = "default";
+    let googleUserToken = null;
+    let currentAdminName = null;
+    let currentAdminEmail = null;
+    /* ⚠️ ahora el buffer no se limpia automático */
+    let pendingEdits = []; // {id, field, value, input}
+
     const searchInput = document.getElementById('searchInput');
     const productTableBody = document.getElementById('productTableBody');
     const cartList = document.getElementById('cartList');
     const totalPriceElement = document.getElementById('totalPrice');
     const whatsappBtn = document.getElementById('whatsappBtn');
-    const clearCartBtn = document.getElementById('clearCartBtn');
     const contactWhatsappLink = document.getElementById('contactWhatsappLink');
     const sortPriceBtn = document.getElementById('sortPriceBtn');
-    const adminModeBtn = document.getElementById('adminModeBtn');
-    const productImageDisplay = document.getElementById("productImageDisplay");
-    const displayedProductImage = document.getElementById("displayedProductImage");
-    const displayedProductCaption = document.getElementById("displayedProductCaption");
     const googleSignInContainer = document.getElementById('googleSignInContainer');
+    const inventoryTotalElement = document.getElementById('inventoryTotal');
+    const invoiceBtn = document.getElementById('invoiceBtn');
+    const qtyHeader = document.getElementById('qtyHeader');
+    const modeSelector = document.getElementById('modeSelector');
+    const cartContainer = document.getElementById('cartContainer');
+    const categoryMenuContainer = document.getElementById('categoryMenu');
+    const brandMenuContainer = document.getElementById('brandMenu');
+    const categoryToggleBtn = document.getElementById('categoryToggleBtn');
+    const brandToggleBtn = document.getElementById('brandToggleBtn');
+    const saveEditsBtn = document.getElementById('saveEditsBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
 
-    let cart = {};
-    let currentSortOrder = 'default';
-    const currencyFormatter = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
-
-    // --- LÓGICA DE CARGA DE DATOS ---
-    fetch(googleSheetURL)
-        .then(response => response.ok ? response.text() : Promise.reject('Error en la red'))
-        .then(csvText => {
-            const rows = csvText.trim().split('\n').slice(2); 
-            products = rows.map(row => {
-                const columns = row.split('\t'); 
-                const columnIndices = { name: 0, category: 1, marca: 2, valor_unitario: 3, stock: 4 };
-                if (columns.length < 4) return null; 
-                let priceString = columns[columnIndices.valor_unitario] || '0';
-                priceString = priceString.replace(/[^\d.]/g, '').replace(/\./g, ''); 
-                const parsedPrice = parseInt(priceString, 10) || 0;
-                const parsedStock = (columns[columnIndices.stock]) 
-                    ? parseInt(columns[columnIndices.stock].replace(/[^\d]/g, ''), 10) || 0 
-                    : 0;
-                return {
-                    name: columns[columnIndices.name] ? columns[columnIndices.name].trim() : '',
-                    category: columns[columnIndices.category] ? columns[columnIndices.category].trim() : '',
-                    marca: columns[columnIndices.marca] ? toTitleCase(columns[columnIndices.marca].trim()) : '',
-                    valor_unitario: parsedPrice, 
-                    stock: parsedStock
-                };
-            }).filter(p => p && p.name && p.name.trim() !== '');
-            
-            initializeApp();
-        })
-        .catch(error => {
-            console.error('Error al cargar productos:', error);
-            productTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Error al cargar productos. Verifica la URL de la hoja de cálculo y que esté publicada.</td></tr>`;
-        });
-    
-    /**
-     * --- INICIALIZACIÓN DE GOOGLE SIGN-IN ---
-     */
-    window.onload = function() {
-        if (typeof google === 'undefined') {
-            console.error("No se pudo cargar la librería de Google Sign-In.");
-            return;
-        }
-
-        try {
-            google.accounts.id.initialize({
-                client_id: GOOGLE_CLIENT_ID,
-                callback: handleGoogleSignIn // Función que se llama tras el login exitoso
-            });
-
-            // Renderiza el botón oficial de Google en el contenedor oculto
-            google.accounts.id.renderButton(
-                googleSignInContainer,
-                { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" } 
-            );
-
-        } catch (error) {
-            console.error("Error inicializando Google Sign-In:", error);
-            // Uso de console.warn en lugar de alert para evitar el uso de alert()
-            console.warn("Advertencia: No se pudo conectar con el servicio de Google. Verifica tu Client ID.");
-        }
-    };
-
-    function handleGoogleSignIn(response) {
-        if (!response.credential) {
-            console.error("Respuesta de Google inválida.", response);
-            return;
-        }
-        
-        googleUserToken = response.credential;
-        
-        const payload = JSON.parse(atob(response.credential.split('.')[1]));
-        const userName = payload.given_name || payload.name || 'Admin';
-
-        enterAdminMode(userName);
-    }
-    
-    function enterAdminMode(userName) {
-        isAdminMode = true;
-        
-        // Muestra el botón "Salir", oculta el de Google
-        adminModeBtn.textContent = `🔒 Salir (Hola, ${userName})`;
-        adminModeBtn.classList.add('active');
-        adminModeBtn.style.display = "block"; // Muestra el botón Salir
-        googleSignInContainer.style.display = "none"; // Oculta el botón de Google
-
-        document.querySelector('.right-panel').style.display = 'none'; // Ocultar carrito
-        filterAndDisplayProducts(); // Redibuja la tabla en modo admin
-    }
-
-    function exitAdminMode() {
-        isAdminMode = false;
-        
-        if (typeof google !== 'undefined') {
-            google.accounts.id.disableAutoSelect();
-            if (googleUserToken) {
-                try {
-                    const payload = JSON.parse(atob(googleUserToken.split('.')[1]));
-                    if (payload.sub) { 
-                         google.accounts.id.revoke(payload.sub, done => {
-                            console.log('Intento de revocación de sesión de Google:', done.successful);
-                         });
-                    }
-                } catch (e) {
-                    console.error("Error al decodificar o revocar el token:", e);
-                }
-            }
-        }
-        
-        googleUserToken = null; // Borra el token
-        
-        // Muestra el botón "Admin", oculta el de Google
-        adminModeBtn.textContent = '🔑 Admin';
-        adminModeBtn.classList.remove('active');
-        adminModeBtn.style.display = "block"; // Muestra el botón Admin
-        googleSignInContainer.style.display = "none"; // Mantiene oculto el de Google
-
-        document.querySelector('.right-panel').style.display = 'flex'; // Mostrar carrito
-        filterAndDisplayProducts(); // Redibuja la tabla en modo cliente
-    }
-
-    adminModeBtn.addEventListener('click', () => {
-        if (isAdminMode) {
-            exitAdminMode();
-        } else {
-            adminModeBtn.style.display = "none";
-            googleSignInContainer.style.display = "block";
-        }
+    const currencyFormatter = new Intl.NumberFormat("es-CO", {
+      style: "currency",
+      currency: "COP",
+      minimumFractionDigits: 0
     });
 
-    /**
-     * --- FUNCIÓN PRINCIPAL DE ESCRITURA ---
-     * Llama al Apps Script para actualizar el stock en Google Sheets.
-     */
-    async function updateStockInGoogleSheet(productName, newStock, inputElement) {
-        if (APPS_SCRIPT_URL === "") {
-            console.error("Error: APPS_SCRIPT_URL no configurada.");
-            alert("Error: La URL de APPS_SCRIPT_URL no está configurada en el HTML.");
-            return;
-        }
-        if (!googleUserToken) {
-            alert("Error: No estás autenticado. Vuelve a iniciar sesión.");
-            exitAdminMode();
-            return;
-        }
+    /* ===== CARGA DE PRODUCTOS ===== */
+    fetch(googleSheetURL)
+      .then(r => r.ok ? r.text() : Promise.reject("Error de red"))
+      .then(csvText => {
+        const rows = csvText.trim().split('\n').slice(2);
+        products = rows.map(row => {
+          const cols = row.split('\t');
+          if (cols.length < 6) return null;
+          const priceStr = (cols[3] || '0').replace(/[^\d]/g, '');
+          const stockStr = (cols[4] || '0').replace(/[^\d]/g, '');
+          const id = cols[5] ? cols[5].trim() : null;
+          const name = cols[0] ? cols[0].trim() : null;
+          if (!id || !name) return null;
+          return {
+            id,
+            name,
+            category: cols[1] ? cols[1].trim() : '',
+            marca: cols[2] ? toTitleCase(cols[2].trim()) : '',
+            valor_unitario: parseInt(priceStr, 10) || 0,
+            stock: parseInt(stockStr, 10) || 0
+          };
+        }).filter(Boolean);
+        initializeApp();
+      })
+      .catch(err => {
+        console.error(err);
+        productTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Error al cargar productos.</td></tr>`;
+      });
 
-        const product = products.find(p => p.name === productName);
-        const originalStock = product ? product.stock : 0;
-
-        inputElement.disabled = true; // Deshabilita mientras guarda
-
-        const payload = {
-            token: googleUserToken, 
-            productName: productName,
-            newStock: newStock
-        };
-
-        try {
-            const response = await fetch(APPS_SCRIPT_URL, {
-                method: 'POST',
-                mode: 'cors',
-                cache: 'no-cache',
-                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-                body: JSON.stringify(payload),
-                redirect: 'follow' // Permite la redirección de Apps Script
+    /* ===== GOOGLE ID (REINTENTO) ===== */
+    document.addEventListener("DOMContentLoaded", () => {
+      let tries = 0;
+      const maxTries = 20;
+      const timer = setInterval(() => {
+        tries++;
+        if (typeof google !== "undefined" && google.accounts && google.accounts.id) {
+          clearInterval(timer);
+          try {
+            google.accounts.id.initialize({
+              client_id: GOOGLE_CLIENT_ID,
+              callback: handleGoogleSignIn
             });
-
-            if (!response.ok) {
-                throw new Error(`Error de red: ${response.status} ${response.statusText}`);
-            }
-            const result = await response.json();
-
-            if (result.status === "success") {
-                if (product) {
-                    product.stock = newStock;
-                }
-                console.log(result.message);
-            } else {
-                throw new Error(result.message);
-            }
-
-        } catch (error) {
-            // Error mejorado y más descriptivo
-            console.error("Error al actualizar stock:", error); 
-            let errorMessage = error.message;
-            if (error instanceof TypeError && error.message.includes("Failed to fetch")) {
-                errorMessage = "Failed to fetch. \n\nCausa probable: \n1. Problema de CORS.\n2. El script no fue (re)implementado.";
-            }
-            alert(`Error al guardar: ${errorMessage}\nEl valor se revertirá.`);
-            inputElement.value = originalStock; // Revierte el cambio visual
-        } finally {
-            inputElement.disabled = false; // Vuelve a habilitar
+            google.accounts.id.renderButton(
+              googleSignInContainer,
+              { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
+            );
+          } catch (e) { console.warn(e); }
         }
+        if (tries >= maxTries) clearInterval(timer);
+      }, 300);
+    });
+
+    function parseJwt(token) {
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+      } catch (e) { return null; }
     }
 
-    // --- (Funciones de UI y Lógica) ---
+    function handleGoogleSignIn(resp) {
+      if (!resp.credential) {
+        alert("Error de login");
+        return;
+      }
+      const payload = parseJwt(resp.credential);
+      const email = payload && payload.email ? payload.email : null;
+      const name = payload && (payload.given_name || payload.name) ? (payload.given_name || payload.name) : "Admin";
 
-    function toTitleCase(str) {
-        if (!str) return "";
-        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+      if (email && !ALLOWED_ADMIN_EMAILS.includes(email)) {
+        alert("Este correo no está autorizado como administrador.\nCorreo: " + email);
+        currentMode = MODE_CLIENT;
+        modeSelector.value = MODE_CLIENT;
+        applyUIMode();
+        filterAndDisplayProducts();
+        return;
+      }
+
+      googleUserToken = resp.credential;
+      currentAdminName = name;
+      currentAdminEmail = email;
+
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        token: googleUserToken,
+        name: currentAdminName,
+        email: currentAdminEmail,
+        mode: MODE_ADMIN_EDIT
+      }));
+
+      enterAdminMode(name, email, MODE_ADMIN_EDIT);
     }
-    
-    function generateImageUrl(productName) {
-        const normalizedName = productName
-            .toLowerCase()
-            .normalize("NFD").replace(/[\u0300-\u036f]/g, "") 
-            .replace(/[^a-z0-9\s-]/g, '')
-            .replace(/\s+/g, '-')
-            .replace(/-+/g, '-');
-            
-        return `${imageBaseUrl}${normalizedName}${imageExtension}`;
+
+    function restoreAdminSession() {
+      try {
+        const raw = localStorage.getItem(SESSION_KEY);
+        if (!raw) return;
+        const saved = JSON.parse(raw);
+        if (!saved || !saved.token || !saved.email) return;
+        googleUserToken = saved.token;
+        currentAdminName = saved.name || "Admin";
+        currentAdminEmail = saved.email;
+        currentMode = saved.mode || MODE_ADMIN_EDIT;
+      } catch (e) {
+        console.warn("No se pudo restaurar la sesión:", e);
+      }
     }
 
     function initializeApp() {
-        const brandOrder = { 'Natura': 1, 'Avon': 2, 'Esika': 3 };
-        const categoryOrder = { 'Perfumes femeninos': 1, 'Perfumes masculinos': 2, 'Perfumes unisex': 3, 'Colonias': 4, 'Combos perfumes': 5, 'Regalos': 6, 'Combos regalos': 7, 'Combos cuidado corporal': 8, 'Cremas hidratantes corporales': 9, 'Combos cuidado capilar': 10, 'Jabones': 11, 'Cremas hidratantes para manos': 12, 'Cuidado capilar': 13, 'Bloqueadores': 14, 'Cuidado facial': 15, 'Combos cuidado facial': 16, 'Desodorantes y antitranspirantes': 17, 'Exfoliantes': 18, 'Maquillaje': 19, 'Aceites': 20, 'Cremas y bálsamos para afeitar': 21, 'Cuidado del bebe': 22, 'Cuidado intimo': 23 };
-        products.sort((a, b) => {
-            const brandAOrder = brandOrder[a.marca] || 99;
-            const brandBOrder = brandOrder[b.marca] || 99;
-            if (brandAOrder !== brandBOrder) return brandAOrder - brandBOrder;
-            const categoryAOrder = categoryOrder[a.category] || 999;
-            const categoryBOrder = categoryOrder[b.category] || 999;
-            if (categoryAOrder !== categoryBOrder) return categoryAOrder - categoryBOrder;
-            return a.name.localeCompare(b.name);
-        });
-        const savedCart = localStorage.getItem("shoppingCart");
-        if (savedCart) { try { cart = JSON.parse(savedCart) || {}; } catch (a) { cart = {}; } }
-        const uniqueCategories = [...new Set(products.map(p => p.category))].sort();
-        const categories = ["Todas", ...uniqueCategories];
-        const brands = ["Todas", ...new Set(products.map(p => p.marca))].sort();
-        populateRadioMenu(categoryMenuContainer, categories, 'category');
-        populateCheckboxes(brandMenuContainer, brands);
-        setupRadioMenuListener(categoryMenuContainer);
-        setupCheckboxListener(brandMenuContainer);
+      restoreAdminSession();
+      products.sort((a, b) => a.name.localeCompare(b.name));
+      loadCartFromStorage();
+      refreshFilters();
+      applyUIMode();
+      filterAndDisplayProducts();
+      updateCart();
+      updateInventoryTotalDisplay();
+    }
+
+    function refreshFilters() {
+      allCategories = [...new Set(products.map(p => p.category))].sort();
+      allBrands = [...new Set(products.map(p => p.marca))].sort();
+
+      categoryMenuContainer.innerHTML = ["Todas", ...allCategories].map(c => `
+        <label style="display:block;margin-bottom:4px;">
+          <input type="radio" name="category" value="${c}" ${c==="Todas"?"checked":""}>
+          ${c}
+        </label>
+      `).join("");
+
+      brandMenuContainer.innerHTML = ["Todas", ...allBrands].map(b => `
+        <label style="display:block;margin-bottom:4px;">
+          <input type="radio" name="brand" value="${b}" ${b==="Todas"?"checked":""}>
+          ${b}
+        </label>
+      `).join("");
+
+      categoryMenuContainer.addEventListener("change", () => {
         filterAndDisplayProducts();
-        updateCart();
-    }
-    function normalizeText(text) { return text.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
-    function filterAndDisplayProducts() {
-        let filteredProducts = [...products];
-        const categoryRadio = document.querySelector("#categoryMenu input:checked");
-        const selectedCategory = categoryRadio ? categoryRadio.value : "Todas";
-        if (selectedCategory && selectedCategory !== "Todas") { filteredProducts = filteredProducts.filter(p => p.category === selectedCategory); }
-        const selectedBrands = Array.from(document.querySelectorAll("#brandMenu input:checked")).map(cb => cb.value);
-        if (selectedBrands.length > 0 && !selectedBrands.includes("Todas")) { filteredProducts = filteredProducts.filter(p => selectedBrands.includes(p.marca)); }
-        const searchTerms = normalizeText(searchInput.value).split(/\s+/).filter(term => term);
-        if (searchTerms.length > 0) { filteredProducts = filteredProducts.filter(product => { const searchableText = normalizeText(`${product.name} ${product.category} ${product.marca}`); return searchTerms.every(term => searchableText.includes(term)); }); }
-        if (currentSortOrder === "asc") { filteredProducts.sort((a, b) => a.valor_unitario - b.valor_unitario); } else if (currentSortOrder === "desc") { filteredProducts.sort((a, b) => b.valor_unitario - b.valor_unitario); }
-        displayProducts(filteredProducts);
-        updateBrandToggleLabel(); 
-        updateCategoryToggleLabel();
-    }
-    function displayProducts(productsToDisplay) {
-        if (productsToDisplay.length === 0) { productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding-left: 10px;">No se encontraron productos.</td></tr>'; return; }
-        const rowsHtml = productsToDisplay.map(product => {
-            const quantityInCart = cart[product.name] ? cart[product.name].quantity : 0;
-            const valueToShow = isAdminMode ? product.stock : quantityInCart;
-            const dataLabel = isAdminMode ? "Stock" : "Cantidad";
-            const subtotal = isAdminMode ? 0 : (quantityInCart * product.valor_unitario);
-            const subtotalText = isAdminMode ? "---" : currencyFormatter.format(subtotal);
-            const totalLabel = isAdminMode ? "---" : "Total a Pagar";
-            const imageUrl = generateImageUrl(product.name);
-            const readOnlyAttr = !isAdminMode ? 'readonly' : '';
+        updateCategoryButtonLabel();
+        closeDropdowns();
+      });
+      brandMenuContainer.addEventListener("change", () => {
+        filterAndDisplayProducts();
+        updateBrandButtonLabel();
+        closeDropdowns();
+      });
 
-            return `
-                <tr>
-                    <td data-label="Producto"><span class="product-name-clickable" data-image-url="${imageUrl}" data-caption="${product.name}">${product.name}</span></td>
-                    <td data-label="Categoría">${product.category}</td>
-                    <td data-label="Marca">${product.marca}</td>
-                    <td data-label="Valor Unit." class="price-cell">${currencyFormatter.format(product.valor_unitario)}</td>
-                    <td data-label="${dataLabel}">
-                        <div class="quantity-control">
-                            <button type="button" class="quantity-btn decrease-btn">-</button>
-                            <input type="number" class="quantity-input" min="0" value="${valueToShow}" data-price="${product.valor_unitario}" data-name="${product.name}" ${readOnlyAttr}>
-                            <button type="button" class="quantity-btn increase-btn">+</button>
-                        </div>
-                    </td>
-                    <td data-label="${totalLabel}" class="price-cell total-pay">${subtotalText}</td>
-                </tr>`;
+      updateCategoryButtonLabel();
+      updateBrandButtonLabel();
+    }
+
+    function updateCategoryButtonLabel(){
+      const sel = categoryMenuContainer.querySelector('input[name="category"]:checked');
+      categoryToggleBtn.textContent = sel && sel.value !== "Todas"
+        ? sel.value + " ▾"
+        : "Categorías ▾";
+    }
+    function updateBrandButtonLabel(){
+      const sel = brandMenuContainer.querySelector('input[name="brand"]:checked');
+      brandToggleBtn.textContent = sel && sel.value !== "Todas"
+        ? sel.value + " ▾"
+        : "Marcas ▾";
+    }
+
+    function closeDropdowns(){
+      document.querySelectorAll('.custom-dropdown.open').forEach(d => {
+        d.classList.remove('open');
+        d.querySelector('.custom-menu').setAttribute('aria-hidden','true');
+      });
+    }
+    document.addEventListener("click", e => {
+      const t = e.target;
+      if (t.classList.contains("dropdown-toggle-btn")) {
+        e.stopPropagation();
+        const dd = t.closest(".custom-dropdown");
+        const was = dd.classList.contains("open");
+        closeDropdowns();
+        dd.classList.toggle("open", !was);
+        dd.querySelector(".custom-menu").setAttribute("aria-hidden", was ? "true" : "false");
+      } else if (!t.closest(".custom-dropdown")) {
+        closeDropdowns();
+      }
+    });
+
+    function enterAdminMode(name, email, modeWanted){
+      currentMode = modeWanted || MODE_ADMIN_EDIT;
+      modeSelector.value = currentMode;
+      applyUIMode();
+      filterAndDisplayProducts();
+      updateInventoryTotalDisplay();
+      const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+      if (saved){
+        saved.mode = currentMode;
+        localStorage.setItem(SESSION_KEY, JSON.stringify(saved));
+      }
+    }
+
+    function exitAdminMode(){
+      currentMode = MODE_CLIENT;
+      googleUserToken = null;
+      currentAdminName = null;
+      currentAdminEmail = null;
+      /* no limpiamos el buffer aquí si no quieres; pero al salir de admin no tiene sentido guardarlo */
+      pendingEdits = [];
+      updateSaveBtnState();
+      localStorage.removeItem(SESSION_KEY);
+      modeSelector.value = MODE_CLIENT;
+      applyUIMode();
+      filterAndDisplayProducts();
+      updateInventoryTotalDisplay();
+    }
+
+    logoutBtn.addEventListener("click", () => {
+      exitAdminMode();
+      alert("Sesión cerrada.");
+    });
+
+    modeSelector.addEventListener("change", () => {
+      const selected = modeSelector.value;
+
+      if (!googleUserToken && (selected === MODE_ADMIN_EDIT || selected === MODE_ADMIN_SALE)) {
+        alert("Inicia sesión con un correo autorizado para usar ese modo.");
+        modeSelector.value = MODE_CLIENT;
+        currentMode = MODE_CLIENT;
+        applyUIMode();
+        filterAndDisplayProducts();
+        return;
+      }
+
+      if (selected === MODE_CLIENT) {
+        exitAdminMode();
+        return;
+      }
+
+      currentMode = selected;
+      applyUIMode();
+      filterAndDisplayProducts();
+
+      const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+      if (saved){
+        saved.mode = currentMode;
+        localStorage.setItem(SESSION_KEY, JSON.stringify(saved));
+      }
+    });
+
+    function applyUIMode(){
+      document.querySelectorAll('.only-client').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'none');
+      document.querySelectorAll('.only-admin-sale').forEach(el => el.style.display = 'none');
+
+      if (currentMode === MODE_CLIENT){
+        document.querySelectorAll('.only-client').forEach(el => el.style.display = 'block');
+        sortPriceBtn.style.display = "inline-block";
+        inventoryTotalElement.style.display = "none";
+        cartContainer.style.display = "block";
+        invoiceBtn.disabled = true;
+        saveEditsBtn.style.display = "none";
+        logoutBtn.style.display = "none";
+      } else if (currentMode === MODE_ADMIN_EDIT){
+        document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
+        document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
+        sortPriceBtn.style.display = "none";
+        inventoryTotalElement.style.display = "inline-block";
+        cartContainer.style.display = "block";
+        invoiceBtn.disabled = true;
+        saveEditsBtn.style.display = "block";
+        logoutBtn.style.display = "block";
+      } else if (currentMode === MODE_ADMIN_SALE){
+        document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
+        document.querySelectorAll('.only-admin-sale').forEach(el => el.style.display = 'inline-block');
+        sortPriceBtn.style.display = "none";
+        inventoryTotalElement.style.display = "inline-block";
+        cartContainer.style.display = "block";
+        invoiceBtn.disabled = false;
+        saveEditsBtn.style.display = "none";
+        logoutBtn.style.display = "block";
+      }
+      setQtyHeader();
+    }
+
+    function setQtyHeader(){
+      if (!qtyHeader) return;
+      qtyHeader.textContent = currentMode === MODE_ADMIN_EDIT ? "Stock" : "Cantidad";
+    }
+
+    function calculateInventoryTotal(){
+      return products.reduce((acc,p)=> acc + ((p.valor_unitario||0) * (p.stock||0)), 0);
+    }
+
+    function updateInventoryTotalDisplay(){
+      if (currentMode === MODE_ADMIN_EDIT || currentMode === MODE_ADMIN_SALE){
+        inventoryTotalElement.style.display = "inline-block";
+        inventoryTotalElement.textContent = "Total: " + currencyFormatter.format(calculateInventoryTotal());
+      } else {
+        inventoryTotalElement.style.display = "none";
+      }
+    }
+
+    function normalizeText(t){
+      return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+    }
+
+    function filterAndDisplayProducts(){
+      let list = [...products];
+
+      const catSel = document.querySelector("#categoryMenu input[name='category']:checked");
+      const catVal = catSel ? catSel.value : "Todas";
+      if (catVal !== "Todas"){
+        list = list.filter(p => p.category === catVal);
+      }
+
+      const brandSel = document.querySelector("#brandMenu input[name='brand']:checked");
+      const brandVal = brandSel ? brandSel.value : "Todas";
+      if (brandVal !== "Todas"){
+        list = list.filter(p => p.marca === brandVal);
+      }
+
+      const searchTerms = normalizeText(searchInput.value).split(/\s+/).filter(Boolean);
+      if (searchTerms.length > 0){
+        list = list.filter(p => {
+          const s = normalizeText(`${p.id} ${p.name} ${p.category} ${p.marca}`);
+          return searchTerms.every(t => s.includes(t));
+        });
+      }
+
+      if (currentSortOrder === "asc") list.sort((a,b)=>a.valor_unitario-b.valor_unitario);
+      else if (currentSortOrder === "desc") list.sort((a,b)=>b.valor_unitario-a.valor_unitario);
+
+      displayProducts(list);
+      updateInventoryTotalDisplay();
+    }
+
+    function displayProducts(list){
+      if (list.length === 0){
+        productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
+        return;
+      }
+
+      const rows = list.map(p => {
+        const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
+        const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken);
+        const valueToShow = isEditing ? p.stock : qtyInCart;
+        const dataLabel = isEditing ? "Stock" : "Cantidad";
+        const unitPrice = (p.valor_unitario || 0);
+        const subtotal = (isEditing ? (p.stock||0) : qtyInCart) * unitPrice;
+        const readOnlyAttr = isEditing ? "" : "readonly";
+        const isPending = pendingEdits.some(ed => ed.id === p.id);
+
+        let nameCell, catCell, brandCell, priceCell;
+        if (isEditing){
+          nameCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}">`;
+          catCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="category" value="${escapeHtml(p.category)}">`;
+          brandCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="marca" value="${escapeHtml(p.marca)}">`;
+          priceCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="valor_unitario" value="${unitPrice}" placeholder="0">`;
+        } else {
+          nameCell = `<span>${escapeHtml(p.name)}</span>`;
+          catCell = escapeHtml(p.category);
+          brandCell = escapeHtml(p.marca);
+          priceCell = currencyFormatter.format(unitPrice);
+        }
+
+        return `
+          <tr data-product-id="${p.id}" class="${isPending ? 'row-pending-edit' : ''}">
+            <td data-label="Nombre">${nameCell}</td>
+            <td data-label="Categoría">${catCell}</td>
+            <td data-label="Marca">${brandCell}</td>
+            <td data-label="Valor unitario" class="price-cell">${priceCell}</td>
+            <td data-label="${dataLabel}">
+              <div class="quantity-control">
+                <button type="button" class="quantity-btn decrease-btn">-</button>
+                <input type="number" class="quantity-input" min="0" value="${valueToShow}"
+                  data-price="${unitPrice}"
+                  data-id="${p.id}"
+                  data-name="${escapeHtml(p.name)}"
+                  ${readOnlyAttr}>
+                <button type="button" class="quantity-btn increase-btn">+</button>
+              </div>
+            </td>
+            <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      productTableBody.innerHTML = rows;
+    }
+
+    function loadCartFromStorage(){
+      const savedCart = localStorage.getItem("shoppingCart");
+      try{
+        const parsed = JSON.parse(savedCart);
+        if (parsed && Object.values(parsed)[0]?.id){
+          cart = parsed;
+        }
+      }catch{ cart = {}; }
+    }
+
+    function updateCart(){
+      let total = 0;
+      const items = Object.values(cart);
+      if (items.length === 0){
+        cartList.innerHTML = '<li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>';
+      } else {
+        cartList.innerHTML = items.map(it => {
+          const sub = it.quantity * it.price;
+          total += sub;
+          return `<li class="cart-item">
+              <span class="cart-item-title">${it.quantity} x ${escapeHtml(it.name)} <strong>(${currencyFormatter.format(sub)})</strong></span>
+              <button class="remove-item-btn" data-id="${it.id}">X</button>
+            </li>`;
         }).join("");
-        productTableBody.innerHTML = rowsHtml;
+      }
+      totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
+      localStorage.setItem("shoppingCart", JSON.stringify(cart));
     }
-    function updateCart() {
-        let grandTotal = 0;
-        const cartItems = Object.values(cart);
-        if (cartItems.length === 0) { cartList.innerHTML = "<li>El carrito está vacío.</li>"; } else {
-            cartList.innerHTML = cartItems.map(item => { const subtotal = item.quantity * item.price; grandTotal += subtotal; return `<li><span>${item.quantity} x ${item.name} (${currencyFormatter.format(subtotal)})</span><button class="remove-item-btn" data-name="${item.name}">X</button></li>`; }).join("");
-        }
-        totalPriceElement.textContent = `Total: ${currencyFormatter.format(grandTotal)}`;
-        localStorage.setItem("shoppingCart", JSON.stringify(cart));
-    }
-    productTableBody.addEventListener("input", (event) => {
-        if (isAdminMode) return; 
-        if (event.target.classList.contains("quantity-input")) { 
-            const input = event.target;
-            let quantity = parseInt(input.value, 10) || 0;
-            const name = input.dataset.name;
-            const price = parseFloat(input.dataset.price);
-            if (quantity < 0) { quantity = 0; input.value = 0; }
-            input.closest("tr").querySelector(".total-pay").textContent = currencyFormatter.format(quantity * price);
-            if (quantity > 0) { cart[name] = { name, quantity, price }; } else { delete cart[name]; }
-            updateCart();
-        }
-    });
-    productTableBody.addEventListener("click", (event) => {
-        const target = event.target;
-        if (target.classList.contains("quantity-btn")) {
-            const controlDiv = target.closest(".quantity-control");
-            const input = controlDiv.querySelector(".quantity-input");
-            let currentValue = parseInt(input.value, 10) || 0;
-            if (target.classList.contains("increase-btn")) { currentValue++; } else if (target.classList.contains("decrease-btn")) { currentValue--; }
-            if (currentValue < 0) { currentValue = 0; }
-            input.value = currentValue;
-            if (isAdminMode) {
-                const name = input.dataset.name;
-                updateStockInGoogleSheet(name, currentValue, input);
-            } else {
-                input.dispatchEvent(new Event("input", { bubbles: true }));
-            }
-        }
-        if (target.classList.contains("product-name-clickable")) {
-            const imgUrl = target.dataset.imageUrl;
-            const captionText = target.dataset.caption;
-            if (imgUrl) { displayedProductImage.src = imgUrl; displayedProductImage.alt = captionText; displayedProductImage.style.display = 'block'; displayedProductCaption.textContent = captionText; } else { displayedProductImage.style.display = 'none'; displayedProductImage.src = ''; displayedProductImage.alt = ''; displayedProductCaption.textContent = 'Haz clic en un producto para ver su imagen'; }
-        }
-    });
-    function populateRadioMenu(container, items, groupName) { container.innerHTML = items.map(item => { const safeVal = item.replace(/"/g, '"'); const checkedAttr = (item === "Todas") ? "checked" : ""; return `<label><input type="radio" name="${groupName}" value="${safeVal}" ${checkedAttr}> ${item}</label>`; }).join(""); }
-    function setupRadioMenuListener(container) { container.addEventListener("change", (event) => { if (event.target.type === "radio") { filterAndDisplayProducts(); const dropdown = container.closest('.custom-dropdown'); if (dropdown) { dropdown.classList.remove('open'); container.setAttribute('aria-hidden', 'true'); } } }); }
-    function updateCategoryToggleLabel() { const checkedRadio = document.querySelector("#categoryMenu input:checked"); const btn = categoryToggleBtn; if (checkedRadio && checkedRadio.value !== "Todas") { btn.textContent = `Categoría: ${checkedRadio.value} ▾`; } else { btn.textContent = "Categorías: Todas ▾"; } }
-    function populateCheckboxes(container, items) { container.innerHTML = items.map(item => { const safeVal = item.replace(/"/g, '"'); const checkedAttr = ("Todas" === item) ? "checked" : ""; return `<label><input type="checkbox" name="brand" value="${safeVal}" ${checkedAttr}> ${item}</label>`; }).join(""); }
-    function setupCheckboxListener(container) { container.addEventListener("change", (event) => { const targetCheckbox = event.target; if ("checkbox" !== targetCheckbox.type) return; const allCheckbox = container.querySelector('input[value="Todas"]'); if ("Todas" === targetCheckbox.value && targetCheckbox.checked) { container.querySelectorAll('input:not([value="Todas"])').forEach(cb => cb.checked = false); } else if ("Todas" !== targetCheckbox.value && targetCheckbox.checked && allCheckbox) { allCheckbox.checked = false; } if (!container.querySelector("input:checked") && allCheckbox && allCheckbox.checked === false) { allCheckbox.checked = true; } filterAndDisplayProducts(); }); }
-    function updateBrandToggleLabel(){ const checked = Array.from(document.querySelectorAll("#brandMenu input:checked")).map(i => i.value); const btn = brandToggleBtn; if (!checked || checked.length === 0) { btn.textContent = "Marcas ▾"; } else if (checked.includes("Todas")) { btn.textContent = "Marcas: Todas ▾"; } else if (checked.length === 1) { btn.textContent = `Marca: ${checked[0]} ▾`; } else { btn.textContent = `Marcas: ${checked.length} ▾`; } }
-    document.addEventListener('click', (e) => { const target = e.target; if (target.classList.contains('dropdown-toggle-btn')) { e.stopPropagation(); const dropdown = target.closest('.custom-dropdown'); const menu = dropdown.querySelector('.custom-menu'); const wasOpen = dropdown.classList.contains('open'); document.querySelectorAll('.custom-dropdown.open').forEach(d => { if (d !== dropdown) { d.classList.remove('open'); d.querySelector('.custom-menu').setAttribute('aria-hidden', 'true'); } }); dropdown.classList.toggle('open', !wasOpen); menu.setAttribute('aria-hidden', 'true'); } else if (!target.closest('.custom-dropdown')) { document.querySelectorAll('.custom-dropdown.open').forEach(dropdown => { dropdown.classList.remove('open'); dropdown.querySelector('.custom-menu').setAttribute('aria-hidden', 'true'); }); } else if (target.closest('#brandMenu')) { e.stopPropagation(); } });
-    function openWhatsApp(message) { const phoneNumber = "573042088961"; const encodedMessage = encodeURIComponent(message); const whatsappURL = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ? `https://api.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}` : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedMessage}`; window.open(whatsappURL, "_blank"); }
-    searchInput.addEventListener("input", filterAndDisplayProducts);
-    sortPriceBtn.addEventListener("click", () => { if ("default" === currentSortOrder || "desc" === currentSortOrder) { currentSortOrder = "asc"; sortPriceBtn.textContent = "Precio $↓"; sortPriceBtn.classList.add("active"); } else if ("asc" === currentSortOrder) { currentSortOrder = "desc"; sortPriceBtn.textContent = "Precio $↑"; sortPriceBtn.classList.remove("active"); } filterAndDisplayProducts(); });
-    whatsappBtn.addEventListener("click", () => { const cartItems = Object.values(cart); if (cartItems.length === 0) { console.warn("El carrito está vacío."); return; } let message = "Hola, deseo comprar los siguientes productos:\n\n"; let total = 0; cartItems.forEach(item => { const subtotal = item.quantity * item.price; message += `- ${item.quantity} x *${item.name}* (${currencyFormatter.format(item.price)} c/u) - Subtotal: ${currencyFormatter.format(subtotal)}\n`; total += subtotal; }); message += `\n*Total del pedido: ${currencyFormatter.format(total)}*`; openWhatsApp(message); });
-    contactWhatsappLink.addEventListener("click", (e) => { e.preventDefault(); openWhatsApp("Hola, me interesan tus productos."); });
-    cartList.addEventListener("click", (event) => { if (event.target.classList.contains("remove-item-btn")) { const productName = event.target.dataset.name; delete cart[productName]; const inputInTable = productTableBody.querySelector(`.quantity-input[data-name="${productName}"]`); if (inputInTable) { inputInTable.value = 0; inputInTable.dispatchEvent(new Event("input", { bubbles: true })); } else { updateCart(); } } });
-    clearCartBtn.addEventListener("click", () => { cart = {}; localStorage.removeItem("shoppingCart"); productTableBody.querySelectorAll(".quantity-input").forEach(input => { if (parseInt(input.value) > 0) { input.value = 0; input.dispatchEvent(new Event("input", { bubbles: true })); } }); updateCart(); });
-</script>
 
+    function escapeHtml(t){
+      if (t == null) return '';
+      return String(t).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
+    }
+
+    /* ====== BUFFER DE EDICIONES ====== */
+    function addPendingEdit(id,field,value,inputEl){
+      const idx = pendingEdits.findIndex(e => e.id===id && e.field===field);
+      if (idx>=0){
+        pendingEdits[idx].value = value;
+        pendingEdits[idx].input = inputEl;
+      } else {
+        pendingEdits.push({id,field,value,input:inputEl});
+      }
+      const row = productTableBody.querySelector(`tr[data-product-id="${id}"]`);
+      if (row) row.classList.add("row-pending-edit");
+      updateSaveBtnState();
+    }
+
+    function updateSaveBtnState(){
+      if (pendingEdits.length>0){
+        saveEditsBtn.disabled = false;
+        saveEditsBtn.textContent = `💾 Guardar cambios (${pendingEdits.length})`;
+      } else {
+        saveEditsBtn.disabled = true;
+        saveEditsBtn.textContent = "💾 Guardar cambios (0)";
+      }
+    }
+
+    /* ahora el botón guarda pero NO limpia el buffer */
+    saveEditsBtn.addEventListener("click", async () => {
+      if (pendingEdits.length===0) return;
+      saveEditsBtn.disabled = true;
+      for (const edit of pendingEdits){
+        await updateProductFieldInGoogleSheet(edit.id, edit.field, edit.value, edit.input, true);
+      }
+      alert("Cambios enviados. (El listado de cambios queda hasta que recargues la página.)");
+      saveEditsBtn.disabled = false;
+      /* NO vaciamos pendingEdits */
+      /* pero sí refrescamos tabla para ver valores reales */
+      filterAndDisplayProducts();
+      updateInventoryTotalDisplay();
+    });
+
+    /* ===== EVENTOS DE TABLA ===== */
+    productTableBody.addEventListener("input", e => {
+      const isQty = e.target.classList.contains("quantity-input");
+      const isAdminInput = e.target.classList.contains("admin-input");
+
+      /* admin edición → buffer (cualquier campo) */
+      if (isAdminInput && currentMode===MODE_ADMIN_EDIT && googleUserToken){
+        const input = e.target;
+        addPendingEdit(input.dataset.id, input.dataset.field, input.value, input);
+        return;
+      }
+
+      if (!isQty) return;
+      const input = e.target;
+      let qty = parseInt(input.value,10) || 0;
+      if (qty<0) qty=0;
+      input.value = qty;
+      const id = input.dataset.id;
+      const name = input.dataset.name;
+      const price = parseInt(input.dataset.price,10)||0;
+      const tr = input.closest("tr");
+      if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty*price);
+
+      if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
+        /* ANTES: updateStockInGoogleSheet(...) */
+        /* AHORA: SOLO BUFFER */
+        addPendingEdit(id, "stock", qty, input);
+        /* también actualizamos en memoria para que el total de inventario se vea bien */
+        const p = products.find(p=>p.id===id);
+        if (p) p.stock = qty;
+        updateInventoryTotalDisplay();
+        return;
+      }
+
+      /* cliente / vendedor → carrito */
+      if (qty>0){
+        cart[id] = {id,name,quantity:qty,price};
+      } else {
+        delete cart[id];
+      }
+      updateCart();
+    });
+
+    productTableBody.addEventListener("click", e => {
+      if (!e.target.classList.contains("quantity-btn")) return;
+      const ctrl = e.target.closest(".quantity-control");
+      const input = ctrl.querySelector(".quantity-input");
+      let val = parseInt(input.value,10) || 0;
+      if (e.target.classList.contains("increase-btn")) val++;
+      else val--;
+      if (val<0) val=0;
+      input.value = val;
+
+      const id = input.dataset.id;
+      const name = input.dataset.name;
+      const price = parseInt(input.dataset.price,10)||0;
+      const tr = input.closest("tr");
+      if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val*price);
+
+      if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
+        /* ANTES: updateStockInGoogleSheet(...) */
+        /* AHORA: SOLO BUFFER */
+        addPendingEdit(id, "stock", val, input);
+        const p = products.find(p=>p.id===id);
+        if (p) p.stock = val;
+        updateInventoryTotalDisplay();
+        return;
+      }
+
+      if (val>0){
+        cart[id] = {id,name,quantity:val,price};
+      } else {
+        delete cart[id];
+      }
+      updateCart();
+    });
+
+    /* ===== ACTUALIZACIÓN EN SHEETS (ahora solo la llama el botón) ===== */
+    async function updateProductFieldInGoogleSheet(id,field,value,input,silent){
+      if (!googleUserToken){
+        alert("No estás autenticado.");
+        return;
+      }
+      const p = products.find(p=>p.id===id);
+      const original = p ? p[field] : "";
+      let newValue = value;
+      if (field==="valor_unitario"){
+        newValue = (value||"").replace(/[^\d]/g,"");
+        newValue = parseInt(newValue,10)||0;
+      }
+      if (input) input.disabled = true;
+      try{
+        const resp = await fetch(APPS_SCRIPT_URL, {
+          method:"POST",
+          headers:{"Content-Type":"text/plain;charset=utf-8"},
+          body:JSON.stringify({
+            action: field === "stock" ? "updateStock" : "updateField",
+            token:googleUserToken,
+            productId:id,
+            fieldToUpdate:field,
+            newValue,
+            adminEmail:currentAdminEmail
+          })
+        });
+        const json = await resp.json();
+        if (json.status==="success"){
+          if (p) p[field] = newValue;
+          if (!silent){
+            filterAndDisplayProducts();
+            updateInventoryTotalDisplay();
+          }
+        } else {
+          throw new Error(json.message || "Error guardando");
+        }
+      } catch(err){
+        alert("Error al guardar: " + err.message);
+        if (input) input.value = original;
+      } finally {
+        if (input) input.disabled = false;
+      }
+    }
+
+    /* ===== BUSCADOR Y ORDEN ===== */
+    searchInput.addEventListener("input", filterAndDisplayProducts);
+    sortPriceBtn.addEventListener("click", () => {
+      if (currentSortOrder==="default" || currentSortOrder==="desc"){
+        currentSortOrder="asc";
+        sortPriceBtn.textContent="Precio $↓";
+      } else {
+        currentSortOrder="desc";
+        sortPriceBtn.textContent="Precio $↑";
+      }
+      filterAndDisplayProducts();
+    });
+
+    /* ===== WHATSAPP ===== */
+    function openWhatsApp(msg){
+      const encoded = encodeURIComponent(msg);
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const url = isMobile
+        ? `https://api.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`
+        : `https://web.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`;
+      window.open(url, "_blank");
+    }
+
+    whatsappBtn.addEventListener("click", () => {
+      if (currentMode !== MODE_CLIENT) return;
+      const items = Object.values(cart);
+      if (items.length===0) return;
+      const msg = buildWhatsAppMsg(items);
+      openWhatsApp(msg);
+    });
+
+    function buildWhatsAppMsg(items, header="Hola, deseo comprar estos productos en Irenismb Natura Stock:"){
+      let msg = header + "\n\n";
+      let total=0;
+      items.forEach(it=>{
+        const sub = it.quantity * it.price;
+        msg += `• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
+        total += sub;
+      });
+      msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
+      msg += `\nVendedor: ${SELLER_NAME}\nWhatsApp: ${SELLER_PHONE}\n`;
+      return msg;
+    }
+
+    contactWhatsappLink.addEventListener("click", e => {
+      e.preventDefault();
+      openWhatsApp("Hola, me interesan los productos de Irenismb Natura Stock.");
+    });
+
+    cartList.addEventListener("click", e => {
+      if (!e.target.classList.contains("remove-item-btn")) return;
+      const id = e.target.dataset.id;
+      delete cart[id];
+      const input = productTableBody.querySelector(`.quantity-input[data-id="${id}"]`);
+      if (input){
+        input.value = 0;
+        input.dispatchEvent(new Event("input", {bubbles:true}));
+      } else {
+        updateCart();
+      }
+    });
+
+    /* ===== VENDER (ADMIN SALE) ===== */
+    invoiceBtn.addEventListener("click", () => {
+      if (currentMode !== MODE_ADMIN_SALE) return;
+      if (!googleUserToken){
+        alert("Inicia sesión con Google primero.");
+        googleSignInContainer.style.display = "block";
+        return;
+      }
+      startSellFlow();
+    });
+
+    function openInvoiceWindow(html){
+      const w = window.open("", "_blank");
+      w.document.write(html);
+      w.document.close();
+    }
+
+    function startSellFlow(){
+      const items = Object.values(cart);
+      if (items.length===0){
+        alert("No hay productos en el carrito.");
+        return;
+      }
+
+      const action = prompt("Seleccione la acción:\n1. Generar factura (predeterminado)\n2. Enviar por WhatsApp", "1");
+      const actionNum = (action || "1").trim();
+
+      const cliente = prompt("Nombre del cliente:", "Cliente contado");
+      if (cliente===null) return;
+
+      const fechaDef = formatDateDDMMYYYY(new Date());
+      let fecha = prompt("Fecha de venta (dd/mm/aaaa):", fechaDef) || fechaDef;
+      let abonadoStr = prompt("Valor abonado / pagado:", "0") || "0";
+      let plazoStr = prompt("Plazo en días (30 por defecto):", "30") || "30";
+
+      const abonado = parseInt(abonadoStr.replace(/[^\d]/g,""),10) || 0;
+      let plazo = parseInt(plazoStr,10);
+      if (isNaN(plazo) || plazo<0) plazo=30;
+
+      let total = 0;
+      items.forEach(it => total += it.quantity * it.price);
+      let saldo = total - abonado;
+      if (saldo<0) saldo=0;
+
+      let vence = "";
+      if (saldo>0){
+        const p = fecha.split("/");
+        let d = new Date();
+        if (p.length===3){
+          d = new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10));
+        }
+        d.setDate(d.getDate() + plazo);
+        vence = formatDateDDMMYYYY(d);
+      }
+
+      if (actionNum==="1" || actionNum===""){
+        const html = `
+          <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
+          <h2>Irenismb Natura Stock</h2>
+          <p><strong>Cliente:</strong> ${cliente}</p>
+          <p><strong>Fecha:</strong> ${fecha}</p>
+          <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
+          <table border="1" cellspacing="0" cellpadding="5">
+            <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
+            ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity*it.price)}</td></tr>`).join("")}
+            <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
+            <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
+            <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
+            ${saldo>0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
+          </table>
+          <p>Gracias por su compra.</p>
+          </body></html>
+        `;
+        openInvoiceWindow(html);
+      } else if (actionNum==="2"){
+        let msg = `Venta para ${cliente}\nFecha: ${fecha}\n\n`;
+        items.forEach(it => {
+          const sub = it.quantity * it.price;
+          msg += `• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
+        });
+        msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
+        msg += `Abonado/Pagado: ${currencyFormatter.format(abonado)}\n`;
+        msg += `Saldo: ${currencyFormatter.format(saldo)}\n`;
+        if (saldo>0) msg += `Vence: ${vence}\n`;
+        msg += `\nVendedor: ${SELLER_NAME} - ${SELLER_PHONE}`;
+        openWhatsApp(msg);
+      } else {
+        const html = `
+          <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
+          <h2>Irenismb Natura Stock</h2>
+          <p><strong>Cliente:</strong> ${cliente}</p>
+          <p><strong>Fecha:</strong> ${fecha}</p>
+          <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
+          <table border="1" cellspacing="0" cellpadding="5">
+            <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
+            ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity*it.price)}</td></tr>`).join("")}
+            <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
+            <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
+            <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
+            ${saldo>0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
+          </table>
+          <p>Gracias por su compra.</p>
+          </body></html>
+        `;
+        openInvoiceWindow(html);
+      }
+
+      /* ⚠️ antes aquí DESCONTABA en la hoja.
+         ahora SOLO lo metemos al BUFFER para que se guarde cuando tú quieras */
+      items.forEach(it => {
+        const prod = products.find(p => p.id === it.id);
+        if (prod){
+          const newStock = Math.max((prod.stock||0) - it.quantity, 0);
+          prod.stock = newStock;  // lo reflejamos en memoria
+          addPendingEdit(prod.id, "stock", newStock, null);
+        }
+      });
+
+      /* limpiar carrito (esto sí puede ser automático) */
+      cart = {};
+      localStorage.removeItem("shoppingCart");
+      productTableBody.querySelectorAll(".quantity-input").forEach(input=>{
+        if (currentMode !== MODE_ADMIN_EDIT) input.value = 0;
+      });
+      updateCart();
+      filterAndDisplayProducts();
+      updateInventoryTotalDisplay();
+    }
+
+    function toTitleCase(str){return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";}
+    function formatDateDDMMYYYY(d){
+      const dd = String(d.getDate()).padStart(2,"0");
+      const mm = String(d.getMonth()+1).toString().padStart(2,"0");
+      const yy = d.getFullYear();
+      return `${dd}/${mm}/${yy}`;
+    }
+  </script>
 </body>
 </html>

@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
   <!-- Google Identity -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
-<style>
+  <style>
   :root{
     --primary-color:#007bff;
     --secondary-color:#25D366;
@@ -22,6 +22,11 @@
     box-sizing:border-box;
     -webkit-tap-highlight-color:transparent;
   }
+  html,body{
+    width:100%;
+    max-width:100%;
+    overflow-x:hidden; /* 👈 NO más scroll lateral */
+  }
   body{
     font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
     margin:0;
@@ -33,6 +38,7 @@
     display:flex;
     gap:15px;
     align-items:flex-start;
+    width:100%;
   }
   .left-panel{
     flex:3 1 700px;
@@ -175,13 +181,14 @@
     display:flex;
     align-items:center;
     justify-content:center;
+    gap:4px;
   }
   .quantity-btn{
     background-color:#e9ecef;
     border:1px solid #ced4da;
     color:#495057;
     cursor:pointer;
-    font-size:1.3rem;
+    font-size:1.2rem;
     font-weight:700;
     width:34px;
     height:34px;
@@ -198,7 +205,6 @@
     border:1px solid #ced4da;
     background-color:#fff;
     font-size:15px;
-    margin:0 3px;
     border-radius:6px;
   }
   .price-cell{font-weight:700;color:#2a9d8f}
@@ -309,24 +315,29 @@
   @media (max-width:768px){
     body{
       padding:6px;
-      overflow-x:hidden; /* evita arrastre lateral */
     }
     .container{
       flex-direction:column-reverse;
       gap:10px;
+      width:100%;
     }
-    /* quito TODAS las posiciones fijas/pegadas */
     .controls-panel{
       position:static;
     }
     .right-panel{
       position:static;
       max-height:none;
+      width:100%;              /* 👈 carrito 100% */
+      overflow:visible;
+    }
+    .cart-container,
+    .contact-info{
       width:100%;
     }
     .table-wrapper{
       max-height:none;
       overflow:visible;
+      width:100%;
     }
     .products-header{
       flex-direction:column;
@@ -342,7 +353,6 @@
       width:100%;
       min-width:100%;
     }
-    /* botones que causaban scroll horizontal → full width */
     .dropdown-toggle-btn,
     #sortPriceBtn,
     #modeSelector,
@@ -351,17 +361,16 @@
       width:100%;
       display:block;
       text-align:left;
+      white-space:normal;
     }
     #inventoryTotal{
       margin-left:0;
-      white-space:normal;
     }
     .custom-menu{
       width:min(310px, 96vw);
       left:0;
       right:auto;
     }
-
     /* tabla → tarjetas sin horizontal */
     .product-table{
       border:0;
@@ -374,6 +383,7 @@
       border:1px solid #eee;
       border-radius:8px;
       overflow:hidden;
+      width:100%;
     }
     .product-table td{
       display:flex;
@@ -383,6 +393,8 @@
       border-bottom:1px solid #f1f1f1;
       padding:8px 10px;
       font-size:14px;
+      width:100% !important;         /* 👈 aunque JS les ponga width, aquí lo tumbo */
+      max-width:100% !important;
     }
     .product-table td:last-child{border-bottom:none;}
     .product-table td::before{
@@ -404,16 +416,8 @@
     #googleSignInContainer{
       width:100%;
     }
-    .contact-info,
-    .cart-container{
-      width:100%;
-    }
   }
-</style>
-
-    
-  
-  
+  </style>
 </head>
 <body>
   <div class="container">
@@ -435,14 +439,11 @@
             </div>
           </div>
           <button id="sortPriceBtn" class="only-client">Ordenar por precio</button>
-
-          <!-- selector de modos -->
           <select id="modeSelector" title="Seleccionar modo">
             <option value="client" selected>Cliente</option>
             <option value="admin_edit">Edición</option>
             <option value="admin_sale">Vendedor</option>
           </select>
-
           <span id="inventoryTotal">Total: $0</span>
           <div id="googleSignInContainer"></div>
         </div>
@@ -492,7 +493,7 @@
   </div>
   <footer></footer>
 
- <script>
+  <script>
   // ===== CONFIG =====
   const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBTeqbaoB-5-b_h98cslcSic_6QcA1lCkCQagpF8q-yxcr1okC9TEuIYAZDgTL1DSCvdPtwBrApGj6/pub?gid=732037573&single=true&output=tsv';
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
@@ -501,7 +502,6 @@
   const SELLER_NAME = "Irenis Stock Natura";
   const SELLER_PHONE = "3042088961";
 
-  // correos autorizados
   const ALLOWED_ADMIN_EMAILS = [
     "irenismendoza@gmail.com",
     "marllerpar@gmail.com",
@@ -512,7 +512,6 @@
   const MODE_ADMIN_EDIT = "admin_edit";
   const MODE_ADMIN_SALE = "admin_sale";
 
-  // 🔐 clave para guardar la sesión
   const SESSION_KEY = "naturaAdminGoogleSession";
 
   let currentMode = MODE_CLIENT;
@@ -604,7 +603,6 @@
     }
   }
 
-  // 🟢 restaurar sesión guardada
   function restoreAdminSession() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
@@ -686,7 +684,6 @@
     updateInventoryTotalDisplay();
   }
 
-  // selector de modo
   modeSelector.addEventListener("change", () => {
     const selected = modeSelector.value;
     if (selected === MODE_CLIENT) {
@@ -716,7 +713,6 @@
     } catch (e) {}
   });
 
-  // ===== MODO → UI =====
   function applyUIMode() {
     document.querySelectorAll('.only-client').forEach(el => el.style.display = 'none');
     document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'none');
@@ -756,7 +752,6 @@
     }
   }
 
-  // ===== helpers =====
   function toTitleCase(str) { return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : ""; }
   function calculateInventoryTotal() {
     return products.reduce((acc, p) => acc + ((p.valor_unitario || 0) * (p.stock || 0)), 0);
@@ -776,7 +771,6 @@
     return `${dd}/${mm}/${yy}`;
   }
 
-  // ===== init =====
   function initializeApp() {
     restoreAdminSession();
     products.sort((a, b) => a.name.localeCompare(b.name));
@@ -796,7 +790,6 @@
 
   function normalizeText(t) { return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }
 
-  // ===== filters =====
   function refreshFilters() {
     allCategories = [...new Set(products.map(p => p.category))].sort();
     allBrands = [...new Set(products.map(p => p.marca))].sort();
@@ -865,7 +858,6 @@
     }
   });
 
-  // ===== filter & display =====
   function filterAndDisplayProducts() {
     let list = [...products];
 
@@ -894,7 +886,7 @@
     updateInventoryTotalDisplay();
   }
 
-  // ===== display =====
+  /* 👇👆 AQUÍ VA TU CORRECCIÓN IMPORTANTE */
   function displayProducts(list) {
     if (list.length === 0) {
       productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
@@ -915,17 +907,13 @@
 
       let nameCell, catCell, brandCell, priceCell;
       if (isEditing) {
-        nameCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="name"
-                        style="width:100%;box-sizing:border-box;max-width:420px;"
+        nameCell = `<input type="text" class="admin-input admin-col-name" data-id="${p.id}" data-field="name"
                         value="${escapeHtml(p.name)}">`;
-        catCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="category"
-                        style="width:120px;box-sizing:border-box;"
+        catCell = `<input type="text" class="admin-input admin-col-cat" data-id="${p.id}" data-field="category"
                         value="${escapeHtml(p.category)}">`;
-        brandCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="marca"
-                        style="width:110px;box-sizing:border-box;"
+        brandCell = `<input type="text" class="admin-input admin-col-brand" data-id="${p.id}" data-field="marca"
                         value="${escapeHtml(p.marca)}">`;
-        priceCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="valor_unitario"
-                        style="width:105px;box-sizing:border-box;text-align:right;"
+        priceCell = `<input type="text" class="admin-input admin-col-price" data-id="${p.id}" data-field="valor_unitario"
                         value="${p.valor_unitario}" placeholder="0">`;
       } else {
         nameCell = `<span>${escapeHtml(p.name)}</span>`;
@@ -936,11 +924,11 @@
 
       return `
           <tr>
-            <td style="min-width:210px;" data-label="Nombre">${nameCell}</td>
-            <td style="width:125px;" data-label="Categoría">${catCell}</td>
-            <td style="width:110px;" data-label="Marca">${brandCell}</td>
-            <td class="price-cell" style="width:110px;" data-label="Valor unitario">${priceCell}</td>
-            <td data-label="${dataLabel}">
+            <td class="col-name" data-label="Nombre">${nameCell}</td>
+            <td class="col-cat" data-label="Categoría">${catCell}</td>
+            <td class="col-brand" data-label="Marca">${brandCell}</td>
+            <td class="col-price price-cell" data-label="Valor unitario">${priceCell}</td>
+            <td class="col-qty" data-label="${dataLabel}">
               <div class="quantity-control">
                 <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir cantidad">-</button>
                 <input type="number" class="quantity-input" min="0" value="${valueToShow}"
@@ -951,14 +939,23 @@
                 <button type="button" class="quantity-btn increase-btn" aria-label="Aumentar cantidad">+</button>
               </div>
             </td>
-            <td class="price-cell total-pay" data-label="Total">${currencyFormatter.format(subtotal)}</td>
+            <td class="col-total price-cell total-pay" data-label="Total">${currencyFormatter.format(subtotal)}</td>
           </tr>
         `;
     }).join("");
     productTableBody.innerHTML = rows;
   }
 
-  // ===== carrito =====
+  searchInput.addEventListener("input", filterAndDisplayProducts);
+  sortPriceBtn.addEventListener("click", () => {
+    if (currentSortOrder === "default" || currentSortOrder === "desc") {
+      currentSortOrder = "asc"; sortPriceBtn.textContent = "Precio $↓";
+    } else {
+      currentSortOrder = "desc"; sortPriceBtn.textContent = "Precio $↑";
+    }
+    filterAndDisplayProducts();
+  });
+
   function updateCart() {
     let total = 0;
     const items = Object.values(cart);
@@ -980,7 +977,6 @@
     return String(t).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
   }
 
-  // ===== eventos de tabla =====
   productTableBody.addEventListener("input", (e) => {
     if (currentMode === MODE_ADMIN_EDIT) return;
     if (!e.target.classList.contains("quantity-input")) return;
@@ -1032,7 +1028,6 @@
     updateProductFieldInGoogleSheet(id, field, value, input);
   });
 
-  // ===== actualizar en sheets =====
   async function updateStockInGoogleSheet(id, newStock, input) {
     if (!googleUserToken) {
       alert("No estás autenticado. Vuelve a iniciar sesión (pero tu sesión guardada sigue ahí).");
@@ -1113,17 +1108,6 @@
     }
   }
 
-  // ===== WhatsApp & botones =====
-  searchInput.addEventListener("input", filterAndDisplayProducts);
-  sortPriceBtn.addEventListener("click", () => {
-    if (currentSortOrder === "default" || currentSortOrder === "desc") {
-      currentSortOrder = "asc"; sortPriceBtn.textContent = "Precio $↓";
-    } else {
-      currentSortOrder = "desc"; sortPriceBtn.textContent = "Precio $↑";
-    }
-    filterAndDisplayProducts();
-  });
-
   function openWhatsApp(msg) {
     const encoded = encodeURIComponent(msg);
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -1171,7 +1155,6 @@
     }
   });
 
-  // ===== VENDER (admin venta) =====
   invoiceBtn.addEventListener("click", () => {
     if (currentMode !== MODE_ADMIN_SALE) return;
     if (!googleUserToken) {
@@ -1302,6 +1285,6 @@
     });
     updateCart();
   }
-</script>
+  </script>
 </body>
 </html>

@@ -70,14 +70,12 @@
       border-bottom:1px solid rgba(0,0,0,.05);
       padding-bottom:6px;
     }
-    /* 🔴 fila superior: todo en una sola línea en desktop */
     .controls-top{
       display:flex;
       align-items:center;
       gap:8px;
       flex-wrap:nowrap;
     }
-    /* buscador ocupa el espacio sobrante */
     #searchInput{
       flex:1 1 220px;
       min-width:180px;
@@ -348,17 +346,15 @@
         overflow:visible;
         width:100%;
       }
-      /* 👉 en móvil se apilan */
       .controls-top{
         flex-direction:column;
         align-items:stretch;
       }
-      /* 👉 misma altura buscador y modo */
       #searchInput,
       #modeSelector{
         width:100%;
         padding:6px 10px;
-        min-height:40px;     /* misma altura */
+        min-height:40px;
         line-height:1.2;
       }
       .controls-bottom{
@@ -418,7 +414,6 @@
     <div class="left-panel">
       <div class="controls-panel">
         <div class="products-header">
-          <!-- FILA ÚNICA (desktop) -->
           <div class="controls-top">
             <input id="searchInput" type="text" autocomplete="off" inputmode="search" placeholder="🔍 Buscar por nombre, marca, categoría...">
             <select id="modeSelector" title="Seleccionar modo">
@@ -431,7 +426,6 @@
             <button id="logoutBtn" class="only-admin">🚪 Cerrar sesión</button>
             <div id="googleSignInContainer"></div>
           </div>
-          <!-- FILA 2 -->
           <div class="controls-bottom">
             <button id="sortPriceBtn" class="only-client">Ordenar por precio</button>
             <div class="custom-dropdown" id="categoryDropdown">
@@ -496,6 +490,7 @@
     const DEFAULT_WHATSAPP = "573042088961";
     const SELLER_NAME = "Irenis Stock Natura";
     const SELLER_PHONE = "3042088961";
+    const AUTO_REFRESH_MS = 20000; // refresca catálogo cada 20 s
 
     const ALLOWED_ADMIN_EMAILS = [
       "irenismendoza@gmail.com",
@@ -516,8 +511,7 @@
     let googleUserToken = null;
     let currentAdminName = null;
     let currentAdminEmail = null;
-    /* buffer de cambios manuales */
-    let pendingEdits = []; // {id, field, value, input}
+    let pendingEdits = [];
 
     const searchInput = document.getElementById('searchInput');
     const productTableBody = document.getElementById('productTableBody');
@@ -544,12 +538,13 @@
       minimumFractionDigits: 0
     });
 
-    /* ===== CARGA DE PRODUCTOS ===== */
-    fetch(googleSheetURL)
-      .then(r => r.ok ? r.text() : Promise.reject("Error de red"))
-      .then(csvText => {
+    async function fetchProductsFromSheet() {
+      try {
+        const resp = await fetch(googleSheetURL + "&_=" + Date.now());
+        if (!resp.ok) throw new Error("Error de red");
+        const csvText = await resp.text();
         const rows = csvText.trim().split('\n').slice(2);
-        products = rows.map(row => {
+        const newProducts = rows.map(row => {
           const cols = row.split('\t');
           if (cols.length < 6) return null;
           const priceStr = (cols[3] || '0').replace(/[^\d]/g, '');
@@ -566,14 +561,33 @@
             stock: parseInt(stockStr, 10) || 0
           };
         }).filter(Boolean);
-        initializeApp();
-      })
-      .catch(err => {
+        if (newProducts.length > 0) {
+          products = newProducts.sort((a, b) => a.name.localeCompare(b.name));
+          refreshFilters();
+          filterAndDisplayProducts();
+          updateInventoryTotalDisplay();
+        }
+      } catch (err) {
         console.error(err);
         productTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Error al cargar productos.</td></tr>`;
-      });
+      }
+    }
 
-    /* ===== GOOGLE ID (REINTENTO) ===== */
+    fetchProductsFromSheet().then(() => {
+      restoreAdminSession();
+      loadCartFromStorage();
+      applyUIMode();
+      filterAndDisplayProducts();
+      updateCart();
+      updateInventoryTotalDisplay();
+    });
+
+    setInterval(() => {
+      if (pendingEdits.length === 0) {
+        fetchProductsFromSheet();
+      }
+    }, AUTO_REFRESH_MS);
+
     document.addEventListener("DOMContentLoaded", () => {
       let tries = 0;
       const maxTries = 20;
@@ -652,17 +666,6 @@
       } catch (e) {
         console.warn("No se pudo restaurar la sesión:", e);
       }
-    }
-
-    function initializeApp() {
-      restoreAdminSession();
-      products.sort((a, b) => a.name.localeCompare(b.name));
-      loadCartFromStorage();
-      refreshFilters();
-      applyUIMode();
-      filterAndDisplayProducts();
-      updateCart();
-      updateInventoryTotalDisplay();
     }
 
     function refreshFilters() {
@@ -883,14 +886,12 @@
       }
 
       const rows = list.map(p => {
-        const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
         const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken);
-        const valueToShow = isEditing ? p.stock : qtyInCart;
+        const valueToShow = isEditing ? (p.stock || 0) : (cart[p.id]?.quantity || 0);
         const dataLabel = isEditing ? "Stock" : "Cantidad";
         const unitPrice = (p.valor_unitario || 0);
-        const subtotal = (isEditing ? (p.stock||0) : qtyInCart) * unitPrice;
+        const subtotal = valueToShow * unitPrice;
         const readOnlyAttr = isEditing ? "" : "readonly";
-        const isPending = pendingEdits.some(ed => ed.id === p.id);
 
         let nameCell, catCell, brandCell, priceCell;
         if (isEditing){
@@ -906,7 +907,7 @@
         }
 
         return `
-          <tr data-product-id="${p.id}" class="${isPending ? 'row-pending-edit' : ''}">
+          <tr data-product-id="${p.id}">
             <td data-label="Nombre">${nameCell}</td>
             <td data-label="Categoría">${catCell}</td>
             <td data-label="Marca">${brandCell}</td>
@@ -964,7 +965,6 @@
       return String(t).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
     }
 
-    /* ====== BUFFER DE EDICIONES ====== */
     function addPendingEdit(id,field,value,inputEl){
       const idx = pendingEdits.findIndex(e => e.id===id && e.field===field);
       if (idx>=0){
@@ -973,8 +973,6 @@
       } else {
         pendingEdits.push({id,field,value,input:inputEl});
       }
-      const row = productTableBody.querySelector(`tr[data-product-id="${id}"]`);
-      if (row) row.classList.add("row-pending-edit");
       updateSaveBtnState();
     }
 
@@ -988,27 +986,28 @@
       }
     }
 
-    /* botón guardado: NO limpia el buffer */
     saveEditsBtn.addEventListener("click", async () => {
       if (pendingEdits.length===0) return;
       saveEditsBtn.disabled = true;
       for (const edit of pendingEdits){
         await updateProductFieldInGoogleSheet(edit.id, edit.field, edit.value, edit.input, true);
       }
-      alert("Cambios enviados. (Los cambios siguen listados hasta que recargues la página.)");
-      saveEditsBtn.disabled = false;
-      filterAndDisplayProducts();
-      updateInventoryTotalDisplay();
+      alert("Cambios enviados.");
+      pendingEdits = [];
+      updateSaveBtnState();
+      fetchProductsFromSheet();
     });
 
-    /* ===== EVENTOS DE TABLA ===== */
-    productTableBody.addEventListener("input", e => {
+    productTableBody.addEventListener("input", async e => {
       const isQty = e.target.classList.contains("quantity-input");
       const isAdminInput = e.target.classList.contains("admin-input");
 
       if (isAdminInput && currentMode===MODE_ADMIN_EDIT && googleUserToken){
         const input = e.target;
-        addPendingEdit(input.dataset.id, input.dataset.field, input.value, input);
+        const field = input.dataset.field;
+        const id = input.dataset.id;
+        const val = input.value;
+        addPendingEdit(id, field, val, input);
         return;
       }
 
@@ -1024,15 +1023,13 @@
       if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty*price);
 
       if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        /* SOLO buffer, NO a la hoja */
-        addPendingEdit(id, "stock", qty, input);
         const p = products.find(p=>p.id===id);
         if (p) p.stock = qty;
         updateInventoryTotalDisplay();
+        await updateProductFieldInGoogleSheet(id, "stock", qty, input, false);
         return;
       }
 
-      /* cliente / vendedor → carrito */
       if (qty>0){
         cart[id] = {id,name,quantity:qty,price};
       } else {
@@ -1041,7 +1038,7 @@
       updateCart();
     });
 
-    productTableBody.addEventListener("click", e => {
+    productTableBody.addEventListener("click", async e => {
       if (!e.target.classList.contains("quantity-btn")) return;
       const ctrl = e.target.closest(".quantity-control");
       const input = ctrl.querySelector(".quantity-input");
@@ -1058,10 +1055,10 @@
       if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val*price);
 
       if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        addPendingEdit(id, "stock", val, input);
         const p = products.find(p=>p.id===id);
         if (p) p.stock = val;
         updateInventoryTotalDisplay();
+        await updateProductFieldInGoogleSheet(id, "stock", val, input, false);
         return;
       }
 
@@ -1073,7 +1070,6 @@
       updateCart();
     });
 
-    /* ===== ACTUALIZACIÓN EN SHEETS (solo desde botón) ===== */
     async function updateProductFieldInGoogleSheet(id,field,value,input,silent){
       if (!googleUserToken){
         alert("No estás autenticado.");
@@ -1103,8 +1099,11 @@
         const json = await resp.json();
         if (json.status==="success"){
           if (p) p[field] = newValue;
+          if (field === "stock") {
+            const rowInput = document.querySelector(`.quantity-input[data-id="${id}"]`);
+            if (rowInput) rowInput.value = newValue;
+          }
           if (!silent){
-            filterAndDisplayProducts();
             updateInventoryTotalDisplay();
           }
         } else {
@@ -1118,7 +1117,6 @@
       }
     }
 
-    /* ===== ORDEN Y BUSCADOR ===== */
     searchInput.addEventListener("input", filterAndDisplayProducts);
     sortPriceBtn.addEventListener("click", () => {
       if (currentSortOrder==="default" || currentSortOrder==="desc"){
@@ -1131,7 +1129,6 @@
       filterAndDisplayProducts();
     });
 
-    /* ===== WHATSAPP ===== */
     function openWhatsApp(msg){
       const encoded = encodeURIComponent(msg);
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -1180,7 +1177,6 @@
       }
     });
 
-    /* ===== VENDER (ADMIN) ===== */
     invoiceBtn.addEventListener("click", () => {
       if (currentMode !== MODE_ADMIN_SALE) return;
       if (!googleUserToken){
@@ -1197,7 +1193,7 @@
       w.document.close();
     }
 
-    function startSellFlow(){
+    async function startSellFlow(){
       const items = Object.values(cart);
       if (items.length===0){
         alert("No hay productos en el carrito.");
@@ -1287,15 +1283,14 @@
         openInvoiceWindow(html);
       }
 
-      /* ahora NO guardamos en la hoja, solo añadimos al buffer */
-      items.forEach(it => {
+      for (const it of items) {
         const prod = products.find(p => p.id === it.id);
         if (prod){
           const newStock = Math.max((prod.stock||0) - it.quantity, 0);
           prod.stock = newStock;
-          addPendingEdit(prod.id, "stock", newStock, null);
+          await updateProductFieldInGoogleSheet(prod.id, "stock", newStock, null, true);
         }
-      });
+      }
 
       cart = {};
       localStorage.removeItem("shoppingCart");

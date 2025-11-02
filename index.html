@@ -70,18 +70,14 @@
       border-bottom:1px solid rgba(0,0,0,.05);
       padding-bottom:6px;
     }
+    /* 🔴 fila superior: todo en una sola línea en desktop */
     .controls-top{
       display:flex;
-      gap:8px;
       align-items:center;
-      flex-wrap:wrap;
-    }
-    .controls-bottom{
-      display:flex;
       gap:8px;
-      align-items:center;
-      flex-wrap:wrap;
+      flex-wrap:nowrap;
     }
+    /* buscador ocupa el espacio sobrante */
     #searchInput{
       flex:1 1 220px;
       min-width:180px;
@@ -90,6 +86,19 @@
       border-radius:5px;
       background:var(--card);
       font-size:16px;
+    }
+    #modeSelector,
+    #inventoryTotal,
+    #saveEditsBtn,
+    #logoutBtn,
+    #googleSignInContainer{
+      flex:0 0 auto;
+    }
+    .controls-bottom{
+      display:flex;
+      gap:8px;
+      align-items:center;
+      flex-wrap:wrap;
     }
     #modeSelector{
       padding:6px 10px;
@@ -311,11 +320,12 @@
     .only-admin{display:none;}
     .only-admin-edit{display:none;}
     .only-admin-sale{display:none;}
-    /* marcar fila con cambios pendientes */
     .row-pending-edit{
       outline:2px dashed rgba(25,135,84,.5);
       background:rgba(25,135,84,.04);
     }
+
+    /* ======== MÓVIL ======== */
     @media (max-width:768px){
       body{padding:6px;}
       .container{
@@ -338,13 +348,19 @@
         overflow:visible;
         width:100%;
       }
-      #searchInput{
+      /* 👉 en móvil se apilan */
+      .controls-top{
+        flex-direction:column;
+        align-items:stretch;
+      }
+      /* 👉 misma altura buscador y modo */
+      #searchInput,
+      #modeSelector{
         width:100%;
         padding:6px 10px;
-        height:auto;
-        min-height:36px;
+        min-height:40px;     /* misma altura */
+        line-height:1.2;
       }
-      .controls-top,
       .controls-bottom{
         flex-direction:column;
         align-items:stretch;
@@ -402,6 +418,7 @@
     <div class="left-panel">
       <div class="controls-panel">
         <div class="products-header">
+          <!-- FILA ÚNICA (desktop) -->
           <div class="controls-top">
             <input id="searchInput" type="text" autocomplete="off" inputmode="search" placeholder="🔍 Buscar por nombre, marca, categoría...">
             <select id="modeSelector" title="Seleccionar modo">
@@ -414,6 +431,7 @@
             <button id="logoutBtn" class="only-admin">🚪 Cerrar sesión</button>
             <div id="googleSignInContainer"></div>
           </div>
+          <!-- FILA 2 -->
           <div class="controls-bottom">
             <button id="sortPriceBtn" class="only-client">Ordenar por precio</button>
             <div class="custom-dropdown" id="categoryDropdown">
@@ -445,6 +463,7 @@
         </table>
       </div>
     </div>
+
     <div class="right-panel">
       <div class="cart-container" id="cartContainer">
         <h3>🛒 Carrito de Compras</h3>
@@ -455,6 +474,7 @@
         <button id="whatsappBtn" class="only-client">Comprar por WhatsApp (cliente)</button>
         <button id="invoiceBtn" class="only-admin-sale" style="display:none;" disabled>Vender</button>
       </div>
+
       <div class="contact-info">
         <h3>✨ Contacto y Ubicación ✨</h3>
         <p class="small-gap">📱 <strong>WhatsApp y llamadas:</strong> <a href="https://wa.me/573042088961" target="_blank" rel="noopener" id="contactWhatsappLink">3042088961</a></p>
@@ -477,7 +497,6 @@
     const SELLER_NAME = "Irenis Stock Natura";
     const SELLER_PHONE = "3042088961";
 
-    /* correos admin autorizados */
     const ALLOWED_ADMIN_EMAILS = [
       "irenismendoza@gmail.com",
       "marllerpar@gmail.com"
@@ -497,7 +516,7 @@
     let googleUserToken = null;
     let currentAdminName = null;
     let currentAdminEmail = null;
-    /* ⚠️ ahora el buffer no se limpia automático */
+    /* buffer de cambios manuales */
     let pendingEdits = []; // {id, field, value, input}
 
     const searchInput = document.getElementById('searchInput');
@@ -512,7 +531,6 @@
     const invoiceBtn = document.getElementById('invoiceBtn');
     const qtyHeader = document.getElementById('qtyHeader');
     const modeSelector = document.getElementById('modeSelector');
-    const cartContainer = document.getElementById('cartContainer');
     const categoryMenuContainer = document.getElementById('categoryMenu');
     const brandMenuContainer = document.getElementById('brandMenu');
     const categoryToggleBtn = document.getElementById('categoryToggleBtn');
@@ -731,7 +749,6 @@
       googleUserToken = null;
       currentAdminName = null;
       currentAdminEmail = null;
-      /* no limpiamos el buffer aquí si no quieres; pero al salir de admin no tiene sentido guardarlo */
       pendingEdits = [];
       updateSaveBtnState();
       localStorage.removeItem(SESSION_KEY);
@@ -784,7 +801,6 @@
         document.querySelectorAll('.only-client').forEach(el => el.style.display = 'block');
         sortPriceBtn.style.display = "inline-block";
         inventoryTotalElement.style.display = "none";
-        cartContainer.style.display = "block";
         invoiceBtn.disabled = true;
         saveEditsBtn.style.display = "none";
         logoutBtn.style.display = "none";
@@ -793,7 +809,6 @@
         document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
         sortPriceBtn.style.display = "none";
         inventoryTotalElement.style.display = "inline-block";
-        cartContainer.style.display = "block";
         invoiceBtn.disabled = true;
         saveEditsBtn.style.display = "block";
         logoutBtn.style.display = "block";
@@ -802,7 +817,6 @@
         document.querySelectorAll('.only-admin-sale').forEach(el => el.style.display = 'inline-block');
         sortPriceBtn.style.display = "none";
         inventoryTotalElement.style.display = "inline-block";
-        cartContainer.style.display = "block";
         invoiceBtn.disabled = false;
         saveEditsBtn.style.display = "none";
         logoutBtn.style.display = "block";
@@ -974,17 +988,15 @@
       }
     }
 
-    /* ahora el botón guarda pero NO limpia el buffer */
+    /* botón guardado: NO limpia el buffer */
     saveEditsBtn.addEventListener("click", async () => {
       if (pendingEdits.length===0) return;
       saveEditsBtn.disabled = true;
       for (const edit of pendingEdits){
         await updateProductFieldInGoogleSheet(edit.id, edit.field, edit.value, edit.input, true);
       }
-      alert("Cambios enviados. (El listado de cambios queda hasta que recargues la página.)");
+      alert("Cambios enviados. (Los cambios siguen listados hasta que recargues la página.)");
       saveEditsBtn.disabled = false;
-      /* NO vaciamos pendingEdits */
-      /* pero sí refrescamos tabla para ver valores reales */
       filterAndDisplayProducts();
       updateInventoryTotalDisplay();
     });
@@ -994,7 +1006,6 @@
       const isQty = e.target.classList.contains("quantity-input");
       const isAdminInput = e.target.classList.contains("admin-input");
 
-      /* admin edición → buffer (cualquier campo) */
       if (isAdminInput && currentMode===MODE_ADMIN_EDIT && googleUserToken){
         const input = e.target;
         addPendingEdit(input.dataset.id, input.dataset.field, input.value, input);
@@ -1013,10 +1024,8 @@
       if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty*price);
 
       if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        /* ANTES: updateStockInGoogleSheet(...) */
-        /* AHORA: SOLO BUFFER */
+        /* SOLO buffer, NO a la hoja */
         addPendingEdit(id, "stock", qty, input);
-        /* también actualizamos en memoria para que el total de inventario se vea bien */
         const p = products.find(p=>p.id===id);
         if (p) p.stock = qty;
         updateInventoryTotalDisplay();
@@ -1049,8 +1058,6 @@
       if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val*price);
 
       if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        /* ANTES: updateStockInGoogleSheet(...) */
-        /* AHORA: SOLO BUFFER */
         addPendingEdit(id, "stock", val, input);
         const p = products.find(p=>p.id===id);
         if (p) p.stock = val;
@@ -1066,7 +1073,7 @@
       updateCart();
     });
 
-    /* ===== ACTUALIZACIÓN EN SHEETS (ahora solo la llama el botón) ===== */
+    /* ===== ACTUALIZACIÓN EN SHEETS (solo desde botón) ===== */
     async function updateProductFieldInGoogleSheet(id,field,value,input,silent){
       if (!googleUserToken){
         alert("No estás autenticado.");
@@ -1111,7 +1118,7 @@
       }
     }
 
-    /* ===== BUSCADOR Y ORDEN ===== */
+    /* ===== ORDEN Y BUSCADOR ===== */
     searchInput.addEventListener("input", filterAndDisplayProducts);
     sortPriceBtn.addEventListener("click", () => {
       if (currentSortOrder==="default" || currentSortOrder==="desc"){
@@ -1173,7 +1180,7 @@
       }
     });
 
-    /* ===== VENDER (ADMIN SALE) ===== */
+    /* ===== VENDER (ADMIN) ===== */
     invoiceBtn.addEventListener("click", () => {
       if (currentMode !== MODE_ADMIN_SALE) return;
       if (!googleUserToken){
@@ -1280,18 +1287,16 @@
         openInvoiceWindow(html);
       }
 
-      /* ⚠️ antes aquí DESCONTABA en la hoja.
-         ahora SOLO lo metemos al BUFFER para que se guarde cuando tú quieras */
+      /* ahora NO guardamos en la hoja, solo añadimos al buffer */
       items.forEach(it => {
         const prod = products.find(p => p.id === it.id);
         if (prod){
           const newStock = Math.max((prod.stock||0) - it.quantity, 0);
-          prod.stock = newStock;  // lo reflejamos en memoria
+          prod.stock = newStock;
           addPendingEdit(prod.id, "stock", newStock, null);
         }
       });
 
-      /* limpiar carrito (esto sí puede ser automático) */
       cart = {};
       localStorage.removeItem("shoppingCart");
       productTableBody.querySelectorAll(".quantity-input").forEach(input=>{

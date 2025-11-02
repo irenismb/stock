@@ -135,7 +135,10 @@
     font-size:14px;
     min-height:36px;
   }
-  #googleSignInContainer{display:none; margin-left: 8px;}
+  #googleSignInContainer{
+    display:block; /* 👈 ahora también en móvil */
+    margin-left:8px;
+  }
   #inventoryTotal{
     margin-left:10px;
     font-weight:bold;
@@ -565,13 +568,11 @@
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn
       });
-      // solo lo mostramos fijo en escritorio
-      if (!IS_MOBILE) {
-        google.accounts.id.renderButton(
-          googleSignInContainer,
-          { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
-        );
-      }
+      // 👇 ahora SÍ lo renderizamos también en móvil
+      google.accounts.id.renderButton(
+        googleSignInContainer,
+        { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
+      );
     } catch (e) { console.warn(e); }
   };
 
@@ -600,11 +601,8 @@
       googleUserToken = saved.token;
       currentAdminName = saved.name || "Admin";
       currentAdminEmail = saved.email;
-      // en móvil ahora sí respetamos el modo guardado si hay sesión
       currentMode = saved.mode || MODE_ADMIN_EDIT;
-      if (!IS_MOBILE) {
-        googleSignInContainer.style.display = "none";
-      }
+      googleSignInContainer.style.display = "block"; // lo dejamos visible para re-login
     } catch (e) {
       console.warn("No se pudo restaurar la sesión:", e);
     }
@@ -668,10 +666,9 @@
   modeSelector.addEventListener("change", () => {
     const selected = modeSelector.value;
 
-    // si no hay sesión de admin, en cualquier dispositivo → solo cliente
+    // si no hay sesión de admin → solo cliente
     if (!googleUserToken && (selected === MODE_ADMIN_EDIT || selected === MODE_ADMIN_SALE)) {
       alert("Inicia sesión con un correo autorizado para usar ese modo.");
-      if (!IS_MOBILE) googleSignInContainer.style.display = "block";
       modeSelector.value = MODE_CLIENT;
       currentMode = MODE_CLIENT;
       applyUIMode();
@@ -713,7 +710,6 @@
       document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
       document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
       sortPriceBtn.style.display = "none";
-      // en móvil seguimos mostrando el carrito
       cartContainer.style.display = "block";
       inventoryTotalElement.style.display = "inline-block";
       invoiceBtn.disabled = true;
@@ -879,8 +875,7 @@
     }
     const rows = list.map(p => {
       const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
-      // si hay sesión de admin, incluso en móvil puede editar
-      const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken);
+      const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken); // 👈 ahora también móvil
       const valueToShow = isEditing ? p.stock : qtyInCart;
       const dataLabel = isEditing ? "Stock" : "Cantidad";
       let subtotal;
@@ -954,7 +949,7 @@
     const isQty = e.target.classList && e.target.classList.contains("quantity-input");
     const isAdminInput = e.target.classList && e.target.classList.contains("admin-input");
 
-    // admin edición
+    // admin edición (ahora también en móvil)
     if (isAdminInput && currentMode === MODE_ADMIN_EDIT && googleUserToken) {
       const input = e.target;
       const id = input.dataset.id;
@@ -975,13 +970,13 @@
     const tr = input.closest("tr");
     if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty * price);
 
-    // admin edit en escritorio → guardar en sheet
-    if (currentMode === MODE_ADMIN_EDIT && googleUserToken && !IS_MOBILE) {
+    // admin edit con sesión → guardar stock (sin importar móvil o escritorio)
+    if (currentMode === MODE_ADMIN_EDIT && googleUserToken) {
       updateStockInGoogleSheet(id, qty, input);
       return;
     }
 
-    // cliente / móvil → carrito
+    // cliente / admin venta → carrito
     if (qty > 0) {
       cart[id] = { id, name, quantity: qty, price };
     } else {
@@ -1007,7 +1002,7 @@
     const tr = input.closest("tr");
     if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val * price);
 
-    if (currentMode === MODE_ADMIN_EDIT && googleUserToken && !IS_MOBILE) {
+    if (currentMode === MODE_ADMIN_EDIT && googleUserToken) {
       updateStockInGoogleSheet(id, val, input);
       return;
     }
@@ -1279,7 +1274,7 @@
       openInvoiceWindow(html);
     }
 
-    // descontar stock también en la hoja
+    // descontar stock también en la hoja (móvil y escritorio)
     items.forEach(it => {
       const prod = products.find(p => p.id === it.id);
       if (prod) {

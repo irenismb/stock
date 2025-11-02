@@ -51,33 +51,29 @@
     padding-bottom:6px;
     padding-top:4px;
   }
+  /* nuevo layout en 2 líneas */
   .products-header{
     display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:10px;
+    flex-direction:column;
+    gap:6px;
     border-bottom:1px solid rgba(0,0,0,.05);
     padding-bottom:6px;
+  }
+  .controls-top{
+    display:flex;
+    gap:8px;
+    align-items:center;
     flex-wrap:wrap;
   }
-  .left-controls{
+  .controls-bottom{
     display:flex;
-    align-items:center;
-    gap:10px;
-    flex:1;
-    min-width:0;
-  }
-  .search-filters{
-    display:flex;
-    align-items:center;
     gap:8px;
-    flex:1;
-    min-width:0;
+    align-items:center;
     flex-wrap:wrap;
   }
   #searchInput{
-    flex:1 1 180px;
-    min-width:0;
+    flex:1 1 220px;
+    min-width:180px;
     padding:10px 12px;
     border:1px solid #ccc;
     border-radius:5px;
@@ -136,14 +132,35 @@
     min-height:36px;
   }
   #googleSignInContainer{
-    display:block; /* 👈 ahora también en móvil */
-    margin-left:8px;
+    display:block;
   }
   #inventoryTotal{
-    margin-left:10px;
+    margin-left:0;
     font-weight:bold;
     color:#dc3545;
     white-space:nowrap;
+    display:none;
+  }
+  #saveEditsBtn,
+  #logoutBtn{
+    border:none;
+    border-radius:6px;
+    padding:8px 12px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  #saveEditsBtn{
+    background:#198754;
+    color:#fff;
+    display:none;
+  }
+  #saveEditsBtn[disabled]{
+    opacity:.55;
+    cursor:not-allowed;
+  }
+  #logoutBtn{
+    background:#dc3545;
+    color:#fff;
     display:none;
   }
 
@@ -308,9 +325,6 @@
   .only-admin-edit{display:none;}
   .only-admin-sale{display:none;}
 
-  /* ==========================
-       MÓVILES
-     ========================== */
   @media (max-width:768px){
     body{
       padding:6px;
@@ -336,25 +350,19 @@
       overflow:visible;
       width:100%;
     }
-    .products-header{
+    .controls-top,
+    .controls-bottom{
       flex-direction:column;
       align-items:stretch;
-      gap:6px;
     }
-    .left-controls,
-    .search-filters{
-      width:100%;
-      flex-wrap:wrap;
-    }
-    #searchInput{
-      width:100%;
-      min-width:100%;
-    }
-    .dropdown-toggle-btn,
-    #sortPriceBtn,
+    #searchInput,
     #modeSelector,
     #inventoryTotal,
-    #googleSignInContainer{
+    #saveEditsBtn,
+    #logoutBtn,
+    #googleSignInContainer,
+    #sortPriceBtn,
+    .dropdown-toggle-btn{
       width:100%;
       display:block;
       text-align:left;
@@ -409,27 +417,31 @@
       <!-- CONTROLES SUPERIORES -->
       <div class="controls-panel">
         <div class="products-header">
-          <div class="left-controls">
-            <div class="search-filters">
-              <input type="text" id="searchInput" autocomplete="off" inputmode="search" placeholder="🔍 Buscar por nombre, marca, categoría...">
-              <div class="custom-dropdown" id="categoryDropdown">
-                <button type="button" id="categoryToggleBtn" class="dropdown-toggle-btn">Categorías ▾</button>
-                <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
-              </div>
-              <div class="custom-dropdown" id="brandDropdown">
-                <button type="button" id="brandToggleBtn" class="dropdown-toggle-btn">Marcas ▾</button>
-                <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
-              </div>
+          <!-- FILA 1 -->
+          <div class="controls-top">
+            <input type="text" id="searchInput" autocomplete="off" inputmode="search" placeholder="🔍 Buscar por nombre, marca, categoría...">
+            <select id="modeSelector" title="Seleccionar modo">
+              <option value="client" selected>Cliente</option>
+              <option value="admin_edit">Edición</option>
+              <option value="admin_sale">Vendedor</option>
+            </select>
+            <span id="inventoryTotal">Total: $0</span>
+            <button id="saveEditsBtn" class="only-admin-edit" disabled>💾 Guardar cambios (0)</button>
+            <button id="logoutBtn" class="only-admin">🚪 Cerrar sesión</button>
+            <div id="googleSignInContainer"></div>
+          </div>
+          <!-- FILA 2 -->
+          <div class="controls-bottom">
+            <button id="sortPriceBtn" class="only-client">Ordenar por precio</button>
+            <div class="custom-dropdown" id="categoryDropdown">
+              <button type="button" id="categoryToggleBtn" class="dropdown-toggle-btn">Categorías ▾</button>
+              <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
+            </div>
+            <div class="custom-dropdown" id="brandDropdown">
+              <button type="button" id="brandToggleBtn" class="dropdown-toggle-btn">Marcas ▾</button>
+              <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
             </div>
           </div>
-          <button id="sortPriceBtn" class="only-client">Ordenar por precio</button>
-          <select id="modeSelector" title="Seleccionar modo">
-            <option value="client" selected>Cliente</option>
-            <option value="admin_edit">Edición</option>
-            <option value="admin_sale">Vendedor</option>
-          </select>
-          <span id="inventoryTotal">Total: $0</span>
-          <div id="googleSignInContainer"></div>
         </div>
       </div>
 
@@ -526,10 +538,15 @@
   const cartContainer = document.getElementById('cartContainer');
   const categoryToggleBtn = document.getElementById('categoryToggleBtn');
   const brandToggleBtn = document.getElementById('brandToggleBtn');
+  const saveEditsBtn = document.getElementById('saveEditsBtn');
+  const logoutBtn = document.getElementById('logoutBtn');
 
   let cart = {};
   let currentSortOrder = 'default';
   const currencyFormatter = new Intl.NumberFormat("es-CO", { style: "currency", currency: "COP", minimumFractionDigits: 0 });
+
+  // buffer de cambios solo de texto/valor
+  let pendingEdits = []; // {id, field, value, input}
 
   // ===== CARGA DE PRODUCTOS =====
   fetch(googleSheetURL)
@@ -568,7 +585,6 @@
         client_id: GOOGLE_CLIENT_ID,
         callback: handleGoogleSignIn
       });
-      // 👇 ahora SÍ lo renderizamos también en móvil
       google.accounts.id.renderButton(
         googleSignInContainer,
         { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
@@ -602,7 +618,7 @@
       currentAdminName = saved.name || "Admin";
       currentAdminEmail = saved.email;
       currentMode = saved.mode || MODE_ADMIN_EDIT;
-      googleSignInContainer.style.display = "block"; // lo dejamos visible para re-login
+      googleSignInContainer.style.display = "block";
     } catch (e) {
       console.warn("No se pudo restaurar la sesión:", e);
     }
@@ -657,16 +673,26 @@
 
   function exitAdminMode() {
     currentMode = MODE_CLIENT;
+    googleUserToken = null;
+    currentAdminName = null;
+    currentAdminEmail = null;
+    pendingEdits = [];
+    updateSaveBtnState();
+    localStorage.removeItem(SESSION_KEY);
     modeSelector.value = MODE_CLIENT;
     applyUIMode();
     filterAndDisplayProducts();
     updateInventoryTotalDisplay();
   }
 
+  logoutBtn.addEventListener("click", () => {
+    exitAdminMode();
+    alert("Sesión cerrada.");
+  });
+
   modeSelector.addEventListener("change", () => {
     const selected = modeSelector.value;
 
-    // si no hay sesión de admin → solo cliente
     if (!googleUserToken && (selected === MODE_ADMIN_EDIT || selected === MODE_ADMIN_SALE)) {
       alert("Inicia sesión con un correo autorizado para usar ese modo.");
       modeSelector.value = MODE_CLIENT;
@@ -706,6 +732,8 @@
       inventoryTotalElement.style.display = "none";
       cartContainer.style.display = "block";
       invoiceBtn.disabled = true;
+      saveEditsBtn.style.display = "none";
+      logoutBtn.style.display = "none";
     } else if (currentMode === MODE_ADMIN_EDIT) {
       document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
       document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
@@ -713,6 +741,8 @@
       cartContainer.style.display = "block";
       inventoryTotalElement.style.display = "inline-block";
       invoiceBtn.disabled = true;
+      saveEditsBtn.style.display = "block";
+      logoutBtn.style.display = "block";
     } else if (currentMode === MODE_ADMIN_SALE) {
       document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
       document.querySelectorAll('.only-admin-sale').forEach(el => el.style.display = 'inline-block');
@@ -720,6 +750,8 @@
       cartContainer.style.display = "block";
       inventoryTotalElement.style.display = "inline-block";
       invoiceBtn.disabled = false;
+      saveEditsBtn.style.display = "none";
+      logoutBtn.style.display = "block";
     }
 
     setQtyHeader();
@@ -875,7 +907,7 @@
     }
     const rows = list.map(p => {
       const qtyInCart = cart[p.id] ? cart[p.id].quantity : 0;
-      const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken); // 👈 ahora también móvil
+      const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken);
       const valueToShow = isEditing ? p.stock : qtyInCart;
       const dataLabel = isEditing ? "Stock" : "Cantidad";
       let subtotal;
@@ -944,18 +976,52 @@
     return String(t).replace(/[&<>"']/g, s => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
   }
 
-  // eventos
+  // ====== BUFFER DE EDICIÓN ======
+  function addPendingEdit(id, field, value, inputEl){
+    const idx = pendingEdits.findIndex(e => e.id === id && e.field === field);
+    if (idx >= 0){
+      pendingEdits[idx].value = value;
+      pendingEdits[idx].input = inputEl;
+    } else {
+      pendingEdits.push({id, field, value, input: inputEl});
+    }
+    updateSaveBtnState();
+  }
+
+  function updateSaveBtnState(){
+    if (pendingEdits.length > 0){
+      saveEditsBtn.disabled = false;
+      saveEditsBtn.textContent = `💾 Guardar cambios (${pendingEdits.length})`;
+    } else {
+      saveEditsBtn.disabled = true;
+      saveEditsBtn.textContent = "💾 Guardar cambios (0)";
+    }
+  }
+
+  saveEditsBtn.addEventListener("click", async () => {
+    if (pendingEdits.length === 0) return;
+    saveEditsBtn.disabled = true;
+    for (const edit of pendingEdits){
+      await updateProductFieldInGoogleSheet(edit.id, edit.field, edit.value, edit.input, true);
+    }
+    pendingEdits = [];
+    updateSaveBtnState();
+    alert("Cambios guardados.");
+    filterAndDisplayProducts();
+  });
+
+  // eventos de la tabla
   productTableBody.addEventListener("input", (e) => {
     const isQty = e.target.classList && e.target.classList.contains("quantity-input");
     const isAdminInput = e.target.classList && e.target.classList.contains("admin-input");
 
-    // admin edición (ahora también en móvil)
+    // admin edición → texto/precio a buffer
     if (isAdminInput && currentMode === MODE_ADMIN_EDIT && googleUserToken) {
       const input = e.target;
       const id = input.dataset.id;
       const field = input.dataset.field;
       const value = input.value;
-      updateProductFieldInGoogleSheet(id, field, value, input);
+      addPendingEdit(id, field, value, input);
       return;
     }
 
@@ -970,7 +1036,7 @@
     const tr = input.closest("tr");
     if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty * price);
 
-    // admin edit con sesión → guardar stock (sin importar móvil o escritorio)
+    // admin edit con sesión → stock se guarda de una
     if (currentMode === MODE_ADMIN_EDIT && googleUserToken) {
       updateStockInGoogleSheet(id, qty, input);
       return;
@@ -1015,16 +1081,6 @@
     updateCart();
   });
 
-  productTableBody.addEventListener("change", (e) => {
-    if (!e.target.classList.contains("admin-input")) return;
-    if (currentMode !== MODE_ADMIN_EDIT || !googleUserToken) return;
-    const input = e.target;
-    const id = input.dataset.id;
-    const field = input.dataset.field;
-    const value = input.value;
-    updateProductFieldInGoogleSheet(id, field, value, input);
-  });
-
   async function updateStockInGoogleSheet(id, newStock, input) {
     if (!googleUserToken) {
       alert("No estás autenticado.");
@@ -1061,7 +1117,7 @@
     }
   }
 
-  async function updateProductFieldInGoogleSheet(id, field, value, input) {
+  async function updateProductFieldInGoogleSheet(id, field, value, input, silent) {
     if (!googleUserToken) {
       alert("No estás autenticado.");
       return;
@@ -1073,7 +1129,7 @@
       newValue = (value || "").replace(/[^\d]/g, "");
       newValue = parseInt(newValue, 10) || 0;
     }
-    input.disabled = true;
+    if (input) input.disabled = true;
     try {
       const resp = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
@@ -1090,14 +1146,16 @@
       const json = await resp.json();
       if (json.status === "success") {
         p[field] = newValue;
-        filterAndDisplayProducts();
-        updateInventoryTotalDisplay();
+        if (!silent){
+          filterAndDisplayProducts();
+          updateInventoryTotalDisplay();
+        }
       } else {
         throw new Error(json.message || "Error guardando");
       }
     } catch (err) {
       alert("Error al guardar: " + err.message);
-      input.value = original;
+      if (input) input.value = original;
     } finally {
       if (input) input.disabled = false;
     }
@@ -1274,7 +1332,7 @@
       openInvoiceWindow(html);
     }
 
-    // descontar stock también en la hoja (móvil y escritorio)
+    // descontar stock también en la hoja
     items.forEach(it => {
       const prod = products.find(p => p.id === it.id);
       if (prod) {

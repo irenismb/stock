@@ -473,7 +473,8 @@
         <h3>✨ Contacto y Ubicación ✨</h3>
         <p class="small-gap">📱 <strong>WhatsApp y llamadas:</strong> <a href="https://wa.me/573042088961" target="_blank" rel="noopener" id="contactWhatsappLink">3042088961</a></p>
         <p class="small-gap">📍 <strong>Ubicación:</strong> Estamos en Santa Marta. ¡Hacemos envíos a toda Colombia y pagos contra entrega en Santa Marta!</p>
-        <p class="small-gap">🗺️ <strong>Visítanos (GPS):</strong> <a href="https://www.google.com/maps" target="_blank" rel="noopener">Ver en Google Maps</a></p>
+        <p class="small-gap">🗺️ <strong>Visítanos (GPS):</strong> <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">Ver en Google Maps</a>
+</p>
         <hr>
         <h3>🌐 ¡Síguenos en Nuestras Redes! 🌐</h3>
         <p class="small-gap">👍 <a href="#" target="_blank" rel="noopener">Facebook</a></p>
@@ -483,832 +484,554 @@
     </div>
   </div>
 
-  <script>
-    const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBTeqbaoB-5-b_h98cslcSic_6QcA1lCkCQagpF8q-yxcr1okC9TEuIYAZDgTL1DSCvdPtwBrApGj6/pub?gid=732037573&single=true&output=tsv';
-    const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
-    const GOOGLE_CLIENT_ID = "575624026373-nm1ienpvaaa4its9070pv182quqf544m.apps.googleusercontent.com";
-    const DEFAULT_WHATSAPP = "573042088961";
-    const SELLER_NAME = "Irenis Stock Natura";
-    const SELLER_PHONE = "3042088961";
-    const AUTO_REFRESH_MS = 20000; // refresca catálogo cada 20 s
+<script>
+  /* ================== CONFIG ================== */
+  const googleSheetURL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRBTeqbaoB-5-b_h98cslcSic_6QcA1lCkCQagpF8q-yxcr1okC9TEuIYAZDgTL1DSCvdPtwBrApGj6/pub?gid=732037573&single=true&output=tsv';
+  const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
+  const GOOGLE_CLIENT_ID = "575624026373-nm1ienpvaaa4its9070pv182quqf544m.apps.googleusercontent.com";
+  const DEFAULT_WHATSAPP = "573042088961";
+  const STORE_HEADER = "Irenismb Stock Natura Santa Marta";
+  const AUTO_REFRESH_MS = 20000;
 
-    const ALLOWED_ADMIN_EMAILS = [
-      "irenismendoza@gmail.com",
-      "marllerpar@gmail.com"
-    ];
+  const ALLOWED_ADMIN_EMAILS = ["irenismendoza@gmail.com","marllerpar@gmail.com"];
 
-    const MODE_CLIENT = "client";
-    const MODE_ADMIN_EDIT = "admin_edit";
-    const MODE_ADMIN_SALE = "admin_sale";
-    const SESSION_KEY = "naturaAdminGoogleSession";
+  const MODE_CLIENT = "client";
+  const MODE_ADMIN_EDIT = "admin_edit";
+  const MODE_ADMIN_SALE = "admin_sale";
+  const SESSION_KEY = "naturaAdminGoogleSession";
+  const LS_FILTERS_KEY = "naturaFilters";
+  const LS_CART_KEY = "shoppingCart";
 
-    let currentMode = MODE_CLIENT;
-    let products = [];
-    let cart = {};
-    let allCategories = [];
-    let allBrands = [];
-    let currentSortOrder = "default";
-    let googleUserToken = null;
-    let currentAdminName = null;
-    let currentAdminEmail = null;
-    let pendingEdits = [];
+  /* ================== ESTADO ================== */
+  let currentMode = MODE_CLIENT;
+  let products = [];
+  let cart = {};
+  let allCategories = [];
+  let allBrands = [];
+  let currentSortOrder = "default";
+  let googleUserToken = null;
+  let currentAdminName = null;
+  let currentAdminEmail = null;
 
-    const searchInput = document.getElementById('searchInput');
-    const productTableBody = document.getElementById('productTableBody');
-    const cartList = document.getElementById('cartList');
-    const totalPriceElement = document.getElementById('totalPrice');
-    const whatsappBtn = document.getElementById('whatsappBtn');
-    const contactWhatsappLink = document.getElementById('contactWhatsappLink');
-    const sortPriceBtn = document.getElementById('sortPriceBtn');
-    const googleSignInContainer = document.getElementById('googleSignInContainer');
-    const inventoryTotalElement = document.getElementById('inventoryTotal');
-    const invoiceBtn = document.getElementById('invoiceBtn');
-    const qtyHeader = document.getElementById('qtyHeader');
-    const modeSelector = document.getElementById('modeSelector');
-    const categoryMenuContainer = document.getElementById('categoryMenu');
-    const brandMenuContainer = document.getElementById('brandMenu');
-    const categoryToggleBtn = document.getElementById('categoryToggleBtn');
-    const brandToggleBtn = document.getElementById('brandToggleBtn');
-    const saveEditsBtn = document.getElementById('saveEditsBtn');
-    const logoutBtn = document.getElementById('logoutBtn');
+  // Google Identity
+  let gsiReady = false;
+  let gsiInitialized = false;
 
-    const currencyFormatter = new Intl.NumberFormat("es-CO", {
-      style: "currency",
-      currency: "COP",
-      minimumFractionDigits: 0
-    });
+  // Control de fetch
+  let fetchInFlight = false;
+  let fetchController = null;
 
-    async function fetchProductsFromSheet() {
-      try {
-        const resp = await fetch(googleSheetURL + "&_=" + Date.now());
-        if (!resp.ok) throw new Error("Error de red");
-        const csvText = await resp.text();
-        const rows = csvText.trim().split('\n').slice(2);
-        const newProducts = rows.map(row => {
-          const cols = row.split('\t');
-          if (cols.length < 6) return null;
-          const priceStr = (cols[3] || '0').replace(/[^\d]/g, '');
-          const stockStr = (cols[4] || '0').replace(/[^\d]/g, '');
-          const id = cols[5] ? cols[5].trim() : null;
-          const name = cols[0] ? cols[0].trim() : null;
-          if (!id || !name) return null;
-          return {
-            id,
-            name,
-            category: cols[1] ? cols[1].trim() : '',
-            marca: cols[2] ? toTitleCase(cols[2].trim()) : '',
-            valor_unitario: parseInt(priceStr, 10) || 0,
-            stock: parseInt(stockStr, 10) || 0
-          };
-        }).filter(Boolean);
-        if (newProducts.length > 0) {
-          products = newProducts.sort((a, b) => a.name.localeCompare(b.name));
-          refreshFilters();
-          filterAndDisplayProducts();
-          updateInventoryTotalDisplay();
+  // Filtro (listeners una vez)
+  let filterListenersAttached = false;
+
+  /* ================== DOM ================== */
+  const searchInput = document.getElementById('searchInput');
+  const productTableBody = document.getElementById('productTableBody');
+  const cartList = document.getElementById('cartList');
+  const totalPriceElement = document.getElementById('totalPrice');
+  const whatsappBtn = document.getElementById('whatsappBtn');
+  const contactWhatsappLink = document.getElementById('contactWhatsappLink');
+  const sortPriceBtn = document.getElementById('sortPriceBtn');
+  const inventoryTotalElement = document.getElementById('inventoryTotal');
+  const invoiceBtn = document.getElementById('invoiceBtn');
+  const qtyHeader = document.getElementById('qtyHeader');
+  const modeSelector = document.getElementById('modeSelector');
+  const categoryMenuContainer = document.getElementById('categoryMenu');
+  const brandMenuContainer = document.getElementById('brandMenu');
+  const categoryToggleBtn = document.getElementById('categoryToggleBtn');
+  const brandToggleBtn = document.getElementById('brandToggleBtn');
+  const saveEditsBtn = document.getElementById('saveEditsBtn'); // oculto
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  const currencyFormatter = new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",minimumFractionDigits:0});
+
+  /* ================== UTIL ================== */
+  function debounce(fn, ms=180){ let t=null; return (...a)=>{clearTimeout(t); t=setTimeout(()=>fn(...a),ms)} }
+  function toTitleCase(str){return str ? str.charAt(0).toUpperCase()+str.slice(1).toLowerCase() : "";}
+  function formatDateDDMMYYYY(d){const dd=String(d.getDate()).padStart(2,"0"); const mm=String(d.getMonth()+1).padStart(2,"0"); const yy=d.getFullYear(); return `${dd}/${mm}/${yy}`;}
+  function normalizeText(t){return (t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+  function escapeHtml(t){if(t==null)return''; return String(t).replace(/[&<>"']/g,s=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));}
+
+  /* ================== GOOGLE ID ================== */
+  function ensureGSIInitialized(){
+    if(!gsiReady||gsiInitialized) return;
+    try{
+      google.accounts.id.initialize({client_id:GOOGLE_CLIENT_ID, callback:handleGoogleSignIn});
+      gsiInitialized = true;
+    }catch(e){ console.warn("GSI init error:", e); }
+  }
+  function fallbackToClient(reason){
+    console.warn("Fallo de login/admin:", reason);
+    currentMode = MODE_CLIENT;
+    modeSelector.value = MODE_CLIENT;
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+    if(saved){ saved.mode = MODE_CLIENT; localStorage.setItem(SESSION_KEY, JSON.stringify(saved)); }
+    applyUIMode(); filterAndDisplayProducts();
+    alert("No se pudo iniciar sesión con Google. Se volvió a Cliente.");
+  }
+  function startGoogleSignInFlow(){
+    ensureGSIInitialized();
+    if(!gsiInitialized){ fallbackToClient("GSI no inicializado"); return; }
+    try{
+      google.accounts.id.prompt((notif)=>{
+        // Si el usuario cierra o falla, volvemos a Cliente
+        if(notif && (notif.isNotDisplayed() || notif.isSkippedMoment())){
+          fallbackToClient("Prompt no mostrado/omitido");
         }
-      } catch (err) {
+      });
+    }catch(e){
+      console.warn("GSI prompt error:", e);
+      fallbackToClient("Excepción al abrir prompt");
+    }
+  }
+  function parseJwt(token){
+    try{
+      const base64Url = token.split('.')[1];
+      const base64 = base64Url.replace(/-/g,'+').replace(/_/g,'/');
+      const jsonPayload = decodeURIComponent(atob(base64).split('').map(c=>'%' + ('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+      return JSON.parse(jsonPayload);
+    }catch(e){ return null; }
+  }
+  function handleGoogleSignIn(resp){
+    if(!resp || !resp.credential){ return fallbackToClient("Sin credencial"); }
+    const payload = parseJwt(resp.credential);
+    const email = payload && payload.email ? payload.email : null;
+    const name  = payload && (payload.given_name || payload.name) ? (payload.given_name || payload.name) : "Admin";
+    if(email && !ALLOWED_ADMIN_EMAILS.includes(email)){
+      alert("Este correo no está autorizado como administrador.\nCorreo: " + email);
+      return fallbackToClient("Correo no autorizado");
+    }
+    googleUserToken = resp.credential;
+    currentAdminName = name;
+    currentAdminEmail = email;
+    localStorage.setItem(SESSION_KEY, JSON.stringify({token:googleUserToken,name:currentAdminName,email:currentAdminEmail,mode:MODE_ADMIN_EDIT}));
+    // Si el usuario pretendía entrar a admin, respetamos la elección; de lo contrario, vamos a Edición
+    if(modeSelector.value===MODE_ADMIN_EDIT || modeSelector.value===MODE_ADMIN_SALE){
+      currentMode = modeSelector.value;
+    } else {
+      currentMode = MODE_ADMIN_EDIT;
+      modeSelector.value = MODE_ADMIN_EDIT;
+    }
+    applyUIMode(); filterAndDisplayProducts(); updateInventoryTotalDisplay();
+  }
+
+  /* ================== CARGA DE PRODUCTOS ================== */
+  async function fetchProductsFromSheet(){
+    if(fetchInFlight){ try{fetchController?.abort();}catch{} }
+    fetchController = new AbortController();
+    fetchInFlight = true;
+    try{
+      const resp = await fetch(googleSheetURL + "&_=" + Date.now(), {signal:fetchController.signal});
+      if(!resp.ok) throw new Error("Error de red");
+      const tsv = await resp.text();
+      const rows = tsv.trim().split('\n').slice(2);
+      const newProducts = rows.map(row=>{
+        const cols = row.split('\t'); if(cols.length<6) return null;
+        const priceStr = (cols[3]||'0').replace(/[^\d]/g,'');
+        const stockStr = (cols[4]||'0').replace(/[^\d]/g,'');
+        const id = cols[5]? cols[5].trim():null;
+        const name = cols[0]? cols[0].trim():null;
+        if(!id||!name) return null;
+        return { id, name, category: cols[1]? cols[1].trim():'', marca: cols[2]? toTitleCase(cols[2].trim()):'', valor_unitario: parseInt(priceStr,10)||0, stock: parseInt(stockStr,10)||0 };
+      }).filter(Boolean);
+      if(newProducts.length>0){
+        products = newProducts.sort((a,b)=>a.name.localeCompare(b.name));
+        refreshFilters(); setupFilterListenersOnce(); restoreFiltersFromStorage();
+        filterAndDisplayProducts(); updateInventoryTotalDisplay();
+      }
+    }catch(err){
+      if(err.name!=="AbortError"){
         console.error(err);
         productTableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Error al cargar productos.</td></tr>`;
       }
-    }
+    }finally{ fetchInFlight=false; }
+  }
 
-    fetchProductsFromSheet().then(() => {
-      restoreAdminSession();
-      loadCartFromStorage();
-      applyUIMode();
-      filterAndDisplayProducts();
-      updateCart();
-      updateInventoryTotalDisplay();
-    });
+  /* ================== INICIO ================== */
+  fetchProductsFromSheet().then(()=>{
+    restoreAdminSession();
+    loadCartFromStorage();
+    applyUIMode();
+    filterAndDisplayProducts();
+    updateCart();
+    updateInventoryTotalDisplay();
+  });
 
-    setInterval(() => {
-      if (pendingEdits.length === 0) {
-        fetchProductsFromSheet();
+  // Detecta GSI (sin botón)
+  document.addEventListener("DOMContentLoaded", ()=>{
+    let tries=0; const maxTries=40;
+    const timer=setInterval(()=>{
+      tries++;
+      if(typeof google!=="undefined" && google.accounts && google.accounts.id){
+        gsiReady = true; ensureGSIInitialized(); clearInterval(timer);
       }
-    }, AUTO_REFRESH_MS);
+      if(tries>=maxTries) clearInterval(timer);
+    },200);
 
-    document.addEventListener("DOMContentLoaded", () => {
-      let tries = 0;
-      const maxTries = 20;
-      const timer = setInterval(() => {
-        tries++;
-        if (typeof google !== "undefined" && google.accounts && google.accounts.id) {
-          clearInterval(timer);
-          try {
-            google.accounts.id.initialize({
-              client_id: GOOGLE_CLIENT_ID,
-              callback: handleGoogleSignIn
-            });
-            google.accounts.id.renderButton(
-              googleSignInContainer,
-              { theme: "outline", size: "medium", text: "signin_with", shape: "rectangular" }
-            );
-          } catch (e) { console.warn(e); }
+    // Actualiza redes sociales proporcionadas (sin tocar HTML)
+    try{
+      const links = document.querySelectorAll('.contact-info a');
+      links.forEach(a=>{
+        const txt = (a.textContent||"").toLowerCase();
+        if(txt.includes('facebook')){
+          a.href = "https://www.facebook.com/marketplace/profile/100084865295132";
+          a.target = "_blank"; a.rel="noopener noreferrer";
+        } else if(txt.includes('instagram')){
+          a.href = "https://www.instagram.com/irenismb_stocknaturasm";
+          a.target = "_blank"; a.rel="noopener noreferrer";
+        } else if(txt.includes('tiktok')){
+          a.href = "https://www.tiktok.com/@irenismbstocknatura";
+          a.target = "_blank"; a.rel="noopener noreferrer";
         }
-        if (tries >= maxTries) clearInterval(timer);
-      }, 300);
-    });
-
-    function parseJwt(token) {
-      try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function (c) {
-          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-      } catch (e) { return null; }
-    }
-
-    function handleGoogleSignIn(resp) {
-      if (!resp.credential) {
-        alert("Error de login");
-        return;
-      }
-      const payload = parseJwt(resp.credential);
-      const email = payload && payload.email ? payload.email : null;
-      const name = payload && (payload.given_name || payload.name) ? (payload.given_name || payload.name) : "Admin";
-
-      if (email && !ALLOWED_ADMIN_EMAILS.includes(email)) {
-        alert("Este correo no está autorizado como administrador.\nCorreo: " + email);
-        currentMode = MODE_CLIENT;
-        modeSelector.value = MODE_CLIENT;
-        applyUIMode();
-        filterAndDisplayProducts();
-        return;
-      }
-
-      googleUserToken = resp.credential;
-      currentAdminName = name;
-      currentAdminEmail = email;
-
-      localStorage.setItem(SESSION_KEY, JSON.stringify({
-        token: googleUserToken,
-        name: currentAdminName,
-        email: currentAdminEmail,
-        mode: MODE_ADMIN_EDIT
-      }));
-
-      enterAdminMode(name, email, MODE_ADMIN_EDIT);
-    }
-
-    function restoreAdminSession() {
-      try {
-        const raw = localStorage.getItem(SESSION_KEY);
-        if (!raw) return;
-        const saved = JSON.parse(raw);
-        if (!saved || !saved.token || !saved.email) return;
-        googleUserToken = saved.token;
-        currentAdminName = saved.name || "Admin";
-        currentAdminEmail = saved.email;
-        currentMode = saved.mode || MODE_ADMIN_EDIT;
-      } catch (e) {
-        console.warn("No se pudo restaurar la sesión:", e);
-      }
-    }
-
-    function refreshFilters() {
-      allCategories = [...new Set(products.map(p => p.category))].sort();
-      allBrands = [...new Set(products.map(p => p.marca))].sort();
-
-      categoryMenuContainer.innerHTML = ["Todas", ...allCategories].map(c => `
-        <label style="display:block;margin-bottom:4px;">
-          <input type="radio" name="category" value="${c}" ${c==="Todas"?"checked":""}>
-          ${c}
-        </label>
-      `).join("");
-
-      brandMenuContainer.innerHTML = ["Todas", ...allBrands].map(b => `
-        <label style="display:block;margin-bottom:4px;">
-          <input type="radio" name="brand" value="${b}" ${b==="Todas"?"checked":""}>
-          ${b}
-        </label>
-      `).join("");
-
-      categoryMenuContainer.addEventListener("change", () => {
-        filterAndDisplayProducts();
-        updateCategoryButtonLabel();
-        closeDropdowns();
       });
-      brandMenuContainer.addEventListener("change", () => {
-        filterAndDisplayProducts();
-        updateBrandButtonLabel();
-        closeDropdowns();
-      });
+    }catch(e){ console.warn("No se pudieron actualizar las redes:", e); }
+  });
 
-      updateCategoryButtonLabel();
-      updateBrandButtonLabel();
-    }
+  setInterval(()=>{ if(!fetchInFlight) fetchProductsFromSheet(); }, AUTO_REFRESH_MS);
 
-    function updateCategoryButtonLabel(){
-      const sel = categoryMenuContainer.querySelector('input[name="category"]:checked');
-      categoryToggleBtn.textContent = sel && sel.value !== "Todas"
-        ? sel.value + " ▾"
-        : "Categorías ▾";
-    }
-    function updateBrandButtonLabel(){
-      const sel = brandMenuContainer.querySelector('input[name="brand"]:checked');
-      brandToggleBtn.textContent = sel && sel.value !== "Todas"
-        ? sel.value + " ▾"
-        : "Marcas ▾";
-    }
+  function restoreAdminSession(){
+    try{
+      const raw = localStorage.getItem(SESSION_KEY); if(!raw) return;
+      const saved = JSON.parse(raw); if(!saved||!saved.token||!saved.email) return;
+      googleUserToken = saved.token; currentAdminName = saved.name||"Admin"; currentAdminEmail = saved.email; currentMode = saved.mode||MODE_ADMIN_EDIT;
+    }catch(e){ console.warn("No se pudo restaurar la sesión:", e); }
+  }
 
-    function closeDropdowns(){
-      document.querySelectorAll('.custom-dropdown.open').forEach(d => {
-        d.classList.remove('open');
-        d.querySelector('.custom-menu').setAttribute('aria-hidden','true');
-      });
-    }
-    document.addEventListener("click", e => {
-      const t = e.target;
-      if (t.classList.contains("dropdown-toggle-btn")) {
+  /* ================== FILTROS ================== */
+  function refreshFilters(){
+    allCategories = [...new Set(products.map(p=>p.category))].sort();
+    allBrands = [...new Set(products.map(p=>p.marca))].sort();
+    const {category:catSaved="Todas", brand:brandSaved="Todas"} = getSavedFilters();
+    categoryMenuContainer.innerHTML = ["Todas",...allCategories].map(c=>`<label style="display:block;margin-bottom:4px;"><input type="radio" name="category" value="${c}" ${c===catSaved?"checked":""}> ${c}</label>`).join("");
+    brandMenuContainer.innerHTML = ["Todas",...allBrands].map(b=>`<label style="display:block;margin-bottom:4px;"><input type="radio" name="brand" value="${b}" ${b===brandSaved?"checked":""}> ${b}</label>`).join("");
+    updateCategoryButtonLabel(); updateBrandButtonLabel();
+  }
+  function setupFilterListenersOnce(){
+    if(filterListenersAttached) return; filterListenersAttached=true;
+    categoryMenuContainer.addEventListener("change",()=>{ saveFiltersToStorage(); filterAndDisplayProducts(); updateCategoryButtonLabel(); closeDropdowns(); });
+    brandMenuContainer.addEventListener("change",()=>{ saveFiltersToStorage(); filterAndDisplayProducts(); updateBrandButtonLabel(); closeDropdowns(); });
+    document.addEventListener("click",e=>{
+      const t=e.target;
+      if(t.classList.contains("dropdown-toggle-btn")){
         e.stopPropagation();
-        const dd = t.closest(".custom-dropdown");
-        const was = dd.classList.contains("open");
-        closeDropdowns();
-        dd.classList.toggle("open", !was);
-        dd.querySelector(".custom-menu").setAttribute("aria-hidden", was ? "true" : "false");
-      } else if (!t.closest(".custom-dropdown")) {
-        closeDropdowns();
-      }
+        const dd=t.closest(".custom-dropdown"); const was=dd.classList.contains("open");
+        closeDropdowns(); dd.classList.toggle("open",!was);
+        dd.querySelector(".custom-menu").setAttribute("aria-hidden", was?"true":"false");
+      } else if(!t.closest(".custom-dropdown")) { closeDropdowns(); }
     });
+    searchInput.addEventListener("input", debounce(()=>{ filterAndDisplayProducts(); },200));
+  }
+  function updateCategoryButtonLabel(){
+    const sel = categoryMenuContainer.querySelector('input[name="category"]:checked');
+    categoryToggleBtn.textContent = sel && sel.value!=="Todas" ? sel.value+" ▾" : "Categorías ▾";
+  }
+  function updateBrandButtonLabel(){
+    const sel = brandMenuContainer.querySelector('input[name="brand"]:checked');
+    brandToggleBtn.textContent = sel && sel.value!=="Todas" ? sel.value+" ▾" : "Marcas ▾";
+  }
+  function closeDropdowns(){ document.querySelectorAll('.custom-dropdown.open').forEach(d=>{ d.classList.remove('open'); d.querySelector('.custom-menu').setAttribute('aria-hidden','true'); }); }
+  function getSavedFilters(){ try{return JSON.parse(localStorage.getItem(LS_FILTERS_KEY)||"{}");}catch{return{}} }
+  function saveFiltersToStorage(){
+    const cat = categoryMenuContainer.querySelector('input[name="category"]:checked')?.value || "Todas";
+    const brand = brandMenuContainer.querySelector('input[name="brand"]:checked')?.value || "Todas";
+    localStorage.setItem(LS_FILTERS_KEY, JSON.stringify({category:cat, brand}));
+  }
+  function restoreFiltersFromStorage(){
+    const {category="Todas", brand="Todas"} = getSavedFilters();
+    const cat = categoryMenuContainer.querySelector(`input[name="category"][value="${CSS.escape(category)}"]`);
+    const br  = brandMenuContainer.querySelector(`input[name="brand"][value="${CSS.escape(brand)}"]`);
+    if(cat) cat.checked=true; if(br) br.checked=true; updateCategoryButtonLabel(); updateBrandButtonLabel();
+  }
 
-    function enterAdminMode(name, email, modeWanted){
-      currentMode = modeWanted || MODE_ADMIN_EDIT;
-      modeSelector.value = currentMode;
-      applyUIMode();
-      filterAndDisplayProducts();
-      updateInventoryTotalDisplay();
-      const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-      if (saved){
-        saved.mode = currentMode;
-        localStorage.setItem(SESSION_KEY, JSON.stringify(saved));
-      }
+  /* ================== MODO UI ================== */
+  function applyUIMode(){
+    document.querySelectorAll('.only-client').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.only-admin').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.only-admin-edit').forEach(el=>el.style.display='none');
+    document.querySelectorAll('.only-admin-sale').forEach(el=>el.style.display='none');
+
+    if(currentMode===MODE_CLIENT){
+      document.querySelectorAll('.only-client').forEach(el=>el.style.display='block');
+      sortPriceBtn.style.display="inline-block";
+      inventoryTotalElement.style.display="none";
+      invoiceBtn.disabled=true;
+      saveEditsBtn.style.display="none";
+      logoutBtn.style.display="none";
+    }else if(currentMode===MODE_ADMIN_EDIT){
+      document.querySelectorAll('.only-admin').forEach(el=>el.style.display='inline-block');
+      sortPriceBtn.style.display="none";
+      inventoryTotalElement.style.display="inline-block";
+      invoiceBtn.disabled=true;
+      saveEditsBtn.style.display="none";
+      logoutBtn.style.display="block";
+    }else if(currentMode===MODE_ADMIN_SALE){
+      document.querySelectorAll('.only-admin').forEach(el=>el.style.display='inline-block');
+      document.querySelectorAll('.only-admin-sale').forEach(el=>el.style.display='inline-block');
+      sortPriceBtn.style.display="none";
+      inventoryTotalElement.style.display="inline-block";
+      invoiceBtn.disabled=false;
+      saveEditsBtn.style.display="none";
+      logoutBtn.style.display="block";
     }
+    setQtyHeader();
+  }
+  function setQtyHeader(){ if(!qtyHeader) return; qtyHeader.textContent = currentMode===MODE_ADMIN_EDIT ? "Stock" : "Cantidad"; }
 
-    function exitAdminMode(){
+  function enterAdminMode(name,email,modeWanted){
+    currentMode = modeWanted || MODE_ADMIN_EDIT;
+    modeSelector.value = currentMode;
+    applyUIMode(); filterAndDisplayProducts(); updateInventoryTotalDisplay();
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+    if(saved){ saved.mode=currentMode; localStorage.setItem(SESSION_KEY, JSON.stringify(saved)); }
+  }
+  function exitAdminMode(){
+    currentMode = MODE_CLIENT;
+    googleUserToken=null; currentAdminName=null; currentAdminEmail=null;
+    localStorage.removeItem(SESSION_KEY);
+    modeSelector.value=MODE_CLIENT;
+    applyUIMode(); filterAndDisplayProducts(); updateInventoryTotalDisplay();
+  }
+  logoutBtn.addEventListener("click",()=>{ exitAdminMode(); alert("Sesión cerrada."); });
+
+  // Cambio de modo: si se elige admin sin sesión, disparamos GSI; si falla, volvemos a Cliente
+  modeSelector.addEventListener("change", ()=>{
+    const selected = modeSelector.value;
+    if((selected===MODE_ADMIN_EDIT || selected===MODE_ADMIN_SALE) && !googleUserToken){
+      modeSelector.value = selected; // refleja elección
+      startGoogleSignInFlow();
+      return;
+    }
+    if(selected===MODE_CLIENT){
       currentMode = MODE_CLIENT;
-      googleUserToken = null;
-      currentAdminName = null;
-      currentAdminEmail = null;
-      pendingEdits = [];
-      updateSaveBtnState();
-      localStorage.removeItem(SESSION_KEY);
-      modeSelector.value = MODE_CLIENT;
-      applyUIMode();
-      filterAndDisplayProducts();
-      updateInventoryTotalDisplay();
+      const saved = JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+      if(saved){ saved.mode = currentMode; localStorage.setItem(SESSION_KEY, JSON.stringify(saved)); }
+      applyUIMode(); filterAndDisplayProducts();
+      return;
     }
+    currentMode = selected;
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY)||"null");
+    if(saved){ saved.mode = currentMode; localStorage.setItem(SESSION_KEY, JSON.stringify(saved)); }
+    applyUIMode(); filterAndDisplayProducts();
+  });
 
-    logoutBtn.addEventListener("click", () => {
-      exitAdminMode();
-      alert("Sesión cerrada.");
-    });
+  function calculateInventoryTotal(){ return products.reduce((acc,p)=> acc + ((p.valor_unitario||0)*(p.stock||0)), 0); }
+  function updateInventoryTotalDisplay(){
+    if(currentMode===MODE_ADMIN_EDIT || currentMode===MODE_ADMIN_SALE){
+      inventoryTotalElement.style.display="inline-block";
+      inventoryTotalElement.textContent = "Total: " + currencyFormatter.format(calculateInventoryTotal());
+    } else { inventoryTotalElement.style.display="none"; }
+  }
 
-    modeSelector.addEventListener("change", () => {
-      const selected = modeSelector.value;
-
-      if (!googleUserToken && (selected === MODE_ADMIN_EDIT || selected === MODE_ADMIN_SALE)) {
-        alert("Inicia sesión con un correo autorizado para usar ese modo.");
-        modeSelector.value = MODE_CLIENT;
-        currentMode = MODE_CLIENT;
-        applyUIMode();
-        filterAndDisplayProducts();
-        return;
-      }
-
-      if (selected === MODE_CLIENT) {
-        exitAdminMode();
-        return;
-      }
-
-      currentMode = selected;
-      applyUIMode();
-      filterAndDisplayProducts();
-
-      const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
-      if (saved){
-        saved.mode = currentMode;
-        localStorage.setItem(SESSION_KEY, JSON.stringify(saved));
-      }
-    });
-
-    function applyUIMode(){
-      document.querySelectorAll('.only-client').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'none');
-      document.querySelectorAll('.only-admin-sale').forEach(el => el.style.display = 'none');
-
-      if (currentMode === MODE_CLIENT){
-        document.querySelectorAll('.only-client').forEach(el => el.style.display = 'block');
-        sortPriceBtn.style.display = "inline-block";
-        inventoryTotalElement.style.display = "none";
-        invoiceBtn.disabled = true;
-        saveEditsBtn.style.display = "none";
-        logoutBtn.style.display = "none";
-      } else if (currentMode === MODE_ADMIN_EDIT){
-        document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
-        document.querySelectorAll('.only-admin-edit').forEach(el => el.style.display = 'inline-block');
-        sortPriceBtn.style.display = "none";
-        inventoryTotalElement.style.display = "inline-block";
-        invoiceBtn.disabled = true;
-        saveEditsBtn.style.display = "block";
-        logoutBtn.style.display = "block";
-      } else if (currentMode === MODE_ADMIN_SALE){
-        document.querySelectorAll('.only-admin').forEach(el => el.style.display = 'inline-block');
-        document.querySelectorAll('.only-admin-sale').forEach(el => el.style.display = 'inline-block');
-        sortPriceBtn.style.display = "none";
-        inventoryTotalElement.style.display = "inline-block";
-        invoiceBtn.disabled = false;
-        saveEditsBtn.style.display = "none";
-        logoutBtn.style.display = "block";
-      }
-      setQtyHeader();
+  /* ================== LISTADO / FILTRADO ================== */
+  function filterAndDisplayProducts(){
+    let list=[...products];
+    const catSel = document.querySelector("#categoryMenu input[name='category']:checked");
+    const catVal = catSel ? catSel.value : "Todas";
+    if(catVal!=="Todas") list = list.filter(p=>p.category===catVal);
+    const brandSel = document.querySelector("#brandMenu input[name='brand']:checked");
+    const brandVal = brandSel ? brandSel.value : "Todas";
+    if(brandVal!=="Todas") list = list.filter(p=>p.marca===brandVal);
+    const terms = normalizeText(searchInput.value).split(/\s+/).filter(Boolean);
+    if(terms.length>0){
+      list = list.filter(p=>{
+        const s = normalizeText(`${p.id} ${p.name} ${p.category} ${p.marca}`);
+        return terms.every(t=>s.includes(t));
+      });
     }
-
-    function setQtyHeader(){
-      if (!qtyHeader) return;
-      qtyHeader.textContent = currentMode === MODE_ADMIN_EDIT ? "Stock" : "Cantidad";
+    if(currentSortOrder==="asc") list.sort((a,b)=>a.valor_unitario-b.valor_unitario);
+    else if(currentSortOrder==="desc") list.sort((a,b)=>b.valor_unitario-a.valor_unitario);
+    displayProducts(list); updateInventoryTotalDisplay();
+  }
+  function displayProducts(list){
+    if(list.length===0){
+      productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
+      return;
     }
+    const rows = list.map(p=>{
+      const isEditing = (currentMode===MODE_ADMIN_EDIT && googleUserToken);
+      const valueToShow = isEditing ? (p.stock||0) : (cart[p.id]?.quantity||0);
+      const dataLabel = isEditing ? "Stock" : "Cantidad";
+      const unitPrice = (p.valor_unitario||0);
+      const subtotal = valueToShow*unitPrice;
+      const readOnlyAttr = isEditing ? "" : "readonly";
+      return `
+        <tr data-product-id="${p.id}">
+          <td data-label="Nombre"><span>${escapeHtml(p.name)}</span></td>
+          <td data-label="Categoría">${escapeHtml(p.category)}</td>
+          <td data-label="Marca">${escapeHtml(p.marca)}</td>
+          <td data-label="Valor unitario" class="price-cell">${currencyFormatter.format(unitPrice)}</td>
+          <td data-label="${dataLabel}">
+            <div class="quantity-control">
+              <button type="button" class="quantity-btn decrease-btn">-</button>
+              <input type="number" class="quantity-input" min="0" value="${valueToShow}"
+                data-price="${unitPrice}" data-id="${p.id}" data-name="${escapeHtml(p.name)}" ${readOnlyAttr}>
+              <button type="button" class="quantity-btn increase-btn">+</button>
+            </div>
+          </td>
+          <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
+        </tr>`;
+    }).join("");
+    productTableBody.innerHTML = rows;
+  }
 
-    function calculateInventoryTotal(){
-      return products.reduce((acc,p)=> acc + ((p.valor_unitario||0) * (p.stock||0)), 0);
-    }
-
-    function updateInventoryTotalDisplay(){
-      if (currentMode === MODE_ADMIN_EDIT || currentMode === MODE_ADMIN_SALE){
-        inventoryTotalElement.style.display = "inline-block";
-        inventoryTotalElement.textContent = "Total: " + currencyFormatter.format(calculateInventoryTotal());
-      } else {
-        inventoryTotalElement.style.display = "none";
-      }
-    }
-
-    function normalizeText(t){
-      return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
-    }
-
-    function filterAndDisplayProducts(){
-      let list = [...products];
-
-      const catSel = document.querySelector("#categoryMenu input[name='category']:checked");
-      const catVal = catSel ? catSel.value : "Todas";
-      if (catVal !== "Todas"){
-        list = list.filter(p => p.category === catVal);
-      }
-
-      const brandSel = document.querySelector("#brandMenu input[name='brand']:checked");
-      const brandVal = brandSel ? brandSel.value : "Todas";
-      if (brandVal !== "Todas"){
-        list = list.filter(p => p.marca === brandVal);
-      }
-
-      const searchTerms = normalizeText(searchInput.value).split(/\s+/).filter(Boolean);
-      if (searchTerms.length > 0){
-        list = list.filter(p => {
-          const s = normalizeText(`${p.id} ${p.name} ${p.category} ${p.marca}`);
-          return searchTerms.every(t => s.includes(t));
-        });
-      }
-
-      if (currentSortOrder === "asc") list.sort((a,b)=>a.valor_unitario-b.valor_unitario);
-      else if (currentSortOrder === "desc") list.sort((a,b)=>b.valor_unitario-a.valor_unitario);
-
-      displayProducts(list);
-      updateInventoryTotalDisplay();
-    }
-
-    function displayProducts(list){
-      if (list.length === 0){
-        productTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
-        return;
-      }
-
-      const rows = list.map(p => {
-        const isEditing = (currentMode === MODE_ADMIN_EDIT && googleUserToken);
-        const valueToShow = isEditing ? (p.stock || 0) : (cart[p.id]?.quantity || 0);
-        const dataLabel = isEditing ? "Stock" : "Cantidad";
-        const unitPrice = (p.valor_unitario || 0);
-        const subtotal = valueToShow * unitPrice;
-        const readOnlyAttr = isEditing ? "" : "readonly";
-
-        let nameCell, catCell, brandCell, priceCell;
-        if (isEditing){
-          nameCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="name" value="${escapeHtml(p.name)}">`;
-          catCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="category" value="${escapeHtml(p.category)}">`;
-          brandCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="marca" value="${escapeHtml(p.marca)}">`;
-          priceCell = `<input type="text" class="admin-input" data-id="${p.id}" data-field="valor_unitario" value="${unitPrice}" placeholder="0">`;
-        } else {
-          nameCell = `<span>${escapeHtml(p.name)}</span>`;
-          catCell = escapeHtml(p.category);
-          brandCell = escapeHtml(p.marca);
-          priceCell = currencyFormatter.format(unitPrice);
-        }
-
-        return `
-          <tr data-product-id="${p.id}">
-            <td data-label="Nombre">${nameCell}</td>
-            <td data-label="Categoría">${catCell}</td>
-            <td data-label="Marca">${brandCell}</td>
-            <td data-label="Valor unitario" class="price-cell">${priceCell}</td>
-            <td data-label="${dataLabel}">
-              <div class="quantity-control">
-                <button type="button" class="quantity-btn decrease-btn">-</button>
-                <input type="number" class="quantity-input" min="0" value="${valueToShow}"
-                  data-price="${unitPrice}"
-                  data-id="${p.id}"
-                  data-name="${escapeHtml(p.name)}"
-                  ${readOnlyAttr}>
-                <button type="button" class="quantity-btn increase-btn">+</button>
-              </div>
-            </td>
-            <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
-          </tr>
-        `;
+  /* ================== CARRITO ================== */
+  function loadCartFromStorage(){
+    const savedCart = localStorage.getItem(LS_CART_KEY);
+    try{ const parsed = JSON.parse(savedCart); if(parsed && Object.values(parsed)[0]?.id){ cart = parsed; } }
+    catch{ cart = {}; }
+  }
+  function updateCart(){
+    let total=0; const items=Object.values(cart);
+    if(items.length===0){
+      cartList.innerHTML = '<li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>';
+    }else{
+      cartList.innerHTML = items.map(it=>{
+        const sub = it.quantity*it.price; total+=sub;
+        return `<li class="cart-item"><span class="cart-item-title">${it.quantity} x ${escapeHtml(it.name)} <strong>(${currencyFormatter.format(sub)})</strong></span><button class="remove-item-btn" data-id="${it.id}">X</button></li>`;
       }).join("");
-
-      productTableBody.innerHTML = rows;
     }
+    totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
+    localStorage.setItem(LS_CART_KEY, JSON.stringify(cart));
+  }
 
-    function loadCartFromStorage(){
-      const savedCart = localStorage.getItem("shoppingCart");
-      try{
-        const parsed = JSON.parse(savedCart);
-        if (parsed && Object.values(parsed)[0]?.id){
-          cart = parsed;
+  // CLIENTE: mensaje sin línea de vendedor
+  function buildClientWhatsAppMsg(items, header="Hola, deseo comprar estos productos en Irenismb Natura Stock:"){
+    let msg = header + "\n\n";
+    let total=0;
+    items.forEach(it=>{ const sub=it.quantity*it.price; msg+=`• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`; total+=sub; });
+    msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
+    return msg;
+  }
+  // VENTA: formato solicitado
+  function buildSaleWhatsAppMsg({cliente,fecha,items,abonado,saldo,vence}){
+    let msg = `${STORE_HEADER}\n`;
+    msg += `Cliente: ${cliente}\n`;
+    msg += `Fecha: ${fecha}\n\n`;
+    items.forEach(it=>{ const sub=it.quantity*it.price; msg+=`• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`; });
+    const total = items.reduce((a,it)=>a+it.quantity*it.price,0);
+    msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
+    msg += `Abonado/Pagado: ${currencyFormatter.format(abonado)}\n`;
+    msg += `Saldo: ${currencyFormatter.format(saldo)}\n`;
+    if(saldo>0) msg += `Vence: ${vence}\n`;
+    return msg;
+  }
+  function openWhatsApp(msg){
+    const encoded = encodeURIComponent(msg);
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const url = isMobile ? `https://api.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}` : `https://web.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`;
+    window.open(url,"_blank");
+  }
+
+  /* ================== EVENTOS ================== */
+  productTableBody.addEventListener("input", async e=>{
+    if(!e.target.classList.contains("quantity-input")) return;
+    const input=e.target;
+    let qty=parseInt(input.value,10)||0; if(qty<0) qty=0; input.value=qty;
+    const id=input.dataset.id, name=input.dataset.name, price=parseInt(input.dataset.price,10)||0;
+    const tr=input.closest("tr"); if(tr) tr.querySelector(".total-pay").textContent=currencyFormatter.format(qty*price);
+    if(currentMode===MODE_ADMIN_EDIT && googleUserToken){
+      const p=products.find(p=>p.id===id); if(p) p.stock=qty; updateInventoryTotalDisplay();
+      await updateProductFieldInGoogleSheet(id,"stock",qty,input,false); return;
+    }
+    if(qty>0){ cart[id]={id,name,quantity:qty,price}; } else { delete cart[id]; }
+    updateCart();
+  });
+  productTableBody.addEventListener("click", async e=>{
+    if(!e.target.classList.contains("quantity-btn")) return;
+    const input=e.target.closest(".quantity-control").querySelector(".quantity-input");
+    let val=parseInt(input.value,10)||0; if(e.target.classList.contains("increase-btn")) val++; else val--; if(val<0) val=0; input.value=val;
+    const id=input.dataset.id, name=input.dataset.name, price=parseInt(input.dataset.price,10)||0;
+    const tr=input.closest("tr"); if(tr) tr.querySelector(".total-pay").textContent=currencyFormatter.format(val*price);
+    if(currentMode===MODE_ADMIN_EDIT && googleUserToken){
+      const p=products.find(p=>p.id===id); if(p) p.stock=val; updateInventoryTotalDisplay();
+      await updateProductFieldInGoogleSheet(id,"stock",val,input,false); return;
+    }
+    if(val>0){ cart[id]={id,name,quantity:val,price}; } else { delete cart[id]; }
+    updateCart();
+  });
+
+  sortPriceBtn.addEventListener("click", ()=>{
+    if(currentSortOrder==="default"||currentSortOrder==="desc"){ currentSortOrder="asc"; sortPriceBtn.textContent="Precio $↓"; }
+    else { currentSortOrder="desc"; sortPriceBtn.textContent="Precio $↑"; }
+    filterAndDisplayProducts();
+  });
+
+  whatsappBtn.addEventListener("click", ()=>{
+    if(currentMode!==MODE_CLIENT) return;
+    const items=Object.values(cart); if(items.length===0) return;
+    const msg = buildClientWhatsAppMsg(items);
+    openWhatsApp(msg);
+  });
+
+  contactWhatsappLink.addEventListener("click", e=>{
+    e.preventDefault();
+    openWhatsApp("Hola, me interesan los productos de Irenismb Natura Stock.");
+  });
+
+  cartList.addEventListener("click", e=>{
+    if(!e.target.classList.contains("remove-item-btn")) return;
+    const id=e.target.dataset.id; delete cart[id];
+    const input = productTableBody.querySelector(`.quantity-input[data-id="${id}"]`);
+    if(input){ input.value=0; input.dispatchEvent(new Event("input",{bubbles:true})); } else { updateCart(); }
+  });
+
+  // VENDEDOR: login automático si hace falta; si falla login, vuelve a Cliente
+  invoiceBtn.addEventListener("click", ()=>{
+    if(currentMode!==MODE_ADMIN_SALE) return;
+    if(!googleUserToken){ startGoogleSignInFlow(); return; }
+    startSellFlow();
+  });
+
+  /* ================== GUARDADO EN HOJA ================== */
+  async function updateProductFieldInGoogleSheet(id,field,value,input,silent){
+    if(!googleUserToken){ alert("No estás autenticado."); return; }
+    const p=products.find(p=>p.id===id); const original=p? p[field] : "";
+    let newValue=value; if(input) input.disabled=true;
+    try{
+      const resp = await fetch(APPS_SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
+        body:JSON.stringify({action: field==="stock"?"updateStock":"updateField", token:googleUserToken, productId:id, fieldToUpdate:field, newValue, adminEmail:currentAdminEmail})});
+      const json = await resp.json();
+      if(json.status==="success"){
+        if(p) p[field]=newValue;
+        if(field==="stock"){
+          const rowInput=document.querySelector(`.quantity-input[data-id="${id}"]`);
+          if(rowInput) rowInput.value=newValue;
         }
-      }catch{ cart = {}; }
+        if(!silent) updateInventoryTotalDisplay();
+      } else { throw new Error(json.message||"Error guardando"); }
+    }catch(err){
+      alert("Error al guardar: "+err.message);
+      if(input) input.value=original;
+    }finally{ if(input) input.disabled=false; }
+  }
+
+  /* ================== VENTA ================== */
+  async function startSellFlow(){
+    const items=Object.values(cart); if(items.length===0){ alert("No hay productos en el carrito."); return; }
+    const cliente = prompt("Nombre del cliente:", "Cliente contado"); if(cliente===null) return;
+    const fechaDef = formatDateDDMMYYYY(new Date());
+    let fecha = prompt("Fecha de venta (dd/mm/aaaa):", fechaDef) || fechaDef;
+    let abonadoStr = prompt("Valor abonado / pagado:", "0") || "0";
+    let plazoStr = prompt("Plazo en días (30 por defecto):", "30") || "30";
+    const abonado = parseInt(abonadoStr.replace(/[^\d]/g,""),10)||0;
+    let plazo = parseInt(plazoStr,10); if(isNaN(plazo)||plazo<0) plazo=30;
+    const total = items.reduce((a,it)=>a+it.quantity*it.price,0);
+    let saldo = total - abonado; if(saldo<0) saldo=0;
+    let vence = "";
+    if(saldo>0){
+      const p=fecha.split("/"); let d=new Date();
+      if(p.length===3){ d=new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10)); }
+      d.setDate(d.getDate()+plazo); vence=formatDateDDMMYYYY(d);
     }
+    const msg = buildSaleWhatsAppMsg({cliente,fecha,items,abonado,saldo,vence});
+    openWhatsApp(msg); // Vista previa; usuario pulsa "Enviar"
+    // No descuenta stock aquí.
+  }
 
-    function updateCart(){
-      let total = 0;
-      const items = Object.values(cart);
-      if (items.length === 0){
-        cartList.innerHTML = '<li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>';
-      } else {
-        cartList.innerHTML = items.map(it => {
-          const sub = it.quantity * it.price;
-          total += sub;
-          return `<li class="cart-item">
-              <span class="cart-item-title">${it.quantity} x ${escapeHtml(it.name)} <strong>(${currencyFormatter.format(sub)})</strong></span>
-              <button class="remove-item-btn" data-id="${it.id}">X</button>
-            </li>`;
-        }).join("");
-      }
-      totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
-      localStorage.setItem("shoppingCart", JSON.stringify(cart));
-    }
+  /* ================== REFRESCO ================== */
+  setInterval(()=>{ if(!fetchInFlight) fetchProductsFromSheet(); }, AUTO_REFRESH_MS);
 
-    function escapeHtml(t){
-      if (t == null) return '';
-      return String(t).replace(/[&<>"']/g, s => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[s]));
-    }
-
-    function addPendingEdit(id,field,value,inputEl){
-      const idx = pendingEdits.findIndex(e => e.id===id && e.field===field);
-      if (idx>=0){
-        pendingEdits[idx].value = value;
-        pendingEdits[idx].input = inputEl;
-      } else {
-        pendingEdits.push({id,field,value,input:inputEl});
-      }
-      updateSaveBtnState();
-    }
-
-    function updateSaveBtnState(){
-      if (pendingEdits.length>0){
-        saveEditsBtn.disabled = false;
-        saveEditsBtn.textContent = `💾 Guardar cambios (${pendingEdits.length})`;
-      } else {
-        saveEditsBtn.disabled = true;
-        saveEditsBtn.textContent = "💾 Guardar cambios (0)";
-      }
-    }
-
-    saveEditsBtn.addEventListener("click", async () => {
-      if (pendingEdits.length===0) return;
-      saveEditsBtn.disabled = true;
-      for (const edit of pendingEdits){
-        await updateProductFieldInGoogleSheet(edit.id, edit.field, edit.value, edit.input, true);
-      }
-      alert("Cambios enviados.");
-      pendingEdits = [];
-      updateSaveBtnState();
-      fetchProductsFromSheet();
-    });
-
-    productTableBody.addEventListener("input", async e => {
-      const isQty = e.target.classList.contains("quantity-input");
-      const isAdminInput = e.target.classList.contains("admin-input");
-
-      if (isAdminInput && currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        const input = e.target;
-        const field = input.dataset.field;
-        const id = input.dataset.id;
-        const val = input.value;
-        addPendingEdit(id, field, val, input);
-        return;
-      }
-
-      if (!isQty) return;
-      const input = e.target;
-      let qty = parseInt(input.value,10) || 0;
-      if (qty<0) qty=0;
-      input.value = qty;
-      const id = input.dataset.id;
-      const name = input.dataset.name;
-      const price = parseInt(input.dataset.price,10)||0;
-      const tr = input.closest("tr");
-      if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(qty*price);
-
-      if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        const p = products.find(p=>p.id===id);
-        if (p) p.stock = qty;
-        updateInventoryTotalDisplay();
-        await updateProductFieldInGoogleSheet(id, "stock", qty, input, false);
-        return;
-      }
-
-      if (qty>0){
-        cart[id] = {id,name,quantity:qty,price};
-      } else {
-        delete cart[id];
-      }
-      updateCart();
-    });
-
-    productTableBody.addEventListener("click", async e => {
-      if (!e.target.classList.contains("quantity-btn")) return;
-      const ctrl = e.target.closest(".quantity-control");
-      const input = ctrl.querySelector(".quantity-input");
-      let val = parseInt(input.value,10) || 0;
-      if (e.target.classList.contains("increase-btn")) val++;
-      else val--;
-      if (val<0) val=0;
-      input.value = val;
-
-      const id = input.dataset.id;
-      const name = input.dataset.name;
-      const price = parseInt(input.dataset.price,10)||0;
-      const tr = input.closest("tr");
-      if (tr) tr.querySelector(".total-pay").textContent = currencyFormatter.format(val*price);
-
-      if (currentMode===MODE_ADMIN_EDIT && googleUserToken){
-        const p = products.find(p=>p.id===id);
-        if (p) p.stock = val;
-        updateInventoryTotalDisplay();
-        await updateProductFieldInGoogleSheet(id, "stock", val, input, false);
-        return;
-      }
-
-      if (val>0){
-        cart[id] = {id,name,quantity:val,price};
-      } else {
-        delete cart[id];
-      }
-      updateCart();
-    });
-
-    async function updateProductFieldInGoogleSheet(id,field,value,input,silent){
-      if (!googleUserToken){
-        alert("No estás autenticado.");
-        return;
-      }
-      const p = products.find(p=>p.id===id);
-      const original = p ? p[field] : "";
-      let newValue = value;
-      if (field==="valor_unitario"){
-        newValue = (value||"").replace(/[^\d]/g,"");
-        newValue = parseInt(newValue,10)||0;
-      }
-      if (input) input.disabled = true;
-      try{
-        const resp = await fetch(APPS_SCRIPT_URL, {
-          method:"POST",
-          headers:{"Content-Type":"text/plain;charset=utf-8"},
-          body:JSON.stringify({
-            action: field === "stock" ? "updateStock" : "updateField",
-            token:googleUserToken,
-            productId:id,
-            fieldToUpdate:field,
-            newValue,
-            adminEmail:currentAdminEmail
-          })
-        });
-        const json = await resp.json();
-        if (json.status==="success"){
-          if (p) p[field] = newValue;
-          if (field === "stock") {
-            const rowInput = document.querySelector(`.quantity-input[data-id="${id}"]`);
-            if (rowInput) rowInput.value = newValue;
-          }
-          if (!silent){
-            updateInventoryTotalDisplay();
-          }
-        } else {
-          throw new Error(json.message || "Error guardando");
-        }
-      } catch(err){
-        alert("Error al guardar: " + err.message);
-        if (input) input.value = original;
-      } finally {
-        if (input) input.disabled = false;
-      }
-    }
-
-    searchInput.addEventListener("input", filterAndDisplayProducts);
-    sortPriceBtn.addEventListener("click", () => {
-      if (currentSortOrder==="default" || currentSortOrder==="desc"){
-        currentSortOrder="asc";
-        sortPriceBtn.textContent="Precio $↓";
-      } else {
-        currentSortOrder="desc";
-        sortPriceBtn.textContent="Precio $↑";
-      }
-      filterAndDisplayProducts();
-    });
-
-    function openWhatsApp(msg){
-      const encoded = encodeURIComponent(msg);
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const url = isMobile
-        ? `https://api.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`
-        : `https://web.whatsapp.com/send?phone=${DEFAULT_WHATSAPP}&text=${encoded}`;
-      window.open(url, "_blank");
-    }
-
-    whatsappBtn.addEventListener("click", () => {
-      if (currentMode !== MODE_CLIENT) return;
-      const items = Object.values(cart);
-      if (items.length===0) return;
-      const msg = buildWhatsAppMsg(items);
-      openWhatsApp(msg);
-    });
-
-    function buildWhatsAppMsg(items, header="Hola, deseo comprar estos productos en Irenismb Natura Stock:"){
-      let msg = header + "\n\n";
-      let total=0;
-      items.forEach(it=>{
-        const sub = it.quantity * it.price;
-        msg += `• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
-        total += sub;
-      });
-      msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
-      msg += `\nVendedor: ${SELLER_NAME}\nWhatsApp: ${SELLER_PHONE}\n`;
-      return msg;
-    }
-
-    contactWhatsappLink.addEventListener("click", e => {
-      e.preventDefault();
-      openWhatsApp("Hola, me interesan los productos de Irenismb Natura Stock.");
-    });
-
-    cartList.addEventListener("click", e => {
-      if (!e.target.classList.contains("remove-item-btn")) return;
-      const id = e.target.dataset.id;
-      delete cart[id];
-      const input = productTableBody.querySelector(`.quantity-input[data-id="${id}"]`);
-      if (input){
-        input.value = 0;
-        input.dispatchEvent(new Event("input", {bubbles:true}));
-      } else {
-        updateCart();
-      }
-    });
-
-    invoiceBtn.addEventListener("click", () => {
-      if (currentMode !== MODE_ADMIN_SALE) return;
-      if (!googleUserToken){
-        alert("Inicia sesión con Google primero.");
-        googleSignInContainer.style.display = "block";
-        return;
-      }
-      startSellFlow();
-    });
-
-    function openInvoiceWindow(html){
-      const w = window.open("", "_blank");
-      w.document.write(html);
-      w.document.close();
-    }
-
-    async function startSellFlow(){
-      const items = Object.values(cart);
-      if (items.length===0){
-        alert("No hay productos en el carrito.");
-        return;
-      }
-
-      const action = prompt("Seleccione la acción:\n1. Generar factura (predeterminado)\n2. Enviar por WhatsApp", "1");
-      const actionNum = (action || "1").trim();
-
-      const cliente = prompt("Nombre del cliente:", "Cliente contado");
-      if (cliente===null) return;
-
-      const fechaDef = formatDateDDMMYYYY(new Date());
-      let fecha = prompt("Fecha de venta (dd/mm/aaaa):", fechaDef) || fechaDef;
-      let abonadoStr = prompt("Valor abonado / pagado:", "0") || "0";
-      let plazoStr = prompt("Plazo en días (30 por defecto):", "30") || "30";
-
-      const abonado = parseInt(abonadoStr.replace(/[^\d]/g,""),10) || 0;
-      let plazo = parseInt(plazoStr,10);
-      if (isNaN(plazo) || plazo<0) plazo=30;
-
-      let total = 0;
-      items.forEach(it => total += it.quantity * it.price);
-      let saldo = total - abonado;
-      if (saldo<0) saldo=0;
-
-      let vence = "";
-      if (saldo>0){
-        const p = fecha.split("/");
-        let d = new Date();
-        if (p.length===3){
-          d = new Date(parseInt(p[2],10), parseInt(p[1],10)-1, parseInt(p[0],10));
-        }
-        d.setDate(d.getDate() + plazo);
-        vence = formatDateDDMMYYYY(d);
-      }
-
-      if (actionNum==="1" || actionNum===""){
-        const html = `
-          <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
-          <h2>Irenismb Natura Stock</h2>
-          <p><strong>Cliente:</strong> ${cliente}</p>
-          <p><strong>Fecha:</strong> ${fecha}</p>
-          <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
-          <table border="1" cellspacing="0" cellpadding="5">
-            <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
-            ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity*it.price)}</td></tr>`).join("")}
-            <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
-            <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
-            <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
-            ${saldo>0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
-          </table>
-          <p>Gracias por su compra.</p>
-          </body></html>
-        `;
-        openInvoiceWindow(html);
-      } else if (actionNum==="2"){
-        let msg = `Venta para ${cliente}\nFecha: ${fecha}\n\n`;
-        items.forEach(it => {
-          const sub = it.quantity * it.price;
-          msg += `• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
-        });
-        msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
-        msg += `Abonado/Pagado: ${currencyFormatter.format(abonado)}\n`;
-        msg += `Saldo: ${currencyFormatter.format(saldo)}\n`;
-        if (saldo>0) msg += `Vence: ${vence}\n`;
-        msg += `\nVendedor: ${SELLER_NAME} - ${SELLER_PHONE}`;
-        openWhatsApp(msg);
-      } else {
-        const html = `
-          <html><head><title>Factura - Irenismb Natura Stock</title></head><body>
-          <h2>Irenismb Natura Stock</h2>
-          <p><strong>Cliente:</strong> ${cliente}</p>
-          <p><strong>Fecha:</strong> ${fecha}</p>
-          <p><strong>Vendedor:</strong> ${SELLER_NAME} - ${SELLER_PHONE}</p>
-          <table border="1" cellspacing="0" cellpadding="5">
-            <tr><th>Producto</th><th>Cant</th><th>V.Unit</th><th>Subtotal</th></tr>
-            ${items.map(it => `<tr><td>${it.name}</td><td>${it.quantity}</td><td>${currencyFormatter.format(it.price)}</td><td>${currencyFormatter.format(it.quantity*it.price)}</td></tr>`).join("")}
-            <tr><td colspan="3"><strong>Total</strong></td><td>${currencyFormatter.format(total)}</td></tr>
-            <tr><td colspan="3"><strong>Abonado/Pagado</strong></td><td>${currencyFormatter.format(abonado)}</td></tr>
-            <tr><td colspan="3"><strong>Saldo</strong></td><td>${currencyFormatter.format(saldo)}</td></tr>
-            ${saldo>0 ? `<tr><td colspan="3"><strong>Vence</strong></td><td>${vence}</td></tr>` : ""}
-          </table>
-          <p>Gracias por su compra.</p>
-          </body></html>
-        `;
-        openInvoiceWindow(html);
-      }
-
-      for (const it of items) {
-        const prod = products.find(p => p.id === it.id);
-        if (prod){
-          const newStock = Math.max((prod.stock||0) - it.quantity, 0);
-          prod.stock = newStock;
-          await updateProductFieldInGoogleSheet(prod.id, "stock", newStock, null, true);
-        }
-      }
-
-      cart = {};
-      localStorage.removeItem("shoppingCart");
-      productTableBody.querySelectorAll(".quantity-input").forEach(input=>{
-        if (currentMode !== MODE_ADMIN_EDIT) input.value = 0;
-      });
-      updateCart();
-      filterAndDisplayProducts();
-      updateInventoryTotalDisplay();
-    }
-
-    function toTitleCase(str){return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";}
-    function formatDateDDMMYYYY(d){
-      const dd = String(d.getDate()).padStart(2,"0");
-      const mm = String(d.getMonth()+1).toString().padStart(2,"0");
-      const yy = d.getFullYear();
-      return `${dd}/${mm}/${yy}`;
-    }
-  </script>
-</body>
-</html>
+  /* ================== SALVADO ================== */
+  function saveFiltersAndCart(){ saveFiltersToStorage(); localStorage.setItem(LS_CART_KEY, JSON.stringify(cart)); }
+  window.addEventListener("beforeunload", saveFiltersAndCart);
+</script>

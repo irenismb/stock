@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Reporte de Caja — Inicio, Captura, Totales y Detalles</title>
   <meta name="description" content="Aplicación de caja con inicio, captura diaria y reportes por rango (totales o detalles), protegida por clave y con exportación a Excel." />
   <style>
@@ -11,6 +11,7 @@
       --warning:#ffc107; --info:#007bff; --muted:#6c757d; --purple:#6f42c1;
       --bg:#f4f7f9; --card:#fff; --radius:8px; --shadow:0 6px 18px rgba(9,30,66,0.08);
       --whatsapp:#25D366; --border:#e6eaee;
+      --touch:44px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -21,19 +22,19 @@
       padding:8px;
     }
     .container{
-      width:96vw; max-width:96vw; min-height:96vh;
+      width:100vw; max-width:100vw; min-height:96vh;
       margin:0 auto;background:var(--card);
       border-radius:var(--radius);box-shadow:var(--shadow);padding:16px; position: relative;
     }
     header h1{margin:0 0 8px 0;color:var(--primary);font-size:1.6rem}
     header p{margin:0 0 14px 0;color:var(--muted);font-size:0.95rem}
-    .btn {padding:10px 14px;border-radius:6px;border:0;cursor:pointer;color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:transform .12s, box-shadow .12s, opacity .12s;justify-content:center;}
+    .btn {padding:10px 14px;border-radius:6px;border:0;cursor:pointer;color:#fff;font-weight:600;display:inline-flex;align-items:center;gap:8px;transition:transform .12s, box-shadow .12s, opacity .12s;justify-content:center; min-height:var(--touch); min-width:var(--touch);}
     .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.6;cursor:not-allowed}
     .btn-primary{background:var(--primary)} .btn-success{background:var(--success)}
     .btn-info{background:var(--info)} .btn-warning{background:var(--warning); color:#222}
     .btn-danger{background:var(--danger)} .btn-whatsapp{background:var(--whatsapp)}
     .btn-purple{background:var(--purple)} .btn-ghost{background:#eef3fb;color:var(--primary)}
-    .btn-small{padding: 4px 8px; font-size: 0.8rem;}
+    .btn-small{padding: 8px 10px; font-size: 0.95rem; min-height:var(--touch)}
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
     .card{border:1px solid var(--border);border-radius:10px;padding:16px;background:#fff}
     .card h3{margin:0 0 8px 0}
@@ -46,11 +47,11 @@
     .actions-bar {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
     .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px;}
     label{font-weight:600;font-size:0.88rem;margin-bottom:4px;display:block}
-    input, select{width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:6px;font-size:0.95rem;background:#fff;}
+    input, select{width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;font-size:1rem;background:#fff; min-height:var(--touch);}
 
     .records-container{overflow:auto;border-radius:6px;border:1px solid var(--border)}
     table{width:100%;border-collapse:collapse;min-width:900px}
-    th, td{padding:8px;border-top:1px solid #f4f7fb;font-size:0.95rem; text-align: left; vertical-align: middle;}
+    th, td{padding:10px;border-top:1px solid #f4f7fb;font-size:1rem; text-align: left; vertical-align: middle;}
     thead th{background:#f1f6fb;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)}
     tbody tr:nth-child(odd){background:#fbfdff}
     tbody tr:hover { background-color: #e7f1ff !important; }
@@ -67,27 +68,27 @@
     tbody tr.row-style-credito-formulas:nth-child(odd) { background-color: #d5e9f5; }
     tbody tr.row-style-gasto:nth-child(odd) { background-color: #fcf3d7; }
     tbody tr.row-style-interco:nth-child(odd) { background-color: #e1bee7; }
-    tfoot td { padding: 10px; background: #fafcfe; font-weight: 700; border-top: 1px solid #eef2f5; }
+    tfoot td { padding: 12px; background: #fafcfe; font-weight: 700; border-top: 1px solid #eef2f5; }
     tfoot tr.grand-total td { background-color: #e7f1ff; font-weight: bold; }
     tfoot tr.sub-grand-total td { background-color: #e9ecef; font-weight: bold; }
     .col-number, .col-total {text-align:right} .col-action{text-align:center;white-space:nowrap}
-    .table-input {border:1px solid #dde2e7;background:#fdfdfd;width:100%;padding:4px;border-radius:4px;font-size:inherit;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05);}
+    .table-input {border:1px solid #dde2e7;background:#fdfdfd;width:100%;padding:10px;border-radius:6px;font-size:1rem;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05); min-height:var(--touch);}
     .table-input:focus {background:#fff;border-color:var(--primary);outline:none;box-shadow:0 0 0 2px rgba(0, 123, 255, 0.25);}
     .truncate{white-space: normal; word-break: break-word;}
 
     /* ---- REPORTE ---- */
     #report-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
     .scroll-x{overflow-x:auto; overflow-y:hidden; border:1px solid var(--border);border-radius:6px}
-    .tag{display:inline-block;padding:4px 8px;border-radius:999px;background:#eef3fb;color:#1353d8;font-weight:600;font-size:.85rem}
-    .table-compact th,.table-compact td{padding:6px 8px}
+    .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef3fb;color:#1353d8;font-weight:600;font-size:.9rem}
+    .table-compact th,.table-compact td{padding:10px}
     .right{text-align:right}
 
     .report-gate{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:#f8fbff;border:1px dashed #cdd9f0;padding:12px;border-radius:8px;margin:10px 0}
-    .gate-note{color:#6b7280;font-size:.9rem}
+    .gate-note{color:#6b7280;font-size:.95rem}
 
     /* === REPORTE: tabla adaptable === */
     #tablaTotales{ table-layout:auto; width:100%; border-collapse:collapse; }
-    #tablaTotales th, #tablaTotales td{ padding:8px 10px; white-space:nowrap; overflow:visible; text-overflow:clip; vertical-align:middle; border-top:1px solid #eef2f5; }
+    #tablaTotales th, #tablaTotales td{ padding:10px 12px; white-space:nowrap; overflow:visible; text-overflow:clip; vertical-align:middle; border-top:1px solid #eef2f5; }
     #tablaTotales thead th:not(:first-child), #tablaTotales tbody td:not(:first-child), #tablaTotales tfoot td:not(:first-child){ min-width:120px; text-align:right; }
     #tablaTotales th:first-child, #tablaTotales td:first-child{ white-space:normal; min-width:260px; text-align:left; }
     #tablaTotales thead th:last-child, #tablaTotales tbody td:last-child, #tablaTotales tfoot td:last-child{ min-width:140px; font-weight:700; }
@@ -99,7 +100,20 @@
     /* ⭐️ Barra de navegación del reporte */
     .report-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
     .report-nav .nav-info{color:var(--muted);font-weight:600}
-    .btn-icon{padding:8px 10px}
+    .btn-icon{padding:10px 12px}
+
+    /* ======= MÓVIL ======= */
+    @media (max-width: 600px){
+      body{padding:0}
+      .container{border-radius:0; padding:12px}
+      header h1{font-size:1.35rem}
+      .cards{grid-template-columns:1fr}
+      .btn{width:100%}
+      .actions-bar{flex-direction:column}
+      table{min-width:720px}
+      #action-buttons-container{grid-template-columns:1fr}
+      .btn-icon{min-width:var(--touch)}
+    }
 
     @media print{
       .no-print{display:none !important}
@@ -233,7 +247,7 @@
           <label for="tipoReporte">Tipo de reporte</label>
           <select id="tipoReporte">
             <option value="totales">Totales por punto (servidor)</option>
-            <option value="detalles" id="opt-detalles-label">Detalles (local)</option>
+            <option value="detalles" id="opt-detalles-label">Detalles (servidor: hoja de cálculo)</option>
           </select>
         </div>
         <div style="align-self:end">
@@ -274,7 +288,7 @@
       LS_RECORDS_KEY: 'salesGridRecords_v2',
       LS_SESSION_KEY: 'sessionGrid_v2',
       WHATSAPP_PHONE: '573114040809',
-      // Tu Web App (sin cambios en backend)
+      // Tu Web App (Apps Script)
       SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx-_O7ZMuWAZKZppxFa0_cOd4yTI5wiqJuMVjIqRoJEucqjFbL4Jlri57OoYXNIFykouA/exec',
       API_KEY: '',
       PUNTOS_VENTA: ['Almendros','Aroma','Ferrocarril','Flora','Irotama','Libertador','Minca','Neguanje','Orient','Playa','Reserva','Rodadero'],
@@ -299,10 +313,10 @@
 
     /* ======================== UTILIDADES ======================== */
     const Utils = {
-      safeNumber(val){ 
+      safeNumber(val){
         const cleanStr = String(val || '0').replace(/\./g, '').replace(/,/g, '.');
-        const n = parseFloat(cleanStr); 
-        return isFinite(n) ? n : 0; 
+        const n = parseFloat(cleanStr);
+        return isFinite(n) ? n : 0;
       },
       formatCurrency(num){ return new Intl.NumberFormat('es-CO',{ style:'currency', currency:'COP', minimumFractionDigits:0, maximumFractionDigits:0 }).format(Math.round(num)); },
       nowDateISO(){ return new Date().toISOString().slice(0,10); },
@@ -312,9 +326,23 @@
       escapeHtml(s){ return String(s == null ? '' : s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;') }
     };
 
+    // 🔧 Helper de red robusto (muestra mensajes claros en reportStatus)
+    async function fetchJson(url, opt = {}, errorPrefix = 'Error'){
+      const res = await fetch(url, opt);
+      const text = await res.text().catch(()=> '');
+      if(!res.ok){
+        const msg = `${errorPrefix}: HTTP ${res.status} — ${text.slice(0,180)}`;
+        throw new Error(msg);
+      }
+      try{
+        return JSON.parse(text);
+      }catch(e){
+        throw new Error(`${errorPrefix}: JSON inválido — ${text.slice(0,180)}`);
+      }
+    }
+
     /* ======================== UI HOOKS ======================== */
     const UI = {
-      // navegación
       home: document.getElementById('home'),
       capture: document.getElementById('capture'),
       report: document.getElementById('report'),
@@ -353,7 +381,7 @@
       reportTag: document.getElementById('reportTag'),
       reportTableWrapper: document.getElementById('reportTableWrapper'),
 
-      // barra de navegación del reporte
+      // barra de navegación
       reportNav: document.getElementById('report-nav'),
       navPrevBtn: document.getElementById('nav-prev'),
       navNextBtn: document.getElementById('nav-next'),
@@ -362,19 +390,14 @@
 
     const state = {
       session: { date: null, pos: null },
-      reporte: { 
-        desde: null, 
-        hasta: null, 
-        tipo: 'totales', 
-        matriz: null, 
+      reporte: {
+        desde: null,
+        hasta: null,
+        tipo: 'totales',
+        matriz: null,
         detalles: [],
-        detallesSource: 'local', // 'server' | 'local'
-        // cursor para navegación
-        cursor: { 
-          puntosConDatos: [], // solo para detalles (día único)
-          puntoIndex: 0,
-          currentPuntoFilter: null // string o null
-        } 
+        detallesSource: 'server', // 🔒 forzado a servidor
+        cursor: { puntosConDatos: [], puntoIndex: 0, currentPuntoFilter: null }
       },
       reportUnlocked: false
     };
@@ -387,18 +410,17 @@
         this.bindNav();
         this.bindCaptureEvents();
         this.bindReportEvents();
-        this.bindReportNavEvents(); // ⭐️ navegación
+        this.bindReportNavEvents();
         this.updateNetworkStatus();
         window.addEventListener('online', () => this.updateNetworkStatus());
         window.addEventListener('offline', () => this.updateNetworkStatus());
 
-        // rango por defecto del reporte: ayer…ayer
         const ayer = Utils.yesterdayISO();
         UI.fechaDesde.value = ayer;
         UI.fechaHasta.value = ayer;
 
         UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
-        setDetallesOptionLabel(state.reporte.detallesSource);
+        setDetallesOptionLabel();
       },
 
       /* ---------- Navegación ---------- */
@@ -408,21 +430,10 @@
           if (!state.reportUnlocked) {
             UI.reportGate.classList.remove('hidden');
             UI.reportControls.classList.add('hidden');
-            const entered = prompt('Ingresa la clave de administrador para ver el REPORTE:');
-            if (entered && entered.trim() === ADMIN_PASS) {
-              state.reportUnlocked = true;
-              UI.reportGate.classList.add('hidden');
-              UI.reportControls.classList.remove('hidden');
-              this.updateReportNavBar();
-              setDetallesOptionLabel(state.reporte.detallesSource);
-            } else if (entered !== null) {
-              alert('Clave incorrecta.');
-            }
           } else {
             this.updateReportNavBar();
           }
         });
-
         UI.goCaptureBtn.addEventListener('click', () => this.showSection('capture'));
         UI.backHome1.addEventListener('click', () => this.showSection('home'));
         UI.backHome2.addEventListener('click', () => this.showSection('home'));
@@ -441,15 +452,15 @@
         UI.report.classList.toggle('hidden', name!=='report');
 
         if(name==='capture' && !(state.session.date && state.session.pos)){
-          UI.fechaInput.value = Utils.yesterdayISO(); // por defecto: ayer
+          UI.fechaInput.value = Utils.yesterdayISO();
         }
         if(name==='report' && !state.reportUnlocked){
           UI.reportGate.classList.remove('hidden');
           UI.reportControls.classList.add('hidden');
         }
-        if(name==='report') {
+        if(name==='report'){
           this.updateReportNavBar();
-          setDetallesOptionLabel(state.reporte.detallesSource);
+          setDetallesOptionLabel();
         }
       },
 
@@ -466,7 +477,6 @@
           const puntoVenta = UI.puntoVentaInput.value;
           if (!fecha || !puntoVenta) { alert('Por favor, seleccione fecha y punto de venta.'); return; }
 
-          // Validación: solo AYER
           const ayer = Utils.yesterdayISO();
           if (fecha !== ayer) {
             alert(
@@ -647,37 +657,54 @@
         }
       },
 
-      // WHATSAPP
+      // WHATSAPP — conceptos en negrita y línea en blanco entre líneas
       handleSendWhatsApp(){
         if (!state.session.date || !state.session.pos) return;
         const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
         const oneLine = (s) => String(s ?? '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\|+/g, '/').trim();
 
-        const encabezado = `Punto que reporta: ${state.session.pos}\nFecha que se reporta: ${state.session.date}\n`;
+        const bloques = [];
 
+        // Encabezado (con separación doble)
+        bloques.push(`*Punto que reporta:* ${state.session.pos}`);
+        bloques.push(`*Fecha que se reporta:* ${state.session.date}`);
+
+        // Detalle
         const rows = this.getRecordsFromTable();
-        const detalle = [
+        const detalleLineas = [
           '*Detalle de ventas*',
           ...rows.map(r => {
             const terceroTxt = oneLine(r.tercero) || '-';
             const detalleTxt = oneLine(r.detalle) || '-';
-            return `${state.session.pos} | ${r.tipo} | ${terceroTxt} | ${detalleTxt} | ${money(r.total)}`;
+            // Concepto en negrita + fila de contenido aparte
+            return `*${r.tipo}*\n${state.session.pos} | ${terceroTxt} | ${detalleTxt} | ${money(r.total)}`;
           })
-        ].join('\n');
+        ];
+        bloques.push(detalleLineas.join('\n\n')); // línea en blanco entre cada línea
 
+        // Totales (doble espacio entre líneas)
         const t = this.getCalculatedState().summary;
         const totales = [
           '*Totales*',
-          `Total ventas en efectivo: ${money(t.ventasNetoEfectivo)}`,
-          `Total ventas por medios electronicos: ${money(t.ventasElectronicas)}`,
-          `Total ventas a credito: ${money(t.ventasCredito)}`,
-          `Total ventas: ${money(t.ventasGlobal)}`,
-          `Total gastos en efectivo: ${money(t.gastosEfectivo)}`,
-          `Total dinero a recibir por tesoreria: ${money(t.esperadoTesoreria)}`
-        ].join('\n');
+          `*Total ventas en efectivo:* ${money(t.ventasNetoEfectivo)}`,
+          `*Total ventas por medios electronicos:* ${money(t.ventasElectronicas)}`,
+          `*Total ventas a credito:* ${money(t.ventasCredito)}`,
+          `*Total ventas:* ${money(t.ventasGlobal)}`,
+          `*Total gastos en efectivo:* ${money(t.gastosEfectivo)}`,
+          `*Total dinero a recibir por tesoreria:* ${money(t.esperadoTesoreria)}`
+        ].join('\n\n');
+        bloques.push(totales);
 
-        const finalMessage = `${encabezado}\n${detalle}\n\n${totales}`;
-        window.open(`https://web.whatsapp.com/send?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`,'_blank');
+        const finalMessage = bloques.join('\n\n'); // separa bloques con línea en blanco
+
+        // Mejor UX según dispositivo
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
+        const url = isMobile
+          ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
+          : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
+
+        window.open(url,'_blank');
       },
 
       handleClearAll(){
@@ -734,18 +761,18 @@
           UI.reportGate.classList.add('hidden');
           UI.reportControls.classList.remove('hidden');
           this.updateReportNavBar();
-          setDetallesOptionLabel(state.reporte.detallesSource);
+          setDetallesOptionLabel();
         });
 
         UI.tipoReporte.addEventListener('change', () => {
           state.reporte.tipo = UI.tipoReporte.value;
-          UI.reportTag.textContent = (state.reporte.tipo === 'detalles') ? 'Reporte de detalles' : 'Reporte de totales';
+          UI.reportTag.textContent = (state.reporte.tipo === 'detalles') ? 'Reporte de detalles (servidor)' : 'Reporte de totales';
           UI.reportTableWrapper.classList.toggle('details-mode', state.reporte.tipo === 'detalles');
           if (state.reporte.desde && state.reporte.hasta) {
             this.repintarSegunTipo();
             this.updateReportNavBar();
           }
-          setDetallesOptionLabel(state.reporte.detallesSource);
+          setDetallesOptionLabel();
         });
 
         UI.btnCargarReporte.addEventListener('click', () => {
@@ -775,25 +802,21 @@
         const { tipo, desde, hasta, cursor } = state.reporte;
         const rangoUnDia = !!(desde && hasta && desde === hasta);
 
-        // Mostrar barra solo si: detalles (un día) o totales (un día)
         const show = (tipo === 'detalles' && rangoUnDia) || (tipo === 'totales' && rangoUnDia);
         UI.reportNav.classList.toggle('hidden', !show);
 
         if (!show) { UI.navInfo.textContent = ''; return; }
 
         if (tipo === 'detalles') {
-          // preparar lista de puntos con datos del día
           const puntosConDatos = Array.from(new Set(
             (state.reporte.detalles || [])
               .filter(r => r.fecha === desde)
               .map(r => r.punto)
           ));
           cursor.puntosConDatos = puntosConDatos.length ? puntosConDatos : CONFIG.PUNTOS_VENTA.slice();
-          // asegurar índice válido
           if (cursor.puntoIndex >= cursor.puntosConDatos.length) cursor.puntoIndex = 0;
           cursor.currentPuntoFilter = cursor.puntosConDatos[cursor.puntoIndex] || null;
           UI.navInfo.textContent = `Día: ${desde} — Punto: ${cursor.currentPuntoFilter || 'N/A'}`;
-          // repintar tabla con filtro
           this.pintarTablaDetalles();
         } else {
           UI.navInfo.textContent = `Día: ${desde}`;
@@ -842,90 +865,41 @@
 
         if (state.reporte.tipo === 'detalles') {
           const rangoTxt = desde===hasta ? `del ${desde}` : `del ${desde} al ${hasta}`;
-          UI.reportStatus.textContent = 'Cargando detalles desde hoja de cálculo...';
+          UI.reportStatus.textContent = 'Cargando detalles desde hoja de cálculo (servidor)...';
 
           try{
             const detallesSrv = await cargarDetallesDesdeServidor(desde, hasta);
             state.reporte.detalles = detallesSrv;
             state.reporte.detallesSource = 'server';
-            setDetallesOptionLabel('server');
-            // reset cursor de punto si cambió el día
+            setDetallesOptionLabel();
             state.reporte.cursor.puntoIndex = 0;
             this.pintarTablaDetalles();
             UI.reportStatus.textContent = `Detalles ${rangoTxt} (servidor). Filas: ${detallesSrv.length}.`;
           }catch(e){
-            // Fallback a local SI falla el servidor
-            UI.reportStatus.textContent = 'No fue posible leer del servidor; usando datos locales...';
-            const detallesLoc = this.cargarDetallesDesdeLocalStorage(desde, hasta);
-            state.reporte.detalles = detallesLoc;
-            state.reporte.detallesSource = 'local';
-            setDetallesOptionLabel('local');
-            state.reporte.cursor.puntoIndex = 0;
+            console.error(e);
+            state.reporte.detalles = [];
+            state.reporte.detallesSource = 'server';
+            setDetallesOptionLabel();
             this.pintarTablaDetalles();
-            UI.reportStatus.textContent = `Detalles ${rangoTxt} (local). Registros: ${detallesLoc.length}.`;
+            UI.reportStatus.textContent = 'No fue posible leer los detalles del servidor. Verifique la Web App / permisos.';
           }
 
           this.updateReportNavBar();
           return;
         }
 
-        // Totales: servidor (tu Apps Script original)
+        // Totales: servidor
         UI.reportStatus.textContent = 'Cargando totales desde servidor...';
         try{
           const url = `${CONFIG.SCRIPT_URL}?action=report&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''}`;
-          const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-          const raw = await resp.text();
-          let rows;
-          try { rows = JSON.parse(raw); }
-          catch { UI.reportStatus.textContent = 'El backend no devolvió JSON válido (revisa URL / permisos del WebApp).'; rows = []; }
+          const rows = await fetchJson(url, { headers: { 'Accept': 'application/json' } }, 'Totales');
           this.procesarReporteTotales(rows, desde, hasta);
         }catch(err){
           console.error(err);
-          UI.reportStatus.textContent = 'No se pudo contactar el backend.';
+          UI.reportStatus.textContent = String(err.message || err);
           this.procesarReporteTotales([], desde, hasta);
         }
         this.updateReportNavBar();
-      },
-
-      /* ==== DETALLES (LOCAL) ==== */
-      cargarDetallesDesdeLocalStorage(desde, hasta){
-        const res = [];
-        const pref = CONFIG.LS_RECORDS_KEY + '_'; // salesGridRecords_v2_
-        for (let i=0;i<localStorage.length;i++){
-          const k = localStorage.key(i) || '';
-          if (!k.startsWith(pref)) continue;
-          // clave: salesGridRecords_v2_YYYY-MM-DD_PUNTO
-          const tail = k.substring(pref.length);
-          const parts = tail.split('_');
-          const fecha = parts[0] || '';
-          const punto = parts.slice(1).join('_') || '';
-          if (!fecha || fecha < desde || fecha > hasta) continue;
-
-          try{
-            const arr = JSON.parse(localStorage.getItem(k) || '[]');
-            (arr||[]).forEach(rec=>{
-              const valor = Utils.safeNumber(rec.valor);
-              const dev   = Utils.safeNumber(rec.devoluciones);
-              const total = valor - dev;
-              if (total === 0) return;
-              res.push({
-                fecha, punto,
-                tipo: rec.tipo || '',
-                tercero: rec.tercero || '',
-                detalle: rec.detalle || '',
-                valor: total
-              });
-            });
-          }catch{}
-        }
-        // Ordenar por fecha, punto
-        res.sort((a,b)=> (a.fecha+b.punto).localeCompare(b.fecha+b.punto));
-        return res;
-      },
-
-      /* ==== DETALLES (SERVIDOR) ==== */
-      async cargarDetallesDesdeServidorWrapper(desde, hasta){
-        return cargarDetallesDesdeServidor(desde, hasta);
       },
 
       /* ==== TOTALES (SERVIDOR) ==== */
@@ -968,7 +942,7 @@
             const v = state.reporte.matriz?.[p]?.[row.key]||0; totalGeneral += v;
             return `<td class="right">${Utils.formatCurrency(v)}</td>`;
           }).join('');
-          tr.innerHTML = `<td>${row.label}</td>${celdas}<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
+          tr.innerHTML = `<td><strong>${row.label}</strong></td>${celdas}<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
           UI.tbodyTot.appendChild(tr);
         });
 
@@ -983,7 +957,7 @@
         const filtroPunto = (rangoUnDia ? (cursor.currentPuntoFilter || null) : null);
 
         const rowsFiltradas = (filtroPunto)
-          ? rows.filter(r => r.fecha === desde && r.punto === filtroPunto)
+          ? rows.filter(r => r.fecha === desde && (r.punto === filtroPunto || r.puntoVenta === filtroPunto))
           : rows;
 
         UI.theadTot.innerHTML = '';
@@ -1000,15 +974,16 @@
         UI.tbodyTot.innerHTML = '';
         let totalGeneral = 0;
         rowsFiltradas.forEach(r => {
-          totalGeneral += r.valor;
+          const punto = r.punto || r.puntoVenta || '';
+          totalGeneral += Number(r.valor)||0;
           const tr = document.createElement('tr');
           tr.innerHTML = `
-            <td>${Utils.escapeHtml(r.fecha)}</td>
-            <td>${Utils.escapeHtml(r.punto)}</td>
-            <td>${Utils.escapeHtml(r.tipo)}</td>
-            <td>${Utils.escapeHtml(r.tercero)}</td>
-            <td>${Utils.escapeHtml(r.detalle)}</td>
-            <td class="right">${Utils.formatCurrency(r.valor)}</td>
+            <td>${Utils.escapeHtml(r.fecha || '')}</td>
+            <td>${Utils.escapeHtml(punto)}</td>
+            <td><strong>${Utils.escapeHtml(r.tipo || '')}</strong></td>
+            <td>${Utils.escapeHtml(r.tercero || '')}</td>
+            <td>${Utils.escapeHtml(r.detalle || '')}</td>
+            <td class="right">${Utils.formatCurrency(r.valor || 0)}</td>
           `;
           UI.tbodyTot.appendChild(tr);
         });
@@ -1077,7 +1052,7 @@
 
         const filtroPunto = cursor.currentPuntoFilter;
         const rows = (filtroPunto && desde===hasta)
-          ? detalles.filter(r => r.fecha === desde && r.punto === filtroPunto)
+          ? detalles.filter(r => (r.fecha === desde) && ((r.punto || r.puntoVenta) === filtroPunto))
           : detalles;
 
         const th = `
@@ -1090,20 +1065,22 @@
 
         let totalGeneral = 0;
         const filas = (rows||[]).map(r=>{
-          totalGeneral += Number(r.valor)||0;
+          const punto = r.punto || r.puntoVenta || '';
+          const val = Number(r.valor)||0;
+          totalGeneral += val;
           return `<tr>
             <td>${(r.fecha||'')}</td>
-            <td>${(r.punto||'')}</td>
+            <td>${(punto)}</td>
             <td>${(r.tipo||'')}</td>
             <td>${(r.tercero||'')}</td>
             <td>${(r.detalle||'')}</td>
-            <td style="mso-number-format:'\\#\\,\\#\\#0'; text-align:right;">${Number(r.valor)||0}</td>
+            <td style="mso-number-format:'\\#\\,\\#\\#0'; text-align:right;">${val}</td>
           </tr>`;
         }).join('');
 
         const tfoot = `<tr><td colspan="5" style="text-align:right;font-weight:bold;">Total general</td><td style="mso-number-format:'\\#\\,\\#\\#0'; text-align:right;font-weight:bold;">${totalGeneral}</td></tr>`;
 
-        const src = (state.reporte?.detallesSource === 'server') ? 'srv' : 'loc';
+        const src = 'srv';
         const suf = (desde===hasta) ? (filtroPunto ? `${desde}_${filtroPunto}_${src}` : `${desde}_${src}`) : `${desde}_${hasta}_${src}`;
 
         const htmlTable = `
@@ -1136,25 +1113,22 @@
       }
     };
 
-    /* === Helpers de etiqueta dinámica para la opción "Detalles" === */
-    function setDetallesOptionLabel(source){
+    /* === Helpers de etiqueta para "Detalles" (forzado servidor) === */
+    function setDetallesOptionLabel(){
       const el = document.getElementById('opt-detalles-label');
       if(!el) return;
-      el.textContent = source === 'server' ? 'Detalles (servidor: hoja de cálculo)' : 'Detalles (local)';
+      el.textContent = 'Detalles (servidor: hoja de cálculo)';
     }
 
     /* === Lector de detalles desde servidor (Apps Script) === */
     async function cargarDetallesDesdeServidor(desde, hasta){
       const url = `${CONFIG.SCRIPT_URL}?action=details&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''}`;
-      const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
-      const raw = await resp.text();
-      let rows = [];
-      try { rows = JSON.parse(raw) || []; } catch(e){ throw new Error('JSON inválido'); }
-
-      // Se espera formato: [{fecha, puntoVenta, tipo, tercero, detalle, valor}, ...]
-      return rows.map(r => ({
+      // Usamos fetchJson para errores claros
+      const rows = await fetchJson(url, { headers: { 'Accept': 'application/json' } }, 'Detalles');
+      // Normaliza claves por si el backend usa mayúsculas
+      return (rows || []).map(r => ({
         fecha: r.fecha || r.Fecha || '',
-        punto: r.puntoVenta || r.Punto || '',
+        punto: r.punto || r.puntoVenta || r.Punto || '',
         tipo: r.tipo || r.Tipo || '',
         tercero: r.tercero || r.Tercero || '',
         detalle: r.detalle || r.Detalle || '',

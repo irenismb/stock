@@ -233,7 +233,7 @@
           <label for="tipoReporte">Tipo de reporte</label>
           <select id="tipoReporte">
             <option value="totales">Totales por punto (servidor)</option>
-            <option value="detalles">Detalles (local: este navegador)</option>
+            <option value="detalles" id="opt-detalles-label">Detalles (local)</option>
           </select>
         </div>
         <div style="align-self:end">
@@ -368,6 +368,7 @@
         tipo: 'totales', 
         matriz: null, 
         detalles: [],
+        detallesSource: 'local', // 'server' | 'local'
         // cursor para navegación
         cursor: { 
           puntosConDatos: [], // solo para detalles (día único)
@@ -386,7 +387,7 @@
         this.bindNav();
         this.bindCaptureEvents();
         this.bindReportEvents();
-        this.bindReportNavEvents(); // ⭐️
+        this.bindReportNavEvents(); // ⭐️ navegación
         this.updateNetworkStatus();
         window.addEventListener('online', () => this.updateNetworkStatus());
         window.addEventListener('offline', () => this.updateNetworkStatus());
@@ -397,6 +398,7 @@
         UI.fechaHasta.value = ayer;
 
         UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
+        setDetallesOptionLabel(state.reporte.detallesSource);
       },
 
       /* ---------- Navegación ---------- */
@@ -412,6 +414,7 @@
               UI.reportGate.classList.add('hidden');
               UI.reportControls.classList.remove('hidden');
               this.updateReportNavBar();
+              setDetallesOptionLabel(state.reporte.detallesSource);
             } else if (entered !== null) {
               alert('Clave incorrecta.');
             }
@@ -444,7 +447,10 @@
           UI.reportGate.classList.remove('hidden');
           UI.reportControls.classList.add('hidden');
         }
-        if(name==='report') this.updateReportNavBar();
+        if(name==='report') {
+          this.updateReportNavBar();
+          setDetallesOptionLabel(state.reporte.detallesSource);
+        }
       },
 
       /* ---------- Captura ---------- */
@@ -728,6 +734,7 @@
           UI.reportGate.classList.add('hidden');
           UI.reportControls.classList.remove('hidden');
           this.updateReportNavBar();
+          setDetallesOptionLabel(state.reporte.detallesSource);
         });
 
         UI.tipoReporte.addEventListener('change', () => {
@@ -738,6 +745,7 @@
             this.repintarSegunTipo();
             this.updateReportNavBar();
           }
+          setDetallesOptionLabel(state.reporte.detallesSource);
         });
 
         UI.btnCargarReporte.addEventListener('click', () => {
@@ -833,15 +841,30 @@
         state.reporte.hasta = hasta;
 
         if (state.reporte.tipo === 'detalles') {
-          // Detalles: SOLO local (navegador)
-          UI.reportStatus.textContent = 'Cargando detalles locales...';
-          const detalles = this.cargarDetallesDesdeLocalStorage(desde, hasta);
-          state.reporte.detalles = detalles;
-          // reset cursor de punto si cambió el día
-          state.reporte.cursor.puntoIndex = 0;
-          this.pintarTablaDetalles();
           const rangoTxt = desde===hasta ? `del ${desde}` : `del ${desde} al ${hasta}`;
-          UI.reportStatus.textContent = `Detalles ${rangoTxt}. Registros locales: ${detalles.length}.`;
+          UI.reportStatus.textContent = 'Cargando detalles desde hoja de cálculo...';
+
+          try{
+            const detallesSrv = await cargarDetallesDesdeServidor(desde, hasta);
+            state.reporte.detalles = detallesSrv;
+            state.reporte.detallesSource = 'server';
+            setDetallesOptionLabel('server');
+            // reset cursor de punto si cambió el día
+            state.reporte.cursor.puntoIndex = 0;
+            this.pintarTablaDetalles();
+            UI.reportStatus.textContent = `Detalles ${rangoTxt} (servidor). Filas: ${detallesSrv.length}.`;
+          }catch(e){
+            // Fallback a local SI falla el servidor
+            UI.reportStatus.textContent = 'No fue posible leer del servidor; usando datos locales...';
+            const detallesLoc = this.cargarDetallesDesdeLocalStorage(desde, hasta);
+            state.reporte.detalles = detallesLoc;
+            state.reporte.detallesSource = 'local';
+            setDetallesOptionLabel('local');
+            state.reporte.cursor.puntoIndex = 0;
+            this.pintarTablaDetalles();
+            UI.reportStatus.textContent = `Detalles ${rangoTxt} (local). Registros: ${detallesLoc.length}.`;
+          }
+
           this.updateReportNavBar();
           return;
         }
@@ -900,6 +923,11 @@
         return res;
       },
 
+      /* ==== DETALLES (SERVIDOR) ==== */
+      async cargarDetallesDesdeServidorWrapper(desde, hasta){
+        return cargarDetallesDesdeServidor(desde, hasta);
+      },
+
       /* ==== TOTALES (SERVIDOR) ==== */
       procesarReporteTotales(rows, desde, hasta){
         const matriz = {};
@@ -947,7 +975,7 @@
         UI.tfootTot.innerHTML = '';
       },
 
-      /* ====== TABLA: DETALLES (LOCAL) ====== */
+      /* ====== TABLA: DETALLES ====== */
       pintarTablaDetalles(){
         const rows = state.reporte.detalles || [];
         const { desde, hasta, cursor } = state.reporte;
@@ -1075,6 +1103,9 @@
 
         const tfoot = `<tr><td colspan="5" style="text-align:right;font-weight:bold;">Total general</td><td style="mso-number-format:'\\#\\,\\#\\#0'; text-align:right;font-weight:bold;">${totalGeneral}</td></tr>`;
 
+        const src = (state.reporte?.detallesSource === 'server') ? 'srv' : 'loc';
+        const suf = (desde===hasta) ? (filtroPunto ? `${desde}_${filtroPunto}_${src}` : `${desde}_${src}`) : `${desde}_${hasta}_${src}`;
+
         const htmlTable = `
           <html xmlns:o="urn:schemas-microsoft-com:office:office"
                 xmlns:x="urn:schemas-microsoft-com:office:excel"
@@ -1095,7 +1126,6 @@
         const blob = new Blob([htmlTable], {type: 'application/vnd.ms-excel;charset=utf-8;'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
-        const suf = (desde===hasta) ? (filtroPunto ? `${desde}_${filtroPunto}` : desde) : `${desde}_${hasta}`;
         a.href = url;
         a.download = `detalles_${suf}.xls`;
         document.body.appendChild(a);
@@ -1105,6 +1135,32 @@
         UI.reportStatus.textContent = 'Excel (detalles) generado correctamente.';
       }
     };
+
+    /* === Helpers de etiqueta dinámica para la opción "Detalles" === */
+    function setDetallesOptionLabel(source){
+      const el = document.getElementById('opt-detalles-label');
+      if(!el) return;
+      el.textContent = source === 'server' ? 'Detalles (servidor: hoja de cálculo)' : 'Detalles (local)';
+    }
+
+    /* === Lector de detalles desde servidor (Apps Script) === */
+    async function cargarDetallesDesdeServidor(desde, hasta){
+      const url = `${CONFIG.SCRIPT_URL}?action=details&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''}`;
+      const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const raw = await resp.text();
+      let rows = [];
+      try { rows = JSON.parse(raw) || []; } catch(e){ throw new Error('JSON inválido'); }
+
+      // Se espera formato: [{fecha, puntoVenta, tipo, tercero, detalle, valor}, ...]
+      return rows.map(r => ({
+        fecha: r.fecha || r.Fecha || '',
+        punto: r.puntoVenta || r.Punto || '',
+        tipo: r.tipo || r.Tipo || '',
+        tercero: r.tercero || r.Tercero || '',
+        detalle: r.detalle || r.Detalle || '',
+        valor: Number(r.valor || r.Valor || 0)
+      }));
+    }
 
     App.init();
   })();

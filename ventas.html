@@ -77,16 +77,23 @@
     .truncate{white-space: normal; word-break: break-word;}
 
     /* ---- REPORTE ---- */
-    #report-controls{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:12px 0}
-    .scroll-x{overflow-x:auto; overflow-y:hidden; border:1px solid var(--border);border-radius:6px}
-    .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef3fb;color:#1353d8;font-weight:600;font-size:.9rem}
-    .table-compact th,.table-compact td{padding:10px}
     .right{text-align:right}
+    .tag{display:inline-block;padding:6px 10px;border-radius:999px;background:#eef3fb;color:#1353d8;font-weight:600;font-size:.9rem}
 
-    .report-gate{display:flex;gap:10px;align-items:end;flex-wrap:wrap;background:#f8fbff;border:1px dashed #cdd9f0;padding:12px;border-radius:8px;margin:10px 0}
-    .gate-note{color:#6b7280;font-size:.95rem}
+    /* --- Nueva composición de pasos en Reporte --- */
+    .steps{display:grid;grid-template-columns:1fr;gap:12px;margin:12px 0}
+    .step-card{
+      border:1px solid var(--border);
+      border-radius:10px; background:#fff; padding:14px;
+    }
+    .step-title{display:flex;align-items:center;gap:10px;margin:0 0 8px 0;font-size:1.05rem}
+    .badge{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;font-weight:800}
+    .subgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .helper{color:var(--muted);font-size:.92rem;margin:6px 0 0}
 
-    /* === REPORTE: tabla adaptable === */
+    /* Tabla adaptable de reporte */
+    .scroll-x{overflow-x:auto; overflow-y:hidden; border:1px solid var(--border);border-radius:6px}
+    .table-compact th,.table-compact td{padding:10px}
     #tablaTotales{ table-layout:auto; width:100%; border-collapse:collapse; }
     #tablaTotales th, #tablaTotales td{ padding:10px 12px; white-space:nowrap; overflow:visible; text-overflow:clip; vertical-align:middle; border-top:1px solid #eef2f5; }
     #tablaTotales thead th:not(:first-child), #tablaTotales tbody td:not(:first-child), #tablaTotales tfoot td:not(:first-child){ min-width:120px; text-align:right; }
@@ -97,7 +104,7 @@
     .details-mode #tablaTotales th:first-child,
     .details-mode #tablaTotales td:first-child{ min-width:140px; }
 
-    /* ⭐️ Barra de navegación del reporte */
+    /* Barra de navegación del reporte (días/puntos) */
     .report-nav{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
     .report-nav .nav-info{color:var(--muted);font-weight:600}
     .btn-icon{padding:10px 12px}
@@ -222,50 +229,96 @@
         <span class="tag" id="reportTag">Reporte</span>
       </div>
 
-      <!-- Puerta de acceso -->
-      <div id="reportGate" class="report-gate">
-        <div style="flex:1 1 240px">
-          <label for="reportPass">Clave de administrador para ver el reporte</label>
-          <input id="reportPass" type="password" placeholder="••••" />
-          <div class="gate-note">La clave por defecto es <strong>2525</strong>. Puedes cambiarla en el código (<code>ADMIN_PASS</code>).</div>
-        </div>
-        <div>
-          <button id="btnGateOpen" class="btn btn-success">Desbloquear reporte</button>
+      <!-- Paso 0: Puerta de acceso -->
+      <div id="reportGate" class="step-card">
+        <h3 class="step-title"><span class="badge">0</span> Desbloquear reporte</h3>
+        <div class="subgrid">
+          <div>
+            <label for="reportPass">Clave de administrador</label>
+            <input id="reportPass" type="password" placeholder="••••" />
+            <div class="helper">Digite la clave de administrador <strong>****</strong>. Para poder imprimir reportes. <code> Gracias</code>.</div>
+          </div>
+          <div style="align-self:end">
+            <button id="btnGateOpen" class="btn btn-success" style="width:100%">Desbloquear</button>
+          </div>
         </div>
       </div>
 
       <div id="report-controls" class="hidden">
-        <div>
-          <label for="fechaDesde">Desde</label>
-          <input id="fechaDesde" type="date" />
-        </div>
-        <div>
-          <label for="fechaHasta">Hasta</label>
-          <input id="fechaHasta" type="date" />
-        </div>
-        <div>
-          <label for="tipoReporte">Tipo de reporte</label>
-          <select id="tipoReporte">
-            <option value="totales">Totales por punto (servidor)</option>
-            <option value="detalles" id="opt-detalles-label">Detalles (servidor: hoja de cálculo)</option>
-          </select>
-        </div>
-        <div style="align-self:end">
-          <button id="btnCargarReporte" class="btn btn-primary" style="width:100%">Cargar reporte</button>
-        </div>
-        <div style="align-self:end">
-          <button id="btnExportarExcel" class="btn btn-ghost" style="width:100%">Exportar Excel</button>
+        <div class="steps">
+          <!-- Paso 1: Rango -->
+          <div class="step-card">
+            <h3 class="step-title"><span class="badge">1</span> Elegir rango de fechas</h3>
+            <div class="subgrid">
+              <div>
+                <label for="fechaDesde">Desde</label>
+                <input id="fechaDesde" type="date" />
+              </div>
+              <div>
+                <label for="fechaHasta">Hasta</label>
+                <input id="fechaHasta" type="date" />
+              </div>
+            </div>
+            <div class="helper">Usa el mismo día en ambos campos si deseas navegar con ⬅/➡ o enviar por punto específico.</div>
+          </div>
+
+          <!-- Paso 2: Tipo de información -->
+          <div class="step-card">
+            <h3 class="step-title"><span class="badge">2</span> Seleccionar tipo de reporte</h3>
+            <div class="subgrid">
+              <div>
+                <label for="tipoReporte">Tipo de reporte</label>
+                <select id="tipoReporte">
+                  <option value="totales">Totales por punto (servidor)</option>
+                  <option value="detalles" id="opt-detalles-label">Detalles (servidor: hoja de cálculo)</option>
+                </select>
+              </div>
+              <div style="align-self:end">
+                <button id="btnCargarReporte" class="btn btn-primary" style="width:100%">Cargar reporte</button>
+              </div>
+            </div>
+            <div class="helper">La tabla se mostrará abajo y podrás exportar/compartir en el paso 3.</div>
+          </div>
+
+          <!-- Paso 3: Compartir / Exportar -->
+          <div class="step-card">
+            <h3 class="step-title"><span class="badge">3</span> Compartir o exportar</h3>
+            <div class="subgrid">
+              <div>
+                <label for="modoEnvio">Contenido a enviar</label>
+                <select id="modoEnvio">
+                  <option value="detalles">Solo detalles</option>
+                  <option value="totales">Solo totales</option>
+                  <option value="ambos" selected>Ambos (detalles y totales)</option>
+                </select>
+              </div>
+              <div>
+                <label for="puntoEnviar">Punto a enviar</label>
+                <select id="puntoEnviar"></select>
+              </div>
+              <div style="align-self:end">
+                <button id="btnEnviarWhatsAppReporte" class="btn btn-whatsapp" style="width:100%" disabled>Enviar WhatsApp</button>
+              </div>
+              <div style="align-self:end">
+                <button id="btnExportarExcel" class="btn btn-ghost" style="width:100%" disabled>Exportar Excel</button>
+              </div>
+              <div style="align-self:end">
+                <button id="btnExportarHTML" class="btn btn-info" style="width:100%" disabled>Descargar HTML</button>
+              </div>
+            </div>
+            <div class="helper">Los botones se habilitan automáticamente cuando el reporte se ha cargado correctamente.</div>
+          </div>
         </div>
       </div>
 
-      <!-- ⭐️ Barra navegación del reporte -->
+      <!-- Navegación contextual -->
       <div id="report-nav" class="report-nav hidden">
         <button id="nav-prev" class="btn btn-ghost btn-icon">⬅ Anterior</button>
         <button id="nav-next" class="btn btn-ghost btn-icon">Siguiente ➡</button>
         <span id="nav-info" class="nav-info"></span>
       </div>
 
-      <div id="reportStatus" class="muted" style="margin:6px 0 10px"></div>
+      <div id="reportStatus" class="muted" style="margin:6px 0 10px" aria-live="polite"></div>
 
       <div class="scroll-x" id="reportTableWrapper" title="La tabla se ajusta al contenido; si hiciera falta, puedes desplazar horizontalmente.">
         <table id="tablaTotales" class="table-compact">
@@ -287,8 +340,7 @@
     const CONFIG = {
       LS_RECORDS_KEY: 'salesGridRecords_v2',
       LS_SESSION_KEY: 'sessionGrid_v2',
-      WHATSAPP_PHONE: '573114040809',
-      // Tu Web App (Apps Script)
+      WHATSAPP_PHONE: '573007248537', // número actualizado
       SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx-_O7ZMuWAZKZppxFa0_cOd4yTI5wiqJuMVjIqRoJEucqjFbL4Jlri57OoYXNIFykouA/exec',
       API_KEY: '',
       PUNTOS_VENTA: ['Almendros','Aroma','Ferrocarril','Flora','Irotama','Libertador','Minca','Neguanje','Orient','Playa','Reserva','Rodadero'],
@@ -319,6 +371,7 @@
         return isFinite(n) ? n : 0;
       },
       formatCurrency(num){ return new Intl.NumberFormat('es-CO',{ style:'currency', currency:'COP', minimumFractionDigits:0, maximumFractionDigits:0 }).format(Math.round(num)); },
+      formatNumber(num){ return new Intl.NumberFormat('es-CO',{ minimumFractionDigits:0, maximumFractionDigits:0 }).format(Math.round(num)); },
       nowDateISO(){ return new Date().toISOString().slice(0,10); },
       dateAddDays(iso, days){ const d = new Date(iso); d.setDate(d.getDate()+days); return d.toISOString().slice(0,10); },
       yesterdayISO(){ return Utils.dateAddDays(Utils.nowDateISO(), -1); },
@@ -326,7 +379,6 @@
       escapeHtml(s){ return String(s == null ? '' : s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;') }
     };
 
-    // 🔧 Helper de red robusto (muestra mensajes claros en reportStatus)
     async function fetchJson(url, opt = {}, errorPrefix = 'Error'){
       const res = await fetch(url, opt);
       const text = await res.text().catch(()=> '');
@@ -373,6 +425,7 @@
       tipoReporte: document.getElementById('tipoReporte'),
       btnCargarReporte: document.getElementById('btnCargarReporte'),
       btnExportarExcel: document.getElementById('btnExportarExcel'),
+      btnExportarHTML: document.getElementById('btnExportarHTML'),
       reportStatus: document.getElementById('reportStatus'),
       theadTot: document.getElementById('theadTotales'),
       tbodyTot: document.getElementById('tbodyTotales'),
@@ -385,7 +438,12 @@
       reportNav: document.getElementById('report-nav'),
       navPrevBtn: document.getElementById('nav-prev'),
       navNextBtn: document.getElementById('nav-next'),
-      navInfo: document.getElementById('nav-info')
+      navInfo: document.getElementById('nav-info'),
+
+      // controles de envío desde reporte
+      puntoEnviar: document.getElementById('puntoEnviar'),
+      modoEnvio: document.getElementById('modoEnvio'),
+      btnEnviarWhatsAppReporte: document.getElementById('btnEnviarWhatsAppReporte')
     };
 
     const state = {
@@ -396,8 +454,10 @@
         tipo: 'totales',
         matriz: null,
         detalles: [],
-        detallesSource: 'server', // 🔒 forzado a servidor
-        cursor: { puntosConDatos: [], puntoIndex: 0, currentPuntoFilter: null }
+        detallesSource: 'server',
+        cursor: { puntosConDatos: [], puntoIndex: 0, currentPuntoFilter: null },
+        detallesRange: { desde: null, hasta: null },
+        totalesRange: { desde: null, hasta: null }
       },
       reportUnlocked: false
     };
@@ -406,6 +466,7 @@
     const App = {
       init(){
         this.populatePuntoVentaSelect();
+        this.populatePuntoEnviarSelect();
         this.loadSession();
         this.bindNav();
         this.bindCaptureEvents();
@@ -468,6 +529,13 @@
       populatePuntoVentaSelect(){
         const select = UI.puntoVentaInput;
         select.innerHTML = '<option value="">Seleccione...</option>';
+        CONFIG.PUNTOS_VENTA.forEach(pv => { select.innerHTML += `<option value="${pv}">${pv}</option>`; });
+      },
+
+      populatePuntoEnviarSelect(){
+        const select = UI.puntoEnviar;
+        if(!select) return;
+        select.innerHTML = '<option value="Todos">Todos</option>';
         CONFIG.PUNTOS_VENTA.forEach(pv => { select.innerHTML += `<option value="${pv}">${pv}</option>`; });
       },
 
@@ -657,32 +725,27 @@
         }
       },
 
-      // WHATSAPP — conceptos en negrita y línea en blanco entre líneas
+      // WHATSAPP — CAPTURA (una sola sede)
       handleSendWhatsApp(){
         if (!state.session.date || !state.session.pos) return;
         const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
         const oneLine = (s) => String(s ?? '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\|+/g, '/').trim();
 
         const bloques = [];
-
-        // Encabezado (con separación doble)
         bloques.push(`*Punto que reporta:* ${state.session.pos}`);
         bloques.push(`*Fecha que se reporta:* ${state.session.date}`);
 
-        // Detalle
         const rows = this.getRecordsFromTable();
         const detalleLineas = [
           '*Detalle de ventas*',
           ...rows.map(r => {
             const terceroTxt = oneLine(r.tercero) || '-';
             const detalleTxt = oneLine(r.detalle) || '-';
-            // Concepto en negrita + fila de contenido aparte
             return `*${r.tipo}*\n${state.session.pos} | ${terceroTxt} | ${detalleTxt} | ${money(r.total)}`;
           })
         ];
-        bloques.push(detalleLineas.join('\n\n')); // línea en blanco entre cada línea
+        bloques.push(detalleLineas.join('\n\n'));
 
-        // Totales (doble espacio entre líneas)
         const t = this.getCalculatedState().summary;
         const totales = [
           '*Totales*',
@@ -695,15 +758,12 @@
         ].join('\n\n');
         bloques.push(totales);
 
-        const finalMessage = bloques.join('\n\n'); // separa bloques con línea en blanco
-
-        // Mejor UX según dispositivo
+        const finalMessage = bloques.join('\n\n');
         const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
         const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
         const url = isMobile
           ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
           : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
-
         window.open(url,'_blank');
       },
 
@@ -760,8 +820,10 @@
           state.reportUnlocked = true;
           UI.reportGate.classList.add('hidden');
           UI.reportControls.classList.remove('hidden');
+          this.toggleShareButtons(false);
           this.updateReportNavBar();
           setDetallesOptionLabel();
+          this.populatePuntoEnviarSelect();
         });
 
         UI.tipoReporte.addEventListener('change', () => {
@@ -783,6 +845,16 @@
         UI.btnExportarExcel.addEventListener('click', () => {
           if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
           this.exportarExcel();
+        });
+
+        UI.btnEnviarWhatsAppReporte.addEventListener('click', () => {
+          if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
+          this.handleSendWhatsAppReporte();
+        });
+
+        UI.btnExportarHTML.addEventListener('click', () => {
+          if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
+          this.exportarHTMLPorPunto();
         });
       },
 
@@ -811,7 +883,7 @@
           const puntosConDatos = Array.from(new Set(
             (state.reporte.detalles || [])
               .filter(r => r.fecha === desde)
-              .map(r => r.punto)
+              .map(r => r.punto || r.puntoVenta || '')
           ));
           cursor.puntosConDatos = puntosConDatos.length ? puntosConDatos : CONFIG.PUNTOS_VENTA.slice();
           if (cursor.puntoIndex >= cursor.puntosConDatos.length) cursor.puntoIndex = 0;
@@ -855,6 +927,12 @@
         this.cargarReporte();
       },
 
+      toggleShareButtons(enabled){
+        UI.btnExportarExcel.disabled = !enabled;
+        UI.btnEnviarWhatsAppReporte.disabled = !enabled;
+        UI.btnExportarHTML.disabled = !enabled;
+      },
+
       async cargarReporte(){
         const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
         if(!desde || !hasta){ alert('Seleccione el rango de fechas.'); return; }
@@ -862,6 +940,7 @@
 
         state.reporte.desde = desde;
         state.reporte.hasta = hasta;
+        this.toggleShareButtons(false);
 
         if (state.reporte.tipo === 'detalles') {
           const rangoTxt = desde===hasta ? `del ${desde}` : `del ${desde} al ${hasta}`;
@@ -871,14 +950,17 @@
             const detallesSrv = await cargarDetallesDesdeServidor(desde, hasta);
             state.reporte.detalles = detallesSrv;
             state.reporte.detallesSource = 'server';
+            state.reporte.detallesRange = { desde, hasta };
             setDetallesOptionLabel();
             state.reporte.cursor.puntoIndex = 0;
             this.pintarTablaDetalles();
             UI.reportStatus.textContent = `Detalles ${rangoTxt} (servidor). Filas: ${detallesSrv.length}.`;
+            this.toggleShareButtons(true);
           }catch(e){
             console.error(e);
             state.reporte.detalles = [];
             state.reporte.detallesSource = 'server';
+            state.reporte.detallesRange = { desde:null, hasta:null };
             setDetallesOptionLabel();
             this.pintarTablaDetalles();
             UI.reportStatus.textContent = 'No fue posible leer los detalles del servidor. Verifique la Web App / permisos.';
@@ -894,6 +976,7 @@
           const url = `${CONFIG.SCRIPT_URL}?action=report&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''}`;
           const rows = await fetchJson(url, { headers: { 'Accept': 'application/json' } }, 'Totales');
           this.procesarReporteTotales(rows, desde, hasta);
+          this.toggleShareButtons(true);
         }catch(err){
           console.error(err);
           UI.reportStatus.textContent = String(err.message || err);
@@ -915,6 +998,7 @@
         });
 
         state.reporte.matriz = matriz;
+        state.reporte.totalesRange = { desde, hasta };
         this.pintarTablaTotales();
 
         const rangoTxt = desde===hasta ? `del ${desde}` : `del ${desde} al ${hasta}`;
@@ -957,7 +1041,7 @@
         const filtroPunto = (rangoUnDia ? (cursor.currentPuntoFilter || null) : null);
 
         const rowsFiltradas = (filtroPunto)
-          ? rows.filter(r => r.fecha === desde && (r.punto === filtroPunto || r.puntoVenta === filtroPunto))
+          ? rows.filter(r => r.fecha === desde && ((r.punto || r.puntoVenta) === filtroPunto))
           : rows;
 
         UI.theadTot.innerHTML = '';
@@ -1110,6 +1194,241 @@
         a.remove();
         URL.revokeObjectURL(url);
         UI.reportStatus.textContent = 'Excel (detalles) generado correctamente.';
+      },
+
+      /* ======= Envío DESDE REPORTE (bloques por punto, sin puntos en cero) ======= */
+      async handleSendWhatsAppReporte(){
+        const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+        if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
+        if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
+
+        const puntoSel = UI.puntoEnviar?.value || 'Todos';
+        const modo = UI.modoEnvio?.value || 'ambos';
+
+        await this.ensureDataForRange(desde, hasta, (modo!=='totales'), (modo!=='detalles'));
+
+        const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
+        const points = basePoints.filter(pt => this.hasDataForPoint(pt, desde, hasta, modo));
+
+        if (!points.length){
+          alert('No hay puntos con valores mayores a cero para el rango seleccionado.'); return;
+        }
+
+        const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
+        const oneLine = (s) => String(s ?? '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\|+/g, '/').trim();
+        const rangeTxt = (desde===hasta) ? desde : `${desde} al ${hasta}`;
+
+        const bloques = [];
+
+        points.forEach((pt, idx) => {
+          const titulo = [
+            `*PUNTO QUE REPORTA:* ${pt.toUpperCase()}`,
+            `*FECHA QUE SE REPORTA:* ${rangeTxt.toUpperCase()}`
+          ];
+
+          const secciones = [titulo.join('\n\n')];
+
+          if (modo === 'detalles' || modo === 'ambos') {
+            const all = state.reporte.detalles || [];
+            const filas = all.filter(r => {
+              const f = r.fecha || '';
+              const okFecha = (f >= desde && f <= hasta);
+              const punto = r.punto || r.puntoVenta || '';
+              return okFecha && (punto === pt);
+            });
+            if (filas.length){
+              const detalleBloque = [
+                '*Detalle de ventas*',
+                ...filas.map(r => {
+                  const punto = r.punto || r.puntoVenta || '';
+                  const terceroTxt = oneLine(r.tercero) || '-';
+                  const detalleTxt = oneLine(r.detalle) || '-';
+                  return `*${r.tipo}*\n${punto} | ${terceroTxt} | ${detalleTxt} | ${money(Number(r.valor)||0)}`;
+                })
+              ].join('\n\n');
+              secciones.push(detalleBloque);
+            }
+          }
+
+          if (modo === 'totales' || modo === 'ambos') {
+            const m = state.reporte.matriz || {};
+            const totTxt = [
+              '*Totales*',
+              `*Total ventas en efectivo:* ${money(Number(m?.[pt]?.['total_ventas_efectivo']||0))}`,
+              `*Total ventas por medios electronicos:* ${money(Number(m?.[pt]?.['total_ventas_electronicas']||0))}`,
+              `*Total ventas a credito:* ${money(Number(m?.[pt]?.['total_ventas_credito']||0))}`,
+              `*Total ventas:* ${money(Number(m?.[pt]?.['total_ventas_global']||0))}`,
+              `*Total gastos en efectivo:* ${money(Number(m?.[pt]?.['total_gastos_efectivo']||0))}`,
+              `*Total dinero a recibir por tesoreria:* ${money(Number(m?.[pt]?.['total_esperado_tesoreria']||0))}`
+            ].join('\n\n');
+            secciones.push(totTxt);
+          }
+
+          bloques.push(secciones.join('\n\n'));
+          if (idx < points.length - 1){ bloques.push('--------------------'); }
+        });
+
+        const finalMessage = bloques.join('\n\n');
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
+        const url = isMobile
+          ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
+          : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
+
+        window.open(url,'_blank');
+        UI.reportStatus.textContent = (puntoSel === 'Todos')
+          ? `Mensaje preparado por puntos con movimiento (${rangeTxt}).`
+          : `Mensaje preparado para ${puntoSel} (${rangeTxt}).`;
+      },
+
+      /* ======= NUEVO: Exportar HTML con tablas por punto (sin puntos en cero) ======= */
+      async exportarHTMLPorPunto(){
+        const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+        if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
+        if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
+
+        const puntoSel = UI.puntoEnviar?.value || 'Todos';
+        const modo = UI.modoEnvio?.value || 'ambos';
+
+        await this.ensureDataForRange(desde, hasta, (modo!=='totales'), (modo!=='detalles'));
+
+        const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
+        const points = basePoints.filter(pt => this.hasDataForPoint(pt, desde, hasta, modo));
+
+        if (!points.length){
+          alert('No hay puntos con valores mayores a cero para generar el HTML.'); return;
+        }
+
+        const rangeTxt = (desde===hasta) ? desde : `${desde} al ${hasta}`;
+
+        const tables = points.map(pt => {
+          // Filas de detalles
+          let rows = [];
+          if (modo === 'detalles' || modo === 'ambos'){
+            const all = state.reporte.detalles || [];
+            rows = all.filter(r => {
+              const f = r.fecha || '';
+              const punto = r.punto || r.puntoVenta || '';
+              return (f >= desde && f <= hasta) && (punto === pt);
+            });
+          }
+
+          // Construcción de una única tabla por punto
+          const th = `
+            <th>fecha</th>
+            <th>punto</th>
+            <th>tipo</th>
+            <th>tercero</th>
+            <th>detalle</th>
+            <th>valor</th>`;
+
+          const filasHtml = (rows || []).map(r=>{
+            const val = Number(r.valor)||0;
+            const punto = r.punto || r.puntoVenta || '';
+            return `<tr>
+              <td>${Utils.escapeHtml(r.fecha||'')}</td>
+              <td>${Utils.escapeHtml(punto)}</td>
+              <td>${Utils.escapeHtml(r.tipo||'')}</td>
+              <td>${Utils.escapeHtml(r.tercero||'')}</td>
+              <td>${Utils.escapeHtml(r.detalle||'')}</td>
+              <td style="text-align:right;">${Utils.formatNumber(val)}</td>
+            </tr>`;
+          }).join('');
+
+          // Totales al final (si procede)
+          let totalesHtml = '';
+          if (modo === 'totales' || modo === 'ambos'){
+            const m = state.reporte.matriz?.[pt] || {};
+            const fila = (label, key, extraStyle='') => {
+              const v = Number(m[key]||0);
+              return `<tr style="${extraStyle}"><td colspan="5"><strong>${label}</strong></td><td style="text-align:right;"><strong>${Utils.formatNumber(v)}</strong></td></tr>`;
+            };
+            const highlight = 'background:#EAF4FF;color:#0B5BD3;border-top:2px solid #0B5BD3;';
+            totalesHtml = [
+              fila('Total ventas','total_ventas_global'),
+              fila('Total gastos en efectivo','total_gastos_efectivo'),
+              fila('Total dinero a recibir por tesoreria','total_esperado_tesoreria', highlight)
+            ].join('');
+          }
+
+          const titulo = `<h3 style="margin:4px 0 6px">${pt.toUpperCase()} — ${rangeTxt.toUpperCase()}</h3>`;
+
+          return `
+            ${titulo}
+            <table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; width:100%; max-width:100%;">
+              <thead style="background:#e8f0fe;"><tr>${th}</tr></thead>
+              <tbody>${filasHtml}</tbody>
+              <tfoot>${totalesHtml}</tfoot>
+            </table>
+          `;
+        });
+
+        const htmlDoc = `
+          <!DOCTYPE html>
+          <html lang="es">
+          <head>
+            <meta charset="UTF-8">
+            <title>Reporte por punto ${rangeTxt}</title>
+            <style>body{font-family:Segoe UI,Arial,sans-serif;line-height:1.35;padding:12px;} h3{color:#0b5bd3}</style>
+          </head>
+          <body>
+            ${tables.join('<p style="line-height:1">&nbsp;</p>')}
+          </body>
+          </html>
+        `.trim();
+
+        const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        const suf = (puntoSel==='Todos') ? 'todos' : puntoSel;
+        a.download = `reporte_html_${suf}_${(desde===hasta)?desde:(desde+'_'+hasta)}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        UI.reportStatus.textContent = `Archivo HTML generado (${points.length} tabla(s)).`;
+      },
+
+      /* ======= Helpers para envío/descarga ======= */
+      async ensureDataForRange(desde, hasta, needDetalles, needTotales){
+        if (needDetalles){
+          const r = state.reporte.detallesRange || {};
+          if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles)) {
+            const detallesSrv = await cargarDetallesDesdeServidor(desde, hasta);
+            state.reporte.detalles = detallesSrv;
+            state.reporte.detallesRange = { desde, hasta };
+            state.reporte.detallesSource = 'server';
+          }
+        }
+        if (needTotales){
+          const r = state.reporte.totalesRange || {};
+          if (r.desde !== desde || r.hasta !== hasta || !state.reporte.matriz) {
+            const url = `${CONFIG.SCRIPT_URL}?action=report&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''}`;
+            const rows = await fetchJson(url, { headers: { 'Accept':'application/json' } }, 'Totales');
+            this.procesarReporteTotales(rows, desde, hasta);
+          }
+        }
+      },
+
+      hasDataForPoint(pt, desde, hasta, modo){
+        let detallesPositivos = 0, totalesPositivos = 0;
+
+        if (modo === 'detalles' || modo === 'ambos') {
+          const all = state.reporte.detalles || [];
+          detallesPositivos = all
+            .filter(r => {
+              const f = r.fecha || '';
+              const punto = r.punto || r.puntoVenta || '';
+              return (f >= desde && f <= hasta) && (punto === pt);
+            })
+            .reduce((acc, r) => acc + Math.max(0, Number(r.valor)||0), 0);
+        }
+        if (modo === 'totales' || modo === 'ambos') {
+          const m = state.reporte.matriz?.[pt] || {};
+          const keys = Object.keys(CONFIG.TIPO_A_CLAVE).map(k=>CONFIG.TIPO_A_CLAVE[k]);
+          totalesPositivos = keys.reduce((acc,k)=> acc + Math.max(0, Number(m[k]||0)), 0);
+        }
+
+        return (detallesPositivos > 0) || (totalesPositivos > 0);
       }
     };
 
@@ -1123,9 +1442,7 @@
     /* === Lector de detalles desde servidor (Apps Script) === */
     async function cargarDetallesDesdeServidor(desde, hasta){
       const url = `${CONFIG.SCRIPT_URL}?action=details&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''}`;
-      // Usamos fetchJson para errores claros
       const rows = await fetchJson(url, { headers: { 'Accept': 'application/json' } }, 'Detalles');
-      // Normaliza claves por si el backend usa mayúsculas
       return (rows || []).map(r => ({
         fecha: r.fecha || r.Fecha || '',
         punto: r.punto || r.puntoVenta || r.Punto || '',

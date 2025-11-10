@@ -128,6 +128,14 @@
       .container{ box-shadow:none; border:1px solid #ccc }
       thead th{ background:#eee !important; color:#000 }
     }
+
+    /* ====== Estado de red (mejora visual) ====== */
+    .status-pill{
+      padding:6px 10px;border-radius:999px;font-weight:700;font-size:.85rem;
+      border:1px solid var(--border);
+    }
+    .status-online{ background:#e6f8ee; color:#117a3a; border-color:#bfe8cf; }
+    .status-offline{ background:#fff3f3; color:#b02a37; border-color:#f1c2c6; }
   </style>
 </head>
 <body>
@@ -205,7 +213,8 @@
           </thead>
           <tbody id="recordsListBody"></tbody>
           <tfoot id="recordsTableFooter">
-            <tr data-summary-id="total_ventas_efectivo"><td>Total ventas en efectivo</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
+            <!-- RÓTULO ACLARADO: solo cambia el texto visible -->
+            <tr data-summary-id="total_ventas_efectivo"><td>Efectivo neto (efectivo - crédito)</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
             <tr data-summary-id="total_ventas_electronicas"><td>Total ventas por medios electronicos</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
             <tr data-summary-id="total_ventas_credito"><td>Total ventas a credito</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
             <tr class="sub-grand-total" data-summary-id="total_ventas_global"><td>Total ventas</td><td colspan="2"></td><td class="col-total"></td><td colspan="3"></td></tr>
@@ -350,9 +359,11 @@
         {key:'total_gastos_efectivo',   label:'Total gastos en efectivo'},
         {key:'total_ventas_global',     label:'Total ventas'},
         {key:'total_ventas_credito',    label:'Total ventas a credito'},
-        {key:'total_ventas_efectivo',   label:'Total ventas en efectivo'},
+        // Solo cambia el rótulo visible; la clave se mantiene idéntica para compatibilidad
+        {key:'total_ventas_efectivo',   label:'Efectivo neto (efectivo - crédito)'},
         {key:'total_ventas_electronicas',label:'Total ventas por medios electronicos'}
       ],
+      // Mapeo de texto que viene/va al servidor -> clave (no lo cambiamos)
       TIPO_A_CLAVE: {
         'Total dinero a recibir por tesoreria':'total_esperado_tesoreria',
         'Total gastos en efectivo':'total_gastos_efectivo',
@@ -545,16 +556,9 @@
           const puntoVenta = UI.puntoVentaInput.value;
           if (!fecha || !puntoVenta) { alert('Por favor, seleccione fecha y punto de venta.'); return; }
 
+          // ✅ Advertencia, pero permite continuar con cualquier fecha
           const ayer = Utils.yesterdayISO();
-          if (fecha !== ayer) {
-            alert(
-              'La fecha del reporte debe ser la del día ANTERIOR ('+ ayer +').\n\n' +
-              'Si vas a reportar un día diferente, NO lo registres aquí; ' +
-              'envíalo al final por WhatsApp con el botón "Enviar Resumen por WhatsApp".'
-            );
-            UI.fechaInput.value = ayer;
-            return;
-          }
+          if (fecha !== ayer && !confirm(`Vas a abrir la sesión para ${fecha} (no es el día anterior: ${ayer}). ¿Continuar?`)) return;
 
           if (localStorage.getItem(this.getStorageKey()) && !confirm('¿Iniciar nueva sesión? Se borrarán los datos no guardados de la sesión anterior.')) { return; }
           this.startSession(fecha, puntoVenta);
@@ -643,26 +647,37 @@
       },
 
       getCalculatedState(){
-        const totals = { efectivo: 0, electronica: 0, credito: 0, gasto: 0 };
+        // Suma por categoría
+        let efectivo = 0, electronica = 0, credito = 0, gasto = 0;
         UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
           const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
           const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
           const currentTotal = valor - devoluciones;
           tr.querySelector('[data-field="total"]').textContent = Utils.formatCurrency(currentTotal);
-          const category = tr.dataset.category; if (totals.hasOwnProperty(category)) totals[category] += currentTotal;
+          const category = tr.dataset.category;
+          switch (category) {
+            case 'efectivo': efectivo += currentTotal; break;         // Efectivo POS (bruto)
+            case 'electronica': electronica += currentTotal; break;   // QR + débito + crédito (tarjeta)
+            case 'credito': credito += currentTotal; break;           // Nómina + Interco + Fórmulas
+            case 'gasto': gasto += currentTotal; break;               // Gastos en efectivo
+          }
         });
 
-        const totalVentasNetoEfectivo = totals.efectivo - totals.credito;
-        const totalDineroTesoreria = totalVentasNetoEfectivo - totals.gasto;
-        const totalVentasGeneral = totalVentasNetoEfectivo + totals.electronica + totals.credito;
+        // Fórmulas pedidas (claras y exactas)
+        const ventasNetoEfectivo = efectivo - credito;                  // Efectivo neto (efectivo - crédito)
+        const ventasElectronicas = electronica;                         // Total ventas por medios electrónicos
+        const ventasCredito      = credito;                             // Total ventas a crédito
+        const ventasGlobal       = efectivo + electronica + credito;    // Total ventas (bruto del día)
+        const gastosEfectivo     = gasto;                               // Total gastos en efectivo
+        const esperadoTesoreria  = ventasNetoEfectivo - gastosEfectivo; // Tesorería
 
         return { summary: {
-          ventasNetoEfectivo: totalVentasNetoEfectivo,
-          ventasElectronicas: totals.electronica,
-          ventasCredito: totals.credito,
-          gastosEfectivo: totals.gasto,
-          ventasGlobal: totalVentasGeneral,
-          esperadoTesoreria: totalDineroTesoreria,
+          ventasNetoEfectivo,
+          ventasElectronicas,
+          ventasCredito,
+          gastosEfectivo,
+          ventasGlobal,
+          esperadoTesoreria,
         }};
       },
 
@@ -702,6 +717,7 @@
 
         const detailData = records.map(r => ({fecha: state.session.date, puntoVenta: state.session.pos, tipo: r.tipo, tercero: r.tercero, detalle: r.detalle, valor: r.total}));
         const c = this.getCalculatedState().summary;
+        // Importante: para compatibilidad con el servidor NO cambiamos estos textos
         const summaryData = [
           { tipo: 'Total ventas en efectivo', valor: c.ventasNetoEfectivo },
           { tipo: 'Total ventas por medios electronicos', valor: c.ventasElectronicas },
@@ -749,7 +765,7 @@
         const t = this.getCalculatedState().summary;
         const totales = [
           '*Totales*',
-          `*Total ventas en efectivo:* ${money(t.ventasNetoEfectivo)}`,
+          `*Efectivo neto (efectivo - crédito):* ${money(t.ventasNetoEfectivo)}`,
           `*Total ventas por medios electronicos:* ${money(t.ventasElectronicas)}`,
           `*Total ventas a credito:* ${money(t.ventasCredito)}`,
           `*Total ventas:* ${money(t.ventasGlobal)}`,
@@ -1254,7 +1270,7 @@
             const m = state.reporte.matriz || {};
             const totTxt = [
               '*Totales*',
-              `*Total ventas en efectivo:* ${money(Number(m?.[pt]?.['total_ventas_efectivo']||0))}`,
+              `*Efectivo neto (efectivo - crédito):* ${money(Number(m?.[pt]?.['total_ventas_efectivo']||0))}`,
               `*Total ventas por medios electronicos:* ${money(Number(m?.[pt]?.['total_ventas_electronicas']||0))}`,
               `*Total ventas a credito:* ${money(Number(m?.[pt]?.['total_ventas_credito']||0))}`,
               `*Total ventas:* ${money(Number(m?.[pt]?.['total_ventas_global']||0))}`,

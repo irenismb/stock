@@ -242,7 +242,6 @@
   });
 
   /* ================== IMÁGENES (GitHub) ================== */
-  // Ajusta la ruta si tus fotos están en otro sitio
   const IMG_BASE_PATH = "https://irenismb.github.io/stock/imagenes/productos/";
   const IMG_EXTS = ["webp","jpg","jpeg","png","gif","JPG","JPEG","PNG","WEBP","GIF"];
   const imageCache = new Map(); // clave: base.ext  → {ok,url}
@@ -312,28 +311,23 @@
   }
 
   /* ================== REGISTRO DE VISITAS ================== */
-function logVisit(clickText, searchText){
-  try {
-    // Para depuración (solo lo verás si abres la consola del navegador)
-    console.log("logVisit →", clickText, "| buscar:", searchText);
+  function logVisit(clickText, searchText){
+    try {
+      console.log("logVisit →", clickText, "| buscar:", searchText);
 
-    const params = new URLSearchParams({
-      action: "logVisit",
-      clickText: String(clickText || ""),
-      searchText: String(searchText || ""),
-      ts: Date.now().toString()  // evita caché
-    });
+      const params = new URLSearchParams({
+        action: "logVisit",
+        clickText: String(clickText || ""),
+        searchText: String(searchText || ""),
+        ts: Date.now().toString()
+      });
 
-    // "Tracking pixel": no usa fetch, así evitamos cualquier problema de CORS
-    const img = new Image();
-    img.src = APPS_SCRIPT_URL + "?" + params.toString();
-    // no necesitamos añadirla al DOM, con asignar src ya se lanza la petición
-  } catch (e) {
-    console.error("Error en logVisit:", e);
+      const img = new Image();
+      img.src = APPS_SCRIPT_URL + "?" + params.toString();
+    } catch (e) {
+      console.error("Error en logVisit:", e);
+    }
   }
-}
-
-
 
   /* ================== IMÁGENES / GALERÍA ================== */
   function preloadImage(url){
@@ -372,15 +366,14 @@ function logVisit(clickText, searchText){
     });
   }
 
-  // intenta con "codigo@nombre" y luego solo "codigo"
   async function resolveImageForCode(code,name){
     if(!code) return null;
     const safeName=(name||"").trim();
     const baseVariants=[];
     if(safeName){
-      baseVariants.push(`${code}@${safeName}`); // patrón nuevo
+      baseVariants.push(`${code}@${safeName}`);
     }
-    baseVariants.push(`${code}`); // compatibilidad patrón viejo (sin @Nombre)
+    baseVariants.push(`${code}`);
 
     for(const base of baseVariants){
       for(const ext of IMG_EXTS){
@@ -422,7 +415,7 @@ function logVisit(clickText, searchText){
       const im=document.createElement("img");
       im.src=u;
       im.alt=`Miniatura ${idx+1}`;
-      im.role="listitem";
+      im.setAttribute("role","listitem");
       if(idx===activeIndex) im.classList.add("active");
       im.addEventListener("click",()=>setGalleryIndex(idx,true));
       thumbs.appendChild(im);
@@ -445,7 +438,7 @@ function logVisit(clickText, searchText){
     previewImg.src=currentGallery.images[idx];
     previewImg.onload=()=>{
       previewImg.style.display="block";
-      if(focusImg && previewImg.focus) previewImg.focus();
+      if(focusImg && typeof previewImg.focus==="function") previewImg.focus();
     };
 
     [...thumbs.querySelectorAll("img")].forEach((im,i)=>{
@@ -457,7 +450,6 @@ function logVisit(clickText, searchText){
     preloadImage(currentGallery.images[nextIdx]);
 
     updateNavButtons();
-    // NOTA: no mostramos "imagen 1 de 2" ni nombre de archivo.
   }
 
   async function showPreviewForProduct(prod){
@@ -513,7 +505,9 @@ function logVisit(clickText, searchText){
   function getSavedFilters(){
     try{
       return JSON.parse(localStorage.getItem(LS_FILTERS_KEY)||"{}");
-    }catch{return{}}
+    }catch{
+      return {};
+    }
   }
   function saveFiltersToStorage(){
     const cat=categoryMenuContainer.querySelector('input[name="category"]:checked')?.value || "Todas";
@@ -531,7 +525,10 @@ function logVisit(clickText, searchText){
   function closeDropdowns(){
     document.querySelectorAll(".custom-dropdown.open").forEach(d=>{
       d.classList.remove("open");
-      d.querySelector(".custom-menu").setAttribute("aria-hidden","true");
+      const menu = d.querySelector(".custom-menu");
+      if(menu){
+        menu.setAttribute("aria-hidden","true");
+      }
       d.querySelector(".dropdown-toggle-btn")?.setAttribute("aria-expanded","false");
     });
   }
@@ -580,18 +577,24 @@ function logVisit(clickText, searchText){
       if(t.classList.contains("dropdown-toggle-btn")){
         e.stopPropagation();
         const dd=t.closest(".custom-dropdown");
+        if(!dd) return;
         const was=dd.classList.contains("open");
         closeDropdowns();
         dd.classList.toggle("open",!was);
-        dd.querySelector(".custom-menu").setAttribute("aria-hidden",was?"true":"false");
+        const menu = dd.querySelector(".custom-menu");
+        if(menu){
+          menu.setAttribute("aria-hidden",was?"true":"false");
+        }
         t.setAttribute("aria-expanded",(!was).toString());
       }else if(!t.closest(".custom-dropdown")){
         closeDropdowns();
       }
     });
+
     document.addEventListener("keydown",e=>{
       if(e.key==="Escape") closeDropdowns();
     });
+
     [categoryToggleBtn,brandToggleBtn].forEach(btn=>{
       btn.addEventListener("keydown",e=>{
         if(e.key==="Enter"||e.key===" "){
@@ -603,7 +606,7 @@ function logVisit(clickText, searchText){
 
     searchInput.addEventListener("input", debounce(() => {
       filterAndDisplayProducts();
-    
+
       // registrar búsqueda si el texto cambió y no está vacío
       const term = searchInput.value.trim();
       if (term && term !== lastSearchLogged) {
@@ -611,7 +614,7 @@ function logVisit(clickText, searchText){
         logVisit("busqueda", term);
       }
     }, 600));  // 0,6 s sin escribir = nueva búsqueda
-
+  }
 
   /* ================== CARGA DE PRODUCTOS ================== */
   async function fetchProductsFromBackend(){
@@ -622,7 +625,18 @@ function logVisit(clickText, searchText){
       if(data.status!=="success" || !Array.isArray(data.products)){
         throw new Error(data.message||"Respuesta inválida");
       }
-      products=data.products.slice();
+
+      // Normalizar tipos numéricos para evitar problemas en sort y cálculos
+      products = data.products.map(p=>{
+        const valor = Number(p.valor_unitario);
+        const orden = Number(p.orden);
+        return {
+          ...p,
+          valor_unitario: Number.isFinite(valor) ? valor : 0,
+          orden: Number.isFinite(orden) ? orden : 999999
+        };
+      });
+
       refreshFilters();
       setupFilterListenersOnce();
       filterAndDisplayProducts();
@@ -634,10 +648,8 @@ function logVisit(clickText, searchText){
 
   function sortByOrdenThenName(list){
     list.sort((a,b)=>{
-      const ao=parseInt(a.orden,10);
-      const bo=parseInt(b.orden,10);
-      const aVal=isNaN(ao)? 999999 : ao;
-      const bVal=isNaN(bo)? 999999 : bo;
+      const aVal = typeof a.orden === "number" && !isNaN(a.orden) ? a.orden : 999999;
+      const bVal = typeof b.orden === "number" && !isNaN(b.orden) ? b.orden : 999999;
       if(aVal!==bVal) return aVal-bVal;
       return String(a.name).localeCompare(String(b.name));
     });
@@ -668,7 +680,6 @@ function logVisit(clickText, searchText){
     }else if(currentSortOrder==="desc"){
       list.sort((a,b)=>(b.valor_unitario||0)-(a.valor_unitario||0));
     }else{
-      // default: usar columna Orden
       sortByOrdenThenName(list);
     }
 
@@ -678,7 +689,7 @@ function logVisit(clickText, searchText){
   function displayProducts(list){
     if(!Array.isArray(list) || list.length===0){
       productTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
-    return;
+      return;
     }
     const frag=document.createDocumentFragment();
     list.forEach(p=>{
@@ -842,7 +853,8 @@ function logVisit(clickText, searchText){
     const id=e.target.dataset.id;
     delete cart[id];
     try{
-      const input=productTableBody.querySelector(`.quantity-input[data-id="${CSS.escape(id)}"]`);
+      const selector = `.quantity-input[data-id="${CSS.escape(id)}"]`;
+      const input=productTableBody.querySelector(selector);
       if(input){
         input.value=0;
         input.dispatchEvent(new Event("input",{bubbles:true}));
@@ -899,7 +911,9 @@ function logVisit(clickText, searchText){
           a.rel="noopener noreferrer";
         }
       });
-    }catch(e){}
+    }catch(e){
+      console.error("Error actualizando redes:", e);
+    }
   });
 
   window.addEventListener("beforeunload",()=>{
@@ -909,6 +923,3 @@ function logVisit(clickText, searchText){
 </script>
 </body>
 </html>
-
-
-

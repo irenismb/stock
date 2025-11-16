@@ -255,6 +255,7 @@
   let currentSortOrder = "default"; // default → Orden, asc/desc → precio
   let currentGallery = { productId:null, images:[], index:0 };
   let filterListenersAttached = false;
+  let lastSearchLogged = "";   // última búsqueda registrada en "visitas"
 
   /* ================== DOM ================== */
   const searchInput = document.getElementById("searchInput");
@@ -600,15 +601,17 @@ function logVisit(clickText, searchText){
       });
     });
 
-    searchInput.addEventListener("input",debounce(()=>{
+    searchInput.addEventListener("input", debounce(() => {
       filterAndDisplayProducts();
-    },200));
-    searchInput.addEventListener("keydown",e=>{
-      if(e.key==="Enter"){
-        logVisit("busqueda",searchInput.value.trim());
+    
+      // registrar búsqueda si el texto cambió y no está vacío
+      const term = searchInput.value.trim();
+      if (term && term !== lastSearchLogged) {
+        lastSearchLogged = term;
+        logVisit("busqueda", term);
       }
-    });
-  }
+    }, 600));  // 0,6 s sin escribir = nueva búsqueda
+
 
   /* ================== CARGA DE PRODUCTOS ================== */
   async function fetchProductsFromBackend(){
@@ -906,5 +909,6 @@ function logVisit(clickText, searchText){
 </script>
 </body>
 </html>
+
 
 

@@ -101,7 +101,6 @@
       font-size:14px;
       text-align:center;
     }
-    /* Quitamos “líneas vacías” reduciendo márgenes */
     .contact-info h3{
       margin:0 0 6px;
     }
@@ -139,7 +138,7 @@
     }
     .thumbs img.active{ border-color:var(--primary); }
 
-    /* NUEVO: nombre del producto entre miniaturas y descripción */
+    /* Nombre del producto entre miniaturas y descripción */
     .preview .product-name{
       width:100%;
       text-align:left;
@@ -229,7 +228,6 @@
           <button class="nav next" id="galleryNextBtn" aria-label="Imagen siguiente">›</button>
         </div>
         <div id="thumbs" class="thumbs" aria-label="Miniaturas de producto" role="list"></div>
-        <!-- NUEVO: nombre del producto en mayúsculas sostenidas -->
         <div id="previewName" class="product-name"></div>
         <div id="previewCaption" class="caption">Haz clic en un producto para ver su descripción</div>
       </div>
@@ -280,7 +278,7 @@
   let products = [];
   let cart = {};
   let allCategories = [];
-  let allBrands = [];
+  let allBrands = [];   // [{key,label}]
   let currentSortOrder = "default"; // default → Orden, asc/desc → precio
   let currentGallery = { productId:null, images:[], index:0 };
   let filterListenersAttached = false;
@@ -307,7 +305,7 @@
   const galleryPrevBtn = document.getElementById("galleryPrevBtn");
   const galleryNextBtn = document.getElementById("galleryNextBtn");
   const thumbs = document.getElementById("thumbs");
-  const previewName = document.getElementById("previewName"); // NUEVO
+  const previewName = document.getElementById("previewName");
 
   /* ================== UTIL ================== */
   function debounce(fn, ms=180){
@@ -321,6 +319,10 @@
     return (t||"").toLowerCase()
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g,"");
+  }
+  // Normaliza marcas para que no discriminen mayúsculas/minúsculas ni tildes
+  function normalizeBrand(str){
+    return normalizeText((str||"").trim());
   }
   function escapeHtml(t){
     if(t==null) return "";
@@ -498,7 +500,6 @@
   async function showPreviewForProduct(prod){
     if (!prod) return;
 
-    // Nuevo id de solicitud
     const requestId = ++lastPreviewRequestId;
 
     // Nombre del producto en MAYÚSCULA SOSTENIDA
@@ -507,21 +508,17 @@
       previewName.textContent = name ? name.toUpperCase() : "";
     }
 
-    // Mostrar de inmediato la descripción del producto seleccionado
+    // Mostrar de inmediato la descripción
     previewCaption.textContent = prod.description ? prod.description : "";
     previewImg.style.display = "none";
     previewImg.src = "";
     thumbs.innerHTML = "";
 
-    // Reset de galería mientras cargan las imágenes
     currentGallery = { productId: prod.id, images: [], index: 0 };
     updateNavButtons();
 
-    // Cargar imágenes de forma asíncrona
     const imgs = await findAllImagesForProduct(prod);
 
-    // Si mientras cargaban las imágenes se hizo clic en otro producto,
-    // esta llamada queda vieja y no debe modificar la vista previa
     if (requestId !== lastPreviewRequestId) {
       return;
     }
@@ -589,7 +586,12 @@
   }
   function updateBrandButtonLabel(){
     const sel=brandMenuContainer.querySelector('input[name="brand"]:checked');
-    brandToggleBtn.textContent = sel && sel.value!=="Todas" ? sel.value+" ▾" : "Marcas ▾";
+    if(sel && sel.value!=="Todas"){
+      const label = sel.dataset.label || sel.value;
+      brandToggleBtn.textContent = label + " ▾";
+    }else{
+      brandToggleBtn.textContent = "Marcas ▾";
+    }
   }
   function closeDropdowns(){
     document.querySelectorAll(".custom-dropdown.open").forEach(d=>{
@@ -601,12 +603,40 @@
       d.querySelector(".dropdown-toggle-btn")?.setAttribute("aria-expanded","false");
     });
   }
+
+  // Aquí se unifican categorías y marcas (marcas sin distinguir mayúsculas/minúsculas)
   function refreshFilters(){
     allCategories=[...new Set(products.map(p=>p.category).filter(Boolean))].sort();
-    allBrands=[...new Set(products.map(p=>p.marca).filter(Boolean))].sort();
+
+    // Mapa de marcas normalizadas → etiqueta original
+    const brandMap = new Map();
+    products.forEach(p=>{
+      const raw=(p.marca||"").trim();
+      if(!raw) return;
+      const key=normalizeBrand(raw);
+      if(!key) return;
+      if(!brandMap.has(key)){
+        brandMap.set(key, raw);
+      }
+    });
+
+    allBrands = Array.from(brandMap.entries())
+      .map(([key,label])=>({key,label}))
+      .sort((a,b)=>a.label.localeCompare(b.label,'es',{sensitivity:'base'}));
+
     const saved=getSavedFilters();
     const catSaved=saved.category||"Todas";
-    const brandSaved=saved.brand||"Todas";
+    let brandSaved=saved.brand||"Todas";
+
+    // Compatibilidad con valores antiguos guardados como texto exacto
+    if(brandSaved!=="Todas" && brandSaved && !brandMap.has(brandSaved)){
+      const normalized = normalizeBrand(brandSaved);
+      if(brandMap.has(normalized)){
+        brandSaved = normalized;
+      }else{
+        brandSaved = "Todas";
+      }
+    }
 
     categoryMenuContainer.innerHTML=["Todas",...allCategories].map(c=>`
       <label style="display:block;margin-bottom:4px;">
@@ -614,11 +644,17 @@
       </label>
     `).join("");
 
-    brandMenuContainer.innerHTML=["Todas",...allBrands].map(b=>`
-      <label style="display:block;margin-bottom:4px;">
-        <input type="radio" name="brand" value="${escapeAttr(b)}" ${b===brandSaved?"checked":""}> ${escapeHtml(b||"Todas")}
-      </label>
-    `).join("");
+    const brandOptionsHtml = [
+      `<label style="display:block;margin-bottom:4px;">
+        <input type="radio" name="brand" value="Todas" ${brandSaved==="Todas"?"checked":""}> Todas
+      </label>`,
+      ...allBrands.map(b=>`
+        <label style="display:block;margin-bottom:4px;">
+          <input type="radio" name="brand" value="${escapeAttr(b.key)}" data-label="${escapeAttr(b.label)}" ${b.key===brandSaved?"checked":""}> ${escapeHtml(b.label)}
+        </label>
+      `)
+    ];
+    brandMenuContainer.innerHTML = brandOptionsHtml.join("");
 
     updateCategoryButtonLabel();
     updateBrandButtonLabel();
@@ -673,12 +709,11 @@
       });
     });
 
-    // Búsqueda con debounce y reseteo de orden al limpiar el texto
+    // Búsqueda con debounce
     searchInput.addEventListener("input", debounce(() => {
       const raw = searchInput.value || "";
       const term = raw.trim();
 
-      // Si se borra el texto de búsqueda, volvemos al orden base (columna "orden" + código)
       if (term === "") {
         currentSortOrder = "default";
         sortPriceBtn.textContent = "Ordenar por precio";
@@ -686,12 +721,11 @@
 
       filterAndDisplayProducts();
 
-      // registrar búsqueda si el texto cambió y no está vacío
       if (term && term !== lastSearchLogged) {
         lastSearchLogged = term;
         logVisit("busqueda", term);
       }
-    }, 600));  // 0,6 s sin escribir = nueva búsqueda
+    }, 600));
   }
 
   /* ================== CARGA DE PRODUCTOS ================== */
@@ -704,7 +738,6 @@
         throw new Error(data.message||"Respuesta inválida");
       }
 
-      // Normalizar tipos numéricos para evitar problemas en sort y cálculos
       products = data.products.map(p=>{
         const valor = Number(p.valor_unitario);
         const orden = Number(p.orden);
@@ -724,13 +757,12 @@
     }
   }
 
-  // Orden base: primero columna "orden" (numérica), luego código (id)
+  // Orden base: columna "orden" + código
   function sortByOrdenThenName(list){
     list.sort((a,b)=>{
       const aVal = typeof a.orden === "number" && !isNaN(a.orden) ? a.orden : 999999;
       const bVal = typeof b.orden === "number" && !isNaN(b.orden) ? b.orden : 999999;
       if(aVal!==bVal) return aVal-bVal;
-      // tie-breaker: código del producto (id)
       return String(a.id).localeCompare(String(b.id));
     });
   }
@@ -745,7 +777,7 @@
 
     const brandSel=brandMenuContainer.querySelector('input[name="brand"]:checked');
     const brandVal=brandSel ? brandSel.value : "Todas";
-    if(brandVal!=="Todas") list=list.filter(p=>p.marca===brandVal);
+    if(brandVal!=="Todas") list=list.filter(p=>normalizeBrand(p.marca||"")===brandVal);
 
     const terms=normalizeText(searchInput.value).split(/\s+/).filter(Boolean);
     if(terms.length>0){
@@ -760,7 +792,6 @@
     }else if(currentSortOrder==="desc"){
       list.sort((a,b)=>(b.valor_unitario||0)-(a.valor_unitario||0));
     }else{
-      // Orden base: columna "orden" + código
       sortByOrdenThenName(list);
     }
 

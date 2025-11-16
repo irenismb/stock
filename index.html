@@ -255,6 +255,7 @@
   let currentGallery = { productId:null, images:[], index:0 };
   let filterListenersAttached = false;
   let lastSearchLogged = "";   // última búsqueda registrada en "visitas"
+  let lastPreviewRequestId = 0; // controla el último clic de vista previa
 
   /* ================== DOM ================== */
   const searchInput = document.getElementById("searchInput");
@@ -452,21 +453,42 @@
     updateNavButtons();
   }
 
+  // Versión protegida: solo el último clic puede actualizar la vista previa
   async function showPreviewForProduct(prod){
-    if(!prod) return;
+    if (!prod) return;
+
+    // Nuevo id de solicitud
+    const requestId = ++lastPreviewRequestId;
+
+    // Mostrar de inmediato la descripción del producto seleccionado
     previewCaption.textContent = prod.description ? prod.description : "";
-    previewImg.style.display="none";
-    previewImg.src="";
+    previewImg.style.display = "none";
+    previewImg.src = "";
+    thumbs.innerHTML = "";
 
-    const imgs=await findAllImagesForProduct(prod);
-    currentGallery={ productId:prod.id, images:imgs, index:0 };
+    // Reset de galería mientras cargan las imágenes
+    currentGallery = { productId: prod.id, images: [], index: 0 };
+    updateNavButtons();
 
-    if(imgs.length===0){
-      thumbs.innerHTML="";
-      previewCaption.textContent = prod.description || "Sin imagen para este producto.";
+    // Cargar imágenes de forma asíncrona
+    const imgs = await findAllImagesForProduct(prod);
+
+    // Si mientras cargaban las imágenes se hizo clic en otro producto,
+    // esta llamada queda vieja y no debe modificar la vista previa
+    if (requestId !== lastPreviewRequestId) {
       return;
     }
-    renderThumbs(imgs,0);
+
+    currentGallery = { productId: prod.id, images: imgs, index: 0 };
+
+    if (imgs.length === 0) {
+      thumbs.innerHTML = "";
+      previewCaption.textContent = prod.description || "Sin imagen para este producto.";
+      updateNavButtons();
+      return;
+    }
+
+    renderThumbs(imgs, 0);
     setGalleryIndex(0);
   }
 
@@ -604,11 +626,20 @@
       });
     });
 
+    // Búsqueda con debounce y reseteo de orden al limpiar el texto
     searchInput.addEventListener("input", debounce(() => {
+      const raw = searchInput.value || "";
+      const term = raw.trim();
+
+      // Si se borra el texto de búsqueda, volvemos al orden base (columna "orden" + código)
+      if (term === "") {
+        currentSortOrder = "default";
+        sortPriceBtn.textContent = "Ordenar por precio";
+      }
+
       filterAndDisplayProducts();
 
       // registrar búsqueda si el texto cambió y no está vacío
-      const term = searchInput.value.trim();
       if (term && term !== lastSearchLogged) {
         lastSearchLogged = term;
         logVisit("busqueda", term);
@@ -646,12 +677,14 @@
     }
   }
 
+  // Orden base: primero columna "orden" (numérica), luego código (id)
   function sortByOrdenThenName(list){
     list.sort((a,b)=>{
       const aVal = typeof a.orden === "number" && !isNaN(a.orden) ? a.orden : 999999;
       const bVal = typeof b.orden === "number" && !isNaN(b.orden) ? b.orden : 999999;
       if(aVal!==bVal) return aVal-bVal;
-      return String(a.name).localeCompare(String(b.name));
+      // tie-breaker: código del producto (id)
+      return String(a.id).localeCompare(String(b.id));
     });
   }
 
@@ -680,6 +713,7 @@
     }else if(currentSortOrder==="desc"){
       list.sort((a,b)=>(b.valor_unitario||0)-(a.valor_unitario||0));
     }else{
+      // Orden base: columna "orden" + código
       sortByOrdenThenName(list);
     }
 

@@ -311,20 +311,27 @@
   }
 
   /* ================== REGISTRO DE VISITAS ================== */
-  function logVisit(clickText, searchText){
-    try{
-      const params = new URLSearchParams({
-        action: "logVisit",
-        clickText: String(clickText || ""),
-        searchText: String(searchText || ""),
-        ts: Date.now().toString()  // para evitar caché
-      });
-      fetch(APPS_SCRIPT_URL + "?" + params.toString())
-        .catch(() => {});
-    }catch(e){
-      // no hacemos nada si falla
-    }
+function logVisit(clickText, searchText){
+  try {
+    // Para depuración (solo lo verás si abres la consola del navegador)
+    console.log("logVisit →", clickText, "| buscar:", searchText);
+
+    const params = new URLSearchParams({
+      action: "logVisit",
+      clickText: String(clickText || ""),
+      searchText: String(searchText || ""),
+      ts: Date.now().toString()  // evita caché
+    });
+
+    // "Tracking pixel": no usa fetch, así evitamos cualquier problema de CORS
+    const img = new Image();
+    img.src = APPS_SCRIPT_URL + "?" + params.toString();
+    // no necesitamos añadirla al DOM, con asignar src ya se lanza la petición
+  } catch (e) {
+    console.error("Error en logVisit:", e);
   }
+}
+
 
 
   /* ================== IMÁGENES / GALERÍA ================== */
@@ -899,4 +906,5 @@
 </script>
 </body>
 </html>
+
 

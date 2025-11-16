@@ -313,19 +313,19 @@
   /* ================== REGISTRO DE VISITAS ================== */
   function logVisit(clickText, searchText){
     try{
-      fetch(APPS_SCRIPT_URL,{
-        method:"POST",
-        headers:{"Content-Type":"application/json;charset=utf-8"},
-        body:JSON.stringify({
-          action:"logVisit",
-          clickText:String(clickText||""),
-          searchText:String(searchText||"")
-        })
-      }).catch(()=>{});
+      const params = new URLSearchParams({
+        action: "logVisit",
+        clickText: String(clickText || ""),
+        searchText: String(searchText || ""),
+        ts: Date.now().toString()  // para evitar caché
+      });
+      fetch(APPS_SCRIPT_URL + "?" + params.toString())
+        .catch(() => {});
     }catch(e){
-      // silencioso
+      // no hacemos nada si falla
     }
   }
+
 
   /* ================== IMÁGENES / GALERÍA ================== */
   function preloadImage(url){
@@ -899,3 +899,4 @@
 </script>
 </body>
 </html>
+

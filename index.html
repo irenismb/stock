@@ -93,7 +93,24 @@
       background:var(--secondary); color:#fff; width:100%; border:none; padding:11px 14px; font-size:15px; border-radius:8px; cursor:pointer; margin-top:8px; touch-action:manipulation;
     }
 
-    .contact-info{ padding:15px; background:var(--card); border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,.05); font-size:14px; text-align:center; }
+    .contact-info{
+      padding:15px;
+      background:var(--card);
+      border-radius:8px;
+      box-shadow:0 2px 5px rgba(0,0,0,.05);
+      font-size:14px;
+      text-align:center;
+    }
+    /* Quitamos “líneas vacías” reduciendo márgenes */
+    .contact-info h3{
+      margin:0 0 6px;
+    }
+    .contact-info p{
+      margin:2px 0;
+    }
+    .contact-info hr{
+      margin:8px 0;
+    }
 
     /* ==== Previsualización / Galería ==== */
     .preview{
@@ -367,14 +384,24 @@
     });
   }
 
+  // Busca archivos: ID@Nombre, ID-Nombre, ID-nombre-normalizado, ID
   async function resolveImageForCode(code,name){
     if(!code) return null;
     const safeName=(name||"").trim();
     const baseVariants=[];
     if(safeName){
-      baseVariants.push(`${code}@${safeName}`);
+      const safeNameSlug = safeName
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .replace(/[^a-zA-Z0-9]+/g,"-")
+        .replace(/-+/g,"-")
+        .replace(/^-|-$/g,"");
+      baseVariants.push(`${code}@${safeName}`);      // patrón antiguo
+      baseVariants.push(`${code}-${safeName}`);      // patrón con guion y nombre original
+      if(safeNameSlug){
+        baseVariants.push(`${code}-${safeNameSlug}`); // patrón con guion y nombre “limpio”
+      }
     }
-    baseVariants.push(`${code}`);
+    baseVariants.push(`${code}`); // solo código
 
     for(const base of baseVariants){
       for(const ext of IMG_EXTS){

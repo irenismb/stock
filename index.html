@@ -36,6 +36,7 @@
       background:var(--card); font-size:16px;
     }
     .controls-bottom{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+
     .custom-dropdown{ position:relative }
     .dropdown-toggle-btn{
       padding:8px 10px; border:1px solid #ccc; border-radius:5px; background:var(--card);
@@ -47,10 +48,12 @@
     }
     .custom-dropdown.open .custom-menu{ display:block }
     #categoryMenu{ right:auto; left:0 }
+
     #sortPriceBtn{
       padding:8px 12px; font-size:14px; border:1px solid #ccc; background:#f8f9fa;
       border-radius:5px; cursor:pointer; min-height:38px;
     }
+
     .table-wrapper{ border-radius:8px; overflow:hidden; background:#fff; max-height:calc(100vh - 140px); overflow-y:auto; }
     .product-table{ width:100%; border-collapse:collapse; background:var(--card); }
     .product-table th,.product-table td{ border:1px solid var(--border); padding:10px; text-align:left; vertical-align:middle; }
@@ -67,6 +70,7 @@
       width:55px; height:34px; padding:5px; text-align:center; border:1px solid #ced4da; background:#fff; font-size:15px; border-radius:6px;
     }
     .price-cell{ font-weight:700; color:#2a9d8f }
+
     .cart-container{
       background:#e9f5ff; padding:15px; border-radius:10px; border:1px solid #bde0fe;
       box-shadow:0 6px 16px rgba(13,110,253,0.08);
@@ -88,6 +92,7 @@
     #whatsappBtn{
       background:var(--secondary); color:#fff; width:100%; border:none; padding:11px 14px; font-size:15px; border-radius:8px; cursor:pointer; margin-top:8px; touch-action:manipulation;
     }
+
     .contact-info{ padding:15px; background:var(--card); border-radius:8px; box-shadow:0 2px 5px rgba(0,0,0,.05); font-size:14px; text-align:center; }
 
     /* ==== Previsualización / Galería ==== */
@@ -116,9 +121,8 @@
       flex:0 0 auto;
     }
     .thumbs img.active{ border-color:var(--primary); }
-    .preview .caption{ font-size:13px; color:#555; text-align:center; }
-    .preview .description{
-      font-size:13px; color:#444; text-align:left; width:100%; margin-top:2px;
+    .preview .caption{
+      font-size:13px; color:#444; text-align:left; width:100%; min-height:2.5em;
     }
 
     /* ======== MÓVIL ======== */
@@ -197,8 +201,7 @@
           <button class="nav next" id="galleryNextBtn" aria-label="Imagen siguiente">›</button>
         </div>
         <div id="thumbs" class="thumbs" aria-label="Miniaturas de producto" role="list"></div>
-        <div id="previewCaption" class="caption">Haz clic en un producto para ver sus imágenes</div>
-        <div id="previewDescription" class="description"></div>
+        <div id="previewCaption" class="caption">Haz clic en un producto para ver su descripción</div>
       </div>
 
       <div class="cart-container" id="cartContainer">
@@ -228,7 +231,6 @@
   /* ================== CONFIG ================== */
   const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
   const DEFAULT_WHATSAPP = "573042088961";
-  const STORE_HEADER = "Irenismb Stock Natura Santa Marta";
   const AUTO_REFRESH_MS = 20000;
   const LS_FILTERS_KEY = "naturaFilters";
   const LS_CART_KEY = "shoppingCart";
@@ -240,7 +242,7 @@
   });
 
   /* ================== IMÁGENES (GitHub) ================== */
-  // Ajusta el path si tus fotos están en otra carpeta
+  // Ajusta la ruta si tus fotos están en otro sitio
   const IMG_BASE_PATH = "https://irenismb.github.io/stock/imagenes/productos/";
   const IMG_EXTS = ["webp","jpg","jpeg","png","gif","JPG","JPEG","PNG","WEBP","GIF"];
   const imageCache = new Map(); // clave: base.ext  → {ok,url}
@@ -250,7 +252,7 @@
   let cart = {};
   let allCategories = [];
   let allBrands = [];
-  let currentSortOrder = "default";
+  let currentSortOrder = "default"; // default → Orden, asc/desc → precio
   let currentGallery = { productId:null, images:[], index:0 };
   let filterListenersAttached = false;
 
@@ -271,7 +273,6 @@
   const productPreview = document.getElementById("productPreview");
   const previewImg = document.getElementById("previewImg");
   const previewCaption = document.getElementById("previewCaption");
-  const previewDescription = document.getElementById("previewDescription");
   const galleryPrevBtn = document.getElementById("galleryPrevBtn");
   const galleryNextBtn = document.getElementById("galleryNextBtn");
   const thumbs = document.getElementById("thumbs");
@@ -371,7 +372,7 @@
     if(safeName){
       baseVariants.push(`${code}@${safeName}`); // patrón nuevo
     }
-    baseVariants.push(`${code}`); // compatibilidad patrón viejo
+    baseVariants.push(`${code}`); // compatibilidad patrón viejo (sin @Nombre)
 
     for(const base of baseVariants){
       for(const ext of IMG_EXTS){
@@ -448,17 +449,12 @@
     preloadImage(currentGallery.images[nextIdx]);
 
     updateNavButtons();
-
-    const prod=products.find(p=>String(p.id)===String(currentGallery.productId));
-    const n=idx+1, m=len;
-    previewCaption.textContent = prod
-      ? `${prod.name} (${prod.id}) — imagen ${n} de ${m}`
-      : `Imagen ${n} de ${m}`;
+    // NOTA: no mostramos "imagen 1 de 2" ni nombre de archivo.
   }
+
   async function showPreviewForProduct(prod){
     if(!prod) return;
-    previewCaption.textContent="Cargando imágenes...";
-    previewDescription.textContent=prod.description ? prod.description : "";
+    previewCaption.textContent = prod.description ? prod.description : "";
     previewImg.style.display="none";
     previewImg.src="";
 
@@ -467,7 +463,7 @@
 
     if(imgs.length===0){
       thumbs.innerHTML="";
-      previewCaption.textContent=`Sin imagen para ${prod.name} (${prod.id}) en /imagenes/productos/`;
+      previewCaption.textContent = prod.description || "Sin imagen para este producto.";
       return;
     }
     renderThumbs(imgs,0);
@@ -553,6 +549,7 @@
     updateCategoryButtonLabel();
     updateBrandButtonLabel();
   }
+
   function setupFilterListenersOnce(){
     if(filterListenersAttached) return;
     filterListenersAttached=true;
@@ -615,7 +612,7 @@
       if(data.status!=="success" || !Array.isArray(data.products)){
         throw new Error(data.message||"Respuesta inválida");
       }
-      products=data.products.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+      products=data.products.slice();
       refreshFilters();
       setupFilterListenersOnce();
       filterAndDisplayProducts();
@@ -625,9 +622,21 @@
     }
   }
 
+  function sortByOrdenThenName(list){
+    list.sort((a,b)=>{
+      const ao=parseInt(a.orden,10);
+      const bo=parseInt(b.orden,10);
+      const aVal=isNaN(ao)? 999999 : ao;
+      const bVal=isNaN(bo)? 999999 : bo;
+      if(aVal!==bVal) return aVal-bVal;
+      return String(a.name).localeCompare(String(b.name));
+    });
+  }
+
   /* ================== LISTADO / FILTRADO ================== */
   function filterAndDisplayProducts(){
     let list=[...products];
+
     const catSel=categoryMenuContainer.querySelector('input[name="category"]:checked');
     const catVal=catSel ? catSel.value : "Todas";
     if(catVal!=="Todas") list=list.filter(p=>p.category===catVal);
@@ -648,14 +657,18 @@
       list.sort((a,b)=>(a.valor_unitario||0)-(b.valor_unitario||0));
     }else if(currentSortOrder==="desc"){
       list.sort((a,b)=>(b.valor_unitario||0)-(a.valor_unitario||0));
+    }else{
+      // default: usar columna Orden
+      sortByOrdenThenName(list);
     }
+
     displayProducts(list);
   }
 
   function displayProducts(list){
     if(!Array.isArray(list) || list.length===0){
       productTableBody.innerHTML='<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
-      return;
+    return;
     }
     const frag=document.createDocumentFragment();
     list.forEach(p=>{
@@ -719,17 +732,17 @@
   }
 
   function buildClientWhatsAppMsg(items,header="Hola, deseo comprar estos productos en Irenismb Natura Stock:"){
-    let msg=header + "\\n\\n";
+    let msg=header + "\n\n";
     let total=0;
     items.forEach(it=>{
       const sub=it.quantity*it.price;
       total+=sub;
-      msg+=`• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\\n`;
+      msg+=`• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
     });
-    msg+=`\\nTotal: ${currencyFormatter.format(total)}\\n`;
-    msg+=`\\nUbicación (GPS): https://maps.google.com/?q=11.244833370782679,-74.19066001689564`;
-    msg+=`\\nInstagram: https://www.instagram.com/irenismb_stocknaturasm`;
-    msg+=`\\nFacebook: https://www.facebook.com/marketplace/profile/100084865295132`;
+    msg+=`\nTotal: ${currencyFormatter.format(total)}\n`;
+    msg+=`\nUbicación (GPS): https://maps.google.com/?q=11.244833370782679,-74.19066001689564`;
+    msg+=`\nInstagram: https://www.instagram.com/irenismb_stocknaturasm`;
+    msg+=`\nFacebook: https://www.facebook.com/marketplace/profile/100084865295132`;
     return msg;
   }
   function openWhatsApp(msg){

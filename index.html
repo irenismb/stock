@@ -54,6 +54,26 @@
       border-radius:5px; cursor:pointer; min-height:38px;
     }
 
+    /* Logo + nombre de empresa en la barra de filtros */
+    .brand-logo{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      margin-left:auto;
+      font-weight:600;
+      color:#444;
+      font-size:14px;
+    }
+    .brand-logo-img{
+      width:40px;
+      height:40px;
+      border-radius:50%;
+      object-fit:cover;
+    }
+    .brand-logo-text{
+      white-space:nowrap;
+    }
+
     .table-wrapper{ border-radius:8px; overflow:hidden; background:#fff; max-height:calc(100vh - 140px); overflow-y:auto; }
     .product-table{ width:100%; border-collapse:collapse; background:var(--card); }
     .product-table th,.product-table td{ border:1px solid var(--border); padding:10px; text-align:left; vertical-align:middle; }
@@ -165,6 +185,12 @@
       .controls-bottom{ flex-direction:column; align-items:stretch; }
       #sortPriceBtn,.dropdown-toggle-btn{ width:100%; text-align:left; }
       .custom-menu{ width:min(310px,96vw); left:0; right:auto; }
+
+      .brand-logo{
+        margin-left:0;
+        justify-content:flex-start;
+      }
+
       .product-table{ border:0; }
       .product-table thead{ display:none; }
       .product-table tr{ display:block; background:#fff; margin-bottom:12px; border:1px solid #eee; border-radius:8px; overflow:hidden; }
@@ -196,6 +222,12 @@
             <div class="custom-dropdown" id="brandDropdown">
               <button type="button" id="brandToggleBtn" class="dropdown-toggle-btn" aria-haspopup="listbox" aria-expanded="false">Marcas ▾</button>
               <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
+            </div>
+
+            <!-- Logo + nombre de la empresa -->
+            <div class="brand-logo">
+              <img src="logo.png" alt="Logo Irenismb Stock" class="brand-logo-img">
+              <span class="brand-logo-text">Irenismb Stock</span>
             </div>
           </div>
         </div>

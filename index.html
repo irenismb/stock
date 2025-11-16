@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
@@ -138,6 +138,17 @@
       flex:0 0 auto;
     }
     .thumbs img.active{ border-color:var(--primary); }
+
+    /* NUEVO: nombre del producto entre miniaturas y descripción */
+    .preview .product-name{
+      width:100%;
+      text-align:left;
+      font-weight:700;
+      font-size:14px;
+      letter-spacing:0.06em;
+      color:#222;
+    }
+
     .preview .caption{
       font-size:13px; color:#444; text-align:left; width:100%; min-height:2.5em;
     }
@@ -218,6 +229,8 @@
           <button class="nav next" id="galleryNextBtn" aria-label="Imagen siguiente">›</button>
         </div>
         <div id="thumbs" class="thumbs" aria-label="Miniaturas de producto" role="list"></div>
+        <!-- NUEVO: nombre del producto en mayúsculas sostenidas -->
+        <div id="previewName" class="product-name"></div>
         <div id="previewCaption" class="caption">Haz clic en un producto para ver su descripción</div>
       </div>
 
@@ -294,6 +307,7 @@
   const galleryPrevBtn = document.getElementById("galleryPrevBtn");
   const galleryNextBtn = document.getElementById("galleryNextBtn");
   const thumbs = document.getElementById("thumbs");
+  const previewName = document.getElementById("previewName"); // NUEVO
 
   /* ================== UTIL ================== */
   function debounce(fn, ms=180){
@@ -486,6 +500,12 @@
 
     // Nuevo id de solicitud
     const requestId = ++lastPreviewRequestId;
+
+    // Nombre del producto en MAYÚSCULA SOSTENIDA
+    if (previewName) {
+      const name = (prod.name || "").trim();
+      previewName.textContent = name ? name.toUpperCase() : "";
+    }
 
     // Mostrar de inmediato la descripción del producto seleccionado
     previewCaption.textContent = prod.description ? prod.description : "";

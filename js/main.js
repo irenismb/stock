@@ -113,11 +113,13 @@ function updateCart() {
     cartList.innerHTML = '<li class="cart-item">Tu carrito está vacío</li>';
     totalPriceEl.textContent = currencyFormatter.format(0);
     floatingCartLink.textContent = "Carrito vacío";
+    floatingCartLink.setAttribute("aria-label", "Carrito vacío");
     return;
   }
 
   const frag = document.createDocumentFragment();
   let total = 0;
+  let totalQuantity = 0;
   items.forEach(item => {
     const li = document.createElement("li");
     li.className = "cart-item";
@@ -130,10 +132,15 @@ function updateCart() {
     `;
     frag.appendChild(li);
     total += item.price * item.quantity;
+    totalQuantity += item.quantity;
   });
   cartList.appendChild(frag);
   totalPriceEl.textContent = currencyFormatter.format(total);
-  floatingCartLink.textContent = `Carrito (${items.length})`;
+  floatingCartLink.textContent = `Carrito (${totalQuantity})`;
+  floatingCartLink.setAttribute(
+    "aria-label",
+    totalQuantity === 1 ? "Carrito con 1 producto" : `Carrito con ${totalQuantity} productos`
+  );
   saveCart(cart);
 }
 

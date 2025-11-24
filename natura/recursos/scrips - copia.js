@@ -315,30 +315,8 @@ function closeDropdowns() {
   });
 }
 function refreshFilters() {
-  // === CATEGORÍAS SIN DISCRIMINAR MAYÚSCULAS/MINÚSCULAS ===
-  const categoryMap = new Map();
-
-  products.forEach(p => {
-    const raw = (p.category || "").trim();
-    if (!raw) return;
-
-    // Usamos la misma normalización que en marcas:
-    // minúsculas + sin acentos → clave única
-    const key = normalizeText(raw);
-    if (!key) return;
-
-    // Si varias categorías se escriben distinto pero son la misma
-    // (ej: "Cuidado capilar" / "Cuidado Capilar"), solo guardamos la primera
-    if (!categoryMap.has(key)) {
-      categoryMap.set(key, raw);
-    }
-  });
-
-  // Nos quedamos solo con los textos visibles (la primera forma encontrada)
-  allCategories = Array.from(categoryMap.values())
+  allCategories = [...new Set(products.map(p => p.category).filter(Boolean))]
     .sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
-
-  // ==== MARCAS (se deja como estaba) ====
   const brandMap = new Map();
   products.forEach(p => {
     const raw = (p.marca || "").trim();
@@ -352,20 +330,15 @@ function refreshFilters() {
   allBrands = Array.from(brandMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
-
   const saved = getSavedFilters();
   const catSaved = saved.category || "Todas";
   let brandSaved = saved.brand || "Todas";
-
-  // Construcción del menú de categorías
   categoryMenu.innerHTML = ["Todas", ...allCategories].map(c => `
     <label style="display:block;margin-bottom:4px;">
       <input type="radio" name="category" value="${escapeAttr(c)}" ${c === catSaved ? "checked" : ""}>
       ${escapeHtml(c || "Todas")}
     </label>
   `).join("");
-
-  // Construcción del menú de marcas (igual que antes)
   const brandHtml = [
     `<label style="display:block;margin-bottom:4px;">
       <input type="radio" name="brand" value="Todas" ${brandSaved === "Todas" ? "checked" : ""}> Todas
@@ -378,11 +351,9 @@ function refreshFilters() {
     `)
   ];
   brandMenu.innerHTML = brandHtml.join("");
-
   updateCategoryButtonLabel();
   updateBrandButtonLabel();
 }
-
 function setupFilterListenersOnce() {
   if (filterListenersAttached) return;
   filterListenersAttached = true;
@@ -481,38 +452,36 @@ async function fetchProductsFromBackend() {
       '<tr><td colspan="6" style="text-align:center;">Error al cargar productos.</td></tr>';
   }
 }
+function sortByOrdenThenId(list) {
+  list.sort((a, b) => {
+    const aVal = typeof a.orden === "number" && !isNaN(a.orden) ? a.orden : 999999;
+    const bVal = typeof b.orden === "number" && !isNaN(b.orden) ? b.orden : 999999;
+    if (aVal !== bVal) return aVal - bVal;
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
+// ================== LISTADO / FILTRADO ==================
 function filterAndDisplayProducts() {
   let list = [...products];
-
-  // ==== FILTRO POR CATEGORÍA (SIN MAYÚSCULAS/MINÚSCULAS) ====
   const catSel = categoryMenu.querySelector('input[name="category"]:checked');
   const catVal = catSel ? catSel.value : "Todas";
-
   if (catVal !== "Todas") {
-    const catNorm = normalizeText(catVal);
-    list = list.filter(p => normalizeText(p.category) === catNorm);
+    list = list.filter(p => p.category === catVal);
   }
-
-  // ==== FILTRO POR MARCA (ya usaba clave normalizada) ====
   const brandSel = brandMenu.querySelector('input[name="brand"]:checked');
   const brandVal = brandSel ? brandSel.value : "Todas";
   if (brandVal !== "Todas") {
     list = list.filter(p => normalizeBrand(p.marca || "") === brandVal);
   }
-
-  // ==== BÚSQUEDA POR TEXTO ====
   const terms = normalizeText(searchInput.value)
     .split(/\s+/)
     .filter(Boolean);
-
   if (terms.length > 0) {
     list = list.filter(p => {
       const s = normalizeText(`${p.id} ${p.name} ${p.category} ${p.marca} ${p.description || ""}`);
       return terms.every(t => s.includes(t));
     });
   }
-
-  // ==== ORDEN ====
   if (currentSortOrder === "asc") {
     list.sort((a, b) => (a.valor_unitario || 0) - (b.valor_unitario || 0));
   } else if (currentSortOrder === "desc") {
@@ -520,10 +489,8 @@ function filterAndDisplayProducts() {
   } else {
     sortByOrdenThenId(list);
   }
-
   displayProducts(list);
 }
-
 function displayProducts(list) {
   if (!Array.isArray(list) || list.length === 0) {
     productTableBody.innerHTML =

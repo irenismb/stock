@@ -13,6 +13,24 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 
 // ================== IMÁGENES (carpeta recursos/productos) ==================
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
+
+// Carpeta de otras imágenes (logos, iconos, fondos)
+const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
+
+// Intenta encontrar una imagen en otras_imagenes probando varias extensiones
+async function resolveOtherImage(baseName) {
+  if (!baseName) return null;
+  for (const ext of IMG_EXTS) {
+    const url = `${OTRAS_IMG_BASE_PATH}${baseName}.${ext}`;
+    const ok = await testImageOnce(url);
+    if (ok) {
+      return url;
+    }
+  }
+  return null;
+}
+
+
 const IMG_EXTS = ["webp","WEBP","png","PNG","jpg","JPG","jpeg","JPEG"];
 const imageCache = new Map();
 
@@ -861,3 +879,24 @@ function setupAutoRefresh() {
   setupAutoRefresh();
   logVisit("visita", "");
 })();
+
+// Fondo dinámico con logo_natura (admite webp, png, jpg, jpeg)
+(async function setDynamicBackground() {
+  try {
+    // Esta función debe existir más arriba en tu archivo:
+    // async function resolveOtherImage(baseName) { ... }
+    const bgUrl = await resolveOtherImage("logo_natura");
+    if (bgUrl) {
+      document.body.style.backgroundImage = `url("${bgUrl}")`;
+      document.body.style.backgroundSize = "cover";
+      document.body.style.backgroundPosition = "center";
+      document.body.style.backgroundRepeat = "no-repeat";
+      document.body.style.backgroundAttachment = "fixed";
+    }
+  } catch (e) {
+    console.error("No se pudo cargar el fondo logo_natura:", e);
+  }
+})();
+
+
+

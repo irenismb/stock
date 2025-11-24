@@ -13,7 +13,7 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 
 // ================== IMÁGENES (carpeta recursos/productos) ==================
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
-const IMG_EXTS = ["webp", "WEBP"];
+const IMG_EXTS = ["webp","WEBP","png","PNG","jpg","JPG","jpeg","JPEG"];
 const imageCache = new Map();
 
 // ================== ESTADO ==================

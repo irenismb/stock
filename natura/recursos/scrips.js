@@ -291,7 +291,9 @@ function saveFiltersToStorage() {
 function updateCategoryButtonLabel() {
   const sel = categoryMenu.querySelector('input[name="category"]:checked');
   if (sel && sel.value !== "Todas") {
-    categoryToggleBtn.textContent = sel.value + " ▾";
+    // Ahora el value es la clave normalizada y el texto visible va en data-label
+    const label = sel.dataset.label || sel.value;
+    categoryToggleBtn.textContent = label + " ▾";
   } else {
     categoryToggleBtn.textContent = "Categorías ▾";
   }

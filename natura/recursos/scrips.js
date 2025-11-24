@@ -11,27 +11,10 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
   minimumFractionDigits: 0
 });
 
-// ================== IMÁGENES (carpeta recursos/productos) ==================
+// ================== IMÁGENES (carpetas y extensiones) ==================
+const IMG_EXTS = ["webp", "WEBP", "png", "PNG", "jpg", "JPG", "jpeg", "JPEG"];
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
-
-// Carpeta de otras imágenes (logos, iconos, fondos)
 const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
-
-// Intenta encontrar una imagen en otras_imagenes probando varias extensiones
-async function resolveOtherImage(baseName) {
-  if (!baseName) return null;
-  for (const ext of IMG_EXTS) {
-    const url = `${OTRAS_IMG_BASE_PATH}${baseName}.${ext}`;
-    const ok = await testImageOnce(url);
-    if (ok) {
-      return url;
-    }
-  }
-  return null;
-}
-
-
-const IMG_EXTS = ["webp","WEBP","png","PNG","jpg","JPG","jpeg","JPEG"];
 const imageCache = new Map();
 
 // ================== ESTADO ==================
@@ -151,12 +134,25 @@ function testImageOnce(url, timeout = 1200) {
   });
 }
 
+// Intenta encontrar una imagen en otras_imagenes probando varias extensiones
+async function resolveOtherImage(baseName) {
+  if (!baseName) return null;
+  for (const ext of IMG_EXTS) {
+    const url = `${OTRAS_IMG_BASE_PATH}${baseName}.${ext}`;
+    const ok = await testImageOnce(url);
+    if (ok) {
+      return url;
+    }
+  }
+  return null;
+}
+
 async function resolveImageForCode(code, name) {
   if (!code) return null;
   const safeName = (name || "").trim();
   const baseVariants = [];
 
-  // 1) Código solo: 123.webp
+  // 1) Código solo: 123.webp / 123.png / 123.jpg / 123.jpeg...
   baseVariants.push(String(code));
 
   if (safeName) {
@@ -582,7 +578,7 @@ function filterAndDisplayProducts() {
     list = list.filter(p => normalizeText(p.category) === catKey);
   }
 
-  // ==== FILTRO POR MARCA (ya usaba clave normalizada) ====
+  // ==== FILTRO POR MARCA (usa clave normalizada) ====
   const brandSel = brandMenu.querySelector('input[name="brand"]:checked');
   const brandVal = brandSel ? brandSel.value : "Todas";
   if (brandVal !== "Todas") {
@@ -883,8 +879,6 @@ function setupAutoRefresh() {
 // Fondo dinámico con logo_natura (admite webp, png, jpg, jpeg)
 (async function setDynamicBackground() {
   try {
-    // Esta función debe existir más arriba en tu archivo:
-    // async function resolveOtherImage(baseName) { ... }
     const bgUrl = await resolveOtherImage("logo_natura");
     if (bgUrl) {
       document.body.style.backgroundImage = `url("${bgUrl}")`;
@@ -897,6 +891,3 @@ function setupAutoRefresh() {
     console.error("No se pudo cargar el fondo logo_natura:", e);
   }
 })();
-
-
-

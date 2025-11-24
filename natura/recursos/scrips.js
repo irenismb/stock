@@ -4,26 +4,30 @@ const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
 const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
+
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
   minimumFractionDigits: 0
 });
+
 // ================== IMÁGENES (carpeta recursos/productos) ==================
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
-const IMG_EXTS = ["webp","WEBP"];
+const IMG_EXTS = ["webp", "WEBP"];
 const imageCache = new Map();
+
 // ================== ESTADO ==================
 let products = [];
-let allCategories = [];
-let allBrands = [];   // [{key,label}]
+let allCategories = []; // [{ key, label }]
+let allBrands = [];     // [{ key, label }]
 let currentSortOrder = "default"; // default → Orden, asc → precio menor, desc → precio mayor
-let cart = {};        // id -> { id, name, price, quantity }
+let cart = {};          // id -> { id, name, price, quantity }
 let currentGallery = { productId: null, images: [], index: 0 };
 let lastPreviewRequestId = 0;
 let filterListenersAttached = false;
 let lastSearchLogged = "";
 let autoRefreshTimer = null;
+
 // ================== DOM ==================
 const searchInput = document.getElementById("searchInput");
 const productTableBody = document.getElementById("productTableBody");
@@ -44,6 +48,7 @@ const galleryNextBtn = document.getElementById("galleryNextBtn");
 const thumbs = document.getElementById("thumbs");
 const previewName = document.getElementById("previewName");
 const imageStatus = document.getElementById("imageStatus");
+
 // ================== UTIL ==================
 function debounce(fn, ms = 300) {
   let t = null;
@@ -52,6 +57,7 @@ function debounce(fn, ms = 300) {
     t = setTimeout(() => fn(...args), ms);
   };
 }
+
 function normalizeText(t) {
   return (t || "")
     .toString()
@@ -59,9 +65,11 @@ function normalizeText(t) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "");
 }
+
 function normalizeBrand(str) {
   return normalizeText((str || "").trim());
 }
+
 function escapeHtml(t) {
   if (t == null) return "";
   return String(t).replace(/[&<>"']/g, s => ({
@@ -72,9 +80,11 @@ function escapeHtml(t) {
     "'": "&#39;"
   })[s]);
 }
+
 function escapeAttr(t) {
   return escapeHtml(t).replace(/"/g, "&quot;");
 }
+
 // ================== REGISTRO DE VISITAS ==================
 function logVisit(clickText, searchText) {
   try {
@@ -90,6 +100,7 @@ function logVisit(clickText, searchText) {
     console.error("Error en logVisit:", e);
   }
 }
+
 // ================== IMÁGENES / GALERÍA ==================
 function testImageOnce(url, timeout = 1200) {
   return new Promise(resolve => {
@@ -121,12 +132,15 @@ function testImageOnce(url, timeout = 1200) {
     img.src = url;
   });
 }
+
 async function resolveImageForCode(code, name) {
   if (!code) return null;
   const safeName = (name || "").trim();
   const baseVariants = [];
+
   // 1) Código solo: 123.webp
   baseVariants.push(String(code));
+
   if (safeName) {
     const safeNameSlug = safeName
       .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
@@ -141,6 +155,7 @@ async function resolveImageForCode(code, name) {
     // Patrón antiguo: 123@Nombre
     baseVariants.push(`${code}@${safeName}`);
   }
+
   for (const base of baseVariants) {
     for (const ext of IMG_EXTS) {
       const key = `${base}.${ext}`;
@@ -157,6 +172,7 @@ async function resolveImageForCode(code, name) {
   }
   return null;
 }
+
 async function findAllImagesForProduct(prod, maxChildren = 12) {
   if (!prod || !prod.id) return [];
   const id = String(prod.id).trim();
@@ -171,6 +187,7 @@ async function findAllImagesForProduct(prod, maxChildren = 12) {
   }
   return images;
 }
+
 function renderThumbs(imgs, activeIndex) {
   thumbs.innerHTML = "";
   imgs.forEach((url, idx) => {
@@ -182,12 +199,14 @@ function renderThumbs(imgs, activeIndex) {
     thumbs.appendChild(im);
   });
 }
+
 function updateNavButtons() {
   const len = currentGallery.images.length;
   const disabled = len <= 1;
   galleryPrevBtn.disabled = disabled;
   galleryNextBtn.disabled = disabled;
 }
+
 function setGalleryIndex(newIndex, userAction) {
   const imgs = currentGallery.images;
   const len = imgs.length;
@@ -203,11 +222,13 @@ function setGalleryIndex(newIndex, userAction) {
   });
   updateNavButtons();
 }
+
 async function showPreviewForProduct(prod) {
   if (!prod) return;
   const requestId = ++lastPreviewRequestId;
   const name = (prod.name || "").trim();
   const descriptionText = prod.description || "Sin descripción para este producto.";
+
   previewName.textContent = name ? name.toUpperCase() : "";
   previewCaption.textContent = descriptionText;
   previewCaption.classList.remove("loading");
@@ -216,16 +237,19 @@ async function showPreviewForProduct(prod) {
   thumbs.innerHTML = "";
   currentGallery = { productId: prod.id, images: [], index: 0 };
   updateNavButtons();
+
   if (imageStatus) {
     imageStatus.textContent = "Cargando imagen...";
     imageStatus.classList.add("visible");
   }
+
   const imgs = await findAllImagesForProduct(prod);
   if (requestId !== lastPreviewRequestId) {
     return;
   }
   currentGallery.images = imgs;
   currentGallery.index = 0;
+
   if (!imgs.length) {
     if (imageStatus) {
       imageStatus.textContent = "Próximamente tendrás la imagen de tu producto aquí";
@@ -234,6 +258,7 @@ async function showPreviewForProduct(prod) {
     updateNavButtons();
     return;
   }
+
   if (imageStatus) {
     imageStatus.textContent = "";
     imageStatus.classList.remove("visible");
@@ -241,6 +266,7 @@ async function showPreviewForProduct(prod) {
   renderThumbs(imgs, 0);
   setGalleryIndex(0);
 }
+
 // Navegación de galería
 galleryPrevBtn.addEventListener("click", () => {
   setGalleryIndex(currentGallery.index - 1, true);
@@ -248,6 +274,7 @@ galleryPrevBtn.addEventListener("click", () => {
 galleryNextBtn.addEventListener("click", () => {
   setGalleryIndex(currentGallery.index + 1, true);
 });
+
 // Swipe en móvil
 (function addSwipe(el) {
   if (!el) return;
@@ -265,6 +292,7 @@ galleryNextBtn.addEventListener("click", () => {
     startX = null;
   }, { passive: true });
 })(document.querySelector(".stage"));
+
 productPreview.tabIndex = 0;
 productPreview.addEventListener("keydown", e => {
   if (e.key === "ArrowLeft") {
@@ -275,6 +303,7 @@ productPreview.addEventListener("keydown", e => {
     setGalleryIndex(currentGallery.index + 1, true);
   }
 });
+
 // ================== FILTROS ==================
 function getSavedFilters() {
   try {
@@ -283,21 +312,25 @@ function getSavedFilters() {
     return {};
   }
 }
+
 function saveFiltersToStorage() {
-  const cat = categoryMenu.querySelector('input[name="category"]:checked')?.value || "Todas";
-  const brand = brandMenu.querySelector('input[name="brand"]:checked')?.value || "Todas";
+  const catInput = categoryMenu.querySelector('input[name="category"]:checked');
+  const brandInput = brandMenu.querySelector('input[name="brand"]:checked');
+  const cat = catInput ? catInput.value : "Todas";
+  const brand = brandInput ? brandInput.value : "Todas";
   localStorage.setItem(LS_FILTERS_KEY, JSON.stringify({ category: cat, brand }));
 }
+
 function updateCategoryButtonLabel() {
   const sel = categoryMenu.querySelector('input[name="category"]:checked');
   if (sel && sel.value !== "Todas") {
-    // Ahora el value es la clave normalizada y el texto visible va en data-label
     const label = sel.dataset.label || sel.value;
     categoryToggleBtn.textContent = label + " ▾";
   } else {
     categoryToggleBtn.textContent = "Categorías ▾";
   }
 }
+
 function updateBrandButtonLabel() {
   const sel = brandMenu.querySelector('input[name="brand"]:checked');
   if (sel && sel.value !== "Todas") {
@@ -307,6 +340,7 @@ function updateBrandButtonLabel() {
     brandToggleBtn.textContent = "Marcas ▾";
   }
 }
+
 function closeDropdowns() {
   document.querySelectorAll(".custom-dropdown.open").forEach(dd => {
     dd.classList.remove("open");
@@ -316,31 +350,26 @@ function closeDropdowns() {
     if (btn) btn.setAttribute("aria-expanded", "false");
   });
 }
+
 function refreshFilters() {
-  // === CATEGORÍAS SIN DISCRIMINAR MAYÚSCULAS/MINÚSCULAS ===
+  // === CATEGORÍAS: unificadas por clave normalizada (sin mayúsculas/acentos) ===
   const categoryMap = new Map();
 
   products.forEach(p => {
     const raw = (p.category || "").trim();
     if (!raw) return;
-
-    // Usamos la misma normalización que en marcas:
-    // minúsculas + sin acentos → clave única
     const key = normalizeText(raw);
     if (!key) return;
-
-    // Si varias categorías se escriben distinto pero son la misma
-    // (ej: "Cuidado capilar" / "Cuidado Capilar"), solo guardamos la primera
     if (!categoryMap.has(key)) {
-      categoryMap.set(key, raw);
+      categoryMap.set(key, raw); // guardamos la primera forma escrita
     }
   });
 
-  // Nos quedamos solo con los textos visibles (la primera forma encontrada)
-  allCategories = Array.from(categoryMap.values())
-    .sort((a, b) => a.localeCompare(b, "es", { sensitivity: "base" }));
+  allCategories = Array.from(categoryMap.entries())
+    .map(([key, label]) => ({ key, label }))
+    .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
 
-  // ==== MARCAS (se deja como estaba) ====
+  // ==== MARCAS ====
   const brandMap = new Map();
   products.forEach(p => {
     const raw = (p.marca || "").trim();
@@ -351,30 +380,52 @@ function refreshFilters() {
       brandMap.set(key, raw);
     }
   });
+
   allBrands = Array.from(brandMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
 
+  // Filtros guardados
   const saved = getSavedFilters();
-  const catSaved = saved.category || "Todas";
-  let brandSaved = saved.brand || "Todas";
+  let catSaved = saved.category || "Todas";
+  const brandSaved = saved.brand || "Todas";
+
+  // Compatibilidad con valores antiguos (etiquetas en vez de claves)
+  if (catSaved !== "Todas") {
+    catSaved = normalizeText(catSaved);
+  }
 
   // Construcción del menú de categorías
-  categoryMenu.innerHTML = ["Todas", ...allCategories].map(c => `
-    <label style="display:block;margin-bottom:4px;">
-      <input type="radio" name="category" value="${escapeAttr(c)}" ${c === catSaved ? "checked" : ""}>
-      ${escapeHtml(c || "Todas")}
-    </label>
-  `).join("");
+  const categoryOptionsHtml = [
+    `<label style="display:block;margin-bottom:4px;">
+      <input type="radio" name="category" value="Todas" ${catSaved === "Todas" ? "checked" : ""}>
+      Todas
+    </label>`,
+    ...allCategories.map(c => `
+      <label style="display:block;margin-bottom:4px;">
+        <input type="radio"
+               name="category"
+               value="${escapeAttr(c.key)}"
+               data-label="${escapeAttr(c.label)}"
+               ${c.key === catSaved ? "checked" : ""}>
+        ${escapeHtml(c.label)}
+      </label>
+    `)
+  ];
+  categoryMenu.innerHTML = categoryOptionsHtml.join("");
 
-  // Construcción del menú de marcas (igual que antes)
+  // Construcción del menú de marcas
   const brandHtml = [
     `<label style="display:block;margin-bottom:4px;">
       <input type="radio" name="brand" value="Todas" ${brandSaved === "Todas" ? "checked" : ""}> Todas
     </label>`,
     ...allBrands.map(b => `
       <label style="display:block;margin-bottom:4px;">
-        <input type="radio" name="brand" value="${escapeAttr(b.key)}" data-label="${escapeAttr(b.label)}" ${b.key === brandSaved ? "checked" : ""}>
+        <input type="radio"
+               name="brand"
+               value="${escapeAttr(b.key)}"
+               data-label="${escapeAttr(b.label)}"
+               ${b.key === brandSaved ? "checked" : ""}>
         ${escapeHtml(b.label)}
       </label>
     `)
@@ -388,18 +439,21 @@ function refreshFilters() {
 function setupFilterListenersOnce() {
   if (filterListenersAttached) return;
   filterListenersAttached = true;
+
   categoryMenu.addEventListener("change", () => {
     saveFiltersToStorage();
     filterAndDisplayProducts();
     updateCategoryButtonLabel();
     closeDropdowns();
   });
+
   brandMenu.addEventListener("change", () => {
     saveFiltersToStorage();
     filterAndDisplayProducts();
     updateBrandButtonLabel();
     closeDropdowns();
   });
+
   document.addEventListener("click", e => {
     const t = e.target;
     if (t.classList.contains("dropdown-toggle-btn")) {
@@ -416,11 +470,13 @@ function setupFilterListenersOnce() {
       closeDropdowns();
     }
   });
+
   document.addEventListener("keydown", e => {
     if (e.key === "Escape") {
       closeDropdowns();
     }
   });
+
   [categoryToggleBtn, brandToggleBtn].forEach(btn => {
     btn.addEventListener("keydown", e => {
       if (e.key === "Enter" || e.key === " ") {
@@ -429,6 +485,7 @@ function setupFilterListenersOnce() {
       }
     });
   });
+
   // Búsqueda con debounce
   searchInput.addEventListener("input", debounce(() => {
     const raw = searchInput.value || "";
@@ -444,6 +501,7 @@ function setupFilterListenersOnce() {
     }
   }, 500));
 }
+
 // ================== CARGA DE PRODUCTOS ==================
 async function fetchProductsFromBackend() {
   try {
@@ -456,12 +514,12 @@ async function fetchProductsFromBackend() {
     products = data.products.map(p => {
       const valor = Number(p.valor_unitario);
       const orden = Number(p.orden);
-      
+
       // LÓGICA DE STOCK AGREGADA: Leer la columna stock
-      // Se asume que en el JSON viene como "stock". Si está vacío, se asume disponible (9999), 
+      // Se asume que en el JSON viene como "stock". Si está vacío, se asume disponible (9999),
       // pero si es explícitamente 0, se marca como tal.
       let rawStock = p.stock;
-      let stockNum = 9999; 
+      let stockNum = 9999;
       if (rawStock !== undefined && rawStock !== null && rawStock !== "") {
         stockNum = Number(rawStock);
         if (isNaN(stockNum)) stockNum = 9999;
@@ -483,16 +541,27 @@ async function fetchProductsFromBackend() {
       '<tr><td colspan="6" style="text-align:center;">Error al cargar productos.</td></tr>';
   }
 }
+
+// Orden por columna "orden" y luego por id
+function sortByOrdenThenId(list) {
+  list.sort((a, b) => {
+    const aVal = typeof a.orden === "number" && !isNaN(a.orden) ? a.orden : 999999;
+    const bVal = typeof b.orden === "number" && !isNaN(b.orden) ? b.orden : 999999;
+    if (aVal !== bVal) return aVal - bVal;
+    return String(a.id).localeCompare(String(b.id));
+  });
+}
+
+// ================== LISTADO / FILTRADO ==================
 function filterAndDisplayProducts() {
   let list = [...products];
 
-  // ==== FILTRO POR CATEGORÍA (SIN MAYÚSCULAS/MINÚSCULAS) ====
+  // ==== FILTRO POR CATEGORÍA (usa clave normalizada) ====
   const catSel = categoryMenu.querySelector('input[name="category"]:checked');
-  const catVal = catSel ? catSel.value : "Todas";
+  const catKey = catSel ? catSel.value : "Todas";
 
-  if (catVal !== "Todas") {
-    const catNorm = normalizeText(catVal);
-    list = list.filter(p => normalizeText(p.category) === catNorm);
+  if (catKey !== "Todas") {
+    list = list.filter(p => normalizeText(p.category) === catKey);
   }
 
   // ==== FILTRO POR MARCA (ya usaba clave normalizada) ====
@@ -509,7 +578,9 @@ function filterAndDisplayProducts() {
 
   if (terms.length > 0) {
     list = list.filter(p => {
-      const s = normalizeText(`${p.id} ${p.name} ${p.category} ${p.marca} ${p.description || ""}`);
+      const s = normalizeText(
+        `${p.id} ${p.name} ${p.category} ${p.marca} ${p.description || ""}`
+      );
       return terms.every(t => s.includes(t));
     });
   }
@@ -533,25 +604,26 @@ function displayProducts(list) {
     return;
   }
   const frag = document.createDocumentFragment();
+
   list.forEach(p => {
     const item = cart[p.id];
     const qty = item ? item.quantity : 0;
     const unitPrice = p.valor_unitario || 0;
     const subtotal = qty * unitPrice;
-    
+
     // LÓGICA STOCK: Si stock es menor o igual a 0, marcamos el producto.
     const isOutOfStock = (p.stock <= 0);
 
     const tr = document.createElement("tr");
     tr.setAttribute("data-product-id", p.id);
-    
+
     // Agregamos clase CSS si está agotado
     if (isOutOfStock) {
       tr.classList.add("product-row-out-of-stock");
     }
 
-    let quantityHtml = '';
-    
+    let quantityHtml = "";
+
     if (isOutOfStock) {
       // Si no hay stock, mostramos mensaje y no botones
       quantityHtml = `<span class="stock-status-msg">AGOTADO</span>`;
@@ -579,9 +651,11 @@ function displayProducts(list) {
     `;
     frag.appendChild(tr);
   });
+
   productTableBody.innerHTML = "";
   productTableBody.appendChild(frag);
 }
+
 // ================== CARRITO ==================
 function loadCartFromStorage() {
   const saved = localStorage.getItem(LS_CART_KEY);
@@ -600,6 +674,7 @@ function loadCartFromStorage() {
     cart = {};
   }
 }
+
 function updateCart() {
   const items = Object.values(cart);
   let total = 0;
@@ -621,6 +696,7 @@ function updateCart() {
   totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
   localStorage.setItem(LS_CART_KEY, JSON.stringify(cart));
 }
+
 function buildClientWhatsAppMsg(items, header = "Hola, deseo comprar estos productos en Irenismb Stock Natura:") {
   let msg = header + "\n\n";
   let total = 0;
@@ -637,6 +713,7 @@ function buildClientWhatsAppMsg(items, header = "Hola, deseo comprar estos produ
   msg += `\n\nGracias.`;
   return msg;
 }
+
 function handleWhatsAppClick() {
   const items = Object.values(cart).filter(it => it.quantity > 0);
   if (!items.length) {
@@ -649,12 +726,14 @@ function handleWhatsAppClick() {
   window.open(url, "_blank");
   logVisit("whatsapp_compra", searchInput.value || "");
 }
+
 function updateRowTotal(tr, qty, price) {
   const cell = tr.querySelector(".total-pay");
   if (!cell) return;
   const subtotal = (qty || 0) * (price || 0);
   cell.textContent = currencyFormatter.format(subtotal);
 }
+
 function updateCartEntry(id, name, price, qty) {
   if (!id) return;
   const quantity = Math.max(0, Number(qty) || 0);
@@ -670,13 +749,14 @@ function updateCartEntry(id, name, price, qty) {
   }
   updateCart();
 }
+
 // Eventos en la tabla de productos
 productTableBody.addEventListener("click", e => {
   const decBtn = e.target.closest(".decrease-btn");
   const incBtn = e.target.closest(".increase-btn");
   const tr = e.target.closest("tr");
   if (!tr) return;
-  
+
   // Verificación extra: si el tr tiene la clase de agotado, no hacemos nada
   if (tr.classList.contains("product-row-out-of-stock")) return;
 
@@ -695,6 +775,7 @@ productTableBody.addEventListener("click", e => {
     updateCartEntry(id, name, price, qty);
     return;
   }
+
   // Clic en la fila para ver vista previa (evita los controles de cantidad)
   if (e.target.closest(".quantity-control") || e.target.classList.contains("quantity-input")) {
     return;
@@ -706,6 +787,7 @@ productTableBody.addEventListener("click", e => {
     showPreviewForProduct(prod);
   }
 });
+
 productTableBody.addEventListener("change", e => {
   const input = e.target;
   if (!input.classList.contains("quantity-input")) return;
@@ -720,6 +802,7 @@ productTableBody.addEventListener("change", e => {
   updateRowTotal(tr, qty, price);
   updateCartEntry(id, name, price, qty);
 });
+
 // Eliminar desde el carrito
 cartList.addEventListener("click", e => {
   const btn = e.target.closest(".remove-item-btn");
@@ -736,6 +819,7 @@ cartList.addEventListener("click", e => {
   }
   updateCart();
 });
+
 // Ordenar por precio
 sortPriceBtn.addEventListener("click", () => {
   if (currentSortOrder === "default") {
@@ -750,13 +834,16 @@ sortPriceBtn.addEventListener("click", () => {
   }
   filterAndDisplayProducts();
 });
+
 // Click en botón de WhatsApp
 whatsappBtn.addEventListener("click", handleWhatsAppClick);
+
 // Ajustar enlace de contacto de WhatsApp
 if (contactWhatsappLink) {
   const phone = DEFAULT_WHATSAPP;
   contactWhatsappLink.href = `https://wa.me/${encodeURIComponent(phone)}`;
 }
+
 // Auto refresco de productos
 function setupAutoRefresh() {
   if (!AUTO_REFRESH_MS || AUTO_REFRESH_MS <= 0) return;
@@ -765,6 +852,7 @@ function setupAutoRefresh() {
     fetchProductsFromBackend();
   }, AUTO_REFRESH_MS);
 }
+
 // Inicialización
 (function init() {
   loadCartFromStorage();

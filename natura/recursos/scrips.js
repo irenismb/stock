@@ -1,6 +1,6 @@
 // ================== CONFIG ==================
-const APPS_SCRIPT_URL = 
-"https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
 const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
 const LS_FILTERS_KEY = "naturaFilters";
@@ -113,11 +113,15 @@ function ensureSessionId() {
  *  - phase: "start" | "update" | "end"
  *  - clickText: nombre de producto u otra acción
  *  - searchText: texto buscado (frase completa)
+ *
+ * IMPORTANTE:
+ * Usamos GET con querystring (como la URL que probaste) para evitar
+ * problemas de CORS con POST application/json desde github.io.
  */
 function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
   try {
     const sid = ensureSessionId();
-    const payload = {
+    const params = new URLSearchParams({
       action: "logVisit",
       sessionId: sid,
       phase: phase || "update",
@@ -125,25 +129,20 @@ function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
       ipPublica: clientIpPublica || "",
       ciudad: clientCiudad || "",
       clickText: String(clickText || ""),
-      searchText: String(searchText || "")
-    };
-
-    const body = JSON.stringify(payload);
-
-    // Para la salida usamos sendBeacon si está disponible (mejor en beforeunload)
-    if (phase === "end" && navigator.sendBeacon) {
-      const blob = new Blob([body], { type: "application/json" });
-      navigator.sendBeacon(APPS_SCRIPT_URL, blob);
-      return;
-    }
-
-    fetch(APPS_SCRIPT_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body
-    }).catch(err => {
-      console.error("Error enviando visita:", err);
+      searchText: String(searchText || ""),
+      ts: Date.now().toString() // para evitar caché
     });
+
+    const url = `${APPS_SCRIPT_URL}?${params.toString()}`;
+
+    // Para la salida usamos sendBeacon si está disponible
+    if (phase === "end" && navigator.sendBeacon) {
+      navigator.sendBeacon(url);
+    } else {
+      // Ping clásico con una imagen invisible
+      const img = new Image();
+      img.src = url;
+    }
   } catch (e) {
     console.error("Error en sendVisitEvent:", e);
   }
@@ -228,7 +227,6 @@ async function resolveImageForCode(code, name) {
       .replace(/[^a-zA-Z0-9]+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
-
     if (safeNameSlug) {
       baseVariants.push(`${code}-${safeNameSlug}`);
     }
@@ -312,7 +310,6 @@ function setGalleryIndex(newIndex, userAction) {
 
 async function showPreviewForProduct(prod) {
   if (!prod) return;
-
   const requestId = ++lastPreviewRequestId;
   const name = (prod.name || "").trim();
   const descriptionText = prod.description || "Sin descripción para este producto.";
@@ -320,7 +317,6 @@ async function showPreviewForProduct(prod) {
   previewName.textContent = name ? name.toUpperCase() : "";
   previewCaption.textContent = descriptionText;
   previewCaption.classList.remove("loading");
-
   previewImg.style.display = "none";
   previewImg.src = "";
   thumbs.innerHTML = "";
@@ -336,7 +332,6 @@ async function showPreviewForProduct(prod) {
   if (requestId !== lastPreviewRequestId) {
     return;
   }
-
   currentGallery.images = imgs;
   currentGallery.index = 0;
 
@@ -353,7 +348,6 @@ async function showPreviewForProduct(prod) {
     imageStatus.textContent = "";
     imageStatus.classList.remove("visible");
   }
-
   renderThumbs(imgs, 0);
   setGalleryIndex(0);
 }
@@ -454,7 +448,6 @@ function refreshFilters() {
       categoryMap.set(key, raw); // guardamos la primera forma escrita
     }
   });
-
   allCategories = Array.from(categoryMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -470,7 +463,6 @@ function refreshFilters() {
       brandMap.set(key, raw);
     }
   });
-
   allBrands = Array.from(brandMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -580,14 +572,11 @@ function setupFilterListenersOnce() {
   searchInput.addEventListener("input", debounce(() => {
     const raw = searchInput.value || "";
     const term = raw.trim();
-
     if (!term) {
       currentSortOrder = "default";
       sortPriceBtn.textContent = "Ordenar por precio";
     }
-
     filterAndDisplayProducts();
-
     // Registro de búsqueda en la sesión (solo si cambia la frase)
     if (term && term !== lastSearchLogged) {
       lastSearchLogged = term;
@@ -668,7 +657,6 @@ function filterAndDisplayProducts() {
   const terms = normalizeText(searchInput.value)
     .split(/\s+/)
     .filter(Boolean);
-
   if (terms.length > 0) {
     list = list.filter(p => {
       const s = normalizeText(
@@ -742,7 +730,6 @@ function displayProducts(list) {
       </td>
       <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
     `;
-
     frag.appendChild(tr);
   });
 
@@ -835,6 +822,7 @@ function updateRowTotal(tr, qty, price) {
 function updateCartEntry(id, name, price, qty) {
   if (!id) return;
   const quantity = Math.max(0, Number(qty) || 0);
+
   if (!quantity) {
     delete cart[id];
   } else {
@@ -867,10 +855,8 @@ productTableBody.addEventListener("click", e => {
     const price = Number(input.dataset.price) || 0;
     const id = input.dataset.id;
     const name = input.dataset.name || "";
-
     if (incBtn) qty += 1;
     if (decBtn) qty = Math.max(0, qty - 1);
-
     input.value = qty;
     updateRowTotal(tr, qty, price);
     updateCartEntry(id, name, price, qty);
@@ -888,6 +874,7 @@ productTableBody.addEventListener("click", e => {
   const prod = products.find(p => String(p.id) === String(productId));
   if (prod) {
     showPreviewForProduct(prod);
+
     // Registramos el nombre del producto al que se hizo clic
     const clickName = prod.name || prod.nombre || "";
     if (clickName) {
@@ -904,11 +891,9 @@ productTableBody.addEventListener("change", e => {
 
   let qty = parseInt(input.value, 10);
   if (!Number.isFinite(qty) || qty < 0) qty = 0;
-
   const price = Number(input.dataset.price) || 0;
   const id = input.dataset.id;
   const name = input.dataset.name || "";
-
   input.value = qty;
   updateRowTotal(tr, qty, price);
   updateCartEntry(id, name, price, qty);
@@ -970,6 +955,7 @@ function setupAutoRefresh() {
   // Iniciamos la sesión de visita
   ensureSessionId();
   sendVisitEvent("start");
+
   // Obtenemos IP pública y ciudad y las asociamos a la sesión
   initClientLocation();
 })();

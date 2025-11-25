@@ -4,6 +4,8 @@ const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
 const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
+// Servicio externo para IP pública + ciudad
+const CLIENT_INFO_URL = "https://ipapi.co/json/";
 
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
@@ -29,13 +31,18 @@ let filterListenersAttached = false;
 let lastSearchLogged = "";
 let autoRefreshTimer = null;
 
+// Estado para visitas por sesión
+let sessionId = "";
+let clientIpPublica = "";
+let clientCiudad = "";
+let userName = ""; // opcional, por ahora vacío; se puede enlazar a un campo de nombre más adelante
+
 // ================== DOM ==================
 const searchInput = document.getElementById("searchInput");
 const productTableBody = document.getElementById("productTableBody");
 const cartList = document.getElementById("cartList");
 const totalPriceElement = document.getElementById("totalPrice");
 const whatsappBtn = document.getElementById("whatsappBtn");
-const contactWhatsappLink = document.getElementById("contactWhatsappLink");
 const sortPriceBtn = document.getElementById("sortPriceBtn");
 const categoryMenu = document.getElementById("categoryMenu");
 const brandMenu = document.getElementById("brandMenu");
@@ -79,26 +86,83 @@ function escapeHtml(t) {
     ">": "&gt;",
     '"': "&quot;",
     "'": "&#39;"
-  })[s]);
+  }[s]));
 }
 
 function escapeAttr(t) {
   return escapeHtml(t).replace(/"/g, "&quot;");
 }
 
-// ================== REGISTRO DE VISITAS ==================
-function logVisit(clickText, searchText) {
+// ================== REGISTRO DE VISITAS (POR SESIÓN) ==================
+function generateSessionId() {
+  const rand = Math.random().toString(36).slice(2, 10);
+  const ts = Date.now().toString(36);
+  return `${ts}-${rand}`;
+}
+
+function ensureSessionId() {
+  if (!sessionId) {
+    sessionId = generateSessionId();
+  }
+  return sessionId;
+}
+
+/**
+ * Envía un evento de visita al Apps Script:
+ *  - phase: "start" | "update" | "end"
+ *  - clickText: nombre de producto u otra acción
+ *  - searchText: texto buscado (frase completa)
+ */
+function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
   try {
-    const params = new URLSearchParams({
+    const sid = ensureSessionId();
+    const payload = {
       action: "logVisit",
+      sessionId: sid,
+      phase: phase || "update",
+      userName: userName || "",
+      ipPublica: clientIpPublica || "",
+      ciudad: clientCiudad || "",
       clickText: String(clickText || ""),
-      searchText: String(searchText || ""),
-      ts: Date.now().toString()
+      searchText: String(searchText || "")
+    };
+
+    const body = JSON.stringify(payload);
+
+    // Para la salida usamos sendBeacon si está disponible (mejor en beforeunload)
+    if (phase === "end" && navigator.sendBeacon) {
+      const blob = new Blob([body], { type: "application/json" });
+      navigator.sendBeacon(APPS_SCRIPT_URL, blob);
+      return;
+    }
+
+    fetch(APPS_SCRIPT_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body
+    }).catch(err => {
+      console.error("Error enviando visita:", err);
     });
-    const img = new Image();
-    img.src = APPS_SCRIPT_URL + "?" + params.toString();
   } catch (e) {
-    console.error("Error en logVisit:", e);
+    console.error("Error en sendVisitEvent:", e);
+  }
+}
+
+/**
+ * Obtiene IP pública y ciudad aproximada del cliente y las
+ * envía como actualización de la sesión.
+ */
+async function initClientLocation() {
+  try {
+    const resp = await fetch(CLIENT_INFO_URL);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    clientIpPublica = data.ip || "";
+    clientCiudad = data.city || "";
+    // Actualiza la fila de sesión con IP/ciudad
+    sendVisitEvent("update");
+  } catch (e) {
+    console.error("No se pudo obtener IP/ciudad:", e);
   }
 }
 
@@ -107,6 +171,7 @@ function testImageOnce(url, timeout = 1200) {
   return new Promise(resolve => {
     const img = new Image();
     let done = false;
+
     const timer = setTimeout(() => {
       if (!done) {
         done = true;
@@ -114,6 +179,7 @@ function testImageOnce(url, timeout = 1200) {
         resolve(false);
       }
     }, timeout);
+
     img.onload = () => {
       if (!done) {
         done = true;
@@ -161,6 +227,7 @@ async function resolveImageForCode(code, name) {
       .replace(/[^a-zA-Z0-9]+/g, "-")
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "");
+
     if (safeNameSlug) {
       baseVariants.push(`${code}-${safeNameSlug}`);
     }
@@ -192,8 +259,10 @@ async function findAllImagesForProduct(prod, maxChildren = 12) {
   const id = String(prod.id).trim();
   const name = String(prod.name || "").trim();
   const images = [];
+
   const main = await resolveImageForCode(id, name);
   if (main) images.push(main);
+
   for (let i = 1; i <= maxChildren; i++) {
     const childCode = `${id}-${i}`;
     const url = await resolveImageForCode(childCode, name);
@@ -225,12 +294,15 @@ function setGalleryIndex(newIndex, userAction) {
   const imgs = currentGallery.images;
   const len = imgs.length;
   if (!len) return;
+
   if (newIndex < 0) newIndex = len - 1;
   if (newIndex >= len) newIndex = 0;
+
   currentGallery.index = newIndex;
   const url = imgs[newIndex];
   previewImg.style.display = "block";
   previewImg.src = url;
+
   thumbs.querySelectorAll("img").forEach((im, idx) => {
     im.classList.toggle("active", idx === newIndex);
   });
@@ -239,6 +311,7 @@ function setGalleryIndex(newIndex, userAction) {
 
 async function showPreviewForProduct(prod) {
   if (!prod) return;
+
   const requestId = ++lastPreviewRequestId;
   const name = (prod.name || "").trim();
   const descriptionText = prod.description || "Sin descripción para este producto.";
@@ -246,6 +319,7 @@ async function showPreviewForProduct(prod) {
   previewName.textContent = name ? name.toUpperCase() : "";
   previewCaption.textContent = descriptionText;
   previewCaption.classList.remove("loading");
+
   previewImg.style.display = "none";
   previewImg.src = "";
   thumbs.innerHTML = "";
@@ -261,6 +335,7 @@ async function showPreviewForProduct(prod) {
   if (requestId !== lastPreviewRequestId) {
     return;
   }
+
   currentGallery.images = imgs;
   currentGallery.index = 0;
 
@@ -277,6 +352,7 @@ async function showPreviewForProduct(prod) {
     imageStatus.textContent = "";
     imageStatus.classList.remove("visible");
   }
+
   renderThumbs(imgs, 0);
   setGalleryIndex(0);
 }
@@ -368,7 +444,6 @@ function closeDropdowns() {
 function refreshFilters() {
   // === CATEGORÍAS: unificadas por clave normalizada (sin mayúsculas/acentos) ===
   const categoryMap = new Map();
-
   products.forEach(p => {
     const raw = (p.category || "").trim();
     if (!raw) return;
@@ -504,14 +579,18 @@ function setupFilterListenersOnce() {
   searchInput.addEventListener("input", debounce(() => {
     const raw = searchInput.value || "";
     const term = raw.trim();
+
     if (!term) {
       currentSortOrder = "default";
       sortPriceBtn.textContent = "Ordenar por precio";
     }
+
     filterAndDisplayProducts();
+
+    // Registro de búsqueda en la sesión (solo si cambia la frase)
     if (term && term !== lastSearchLogged) {
       lastSearchLogged = term;
-      logVisit("busqueda", term);
+      sendVisitEvent("update", { searchText: term });
     }
   }, 500));
 }
@@ -525,13 +604,12 @@ async function fetchProductsFromBackend() {
     if (data.status !== "success" || !Array.isArray(data.products)) {
       throw new Error(data.message || "Respuesta inválida del servidor");
     }
+
     products = data.products.map(p => {
       const valor = Number(p.valor_unitario);
       const orden = Number(p.orden);
 
-      // LÓGICA DE STOCK AGREGADA: Leer la columna stock
-      // Se asume que en el JSON viene como "stock". Si está vacío, se asume disponible (9999),
-      // pero si es explícitamente 0, se marca como tal.
+      // LÓGICA DE STOCK: Leer la columna stock
       let rawStock = p.stock;
       let stockNum = 9999;
       if (rawStock !== undefined && rawStock !== null && rawStock !== "") {
@@ -546,6 +624,7 @@ async function fetchProductsFromBackend() {
         stock: stockNum // Guardamos el stock normalizado
       };
     });
+
     refreshFilters();
     setupFilterListenersOnce();
     filterAndDisplayProducts();
@@ -573,7 +652,6 @@ function filterAndDisplayProducts() {
   // ==== FILTRO POR CATEGORÍA (usa clave normalizada) ====
   const catSel = categoryMenu.querySelector('input[name="category"]:checked');
   const catKey = catSel ? catSel.value : "Todas";
-
   if (catKey !== "Todas") {
     list = list.filter(p => normalizeText(p.category) === catKey);
   }
@@ -617,6 +695,7 @@ function displayProducts(list) {
       '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
     return;
   }
+
   const frag = document.createDocumentFragment();
 
   list.forEach(p => {
@@ -637,7 +716,6 @@ function displayProducts(list) {
     }
 
     let quantityHtml = "";
-
     if (isOutOfStock) {
       // Si no hay stock, mostramos mensaje y no botones
       quantityHtml = `<span class="stock-status-msg">AGOTADO</span>`;
@@ -663,6 +741,7 @@ function displayProducts(list) {
       </td>
       <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
     `;
+
     frag.appendChild(tr);
   });
 
@@ -692,6 +771,7 @@ function loadCartFromStorage() {
 function updateCart() {
   const items = Object.values(cart);
   let total = 0;
+
   if (items.length === 0) {
     cartList.innerHTML =
       '<li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>';
@@ -707,6 +787,7 @@ function updateCart() {
       `;
     }).join("");
   }
+
   totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
   localStorage.setItem(LS_CART_KEY, JSON.stringify(cart));
 }
@@ -734,11 +815,13 @@ function handleWhatsAppClick() {
     alert("El carrito está vacío. Agrega productos antes de comprar por WhatsApp.");
     return;
   }
-  const phone = DEFAULT_WHATSAPP || contactWhatsappLink.textContent.replace(/[^\d]/g, "");
+  const phone = DEFAULT_WHATSAPP;
   const msg = buildClientWhatsAppMsg(items);
   const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(msg)}`;
   window.open(url, "_blank");
-  logVisit("whatsapp_compra", searchInput.value || "");
+
+  // Registramos que se inició compra por WhatsApp
+  sendVisitEvent("update", { clickText: "whatsapp_compra" });
 }
 
 function updateRowTotal(tr, qty, price) {
@@ -775,6 +858,7 @@ productTableBody.addEventListener("click", e => {
   if (tr.classList.contains("product-row-out-of-stock")) return;
 
   const input = tr.querySelector(".quantity-input");
+
   if (decBtn || incBtn) {
     if (!input) return;
     let qty = parseInt(input.value, 10);
@@ -782,8 +866,10 @@ productTableBody.addEventListener("click", e => {
     const price = Number(input.dataset.price) || 0;
     const id = input.dataset.id;
     const name = input.dataset.name || "";
+
     if (incBtn) qty += 1;
     if (decBtn) qty = Math.max(0, qty - 1);
+
     input.value = qty;
     updateRowTotal(tr, qty, price);
     updateCartEntry(id, name, price, qty);
@@ -794,11 +880,18 @@ productTableBody.addEventListener("click", e => {
   if (e.target.closest(".quantity-control") || e.target.classList.contains("quantity-input")) {
     return;
   }
+
   const productId = tr.getAttribute("data-product-id");
   if (!productId) return;
+
   const prod = products.find(p => String(p.id) === String(productId));
   if (prod) {
     showPreviewForProduct(prod);
+    // Registramos el nombre del producto al que se hizo clic
+    const clickName = prod.name || prod.nombre || "";
+    if (clickName) {
+      sendVisitEvent("update", { clickText: clickName });
+    }
   }
 });
 
@@ -807,11 +900,14 @@ productTableBody.addEventListener("change", e => {
   if (!input.classList.contains("quantity-input")) return;
   const tr = input.closest("tr");
   if (!tr) return;
+
   let qty = parseInt(input.value, 10);
   if (!Number.isFinite(qty) || qty < 0) qty = 0;
+
   const price = Number(input.dataset.price) || 0;
   const id = input.dataset.id;
   const name = input.dataset.name || "";
+
   input.value = qty;
   updateRowTotal(tr, qty, price);
   updateCartEntry(id, name, price, qty);
@@ -823,7 +919,9 @@ cartList.addEventListener("click", e => {
   if (!btn) return;
   const id = btn.dataset.id;
   if (!id) return;
+
   delete cart[id];
+
   const row = productTableBody.querySelector(`tr[data-product-id="${id}"]`);
   if (row) {
     const input = row.querySelector(".quantity-input");
@@ -852,12 +950,6 @@ sortPriceBtn.addEventListener("click", () => {
 // Click en botón de WhatsApp
 whatsappBtn.addEventListener("click", handleWhatsAppClick);
 
-// Ajustar enlace de contacto de WhatsApp
-if (contactWhatsappLink) {
-  const phone = DEFAULT_WHATSAPP;
-  contactWhatsappLink.href = `https://wa.me/${encodeURIComponent(phone)}`;
-}
-
 // Auto refresco de productos
 function setupAutoRefresh() {
   if (!AUTO_REFRESH_MS || AUTO_REFRESH_MS <= 0) return;
@@ -873,8 +965,22 @@ function setupAutoRefresh() {
   updateCart();
   fetchProductsFromBackend();
   setupAutoRefresh();
-  logVisit("visita", "");
+
+  // Iniciamos la sesión de visita
+  ensureSessionId();
+  sendVisitEvent("start");
+  // Obtenemos IP pública y ciudad y las asociamos a la sesión
+  initClientLocation();
 })();
+
+// Registrar SALIDA del catálogo (hora de salida)
+window.addEventListener("beforeunload", function () {
+  try {
+    sendVisitEvent("end");
+  } catch (e) {
+    console.error("Error al registrar salida:", e);
+  }
+});
 
 // Fondo dinámico con logo_natura (admite webp, png, jpg, jpeg)
 (async function setDynamicBackground() {

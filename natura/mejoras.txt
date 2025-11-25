@@ -1,0 +1,4 @@
+aun no escribas codigo. en cuanto al punto 8, las palabras ni frases no deben estar separadas por coma. ahora quiero que no se fije en las letras de las columnas, sino que debera saber donde colocar cada cosa en la hoja de visitas segun el nombre de la columna que te pase en la imagen, por si algun dia las  quiero cambiar de posicion, no tener problemas por ello. muy bien. tambien quiero que en la version de moviles, se apliquen los mismos metodos de ordenamiento de la version para computadores, ya que actualmente cuando se abre la pagina, los productos aparecen ordenados por precio de menor a mayor. la caja de busqueda de productos para moviles se ve muy alta, antes de empezar a escribir, reduce su altura a la mitad de la actual. dime si entendiste todo y si es viable todo lo que te pido.
+
+
+que archivos cambiarian si se aplican todas estas modificaciones?

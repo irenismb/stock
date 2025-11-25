@@ -1,5 +1,6 @@
 // ================== CONFIG ==================
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
+const APPS_SCRIPT_URL = 
+"https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
 const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
 const LS_FILTERS_KEY = "naturaFilters";

@@ -94,6 +94,19 @@ function escapeAttr(t) {
   return escapeHtml(t).replace(/"/g, "&quot;");
 }
 
+function detectDeviceLabel() {
+  const ua = navigator.userAgent || "";
+
+  if (/android/i.test(ua)) return "Celular Android";
+  if (/iphone|ipad|ipod/i.test(ua)) return "iPhone / iPad";
+  if (/windows/i.test(ua)) return "PC Windows";
+  if (/macintosh|mac os x/i.test(ua)) return "Mac";
+  if (/linux/i.test(ua)) return "PC Linux";
+
+  return "Dispositivo web";
+}
+
+
 // ================== REGISTRO DE VISITAS (POR SESIÓN) ==================
 function generateSessionId() {
   const rand = Math.random().toString(36).slice(2, 10);
@@ -961,6 +974,9 @@ function setupAutoRefresh() {
   updateCart();
   fetchProductsFromBackend();
   setupAutoRefresh();
+
+  // NUEVO: identificar el dispositivo y guardarlo en userName
+  userName = detectDeviceLabel();
 
   // Iniciamos la sesión de visita
   ensureSessionId();

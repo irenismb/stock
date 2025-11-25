@@ -118,31 +118,41 @@ function ensureSessionId() {
  * Usamos GET con querystring (como la URL que probaste) para evitar
  * problemas de CORS con POST application/json desde github.io.
  */
+// Envía el evento de visita usando GET con parámetros en la URL
 function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
   try {
     const sid = ensureSessionId();
-    const params = new URLSearchParams({
-      action: "logVisit",
-      sessionId: sid,
-      phase: phase || "update",
-      userName: userName || "",
-      ipPublica: clientIpPublica || "",
-      ciudad: clientCiudad || "",
-      clickText: String(clickText || ""),
-      searchText: String(searchText || ""),
-      ts: Date.now().toString() // para evitar caché
+    const params = new URLSearchParams();
+
+    // Acción del Apps Script
+    params.set("action", "logVisit");
+    params.set("sessionId", sid);
+    params.set("phase", (phase || "update"));
+
+    // Datos opcionales
+    if (userName)        params.set("userName", userName);
+    if (clientIpPublica) params.set("ipPublica", clientIpPublica);
+    if (clientCiudad)    params.set("ciudad", clientCiudad);
+    if (clickText)       params.set("clickText", String(clickText));
+    if (searchText)      params.set("searchText", String(searchText));
+
+    const url = APPS_SCRIPT_URL + "?" + params.toString();
+
+    const options = {
+      method: "GET",
+      mode: "cors"
+    };
+
+    // Para la salida del catálogo intentamos que el navegador
+    // envíe la petición incluso al cerrar la pestaña
+    if (phase === "end") {
+      options.keepalive = true;
+    }
+
+    fetch(url, options).catch(err => {
+      console.error("Error enviando visita:", err);
     });
 
-    const url = `${APPS_SCRIPT_URL}?${params.toString()}`;
-
-    // Para la salida usamos sendBeacon si está disponible
-    if (phase === "end" && navigator.sendBeacon) {
-      navigator.sendBeacon(url);
-    } else {
-      // Ping clásico con una imagen invisible
-      const img = new Image();
-      img.src = url;
-    }
   } catch (e) {
     console.error("Error en sendVisitEvent:", e);
   }

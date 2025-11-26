@@ -7,7 +7,6 @@ const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
 // Servicio externo para IP pública + ciudad
 const CLIENT_INFO_URL = "https://ipapi.co/json/";
-
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
@@ -15,10 +14,10 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 });
 
 // ================== IMÁGENES (carpetas y extensiones) ==================
-const IMG_EXTS = ["webp", "WEBP", "png", "PNG", "jpg", "JPG", "jpeg", "JPEG"];
+// Todas las imágenes se esperan en formato .webp
+const IMG_EXTS = ["webp"];
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
 const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
-const imageCache = new Map();
 
 // ================== ESTADO ==================
 let products = [];
@@ -96,16 +95,13 @@ function escapeAttr(t) {
 
 function detectDeviceLabel() {
   const ua = navigator.userAgent || "";
-
   if (/android/i.test(ua)) return "Celular Android";
   if (/iphone|ipad|ipod/i.test(ua)) return "iPhone / iPad";
   if (/windows/i.test(ua)) return "PC Windows";
   if (/macintosh|mac os x/i.test(ua)) return "Mac";
   if (/linux/i.test(ua)) return "PC Linux";
-
   return "Dispositivo web";
 }
-
 
 // ================== REGISTRO DE VISITAS (POR SESIÓN) ==================
 function generateSessionId() {
@@ -131,7 +127,6 @@ function ensureSessionId() {
  * Usamos GET con querystring (como la URL que probaste) para evitar
  * problemas de CORS con POST application/json desde github.io.
  */
-// Envía el evento de visita usando GET con parámetros en la URL
 function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
   try {
     const sid = ensureSessionId();
@@ -150,14 +145,11 @@ function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
     if (searchText)      params.set("searchText", String(searchText));
 
     const url = APPS_SCRIPT_URL + "?" + params.toString();
-
     const options = {
       method: "GET",
       mode: "cors"
     };
 
-    // Para la salida del catálogo intentamos que el navegador
-    // envíe la petición incluso al cerrar la pestaña
     if (phase === "end") {
       options.keepalive = true;
     }
@@ -165,7 +157,6 @@ function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
     fetch(url, options).catch(err => {
       console.error("Error enviando visita:", err);
     });
-
   } catch (e) {
     console.error("Error en sendVisitEvent:", e);
   }
@@ -182,7 +173,6 @@ async function initClientLocation() {
     const data = await resp.json();
     clientIpPublica = data.ip || "";
     clientCiudad = data.city || "";
-    // Actualiza la fila de sesión con IP/ciudad
     sendVisitEvent("update");
   } catch (e) {
     console.error("No se pudo obtener IP/ciudad:", e);
@@ -210,6 +200,7 @@ function testImageOnce(url, timeout = 1200) {
         resolve(true);
       }
     };
+
     img.onerror = () => {
       if (!done) {
         done = true;
@@ -217,13 +208,14 @@ function testImageOnce(url, timeout = 1200) {
         resolve(false);
       }
     };
+
     img.decoding = "async";
     img.loading = "eager";
     img.src = url;
   });
 }
 
-// Intenta encontrar una imagen en otras_imagenes probando varias extensiones
+// Intenta encontrar una imagen en otras_imagenes probando extensiones definidas (ahora solo .webp)
 async function resolveOtherImage(baseName) {
   if (!baseName) return null;
   for (const ext of IMG_EXTS) {
@@ -236,61 +228,22 @@ async function resolveOtherImage(baseName) {
   return null;
 }
 
-async function resolveImageForCode(code, name) {
+// Cada producto usa SOLO codigo.webp (por ejemplo 123.webp)
+async function resolveImageForCode(code) {
   if (!code) return null;
-  const safeName = (name || "").trim();
-  const baseVariants = [];
+  const id = String(code).trim();
+  if (!id) return null;
 
-  // 1) Código solo: 123.webp / 123.png / 123.jpg / 123.jpeg...
-  baseVariants.push(String(code));
-
-  if (safeName) {
-    const safeNameSlug = safeName
-      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-zA-Z0-9]+/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
-    if (safeNameSlug) {
-      baseVariants.push(`${code}-${safeNameSlug}`);
-    }
-    // Código + nombre original
-    baseVariants.push(`${code}-${safeName}`);
-    // Patrón antiguo: 123@Nombre
-    baseVariants.push(`${code}@${safeName}`);
-  }
-
-  for (const base of baseVariants) {
-    for (const ext of IMG_EXTS) {
-      const key = `${base}.${ext}`;
-      const cached = imageCache.get(key);
-      if (cached) {
-        if (cached.ok) return cached.url;
-        continue;
-      }
-      const url = IMG_BASE_PATH + encodeURIComponent(base) + "." + ext;
-      const ok = await testImageOnce(url);
-      imageCache.set(key, { ok, url });
-      if (ok) return url;
-    }
-  }
-  return null;
+  const url = `${IMG_BASE_PATH}${encodeURIComponent(id)}.webp`;
+  const ok = await testImageOnce(url, 400); // timeout más corto para no bloquear si no existe
+  return ok ? url : null;
 }
 
-async function findAllImagesForProduct(prod, maxChildren = 12) {
+// Para la galería, de momento solo manejamos una imagen principal por producto
+async function findAllImagesForProduct(prod) {
   if (!prod || !prod.id) return [];
-  const id = String(prod.id).trim();
-  const name = String(prod.name || "").trim();
-  const images = [];
-
-  const main = await resolveImageForCode(id, name);
-  if (main) images.push(main);
-
-  for (let i = 1; i <= maxChildren; i++) {
-    const childCode = `${id}-${i}`;
-    const url = await resolveImageForCode(childCode, name);
-    if (url) images.push(url);
-  }
-  return images;
+  const main = await resolveImageForCode(prod.id);
+  return main ? [main] : [];
 }
 
 function renderThumbs(imgs, activeIndex) {
@@ -322,12 +275,14 @@ function setGalleryIndex(newIndex, userAction) {
 
   currentGallery.index = newIndex;
   const url = imgs[newIndex];
+
   previewImg.style.display = "block";
   previewImg.src = url;
 
   thumbs.querySelectorAll("img").forEach((im, idx) => {
     im.classList.toggle("active", idx === newIndex);
   });
+
   updateNavButtons();
 }
 
@@ -355,6 +310,7 @@ async function showPreviewForProduct(prod) {
   if (requestId !== lastPreviewRequestId) {
     return;
   }
+
   currentGallery.images = imgs;
   currentGallery.index = 0;
 
@@ -371,6 +327,7 @@ async function showPreviewForProduct(prod) {
     imageStatus.textContent = "";
     imageStatus.classList.remove("visible");
   }
+
   renderThumbs(imgs, 0);
   setGalleryIndex(0);
 }
@@ -468,9 +425,10 @@ function refreshFilters() {
     const key = normalizeText(raw);
     if (!key) return;
     if (!categoryMap.has(key)) {
-      categoryMap.set(key, raw); // guardamos la primera forma escrita
+      categoryMap.set(key, raw);
     }
   });
+
   allCategories = Array.from(categoryMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -486,6 +444,7 @@ function refreshFilters() {
       brandMap.set(key, raw);
     }
   });
+
   allBrands = Array.from(brandMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -495,7 +454,6 @@ function refreshFilters() {
   let catSaved = saved.category || "Todas";
   const brandSaved = saved.brand || "Todas";
 
-  // Compatibilidad con valores antiguos (etiquetas en vez de claves)
   if (catSaved !== "Todas") {
     catSaved = normalizeText(catSaved);
   }
@@ -595,12 +553,14 @@ function setupFilterListenersOnce() {
   searchInput.addEventListener("input", debounce(() => {
     const raw = searchInput.value || "";
     const term = raw.trim();
+
     if (!term) {
       currentSortOrder = "default";
       sortPriceBtn.textContent = "Ordenar por precio";
     }
+
     filterAndDisplayProducts();
-    // Registro de búsqueda en la sesión (solo si cambia la frase)
+
     if (term && term !== lastSearchLogged) {
       lastSearchLogged = term;
       sendVisitEvent("update", { searchText: term });
@@ -634,7 +594,7 @@ async function fetchProductsFromBackend() {
         ...p,
         valor_unitario: Number.isFinite(valor) ? valor : 0,
         orden: Number.isFinite(orden) ? orden : 999999,
-        stock: stockNum // Guardamos el stock normalizado
+        stock: stockNum
       };
     });
 
@@ -644,7 +604,7 @@ async function fetchProductsFromBackend() {
   } catch (err) {
     console.error("Error al cargar productos:", err);
     productTableBody.innerHTML =
-      '<tr><td colspan="6" style="text-align:center;">Error al cargar productos.</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;">Error al cargar productos.</td></tr>';
   }
 }
 
@@ -662,14 +622,14 @@ function sortByOrdenThenId(list) {
 function filterAndDisplayProducts() {
   let list = [...products];
 
-  // ==== FILTRO POR CATEGORÍA (usa clave normalizada) ====
+  // ==== FILTRO POR CATEGORÍA ====
   const catSel = categoryMenu.querySelector('input[name="category"]:checked');
   const catKey = catSel ? catSel.value : "Todas";
   if (catKey !== "Todas") {
     list = list.filter(p => normalizeText(p.category) === catKey);
   }
 
-  // ==== FILTRO POR MARCA (usa clave normalizada) ====
+  // ==== FILTRO POR MARCA ====
   const brandSel = brandMenu.querySelector('input[name="brand"]:checked');
   const brandVal = brandSel ? brandSel.value : "Todas";
   if (brandVal !== "Todas") {
@@ -680,6 +640,7 @@ function filterAndDisplayProducts() {
   const terms = normalizeText(searchInput.value)
     .split(/\s+/)
     .filter(Boolean);
+
   if (terms.length > 0) {
     list = list.filter(p => {
       const s = normalizeText(
@@ -704,7 +665,7 @@ function filterAndDisplayProducts() {
 function displayProducts(list) {
   if (!Array.isArray(list) || list.length === 0) {
     productTableBody.innerHTML =
-      '<tr><td colspan="6" style="text-align:center;">No hay productos.</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;">No hay productos.</td></tr>';
     return;
   }
 
@@ -716,23 +677,21 @@ function displayProducts(list) {
     const unitPrice = p.valor_unitario || 0;
     const subtotal = qty * unitPrice;
 
-    // LÓGICA STOCK: Si stock es menor o igual a 0, marcamos el producto.
     const isOutOfStock = (p.stock <= 0);
 
     const tr = document.createElement("tr");
     tr.setAttribute("data-product-id", p.id);
 
-    // Agregamos clase CSS si está agotado
     if (isOutOfStock) {
       tr.classList.add("product-row-out-of-stock");
     }
 
+    const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
+
     let quantityHtml = "";
     if (isOutOfStock) {
-      // Si no hay stock, mostramos mensaje y no botones
       quantityHtml = `<span class="stock-status-msg">AGOTADO</span>`;
     } else {
-      // Si hay stock, botones normales
       quantityHtml = `
         <div class="quantity-control">
           <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir">-</button>
@@ -744,6 +703,15 @@ function displayProducts(list) {
     }
 
     tr.innerHTML = `
+      <td data-label="Foto">
+        <img
+          class="product-thumb"
+          loading="lazy"
+          src="${thumbSrc}"
+          alt="Foto ${escapeAttr(p.name)}"
+          onerror="this.style.display='none';"
+        >
+      </td>
       <td data-label="Nombre"><span>${escapeHtml(p.name)}</span></td>
       <td data-label="Categoría">${escapeHtml(p.category)}</td>
       <td data-label="Marca">${escapeHtml(p.marca)}</td>
@@ -753,6 +721,7 @@ function displayProducts(list) {
       </td>
       <td data-label="Total" class="price-cell total-pay">${currencyFormatter.format(subtotal)}</td>
     `;
+
     frag.appendChild(tr);
   });
 
@@ -803,20 +772,22 @@ function updateCart() {
   localStorage.setItem(LS_CART_KEY, JSON.stringify(cart));
 }
 
-function buildClientWhatsAppMsg(items, header = "Hola, deseo comprar estos productos en Irenismb Stock Natura:") {
+function buildClientWhatsAppMsg(
+  items,
+  header = "Hola, deseo comprar estos productos en Irenismb Stock Natura:"
+) {
   let msg = header + "\n\n";
   let total = 0;
+
   items.forEach(it => {
     const sub = it.quantity * it.price;
     total += sub;
     msg += `• ${it.quantity} x ${it.name} = ${currencyFormatter.format(sub)}\n`;
   });
+
   msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
-  msg += `\nUbicación (GPS): https://maps.google.com/?q=11.244833370782679,-74.19066001689564`;
-  msg += `\nInstagram: https://www.instagram.com/irenismb_stocknaturasm`;
-  msg += `\nTikTok: https://www.tiktok.com/@irenismbstocknatura`;
-  msg += `\nFacebook Marketplace: https://www.facebook.com/marketplace/profile/100084865295132`;
-  msg += `\n\nGracias.`;
+  msg += `\nGracias.`;
+
   return msg;
 }
 
@@ -826,12 +797,12 @@ function handleWhatsAppClick() {
     alert("El carrito está vacío. Agrega productos antes de comprar por WhatsApp.");
     return;
   }
+
   const phone = DEFAULT_WHATSAPP;
   const msg = buildClientWhatsAppMsg(items);
   const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(msg)}`;
   window.open(url, "_blank");
 
-  // Registramos que se inició compra por WhatsApp
   sendVisitEvent("update", { clickText: "whatsapp_compra" });
 }
 
@@ -856,6 +827,7 @@ function updateCartEntry(id, name, price, qty) {
       quantity
     };
   }
+
   updateCart();
 }
 
@@ -866,20 +838,23 @@ productTableBody.addEventListener("click", e => {
   const tr = e.target.closest("tr");
   if (!tr) return;
 
-  // Verificación extra: si el tr tiene la clase de agotado, no hacemos nada
   if (tr.classList.contains("product-row-out-of-stock")) return;
 
   const input = tr.querySelector(".quantity-input");
 
   if (decBtn || incBtn) {
     if (!input) return;
+
     let qty = parseInt(input.value, 10);
     if (!Number.isFinite(qty) || qty < 0) qty = 0;
+
     const price = Number(input.dataset.price) || 0;
     const id = input.dataset.id;
     const name = input.dataset.name || "";
+
     if (incBtn) qty += 1;
     if (decBtn) qty = Math.max(0, qty - 1);
+
     input.value = qty;
     updateRowTotal(tr, qty, price);
     updateCartEntry(id, name, price, qty);
@@ -897,8 +872,6 @@ productTableBody.addEventListener("click", e => {
   const prod = products.find(p => String(p.id) === String(productId));
   if (prod) {
     showPreviewForProduct(prod);
-
-    // Registramos el nombre del producto al que se hizo clic
     const clickName = prod.name || prod.nombre || "";
     if (clickName) {
       sendVisitEvent("update", { clickText: clickName });
@@ -909,14 +882,17 @@ productTableBody.addEventListener("click", e => {
 productTableBody.addEventListener("change", e => {
   const input = e.target;
   if (!input.classList.contains("quantity-input")) return;
+
   const tr = input.closest("tr");
   if (!tr) return;
 
   let qty = parseInt(input.value, 10);
   if (!Number.isFinite(qty) || qty < 0) qty = 0;
+
   const price = Number(input.dataset.price) || 0;
   const id = input.dataset.id;
   const name = input.dataset.name || "";
+
   input.value = qty;
   updateRowTotal(tr, qty, price);
   updateCartEntry(id, name, price, qty);
@@ -926,6 +902,7 @@ productTableBody.addEventListener("change", e => {
 cartList.addEventListener("click", e => {
   const btn = e.target.closest(".remove-item-btn");
   if (!btn) return;
+
   const id = btn.dataset.id;
   if (!id) return;
 
@@ -938,6 +915,7 @@ cartList.addEventListener("click", e => {
     const totalCell = row.querySelector(".total-pay");
     if (totalCell) totalCell.textContent = currencyFormatter.format(0);
   }
+
   updateCart();
 });
 
@@ -975,14 +953,9 @@ function setupAutoRefresh() {
   fetchProductsFromBackend();
   setupAutoRefresh();
 
-  // NUEVO: identificar el dispositivo y guardarlo en userName
   userName = detectDeviceLabel();
-
-  // Iniciamos la sesión de visita
   ensureSessionId();
   sendVisitEvent("start");
-
-  // Obtenemos IP pública y ciudad y las asociamos a la sesión
   initClientLocation();
 })();
 
@@ -995,7 +968,7 @@ window.addEventListener("beforeunload", function () {
   }
 });
 
-// Fondo dinámico con logo_natura (admite webp, png, jpg, jpeg)
+// Fondo dinámico con logo_natura (admite .webp)
 (async function setDynamicBackground() {
   try {
     const bgUrl = await resolveOtherImage("logo_natura");

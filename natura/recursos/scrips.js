@@ -1,12 +1,15 @@
 // ================== CONFIG ==================
 const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
+
 const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
 const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
+
 // Servicio externo para IP pública + ciudad
 const CLIENT_INFO_URL = "https://ipapi.co/json/";
+
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
@@ -14,8 +17,8 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 });
 
 // ================== IMÁGENES (carpetas y extensiones) ==================
-// Todas las imágenes se esperan en formato .webp
-const IMG_EXTS = ["webp"];
+// Para productos se usa .webp; en otras imágenes se prueban varios formatos
+const IMG_EXTS = ["webp", "jpeg", "jpg", "png"];
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
 const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
 
@@ -25,10 +28,13 @@ let allCategories = []; // [{ key, label }]
 let allBrands = [];     // [{ key, label }]
 let currentSortOrder = "default"; // default → Orden, asc → precio menor, desc → precio mayor
 let cart = {};          // id -> { id, name, price, quantity }
+
 let currentGallery = { productId: null, images: [], index: 0 };
 let lastPreviewRequestId = 0;
+
 let filterListenersAttached = false;
 let lastSearchLogged = "";
+
 let autoRefreshTimer = null;
 
 // Estado para visitas por sesión
@@ -44,10 +50,12 @@ const cartList = document.getElementById("cartList");
 const totalPriceElement = document.getElementById("totalPrice");
 const whatsappBtn = document.getElementById("whatsappBtn");
 const sortPriceBtn = document.getElementById("sortPriceBtn");
+
 const categoryMenu = document.getElementById("categoryMenu");
 const brandMenu = document.getElementById("brandMenu");
 const categoryToggleBtn = document.getElementById("categoryToggleBtn");
 const brandToggleBtn = document.getElementById("brandToggleBtn");
+
 const productPreview = document.getElementById("productPreview");
 const previewImg = document.getElementById("previewImg");
 const previewCaption = document.getElementById("previewCaption");
@@ -130,8 +138,8 @@ function ensureSessionId() {
 function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
   try {
     const sid = ensureSessionId();
-    const params = new URLSearchParams();
 
+    const params = new URLSearchParams();
     // Acción del Apps Script
     params.set("action", "logVisit");
     params.set("sessionId", sid);
@@ -145,11 +153,12 @@ function sendVisitEvent(phase, { clickText = "", searchText = "" } = {}) {
     if (searchText)      params.set("searchText", String(searchText));
 
     const url = APPS_SCRIPT_URL + "?" + params.toString();
+
     const options = {
       method: "GET",
       mode: "cors"
     };
-
+    // keepalive para fase "end"
     if (phase === "end") {
       options.keepalive = true;
     }
@@ -200,7 +209,6 @@ function testImageOnce(url, timeout = 1200) {
         resolve(true);
       }
     };
-
     img.onerror = () => {
       if (!done) {
         done = true;
@@ -208,14 +216,13 @@ function testImageOnce(url, timeout = 1200) {
         resolve(false);
       }
     };
-
     img.decoding = "async";
     img.loading = "eager";
     img.src = url;
   });
 }
 
-// Intenta encontrar una imagen en otras_imagenes probando extensiones definidas (ahora solo .webp)
+// Intenta encontrar una imagen en otras_imagenes probando extensiones definidas
 async function resolveOtherImage(baseName) {
   if (!baseName) return null;
   for (const ext of IMG_EXTS) {
@@ -288,16 +295,20 @@ function setGalleryIndex(newIndex, userAction) {
 
 async function showPreviewForProduct(prod) {
   if (!prod) return;
+
   const requestId = ++lastPreviewRequestId;
+
   const name = (prod.name || "").trim();
   const descriptionText = prod.description || "Sin descripción para este producto.";
 
   previewName.textContent = name ? name.toUpperCase() : "";
   previewCaption.textContent = descriptionText;
   previewCaption.classList.remove("loading");
+
   previewImg.style.display = "none";
   previewImg.src = "";
   thumbs.innerHTML = "";
+
   currentGallery = { productId: prod.id, images: [], index: 0 };
   updateNavButtons();
 
@@ -307,6 +318,7 @@ async function showPreviewForProduct(prod) {
   }
 
   const imgs = await findAllImagesForProduct(prod);
+
   if (requestId !== lastPreviewRequestId) {
     return;
   }
@@ -336,6 +348,7 @@ async function showPreviewForProduct(prod) {
 galleryPrevBtn.addEventListener("click", () => {
   setGalleryIndex(currentGallery.index - 1, true);
 });
+
 galleryNextBtn.addEventListener("click", () => {
   setGalleryIndex(currentGallery.index + 1, true);
 });
@@ -344,9 +357,11 @@ galleryNextBtn.addEventListener("click", () => {
 (function addSwipe(el) {
   if (!el) return;
   let startX = null;
+
   el.addEventListener("touchstart", e => {
     startX = e.changedTouches[0].clientX;
   }, { passive: true });
+
   el.addEventListener("touchend", e => {
     if (startX == null) return;
     const dx = e.changedTouches[0].clientX - startX;
@@ -428,7 +443,6 @@ function refreshFilters() {
       categoryMap.set(key, raw);
     }
   });
-
   allCategories = Array.from(categoryMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -444,7 +458,6 @@ function refreshFilters() {
       brandMap.set(key, raw);
     }
   });
-
   allBrands = Array.from(brandMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -453,7 +466,6 @@ function refreshFilters() {
   const saved = getSavedFilters();
   let catSaved = saved.category || "Todas";
   const brandSaved = saved.brand || "Todas";
-
   if (catSaved !== "Todas") {
     catSaved = normalizeText(catSaved);
   }
@@ -519,6 +531,7 @@ function setupFilterListenersOnce() {
 
   document.addEventListener("click", e => {
     const t = e.target;
+
     if (t.classList.contains("dropdown-toggle-btn")) {
       e.stopPropagation();
       const dd = t.closest(".custom-dropdown");
@@ -526,6 +539,7 @@ function setupFilterListenersOnce() {
       const wasOpen = dd.classList.contains("open");
       closeDropdowns();
       dd.classList.toggle("open", !wasOpen);
+
       const menu = dd.querySelector(".custom-menu");
       if (menu) menu.setAttribute("aria-hidden", wasOpen ? "true" : "false");
       t.setAttribute("aria-expanded", (!wasOpen).toString());
@@ -573,6 +587,7 @@ async function fetchProductsFromBackend() {
   try {
     const resp = await fetch(APPS_SCRIPT_URL + "?action=getAll&ts=" + Date.now());
     if (!resp.ok) throw new Error("Error de red al cargar productos");
+
     const data = await resp.json();
     if (data.status !== "success" || !Array.isArray(data.products)) {
       throw new Error(data.message || "Respuesta inválida del servidor");
@@ -676,7 +691,6 @@ function displayProducts(list) {
     const qty = item ? item.quantity : 0;
     const unitPrice = p.valor_unitario || 0;
     const subtotal = qty * unitPrice;
-
     const isOutOfStock = (p.stock <= 0);
 
     const tr = document.createElement("tr");
@@ -787,7 +801,6 @@ function buildClientWhatsAppMsg(
 
   msg += `\nTotal: ${currencyFormatter.format(total)}\n`;
   msg += `\nGracias.`;
-
   return msg;
 }
 
@@ -827,7 +840,6 @@ function updateCartEntry(id, name, price, qty) {
       quantity
     };
   }
-
   updateCart();
 }
 
@@ -838,10 +850,8 @@ productTableBody.addEventListener("click", e => {
   const tr = e.target.closest("tr");
   if (!tr) return;
 
-  if (tr.classList.contains("product-row-out-of-stock")) return;
-
+  // Controles de cantidad
   const input = tr.querySelector(".quantity-input");
-
   if (decBtn || incBtn) {
     if (!input) return;
 
@@ -882,7 +892,6 @@ productTableBody.addEventListener("click", e => {
 productTableBody.addEventListener("change", e => {
   const input = e.target;
   if (!input.classList.contains("quantity-input")) return;
-
   const tr = input.closest("tr");
   if (!tr) return;
 
@@ -968,7 +977,7 @@ window.addEventListener("beforeunload", function () {
   }
 });
 
-// Fondo dinámico con logo_natura (admite .webp)
+// Fondo dinámico con logo_natura (admite varias extensiones)
 (async function setDynamicBackground() {
   try {
     const bgUrl = await resolveOtherImage("logo_natura");

@@ -2,3 +2,8 @@ aun no escribas codigo. en cuanto al punto 8, las palabras ni frases no deben es
 
 
 que archivos cambiarian si se aplican todas estas modificaciones?
+
+
+el logo_empresa con extension webp, no lo esta tomando, solo png
+
+quiero que cuando un usuario le de clic a una de las imagenes de un producto, esta se abra de inmediato, para poder verla mas grande

@@ -1,0 +1,221 @@
+/* ===== Capa de refinamiento extra (header, fondo, etc.) ===== */
+.site-header{
+  max-width:1200px;
+  margin:0 auto 16px;
+  padding:10px 14px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.95);
+  box-shadow:0 16px 40px rgba(15,23,42,0.18);
+  border:1px solid rgba(148,163,184,0.35);
+  backdrop-filter:blur(12px);
+}
+.site-header-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+.site-brand{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.site-brand img{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  object-fit:cover;
+  box-shadow:0 8px 22px rgba(15,23,42,0.35);
+}
+.site-brand h1{
+  margin:0;
+  font-size:20px;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:#0f172a;
+}
+.site-brand p{
+  margin:3px 0 0;
+  font-size:13px;
+  color:#6b7280;
+}
+.site-badge{
+  border-radius:999px;
+  background:linear-gradient(90deg,#22c55e,#a3e635);
+  padding:6px 14px;
+  font-size:12px;
+  color:#052e16;
+  font-weight:600;
+  box-shadow:0 10px 24px rgba(34,197,94,0.45);
+  white-space:nowrap;
+}
+/* Ajustes generales de fondo y contenedor */
+body{
+  padding:18px;
+  background-color:#e5e7eb;
+  /* la imagen de fondo se asigna dinámicamente desde scrips.js */
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+}
+.container{
+  max-width:1200px;
+  margin:0 auto;
+  padding:20px 20px 24px;
+  background:rgba(255,255,255,0.96);
+  border-radius:20px;
+  box-shadow:0 24px 60px rgba(15,23,42,0.22);
+  border:1px solid rgba(148,163,184,0.4);
+  backdrop-filter:blur(14px);
+}
+/* Transiciones y estados de foco globales */
+button,
+input,
+select{
+  transition:background .15s ease,box-shadow .15s ease,border-color .15s ease,transform .05s ease,color .15s ease;
+}
+button:focus-visible,
+input:focus-visible{
+  outline:2px solid var(--primary);
+  outline-offset:2px;
+}
+/* Controles superiores refinados */
+.controls-panel{
+  margin-bottom:18px;
+  background:linear-gradient(135deg,#ffffff 0,#f9fafb 45%,#eef2ff 100%);
+  border-radius:16px;
+  box-shadow:0 14px 32px rgba(15,23,42,0.12);
+}
+.products-header{
+  gap:12px;
+}
+#searchInput{
+  font-size:15px;
+  padding:11px 18px;
+}
+/* Tabla y filas */
+.product-table thead th{
+  font-size:12px;
+  padding:10px 8px;
+  letter-spacing:.08em;
+}
+.product-table tbody tr{
+  transition:background .12s ease,transform .06s ease,box-shadow .12s ease;
+}
+.product-table tbody tr:hover{
+  background:#eef2ff;
+  box-shadow:0 8px 18px rgba(148,163,184,0.4);
+  transform:translateY(-1px);
+}
+.product-table td{
+  font-size:14px;
+  line-height:1.4;
+}
+.product-table td[data-label="Nombre"] span{
+  font-weight:600;
+}
+/* Mensaje de “Cargando productos…” */
+.product-table td[colspan="6"],
+.product-table td[colspan="7"]{
+  padding:18px;
+  font-size:14px;
+  color:#6b7280;
+}
+/* Scrollbars personalizados */
+.table-wrapper,
+.right-panel,
+#cartList,
+.thumbs{
+  scrollbar-width:thin;
+  scrollbar-color:rgba(148,163,184,0.8) transparent;
+}
+.table-wrapper::-webkit-scrollbar,
+.right-panel::-webkit-scrollbar,
+#cartList::-webkit-scrollbar,
+.thumbs::-webkit-scrollbar{
+  width:8px;
+  height:8px;
+}
+.table-wrapper::-webkit-scrollbar-track,
+.right-panel::-webkit-scrollbar-track,
+#cartList::-webkit-scrollbar-track,
+.thumbs::-webkit-scrollbar-track{
+  background:transparent;
+}
+.table-wrapper::-webkit-scrollbar-thumb,
+.right-panel::-webkit-scrollbar-thumb,
+#cartList::-webkit-scrollbar-thumb,
+.thumbs::-webkit-scrollbar-thumb{
+  background:rgba(148,163,184,0.8);
+  border-radius:999px;
+}
+/* Miniaturas y galería */
+.preview{
+  border-radius:16px;
+}
+.preview .stage{
+  box-shadow:0 16px 32px rgba(15,23,42,0.25);
+}
+.preview .product-name{
+  font-size:13px;
+  letter-spacing:.1em;
+}
+.thumbs img{
+  transition:transform .12s ease,box-shadow .12s ease,border-color .12s ease;
+}
+.thumbs img:hover{
+  transform:translateY(-2px) scale(1.03);
+  box-shadow:0 8px 18px rgba(15,23,42,0.25);
+}
+/* Botones de cantidad */
+.quantity-btn{
+  box-shadow:0 3px 8px rgba(37,99,235,0.25);
+}
+.quantity-btn:hover{
+  transform:translateY(-1px);
+}
+/* Carrito y contacto */
+.cart-container{
+  border-radius:16px;
+}
+.contact-info{
+  border-radius:16px;
+}
+#whatsappBtn{
+  border-radius:999px;
+  letter-spacing:.03em;
+  font-size:15px;
+}
+#whatsappBtn::before{
+  content:"🟢 ";
+}
+/* Ajustes móviles para header y contenedor extra */
+@media (max-width:768px){
+  .site-header{
+    margin:0 0 12px;
+    padding:10px 10px;
+    border-radius:12px;
+  }
+  .site-header-inner{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+  .site-badge{
+    align-self:stretch;
+    text-align:center;
+  }
+  body{
+    padding:10px;
+    background:#f3f4f6;
+  }
+  .container{
+    max-width:100%;
+    padding:0;
+    margin:0;
+    border-radius:0;
+    box-shadow:none;
+    border:none;
+    background:transparent;
+  }
+}

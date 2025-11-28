@@ -1,0 +1,113 @@
+/* ===== Modal de imagen ampliada (ajustado para ver la foto completa) ===== */
+.image-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+.image-modal.open{
+  display:flex;
+}
+.image-modal-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,0.75);
+}
+.image-modal-content{
+  position:relative;
+  z-index:1;
+  box-sizing:border-box;
+  padding:8px;
+  max-width:min(96vw, 960px);
+  max-height:90vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.image-modal-content img{
+  display:block;
+  width:auto;
+  height:auto;
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;           /* ← asegura que se vea completa sin recortar */
+  border-radius:12px;
+  box-shadow:0 20px 45px rgba(0,0,0,0.6);
+  background:#000;
+}
+.image-modal-close{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  border:none;
+  background:rgba(15,23,42,0.8);
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.5);
+}
+.image-modal-close:focus-visible{
+  outline:2px solid #fff;
+  outline-offset:2px;
+}
+@media (max-width:768px){
+  .image-modal-content{
+    max-width:96vw;
+    max-height:86vh;   /* un poco más bajo para dejar margen en móviles */
+    padding:4px;
+  }
+}
+/* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
+.product-row-out-of-stock {
+  background-color: #e5e7eb !important;
+  color: #9ca3af !important;
+  opacity: 0.7;
+  user-select: none;
+}
+.product-row-out-of-stock td {
+  background-color: #e5e7eb !important;
+  border-color: #d1d5db !important;
+}
+.product-row-out-of-stock .price-cell,
+.product-row-out-of-stock strong,
+.product-row-out-of-stock span {
+  color: #9ca3af !important;
+  font-weight: normal !important;
+}
+.stock-status-msg {
+  font-weight: bold;
+  color: #6b7280; 
+  text-transform: uppercase;
+  font-size: 12px;
+  text-align: center;
+  display: block;
+  padding: 4px 0;
+}
+/* Ocultar la tira de miniaturas de la galería (solo dejamos la imagen grande) */
+.thumbs{
+  display: none !important;
+}
+/* ===== Bloque final móvil: igualar altura de buscador y filtros ===== */
+@media (max-width:768px){
+  .controls-top{
+    flex-direction:column;
+    align-items:stretch;
+  }
+  #searchInput,
+  #sortPriceBtn,
+  .dropdown-toggle-btn{
+    width:100%;
+    min-height:38px;
+    padding:8px 14px;
+    font-size:14px;
+    line-height:1.2;
+  }
+}

@@ -6,6 +6,7 @@
   <!-- Favicon / ícono de pestaña -->
   <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
   <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
+
   <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
   <meta property="og:type" content="website">
   <!-- URL EXACTA de esta página -->
@@ -19,14 +20,20 @@
   <meta property="og:image:height" content="800">
   <meta property="og:site_name" content="Irenismb Stock Natura">
   <meta property="og:locale" content="es_CO">
+
   <!-- Metadatos Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
   <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
   <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <!-- Hoja de estilos principal -->
-  <link rel="stylesheet" href="recursos/estilos.css">
+
+  <!-- Hojas de estilos divididas (carpeta stilos) -->
+  <link rel="stylesheet" href="recursos/stilos/01-base.css">
+  <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
+  <link rel="stylesheet" href="recursos/stilos/03-refinamiento.css">
+  <link rel="stylesheet" href="recursos/stilos/04-extras-modal-stock.css">
 </head>
 <body>
   <!-- ENCABEZADO PRINCIPAL -->
@@ -44,6 +51,7 @@
       </div>
     </div>
   </header>
+
   <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
     <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
@@ -133,6 +141,7 @@
           </div>
         </div>
       </div>
+
       <!-- TABLA DE PRODUCTOS -->
       <div class="table-wrapper">
         <table class="product-table" aria-label="Listado de productos">
@@ -155,6 +164,7 @@
         </table>
       </div>
     </div>
+
     <!-- PANEL DERECHO: PREVIEW + CARRITO + CONTACTO -->
     <div class="right-panel">
       <!-- Vista previa del producto (galería) -->
@@ -172,6 +182,7 @@
           Haz clic en un producto para ver su descripción
         </div>
       </div>
+
       <!-- Carrito -->
       <div class="cart-container" id="cartContainer">
         <h3>🛒 Carrito de Compras</h3>
@@ -183,6 +194,7 @@
         <div id="totalPrice">Total: 0</div>
         <button id="whatsappBtn">Comprar por WhatsApp</button>
       </div>
+
       <!-- Contacto y Descripción -->
       <div class="contact-info">
         <h3>✨ Sobre Nosotros ✨</h3>
@@ -214,7 +226,11 @@
     </div>
   </div>
 
-  <!-- Script principal -->
-  <script src="recursos/scrips.js"></script>
+  <!-- Scripts divididos (carpeta scrips) -->
+  <script src="recursos/scrips/config-estado-dom.js"></script>
+  <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
+  <script src="recursos/scrips/filtros-tabla-productos.js"></script>
+  <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
+  <script src="recursos/scrips/visitas-ubicacion.js"></script>
 </body>
 </html>

@@ -250,6 +250,19 @@
         </p>
       </div>
 
+      <!-- NUEVO: título personalizado -->
+      <div class="pdf-title-row">
+        <label for="pdfCustomTitle" class="pdf-title-label">Título del catálogo (opcional)</label>
+        <input
+          id="pdfCustomTitle"
+          class="pdf-title-input"
+          type="text"
+          maxlength="60"
+          placeholder="Ej: Catálogo Navideño, Especial Mamá, Promos de Abril..."
+          autocomplete="off"
+        >
+      </div>
+
       <div class="pdf-actions">
         <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
         <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
@@ -260,10 +273,6 @@
       <div id="pdfProductList" class="pdf-product-list" role="list"></div>
 
       <div class="pdf-footer">
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfIncludeDescription" checked>
-          Incluir descripción
-        </label>
         <label class="pdf-option">
           <input type="checkbox" id="pdfIncludePrices" checked>
           Incluir precios

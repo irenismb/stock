@@ -2,7 +2,7 @@
 // Requiere: config-estado-dom.js, utilidades-imagenes-galeria.js
 //          y la librería jsPDF UMD cargada en catalogo.html
 
-const PDF_PRODUCTS_PER_PAGE = 6; // ✅ requisito del usuario
+const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
 
@@ -25,7 +25,6 @@ function safeArray(a) {
 }
 
 function getBaseListForPdfModal() {
-  // Preferimos mostrar la lista filtrada actual si existe
   if (Array.isArray(currentFilteredProducts) && currentFilteredProducts.length) {
     return currentFilteredProducts;
   }
@@ -54,6 +53,12 @@ function todayLabel() {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+function getCustomPdfTitle() {
+  const raw = pdfCustomTitle ? String(pdfCustomTitle.value || "") : "";
+  const t = raw.trim();
+  return t;
 }
 
 // ---------- Modal ----------
@@ -235,7 +240,7 @@ async function dataUrlToJpegDataUrl(dataUrl) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    // fondo blanco para evitar transparencias raras
+    // Fondo blanco
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
@@ -263,12 +268,11 @@ async function loadImageForPdf(url) {
   return pack;
 }
 
-// ---------- Dibujo de página / tarjetas ----------
+// ---------- Encabezado ----------
 function drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, totalPages) {
   const marginX = 10;
   const headerY = 8;
 
-  // Línea superior suave
   doc.setDrawColor(226, 232, 240);
 
   // Logo opcional
@@ -278,7 +282,7 @@ function drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, to
     } catch (e) {}
   }
 
-  // Título
+  // Título principal (custom o marca)
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
@@ -300,8 +304,9 @@ function drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, to
   doc.line(marginX, 22, pageW - marginX, 22);
 }
 
+// ---------- Tarjeta de producto (SIN descripción) ----------
 function drawProductCard(doc, p, x, y, w, h, options) {
-  const { imgPack, includeDescription, includePrices } = options;
+  const { imgPack, includePrices } = options;
 
   // Tarjeta
   doc.setDrawColor(226, 232, 240);
@@ -319,19 +324,14 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   const innerH = h - pad * 2;
 
   /**
-   * ✅ AUMENTO DE IMAGEN
-   * Antes estaba fijo en ~26mm.
-   * Ahora intentamos un tamaño ~3x, pero lo limitamos para que
-   * siempre quepa dentro de la tarjeta sin romper texto.
+   * ✅ Imagen grande y sin desperdicio por descripción.
+   * Usamos una porción alta de la tarjeta para foto.
    */
-  const BASE_IMG = 26; 
-  const target = BASE_IMG * 3; // petición del usuario
-  const maxByHeight = innerH * 0.70; // reservamos espacio para textos
-  const imgSize = Math.max(28, Math.min(target, innerW, maxByHeight));
+  const maxByHeight = innerH * 0.78;
+  const imgSize = Math.max(32, Math.min(innerW, maxByHeight));
 
   const imgW = imgSize;
   const imgH = imgSize;
-
   const imgY = innerY;
   const imgX = innerX + (innerW - imgW) / 2;
 
@@ -350,27 +350,25 @@ function drawProductCard(doc, p, x, y, w, h, options) {
     doc.text("Sin imagen", imgX + imgW / 2, imgY + imgH / 2, { align: "center" });
   }
 
-  // Textos
   let cursorY = imgY + imgH + 4;
 
   const name = (p.name || "").toString().trim();
   const marca = (p.marca || "").toString().trim();
   const category = (p.category || "").toString().trim();
   const price = Number(p.valor_unitario) || 0;
-  const desc = (p.description || "").toString().trim();
 
   // Nombre
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
+  doc.setFontSize(10.2);
   doc.setTextColor(15, 23, 42);
   const nameLines = doc.splitTextToSize(name || "Producto", innerW);
   const limitedName = nameLines.slice(0, 2);
   doc.text(limitedName, innerX, cursorY);
-  cursorY += limitedName.length * 4.2;
+  cursorY += limitedName.length * 4.3;
 
   // Marca / categoría
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
+  doc.setFontSize(8.6);
   doc.setTextColor(71, 85, 105);
   const subText = [marca, category].filter(Boolean).join(" • ");
   if (subText) {
@@ -382,23 +380,9 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   // Precio
   if (includePrices) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(10);
+    doc.setFontSize(10.5);
     doc.setTextColor(5, 150, 105);
     doc.text(currencyFormatter.format(price), innerX, cursorY + 1);
-    cursorY += 5;
-  } else {
-    cursorY += 2;
-  }
-
-  // Descripción
-  if (includeDescription && desc) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(55, 65, 81);
-
-    const maxDescLines = 3;
-    const descLines = doc.splitTextToSize(desc, innerW).slice(0, maxDescLines);
-    doc.text(descLines, innerX, cursorY + 1);
   }
 }
 
@@ -420,7 +404,6 @@ async function generatePdf() {
     return;
   }
 
-  const includeDescription = !!(pdfIncludeDescription && pdfIncludeDescription.checked);
   const includePrices = !!(pdfIncludePrices && pdfIncludePrices.checked);
 
   // Orden estable: por nombre
@@ -446,8 +429,13 @@ async function generatePdf() {
   } catch (e) {}
   const logoPack = logoUrl ? await loadImageForPdf(logoUrl) : null;
 
-  const titleText = "Irenismb Stock Natura";
-  const subtitleText = `Catálogo generado ${todayLabel()} • Envíos a toda Colombia`;
+  // Título personalizado
+  const customTitle = getCustomPdfTitle();
+
+  const titleText = customTitle || "Irenismb Stock Natura";
+  const subtitleText = customTitle
+    ? `Irenismb Stock Natura • Generado ${todayLabel()} • Envíos a toda Colombia`
+    : `Catálogo generado ${todayLabel()} • Envíos a toda Colombia`;
 
   // Layout de tarjetas
   const marginX = 10;
@@ -472,26 +460,30 @@ async function generatePdf() {
     for (let i = 0; i < pageItems.length; i++) {
       const p = pageItems[i];
 
-      const pos = i; // 0..5
-      const row = Math.floor(pos / PDF_COLS);
-      const col = pos % PDF_COLS;
+      const row = Math.floor(i / PDF_COLS);
+      const col = i % PDF_COLS;
 
       const x = marginX + col * (cardW + gapX);
       const y = headerBottomY + row * (cardH + gapY);
 
-      // Imagen del producto
       const imgUrl = `${IMG_BASE_PATH}${encodeURIComponent(p.id)}.webp`;
       const imgPack = await loadImageForPdf(imgUrl);
 
       drawProductCard(doc, p, x, y, cardW, cardH, {
         imgPack,
-        includeDescription,
         includePrices
       });
     }
   }
 
-  const filename = `catalogo-irenismb-${todayLabel()}.pdf`;
+  const safeTitle = (customTitle || "catalogo")
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .trim()
+    .replace(/\s+/g, "-")
+    .slice(0, 40);
+
+  const filename = `catalogo-${safeTitle}-${todayLabel()}.pdf`;
   doc.save(filename);
 }
 

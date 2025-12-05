@@ -32,7 +32,7 @@
   height:auto;
   max-width:100%;
   max-height:100%;
-  object-fit:contain;           /* ← asegura que se vea completa sin recortar */
+  object-fit:contain;
   border-radius:12px;
   box-shadow:0 20px 45px rgba(0,0,0,0.6);
   background:#000;
@@ -61,7 +61,7 @@
 @media (max-width:768px){
   .image-modal-content{
     max-width:96vw;
-    max-height:86vh;   /* un poco más bajo para dejar margen en móviles */
+    max-height:86vh;
     padding:4px;
   }
 }
@@ -116,7 +116,7 @@
 }
 
 /* =============================================================================
-   NUEVO: Modal de exportación PDF + botón
+   Modal de exportación PDF + botón
    ============================================================================= */
 .pdf-btn{
   padding:8px 12px;
@@ -201,6 +201,38 @@
   margin:0;
   font-size:12.5px;
   color:#64748b;
+}
+
+/* NUEVO: fila del título personalizado */
+.pdf-title-row{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  background:#f8fafc;
+  border:1px solid #e2e8f0;
+  border-radius:12px;
+  padding:10px 12px;
+}
+.pdf-title-label{
+  font-size:12.5px;
+  font-weight:600;
+  color:#0f172a;
+  white-space:nowrap;
+}
+.pdf-title-input{
+  flex:1 1 320px;
+  min-width:220px;
+  border:1px solid #e2e8f0;
+  background:#ffffff;
+  border-radius:999px;
+  padding:8px 12px;
+  font-size:12.5px;
+  outline:none;
+}
+.pdf-title-input:focus{
+  border-color:#93c5fd;
+  box-shadow:0 0 0 2px rgba(37,99,235,0.12);
 }
 
 /* Botones de acción rápida */
@@ -348,6 +380,12 @@
   }
   .pdf-footer{
     justify-content:flex-start;
+  }
+  .pdf-title-row{
+    align-items:stretch;
+  }
+  .pdf-title-input{
+    width:100%;
   }
 }
 

@@ -1,28 +1,35 @@
 // ================== EXPORTACIÓN DE CATÁLOGO A PDF ==================
 // Requiere: config-estado-dom.js, utilidades-imagenes-galeria.js
 //          y la librería jsPDF UMD cargada en catalogo.html
+
 const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
+
 // Estado de selección para exportar
 const pdfSelection = new Set(); // ids como string
+
 // Cache simple de imágenes para el PDF
 const pdfImageCache = new Map(); // url -> { dataUrl, format }
+
 // ---------- Utilidades ----------
 function getJsPDFClass() {
   if (window.jspdf && window.jspdf.jsPDF) return window.jspdf.jsPDF;
   if (window.jsPDF) return window.jsPDF;
   return null;
 }
+
 function safeArray(a) {
   return Array.isArray(a) ? a : [];
 }
+
 function getBaseListForPdfModal() {
   if (Array.isArray(currentFilteredProducts) && currentFilteredProducts.length) {
     return currentFilteredProducts;
   }
   return safeArray(products);
 }
+
 function getProductById(id) {
   const sid = String(id);
   const p =
@@ -30,6 +37,7 @@ function getProductById(id) {
     safeArray(currentFilteredProducts).find(x => String(x.id) === sid);
   return p || null;
 }
+
 function chunkArray(list, size) {
   const out = [];
   for (let i = 0; i < list.length; i += size) {
@@ -37,6 +45,7 @@ function chunkArray(list, size) {
   }
   return out;
 }
+
 function todayLabel() {
   const d = new Date();
   const y = d.getFullYear();
@@ -44,6 +53,7 @@ function todayLabel() {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
 // ---------- Subtítulo PDF (persistente) ----------
 function loadSubtitleFromStorage() {
   if (!pdfCustomTitle) return "";
@@ -56,6 +66,7 @@ function loadSubtitleFromStorage() {
     return "";
   }
 }
+
 function saveSubtitleToStorage() {
   if (!pdfCustomTitle) return;
   try {
@@ -67,6 +78,7 @@ function saveSubtitleToStorage() {
     }
   } catch (e) {}
 }
+
 function getCustomPdfSubtitle() {
   const raw = pdfCustomTitle ? String(pdfCustomTitle.value || "") : "";
   const t = raw.trim();
@@ -79,6 +91,7 @@ function getCustomPdfSubtitle() {
     return "";
   }
 }
+
 // Guardar mientras escribe (suave y sin ruido)
 if (pdfCustomTitle) {
   pdfCustomTitle.addEventListener(
@@ -88,6 +101,7 @@ if (pdfCustomTitle) {
     }, 250)
   );
 }
+
 // ---------- Modal ----------
 function openPdfModal() {
   if (!pdfModal) return;
@@ -98,6 +112,7 @@ function openPdfModal() {
   document.body.style.overflow = "hidden";
   try { pdfCustomTitle && pdfCustomTitle.focus(); } catch (e) {}
 }
+
 function closePdfModal() {
   if (!pdfModal) return;
   saveSubtitleToStorage();
@@ -105,6 +120,7 @@ function closePdfModal() {
   pdfModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
 }
+
 if (pdfBtn) {
   pdfBtn.addEventListener("click", openPdfModal);
 }
@@ -114,11 +130,13 @@ if (pdfModalClose) {
 if (pdfModalBackdrop) {
   pdfModalBackdrop.addEventListener("click", closePdfModal);
 }
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && pdfModal && pdfModal.classList.contains("open")) {
     closePdfModal();
   }
 });
+
 // ---------- Render de lista seleccionable ----------
 function renderPdfSelectionList() {
   if (!pdfProductList) return;
@@ -128,12 +146,14 @@ function renderPdfSelectionList() {
       `<div class="pdf-empty">No hay productos cargados aún.</div>`;
     return;
   }
+
   const frag = document.createDocumentFragment();
   baseList.forEach(p => {
     const id = String(p.id);
     const checked = pdfSelection.has(id);
     const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
     const price = Number(p.valor_unitario) || 0;
+
     const label = document.createElement("label");
     label.className = "pdf-product-item";
     label.setAttribute("role", "listitem");
@@ -164,9 +184,11 @@ function renderPdfSelectionList() {
     `;
     frag.appendChild(label);
   });
+
   pdfProductList.innerHTML = "";
   pdfProductList.appendChild(frag);
 }
+
 // Delegación de cambios de checkbox
 if (pdfProductList) {
   pdfProductList.addEventListener("change", e => {
@@ -178,6 +200,7 @@ if (pdfProductList) {
     else pdfSelection.delete(String(id));
   });
 }
+
 // ---------- Botones de selección rápida ----------
 function selectAllFrom(list) {
   pdfSelection.clear();
@@ -186,14 +209,17 @@ function selectAllFrom(list) {
   });
   renderPdfSelectionList();
 }
+
 function selectNone() {
   pdfSelection.clear();
   renderPdfSelectionList();
 }
+
 function selectFiltered() {
   const list = getBaseListForPdfModal();
   selectAllFrom(list);
 }
+
 function selectFromCart() {
   const items = Object.values(cart || {}).filter(it => it && it.quantity > 0);
   if (!items.length) {
@@ -204,6 +230,7 @@ function selectFromCart() {
   items.forEach(it => pdfSelection.add(String(it.id)));
   renderPdfSelectionList();
 }
+
 if (pdfSelectAllBtn) {
   pdfSelectAllBtn.addEventListener("click", () => selectAllFrom(safeArray(products)));
 }
@@ -216,6 +243,7 @@ if (pdfSelectFilteredBtn) {
 if (pdfSelectCartBtn) {
   pdfSelectCartBtn.addEventListener("click", selectFromCart);
 }
+
 // ---------- Carga de imágenes para PDF ----------
 async function urlToDataUrl(url) {
   try {
@@ -232,6 +260,7 @@ async function urlToDataUrl(url) {
     return null;
   }
 }
+
 async function dataUrlToJpegDataUrl(dataUrl) {
   try {
     const img = new Image();
@@ -241,6 +270,7 @@ async function dataUrlToJpegDataUrl(dataUrl) {
       img.onload = resolve;
       img.onerror = reject;
     });
+
     const canvas = document.createElement("canvas");
     const w = img.naturalWidth || 300;
     const h = img.naturalHeight || 300;
@@ -248,17 +278,21 @@ async function dataUrlToJpegDataUrl(dataUrl) {
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
+
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
+
     return canvas.toDataURL("image/jpeg", 0.88);
   } catch (e) {
     return null;
   }
 }
+
 async function loadImageForPdf(url) {
   if (!url) return null;
   if (pdfImageCache.has(url)) return pdfImageCache.get(url);
+
   const raw = await urlToDataUrl(url);
   if (!raw) {
     pdfImageCache.set(url, null);
@@ -269,38 +303,106 @@ async function loadImageForPdf(url) {
   pdfImageCache.set(url, pack);
   return pack;
 }
+
 // ---------- Encabezado ----------
-// 1) Empresa SIEMPRE primero
-// 2) Subtítulo personalizado debajo si existe
-// 3) No mostrar fecha de generación
-function drawHeader(doc, pageW, companyName, customSubtitle, logoPack, pageIndex, totalPages) {
+// 1) Logo + razón social en mayúsculas
+// 2) Línea fija: "Catálogo inteligente • Envíos a toda Colombia"
+// 3) Subtítulo personalizado (opcional)
+// 4) Cápsula verde a la derecha: "Natura · Maquillaje · Cuidado personal"
+function drawHeader(
+  doc,
+  pageW,
+  companyName,
+  tagline,
+  customSubtitle,
+  badgeText,
+  logoPack,
+  pageIndex,
+  totalPages
+) {
   const marginX = 10;
   const headerY = 8;
+
+  // Logo
   doc.setDrawColor(226, 232, 240);
   if (logoPack && logoPack.dataUrl) {
     try {
       doc.addImage(logoPack.dataUrl, logoPack.format, marginX, headerY, 12, 12);
     } catch (e) {}
   }
+
+  let textX = marginX + 16;
+  let lineY = headerY + 7;
+
+  // Nombre de la tienda
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(14);
-  doc.text(companyName, marginX + 16, headerY + 8);
-  if (customSubtitle) {
+  doc.setFontSize(13);
+  doc.text(companyName, textX, lineY);
+
+  // Tagline fijo
+  if (tagline) {
+    lineY += 4.3;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
+    doc.setFontSize(9);
     doc.setTextColor(71, 85, 105);
-    doc.text(customSubtitle, marginX + 16, headerY + 13);
+    doc.text(tagline, textX, lineY);
   }
-  doc.setFontSize(9);
+
+  // Subtítulo personalizado del catálogo (opcional)
+  if (customSubtitle) {
+    lineY += 4.2;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9);
+    doc.setTextColor(30, 64, 175);
+    doc.text(customSubtitle, textX, lineY);
+  }
+
+  // Cápsula derecha con "Natura · Maquillaje · Cuidado personal"
+  if (badgeText) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    const badgePaddingX = 5.5;
+    const badgePaddingY = 2;
+    const textWidth = doc.getTextWidth(badgeText);
+    const badgeW = textWidth + badgePaddingX * 2;
+    const badgeH = 7;
+    const badgeX = pageW - marginX - badgeW;
+    const badgeY = headerY + 3;
+
+    doc.setFillColor(34, 197, 94);
+    doc.setDrawColor(22, 163, 74);
+    try {
+      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 3, 3, "FD");
+    } catch (e) {
+      doc.rect(badgeX, badgeY, badgeW, badgeH, "FD");
+    }
+
+    doc.setTextColor(255, 255, 255);
+    doc.text(
+      badgeText,
+      badgeX + badgeW / 2,
+      badgeY + badgeH / 2 + 1.7,
+      { align: "center" }
+    );
+  }
+
+  // Número de página
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
-  doc.text(pageLabel, pageW - marginX, headerY + 8, { align: "right" });
+  doc.text(pageLabel, pageW - marginX, headerY + 16.5, { align: "right" });
+
+  // Línea de separación
+  doc.setDrawColor(226, 232, 240);
   doc.line(marginX, 22, pageW - marginX, 22);
 }
+
 // ---------- Tarjeta de producto (SIN descripción) ----------
 function drawProductCard(doc, p, x, y, w, h, options) {
   const { imgPack, includePrices } = options;
+
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(255, 255, 255);
   try {
@@ -308,17 +410,20 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   } catch (e) {
     doc.rect(x, y, w, h, "FD");
   }
+
   const pad = 4;
   const innerX = x + pad;
   const innerY = y + pad;
   const innerW = w - pad * 2;
   const innerH = h - pad * 2;
   const maxByHeight = innerH * 0.78;
+
   const imgSize = Math.max(32, Math.min(innerW, maxByHeight));
   const imgW = imgSize;
   const imgH = imgSize;
   const imgY = innerY;
   const imgX = innerX + (innerW - imgW) / 2;
+
   if (imgPack && imgPack.dataUrl) {
     try {
       doc.addImage(imgPack.dataUrl, imgPack.format, imgX, imgY, imgW, imgH);
@@ -333,11 +438,14 @@ function drawProductCard(doc, p, x, y, w, h, options) {
     doc.setTextColor(148, 163, 184);
     doc.text("Sin imagen", imgX + imgW / 2, imgY + imgH / 2, { align: "center" });
   }
+
   let cursorY = imgY + imgH + 4;
+
   const name = (p.name || "").toString().trim();
   const marca = (p.marca || "").toString().trim();
   const category = (p.category || "").toString().trim();
   const price = Number(p.valor_unitario) || 0;
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10.2);
   doc.setTextColor(15, 23, 42);
@@ -345,6 +453,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   const limitedName = nameLines.slice(0, 2);
   doc.text(limitedName, innerX, cursorY);
   cursorY += limitedName.length * 4.3;
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.6);
   doc.setTextColor(71, 85, 105);
@@ -354,6 +463,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
     doc.text(subLines.slice(0, 1), innerX, cursorY);
     cursorY += 4.2;
   }
+
   if (includePrices) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10.5);
@@ -361,6 +471,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
     doc.text(currencyFormatter.format(price), innerX, cursorY + 1);
   }
 }
+
 // ---------- Generación del PDF ----------
 async function generatePdf() {
   const jsPDF = getJsPDFClass();
@@ -368,15 +479,20 @@ async function generatePdf() {
     alert("No se pudo cargar la librería de PDF. Verifica tu conexión o el enlace de jsPDF.");
     return;
   }
+
   const selectedIds = Array.from(pdfSelection);
   const selectedProducts = selectedIds
     .map(id => getProductById(id))
     .filter(Boolean);
+
   if (!selectedProducts.length) {
     alert("No has seleccionado productos para exportar.");
     return;
   }
+
   const includePrices = !!(pdfIncludePrices && pdfIncludePrices.checked);
+
+  // Ordenar productos por nombre para el PDF
   selectedProducts.sort((a, b) => {
     const na = (a.name || "").toString();
     const nb = (b.name || "").toString();
@@ -384,18 +500,25 @@ async function generatePdf() {
     if (cmp !== 0) return cmp;
     return String(a.id).localeCompare(String(b.id));
   });
+
   const pages = chunkArray(selectedProducts, PDF_PRODUCTS_PER_PAGE);
   const totalPages = pages.length;
+
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
+
   let logoUrl = null;
   try {
     logoUrl = await resolveOtherImage("logo_empresa");
   } catch (e) {}
   const logoPack = logoUrl ? await loadImageForPdf(logoUrl) : null;
-  const companyName = "Irenismb Stock Natura";
+
+  const companyName = "IRENISMB STOCK NATURA";
+  const tagline = "Catálogo inteligente • Envíos a toda Colombia";
   const customSubtitle = getCustomPdfSubtitle();
+  const badgeText = "Natura · Maquillaje · Cuidado personal";
+
   const marginX = 10;
   const headerBottomY = 24;
   const bottomMargin = 10;
@@ -403,11 +526,24 @@ async function generatePdf() {
   const gapY = 6;
   const usableW = pageW - marginX * 2;
   const usableH = pageH - headerBottomY - bottomMargin;
-  const cardW = (usableW - gapX) / PDF_COLS;
+  const cardW = (usableW - gapX * (PDF_COLS - 1)) / PDF_COLS;
   const cardH = (usableH - gapY * (PDF_ROWS - 1)) / PDF_ROWS;
+
   for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
     if (pageIndex > 0) doc.addPage();
-    drawHeader(doc, pageW, companyName, customSubtitle, logoPack, pageIndex, totalPages);
+
+    drawHeader(
+      doc,
+      pageW,
+      companyName,
+      tagline,
+      customSubtitle,
+      badgeText,
+      logoPack,
+      pageIndex,
+      totalPages
+    );
+
     const pageItems = pages[pageIndex];
     for (let i = 0; i < pageItems.length; i++) {
       const p = pageItems[i];
@@ -417,23 +553,28 @@ async function generatePdf() {
       const y = headerBottomY + row * (cardH + gapY);
       const imgUrl = `${IMG_BASE_PATH}${encodeURIComponent(p.id)}.webp`;
       const imgPack = await loadImageForPdf(imgUrl);
+
       drawProductCard(doc, p, x, y, cardW, cardH, {
         imgPack,
         includePrices
       });
     }
   }
+
   // Guardamos por si generas sin cerrar el modal
   saveSubtitleToStorage();
+
   const safeSub = (customSubtitle || "catalogo")
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
     .slice(0, 40);
+
   const filename = `catalogo-${safeSub}-${todayLabel()}.pdf`;
   doc.save(filename);
 }
+
 // Botón generar
 if (pdfGenerateBtn) {
   pdfGenerateBtn.addEventListener("click", async () => {

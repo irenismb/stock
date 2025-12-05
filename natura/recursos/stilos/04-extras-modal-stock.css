@@ -65,6 +65,7 @@
     padding:4px;
   }
 }
+
 /* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
 .product-row-out-of-stock {
   background-color: #e5e7eb !important;
@@ -91,26 +92,156 @@
   display: block;
   padding: 4px 0;
 }
+
 /* Ocultar la tira de miniaturas de la galería (solo dejamos la imagen grande) */
 .thumbs{
   display: none !important;
 }
-/* ===== Bloque final móvil: igualar altura de buscador y filtros ===== */
+
+/* Ocultar panel de vista previa grande (ya no se usa visualmente) */
+.preview{
+  display:none !important;
+}
+
+/* ===== Botón "Sobre Nosotros" (visible en móvil) ===== */
+.about-btn{
+  display:none;
+  margin-top:10px;
+  width:100%;
+  border:none;
+  border-radius:999px;
+  padding:10px 14px;
+  font-size:14px;
+  background:linear-gradient(90deg,#f97316,#ec4899);
+  color:#fff;
+  cursor:pointer;
+  box-shadow:0 8px 18px rgba(236,72,153,0.25);
+}
+
+/* ===== Modal "Sobre Nosotros" ===== */
+.about-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:1000;
+}
+.about-modal.open{
+  display:flex;
+}
+.about-modal-backdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(15,23,42,0.75);
+  backdrop-filter:blur(3px);
+}
+.about-modal-content{
+  position:relative;
+  z-index:1;
+  width:min(480px, 92vw);
+  max-height:85vh;
+  background:#ffffff;
+  border-radius:16px;
+  border:1px solid rgba(148,163,184,0.4);
+  padding:16px 16px 14px;
+  box-shadow:0 24px 60px rgba(15,23,42,0.35);
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+.about-modal-title{
+  margin:0 0 4px;
+  font-size:18px;
+  color:#0f172a;
+}
+.about-modal-body{
+  font-size:14px;
+  color:#4b5563;
+  line-height:1.5;
+  overflow:auto;
+}
+.about-modal-close{
+  position:absolute;
+  top:8px;
+  right:8px;
+  width:32px;
+  height:32px;
+  border-radius:999px;
+  border:none;
+  background:#0f172a;
+  color:#fff;
+  font-size:18px;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+/* ===== Bloque final: filtros en una sola línea (móvil) ===== */
+
+/* Fila de filtros (ordenar, categoría, marca, PDF) */
+.filters-row{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex-wrap:wrap;
+}
+
+/* Bloque final móvil: buscador arriba, filtros en una sola línea desplazable */
 @media (max-width:768px){
   .controls-top{
     flex-direction:column;
     align-items:stretch;
   }
-  #searchInput,
-  #sortPriceBtn,
-  .dropdown-toggle-btn{
+
+  #searchInput{
     width:100%;
     min-height:38px;
     padding:8px 14px;
     font-size:14px;
     line-height:1.2;
   }
+
+  .controls-bottom{
+    flex-direction:column;
+    align-items:stretch;
+    gap:6px;
+  }
+
+  .filters-row{
+    flex-wrap:nowrap;
+    overflow-x:auto;
+    padding-bottom:2px;
+  }
+
+  .filters-row > *{
+    flex:0 0 auto;
+  }
+
+  #sortPriceBtn,
+  .dropdown-toggle-btn,
+  .pdf-btn{
+    width:auto;
+    min-height:36px;
+    font-size:13px;
+    white-space:nowrap;
+  }
+
+  .social-icons{
+    margin-left:0;
+    justify-content:flex-start;
+  }
+
+  /* En móviles ocultamos la tarjeta fija y usamos el modal con botón */
+  .contact-info{
+    display:none;
+  }
+  .about-btn{
+    display:block;
+  }
 }
+
 /* =============================================================================
    Modal de exportación PDF + botón
    ============================================================================= */

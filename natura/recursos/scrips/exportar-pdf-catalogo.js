@@ -318,17 +318,27 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   const innerW = w - pad * 2;
   const innerH = h - pad * 2;
 
-  // Área de imagen
-  const imgH = 26; // mm
+  /**
+   * ✅ AUMENTO DE IMAGEN
+   * Antes estaba fijo en ~26mm.
+   * Ahora intentamos un tamaño ~3x, pero lo limitamos para que
+   * siempre quepa dentro de la tarjeta sin romper texto.
+   */
+  const BASE_IMG = 26; 
+  const target = BASE_IMG * 3; // petición del usuario
+  const maxByHeight = innerH * 0.70; // reservamos espacio para textos
+  const imgSize = Math.max(28, Math.min(target, innerW, maxByHeight));
+
+  const imgW = imgSize;
+  const imgH = imgSize;
+
   const imgY = innerY;
-  const imgX = innerX + (innerW - 26) / 2;
-  const imgW = 26;
+  const imgX = innerX + (innerW - imgW) / 2;
 
   if (imgPack && imgPack.dataUrl) {
     try {
       doc.addImage(imgPack.dataUrl, imgPack.format, imgX, imgY, imgW, imgH);
     } catch (e) {
-      // fallback simple
       doc.setDrawColor(226, 232, 240);
       doc.rect(imgX, imgY, imgW, imgH);
     }
@@ -501,3 +511,4 @@ if (pdfGenerateBtn) {
     }
   });
 }
+

@@ -6,25 +6,27 @@
   <!-- Favicon / ícono de pestaña -->
   <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
   <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
+
   <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
   <meta property="og:type" content="website">
-  <!-- URL EXACTA de esta página -->
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html">
   <meta property="og:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
   <meta property="og:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <!-- Imagen grande del logo / portada -->
   <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
   <meta property="og:image:type" content="image/png">
   <meta property="og:image:width" content="800">
   <meta property="og:image:height" content="800">
   <meta property="og:site_name" content="Irenismb Stock Natura">
   <meta property="og:locale" content="es_CO">
+
   <!-- Metadatos Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
   <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
   <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+
   <!-- Hojas de estilos divididas (carpeta stilos) -->
   <link rel="stylesheet" href="recursos/stilos/01-base.css">
   <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
@@ -65,6 +67,7 @@
             <button id="sortPriceBtn">Ordenar por precio</button>
             <button id="pdfBtn" class="pdf-btn" type="button">Descargar PDF</button>
           </div>
+
           <div class="controls-bottom">
             <!-- Filtro por categorías -->
             <div class="custom-dropdown" id="categoryDropdown">
@@ -171,7 +174,6 @@
         <div class="stage" role="region" aria-label="Galería del producto">
           <button class="nav prev" id="galleryPrevBtn" aria-label="Imagen anterior">‹</button>
           <img id="previewImg" alt="Vista previa del producto" />
-          <!-- Overlay de estado de imagen -->
           <div id="imageStatus" class="image-status" aria-live="polite"></div>
           <button class="nav next" id="galleryNextBtn" aria-label="Imagen siguiente">›</button>
         </div>
@@ -250,9 +252,9 @@
         </p>
       </div>
 
-      <!-- NUEVO: título personalizado -->
+      <!-- Subtítulo personalizado -->
       <div class="pdf-title-row">
-        <label for="pdfCustomTitle" class="pdf-title-label">Título del catálogo (opcional)</label>
+        <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
         <input
           id="pdfCustomTitle"
           class="pdf-title-input"

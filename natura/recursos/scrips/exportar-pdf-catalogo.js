@@ -14,7 +14,6 @@ const pdfImageCache = new Map(); // url -> { dataUrl, format }
 
 // ---------- Utilidades ----------
 function getJsPDFClass() {
-  // jsPDF UMD suele exponer window.jspdf.jsPDF
   if (window.jspdf && window.jspdf.jsPDF) return window.jspdf.jsPDF;
   if (window.jsPDF) return window.jsPDF;
   return null;
@@ -55,7 +54,7 @@ function todayLabel() {
   return `${y}-${m}-${day}`;
 }
 
-function getCustomPdfTitle() {
+function getCustomPdfSubtitle() {
   const raw = pdfCustomTitle ? String(pdfCustomTitle.value || "") : "";
   const t = raw.trim();
   return t;
@@ -221,7 +220,6 @@ async function urlToDataUrl(url) {
 }
 
 async function dataUrlToJpegDataUrl(dataUrl) {
-  // Convertimos a JPEG para máxima compatibilidad con jsPDF
   try {
     const img = new Image();
     img.decoding = "async";
@@ -240,7 +238,6 @@ async function dataUrlToJpegDataUrl(dataUrl) {
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
 
-    // Fondo blanco
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
@@ -269,7 +266,11 @@ async function loadImageForPdf(url) {
 }
 
 // ---------- Encabezado ----------
-function drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, totalPages) {
+// Reglas pedidas:
+// 1) Empresa SIEMPRE primero
+// 2) Subtítulo personalizado debajo si existe
+// 3) No mostrar fecha de generación
+function drawHeader(doc, pageW, companyName, customSubtitle, logoPack, pageIndex, totalPages) {
   const marginX = 10;
   const headerY = 8;
 
@@ -282,17 +283,19 @@ function drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, to
     } catch (e) {}
   }
 
-  // Título principal (custom o marca)
+  // Empresa
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
-  doc.text(titleText, marginX + 16, headerY + 8);
+  doc.text(companyName, marginX + 16, headerY + 8);
 
-  // Subtítulo
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(71, 85, 105);
-  doc.text(subtitleText, marginX + 16, headerY + 13);
+  // Subtítulo (si existe)
+  if (customSubtitle) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(71, 85, 105);
+    doc.text(customSubtitle, marginX + 16, headerY + 13);
+  }
 
   // Paginación
   doc.setFontSize(9);
@@ -308,7 +311,6 @@ function drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, to
 function drawProductCard(doc, p, x, y, w, h, options) {
   const { imgPack, includePrices } = options;
 
-  // Tarjeta
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(255, 255, 255);
   try {
@@ -323,10 +325,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   const innerW = w - pad * 2;
   const innerH = h - pad * 2;
 
-  /**
-   * ✅ Imagen grande y sin desperdicio por descripción.
-   * Usamos una porción alta de la tarjeta para foto.
-   */
+  // Imagen grande prioritaria
   const maxByHeight = innerH * 0.78;
   const imgSize = Math.max(32, Math.min(innerW, maxByHeight));
 
@@ -406,7 +405,6 @@ async function generatePdf() {
 
   const includePrices = !!(pdfIncludePrices && pdfIncludePrices.checked);
 
-  // Orden estable: por nombre
   selectedProducts.sort((a, b) => {
     const na = (a.name || "").toString();
     const nb = (b.name || "").toString();
@@ -429,13 +427,8 @@ async function generatePdf() {
   } catch (e) {}
   const logoPack = logoUrl ? await loadImageForPdf(logoUrl) : null;
 
-  // Título personalizado
-  const customTitle = getCustomPdfTitle();
-
-  const titleText = customTitle || "Irenismb Stock Natura";
-  const subtitleText = customTitle
-    ? `Irenismb Stock Natura • Generado ${todayLabel()} • Envíos a toda Colombia`
-    : `Catálogo generado ${todayLabel()} • Envíos a toda Colombia`;
+  const companyName = "Irenismb Stock Natura";
+  const customSubtitle = getCustomPdfSubtitle();
 
   // Layout de tarjetas
   const marginX = 10;
@@ -453,7 +446,7 @@ async function generatePdf() {
   for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
     if (pageIndex > 0) doc.addPage();
 
-    drawHeader(doc, pageW, titleText, subtitleText, logoPack, pageIndex, totalPages);
+    drawHeader(doc, pageW, companyName, customSubtitle, logoPack, pageIndex, totalPages);
 
     const pageItems = pages[pageIndex];
 
@@ -476,14 +469,14 @@ async function generatePdf() {
     }
   }
 
-  const safeTitle = (customTitle || "catalogo")
+  const safeSub = (customSubtitle || "catalogo")
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-")
     .slice(0, 40);
 
-  const filename = `catalogo-${safeTitle}-${todayLabel()}.pdf`;
+  const filename = `catalogo-${safeSub}-${todayLabel()}.pdf`;
   doc.save(filename);
 }
 

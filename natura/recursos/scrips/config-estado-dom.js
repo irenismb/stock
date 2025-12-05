@@ -1,299 +1,92 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Irenismb Stock Natura - Catálogo con Búsqueda Inteligente</title>
-  <!-- Favicon / ícono de pestaña -->
-  <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
-  <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
-  <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
-  <meta property="og:type" content="website">
-  <!-- URL EXACTA de esta página -->
-  <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html">
-  <meta property="og:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
-  <meta property="og:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <!-- Imagen grande del logo / portada -->
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="800">
-  <meta property="og:image:height" content="800">
-  <meta property="og:site_name" content="Irenismb Stock Natura">
-  <meta property="og:locale" content="es_CO">
-  <!-- Metadatos Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
-  <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <!-- Hojas de estilos divididas (carpeta stilos) -->
-  <link rel="stylesheet" href="recursos/stilos/01-base.css">
-  <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
-  <link rel="stylesheet" href="recursos/stilos/03-refinamiento.css">
-  <link rel="stylesheet" href="recursos/stilos/04-extras-modal-stock.css">
-</head>
-<body>
-  <!-- ENCABEZADO PRINCIPAL -->
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-brand">
-        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura">
-        <div>
-          <h1>Irenismb Stock Natura</h1>
-          <p>Catálogo inteligente • Envíos a toda Colombia</p>
-        </div>
-      </div>
-      <div class="site-badge">
-        Natura · Maquillaje · Cuidado personal
-      </div>
-    </div>
-  </header>
+// ================== CONFIGURACIÓN GENERAL ==================
+const APPS_SCRIPT_URL =
+  "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
+const DEFAULT_WHATSAPP = "573042088961";
+const AUTO_REFRESH_MS = 20000;
+const LS_FILTERS_KEY = "naturaFilters";
+const LS_CART_KEY = "shoppingCart";
+const BROWSER_ID_LS_KEY = "naturaBrowserId";
 
-  <!-- CONTENEDOR PRINCIPAL -->
-  <div class="container">
-    <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
-    <div class="left-panel">
-      <div class="controls-panel">
-        <div class="products-header">
-          <div class="controls-top">
-            <input
-              id="searchInput"
-              type="text"
-              autocomplete="off"
-              inputmode="search"
-              placeholder="🔍 Buscar por nombre, marca, categoría..."
-            >
-            <button id="sortPriceBtn">Ordenar por precio</button>
-            <button id="pdfBtn" class="pdf-btn" type="button">Descargar PDF</button>
-          </div>
-          <div class="controls-bottom">
-            <!-- Filtro por categorías -->
-            <div class="custom-dropdown" id="categoryDropdown">
-              <button
-                type="button"
-                id="categoryToggleBtn"
-                class="dropdown-toggle-btn"
-                aria-haspopup="listbox"
-                aria-expanded="false"
-              >
-                Categorías ▾
-              </button>
-              <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
-            </div>
+// Servicio externo para IP pública + ciudad
+const CLIENT_INFO_URL = "https://ipapi.co/json/";
 
-            <!-- Filtro por marcas -->
-            <div class="custom-dropdown" id="brandDropdown">
-              <button
-                type="button"
-                id="brandToggleBtn"
-                class="dropdown-toggle-btn"
-                aria-haspopup="listbox"
-                aria-expanded="false"
-              >
-                Marcas ▾
-              </button>
-              <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
-            </div>
+const currencyFormatter = new Intl.NumberFormat("es-CO", {
+  style: "currency",
+  currency: "COP",
+  minimumFractionDigits: 0
+});
 
-            <!-- Iconos de redes sociales y ubicación -->
-            <div class="social-icons">
-              <a
-                href="https://www.facebook.com/marketplace/profile/100084865295132"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook">
-              </a>
-              <a
-                href="https://www.instagram.com/irenismb_stocknaturasm"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram">
-              </a>
-              <a
-                href="https://www.tiktok.com/@irenismbstocknatura"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/tik tok.webp" alt="TikTok">
-              </a>
-              <a
-                href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Ubicación en Google Maps"
-              >
-                <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps">
-              </a>
-              <a
-                href="https://wa.me/573042088961"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp">
-              </a>
-            </div>
-          </div>
-        </div>
-      </div>
+// ================== IMÁGENES (carpetas y extensiones) ==================
+// Para productos se usa .webp; en otras imágenes se prueban varios formatos
+const IMG_EXTS = ["webp", "jpeg", "jpg", "png"];
+const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
+const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
 
-      <!-- TABLA DE PRODUCTOS -->
-      <div class="table-wrapper">
-        <table class="product-table" aria-label="Listado de productos">
-          <thead>
-            <tr>
-              <th>Foto</th>
-              <th>Nombre producto</th>
-              <th>Categoría</th>
-              <th>Marca</th>
-              <th>Valor unitario</th>
-              <th>Cantidad</th>
-              <th>Total a pagar</th>
-            </tr>
-          </thead>
-          <tbody id="productTableBody">
-            <tr>
-              <td colspan="7" style="text-align:center;">Cargando productos...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
+// ================== ESTADO GLOBAL ==================
+let products = [];
+let allCategories = []; // [{ key, label }]
+let allBrands = [];     // [{ key, label }]
+let currentSortOrder = "default"; // default → Orden hoja, asc → precio menor, desc → precio mayor
+let cart = {};                    // id -> { id, name, price, quantity }
+let currentGallery = { productId: null, images: [], index: 0 };
+let lastPreviewRequestId = 0;
+let filterListenersAttached = false;
+let lastSearchLogged = "";
+let autoRefreshTimer = null;
 
-    <!-- PANEL DERECHO: PREVIEW + CARRITO + CONTACTO -->
-    <div class="right-panel">
-      <!-- Vista previa del producto (galería) -->
-      <div id="productPreview" class="preview" aria-live="polite">
-        <div class="stage" role="region" aria-label="Galería del producto">
-          <button class="nav prev" id="galleryPrevBtn" aria-label="Imagen anterior">‹</button>
-          <img id="previewImg" alt="Vista previa del producto" />
-          <!-- Overlay de estado de imagen -->
-          <div id="imageStatus" class="image-status" aria-live="polite"></div>
-          <button class="nav next" id="galleryNextBtn" aria-label="Imagen siguiente">›</button>
-        </div>
-        <div id="thumbs" class="thumbs" aria-label="Miniaturas de producto" role="list"></div>
-        <div id="previewName" class="product-name"></div>
-        <div id="previewCaption" class="caption">
-          Haz clic en un producto para ver su descripción
-        </div>
-      </div>
+// Estado para visitas por sesión
+let sessionId = "";
+let clientIpPublica = "";
+let clientCiudad = "";
+let userName = "";  // opcional
+let browserId = ""; // identificador estable del navegador
 
-      <!-- Carrito -->
-      <div class="cart-container" id="cartContainer">
-        <h3>🛒 Carrito de Compras</h3>
-        <ul id="cartList">
-          <li class="cart-item">
-            <span class="cart-item-title">El carrito está vacío.</span>
-          </li>
-        </ul>
-        <div id="totalPrice">Total: 0</div>
-        <button id="whatsappBtn">Comprar por WhatsApp</button>
-      </div>
+// Lista de productos actualmente filtrados y posición del producto mostrado
+let currentFilteredProducts = [];
+let currentPreviewProductIndex = -1;
+let currentPreviewProductId = null;
 
-      <!-- Contacto y Descripción -->
-      <div class="contact-info">
-        <h3>✨ Sobre Nosotros ✨</h3>
-        <p class="store-description">
-          Irenismb Stock Natura es una tienda en línea en Santa Marta especializada en productos Natura, Avon y Ésika. Tenemos stock disponible de fragancias, maquillaje, cuidado facial y corporal, cuidado capilar, productos para bebés, protección solar y regalos y combos. Ofrecemos asesoría personalizada por WhatsApp, envíos a toda Colombia y pago contra entrega en Santa Marta, para que compres tus productos de catálogo originales de forma fácil y segura.
-        </p>
-      </div>
-    </div>
-  </div>
+// ================== REFERENCIAS AL DOM ==================
+const searchInput = document.getElementById("searchInput");
+const productTableBody = document.getElementById("productTableBody");
+const cartList = document.getElementById("cartList");
+const totalPriceElement = document.getElementById("totalPrice");
+const whatsappBtn = document.getElementById("whatsappBtn");
+const sortPriceBtn = document.getElementById("sortPriceBtn");
 
-  <!-- Modal de imagen ampliada (lightbox) -->
-  <div id="imageModal" class="image-modal" aria-hidden="true">
-    <div id="imageModalBackdrop" class="image-modal-backdrop"></div>
-    <div
-      class="image-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Imagen ampliada del producto"
-    >
-      <button
-        type="button"
-        id="imageModalClose"
-        class="image-modal-close"
-        aria-label="Cerrar imagen ampliada"
-      >
-        ×
-      </button>
-      <img id="imageModalImg" alt="Imagen ampliada del producto">
-    </div>
-  </div>
+const categoryMenu = document.getElementById("categoryMenu");
+const brandMenu = document.getElementById("brandMenu");
+const categoryToggleBtn = document.getElementById("categoryToggleBtn");
+const brandToggleBtn = document.getElementById("brandToggleBtn");
 
-  <!-- Modal de exportación a PDF -->
-  <div id="pdfModal" class="pdf-modal" aria-hidden="true">
-    <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
-    <div
-      class="pdf-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Exportar catálogo a PDF"
-    >
-      <button
-        type="button"
-        id="pdfModalClose"
-        class="pdf-modal-close"
-        aria-label="Cerrar exportación PDF"
-      >
-        ×
-      </button>
+const productPreview = document.getElementById("productPreview");
+const previewImg = document.getElementById("previewImg");
+const previewCaption = document.getElementById("previewCaption");
+const galleryPrevBtn = document.getElementById("galleryPrevBtn");
+const galleryNextBtn = document.getElementById("galleryNextBtn");
+const thumbs = document.getElementById("thumbs");
+const previewName = document.getElementById("previewName");
+const imageStatus = document.getElementById("imageStatus");
 
-      <div class="pdf-modal-header">
-        <h3>📄 Exportar catálogo a PDF</h3>
-        <p class="pdf-modal-hint">
-          Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
-        </p>
-      </div>
+// Elementos del modal de imagen ampliada
+const imageModal = document.getElementById("imageModal");
+const imageModalImg = document.getElementById("imageModalImg");
+const imageModalClose = document.getElementById("imageModalClose");
+const imageModalBackdrop = document.getElementById("imageModalBackdrop");
 
-      <!-- NUEVO: título personalizado -->
-      <div class="pdf-title-row">
-        <label for="pdfCustomTitle" class="pdf-title-label">Título del catálogo (opcional)</label>
-        <input
-          id="pdfCustomTitle"
-          class="pdf-title-input"
-          type="text"
-          maxlength="60"
-          placeholder="Ej: Catálogo Navideño, Especial Mamá, Promos de Abril..."
-          autocomplete="off"
-        >
-      </div>
+// ================== EXPORTACIÓN PDF (DOM) ==================
+const pdfBtn = document.getElementById("pdfBtn");
+const pdfModal = document.getElementById("pdfModal");
+const pdfModalClose = document.getElementById("pdfModalClose");
+const pdfModalBackdrop = document.getElementById("pdfModalBackdrop");
 
-      <div class="pdf-actions">
-        <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
-        <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
-        <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
-        <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
-      </div>
+const pdfProductList = document.getElementById("pdfProductList");
+const pdfSelectFilteredBtn = document.getElementById("pdfSelectFilteredBtn");
+const pdfSelectCartBtn = document.getElementById("pdfSelectCartBtn");
+const pdfSelectAllBtn = document.getElementById("pdfSelectAllBtn");
+const pdfSelectNoneBtn = document.getElementById("pdfSelectNoneBtn");
+const pdfGenerateBtn = document.getElementById("pdfGenerateBtn");
 
-      <div id="pdfProductList" class="pdf-product-list" role="list"></div>
-
-      <div class="pdf-footer">
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfIncludePrices" checked>
-          Incluir precios
-        </label>
-        <button type="button" id="pdfGenerateBtn" class="pdf-generate-btn">
-          Generar PDF
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Librería PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <!-- Scripts divididos (carpeta scrips) -->
-  <script src="recursos/scrips/config-estado-dom.js"></script>
-  <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
-  <script src="recursos/scrips/filtros-tabla-productos.js"></script>
-  <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
-  <script src="recursos/scrips/visitas-ubicacion.js"></script>
-  <script src="recursos/scrips/exportar-pdf-catalogo.js"></script>
-</body>
-</html>
+const pdfIncludePrices = document.getElementById("pdfIncludePrices");
+const pdfCustomTitle = document.getElementById("pdfCustomTitle");
 

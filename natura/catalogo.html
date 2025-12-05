@@ -45,7 +45,6 @@
       </div>
     </div>
   </header>
-
   <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
     <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
@@ -90,7 +89,6 @@
               </button>
               <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
             </div>
-
             <!-- Iconos de redes sociales y ubicación -->
             <div class="social-icons">
               <a
@@ -137,7 +135,6 @@
           </div>
         </div>
       </div>
-
       <!-- TABLA DE PRODUCTOS -->
       <div class="table-wrapper">
         <table class="product-table" aria-label="Listado de productos">
@@ -160,7 +157,6 @@
         </table>
       </div>
     </div>
-
     <!-- PANEL DERECHO: PREVIEW + CARRITO + CONTACTO -->
     <div class="right-panel">
       <!-- Vista previa del producto (galería) -->
@@ -177,7 +173,6 @@
           Haz clic en un producto para ver su descripción
         </div>
       </div>
-
       <!-- Carrito -->
       <div class="cart-container" id="cartContainer">
         <h3>🛒 Carrito de Compras</h3>
@@ -189,7 +184,6 @@
         <div id="totalPrice">Total: 0</div>
         <button id="whatsappBtn">Comprar por WhatsApp</button>
       </div>
-
       <!-- Contacto y Descripción -->
       <div class="contact-info">
         <h3>✨ Sobre Nosotros ✨</h3>
@@ -199,7 +193,6 @@
       </div>
     </div>
   </div>
-
   <!-- Modal de imagen ampliada (lightbox) -->
   <div id="imageModal" class="image-modal" aria-hidden="true">
     <div id="imageModalBackdrop" class="image-modal-backdrop"></div>
@@ -220,8 +213,7 @@
       <img id="imageModalImg" alt="Imagen ampliada del producto">
     </div>
   </div>
-
-  <!-- Modal de exportación a PDF (NUEVO FLUJO) -->
+  <!-- Modal de exportación a PDF -->
   <div id="pdfModal" class="pdf-modal" aria-hidden="true">
     <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
     <div
@@ -238,18 +230,15 @@
       >
         ×
       </button>
-
       <div class="pdf-modal-header">
-        <h3>📄 Exportar catálogos a PDF</h3>
+        <h3>📄 Exportar catálogo a PDF</h3>
         <p class="pdf-modal-hint">
-          Elige un catálogo definido en tu hoja (columnas tipo <strong>Catalogo1</strong>, <strong>Catalogo2</strong>...)
-          o descarga el <strong>Catálogo actual</strong> según los filtros y búsqueda de la página.
+          Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
         </p>
       </div>
-
       <!-- Subtítulo personalizado -->
       <div class="pdf-title-row">
-        <label for="pdfCustomTitle" class="pdf-title-label">Título/Subtítulo del catálogo (opcional)</label>
+        <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
         <input
           id="pdfCustomTitle"
           class="pdf-title-input"
@@ -259,23 +248,17 @@
           autocomplete="off"
         >
       </div>
-
-      <!-- Lista de catálogos disponibles -->
-      <div class="pdf-catalogs-panel">
-        <div id="pdfCatalogList" class="pdf-catalog-list" role="list">
-          <!-- Render dinámico -->
-        </div>
+      <div class="pdf-actions">
+        <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
+        <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
+        <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
+        <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
       </div>
-
-      <!-- Footer del modal -->
+      <div id="pdfProductList" class="pdf-product-list" role="list"></div>
       <div class="pdf-footer">
         <label class="pdf-option">
           <input type="checkbox" id="pdfIncludePrices" checked>
           Incluir precios
-        </label>
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfOnlyWithImages">
-          Solo productos con imágenes
         </label>
         <button type="button" id="pdfGenerateBtn" class="pdf-generate-btn">
           Generar PDF
@@ -283,10 +266,8 @@
       </div>
     </div>
   </div>
-
   <!-- Librería PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
   <!-- Scripts divididos (carpeta scrips) -->
   <script src="recursos/scrips/config-estado-dom.js"></script>
   <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>

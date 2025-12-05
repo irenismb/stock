@@ -45,6 +45,7 @@
       </div>
     </div>
   </header>
+
   <!-- CONTENEDOR PRINCIPAL -->
   <div class="container">
     <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
@@ -135,6 +136,7 @@
           </div>
         </div>
       </div>
+
       <!-- TABLA DE PRODUCTOS -->
       <div class="table-wrapper">
         <table class="product-table" aria-label="Listado de productos">
@@ -157,22 +159,23 @@
         </table>
       </div>
     </div>
+
     <!-- PANEL DERECHO: PREVIEW + CARRITO + CONTACTO -->
     <div class="right-panel">
-      <!-- Vista previa del producto (galería) -->
+      <!-- Vista previa del producto (imagen única) -->
       <div id="productPreview" class="preview" aria-live="polite">
-        <div class="stage" role="region" aria-label="Galería del producto">
-          <button class="nav prev" id="galleryPrevBtn" aria-label="Imagen anterior">‹</button>
+        <div class="stage" role="region" aria-label="Imagen del producto">
+          <button class="nav prev" id="galleryPrevBtn" aria-label="Producto anterior">‹</button>
           <img id="previewImg" alt="Vista previa del producto" />
           <div id="imageStatus" class="image-status" aria-live="polite"></div>
-          <button class="nav next" id="galleryNextBtn" aria-label="Imagen siguiente">›</button>
+          <button class="nav next" id="galleryNextBtn" aria-label="Producto siguiente">›</button>
         </div>
-        <div id="thumbs" class="thumbs" aria-label="Miniaturas de producto" role="list"></div>
         <div id="previewName" class="product-name"></div>
         <div id="previewCaption" class="caption">
           Haz clic en un producto para ver su descripción
         </div>
       </div>
+
       <!-- Carrito -->
       <div class="cart-container" id="cartContainer">
         <h3>🛒 Carrito de Compras</h3>
@@ -184,6 +187,7 @@
         <div id="totalPrice">Total: 0</div>
         <button id="whatsappBtn">Comprar por WhatsApp</button>
       </div>
+
       <!-- Contacto y Descripción -->
       <div class="contact-info">
         <h3>✨ Sobre Nosotros ✨</h3>
@@ -193,6 +197,7 @@
       </div>
     </div>
   </div>
+
   <!-- Modal de imagen ampliada (lightbox) -->
   <div id="imageModal" class="image-modal" aria-hidden="true">
     <div id="imageModalBackdrop" class="image-modal-backdrop"></div>
@@ -213,6 +218,7 @@
       <img id="imageModalImg" alt="Imagen ampliada del producto">
     </div>
   </div>
+
   <!-- Modal de exportación a PDF -->
   <div id="pdfModal" class="pdf-modal" aria-hidden="true">
     <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
@@ -266,6 +272,7 @@
       </div>
     </div>
   </div>
+
   <!-- Librería PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <!-- Scripts divididos (carpeta scrips) -->

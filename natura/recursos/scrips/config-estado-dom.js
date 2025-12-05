@@ -8,39 +8,46 @@ const LS_CART_KEY = "shoppingCart";
 const BROWSER_ID_LS_KEY = "naturaBrowserId";
 // ✅ NUEVO: subtítulo personalizado del PDF
 const LS_PDF_SUBTITLE_KEY = "naturaPdfSubtitle";
+
 // Servicio externo para IP pública + ciudad
 const CLIENT_INFO_URL = "https://ipapi.co/json/";
+
 const currencyFormatter = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
   minimumFractionDigits: 0
 });
+
 // ================== IMÁGENES (carpetas y extensiones) ==================
 // Para productos se usa .webp; en otras imágenes se prueban varios formatos
 const IMG_EXTS = ["webp", "jpeg", "jpg", "png"];
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
 const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
+
 // ================== ESTADO GLOBAL ==================
 let products = [];
 let allCategories = []; // [{ key, label }]
 let allBrands = [];     // [{ key, label }]
 let currentSortOrder = "default"; // default → Orden hoja, asc → precio menor, desc → precio mayor
 let cart = {};                    // id -> { id, name, price, quantity }
-let currentGallery = { productId: null, images: [], index: 0 };
+
 let lastPreviewRequestId = 0;
 let filterListenersAttached = false;
 let lastSearchLogged = "";
 let autoRefreshTimer = null;
+
 // Estado para visitas por sesión
 let sessionId = "";
 let clientIpPublica = "";
 let clientCiudad = "";
 let userName = "";  // opcional
 let browserId = ""; // identificador estable del navegador
+
 // Lista de productos actualmente filtrados y posición del producto mostrado
 let currentFilteredProducts = [];
 let currentPreviewProductIndex = -1;
 let currentPreviewProductId = null;
+
 // ================== REFERENCIAS AL DOM ==================
 const searchInput = document.getElementById("searchInput");
 const productTableBody = document.getElementById("productTableBody");
@@ -48,23 +55,26 @@ const cartList = document.getElementById("cartList");
 const totalPriceElement = document.getElementById("totalPrice");
 const whatsappBtn = document.getElementById("whatsappBtn");
 const sortPriceBtn = document.getElementById("sortPriceBtn");
+
 const categoryMenu = document.getElementById("categoryMenu");
 const brandMenu = document.getElementById("brandMenu");
 const categoryToggleBtn = document.getElementById("categoryToggleBtn");
 const brandToggleBtn = document.getElementById("brandToggleBtn");
+
 const productPreview = document.getElementById("productPreview");
 const previewImg = document.getElementById("previewImg");
 const previewCaption = document.getElementById("previewCaption");
 const galleryPrevBtn = document.getElementById("galleryPrevBtn");
 const galleryNextBtn = document.getElementById("galleryNextBtn");
-const thumbs = document.getElementById("thumbs");
 const previewName = document.getElementById("previewName");
 const imageStatus = document.getElementById("imageStatus");
+
 // Elementos del modal de imagen ampliada
 const imageModal = document.getElementById("imageModal");
 const imageModalImg = document.getElementById("imageModalImg");
 const imageModalClose = document.getElementById("imageModalClose");
 const imageModalBackdrop = document.getElementById("imageModalBackdrop");
+
 // ================== EXPORTACIÓN PDF (DOM) ==================
 const pdfBtn = document.getElementById("pdfBtn");
 const pdfModal = document.getElementById("pdfModal");

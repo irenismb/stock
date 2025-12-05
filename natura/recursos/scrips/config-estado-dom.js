@@ -1,10 +1,8 @@
 // ================== CONFIGURACIÓN GENERAL ==================
 const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
-
 const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
-
 const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
 const BROWSER_ID_LS_KEY = "naturaBrowserId";
@@ -28,10 +26,8 @@ const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
 let products = [];
 let allCategories = []; // [{ key, label }]
 let allBrands = [];     // [{ key, label }]
-
 let currentSortOrder = "default"; // default → Orden hoja, asc → precio menor, desc → precio mayor
 let cart = {};                    // id -> { id, name, price, quantity }
-
 let currentGallery = { productId: null, images: [], index: 0 };
 let lastPreviewRequestId = 0;
 let filterListenersAttached = false;
@@ -77,3 +73,20 @@ const imageModal = document.getElementById("imageModal");
 const imageModalImg = document.getElementById("imageModalImg");
 const imageModalClose = document.getElementById("imageModalClose");
 const imageModalBackdrop = document.getElementById("imageModalBackdrop");
+
+// ================== EXPORTACIÓN PDF (DOM) ==================
+const pdfBtn = document.getElementById("pdfBtn");
+const pdfModal = document.getElementById("pdfModal");
+const pdfModalClose = document.getElementById("pdfModalClose");
+const pdfModalBackdrop = document.getElementById("pdfModalBackdrop");
+
+const pdfProductList = document.getElementById("pdfProductList");
+const pdfSelectFilteredBtn = document.getElementById("pdfSelectFilteredBtn");
+const pdfSelectCartBtn = document.getElementById("pdfSelectCartBtn");
+const pdfSelectAllBtn = document.getElementById("pdfSelectAllBtn");
+const pdfSelectNoneBtn = document.getElementById("pdfSelectNoneBtn");
+const pdfGenerateBtn = document.getElementById("pdfGenerateBtn");
+
+const pdfIncludeDescription = document.getElementById("pdfIncludeDescription");
+const pdfIncludePrices = document.getElementById("pdfIncludePrices");
+

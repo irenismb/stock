@@ -3,13 +3,14 @@ const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
 const DEFAULT_WHATSAPP = "573042088961";
 const AUTO_REFRESH_MS = 20000;
-
 const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
 const BROWSER_ID_LS_KEY = "naturaBrowserId";
 
-// ✅ NUEVO: subtítulo personalizado del PDF
+// ✅ Subtítulo/título personalizado del PDF
 const LS_PDF_SUBTITLE_KEY = "naturaPdfSubtitle";
+// ✅ NUEVO: recordar catálogo seleccionado en el modal PDF
+const LS_PDF_SELECTED_CATALOG_KEY = "naturaPdfSelectedCatalog";
 
 // Servicio externo para IP pública + ciudad
 const CLIENT_INFO_URL = "https://ipapi.co/json/";
@@ -84,13 +85,14 @@ const pdfModal = document.getElementById("pdfModal");
 const pdfModalClose = document.getElementById("pdfModalClose");
 const pdfModalBackdrop = document.getElementById("pdfModalBackdrop");
 
-const pdfProductList = document.getElementById("pdfProductList");
-const pdfSelectFilteredBtn = document.getElementById("pdfSelectFilteredBtn");
-const pdfSelectCartBtn = document.getElementById("pdfSelectCartBtn");
-const pdfSelectAllBtn = document.getElementById("pdfSelectAllBtn");
-const pdfSelectNoneBtn = document.getElementById("pdfSelectNoneBtn");
-const pdfGenerateBtn = document.getElementById("pdfGenerateBtn");
+// ✅ NUEVO: lista de catálogos
+const pdfCatalogList = document.getElementById("pdfCatalogList");
 
+// Botón generar + opciones
+const pdfGenerateBtn = document.getElementById("pdfGenerateBtn");
 const pdfIncludePrices = document.getElementById("pdfIncludePrices");
+const pdfOnlyWithImages = document.getElementById("pdfOnlyWithImages");
+
+// Título/subtítulo personalizado
 const pdfCustomTitle = document.getElementById("pdfCustomTitle");
 

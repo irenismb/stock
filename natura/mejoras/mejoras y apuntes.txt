@@ -7,3 +7,6 @@ que archivos cambiarian si se aplican todas estas modificaciones?
 el logo_empresa con extension webp, no lo esta tomando, solo png
 
 quiero que cuando un usuario le de clic a una de las imagenes de un producto, esta se abra de inmediato, para poder verla mas grande
+
+
+en vez de la ventana actual con tantas opciones para lo del catalogo en pdf, quiero que me arme el catalogo con los productos marcados con x de la columna "Catalogo1" de la hoja de calculo, si debo poder colocar como ahora un titulo al catalogo, eso si debera seguir estando ahi. de esta manera, cada vez que quiera otro catalogo especifico, solo tendre que agregar una columna como esta en la hoja de calculo. en la ventana de catalogos pdf debera salirme la lista de catalogos para poder descargar el que quiera. tambien debera poder descargar el catalogo completo que se muestra en la ventana principal de la pagina web, dandome la opcion (en todos los catalogos) de incluir solo los productos que tengan imagnes.

@@ -54,23 +54,69 @@ function todayLabel() {
   return `${y}-${m}-${day}`;
 }
 
+// ---------- Subtítulo PDF (persistente) ----------
+function loadSubtitleFromStorage() {
+  if (!pdfCustomTitle) return "";
+  try {
+    const saved = localStorage.getItem(LS_PDF_SUBTITLE_KEY) || "";
+    const val = String(saved).trim();
+    pdfCustomTitle.value = val;
+    return val;
+  } catch (e) {
+    return "";
+  }
+}
+
+function saveSubtitleToStorage() {
+  if (!pdfCustomTitle) return;
+  try {
+    const val = String(pdfCustomTitle.value || "").trim();
+    if (!val) {
+      localStorage.removeItem(LS_PDF_SUBTITLE_KEY);
+    } else {
+      localStorage.setItem(LS_PDF_SUBTITLE_KEY, val);
+    }
+  } catch (e) {}
+}
+
 function getCustomPdfSubtitle() {
   const raw = pdfCustomTitle ? String(pdfCustomTitle.value || "") : "";
   const t = raw.trim();
-  return t;
+  if (t) return t;
+
+  // Fallback: si por alguna razón el input está vacío pero hay algo guardado
+  try {
+    const saved = localStorage.getItem(LS_PDF_SUBTITLE_KEY) || "";
+    return String(saved).trim();
+  } catch (e) {
+    return "";
+  }
+}
+
+// Guardar mientras escribe (suave y sin ruido)
+if (pdfCustomTitle) {
+  pdfCustomTitle.addEventListener(
+    "input",
+    debounce(() => {
+      saveSubtitleToStorage();
+    }, 250)
+  );
 }
 
 // ---------- Modal ----------
 function openPdfModal() {
   if (!pdfModal) return;
+  loadSubtitleFromStorage();
   renderPdfSelectionList();
   pdfModal.classList.add("open");
   pdfModal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
+  try { pdfCustomTitle && pdfCustomTitle.focus(); } catch (e) {}
 }
 
 function closePdfModal() {
   if (!pdfModal) return;
+  saveSubtitleToStorage();
   pdfModal.classList.remove("open");
   pdfModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
@@ -266,7 +312,6 @@ async function loadImageForPdf(url) {
 }
 
 // ---------- Encabezado ----------
-// Reglas pedidas:
 // 1) Empresa SIEMPRE primero
 // 2) Subtítulo personalizado debajo si existe
 // 3) No mostrar fecha de generación
@@ -276,20 +321,17 @@ function drawHeader(doc, pageW, companyName, customSubtitle, logoPack, pageIndex
 
   doc.setDrawColor(226, 232, 240);
 
-  // Logo opcional
   if (logoPack && logoPack.dataUrl) {
     try {
       doc.addImage(logoPack.dataUrl, logoPack.format, marginX, headerY, 12, 12);
     } catch (e) {}
   }
 
-  // Empresa
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(14);
   doc.text(companyName, marginX + 16, headerY + 8);
 
-  // Subtítulo (si existe)
   if (customSubtitle) {
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
@@ -297,13 +339,11 @@ function drawHeader(doc, pageW, companyName, customSubtitle, logoPack, pageIndex
     doc.text(customSubtitle, marginX + 16, headerY + 13);
   }
 
-  // Paginación
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
   doc.text(pageLabel, pageW - marginX, headerY + 8, { align: "right" });
 
-  // Separador
   doc.line(marginX, 22, pageW - marginX, 22);
 }
 
@@ -325,7 +365,6 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   const innerW = w - pad * 2;
   const innerH = h - pad * 2;
 
-  // Imagen grande prioritaria
   const maxByHeight = innerH * 0.78;
   const imgSize = Math.max(32, Math.min(innerW, maxByHeight));
 
@@ -356,7 +395,6 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   const category = (p.category || "").toString().trim();
   const price = Number(p.valor_unitario) || 0;
 
-  // Nombre
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10.2);
   doc.setTextColor(15, 23, 42);
@@ -365,7 +403,6 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   doc.text(limitedName, innerX, cursorY);
   cursorY += limitedName.length * 4.3;
 
-  // Marca / categoría
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.6);
   doc.setTextColor(71, 85, 105);
@@ -376,7 +413,6 @@ function drawProductCard(doc, p, x, y, w, h, options) {
     cursorY += 4.2;
   }
 
-  // Precio
   if (includePrices) {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10.5);
@@ -420,7 +456,6 @@ async function generatePdf() {
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
-  // Logo (si existe)
   let logoUrl = null;
   try {
     logoUrl = await resolveOtherImage("logo_empresa");
@@ -430,7 +465,6 @@ async function generatePdf() {
   const companyName = "Irenismb Stock Natura";
   const customSubtitle = getCustomPdfSubtitle();
 
-  // Layout de tarjetas
   const marginX = 10;
   const headerBottomY = 24;
   const bottomMargin = 10;
@@ -468,6 +502,9 @@ async function generatePdf() {
       });
     }
   }
+
+  // Guardamos por si generas sin cerrar el modal
+  saveSubtitleToStorage();
 
   const safeSub = (customSubtitle || "catalogo")
     .toLowerCase()

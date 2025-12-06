@@ -63,13 +63,18 @@
   outline:2px solid #fff;
   outline-offset:2px;
 }
+
 @media (max-width:768px){
-  .image-modal-content{
-    max-width:96vw;
-    max-height:86vh;
-    padding:4px;
+  #searchInput{
+    width:100%;
+    min-height:38px;
+    max-height: 44px; /* ← añade este para mantener el "max" final */
+    padding:8px 14px;
+    font-size:14px;
+    line-height:1.2;
   }
 }
+
 
 /* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
 .product-row-out-of-stock {

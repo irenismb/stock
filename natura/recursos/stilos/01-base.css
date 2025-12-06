@@ -464,16 +464,13 @@ body{
     flex-direction:column;
     align-items:stretch;
   }
-
-  /* ✅ CORREGIDO:
-     Quitamos el ajuste problemático de altura del buscador en móvil.
-     Deja que las capas 04-refinamiento/04-extras definan el estilo final. */
+  /* ✅ RESTAURADO:
+     Volvemos a limitar la altura del buscador en móvil con max-height. */
   #searchInput{
     width:100%;
     min-width:0;
-    /* sin max-height */
+    max-height:44px; /* ajusta si tu valor anterior era distinto */
   }
-
   .controls-bottom{
     flex-direction:column;
     align-items:stretch;

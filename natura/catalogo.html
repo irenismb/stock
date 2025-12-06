@@ -313,12 +313,21 @@
         <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
         <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
       </div>
+
       <div id="pdfProductList" class="pdf-product-list" role="list"></div>
+
       <div class="pdf-footer">
         <label class="pdf-option">
           <input type="checkbox" id="pdfIncludePrices" checked>
           Incluir precios
         </label>
+
+        <!-- ✅ NUEVO CHECK -->
+        <label class="pdf-option">
+          <input type="checkbox" id="pdfIncludeTotal">
+          Incluir total al final
+        </label>
+
         <button type="button" id="pdfGenerateBtn" class="pdf-generate-btn">
           Generar PDF
         </button>
@@ -356,10 +365,8 @@
   <!-- Scripts divididos (carpeta scrips) -->
   <script src="recursos/scrips/config-estado-dom.js"></script>
   <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
-
   <!-- ✅ FIX móvil: reubicar buscador y mantener botones en una sola fila -->
   <script src="recursos/scrips/layout-movil-buscador.js"></script>
-
   <script src="recursos/scrips/filtros-tabla-productos.js"></script>
   <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
   <script src="recursos/scrips/sobre-nosotros.js"></script>

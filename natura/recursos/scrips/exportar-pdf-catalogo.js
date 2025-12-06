@@ -6,7 +6,7 @@ const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
 
-// ✅ NUEVO: configuración QR del encabezado
+// ✅ QR en encabezado
 const PDF_QR_TARGET_URL = "https://irenismb.github.io/stock/natura/catalogo.html";
 const PDF_QR_SIZE_PX = 180; // tamaño de generación del QR (imagen)
 const PDF_QR_SIZE_MM = 14;  // tamaño de impresión dentro del PDF
@@ -17,7 +17,7 @@ const pdfSelection = new Set(); // ids como string
 // Cache simple de imágenes para el PDF
 const pdfImageCache = new Map(); // url -> { dataUrl, format }
 
-// ✅ NUEVO: cache específico para QR
+// Cache específico para QR
 const pdfQrCache = new Map(); // targetUrl -> { dataUrl, format }
 
 // ---------- Utilidades ----------
@@ -62,18 +62,17 @@ function todayLabel() {
   return `${y}-${m}-${day}`;
 }
 
-// ✅ Formato amigable de WhatsApp para metaLine en el header del PDF
+// Formato amigable de WhatsApp para metaLine en el header del PDF
 function formatWhatsAppNumber(raw) {
   const s = String(raw || "").replace(/\D/g, "");
   if (!s) return "";
-  // Caso típico Colombia: 57 + 10 dígitos
   if (s.startsWith("57") && s.length === 12) {
     return `+57 ${s.slice(2, 5)} ${s.slice(5, 8)} ${s.slice(8, 12)}`;
   }
   return `+${s}`;
 }
 
-// ✅ NUEVO: construir URL de QR usando un generador público de PNG
+// Construir URL de QR usando un generador público de PNG
 function buildQrApiUrl(data, sizePx) {
   const sz = Math.max(120, Number(sizePx) || 180);
   return (
@@ -111,7 +110,6 @@ function getCustomPdfSubtitle() {
   const raw = pdfCustomTitle ? String(pdfCustomTitle.value || "") : "";
   const t = raw.trim();
   if (t) return t;
-  // Fallback: si por alguna razón el input está vacío pero hay algo guardado
   try {
     const saved = localStorage.getItem(LS_PDF_SUBTITLE_KEY) || "";
     return String(saved).trim();
@@ -120,7 +118,7 @@ function getCustomPdfSubtitle() {
   }
 }
 
-// Guardar mientras escribe (suave y sin ruido)
+// Guardar mientras escribe
 if (pdfCustomTitle) {
   pdfCustomTitle.addEventListener(
     "input",
@@ -152,20 +150,15 @@ function closePdfModal() {
 if (pdfBtn) {
   pdfBtn.addEventListener("click", openPdfModal);
 }
-
-// Botón compacto de PDF en móvil
 if (pdfBtnMobile) {
   pdfBtnMobile.addEventListener("click", openPdfModal);
 }
-
 if (pdfModalClose) {
   pdfModalClose.addEventListener("click", closePdfModal);
 }
-
 if (pdfModalBackdrop) {
   pdfModalBackdrop.addEventListener("click", closePdfModal);
 }
-
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && pdfModal && pdfModal.classList.contains("open")) {
     closePdfModal();
@@ -306,16 +299,20 @@ async function dataUrlToJpegDataUrl(dataUrl) {
       img.onload = resolve;
       img.onerror = reject;
     });
+
     const canvas = document.createElement("canvas");
     const w = img.naturalWidth || 300;
     const h = img.naturalHeight || 300;
     canvas.width = w;
     canvas.height = h;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
+
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
+
     return canvas.toDataURL("image/jpeg", 0.88);
   } catch (e) {
     return null;
@@ -339,7 +336,7 @@ async function loadImageForPdf(url) {
   return pack;
 }
 
-// ✅ NUEVO: cargar QR sin convertir a JPEG (para que quede nítido)
+// Cargar QR sin convertir a JPEG
 async function loadQrForPdf(targetUrl) {
   const key = String(targetUrl || "").trim();
   if (!key) return null;
@@ -356,7 +353,6 @@ async function loadQrForPdf(targetUrl) {
 
   let format = "PNG";
   if (raw.startsWith("data:image/jpeg")) format = "JPEG";
-  // Si algún servidor responde distinto, mantenemos PNG por defecto.
 
   const pack = { dataUrl: raw, format };
   pdfQrCache.set(key, pack);
@@ -386,30 +382,27 @@ function drawHeader(
     } catch (e) {}
   }
 
-  // QR en el lado derecho (reemplaza la cápsula verde)
+  // QR en el lado derecho
   if (qrPack && qrPack.dataUrl) {
     const qrSize = PDF_QR_SIZE_MM;
     const qrX = pageW - headerMarginX - qrSize;
     const qrY = headerY + 1;
     try {
       doc.addImage(qrPack.dataUrl, qrPack.format, qrX, qrY, qrSize, qrSize);
-      // Marco sutil opcional
       doc.setDrawColor(226, 232, 240);
       doc.rect(qrX, qrY, qrSize, qrSize);
     } catch (e) {}
   }
 
-  // Bloque texto izquierda
+  // Texto izquierda
   let textX = headerMarginX + 15;
   let lineY = headerY + 6.2;
 
-  // Nombre de la tienda
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12.5);
   doc.text(companyName, textX, lineY);
 
-  // Nombre de catálogo escrito por el cliente
   if (catalogName) {
     lineY += 4.4;
     doc.setFont("helvetica", "normal");
@@ -418,7 +411,6 @@ function drawHeader(
     doc.text(catalogName, textX, lineY);
   }
 
-  // MetaLine sutil (WhatsApp + Fecha)
   if (metaLine) {
     lineY += 4.0;
     doc.setFont("helvetica", "normal");
@@ -427,14 +419,12 @@ function drawHeader(
     doc.text(metaLine, textX, lineY);
   }
 
-  // Número de página (ubicado para no pelear con el QR)
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.4);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
   doc.text(pageLabel, pageW - headerMarginX, headerY + 20.5, { align: "right" });
 
-  // Línea de separación
   doc.setDrawColor(226, 232, 240);
   doc.line(headerMarginX, 28, pageW - headerMarginX, 28);
 }
@@ -514,6 +504,92 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   }
 }
 
+// ✅ NUEVO: Página final de total/resumen
+function drawTotalSummaryPage(doc, pageW, pageH, data) {
+  const {
+    companyName,
+    catalogName,
+    metaLine,
+    logoPack,
+    qrPack,
+    pageIndex,
+    totalPages,
+    itemCount,
+    totalValue
+  } = data;
+
+  drawHeader(
+    doc,
+    pageW,
+    companyName,
+    catalogName,
+    metaLine,
+    logoPack,
+    qrPack,
+    pageIndex,
+    totalPages
+  );
+
+  const marginX = 18;
+  const startY = 45;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Resumen del catálogo", marginX, startY);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.setTextColor(71, 85, 105);
+  doc.text(
+    "Este total corresponde a la suma de los precios unitarios de los productos seleccionados.",
+    marginX,
+    startY + 8
+  );
+
+  // Caja suave
+  const boxX = marginX;
+  const boxY = startY + 16;
+  const boxW = pageW - marginX * 2;
+  const boxH = 40;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  try {
+    doc.roundedRect(boxX, boxY, boxW, boxH, 3, 3, "FD");
+  } catch (e) {
+    doc.rect(boxX, boxY, boxW, boxH, "FD");
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Productos seleccionados:", boxX + 8, boxY + 14);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(12);
+  doc.text(String(itemCount), boxX + 70, boxY + 14);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text("Total:", boxX + 8, boxY + 28);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.setTextColor(5, 150, 105);
+  doc.text(currencyFormatter.format(totalValue), boxX + 70, boxY + 28);
+
+  // Nota final
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(100, 116, 139);
+  doc.text(
+    "Escanea el QR para ver el catálogo en línea y confirmar disponibilidad.",
+    marginX,
+    boxY + boxH + 12
+  );
+}
+
 // ---------- Generación del PDF ----------
 async function generatePdf() {
   const jsPDF = getJsPDFClass();
@@ -533,6 +609,7 @@ async function generatePdf() {
   }
 
   const includePrices = !!(pdfIncludePrices && pdfIncludePrices.checked);
+  const includeTotal = !!(pdfIncludeTotal && pdfIncludeTotal.checked);
 
   // Ordenar productos por nombre para el PDF
   selectedProducts.sort((a, b) => {
@@ -543,8 +620,9 @@ async function generatePdf() {
     return String(a.id).localeCompare(String(b.id));
   });
 
-  const pages = chunkArray(selectedProducts, PDF_PRODUCTS_PER_PAGE);
-  const totalPages = pages.length;
+  const productPages = chunkArray(selectedProducts, PDF_PRODUCTS_PER_PAGE);
+  const basePagesCount = productPages.length;
+  const totalPages = includeTotal ? basePagesCount + 1 : basePagesCount;
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
@@ -556,21 +634,16 @@ async function generatePdf() {
   } catch (e) {}
 
   const logoPack = logoUrl ? await loadImageForPdf(logoUrl) : null;
-
-  // ✅ QR pack para el encabezado
   const qrPack = await loadQrForPdf(PDF_QR_TARGET_URL);
 
   const companyName = "IRENISMB STOCK NATURA";
-
-  // ✅ Esta línea reemplaza al tagline fijo
   const catalogName = getCustomPdfSubtitle() || "Catálogo";
 
-  // MetaLine sutil (WhatsApp + Fecha)
   const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
   const metaLine = [whatsappTxt, `Fecha: ${todayLabel()}`].filter(Boolean).join(" • ");
 
   const marginX = 10;
-  const headerBottomY = 30; // Ajustado para este header
+  const headerBottomY = 30;
   const bottomMargin = 10;
 
   const gapX = 6;
@@ -582,7 +655,8 @@ async function generatePdf() {
   const cardW = (usableW - gapX * (PDF_COLS - 1)) / PDF_COLS;
   const cardH = (usableH - gapY * (PDF_ROWS - 1)) / PDF_ROWS;
 
-  for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
+  // 1) Páginas de productos
+  for (let pageIndex = 0; pageIndex < productPages.length; pageIndex++) {
     if (pageIndex > 0) doc.addPage();
 
     drawHeader(
@@ -597,7 +671,7 @@ async function generatePdf() {
       totalPages
     );
 
-    const pageItems = pages[pageIndex];
+    const pageItems = productPages[pageIndex];
 
     for (let i = 0; i < pageItems.length; i++) {
       const p = pageItems[i];
@@ -615,6 +689,29 @@ async function generatePdf() {
         includePrices
       });
     }
+  }
+
+  // 2) Página final de total (opcional)
+  if (includeTotal) {
+    doc.addPage();
+
+    const itemCount = selectedProducts.length;
+    const totalValue = selectedProducts.reduce(
+      (acc, p) => acc + (Number(p.valor_unitario) || 0),
+      0
+    );
+
+    drawTotalSummaryPage(doc, pageW, pageH, {
+      companyName,
+      catalogName,
+      metaLine,
+      logoPack,
+      qrPack,
+      pageIndex: totalPages - 1,
+      totalPages,
+      itemCount,
+      totalValue
+    });
   }
 
   // Guardamos por si generas sin cerrar el modal

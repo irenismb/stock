@@ -1,4 +1,3 @@
-catalogo.html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -63,10 +62,12 @@ catalogo.html
               placeholder="🔍 Buscar por nombre, marca, categoría..."
             >
           </div>
+
           <!-- Fila inferior: filtros + redes -->
           <div class="controls-bottom">
             <div class="filters-row">
               <button id="sortPriceBtn" type="button">Ordenar por precio</button>
+
               <!-- Filtro por categorías -->
               <div class="custom-dropdown" id="categoryDropdown">
                 <button
@@ -80,6 +81,7 @@ catalogo.html
                 </button>
                 <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
               </div>
+
               <!-- Filtro por marcas -->
               <div class="custom-dropdown" id="brandDropdown">
                 <button
@@ -93,9 +95,11 @@ catalogo.html
                 </button>
                 <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
               </div>
+
               <!-- Botón PDF (versión de escritorio / dentro del panel de filtros) -->
               <button id="pdfBtn" class="pdf-btn" type="button">Descargar PDF</button>
             </div>
+
             <!-- Iconos de redes sociales y ubicación -->
             <div class="social-icons">
               <a
@@ -120,7 +124,8 @@ catalogo.html
                 rel="noopener noreferrer"
                 aria-label="TikTok Irenismb Stock"
               >
-                <img src="recursos/otras_imagenes/tik tok.webp" alt="TikTok">
+                <!-- ✅ CORREGIDO: nombre de archivo sin espacio -->
+                <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok">
               </a>
               <a
                 href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564"
@@ -138,6 +143,7 @@ catalogo.html
               >
                 <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp">
               </a>
+
               <!-- Botón PDF específico para móvil, alineado con redes -->
               <button
                 id="pdfBtnMobile"
@@ -288,6 +294,7 @@ catalogo.html
           Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
         </p>
       </div>
+
       <!-- Subtítulo personalizado -->
       <div class="pdf-title-row">
         <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
@@ -300,6 +307,7 @@ catalogo.html
           autocomplete="off"
         >
       </div>
+
       <div class="pdf-actions">
         <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
         <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
@@ -345,6 +353,7 @@ catalogo.html
 
   <!-- Librería PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
   <!-- Scripts divididos (carpeta scrips) -->
   <script src="recursos/scrips/config-estado-dom.js"></script>
   <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>

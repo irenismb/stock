@@ -1,4 +1,3 @@
-recursos/scrips/carrito-whatsapp-init.js
 // ================== CARRITO Y WHATSAPP ==================
 function loadCartFromStorage() {
   const saved = localStorage.getItem(LS_CART_KEY);
@@ -17,9 +16,11 @@ function loadCartFromStorage() {
     cart = {};
   }
 }
+
 function updateCart() {
   const items = Object.values(cart);
   let total = 0;
+
   if (items.length === 0) {
     cartList.innerHTML =
       '<li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>';
@@ -39,9 +40,11 @@ function updateCart() {
       })
       .join("");
   }
+
   totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
   localStorage.setItem(LS_CART_KEY, JSON.stringify(cart));
 }
+
 function buildClientWhatsAppMsg(
   items,
   header = "Hola, deseo comprar estos productos en Irenismb Stock Natura:"
@@ -57,6 +60,7 @@ function buildClientWhatsAppMsg(
   msg += `\nGracias.`;
   return msg;
 }
+
 function handleWhatsAppClick() {
   const items = Object.values(cart).filter(it => it.quantity > 0);
   if (!items.length) {
@@ -67,14 +71,20 @@ function handleWhatsAppClick() {
   const msg = buildClientWhatsAppMsg(items);
   const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(msg)}`;
   window.open(url, "_blank");
-  sendVisitEvent("update", { clickText: "whatsapp_compra" });
+
+  // ✅ Guard extra por robustez
+  if (typeof sendVisitEvent === "function") {
+    sendVisitEvent("update", { clickText: "whatsapp_compra" });
+  }
 }
+
 function updateRowTotal(tr, qty, price) {
   const cell = tr.querySelector(".total-pay");
   if (!cell) return;
   const subtotal = (qty || 0) * (price || 0);
   cell.textContent = currencyFormatter.format(subtotal);
 }
+
 function updateCartEntry(id, name, price, qty) {
   if (!id) return;
   const quantity = Math.max(0, Number(qty) || 0);
@@ -90,6 +100,7 @@ function updateCartEntry(id, name, price, qty) {
   }
   updateCart();
 }
+
 // ================== EVENTOS EN LA TABLA / CARRITO ==================
 productTableBody.addEventListener("click", e => {
   const decBtn = e.target.closest(".decrease-btn");
@@ -97,6 +108,7 @@ productTableBody.addEventListener("click", e => {
   const tr = e.target.closest("tr");
   if (!tr) return;
   const productId = tr.getAttribute("data-product-id");
+
   // Clic en la miniatura → vista previa + modal grande
   const thumbImg = e.target.closest(".product-thumb");
   if (thumbImg) {
@@ -115,7 +127,7 @@ productTableBody.addEventListener("click", e => {
       currentPreviewProductId = prod.id;
       showPreviewForProduct(prod);
       const clickName = prod.name || prod.nombre || "";
-      if (clickName) {
+      if (clickName && typeof sendVisitEvent === "function") {
         sendVisitEvent("update", { clickText: clickName + " (imagen)" });
       }
     }
@@ -124,6 +136,7 @@ productTableBody.addEventListener("click", e => {
     openImageModal(src, alt);
     return;
   }
+
   // Controles de cantidad
   const input = tr.querySelector(".quantity-input");
   if (decBtn || incBtn) {
@@ -140,11 +153,13 @@ productTableBody.addEventListener("click", e => {
     updateCartEntry(id, name, price, qty);
     return;
   }
+
   // Clic en la fila para ver vista previa (evita controles de cantidad)
   if (e.target.closest(".quantity-control") || e.target.classList.contains("quantity-input")) {
     return;
   }
   if (!productId) return;
+
   let idx = currentFilteredProducts.findIndex(p => String(p.id) === String(productId));
   let prod;
   if (idx !== -1) {
@@ -157,11 +172,12 @@ productTableBody.addEventListener("click", e => {
     currentPreviewProductId = prod.id;
     showPreviewForProduct(prod);
     const clickName = prod.name || prod.nombre || "";
-    if (clickName) {
+    if (clickName && typeof sendVisitEvent === "function") {
       sendVisitEvent("update", { clickText: clickName });
     }
   }
 });
+
 productTableBody.addEventListener("change", e => {
   const input = e.target;
   if (!input.classList.contains("quantity-input")) return;
@@ -176,6 +192,7 @@ productTableBody.addEventListener("change", e => {
   updateRowTotal(tr, qty, price);
   updateCartEntry(id, name, price, qty);
 });
+
 // Eliminar desde el carrito
 cartList.addEventListener("click", e => {
   const btn = e.target.closest(".remove-item-btn");
@@ -192,6 +209,7 @@ cartList.addEventListener("click", e => {
   }
   updateCart();
 });
+
 // Ordenar por precio
 sortPriceBtn.addEventListener("click", () => {
   if (currentSortOrder === "default") {
@@ -246,6 +264,7 @@ function setupAutoRefresh() {
     fetchProductsFromBackend();
   }, AUTO_REFRESH_MS);
 }
+
 // ================== INICIALIZACIÓN GENERAL ==================
 (function init() {
   // Generar / recuperar identificador de navegador lo antes posible
@@ -256,17 +275,23 @@ function setupAutoRefresh() {
   setupAutoRefresh();
   userName = detectDeviceLabel();
   ensureSessionId();
-  sendVisitEvent("start");
+  if (typeof sendVisitEvent === "function") {
+    sendVisitEvent("start");
+  }
   initClientLocation();
 })();
+
 // Registrar SALIDA del catálogo
 window.addEventListener("beforeunload", function () {
   try {
-    sendVisitEvent("end");
+    if (typeof sendVisitEvent === "function") {
+      sendVisitEvent("end");
+    }
   } catch (e) {
     console.error("Error al registrar salida:", e);
   }
 });
+
 /**
  * Fondos fijos usando tus archivos en recursos/otras_imagenes:
  * - logo_pagina.webp              → BODY
@@ -282,6 +307,7 @@ window.addEventListener("beforeunload", function () {
     const panelBg  = "recursos/otras_imagenes/logo_panel_de_controles.webp";
     const headerBg = "recursos/otras_imagenes/logo_encabezado.webp";
     console.log("[Fondos] Usando:", { pageBg, panelBg, headerBg });
+
     // 1) Fondo general de la página
     if (pageBg) {
       document.body.style.backgroundImage = `url("${pageBg}")`;
@@ -290,6 +316,7 @@ window.addEventListener("beforeunload", function () {
       document.body.style.backgroundRepeat = "no-repeat";
       document.body.style.backgroundAttachment = "fixed";
     }
+
     // 2) Fondo del contenedor principal
     const container = document.querySelector(".container");
     if (container && panelBg) {
@@ -298,6 +325,7 @@ window.addEventListener("beforeunload", function () {
       container.style.backgroundPosition = "center";
       container.style.backgroundRepeat = "no-repeat";
     }
+
     // 3) Fondo del encabezado
     const header = document.querySelector(".site-header");
     if (header && headerBg) {

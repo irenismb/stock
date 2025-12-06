@@ -432,6 +432,7 @@ body{
   color:#2563eb;
   font-style:italic;
 }
+
 /* ======== MÓVIL BASE ======== */
 @media (max-width:768px){
   body{
@@ -463,12 +464,16 @@ body{
     flex-direction:column;
     align-items:stretch;
   }
+
+  /* ✅ CORREGIDO:
+     Quitamos el ajuste problemático de altura del buscador en móvil.
+     Deja que las capas 04-refinamiento/04-extras definan el estilo final. */
   #searchInput{
     width:100%;
-    padding:3px 12px;
-    max-height:4px;
-    line-height:1.1;
+    min-width:0;
+    /* sin max-height */
   }
+
   .controls-bottom{
     flex-direction:column;
     align-items:stretch;
@@ -529,3 +534,4 @@ body{
     max-height:44vh;
   }
 }
+

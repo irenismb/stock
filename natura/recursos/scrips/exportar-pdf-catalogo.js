@@ -1,3 +1,4 @@
+recursos/scrips/exportar-pdf-catalogo.js
 // ================== EXPORTACIÓN DE CATÁLOGO A PDF ==================
 // Requiere: config-estado-dom.js, utilidades-imagenes-galeria.js
 //          y la librería jsPDF UMD cargada en catalogo.html

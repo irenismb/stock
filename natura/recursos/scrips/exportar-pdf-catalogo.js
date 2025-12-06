@@ -14,6 +14,11 @@ const PDF_QR_TARGET_URL = "https://irenismb.github.io/stock/natura/catalogo.html
 const PDF_QR_SIZE_PX = 180; // tamaño de generación del QR (imagen)
 const PDF_QR_SIZE_MM = 14;  // tamaño de impresión dentro del PDF
 
+// ✅ NUEVO: control para NO mostrar la URL en el texto del encabezado
+// - false: NO imprime la ruta en el PDF (lo que solicitaste)
+// - true: la imprime de nuevo si algún día la necesitas
+const PDF_SHOW_QR_URL_TEXT = false;
+
 // Estado de selección para exportar
 const pdfSelection = new Set(); // ids como string
 
@@ -162,6 +167,7 @@ if (pdfModalClose) {
 if (pdfModalBackdrop) {
   pdfModalBackdrop.addEventListener("click", closePdfModal);
 }
+
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && pdfModal && pdfModal.classList.contains("open")) {
     closePdfModal();
@@ -183,6 +189,7 @@ function renderPdfSelectionList() {
     const checked = pdfSelection.has(id);
     const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
     const price = Number(p.valor_unitario) || 0;
+
     const label = document.createElement("label");
     label.className = "pdf-product-item";
     label.setAttribute("role", "listitem");
@@ -213,6 +220,7 @@ function renderPdfSelectionList() {
     `;
     frag.appendChild(label);
   });
+
   pdfProductList.innerHTML = "";
   pdfProductList.appendChild(frag);
 }
@@ -298,16 +306,19 @@ async function dataUrlToJpegDataUrl(dataUrl) {
       img.onload = resolve;
       img.onerror = reject;
     });
+
     const canvas = document.createElement("canvas");
     const w = img.naturalWidth || 300;
     const h = img.naturalHeight || 300;
     canvas.width = w;
     canvas.height = h;
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
+
     return canvas.toDataURL("image/jpeg", 0.88);
   } catch (e) {
     return null;
@@ -317,11 +328,13 @@ async function dataUrlToJpegDataUrl(dataUrl) {
 async function loadImageForPdf(url) {
   if (!url) return null;
   if (pdfImageCache.has(url)) return pdfImageCache.get(url);
+
   const raw = await urlToDataUrl(url);
   if (!raw) {
     pdfImageCache.set(url, null);
     return null;
   }
+
   const jpg = await dataUrlToJpegDataUrl(raw);
   const pack = jpg ? { dataUrl: jpg, format: "JPEG" } : null;
   pdfImageCache.set(url, pack);
@@ -333,12 +346,14 @@ async function loadQrForPdf(targetUrl) {
   const key = String(targetUrl || "").trim();
   if (!key) return null;
   if (pdfQrCache.has(key)) return pdfQrCache.get(key);
+
   const qrUrl = buildQrApiUrl(key, PDF_QR_SIZE_PX);
   const raw = await urlToDataUrl(qrUrl);
   if (!raw) {
     pdfQrCache.set(key, null);
     return null;
   }
+
   let format = "PNG";
   if (raw.startsWith("data:image/jpeg")) format = "JPEG";
   const pack = { dataUrl: raw, format };
@@ -398,14 +413,13 @@ function drawHeader(
     doc.text(catalogName, textX, lineY);
   }
 
-  // Meta multilinea: teléfono, URL del QR, fecha
+  // Meta multilinea: teléfono, (opcional URL), fecha
   if (metaLine) {
     const lines = Array.isArray(metaLine) ? metaLine : [metaLine];
     lineY += 4.0;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-
     lines.filter(Boolean).forEach((ln, idx) => {
       doc.text(String(ln), textX, lineY);
       lineY += 3.6;
@@ -425,7 +439,6 @@ function drawProductCard(doc, p, x, y, w, h, options) {
 
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(255, 255, 255);
-
   try {
     doc.roundedRect(x, y, w, h, 3, 3, "FD");
   } catch (e) {
@@ -498,7 +511,6 @@ function drawProductCard(doc, p, x, y, w, h, options) {
 // ✅ NUEVO: Resumen inline (título corto)
 function drawInlineTotalSummary(doc, pageW, y, data) {
   const { itemCount, totalValue } = data;
-
   const marginX = 12;
   const boxW = pageW - marginX * 2;
 
@@ -581,7 +593,6 @@ function drawTotalSummaryPage(doc, pageW, pageH, data) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.2);
   doc.setTextColor(71, 85, 105);
-
   const desc = "Suma de los precios unitarios de los productos seleccionados.";
   const descLines = doc.splitTextToSize(desc, pageW - marginX * 2);
   doc.text(descLines.slice(0, 2), marginX, startY + 7);
@@ -647,7 +658,6 @@ async function generatePdf() {
   }
 
   const includePrices = !!(pdfIncludePrices && pdfIncludePrices.checked);
-
   // ✅ El check controla el bloque visual de Resumen
   const includeSummary = !!(pdfIncludeTotal && pdfIncludeTotal.checked);
 
@@ -692,6 +702,7 @@ async function generatePdf() {
   if (includeSummary && basePagesCount > 0) {
     const lastItemsCount = productPages[basePagesCount - 1].length;
     const usedRows = Math.max(1, Math.ceil(lastItemsCount / PDF_COLS));
+
     const lastRowBottom =
       headerBottomY + (usedRows - 1) * (cardH + gapY) + cardH;
 
@@ -720,12 +731,12 @@ async function generatePdf() {
 
   // ✅ Meta en varias líneas:
   // 1) WhatsApp
-  // 2) URL del QR
+  // 2) (opcional) URL del QR
   // 3) Fecha
   const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
   const metaLine = [
     whatsappTxt,
-    PDF_QR_TARGET_URL,
+    PDF_SHOW_QR_URL_TEXT ? PDF_QR_TARGET_URL : "",
     `Fecha: ${todayLabel()}`
   ].filter(Boolean);
 
@@ -751,6 +762,7 @@ async function generatePdf() {
       const p = pageItems[i];
       const row = Math.floor(i / PDF_COLS);
       const col = i % PDF_COLS;
+
       const x = marginX + col * (cardW + gapX);
       const y = headerBottomY + row * (cardH + gapY);
 

@@ -432,14 +432,13 @@ body{
   color:#2563eb;
   font-style:italic;
 }
-
 /* ======== MÓVIL BASE ======== */
 @media (max-width:768px){
   body{
     padding:6px;
   }
   .container{
-    flex-direction:column-reverse;
+    flex-direction:column; /* ✅ CAMBIO: antes column-reverse */
     gap:10px;
   }
   .controls-panel{

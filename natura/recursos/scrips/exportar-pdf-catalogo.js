@@ -6,7 +6,7 @@ const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
 
-// ✅ Nuevo umbral para decidir si el resumen puede ir en la última página
+// ✅ Umbral para decidir si el resumen puede ir inline en la última página
 const PDF_INLINE_TOTAL_MIN_FREE_H = 28; // mm mínimos libres para insertar resumen en la última página
 
 // ✅ QR en encabezado
@@ -346,7 +346,7 @@ async function loadQrForPdf(targetUrl) {
   return pack;
 }
 
-// ---------- Encabezado (CON QR A LA DERECHA) ----------
+// ---------- Encabezado (CON QR A LA DERECHA, SIN PAGINACIÓN) ----------
 function drawHeader(
   doc,
   pageW,
@@ -398,23 +398,25 @@ function drawHeader(
     doc.text(catalogName, textX, lineY);
   }
 
+  // Meta multilinea: teléfono, URL del QR, fecha
   if (metaLine) {
+    const lines = Array.isArray(metaLine) ? metaLine : [metaLine];
     lineY += 4.0;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
-    doc.text(metaLine, textX, lineY);
+
+    lines.filter(Boolean).forEach((ln, idx) => {
+      doc.text(String(ln), textX, lineY);
+      lineY += 3.6;
+    });
   }
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.4);
-  doc.setTextColor(100, 116, 139);
-  const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
-  doc.text(pageLabel, pageW - headerMarginX, headerY + 18, { align: "right" });
+  // ✅ Sin paginación
 
+  // Línea separadora del header
   doc.setDrawColor(226, 232, 240);
-  doc.line(headerMarginX, 27, pageW - headerMarginX, 27);
-
+  doc.line(headerMarginX, 28, pageW - headerMarginX, 28);
 }
 
 // ---------- Tarjeta de producto (SIN descripción) ----------
@@ -493,7 +495,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   }
 }
 
-// ✅ NUEVO: Resumen inline para evitar página casi vacía
+// ✅ NUEVO: Resumen inline (título corto)
 function drawInlineTotalSummary(doc, pageW, y, data) {
   const { itemCount, totalValue } = data;
 
@@ -503,7 +505,7 @@ function drawInlineTotalSummary(doc, pageW, y, data) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(13.5);
   doc.setTextColor(15, 23, 42);
-  doc.text("Resumen del catálogo", marginX, y);
+  doc.text("Resumen", marginX, y);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.2);
@@ -542,7 +544,7 @@ function drawInlineTotalSummary(doc, pageW, y, data) {
   doc.text(currencyFormatter.format(totalValue), marginX + 62, boxY + 17);
 }
 
-// ✅ REEMPLAZO: Página final de total/resumen más compacta
+// ✅ Página final de resumen más compacta (título corto)
 function drawTotalSummaryPage(doc, pageW, pageH, data) {
   const {
     companyName,
@@ -574,16 +576,15 @@ function drawTotalSummaryPage(doc, pageW, pageH, data) {
   doc.setFont("helvetica", "bold");
   doc.setFontSize(17);
   doc.setTextColor(15, 23, 42);
-  doc.text("Resumen del catálogo", marginX, startY);
+  doc.text("Resumen", marginX, startY);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.2);
   doc.setTextColor(71, 85, 105);
 
-  const desc =
-    "Este total corresponde a la suma de los precios unitarios de los productos seleccionados.";
+  const desc = "Suma de los precios unitarios de los productos seleccionados.";
   const descLines = doc.splitTextToSize(desc, pageW - marginX * 2);
-  doc.text(descLines.slice(0, 3), marginX, startY + 7);
+  doc.text(descLines.slice(0, 2), marginX, startY + 7);
 
   const boxX = marginX;
   const boxY = startY + 16;
@@ -646,7 +647,9 @@ async function generatePdf() {
   }
 
   const includePrices = !!(pdfIncludePrices && pdfIncludePrices.checked);
-  const includeTotal = !!(pdfIncludeTotal && pdfIncludeTotal.checked);
+
+  // ✅ El check controla el bloque visual de Resumen
+  const includeSummary = !!(pdfIncludeTotal && pdfIncludeTotal.checked);
 
   // Ordenar productos por nombre para el PDF
   selectedProducts.sort((a, b) => {
@@ -686,7 +689,7 @@ async function generatePdf() {
 
   // ¿Cabe el resumen dentro de la última página de productos?
   let willInlineTotal = false;
-  if (includeTotal && basePagesCount > 0) {
+  if (includeSummary && basePagesCount > 0) {
     const lastItemsCount = productPages[basePagesCount - 1].length;
     const usedRows = Math.max(1, Math.ceil(lastItemsCount / PDF_COLS));
     const lastRowBottom =
@@ -699,7 +702,7 @@ async function generatePdf() {
   }
 
   // Total real para encabezados
-  const totalPages = !includeTotal
+  const totalPages = !includeSummary
     ? basePagesCount
     : (willInlineTotal ? basePagesCount : basePagesCount + 1);
 
@@ -714,8 +717,17 @@ async function generatePdf() {
 
   const companyName = "IRENISMB STOCK NATURA";
   const catalogName = getCustomPdfSubtitle() || "Catálogo";
+
+  // ✅ Meta en varias líneas:
+  // 1) WhatsApp
+  // 2) URL del QR
+  // 3) Fecha
   const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
-  const metaLine = [whatsappTxt, `Fecha: ${todayLabel()}`].filter(Boolean).join(" • ");
+  const metaLine = [
+    whatsappTxt,
+    PDF_QR_TARGET_URL,
+    `Fecha: ${todayLabel()}`
+  ].filter(Boolean);
 
   // 1) Páginas de productos
   for (let pageIndex = 0; pageIndex < productPages.length; pageIndex++) {
@@ -752,7 +764,7 @@ async function generatePdf() {
     }
 
     // ✅ Resumen inline en la última página si hay espacio real
-    if (includeTotal && willInlineTotal && pageIndex === productPages.length - 1) {
+    if (includeSummary && willInlineTotal && pageIndex === productPages.length - 1) {
       const usedRows = Math.max(1, Math.ceil(pageItems.length / PDF_COLS));
       const lastRowBottom =
         headerBottomY + (usedRows - 1) * (cardH + gapY) + cardH;
@@ -766,8 +778,8 @@ async function generatePdf() {
     }
   }
 
-  // 2) Página final de total (solo si NO se pudo inline)
-  if (includeTotal && !willInlineTotal) {
+  // 2) Página final de resumen (solo si NO se pudo inline)
+  if (includeSummary && !willInlineTotal) {
     doc.addPage();
     drawTotalSummaryPage(doc, pageW, pageH, {
       companyName,

@@ -1,3 +1,4 @@
+catalogo.html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -6,7 +7,6 @@
   <!-- Favicon / ícono de pestaña -->
   <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
   <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
-
   <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html">
@@ -18,15 +18,12 @@
   <meta property="og:image:height" content="800">
   <meta property="og:site_name" content="Irenismb Stock Natura">
   <meta property="og:locale" content="es_CO">
-
   <!-- Metadatos Twitter -->
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
   <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
   <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-
   <!-- Hojas de estilos divididas (carpeta stilos) -->
   <link rel="stylesheet" href="recursos/stilos/01-base.css">
   <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
@@ -66,12 +63,10 @@
               placeholder="🔍 Buscar por nombre, marca, categoría..."
             >
           </div>
-
-          <!-- Fila inferior: filtros en una sola línea + redes -->
+          <!-- Fila inferior: filtros + redes -->
           <div class="controls-bottom">
             <div class="filters-row">
               <button id="sortPriceBtn" type="button">Ordenar por precio</button>
-
               <!-- Filtro por categorías -->
               <div class="custom-dropdown" id="categoryDropdown">
                 <button
@@ -85,7 +80,6 @@
                 </button>
                 <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
               </div>
-
               <!-- Filtro por marcas -->
               <div class="custom-dropdown" id="brandDropdown">
                 <button
@@ -99,11 +93,9 @@
                 </button>
                 <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
               </div>
-
-              <!-- Botón PDF (también integrado en la fila de filtros en móvil) -->
+              <!-- Botón PDF (versión de escritorio / dentro del panel de filtros) -->
               <button id="pdfBtn" class="pdf-btn" type="button">Descargar PDF</button>
             </div>
-
             <!-- Iconos de redes sociales y ubicación -->
             <div class="social-icons">
               <a
@@ -146,9 +138,31 @@
               >
                 <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp">
               </a>
+              <!-- Botón PDF específico para móvil, alineado con redes -->
+              <button
+                id="pdfBtnMobile"
+                class="pdf-btn pdf-btn-mobile"
+                type="button"
+                aria-label="Descargar PDF del catálogo"
+              >
+                PDF
+              </button>
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Fila de acciones principales en móvil (WhatsApp / Filtros / Sobre Nosotros) -->
+      <div class="mobile-actions-row" id="mobileActionsRow">
+        <button id="mobileCartBtn" type="button" class="mobile-action-btn">
+          Comprar por WhatsApp
+        </button>
+        <button id="mobileFiltersBtn" type="button" class="mobile-action-btn">
+          Filtros
+        </button>
+        <button id="aboutBtn" class="mobile-action-btn about-btn" type="button">
+          Sobre Nosotros
+        </button>
       </div>
 
       <!-- TABLA DE PRODUCTOS -->
@@ -174,7 +188,7 @@
       </div>
     </div>
 
-    <!-- PANEL DERECHO: AHORA SOLO CARRITO + SOBRE NOSOTROS -->
+    <!-- PANEL DERECHO: CARRITO + SOBRE NOSOTROS -->
     <div class="right-panel">
       <!-- Vista previa del producto (se mantiene en el DOM pero se oculta con CSS) -->
       <div id="productPreview" class="preview" aria-live="polite">
@@ -190,22 +204,35 @@
         </div>
       </div>
 
-      <!-- Carrito -->
-      <div class="cart-container" id="cartContainer">
-        <h3>🛒 Carrito de Compras</h3>
-        <ul id="cartList">
-          <li class="cart-item">
-            <span class="cart-item-title">El carrito está vacío.</span>
-          </li>
-        </ul>
-        <div id="totalPrice">Total: 0</div>
-        <button id="whatsappBtn">Comprar por WhatsApp</button>
+      <!-- Carrito: panel en escritorio, modal en móvil -->
+      <div id="cartModal" class="cart-modal" aria-hidden="false">
+        <div id="cartModalBackdrop" class="cart-modal-backdrop"></div>
+        <div
+          class="cart-modal-content"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Carrito de compras"
+        >
+          <button
+            type="button"
+            id="cartModalClose"
+            class="cart-modal-close"
+            aria-label="Cerrar carrito de compras"
+          >
+            ×
+          </button>
+          <div class="cart-container" id="cartContainer">
+            <h3>🛒 Carrito de Compras</h3>
+            <ul id="cartList">
+              <li class="cart-item">
+                <span class="cart-item-title">El carrito está vacío.</span>
+              </li>
+            </ul>
+            <div id="totalPrice">Total: 0</div>
+            <button id="whatsappBtn">Comprar por WhatsApp</button>
+          </div>
+        </div>
       </div>
-
-      <!-- Botón "Sobre Nosotros" (visible en móviles, oculto en escritorio por CSS) -->
-      <button id="aboutBtn" class="about-btn" type="button">
-        Sobre Nosotros
-      </button>
 
       <!-- Contacto y Descripción (visible en escritorio, oculta en móviles) -->
       <div class="contact-info" id="aboutInfo">
@@ -261,7 +288,6 @@
           Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
         </p>
       </div>
-
       <!-- Subtítulo personalizado -->
       <div class="pdf-title-row">
         <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
@@ -274,16 +300,13 @@
           autocomplete="off"
         >
       </div>
-
       <div class="pdf-actions">
         <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
         <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
         <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
         <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
       </div>
-
       <div id="pdfProductList" class="pdf-product-list" role="list"></div>
-
       <div class="pdf-footer">
         <label class="pdf-option">
           <input type="checkbox" id="pdfIncludePrices" checked>
@@ -322,13 +345,12 @@
 
   <!-- Librería PDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
   <!-- Scripts divididos (carpeta scrips) -->
   <script src="recursos/scrips/config-estado-dom.js"></script>
   <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
   <script src="recursos/scrips/filtros-tabla-productos.js"></script>
   <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
-  <script src="recursos/scrips/sobre-nosotros-modal.js"></script>
+  <script src="recursos/scrips/sobre-nosotros.js"></script>
   <script src="recursos/scrips/visitas-ubicacion.js"></script>
   <script src="recursos/scrips/exportar-pdf-catalogo.js"></script>
 </body>

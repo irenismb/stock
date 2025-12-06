@@ -1,3 +1,4 @@
+recursos/scrips/carrito-whatsapp-init.js
 // ================== CARRITO Y WHATSAPP ==================
 function loadCartFromStorage() {
   const saved = localStorage.getItem(LS_CART_KEY);
@@ -205,8 +206,38 @@ sortPriceBtn.addEventListener("click", () => {
   }
   filterAndDisplayProducts();
 });
-// Click en botón de WhatsApp
+
+// ================== MODAL DEL CARRITO (VISTA MÓVIL) ==================
+function openCartModal() {
+  if (!cartModal) return;
+  cartModal.classList.add("open");
+  cartModal.setAttribute("aria-hidden", "false");
+  document.body.style.overflow = "hidden";
+}
+function closeCartModal() {
+  if (!cartModal) return;
+  cartModal.classList.remove("open");
+  cartModal.setAttribute("aria-hidden", "true");
+  document.body.style.overflow = "";
+}
+if (mobileCartBtn && cartModal) {
+  mobileCartBtn.addEventListener("click", openCartModal);
+}
+if (cartModalClose) {
+  cartModalClose.addEventListener("click", closeCartModal);
+}
+if (cartModalBackdrop) {
+  cartModalBackdrop.addEventListener("click", closeCartModal);
+}
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape" && cartModal && cartModal.classList.contains("open")) {
+    closeCartModal();
+  }
+});
+
+// Click en botón de WhatsApp (dentro del carrito)
 whatsappBtn.addEventListener("click", handleWhatsAppClick);
+
 // ================== AUTO REFRESCO DE PRODUCTOS ==================
 function setupAutoRefresh() {
   if (!AUTO_REFRESH_MS || AUTO_REFRESH_MS <= 0) return;
@@ -236,7 +267,6 @@ window.addEventListener("beforeunload", function () {
     console.error("Error al registrar salida:", e);
   }
 });
-
 /**
  * Fondos fijos usando tus archivos en recursos/otras_imagenes:
  * - logo_pagina.webp              → BODY
@@ -251,9 +281,7 @@ window.addEventListener("beforeunload", function () {
     const pageBg   = "recursos/otras_imagenes/logo_pagina.webp";
     const panelBg  = "recursos/otras_imagenes/logo_panel_de_controles.webp";
     const headerBg = "recursos/otras_imagenes/logo_encabezado.webp";
-
     console.log("[Fondos] Usando:", { pageBg, panelBg, headerBg });
-
     // 1) Fondo general de la página
     if (pageBg) {
       document.body.style.backgroundImage = `url("${pageBg}")`;
@@ -262,7 +290,6 @@ window.addEventListener("beforeunload", function () {
       document.body.style.backgroundRepeat = "no-repeat";
       document.body.style.backgroundAttachment = "fixed";
     }
-
     // 2) Fondo del contenedor principal
     const container = document.querySelector(".container");
     if (container && panelBg) {
@@ -271,7 +298,6 @@ window.addEventListener("beforeunload", function () {
       container.style.backgroundPosition = "center";
       container.style.backgroundRepeat = "no-repeat";
     }
-
     // 3) Fondo del encabezado
     const header = document.querySelector(".site-header");
     if (header && headerBg) {
@@ -284,3 +310,4 @@ window.addEventListener("beforeunload", function () {
     console.error("No se pudieron aplicar los fondos estáticos:", e);
   }
 })();
+

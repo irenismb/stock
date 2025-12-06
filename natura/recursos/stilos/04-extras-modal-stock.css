@@ -1,3 +1,4 @@
+recursos/stilos/04-extras-modal-stock.css
 /* ===== Modal de imagen ampliada (ajustado para ver la foto completa) ===== */
 .image-modal{
   position:fixed;
@@ -65,7 +66,6 @@
     padding:4px;
   }
 }
-
 /* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
 .product-row-out-of-stock {
   background-color: #e5e7eb !important;
@@ -92,30 +92,53 @@
   display: block;
   padding: 4px 0;
 }
-
 /* Ocultar la tira de miniaturas de la galería (solo dejamos la imagen grande) */
 .thumbs{
   display: none !important;
 }
-
 /* Ocultar panel de vista previa grande (ya no se usa visualmente) */
 .preview{
   display:none !important;
 }
 
-/* ===== Botón "Sobre Nosotros" (visible en móvil) ===== */
-.about-btn{
+/* ===== Fila de acciones principales en móvil (WhatsApp / Filtros / Sobre Nosotros) ===== */
+.mobile-actions-row{
   display:none;
-  margin-top:10px;
-  width:100%;
+}
+.mobile-action-btn{
   border:none;
   border-radius:999px;
-  padding:10px 14px;
-  font-size:14px;
+  padding:9px 10px;
+  font-size:13px;
+  cursor:pointer;
+  white-space:nowrap;
+  box-shadow:0 8px 18px rgba(15,23,42,0.18);
+}
+.about-btn{
   background:linear-gradient(90deg,#f97316,#ec4899);
   color:#fff;
-  cursor:pointer;
-  box-shadow:0 8px 18px rgba(236,72,153,0.25);
+}
+@media (max-width:768px){
+  .mobile-actions-row{
+    display:flex;
+    gap:8px;
+    margin:8px 0 10px;
+  }
+  .mobile-action-btn{
+    flex:1 1 0;
+  }
+  #mobileCartBtn{
+    background:linear-gradient(90deg,#22c55e,#16a34a);
+    color:#fff;
+  }
+  #mobileFiltersBtn{
+    background:linear-gradient(90deg,#6366f1,#3b82f6);
+    color:#fff;
+  }
+  .mobile-actions-row .about-btn{
+    margin-top:0;
+    width:auto;
+  }
 }
 
 /* ===== Modal "Sobre Nosotros" ===== */
@@ -178,23 +201,87 @@
   justify-content:center;
 }
 
-/* ===== Bloque final: filtros en una sola línea (móvil) ===== */
+/* ===== Modal del carrito (panel en escritorio, ventana en móvil) ===== */
+.cart-modal{
+  /* En escritorio se comporta como un simple contenedor dentro de la barra lateral */
+  position:static;
+}
+.cart-modal-backdrop{
+  display:none;
+}
+.cart-modal-content{
+  position:static;
+}
+.cart-modal-close{
+  display:none;
+}
+@media (max-width:768px){
+  .cart-modal{
+    position:fixed;
+    inset:0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index:1000;
+  }
+  .cart-modal.open{
+    display:flex;
+  }
+  .cart-modal-backdrop{
+    display:block;
+    position:absolute;
+    inset:0;
+    background:rgba(15,23,42,0.75);
+    backdrop-filter:blur(3px);
+  }
+  .cart-modal-content{
+    position:relative;
+    z-index:1;
+    width:min(480px, 92vw);
+    max-height:85vh;
+    padding:4px 4px 10px;
+    display:flex;
+    flex-direction:column;
+  }
+  .cart-modal-close{
+    display:flex;
+    position:absolute;
+    top:6px;
+    right:6px;
+    width:30px;
+    height:30px;
+    border-radius:999px;
+    border:none;
+    background:#0f172a;
+    color:#fff;
+    font-size:18px;
+    cursor:pointer;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 16px rgba(0,0,0,0.5);
+    z-index:2;
+  }
+  /* Ajustamos ligeramente el contenedor del carrito dentro del modal */
+  .cart-modal .cart-container{
+    max-height:calc(85vh - 18px);
+    overflow:auto;
+  }
+}
 
-/* Fila de filtros (ordenar, categoría, marca, PDF) */
+/* ===== Bloque final: filtros en una sola línea (móvil) ===== */
+/* Fila de filtros (ordenar, categoría, marca, PDF escritorio) */
 .filters-row{
   display:flex;
   align-items:center;
   gap:8px;
   flex-wrap:wrap;
 }
-
-/* Bloque final móvil: buscador arriba, filtros en una sola línea desplazable */
+/* Bloque final móvil: buscador arriba, filtros colapsables y redes + PDF en línea */
 @media (max-width:768px){
   .controls-top{
     flex-direction:column;
     align-items:stretch;
   }
-
   #searchInput{
     width:100%;
     min-height:38px;
@@ -202,43 +289,41 @@
     font-size:14px;
     line-height:1.2;
   }
-
   .controls-bottom{
     flex-direction:column;
     align-items:stretch;
     gap:6px;
   }
-
+  /* Panel de filtros desplegable en móvil */
   .filters-row{
+    display:none;
+    flex-direction:column;
     flex-wrap:nowrap;
-    overflow-x:auto;
-    padding-bottom:2px;
+    padding:8px 10px;
+    border-radius:12px;
+    background:#f9fafb;
+    border:1px solid #e5e7eb;
   }
-
+  .filters-row.is-open{
+    display:flex;
+  }
   .filters-row > *{
-    flex:0 0 auto;
+    width:100%;
   }
-
   #sortPriceBtn,
-  .dropdown-toggle-btn,
-  .pdf-btn{
-    width:auto;
+  .dropdown-toggle-btn{
+    width:100%;
     min-height:36px;
     font-size:13px;
     white-space:nowrap;
   }
-
   .social-icons{
     margin-left:0;
     justify-content:flex-start;
   }
-
   /* En móviles ocultamos la tarjeta fija y usamos el modal con botón */
   .contact-info{
     display:none;
-  }
-  .about-btn{
-    display:block;
   }
 }
 
@@ -263,6 +348,23 @@
 }
 .pdf-btn:active{
   transform:translateY(0);
+}
+/* Versión compacta para el botón de PDF en la fila de redes (móvil) */
+.pdf-btn-mobile{
+  margin-left:4px;
+}
+@media (max-width:768px){
+  .filters-row .pdf-btn{
+    display:none;
+  }
+  .pdf-btn-mobile{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding:6px 10px;
+    font-size:12px;
+    min-height:32px;
+  }
 }
 /* Contenedor modal */
 .pdf-modal{

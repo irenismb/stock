@@ -410,10 +410,11 @@ function drawHeader(
   doc.setFontSize(7.4);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
-  doc.text(pageLabel, pageW - headerMarginX, headerY + 20.5, { align: "right" });
+  doc.text(pageLabel, pageW - headerMarginX, headerY + 18, { align: "right" });
 
   doc.setDrawColor(226, 232, 240);
-  doc.line(headerMarginX, 28, pageW - headerMarginX, 28);
+  doc.line(headerMarginX, 27, pageW - headerMarginX, 27);
+
 }
 
 // ---------- Tarjeta de producto (SIN descripción) ----------

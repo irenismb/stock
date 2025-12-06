@@ -6,11 +6,19 @@ const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
 
+// ✅ NUEVO: configuración QR del encabezado
+const PDF_QR_TARGET_URL = "https://irenismb.github.io/stock/natura/catalogo.html";
+const PDF_QR_SIZE_PX = 180; // tamaño de generación del QR (imagen)
+const PDF_QR_SIZE_MM = 14;  // tamaño de impresión dentro del PDF
+
 // Estado de selección para exportar
 const pdfSelection = new Set(); // ids como string
 
 // Cache simple de imágenes para el PDF
 const pdfImageCache = new Map(); // url -> { dataUrl, format }
+
+// ✅ NUEVO: cache específico para QR
+const pdfQrCache = new Map(); // targetUrl -> { dataUrl, format }
 
 // ---------- Utilidades ----------
 function getJsPDFClass() {
@@ -63,6 +71,15 @@ function formatWhatsAppNumber(raw) {
     return `+57 ${s.slice(2, 5)} ${s.slice(5, 8)} ${s.slice(8, 12)}`;
   }
   return `+${s}`;
+}
+
+// ✅ NUEVO: construir URL de QR usando un generador público de PNG
+function buildQrApiUrl(data, sizePx) {
+  const sz = Math.max(120, Number(sizePx) || 180);
+  return (
+    "https://api.qrserver.com/v1/create-qr-code/" +
+    `?format=png&size=${sz}x${sz}&data=${encodeURIComponent(String(data || ""))}`
+  );
 }
 
 // ---------- Subtítulo PDF (persistente) ----------
@@ -308,18 +325,45 @@ async function dataUrlToJpegDataUrl(dataUrl) {
 async function loadImageForPdf(url) {
   if (!url) return null;
   if (pdfImageCache.has(url)) return pdfImageCache.get(url);
+
   const raw = await urlToDataUrl(url);
   if (!raw) {
     pdfImageCache.set(url, null);
     return null;
   }
+
   const jpg = await dataUrlToJpegDataUrl(raw);
   const pack = jpg ? { dataUrl: jpg, format: "JPEG" } : null;
+
   pdfImageCache.set(url, pack);
   return pack;
 }
 
-// ---------- Encabezado (SIN CÁPSULA VERDE, SIN TAGLINE FIJO) ----------
+// ✅ NUEVO: cargar QR sin convertir a JPEG (para que quede nítido)
+async function loadQrForPdf(targetUrl) {
+  const key = String(targetUrl || "").trim();
+  if (!key) return null;
+
+  if (pdfQrCache.has(key)) return pdfQrCache.get(key);
+
+  const qrUrl = buildQrApiUrl(key, PDF_QR_SIZE_PX);
+  const raw = await urlToDataUrl(qrUrl);
+
+  if (!raw) {
+    pdfQrCache.set(key, null);
+    return null;
+  }
+
+  let format = "PNG";
+  if (raw.startsWith("data:image/jpeg")) format = "JPEG";
+  // Si algún servidor responde distinto, mantenemos PNG por defecto.
+
+  const pack = { dataUrl: raw, format };
+  pdfQrCache.set(key, pack);
+  return pack;
+}
+
+// ---------- Encabezado (CON QR A LA DERECHA) ----------
 function drawHeader(
   doc,
   pageW,
@@ -327,6 +371,7 @@ function drawHeader(
   catalogName,
   metaLine,
   logoPack,
+  qrPack,
   pageIndex,
   totalPages
 ) {
@@ -341,6 +386,19 @@ function drawHeader(
     } catch (e) {}
   }
 
+  // QR en el lado derecho (reemplaza la cápsula verde)
+  if (qrPack && qrPack.dataUrl) {
+    const qrSize = PDF_QR_SIZE_MM;
+    const qrX = pageW - headerMarginX - qrSize;
+    const qrY = headerY + 1;
+    try {
+      doc.addImage(qrPack.dataUrl, qrPack.format, qrX, qrY, qrSize, qrSize);
+      // Marco sutil opcional
+      doc.setDrawColor(226, 232, 240);
+      doc.rect(qrX, qrY, qrSize, qrSize);
+    } catch (e) {}
+  }
+
   // Bloque texto izquierda
   let textX = headerMarginX + 15;
   let lineY = headerY + 6.2;
@@ -351,7 +409,7 @@ function drawHeader(
   doc.setFontSize(12.5);
   doc.text(companyName, textX, lineY);
 
-  // ✅ Nombre del catálogo escrito por el cliente
+  // Nombre de catálogo escrito por el cliente
   if (catalogName) {
     lineY += 4.4;
     doc.setFont("helvetica", "normal");
@@ -369,12 +427,12 @@ function drawHeader(
     doc.text(metaLine, textX, lineY);
   }
 
-  // Número de página con buen margen
+  // Número de página (ubicado para no pelear con el QR)
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(7.6);
+  doc.setFontSize(7.4);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
-  doc.text(pageLabel, pageW - headerMarginX, headerY + 17.8, { align: "right" });
+  doc.text(pageLabel, pageW - headerMarginX, headerY + 20.5, { align: "right" });
 
   // Línea de separación
   doc.setDrawColor(226, 232, 240);
@@ -499,10 +557,12 @@ async function generatePdf() {
 
   const logoPack = logoUrl ? await loadImageForPdf(logoUrl) : null;
 
+  // ✅ QR pack para el encabezado
+  const qrPack = await loadQrForPdf(PDF_QR_TARGET_URL);
+
   const companyName = "IRENISMB STOCK NATURA";
 
-  // ✅ AHORA esta línea reemplaza al tagline fijo
-  // Si está vacío, ponemos un fallback neutro para no dejar el header “cojo”.
+  // ✅ Esta línea reemplaza al tagline fijo
   const catalogName = getCustomPdfSubtitle() || "Catálogo";
 
   // MetaLine sutil (WhatsApp + Fecha)
@@ -510,7 +570,7 @@ async function generatePdf() {
   const metaLine = [whatsappTxt, `Fecha: ${todayLabel()}`].filter(Boolean).join(" • ");
 
   const marginX = 10;
-  const headerBottomY = 30; // Ajustado a 2 líneas + meta
+  const headerBottomY = 30; // Ajustado para este header
   const bottomMargin = 10;
 
   const gapX = 6;
@@ -532,6 +592,7 @@ async function generatePdf() {
       catalogName,
       metaLine,
       logoPack,
+      qrPack,
       pageIndex,
       totalPages
     );

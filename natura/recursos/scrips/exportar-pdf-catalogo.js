@@ -54,7 +54,7 @@ function todayLabel() {
   return `${y}-${m}-${day}`;
 }
 
-// ✅ NUEVO: formato amigable de WhatsApp para el header del PDF
+// ✅ Formato amigable de WhatsApp para metaLine en el header del PDF
 function formatWhatsAppNumber(raw) {
   const s = String(raw || "").replace(/\D/g, "");
   if (!s) return "";
@@ -136,7 +136,7 @@ if (pdfBtn) {
   pdfBtn.addEventListener("click", openPdfModal);
 }
 
-// NUEVO: conectar también el botón compacto de PDF de la fila de redes (móvil)
+// Botón compacto de PDF en móvil
 if (pdfBtnMobile) {
   pdfBtnMobile.addEventListener("click", openPdfModal);
 }
@@ -164,7 +164,9 @@ function renderPdfSelectionList() {
       `<div class="pdf-empty">No hay productos cargados aún.</div>`;
     return;
   }
+
   const frag = document.createDocumentFragment();
+
   baseList.forEach(p => {
     const id = String(p.id);
     const checked = pdfSelection.has(id);
@@ -201,6 +203,7 @@ function renderPdfSelectionList() {
     `;
     frag.appendChild(label);
   });
+
   pdfProductList.innerHTML = "";
   pdfProductList.appendChild(frag);
 }
@@ -316,20 +319,17 @@ async function loadImageForPdf(url) {
   return pack;
 }
 
-// ---------- Encabezado (MEJORADO) ----------
+// ---------- Encabezado (SIN CÁPSULA VERDE, SIN TAGLINE FIJO) ----------
 function drawHeader(
   doc,
   pageW,
   companyName,
-  tagline,
-  customSubtitle,
-  metaLine,       // ✅ NUEVO
-  badgeText,
+  catalogName,
+  metaLine,
   logoPack,
   pageIndex,
   totalPages
 ) {
-  // Margen propio del header
   const headerMarginX = 12;
   const headerY = 8;
 
@@ -351,74 +351,34 @@ function drawHeader(
   doc.setFontSize(12.5);
   doc.text(companyName, textX, lineY);
 
-  // Tagline
-  if (tagline) {
-    lineY += 4.2;
+  // ✅ Nombre del catálogo escrito por el cliente
+  if (catalogName) {
+    lineY += 4.4;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.6);
-    doc.setTextColor(71, 85, 105);
-    doc.text(tagline, textX, lineY);
-  }
-
-  // Subtítulo personalizado (color elegante, no tipo enlace)
-  if (customSubtitle) {
-    lineY += 4.1;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8.9);
+    doc.setFontSize(9.2);
     doc.setTextColor(51, 65, 85);
-    doc.text(customSubtitle, textX, lineY);
+    doc.text(catalogName, textX, lineY);
   }
 
   // MetaLine sutil (WhatsApp + Fecha)
   if (metaLine) {
-    lineY += 3.9;
+    lineY += 4.0;
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
     doc.text(metaLine, textX, lineY);
   }
 
-  // Cápsula derecha más discreta
-  if (badgeText) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(8.2);
-
-    const badgePaddingX = 4.5;
-    const textWidth = doc.getTextWidth(badgeText);
-    const badgeW = textWidth + badgePaddingX * 2;
-    const badgeH = 6;
-
-    const badgeX = pageW - headerMarginX - badgeW;
-    const badgeY = headerY + 3.2;
-
-    doc.setFillColor(34, 197, 94);
-    doc.setDrawColor(22, 163, 74);
-
-    try {
-      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 2.6, 2.6, "FD");
-    } catch (e) {
-      doc.rect(badgeX, badgeY, badgeW, badgeH, "FD");
-    }
-
-    doc.setTextColor(255, 255, 255);
-    doc.text(
-      badgeText,
-      badgeX + badgeW / 2,
-      badgeY + badgeH / 2 + 1.5,
-      { align: "center" }
-    );
-  }
-
-  // Número de página con mejor margen
+  // Número de página con buen margen
   doc.setFont("helvetica", "normal");
   doc.setFontSize(7.6);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
   doc.text(pageLabel, pageW - headerMarginX, headerY + 17.8, { align: "right" });
 
-  // Línea de separación más baja para dar aire
+  // Línea de separación
   doc.setDrawColor(226, 232, 240);
-  doc.line(headerMarginX, 30, pageW - headerMarginX, 30);
+  doc.line(headerMarginX, 28, pageW - headerMarginX, 28);
 }
 
 // ---------- Tarjeta de producto (SIN descripción) ----------
@@ -540,16 +500,17 @@ async function generatePdf() {
   const logoPack = logoUrl ? await loadImageForPdf(logoUrl) : null;
 
   const companyName = "IRENISMB STOCK NATURA";
-  const tagline = "Catálogo inteligente • Envíos a toda Colombia";
-  const customSubtitle = getCustomPdfSubtitle();
-  const badgeText = "Natura · Maquillaje · Cuidado personal";
 
-  // ✅ NUEVO: metaLine sutil (WhatsApp + Fecha)
+  // ✅ AHORA esta línea reemplaza al tagline fijo
+  // Si está vacío, ponemos un fallback neutro para no dejar el header “cojo”.
+  const catalogName = getCustomPdfSubtitle() || "Catálogo";
+
+  // MetaLine sutil (WhatsApp + Fecha)
   const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
   const metaLine = [whatsappTxt, `Fecha: ${todayLabel()}`].filter(Boolean).join(" • ");
 
   const marginX = 10;
-  const headerBottomY = 32; // ✅ más aire en el header
+  const headerBottomY = 30; // Ajustado a 2 líneas + meta
   const bottomMargin = 10;
 
   const gapX = 6;
@@ -568,10 +529,8 @@ async function generatePdf() {
       doc,
       pageW,
       companyName,
-      tagline,
-      customSubtitle,
+      catalogName,
       metaLine,
-      badgeText,
       logoPack,
       pageIndex,
       totalPages
@@ -600,7 +559,7 @@ async function generatePdf() {
   // Guardamos por si generas sin cerrar el modal
   saveSubtitleToStorage();
 
-  const safeSub = (customSubtitle || "catalogo")
+  const safeSub = (catalogName || "catalogo")
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .trim()

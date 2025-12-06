@@ -6,6 +6,9 @@ const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
 
+// ✅ Nuevo umbral para decidir si el resumen puede ir en la última página
+const PDF_INLINE_TOTAL_MIN_FREE_H = 28; // mm mínimos libres para insertar resumen en la última página
+
 // ✅ QR en encabezado
 const PDF_QR_TARGET_URL = "https://irenismb.github.io/stock/natura/catalogo.html";
 const PDF_QR_SIZE_PX = 180; // tamaño de generación del QR (imagen)
@@ -174,15 +177,12 @@ function renderPdfSelectionList() {
       `<div class="pdf-empty">No hay productos cargados aún.</div>`;
     return;
   }
-
   const frag = document.createDocumentFragment();
-
   baseList.forEach(p => {
     const id = String(p.id);
     const checked = pdfSelection.has(id);
     const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
     const price = Number(p.valor_unitario) || 0;
-
     const label = document.createElement("label");
     label.className = "pdf-product-item";
     label.setAttribute("role", "listitem");
@@ -213,7 +213,6 @@ function renderPdfSelectionList() {
     `;
     frag.appendChild(label);
   });
-
   pdfProductList.innerHTML = "";
   pdfProductList.appendChild(frag);
 }
@@ -299,20 +298,16 @@ async function dataUrlToJpegDataUrl(dataUrl) {
       img.onload = resolve;
       img.onerror = reject;
     });
-
     const canvas = document.createElement("canvas");
     const w = img.naturalWidth || 300;
     const h = img.naturalHeight || 300;
     canvas.width = w;
     canvas.height = h;
-
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
-
     return canvas.toDataURL("image/jpeg", 0.88);
   } catch (e) {
     return null;
@@ -322,16 +317,13 @@ async function dataUrlToJpegDataUrl(dataUrl) {
 async function loadImageForPdf(url) {
   if (!url) return null;
   if (pdfImageCache.has(url)) return pdfImageCache.get(url);
-
   const raw = await urlToDataUrl(url);
   if (!raw) {
     pdfImageCache.set(url, null);
     return null;
   }
-
   const jpg = await dataUrlToJpegDataUrl(raw);
   const pack = jpg ? { dataUrl: jpg, format: "JPEG" } : null;
-
   pdfImageCache.set(url, pack);
   return pack;
 }
@@ -340,20 +332,15 @@ async function loadImageForPdf(url) {
 async function loadQrForPdf(targetUrl) {
   const key = String(targetUrl || "").trim();
   if (!key) return null;
-
   if (pdfQrCache.has(key)) return pdfQrCache.get(key);
-
   const qrUrl = buildQrApiUrl(key, PDF_QR_SIZE_PX);
   const raw = await urlToDataUrl(qrUrl);
-
   if (!raw) {
     pdfQrCache.set(key, null);
     return null;
   }
-
   let format = "PNG";
   if (raw.startsWith("data:image/jpeg")) format = "JPEG";
-
   const pack = { dataUrl: raw, format };
   pdfQrCache.set(key, pack);
   return pack;
@@ -435,6 +422,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
 
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(255, 255, 255);
+
   try {
     doc.roundedRect(x, y, w, h, 3, 3, "FD");
   } catch (e) {
@@ -504,7 +492,56 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   }
 }
 
-// ✅ NUEVO: Página final de total/resumen
+// ✅ NUEVO: Resumen inline para evitar página casi vacía
+function drawInlineTotalSummary(doc, pageW, y, data) {
+  const { itemCount, totalValue } = data;
+
+  const marginX = 12;
+  const boxW = pageW - marginX * 2;
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Resumen del catálogo", marginX, y);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.2);
+  doc.setTextColor(71, 85, 105);
+  const desc = "Suma de los precios unitarios de los productos seleccionados.";
+  const descLines = doc.splitTextToSize(desc, boxW);
+  doc.text(descLines.slice(0, 2), marginX, y + 5);
+
+  const boxY = y + 10;
+  const boxH = 22;
+
+  doc.setDrawColor(226, 232, 240);
+  doc.setFillColor(248, 250, 252);
+  try {
+    doc.roundedRect(marginX, boxY, boxW, boxH, 3, 3, "FD");
+  } catch (e) {
+    doc.rect(marginX, boxY, boxW, boxH, "FD");
+  }
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(11);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Productos seleccionados:", marginX + 6, boxY + 9);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(11);
+  doc.text(String(itemCount), marginX + 62, boxY + 9);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(12);
+  doc.text("Total:", marginX + 6, boxY + 17);
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13.5);
+  doc.setTextColor(5, 150, 105);
+  doc.text(currencyFormatter.format(totalValue), marginX + 62, boxY + 17);
+}
+
+// ✅ REEMPLAZO: Página final de total/resumen más compacta
 function drawTotalSummaryPage(doc, pageW, pageH, data) {
   const {
     companyName,
@@ -530,28 +567,27 @@ function drawTotalSummaryPage(doc, pageW, pageH, data) {
     totalPages
   );
 
-  const marginX = 18;
-  const startY = 45;
+  const marginX = 16;
+  const startY = 36;
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
+  doc.setFontSize(17);
   doc.setTextColor(15, 23, 42);
   doc.text("Resumen del catálogo", marginX, startY);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(11);
+  doc.setFontSize(10.2);
   doc.setTextColor(71, 85, 105);
-  doc.text(
-    "Este total corresponde a la suma de los precios unitarios de los productos seleccionados.",
-    marginX,
-    startY + 8
-  );
 
-  // Caja suave
+  const desc =
+    "Este total corresponde a la suma de los precios unitarios de los productos seleccionados.";
+  const descLines = doc.splitTextToSize(desc, pageW - marginX * 2);
+  doc.text(descLines.slice(0, 3), marginX, startY + 7);
+
   const boxX = marginX;
   const boxY = startY + 16;
   const boxW = pageW - marginX * 2;
-  const boxH = 40;
+  const boxH = 32;
 
   doc.setDrawColor(226, 232, 240);
   doc.setFillColor(248, 250, 252);
@@ -562,31 +598,31 @@ function drawTotalSummaryPage(doc, pageW, pageH, data) {
   }
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(12);
+  doc.setFontSize(11.5);
   doc.setTextColor(15, 23, 42);
-  doc.text("Productos seleccionados:", boxX + 8, boxY + 14);
+  doc.text("Productos seleccionados:", boxX + 8, boxY + 12);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(12);
-  doc.text(String(itemCount), boxX + 70, boxY + 14);
+  doc.setFontSize(11.5);
+  doc.text(String(itemCount), boxX + 68, boxY + 12);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text("Total:", boxX + 8, boxY + 28);
+  doc.setFontSize(12.5);
+  doc.setTextColor(15, 23, 42);
+  doc.text("Total:", boxX + 8, boxY + 24);
 
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
+  doc.setFontSize(14.5);
   doc.setTextColor(5, 150, 105);
-  doc.text(currencyFormatter.format(totalValue), boxX + 70, boxY + 28);
+  doc.text(currencyFormatter.format(totalValue), boxX + 68, boxY + 24);
 
-  // Nota final
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(100, 116, 139);
   doc.text(
     "Escanea el QR para ver el catálogo en línea y confirmar disponibilidad.",
     marginX,
-    boxY + boxH + 12
+    boxY + boxH + 10
   );
 }
 
@@ -622,12 +658,51 @@ async function generatePdf() {
 
   const productPages = chunkArray(selectedProducts, PDF_PRODUCTS_PER_PAGE);
   const basePagesCount = productPages.length;
-  const totalPages = includeTotal ? basePagesCount + 1 : basePagesCount;
 
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
   const pageW = doc.internal.pageSize.getWidth();
   const pageH = doc.internal.pageSize.getHeight();
 
+  // Totales para resumen
+  const itemCount = selectedProducts.length;
+  const totalValue = selectedProducts.reduce(
+    (acc, p) => acc + (Number(p.valor_unitario) || 0),
+    0
+  );
+
+  // Layout base
+  const marginX = 10;
+  const headerBottomY = 30;
+  const bottomMargin = 10;
+  const gapX = 6;
+  const gapY = 6;
+
+  const usableW = pageW - marginX * 2;
+  const usableH = pageH - headerBottomY - bottomMargin;
+
+  const cardW = (usableW - gapX * (PDF_COLS - 1)) / PDF_COLS;
+  const cardH = (usableH - gapY * (PDF_ROWS - 1)) / PDF_ROWS;
+
+  // ¿Cabe el resumen dentro de la última página de productos?
+  let willInlineTotal = false;
+  if (includeTotal && basePagesCount > 0) {
+    const lastItemsCount = productPages[basePagesCount - 1].length;
+    const usedRows = Math.max(1, Math.ceil(lastItemsCount / PDF_COLS));
+    const lastRowBottom =
+      headerBottomY + (usedRows - 1) * (cardH + gapY) + cardH;
+
+    const freeStartY = lastRowBottom + 6;
+    const freeH = pageH - bottomMargin - freeStartY;
+
+    willInlineTotal = freeH >= PDF_INLINE_TOTAL_MIN_FREE_H;
+  }
+
+  // Total real para encabezados
+  const totalPages = !includeTotal
+    ? basePagesCount
+    : (willInlineTotal ? basePagesCount : basePagesCount + 1);
+
+  // Cargar logo y QR
   let logoUrl = null;
   try {
     logoUrl = await resolveOtherImage("logo_empresa");
@@ -638,22 +713,8 @@ async function generatePdf() {
 
   const companyName = "IRENISMB STOCK NATURA";
   const catalogName = getCustomPdfSubtitle() || "Catálogo";
-
   const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
   const metaLine = [whatsappTxt, `Fecha: ${todayLabel()}`].filter(Boolean).join(" • ");
-
-  const marginX = 10;
-  const headerBottomY = 30;
-  const bottomMargin = 10;
-
-  const gapX = 6;
-  const gapY = 6;
-
-  const usableW = pageW - marginX * 2;
-  const usableH = pageH - headerBottomY - bottomMargin;
-
-  const cardW = (usableW - gapX * (PDF_COLS - 1)) / PDF_COLS;
-  const cardH = (usableH - gapY * (PDF_ROWS - 1)) / PDF_ROWS;
 
   // 1) Páginas de productos
   for (let pageIndex = 0; pageIndex < productPages.length; pageIndex++) {
@@ -677,7 +738,6 @@ async function generatePdf() {
       const p = pageItems[i];
       const row = Math.floor(i / PDF_COLS);
       const col = i % PDF_COLS;
-
       const x = marginX + col * (cardW + gapX);
       const y = headerBottomY + row * (cardH + gapY);
 
@@ -689,18 +749,25 @@ async function generatePdf() {
         includePrices
       });
     }
+
+    // ✅ Resumen inline en la última página si hay espacio real
+    if (includeTotal && willInlineTotal && pageIndex === productPages.length - 1) {
+      const usedRows = Math.max(1, Math.ceil(pageItems.length / PDF_COLS));
+      const lastRowBottom =
+        headerBottomY + (usedRows - 1) * (cardH + gapY) + cardH;
+
+      const inlineY = lastRowBottom + 8;
+
+      drawInlineTotalSummary(doc, pageW, inlineY, {
+        itemCount,
+        totalValue
+      });
+    }
   }
 
-  // 2) Página final de total (opcional)
-  if (includeTotal) {
+  // 2) Página final de total (solo si NO se pudo inline)
+  if (includeTotal && !willInlineTotal) {
     doc.addPage();
-
-    const itemCount = selectedProducts.length;
-    const totalValue = selectedProducts.reduce(
-      (acc, p) => acc + (Number(p.valor_unitario) || 0),
-      0
-    );
-
     drawTotalSummaryPage(doc, pageW, pageH, {
       companyName,
       catalogName,

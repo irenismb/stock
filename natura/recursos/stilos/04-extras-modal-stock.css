@@ -2,6 +2,7 @@
    04-extras-modal-stock.css
    Modales, stock, acciones móviles, PDF y ajustes finales
    ============================================================================= */
+
 /* ===== Modal de imagen ampliada (ajustado para ver la foto completa) ===== */
 .image-modal{
   position:fixed;
@@ -62,21 +63,78 @@
   outline:2px solid #fff;
   outline-offset:2px;
 }
+
+/* ===== Ajuste fino del buscador en móvil ===== */
 @media (max-width:768px){
   #searchInput{
     width:100%;
     min-height:38px;
-    max-height: 44px; /* ← añade este para mantener el "max" final */
+    max-height:44px;
     padding:8px 14px;
     font-size:14px;
     line-height:1.2;
   }
 }
 
-/* ===== FIX: reducir espacio entre badge del header y buscador en móvil ===== */
+/* =============================================================================
+   ✅ COMPACTACIÓN ESTRUCTURAL MÓVIL (FIX PRINCIPAL)
+   - Evita huecos grandes entre header, redes y buscador.
+   - Gana contra capas 01/02/03.
+   ============================================================================= */
 @media (max-width:768px){
+  /* 1) Asegurar apilado natural del contenido principal */
+  .container{
+    display:flex !important;
+    flex-direction:column !important;
+    gap:8px !important;
+  }
+
+  /* 2) Orden explícito por si algo quedara invertido */
+  .left-panel{
+    order:1 !important;
+  }
+  .right-panel{
+    order:2 !important;
+    position:static !important;
+    top:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+
+  /* 3) Compactar el espacio bajo el header */
   .site-header{
-    margin-bottom: 2px !important;
+    margin-bottom:4px !important;
+  }
+  .site-header-inner{
+    gap:6px !important;
+  }
+
+  /* 4) Compactar panel de controles (donde vive el buscador y redes) */
+  .controls-panel{
+    margin-bottom:6px !important;
+    padding-bottom:6px !important;
+  }
+  .products-header{
+    gap:6px !important;
+    padding-bottom:2px !important;
+  }
+
+  /* 5) Reducir separación interna del bloque inferior */
+  .controls-bottom{
+    gap:6px !important;
+  }
+
+  /* 6) Redes: evitar “aire” sobrante */
+  .social-icons{
+    margin-left:0 !important;
+    padding:4px 6px !important;
+    gap:8px !important;
+    background:transparent !important; /* evita cápsula grande en algunos temas */
+  }
+
+  /* 7) Fila de acciones móviles más pegada al bloque superior */
+  .mobile-actions-row{
+    margin:6px 0 8px !important;
   }
 }
 
@@ -111,6 +169,7 @@
 .thumbs{
   display: none !important;
 }
+
 /* Ocultar panel de vista previa grande (ya no se usa visualmente) */
 .preview{
   display:none !important;
@@ -137,7 +196,6 @@
   .mobile-actions-row{
     display:flex;
     gap:8px;
-    margin:8px 0 10px;
   }
   .mobile-action-btn{
     flex:1 1 0;
@@ -293,13 +351,6 @@
     flex-direction:column;
     align-items:stretch;
   }
-  #searchInput{
-    width:100%;
-    min-height:38px;
-    padding:8px 14px;
-    font-size:14px;
-    line-height:1.2;
-  }
   .controls-bottom{
     flex-direction:column;
     align-items:stretch;
@@ -326,10 +377,6 @@
     min-height:36px;
     font-size:13px;
     white-space:nowrap;
-  }
-  .social-icons{
-    margin-left:0;
-    justify-content:flex-start;
   }
   .contact-info{
     display:none;
@@ -358,9 +405,7 @@
 .pdf-btn:active{
   transform:translateY(0);
 }
-/* ✅ FIX CLAVE:
-   Por defecto (escritorio) el botón móvil NO debe mostrarse,
-   así evitamos dos botones simultáneos. */
+/* Por defecto (escritorio) el botón móvil NO debe mostrarse */
 .pdf-btn-mobile{
   margin-left:4px;
   display:none;
@@ -443,6 +488,7 @@
   font-size:12.5px;
   color:#64748b;
 }
+
 /* Fila del título personalizado */
 .pdf-title-row{
   display:flex;
@@ -474,6 +520,7 @@
   border-color:#93c5fd;
   box-shadow:0 0 0 2px rgba(37,99,235,0.12);
 }
+
 /* Botones de acción rápida */
 .pdf-actions{
   display:flex;
@@ -492,6 +539,7 @@
   background:#eef2ff;
   border-color:#c7d2fe;
 }
+
 /* Listado de productos seleccionables */
 .pdf-product-list{
   border:1px solid #e2e8f0;
@@ -510,6 +558,7 @@
   color:#6b7280;
   font-size:13px;
 }
+
 /* Item */
 .pdf-product-item{
   display:flex;
@@ -560,6 +609,7 @@
   font-weight:700;
   color:#059669;
 }
+
 /* Footer del modal */
 .pdf-footer{
   display:flex;
@@ -602,6 +652,7 @@
   opacity:.7;
   cursor:progress;
 }
+
 /* Ajustes responsivos del modal PDF */
 @media (max-width:768px){
   .pdf-modal-content{
@@ -626,7 +677,6 @@
 /* =============================================================================
    FIX DEFENSIVO DE CAPAS OSCURAS
    - Ningún backdrop debe verse si el modal NO está abierto.
-   - Esto protege frente a webviews, cascadas raras o cambios futuros.
    ============================================================================= */
 .image-modal-backdrop,
 .about-modal-backdrop,

@@ -1,4 +1,8 @@
-recursos/stilos/04-extras-modal-stock.css
+/* =============================================================================
+   04-extras-modal-stock.css
+   Modales, stock, acciones móviles, PDF y ajustes finales
+   ============================================================================= */
+
 /* ===== Modal de imagen ampliada (ajustado para ver la foto completa) ===== */
 .image-modal{
   position:fixed;
@@ -66,6 +70,7 @@ recursos/stilos/04-extras-modal-stock.css
     padding:4px;
   }
 }
+
 /* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
 .product-row-out-of-stock {
   background-color: #e5e7eb !important;
@@ -92,10 +97,12 @@ recursos/stilos/04-extras-modal-stock.css
   display: block;
   padding: 4px 0;
 }
+
 /* Ocultar la tira de miniaturas de la galería (solo dejamos la imagen grande) */
 .thumbs{
   display: none !important;
 }
+
 /* Ocultar panel de vista previa grande (ya no se usa visualmente) */
 .preview{
   display:none !important;
@@ -228,7 +235,6 @@ recursos/stilos/04-extras-modal-stock.css
     display:flex;
   }
   .cart-modal-backdrop{
-    display:block;
     position:absolute;
     inset:0;
     background:rgba(15,23,42,0.75);
@@ -261,7 +267,6 @@ recursos/stilos/04-extras-modal-stock.css
     box-shadow:0 4px 16px rgba(0,0,0,0.5);
     z-index:2;
   }
-  /* Ajustamos ligeramente el contenedor del carrito dentro del modal */
   .cart-modal .cart-container{
     max-height:calc(85vh - 18px);
     overflow:auto;
@@ -269,14 +274,12 @@ recursos/stilos/04-extras-modal-stock.css
 }
 
 /* ===== Bloque final: filtros en una sola línea (móvil) ===== */
-/* Fila de filtros (ordenar, categoría, marca, PDF escritorio) */
 .filters-row{
   display:flex;
   align-items:center;
   gap:8px;
   flex-wrap:wrap;
 }
-/* Bloque final móvil: buscador arriba, filtros colapsables y redes + PDF en línea */
 @media (max-width:768px){
   .controls-top{
     flex-direction:column;
@@ -294,7 +297,6 @@ recursos/stilos/04-extras-modal-stock.css
     align-items:stretch;
     gap:6px;
   }
-  /* Panel de filtros desplegable en móvil */
   .filters-row{
     display:none;
     flex-direction:column;
@@ -321,7 +323,6 @@ recursos/stilos/04-extras-modal-stock.css
     margin-left:0;
     justify-content:flex-start;
   }
-  /* En móviles ocultamos la tarjeta fija y usamos el modal con botón */
   .contact-info{
     display:none;
   }
@@ -349,6 +350,7 @@ recursos/stilos/04-extras-modal-stock.css
 .pdf-btn:active{
   transform:translateY(0);
 }
+
 /* Versión compacta para el botón de PDF en la fila de redes (móvil) */
 .pdf-btn-mobile{
   margin-left:4px;
@@ -366,7 +368,8 @@ recursos/stilos/04-extras-modal-stock.css
     min-height:32px;
   }
 }
-/* Contenedor modal */
+
+/* Contenedor modal PDF */
 .pdf-modal{
   position:fixed;
   inset:0;
@@ -429,7 +432,8 @@ recursos/stilos/04-extras-modal-stock.css
   font-size:12.5px;
   color:#64748b;
 }
-/* NUEVO: fila del título personalizado */
+
+/* Fila del título personalizado */
 .pdf-title-row{
   display:flex;
   gap:10px;
@@ -460,6 +464,7 @@ recursos/stilos/04-extras-modal-stock.css
   border-color:#93c5fd;
   box-shadow:0 0 0 2px rgba(37,99,235,0.12);
 }
+
 /* Botones de acción rápida */
 .pdf-actions{
   display:flex;
@@ -478,6 +483,7 @@ recursos/stilos/04-extras-modal-stock.css
   background:#eef2ff;
   border-color:#c7d2fe;
 }
+
 /* Listado de productos seleccionables */
 .pdf-product-list{
   border:1px solid #e2e8f0;
@@ -496,6 +502,7 @@ recursos/stilos/04-extras-modal-stock.css
   color:#6b7280;
   font-size:13px;
 }
+
 /* Item */
 .pdf-product-item{
   display:flex;
@@ -546,6 +553,7 @@ recursos/stilos/04-extras-modal-stock.css
   font-weight:700;
   color:#059669;
 }
+
 /* Footer del modal */
 .pdf-footer{
   display:flex;
@@ -588,6 +596,7 @@ recursos/stilos/04-extras-modal-stock.css
   opacity:.7;
   cursor:progress;
 }
+
 /* Ajustes responsivos del modal PDF */
 @media (max-width:768px){
   .pdf-modal-content{
@@ -607,5 +616,25 @@ recursos/stilos/04-extras-modal-stock.css
   .pdf-title-input{
     width:100%;
   }
+}
+
+/* =============================================================================
+   FIX DEFENSIVO DE CAPAS OSCURAS
+   - Ningún backdrop debe verse si el modal NO está abierto.
+   - Esto protege frente a webviews, cascadas raras o cambios futuros.
+   ============================================================================= */
+.image-modal-backdrop,
+.about-modal-backdrop,
+.cart-modal-backdrop,
+.pdf-modal-backdrop{
+  display:none;
+}
+
+/* Mostrar backdrop solo cuando el modal está abierto */
+.image-modal.open .image-modal-backdrop,
+.about-modal.open .about-modal-backdrop,
+.cart-modal.open .cart-modal-backdrop,
+.pdf-modal.open .pdf-modal-backdrop{
+  display:block;
 }
 

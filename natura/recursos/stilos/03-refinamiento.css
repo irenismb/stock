@@ -49,6 +49,7 @@
   box-shadow:0 10px 24px rgba(34,197,94,0.45);
   white-space:nowrap;
 }
+
 /* Ajustes generales de fondo y contenedor */
 body{
   padding:18px;
@@ -69,6 +70,7 @@ body{
   border:1px solid rgba(148,163,184,0.4);
   backdrop-filter:blur(14px);
 }
+
 /* Transiciones y estados de foco globales */
 button,
 input,
@@ -80,6 +82,7 @@ input:focus-visible{
   outline:2px solid var(--primary);
   outline-offset:2px;
 }
+
 /* Controles superiores refinados */
 .controls-panel{
   margin-bottom:18px;
@@ -94,6 +97,7 @@ input:focus-visible{
   font-size:15px;
   padding:11px 18px;
 }
+
 /* Tabla y filas */
 .product-table thead th{
   font-size:12px;
@@ -115,6 +119,7 @@ input:focus-visible{
 .product-table td[data-label="Nombre"] span{
   font-weight:600;
 }
+
 /* Mensaje de “Cargando productos…” */
 .product-table td[colspan="6"],
 .product-table td[colspan="7"]{
@@ -122,6 +127,7 @@ input:focus-visible{
   font-size:14px;
   color:#6b7280;
 }
+
 /* Scrollbars personalizados */
 .table-wrapper,
 .right-panel,
@@ -150,6 +156,7 @@ input:focus-visible{
   background:rgba(148,163,184,0.8);
   border-radius:999px;
 }
+
 /* Miniaturas y galería */
 .preview{
   border-radius:16px;
@@ -168,6 +175,7 @@ input:focus-visible{
   transform:translateY(-2px) scale(1.03);
   box-shadow:0 8px 18px rgba(15,23,42,0.25);
 }
+
 /* Botones de cantidad */
 .quantity-btn{
   box-shadow:0 3px 8px rgba(37,99,235,0.25);
@@ -175,6 +183,7 @@ input:focus-visible{
 .quantity-btn:hover{
   transform:translateY(-1px);
 }
+
 /* Carrito y contacto */
 .cart-container{
   border-radius:16px;
@@ -190,16 +199,18 @@ input:focus-visible{
 #whatsappBtn::before{
   content:"🟢 ";
 }
+
 /* Ajustes móviles para header y contenedor extra */
 @media (max-width:768px){
   .site-header{
-    margin:0 0 12px;
+    margin:0 0 6px; /* ✅ Reducimos el espacio bajo el header */
     padding:10px 10px;
     border-radius:12px;
   }
   .site-header-inner{
     flex-direction:column;
     align-items:flex-start;
+    gap:8px; /* ✅ Menos separación interna en móvil */
   }
   .site-badge{
     align-self:stretch;
@@ -219,3 +230,4 @@ input:focus-visible{
     background:transparent;
   }
 }
+

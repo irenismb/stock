@@ -1,7 +1,3 @@
-/* =============================================================================
-   04-extras-modal-stock.css
-   Modales, stock, acciones móviles, PDF y ajustes finales
-   ============================================================================= */
 /* ===== Modal de imagen ampliada (ajustado para ver la foto completa) ===== */
 .image-modal{
   position:fixed;
@@ -83,7 +79,7 @@
   .container{
     display:flex !important;
     flex-direction:column !important;
-    gap:6px !important;
+    gap:8px !important;
   }
   /* 2) Orden explícito por si algo quedara invertido */
   .left-panel{
@@ -98,36 +94,34 @@
   }
   /* 3) Compactar el espacio bajo el header */
   .site-header{
-    margin-bottom:2px !important;
+    margin-bottom:4px !important;
   }
   .site-header-inner{
-    gap:4px !important;
+    gap:6px !important;
   }
   /* 4) Compactar panel de controles (donde vive el buscador y redes) */
   .controls-panel{
-    margin-bottom:4px !important;
-    padding:4px 0 4px !important;
-    padding-bottom:4px !important;
+    margin-bottom:6px !important;
+    padding-bottom:6px !important;
   }
   .products-header{
-    gap:4px !important;
-    padding-bottom:0 !important;
+    gap:6px !important;
+    padding-bottom:2px !important;
   }
   /* 5) Reducir separación interna del bloque inferior */
   .controls-bottom{
-    gap:4px !important;
+    gap:6px !important;
   }
   /* 6) Redes: evitar “aire” sobrante */
   .social-icons{
     margin-left:0 !important;
-    padding:2px 0 !important;
-    gap:6px !important;
+    padding:4px 6px !important;
+    gap:8px !important;
     background:transparent !important; /* evita cápsula grande en algunos temas */
-    border-radius:0 !important;
   }
   /* 7) Fila de acciones móviles más pegada al bloque superior */
   .mobile-actions-row{
-    margin:4px 0 6px !important;
+    margin:6px 0 8px !important;
   }
 }
 /* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
@@ -207,7 +201,7 @@
   .mobile-actions-row{
     display:flex;
     flex-direction:column;
-    gap:6px;
+    gap:8px;
   }
   /* Wrapper creado por layout-movil-buscador.js */
   .mobile-actions-buttons{
@@ -231,13 +225,6 @@
   .dropdown-toggle-btn{
     min-height: var(--mobile-pill-height);
   }
-  /* ✅ NUEVO: afinado del botón PDF móvil para que no se vea más bajo */
-  #pdfBtnMobile{
-    padding: 0 12px !important;
-    font-size: 12px !important;
-    line-height: 1.1;
-  }
-
   /* ===== Estilo degradado unificado (solo móvil) ===== */
   .natura-pill-btn,
   #sortPriceBtn,
@@ -449,7 +436,7 @@
   .controls-bottom{
     flex-direction:column;
     align-items:stretch;
-    gap:4px;
+    gap:6px;
   }
   .filters-row{
     display:none;
@@ -513,14 +500,9 @@
     display:inline-flex;
     align-items:center;
     justify-content:center;
-
-    /* ✅ NUEVO: mismo alto que las otras pastillas */
-    min-height: var(--mobile-pill-height, 40px);
-
-    /* ✅ Reducimos padding lateral para evitar saltos de línea */
-    padding: 0 12px;
-    font-size:12px;
-    line-height:1.1;
+    padding:6px 10px;
+    font-size:11.5px;
+    min-height:32px;
   }
 }
 /* Contenedor modal PDF */
@@ -790,19 +772,9 @@
     width: 100% !important;
     justify-content: center !important;
     margin-left: 0 !important;
-
-    /* ✅ NUEVO: menos “aire” vertical */
-    padding: 2px 0 !important;
-
-    /* ✅ Ajuste de separación */
-    gap: 8px !important;
-
-    /* mantenemos wrap por seguridad en pantallas muy estrechas */
+    padding: 4px 6px !important;
+    gap: 10px !important;
     flex-wrap: wrap;
-  }
-  .social-icons img{
-    width:22px;
-    height:22px;
   }
   .social-icons a,
   .social-icons button{
@@ -812,4 +784,3 @@
     align-self: center;
   }
 }
-

@@ -205,13 +205,6 @@ input:focus-visible{
   .site-badge{
     align-self:stretch;
     text-align:center;
-
-    /* ✅ NUEVO: igualar alto de pastillas en móvil */
-    min-height: var(--mobile-pill-height, 40px);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding: 0 14px;
   }
   body{
     padding:10px;

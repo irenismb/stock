@@ -1,377 +1,378 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <title>Irenismb Stock Natura - Catálogo con Búsqueda Inteligente</title>
-  <!-- Favicon / ícono de pestaña -->
-  <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
-  <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
-  <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html">
-  <meta property="og:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
-  <meta property="og:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="800">
-  <meta property="og:image:height" content="800">
-  <meta property="og:site_name" content="Irenismb Stock Natura">
-  <meta property="og:locale" content="es_CO">
-  <!-- Metadatos Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
-  <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <!-- Hojas de estilos divididas (carpeta stilos) -->
-  <link rel="stylesheet" href="recursos/stilos/01-base.css">
-  <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
-  <link rel="stylesheet" href="recursos/stilos/03-refinamiento.css">
-  <link rel="stylesheet" href="recursos/stilos/04-extras-modal-stock.css">
-</head>
-<body>
-  <!-- ENCABEZADO PRINCIPAL -->
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-brand">
-        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura">
-        <div>
-          <h1>IRENISMB STOCK NATURA</h1>
-          <p>Catálogo inteligente • Envíos a toda Colombia</p>
-        </div>
-      </div>
-      <div class="site-badge">
-        Natura · Maquillaje · Cuidado personal
-      </div>
-    </div>
-  </header>
-
-  <!-- CONTENEDOR PRINCIPAL -->
-  <div class="container">
-    <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
-    <div class="left-panel">
-      <div class="controls-panel">
-        <div class="products-header">
-          <!-- Fila superior: solo buscador -->
-          <div class="controls-top">
-            <input
-              id="searchInput"
-              type="text"
-              autocomplete="off"
-              inputmode="search"
-              placeholder="🔍 Buscar por nombre, marca, categoría..."
-            >
-          </div>
-
-          <!-- Fila inferior: filtros + redes -->
-          <div class="controls-bottom">
-            <div class="filters-row">
-              <button id="sortPriceBtn" type="button" class="natura-pill-btn">Ordenar por precio</button>
-
-              <!-- Filtro por categorías -->
-              <div class="custom-dropdown" id="categoryDropdown">
-                <button
-                  type="button"
-                  id="categoryToggleBtn"
-                  class="dropdown-toggle-btn natura-pill-btn"
-                  aria-haspopup="listbox"
-                  aria-expanded="false"
-                >
-                  Categorías ▾
-                </button>
-                <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
-              </div>
-
-              <!-- Filtro por marcas -->
-              <div class="custom-dropdown" id="brandDropdown">
-                <button
-                  type="button"
-                  id="brandToggleBtn"
-                  class="dropdown-toggle-btn natura-pill-btn"
-                  aria-haspopup="listbox"
-                  aria-expanded="false"
-                >
-                  Marcas ▾
-                </button>
-                <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
-              </div>
-
-              <!-- Botón PDF (versión de escritorio / dentro del panel de filtros) -->
-              <button id="pdfBtn" class="pdf-btn natura-pill-btn" type="button">Descargar PDF</button>
-            </div>
-
-            <!-- Iconos de redes sociales y ubicación -->
-            <div class="social-icons">
-              <a
-                href="https://www.facebook.com/marketplace/profile/100084865295132"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Facebook Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook">
-              </a>
-              <a
-                href="https://www.instagram.com/irenismb_stocknaturasm"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Instagram Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram">
-              </a>
-              <a
-                href="https://www.tiktok.com/@irenismbstocknatura"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="TikTok Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok">
-              </a>
-              <a
-                href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="Ubicación en Google Maps"
-              >
-                <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps">
-              </a>
-              <a
-                href="https://wa.me/573042088961"
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label="WhatsApp Irenismb Stock"
-              >
-                <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp">
-              </a>
-
-              <!-- Botón PDF específico para móvil, alineado con redes -->
-              <button
-                id="pdfBtnMobile"
-                class="pdf-btn pdf-btn-mobile natura-pill-btn"
-                type="button"
-                aria-label="Descargar PDF del catálogo"
-              >
-                Descargar PDF
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Fila de acciones principales en móvil (Carrito / Filtros / Sobre Nosotros) -->
-      <div class="mobile-actions-row" id="mobileActionsRow">
-        <button id="mobileCartBtn" type="button" class="mobile-action-btn natura-pill-btn">
-          Agregar al Carrito
-        </button>
-        <button id="mobileFiltersBtn" type="button" class="mobile-action-btn natura-pill-btn">
-          Filtros
-        </button>
-        <button id="aboutBtn" class="mobile-action-btn about-btn natura-pill-btn" type="button">
-          Sobre Nosotros
-        </button>
-      </div>
-
-      <!-- TABLA DE PRODUCTOS -->
-      <div class="table-wrapper">
-        <table class="product-table" aria-label="Listado de productos">
-          <thead>
-            <tr>
-              <th>Imagen</th>
-              <th>Nombre producto</th>
-              <th>Categoría</th>
-              <th>Marca</th>
-              <th>Valor unitario</th>
-              <th>Cantidad</th>
-              <th>Total a pagar</th>
-            </tr>
-          </thead>
-          <tbody id="productTableBody">
-            <tr>
-              <td colspan="7" style="text-align:center;">Cargando productos...</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- PANEL DERECHO: CARRITO + SOBRE NOSOTROS -->
-    <div class="right-panel">
-      <!-- Vista previa del producto (se mantiene en el DOM pero se oculta con CSS) -->
-      <div id="productPreview" class="preview" aria-live="polite">
-        <div class="stage" role="region" aria-label="Imagen del producto">
-          <button class="nav prev" id="galleryPrevBtn" aria-label="Producto anterior">‹</button>
-          <img id="previewImg" alt="Vista previa del producto" />
-          <div id="imageStatus" class="image-status" aria-live="polite"></div>
-          <button class="nav next" id="galleryNextBtn" aria-label="Producto siguiente">›</button>
-        </div>
-        <div id="previewName" class="product-name"></div>
-        <div id="previewCaption" class="caption">
-          Haz clic en un producto para ver su descripción
-        </div>
-      </div>
-
-      <!-- Carrito: panel en escritorio, modal en móvil -->
-      <div id="cartModal" class="cart-modal" aria-hidden="true">
-        <div id="cartModalBackdrop" class="cart-modal-backdrop"></div>
-        <div
-          class="cart-modal-content"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Carrito de compras"
-        >
-          <button
-            type="button"
-            id="cartModalClose"
-            class="cart-modal-close"
-            aria-label="Cerrar carrito de compras"
-          >
-            ×
-          </button>
-          <div class="cart-container" id="cartContainer">
-            <h3>🛒 Carrito de Compras</h3>
-            <ul id="cartList">
-              <li class="cart-item">
-                <span class="cart-item-title">El carrito está vacío.</span>
-              </li>
-            </ul>
-            <div id="totalPrice">Total: 0</div>
-            <button id="whatsappBtn">Comprar por WhatsApp</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Contacto y Descripción (visible en escritorio, oculta en móviles) -->
-      <div class="contact-info" id="aboutInfo">
-        <h3>✨ Sobre Nosotros ✨</h3>
-        <p class="store-description">
-          Irenismb Stock Natura es una tienda en línea en Santa Marta especializada en productos Natura, Avon y Ésika. Tenemos stock disponible de fragancias, maquillaje, cuidado facial y corporal, cuidado capilar, productos para bebés, protección solar y regalos y combos. Ofrecemos asesoría personalizada por WhatsApp, envíos a toda Colombia y pago contra entrega en Santa Marta, para que compres tus productos de catálogo originales de forma fácil y segura.
-        </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal de imagen ampliada (lightbox) -->
-  <div id="imageModal" class="image-modal" aria-hidden="true">
-    <div id="imageModalBackdrop" class="image-modal-backdrop"></div>
-    <div
-      class="image-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Imagen ampliada del producto"
-    >
-      <button
-        type="button"
-        id="imageModalClose"
-        class="image-modal-close"
-        aria-label="Cerrar imagen ampliada"
-      >
-        ×
-      </button>
-      <img id="imageModalImg" alt="Imagen ampliada del producto">
-    </div>
-  </div>
-
-  <!-- Modal de exportación a PDF -->
-  <div id="pdfModal" class="pdf-modal" aria-hidden="true">
-    <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
-    <div
-      class="pdf-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Exportar catálogo a PDF"
-    >
-      <button
-        type="button"
-        id="pdfModalClose"
-        class="pdf-modal-close"
-        aria-label="Cerrar exportación PDF"
-      >
-        ×
-      </button>
-      <div class="pdf-modal-header">
-        <h3>📄 Exportar catálogo a PDF</h3>
-        <p class="pdf-modal-hint">
-          Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
-        </p>
-      </div>
-
-      <!-- Subtítulo personalizado -->
-      <div class="pdf-title-row">
-        <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
-        <input
-          id="pdfCustomTitle"
-          class="pdf-title-input"
-          type="text"
-          maxlength="60"
-          placeholder="Ej: Catálogo Navideño, Especial Mamá, Promos de Abril..."
-          autocomplete="off"
-        >
-      </div>
-
-      <div class="pdf-actions">
-        <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
-        <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
-        <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
-        <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
-      </div>
-
-      <div id="pdfProductList" class="pdf-product-list" role="list"></div>
-
-      <div class="pdf-footer">
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfIncludePrices" checked>
-          Incluir precios
-        </label>
-
-        <!-- ✅ NUEVO CHECK -->
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfIncludeTotal">
-          Incluir total al final
-        </label>
-
-        <button type="button" id="pdfGenerateBtn" class="pdf-generate-btn">
-          Generar PDF
-        </button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal "Sobre Nosotros" para móviles -->
-  <div id="aboutModal" class="about-modal" aria-hidden="true">
-    <div id="aboutModalBackdrop" class="about-modal-backdrop"></div>
-    <div
-      class="about-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Información sobre Irenismb Stock Natura"
-    >
-      <button
-        type="button"
-        id="aboutModalClose"
-        class="about-modal-close"
-        aria-label="Cerrar información Sobre Nosotros"
-      >
-        ×
-      </button>
-      <h3 class="about-modal-title">Sobre Nosotros</h3>
-      <div id="aboutModalBody" class="about-modal-body">
-        <!-- Se rellena dinámicamente desde .contact-info para no duplicar textos -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Librería PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <!-- Scripts divididos (carpeta scrips) -->
-  <script src="recursos/scrips/config-estado-dom.js"></script>
-  <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
-  <!-- ✅ FIX móvil: reubicar buscador y mantener botones en una sola fila -->
-  <script src="recursos/scrips/layout-movil-buscador.js"></script>
-  <script src="recursos/scrips/filtros-tabla-productos.js"></script>
-  <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
-  <script src="recursos/scrips/sobre-nosotros.js"></script>
-  <script src="recursos/scrips/visitas-ubicacion.js"></script>
-  <script src="recursos/scrips/exportar-pdf-catalogo.js"></script>
-</body>
-</html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Irenismb Stock Natura - Catálogo con Búsqueda Inteligente</title>
+  <!-- Favicon / ícono de pestaña -->
+  <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
+  <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
+  <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html">
+  <meta property="og:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
+  <meta property="og:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="800">
+  <meta property="og:image:height" content="800">
+  <meta property="og:site_name" content="Irenismb Stock Natura">
+  <meta property="og:locale" content="es_CO">
+  <!-- Metadatos Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
+  <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <!-- Hojas de estilos divididas (carpeta stilos) -->
+  <link rel="stylesheet" href="recursos/stilos/01-base.css">
+  <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
+  <link rel="stylesheet" href="recursos/stilos/03-refinamiento.css">
+  <link rel="stylesheet" href="recursos/stilos/04-extras-modal-stock.css">
+</head>
+<body>
+  <!-- ENCABEZADO PRINCIPAL -->
+  <header class="site-header">
+    <div class="site-header-inner">
+      <div class="site-brand">
+        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura">
+        <div>
+          <h1>IRENISMB STOCK NATURA</h1>
+          <p>Catálogo inteligente • Envíos a toda Colombia</p>
+        </div>
+      </div>
+      <div class="site-badge">
+        Natura · Maquillaje · Cuidado personal
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENEDOR PRINCIPAL -->
+  <div class="container">
+    <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
+    <div class="left-panel">
+      <div class="controls-panel">
+        <div class="products-header">
+          <!-- Fila superior: solo buscador -->
+          <div class="controls-top">
+            <input
+              id="searchInput"
+              type="text"
+              autocomplete="off"
+              inputmode="search"
+              placeholder="🔍 Buscar por nombre, marca, categoría..."
+            >
+          </div>
+
+          <!-- Fila inferior: filtros + redes -->
+          <div class="controls-bottom">
+            <div class="filters-row">
+              <button id="sortPriceBtn" type="button" class="natura-pill-btn">Ordenar por precio</button>
+
+              <!-- Filtro por categorías -->
+              <div class="custom-dropdown" id="categoryDropdown">
+                <button
+                  type="button"
+                  id="categoryToggleBtn"
+                  class="dropdown-toggle-btn natura-pill-btn"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                >
+                  Categorías ▾
+                </button>
+                <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
+              </div>
+
+              <!-- Filtro por marcas -->
+              <div class="custom-dropdown" id="brandDropdown">
+                <button
+                  type="button"
+                  id="brandToggleBtn"
+                  class="dropdown-toggle-btn natura-pill-btn"
+                  aria-haspopup="listbox"
+                  aria-expanded="false"
+                >
+                  Marcas ▾
+                </button>
+                <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
+              </div>
+
+              <!-- Botón PDF (versión de escritorio / dentro del panel de filtros) -->
+              <button id="pdfBtn" class="pdf-btn natura-pill-btn" type="button">Descargar PDF</button>
+            </div>
+
+            <!-- Iconos de redes sociales y ubicación -->
+            <div class="social-icons">
+              <a
+                href="https://www.facebook.com/marketplace/profile/100084865295132"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook Irenismb Stock"
+              >
+                <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook">
+              </a>
+              <a
+                href="https://www.instagram.com/irenismb_stocknaturasm"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram Irenismb Stock"
+              >
+                <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram">
+              </a>
+              <a
+                href="https://www.tiktok.com/@irenismbstocknatura"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="TikTok Irenismb Stock"
+              >
+                <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok">
+              </a>
+              <a
+                href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Ubicación en Google Maps"
+              >
+                <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps">
+              </a>
+              <a
+                href="https://wa.me/573042088961"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="WhatsApp Irenismb Stock"
+              >
+                <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp">
+              </a>
+
+              <!-- Botón PDF específico para móvil, alineado con redes -->
+              <button
+                id="pdfBtnMobile"
+                class="pdf-btn pdf-btn-mobile natura-pill-btn"
+                type="button"
+                aria-label="Descargar PDF del catálogo"
+              >
+                Descargar PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Fila de acciones principales en móvil (Carrito / Filtros / Sobre Nosotros) -->
+      <div class="mobile-actions-row" id="mobileActionsRow">
+        <button id="mobileCartBtn" type="button" class="mobile-action-btn natura-pill-btn">
+          Agregar al Carrito
+        </button>
+        <button id="mobileFiltersBtn" type="button" class="mobile-action-btn natura-pill-btn">
+          Filtros
+        </button>
+        <button id="aboutBtn" class="mobile-action-btn about-btn natura-pill-btn" type="button">
+          Sobre Nosotros
+        </button>
+      </div>
+
+      <!-- TABLA DE PRODUCTOS -->
+      <div class="table-wrapper">
+        <table class="product-table" aria-label="Listado de productos">
+          <thead>
+            <tr>
+              <th>Imagen</th>
+              <th>Nombre producto</th>
+              <th>Categoría</th>
+              <th>Marca</th>
+              <th>Valor unitario</th>
+              <th>Cantidad</th>
+              <th>Total a pagar</th>
+            </tr>
+          </thead>
+          <tbody id="productTableBody">
+            <tr>
+              <td colspan="7" style="text-align:center;">Cargando productos...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- PANEL DERECHO: CARRITO + SOBRE NOSOTROS -->
+    <div class="right-panel">
+      <!-- Vista previa del producto (se mantiene en el DOM pero se oculta con CSS) -->
+      <div id="productPreview" class="preview" aria-live="polite">
+        <div class="stage" role="region" aria-label="Imagen del producto">
+          <button class="nav prev" id="galleryPrevBtn" aria-label="Producto anterior">‹</button>
+          <img id="previewImg" alt="Vista previa del producto" />
+          <div id="imageStatus" class="image-status" aria-live="polite"></div>
+          <button class="nav next" id="galleryNextBtn" aria-label="Producto siguiente">›</button>
+        </div>
+        <div id="previewName" class="product-name"></div>
+        <div id="previewCaption" class="caption">
+          Haz clic en un producto para ver su descripción
+        </div>
+      </div>
+
+      <!-- Carrito: panel en escritorio, modal en móvil -->
+      <div id="cartModal" class="cart-modal" aria-hidden="true">
+        <div id="cartModalBackdrop" class="cart-modal-backdrop"></div>
+        <div
+          class="cart-modal-content"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Carrito de compras"
+        >
+          <button
+            type="button"
+            id="cartModalClose"
+            class="cart-modal-close"
+            aria-label="Cerrar carrito de compras"
+          >
+            ×
+          </button>
+          <div class="cart-container" id="cartContainer">
+            <h3>🛒 Carrito de Compras</h3>
+            <ul id="cartList">
+              <li class="cart-item">
+                <span class="cart-item-title">El carrito está vacío.</span>
+              </li>
+            </ul>
+            <div id="totalPrice">Total: 0</div>
+            <button id="whatsappBtn">Comprar por WhatsApp</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contacto y Descripción (visible en escritorio, oculta en móviles) -->
+      <div class="contact-info" id="aboutInfo">
+        <h3>✨ Sobre Nosotros ✨</h3>
+        <p class="store-description">
+          Irenismb Stock Natura es una tienda en línea con punto fisico en Santa Marta especializada en productos Natura, Avon y Ésika. Tenemos stock disponible de fragancias, maquillaje, cuidado facial y corporal, cuidado capilar, productos para bebés, protección solar y regalos y combos. Ofrecemos asesoría personalizada por WhatsApp, envíos a toda Colombia y pago contra entrega en Santa Marta, para que compres tus productos de catálogo originales de forma fácil y segura.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de imagen ampliada (lightbox) -->
+  <div id="imageModal" class="image-modal" aria-hidden="true">
+    <div id="imageModalBackdrop" class="image-modal-backdrop"></div>
+    <div
+      class="image-modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Imagen ampliada del producto"
+    >
+      <button
+        type="button"
+        id="imageModalClose"
+        class="image-modal-close"
+        aria-label="Cerrar imagen ampliada"
+      >
+        ×
+      </button>
+      <img id="imageModalImg" alt="Imagen ampliada del producto">
+    </div>
+  </div>
+
+  <!-- Modal de exportación a PDF -->
+  <div id="pdfModal" class="pdf-modal" aria-hidden="true">
+    <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
+    <div
+      class="pdf-modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Exportar catálogo a PDF"
+    >
+      <button
+        type="button"
+        id="pdfModalClose"
+        class="pdf-modal-close"
+        aria-label="Cerrar exportación PDF"
+      >
+        ×
+      </button>
+      <div class="pdf-modal-header">
+        <h3>📄 Exportar catálogo a PDF</h3>
+        <p class="pdf-modal-hint">
+          Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
+        </p>
+      </div>
+
+      <!-- Subtítulo personalizado -->
+      <div class="pdf-title-row">
+        <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
+        <input
+          id="pdfCustomTitle"
+          class="pdf-title-input"
+          type="text"
+          maxlength="60"
+          placeholder="Ej: Catálogo Navideño, Especial Mamá, Promos de Abril..."
+          autocomplete="off"
+        >
+      </div>
+
+      <div class="pdf-actions">
+        <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
+        <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
+        <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
+        <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
+      </div>
+
+      <div id="pdfProductList" class="pdf-product-list" role="list"></div>
+
+      <div class="pdf-footer">
+        <label class="pdf-option">
+          <input type="checkbox" id="pdfIncludePrices" checked>
+          Incluir precios
+        </label>
+
+        <!-- ✅ NUEVO CHECK -->
+        <label class="pdf-option">
+          <input type="checkbox" id="pdfIncludeTotal">
+          Incluir total al final
+        </label>
+
+        <button type="button" id="pdfGenerateBtn" class="pdf-generate-btn">
+          Generar PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal "Sobre Nosotros" para móviles -->
+  <div id="aboutModal" class="about-modal" aria-hidden="true">
+    <div id="aboutModalBackdrop" class="about-modal-backdrop"></div>
+    <div
+      class="about-modal-content"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Información sobre Irenismb Stock Natura"
+    >
+      <button
+        type="button"
+        id="aboutModalClose"
+        class="about-modal-close"
+        aria-label="Cerrar información Sobre Nosotros"
+      >
+        ×
+      </button>
+      <h3 class="about-modal-title">Sobre Nosotros</h3>
+      <div id="aboutModalBody" class="about-modal-body">
+        <!-- Se rellena dinámicamente desde .contact-info para no duplicar textos -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Librería PDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <!-- Scripts divididos (carpeta scrips) -->
+  <script src="recursos/scrips/config-estado-dom.js"></script>
+  <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
+  <!-- ✅ FIX móvil: reubicar buscador y mantener botones en una sola fila -->
+  <script src="recursos/scrips/layout-movil-buscador.js"></script>
+  <script src="recursos/scrips/filtros-tabla-productos.js"></script>
+  <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
+  <script src="recursos/scrips/sobre-nosotros.js"></script>
+  <script src="recursos/scrips/visitas-ubicacion.js"></script>
+  <script src="recursos/scrips/exportar-pdf-catalogo.js"></script>
+</body>
+</html>
+
 

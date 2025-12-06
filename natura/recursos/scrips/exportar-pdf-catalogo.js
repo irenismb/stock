@@ -398,21 +398,17 @@ function drawHeader(
     doc.text(catalogName, textX, lineY);
   }
 
-  // Meta multilinea con jerarquía:
-  // 1) WhatsApp + Fecha (principal)
-  // 2) URL sin protocolo (secundaria)
+  // Meta multilinea: teléfono, URL del QR, fecha
   if (metaLine) {
     const lines = Array.isArray(metaLine) ? metaLine : [metaLine];
-
     lineY += 4.0;
     doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
 
     lines.filter(Boolean).forEach((ln, idx) => {
-      const isSecondary = idx >= 1;
-      doc.setFontSize(isSecondary ? 7.2 : 8);
       doc.text(String(ln), textX, lineY);
-      lineY += isSecondary ? 3.4 : 3.8;
+      lineY += 3.6;
     });
   }
 
@@ -499,7 +495,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   }
 }
 
-// ✅ Resumen inline (título corto)
+// ✅ NUEVO: Resumen inline (título corto)
 function drawInlineTotalSummary(doc, pageW, y, data) {
   const { itemCount, totalValue } = data;
 
@@ -548,7 +544,7 @@ function drawInlineTotalSummary(doc, pageW, y, data) {
   doc.text(currencyFormatter.format(totalValue), marginX + 62, boxY + 17);
 }
 
-// ✅ Página final de resumen compacta (título corto)
+// ✅ Página final de resumen más compacta (título corto)
 function drawTotalSummaryPage(doc, pageW, pageH, data) {
   const {
     companyName,
@@ -722,15 +718,15 @@ async function generatePdf() {
   const companyName = "IRENISMB STOCK NATURA";
   const catalogName = getCustomPdfSubtitle() || "Catálogo";
 
-  // ✅ Meta con mejor jerarquía visual:
-  // - WhatsApp + Fecha en una sola línea
-  // - URL del QR debajo, sin protocolo
+  // ✅ Meta en varias líneas:
+  // 1) WhatsApp
+  // 2) URL del QR
+  // 3) Fecha
   const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
-  const niceUrl = PDF_QR_TARGET_URL.replace(/^https?:\/\//, "");
-
   const metaLine = [
-    `${whatsappTxt} • Fecha: ${todayLabel()}`,
-    niceUrl
+    whatsappTxt,
+    PDF_QR_TARGET_URL,
+    `Fecha: ${todayLabel()}`
   ].filter(Boolean);
 
   // 1) Páginas de productos

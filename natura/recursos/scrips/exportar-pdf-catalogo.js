@@ -1,6 +1,7 @@
 // ================== EXPORTACIÓN DE CATÁLOGO A PDF ==================
 // Requiere: config-estado-dom.js, utilidades-imagenes-galeria.js
 //          y la librería jsPDF UMD cargada en catalogo.html
+
 const PDF_PRODUCTS_PER_PAGE = 6; // ✅ máximo 6 por página
 const PDF_COLS = 2;
 const PDF_ROWS = 3;
@@ -51,6 +52,17 @@ function todayLabel() {
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
+}
+
+// ✅ NUEVO: formato amigable de WhatsApp para el header del PDF
+function formatWhatsAppNumber(raw) {
+  const s = String(raw || "").replace(/\D/g, "");
+  if (!s) return "";
+  // Caso típico Colombia: 57 + 10 dígitos
+  if (s.startsWith("57") && s.length === 12) {
+    return `+57 ${s.slice(2, 5)} ${s.slice(5, 8)} ${s.slice(8, 12)}`;
+  }
+  return `+${s}`;
 }
 
 // ---------- Subtítulo PDF (persistente) ----------
@@ -147,15 +159,12 @@ document.addEventListener("keydown", e => {
 function renderPdfSelectionList() {
   if (!pdfProductList) return;
   const baseList = getBaseListForPdfModal();
-
   if (!baseList.length) {
     pdfProductList.innerHTML =
       `<div class="pdf-empty">No hay productos cargados aún.</div>`;
     return;
   }
-
   const frag = document.createDocumentFragment();
-
   baseList.forEach(p => {
     const id = String(p.id);
     const checked = pdfSelection.has(id);
@@ -192,7 +201,6 @@ function renderPdfSelectionList() {
     `;
     frag.appendChild(label);
   });
-
   pdfProductList.innerHTML = "";
   pdfProductList.appendChild(frag);
 }
@@ -278,7 +286,6 @@ async function dataUrlToJpegDataUrl(dataUrl) {
       img.onload = resolve;
       img.onerror = reject;
     });
-
     const canvas = document.createElement("canvas");
     const w = img.naturalWidth || 300;
     const h = img.naturalHeight || 300;
@@ -286,7 +293,6 @@ async function dataUrlToJpegDataUrl(dataUrl) {
     canvas.height = h;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, w, h);
     ctx.drawImage(img, 0, 0, w, h);
@@ -299,85 +305,97 @@ async function dataUrlToJpegDataUrl(dataUrl) {
 async function loadImageForPdf(url) {
   if (!url) return null;
   if (pdfImageCache.has(url)) return pdfImageCache.get(url);
-
   const raw = await urlToDataUrl(url);
   if (!raw) {
     pdfImageCache.set(url, null);
     return null;
   }
-
   const jpg = await dataUrlToJpegDataUrl(raw);
   const pack = jpg ? { dataUrl: jpg, format: "JPEG" } : null;
   pdfImageCache.set(url, pack);
   return pack;
 }
 
-// ---------- Encabezado ----------
+// ---------- Encabezado (MEJORADO) ----------
 function drawHeader(
   doc,
   pageW,
   companyName,
   tagline,
   customSubtitle,
+  metaLine,       // ✅ NUEVO
   badgeText,
   logoPack,
   pageIndex,
   totalPages
 ) {
-  const marginX = 10;
+  // Margen propio del header
+  const headerMarginX = 12;
   const headerY = 8;
 
   // Logo
   doc.setDrawColor(226, 232, 240);
   if (logoPack && logoPack.dataUrl) {
     try {
-      doc.addImage(logoPack.dataUrl, logoPack.format, marginX, headerY, 12, 12);
+      doc.addImage(logoPack.dataUrl, logoPack.format, headerMarginX, headerY, 11, 11);
     } catch (e) {}
   }
 
-  let textX = marginX + 16;
-  let lineY = headerY + 7;
+  // Bloque texto izquierda
+  let textX = headerMarginX + 15;
+  let lineY = headerY + 6.2;
 
   // Nombre de la tienda
   doc.setTextColor(15, 23, 42);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
+  doc.setFontSize(12.5);
   doc.text(companyName, textX, lineY);
 
-  // Tagline fijo
+  // Tagline
   if (tagline) {
-    lineY += 4.3;
+    lineY += 4.2;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    doc.setFontSize(8.6);
     doc.setTextColor(71, 85, 105);
     doc.text(tagline, textX, lineY);
   }
 
-  // Subtítulo personalizado del catálogo (opcional)
+  // Subtítulo personalizado (color elegante, no tipo enlace)
   if (customSubtitle) {
-    lineY += 4.2;
+    lineY += 4.1;
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
-    doc.setTextColor(30, 64, 175);
+    doc.setFontSize(8.9);
+    doc.setTextColor(51, 65, 85);
     doc.text(customSubtitle, textX, lineY);
   }
 
-  // Cápsula derecha con "Natura · Maquillaje · Cuidado personal"
+  // MetaLine sutil (WhatsApp + Fecha)
+  if (metaLine) {
+    lineY += 3.9;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(100, 116, 139);
+    doc.text(metaLine, textX, lineY);
+  }
+
+  // Cápsula derecha más discreta
   if (badgeText) {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    const badgePaddingX = 5.5;
-    const badgePaddingY = 2;
+    doc.setFontSize(8.2);
+
+    const badgePaddingX = 4.5;
     const textWidth = doc.getTextWidth(badgeText);
     const badgeW = textWidth + badgePaddingX * 2;
-    const badgeH = 7;
-    const badgeX = pageW - marginX - badgeW;
-    const badgeY = headerY + 3;
+    const badgeH = 6;
+
+    const badgeX = pageW - headerMarginX - badgeW;
+    const badgeY = headerY + 3.2;
 
     doc.setFillColor(34, 197, 94);
     doc.setDrawColor(22, 163, 74);
+
     try {
-      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 3, 3, "FD");
+      doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 2.6, 2.6, "FD");
     } catch (e) {
       doc.rect(badgeX, badgeY, badgeW, badgeH, "FD");
     }
@@ -386,21 +404,21 @@ function drawHeader(
     doc.text(
       badgeText,
       badgeX + badgeW / 2,
-      badgeY + badgeH / 2 + 1.7,
+      badgeY + badgeH / 2 + 1.5,
       { align: "center" }
     );
   }
 
-  // Número de página
+  // Número de página con mejor margen
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
+  doc.setFontSize(7.6);
   doc.setTextColor(100, 116, 139);
   const pageLabel = `Página ${pageIndex + 1} de ${totalPages}`;
-  doc.text(pageLabel, pageW - marginX, headerY + 16.5, { align: "right" });
+  doc.text(pageLabel, pageW - headerMarginX, headerY + 17.8, { align: "right" });
 
-  // Línea de separación
+  // Línea de separación más baja para dar aire
   doc.setDrawColor(226, 232, 240);
-  doc.line(marginX, 22, pageW - marginX, 22);
+  doc.line(headerMarginX, 30, pageW - headerMarginX, 30);
 }
 
 // ---------- Tarjeta de producto (SIN descripción) ----------
@@ -462,6 +480,7 @@ function drawProductCard(doc, p, x, y, w, h, options) {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8.6);
   doc.setTextColor(71, 85, 105);
+
   const subText = [marca, category].filter(Boolean).join(" • ");
   if (subText) {
     const subLines = doc.splitTextToSize(subText, innerW);
@@ -525,9 +544,14 @@ async function generatePdf() {
   const customSubtitle = getCustomPdfSubtitle();
   const badgeText = "Natura · Maquillaje · Cuidado personal";
 
+  // ✅ NUEVO: metaLine sutil (WhatsApp + Fecha)
+  const whatsappTxt = formatWhatsAppNumber(DEFAULT_WHATSAPP);
+  const metaLine = [whatsappTxt, `Fecha: ${todayLabel()}`].filter(Boolean).join(" • ");
+
   const marginX = 10;
-  const headerBottomY = 24;
+  const headerBottomY = 32; // ✅ más aire en el header
   const bottomMargin = 10;
+
   const gapX = 6;
   const gapY = 6;
 
@@ -546,6 +570,7 @@ async function generatePdf() {
       companyName,
       tagline,
       customSubtitle,
+      metaLine,
       badgeText,
       logoPack,
       pageIndex,
@@ -558,6 +583,7 @@ async function generatePdf() {
       const p = pageItems[i];
       const row = Math.floor(i / PDF_COLS);
       const col = i % PDF_COLS;
+
       const x = marginX + col * (cardW + gapX);
       const y = headerBottomY + row * (cardH + gapY);
 

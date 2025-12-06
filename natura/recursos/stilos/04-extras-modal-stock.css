@@ -2,6 +2,7 @@
    04-extras-modal-stock.css
    Modales, stock, acciones móviles, PDF y ajustes finales
    ============================================================================= */
+
 /* ===== Modal de imagen ampliada (ajustado para ver la foto completa) ===== */
 .image-modal{
   position:fixed;
@@ -62,6 +63,7 @@
   outline:2px solid #fff;
   outline-offset:2px;
 }
+
 /* ===== Ajuste fino del buscador en móvil ===== */
 @media (max-width:768px){
   #searchInput{
@@ -73,6 +75,7 @@
     line-height:1.2;
   }
 }
+
 /* =============================================================================
    ✅ COMPACTACIÓN ESTRUCTURAL MÓVIL (FIX PRINCIPAL)
    - Evita huecos grandes entre header, redes y buscador.
@@ -128,6 +131,7 @@
     margin:6px 0 8px !important;
   }
 }
+
 /* ===== ESTILOS PARA PRODUCTOS AGOTADOS (STOCK 0) ===== */
 .product-row-out-of-stock {
   background-color: #e5e7eb !important;
@@ -154,6 +158,7 @@
   display: block;
   padding: 4px 0;
 }
+
 /* Ocultar la tira de miniaturas de la galería (solo dejamos la imagen grande) */
 .thumbs{
   display: none !important;
@@ -162,10 +167,22 @@
 .preview{
   display:none !important;
 }
-/* ===== Fila de acciones principales en móvil (WhatsApp / Filtros / Sobre Nosotros) ===== */
+
+/* =============================================================================
+   ✅ ESTILO UNIFICADO TIPO “NATURA” (BASE)
+   - En escritorio es discreto.
+   - En móvil toma protagonismo con degradado y efecto bonito.
+   ============================================================================= */
+.natura-pill-btn{
+  border-radius:999px;
+}
+
+/* ===== Fila de acciones principales en móvil ===== */
 .mobile-actions-row{
   display:none;
 }
+
+/* Botón base de acción móvil */
 .mobile-action-btn{
   border:none;
   border-radius:999px;
@@ -175,31 +192,138 @@
   white-space:nowrap;
   box-shadow:0 8px 18px rgba(15,23,42,0.18);
 }
+
+/* Mantenemos la clase por compatibilidad, pero el color real se controla en móvil con variables */
 .about-btn{
   background:linear-gradient(90deg,#f97316,#ec4899);
   color:#fff;
 }
+
+/* =============================================================================
+   ✅ NUEVO LAYOUT MÓVIL PARA:
+   - 3 botones en la misma fila
+   - buscador visible debajo
+   - alturas homogéneas
+   ============================================================================= */
 @media (max-width:768px){
+  :root{
+    --mobile-pill-height: 40px;
+  }
+
+  /* El contenedor ahora sirve como columna:
+     1) fila de 3 botones
+     2) buscador debajo (movido por layout-movil-buscador.js) */
   .mobile-actions-row{
     display:flex;
+    flex-direction:column;
     gap:8px;
   }
-  .mobile-action-btn{
+
+  /* Wrapper creado por layout-movil-buscador.js */
+  .mobile-actions-buttons{
+    display:flex;
+    gap:8px;
+    width:100%;
+  }
+  .mobile-actions-buttons .mobile-action-btn{
     flex:1 1 0;
   }
+
+  /* Asegurar que el buscador, cuando esté dentro del row,
+     ocupe todo el ancho y no rompa la fila de botones */
+  .mobile-actions-row #searchInput{
+    width:100% !important;
+    margin-top:2px;
+  }
+
+  /* Altura homogénea para botones clave en móvil */
+  .mobile-action-btn,
+  #pdfBtnMobile,
+  #sortPriceBtn,
+  .dropdown-toggle-btn{
+    min-height: var(--mobile-pill-height);
+  }
+
+  /* ===== Estilo degradado unificado (solo móvil) ===== */
+  .natura-pill-btn,
+  #sortPriceBtn,
+  .dropdown-toggle-btn,
+  .pdf-btn,
+  .pdf-generate-btn{
+    --btn-c1:#22c55e;
+    --btn-c2:#a3e635;
+    --btn-text:#052e16;
+
+    background:linear-gradient(90deg,var(--btn-c1),var(--btn-c2));
+    color:var(--btn-text);
+    border:1px solid rgba(15,23,42,0.08);
+    box-shadow:0 10px 22px rgba(15,23,42,0.14);
+    background-size: 140% 140%;
+    background-position: 0% 50%;
+    transition:
+      filter .15s ease,
+      transform .08s ease,
+      background-position .2s ease,
+      box-shadow .15s ease;
+  }
+
+  .natura-pill-btn:active,
+  #sortPriceBtn:active,
+  .dropdown-toggle-btn:active,
+  .pdf-btn:active{
+    transform:translateY(0);
+    filter:brightness(0.98);
+    background-position: 100% 50%;
+  }
+
+  /* Colores por botón (MISMO ESTILO, distinto tono) */
   #mobileCartBtn{
-    background:linear-gradient(90deg,#22c55e,#16a34a);
-    color:#fff;
+    --btn-c1:#22c55e;
+    --btn-c2:#16a34a;
+    --btn-text:#ffffff;
   }
   #mobileFiltersBtn{
-    background:linear-gradient(90deg,#6366f1,#3b82f6);
-    color:#fff;
+    --btn-c1:#6366f1;
+    --btn-c2:#3b82f6;
+    --btn-text:#ffffff;
   }
+  #aboutBtn{
+    --btn-c1:#f97316;
+    --btn-c2:#ec4899;
+    --btn-text:#ffffff;
+  }
+  #pdfBtnMobile{
+    --btn-c1:#0ea5e9;
+    --btn-c2:#2563eb;
+    --btn-text:#ffffff;
+  }
+
+  /* Botones de filtros internos cuando se despliegan */
+  #sortPriceBtn{
+    --btn-c1:#22c55e;
+    --btn-c2:#a3e635;
+    --btn-text:#052e16;
+  }
+  .dropdown-toggle-btn{
+    --btn-c1:#22c55e;
+    --btn-c2:#a3e635;
+    --btn-text:#052e16;
+  }
+
+  /* Evitar que el texto se vea “apretado” */
+  .mobile-action-btn{
+    padding:10px 12px;
+    font-weight:600;
+    letter-spacing:.01em;
+  }
+
+  /* Sobre nosotros en móvil mantiene ancho natural */
   .mobile-actions-row .about-btn{
     margin-top:0;
     width:auto;
   }
 }
+
 /* ===== Modal "Sobre Nosotros" ===== */
 .about-modal{
   position:fixed;
@@ -259,6 +383,7 @@
   align-items:center;
   justify-content:center;
 }
+
 /* ===== Modal del carrito (panel en escritorio, ventana en móvil) ===== */
 .cart-modal{
   /* En escritorio se comporta como un simple contenedor dentro de la barra lateral */
@@ -323,6 +448,7 @@
     overflow:auto;
   }
 }
+
 /* ===== Bloque final: filtros en una sola línea (móvil) ===== */
 .filters-row{
   display:flex;
@@ -366,6 +492,7 @@
     display:none;
   }
 }
+
 /* =============================================================================
    Modal de exportación PDF + botón
    ============================================================================= */
@@ -388,11 +515,13 @@
 .pdf-btn:active{
   transform:translateY(0);
 }
+
 /* Por defecto (escritorio) el botón móvil NO debe mostrarse */
 .pdf-btn-mobile{
   margin-left:4px;
   display:none;
 }
+
 /* Versión compacta para el botón de PDF en la fila de redes (móvil) */
 @media (max-width:768px){
   .filters-row .pdf-btn{
@@ -407,6 +536,7 @@
     min-height:32px;
   }
 }
+
 /* Contenedor modal PDF */
 .pdf-modal{
   position:fixed;
@@ -470,6 +600,7 @@
   font-size:12.5px;
   color:#64748b;
 }
+
 /* Fila del título personalizado */
 .pdf-title-row{
   display:flex;
@@ -501,6 +632,7 @@
   border-color:#93c5fd;
   box-shadow:0 0 0 2px rgba(37,99,235,0.12);
 }
+
 /* Botones de acción rápida */
 .pdf-actions{
   display:flex;
@@ -519,6 +651,7 @@
   background:#eef2ff;
   border-color:#c7d2fe;
 }
+
 /* Listado de productos seleccionables */
 .pdf-product-list{
   border:1px solid #e2e8f0;
@@ -537,6 +670,7 @@
   color:#6b7280;
   font-size:13px;
 }
+
 /* Item */
 .pdf-product-item{
   display:flex;
@@ -587,6 +721,7 @@
   font-weight:700;
   color:#059669;
 }
+
 /* Footer del modal */
 .pdf-footer{
   display:flex;
@@ -629,6 +764,7 @@
   opacity:.7;
   cursor:progress;
 }
+
 /* Ajustes responsivos del modal PDF */
 @media (max-width:768px){
   .pdf-modal-content{
@@ -649,6 +785,7 @@
     width:100%;
   }
 }
+
 /* =============================================================================
    FIX DEFENSIVO DE CAPAS OSCURAS
    - Ningún backdrop debe verse si el modal NO está abierto.
@@ -679,12 +816,10 @@
     gap: 10px !important;
     flex-wrap: wrap;
   }
-
   .social-icons a,
   .social-icons button{
     flex: 0 0 auto;
   }
-
   #pdfBtnMobile{
     align-self: center;
   }

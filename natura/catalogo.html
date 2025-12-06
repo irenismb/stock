@@ -66,14 +66,14 @@
           <!-- Fila inferior: filtros + redes -->
           <div class="controls-bottom">
             <div class="filters-row">
-              <button id="sortPriceBtn" type="button">Ordenar por precio</button>
+              <button id="sortPriceBtn" type="button" class="natura-pill-btn">Ordenar por precio</button>
 
               <!-- Filtro por categorías -->
               <div class="custom-dropdown" id="categoryDropdown">
                 <button
                   type="button"
                   id="categoryToggleBtn"
-                  class="dropdown-toggle-btn"
+                  class="dropdown-toggle-btn natura-pill-btn"
                   aria-haspopup="listbox"
                   aria-expanded="false"
                 >
@@ -87,7 +87,7 @@
                 <button
                   type="button"
                   id="brandToggleBtn"
-                  class="dropdown-toggle-btn"
+                  class="dropdown-toggle-btn natura-pill-btn"
                   aria-haspopup="listbox"
                   aria-expanded="false"
                 >
@@ -97,7 +97,7 @@
               </div>
 
               <!-- Botón PDF (versión de escritorio / dentro del panel de filtros) -->
-              <button id="pdfBtn" class="pdf-btn" type="button">Descargar PDF</button>
+              <button id="pdfBtn" class="pdf-btn natura-pill-btn" type="button">Descargar PDF</button>
             </div>
 
             <!-- Iconos de redes sociales y ubicación -->
@@ -146,7 +146,7 @@
               <!-- Botón PDF específico para móvil, alineado con redes -->
               <button
                 id="pdfBtnMobile"
-                class="pdf-btn pdf-btn-mobile"
+                class="pdf-btn pdf-btn-mobile natura-pill-btn"
                 type="button"
                 aria-label="Descargar PDF del catálogo"
               >
@@ -157,15 +157,15 @@
         </div>
       </div>
 
-      <!-- Fila de acciones principales en móvil (WhatsApp / Filtros / Sobre Nosotros) -->
+      <!-- Fila de acciones principales en móvil (Carrito / Filtros / Sobre Nosotros) -->
       <div class="mobile-actions-row" id="mobileActionsRow">
-        <button id="mobileCartBtn" type="button" class="mobile-action-btn">
-          Comprar por WhatsApp
+        <button id="mobileCartBtn" type="button" class="mobile-action-btn natura-pill-btn">
+          Agregar al Carrito
         </button>
-        <button id="mobileFiltersBtn" type="button" class="mobile-action-btn">
+        <button id="mobileFiltersBtn" type="button" class="mobile-action-btn natura-pill-btn">
           Filtros
         </button>
-        <button id="aboutBtn" class="mobile-action-btn about-btn" type="button">
+        <button id="aboutBtn" class="mobile-action-btn about-btn natura-pill-btn" type="button">
           Sobre Nosotros
         </button>
       </div>
@@ -175,7 +175,7 @@
         <table class="product-table" aria-label="Listado de productos">
           <thead>
             <tr>
-              <th>Foto</th>
+              <th>Imagen</th>
               <th>Nombre producto</th>
               <th>Categoría</th>
               <th>Marca</th>
@@ -313,9 +313,7 @@
         <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
         <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
       </div>
-
       <div id="pdfProductList" class="pdf-product-list" role="list"></div>
-
       <div class="pdf-footer">
         <label class="pdf-option">
           <input type="checkbox" id="pdfIncludePrices" checked>
@@ -358,6 +356,10 @@
   <!-- Scripts divididos (carpeta scrips) -->
   <script src="recursos/scrips/config-estado-dom.js"></script>
   <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
+
+  <!-- ✅ FIX móvil: reubicar buscador y mantener botones en una sola fila -->
+  <script src="recursos/scrips/layout-movil-buscador.js"></script>
+
   <script src="recursos/scrips/filtros-tabla-productos.js"></script>
   <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
   <script src="recursos/scrips/sobre-nosotros.js"></script>

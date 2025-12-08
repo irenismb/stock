@@ -10,21 +10,18 @@
 // - Cualquier otro valor (incluyendo vacío) => mostrar.
 // - Si la columna no existe => mostrar por defecto.
 //
-
 function hasOwn(obj, key) {
   return obj && Object.prototype.hasOwnProperty.call(obj, key);
 }
 
 function shouldShowInCatalog(p) {
   if (!p) return false;
-
   if (hasOwn(p, "mostrar_catalogo")) {
     const s = String(p.mostrar_catalogo ?? "")
       .trim()
       .toLowerCase();
     if (s === "no") return false;
   }
-
   return true;
 }
 
@@ -35,11 +32,9 @@ function shouldShowInCatalog(p) {
 function pruneCartAgainstVisibleProducts() {
   try {
     if (!cart || typeof cart !== "object") return;
-
     // products ya está filtrado por shouldShowInCatalog
     const allowedMap = new Map((products || []).map(p => [String(p.id), p]));
     let changed = false;
-
     Object.keys(cart).forEach(id => {
       const p = allowedMap.get(String(id));
       // Si no existe o ya no es visible => eliminar del carrito
@@ -48,7 +43,6 @@ function pruneCartAgainstVisibleProducts() {
         changed = true;
       }
     });
-
     if (changed && typeof updateCart === "function") {
       updateCart();
     } else if (changed) {
@@ -61,7 +55,6 @@ function pruneCartAgainstVisibleProducts() {
 }
 
 // ----------------------------------------------------------------
-
 function getSavedFilters() {
   try {
     return JSON.parse(localStorage.getItem(LS_FILTERS_KEY) || "{}");
@@ -73,10 +66,8 @@ function getSavedFilters() {
 function saveFiltersToStorage() {
   const catInput = categoryMenu.querySelector('input[name="category"]:checked');
   const brandInput = brandMenu.querySelector('input[name="brand"]:checked');
-
   const cat = catInput ? catInput.value : "Todas";
   const brand = brandInput ? brandInput.value : "Todas";
-
   localStorage.setItem(LS_FILTERS_KEY, JSON.stringify({ category: cat, brand }));
 }
 
@@ -119,7 +110,6 @@ function refreshFilters() {
     if (!key) return;
     if (!categoryMap.has(key)) categoryMap.set(key, raw);
   });
-
   allCategories = Array.from(categoryMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -132,7 +122,6 @@ function refreshFilters() {
     if (!key) return;
     if (!brandMap.has(key)) brandMap.set(key, raw);
   });
-
   allBrands = Array.from(brandMap.entries())
     .map(([key, label]) => ({ key, label }))
     .sort((a, b) => a.label.localeCompare(b.label, "es", { sensitivity: "base" }));
@@ -279,7 +268,6 @@ async function fetchProductsFromBackend() {
   try {
     const resp = await fetch(APPS_SCRIPT_URL + "?action=getAll&ts=" + Date.now());
     if (!resp.ok) throw new Error("Error de red al cargar productos");
-
     const data = await resp.json();
     if (data.status !== "success" || !Array.isArray(data.products)) {
       throw new Error(data.message || "Respuesta inválida del servidor");
@@ -296,6 +284,9 @@ async function fetchProductsFromBackend() {
       }
       return {
         ...p,
+        // ✅ Por compatibilidad adicional, si el backend enviara "descripcion"
+        // la dejamos convivir sin problema
+        description: (p.description ?? p.descripcion ?? p["descripción"] ?? p.detalle),
         valor_unitario: Number.isFinite(valor) ? valor : 0,
         stock: stockNum
       };
@@ -353,16 +344,13 @@ function syncPreviewWithFilteredList() {
   // En PC: intentar mantener el producto que ya estaba seleccionado.
   const isMobile = window.innerWidth <= 768;
   let index = -1;
-
   if (!isMobile && currentPreviewProductId != null) {
     index = currentFilteredProducts.findIndex(
       p => String(p.id) === String(currentPreviewProductId)
     );
   }
-
   if (index === -1) index = 0;
   const prod = currentFilteredProducts[index];
-
   currentPreviewProductIndex = index;
   currentPreviewProductId = prod.id;
   showPreviewForProduct(prod);
@@ -392,8 +380,9 @@ function filterAndDisplayProducts() {
 
   if (terms.length > 0) {
     list = list.filter(p => {
+      const desc = p.description ?? p.descripcion ?? p["descripción"] ?? p.detalle ?? "";
       const s = normalizeText(
-        `${p.id} ${p.name} ${p.category} ${p.marca} ${p.description || ""}`
+        `${p.id} ${p.name} ${p.category} ${p.marca} ${desc}`
       );
       return terms.every(t => s.includes(t));
     });
@@ -437,7 +426,7 @@ function displayProducts(list) {
 
     const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
 
-    // ✅ NUEVO: SIEMPRE mostrar controles de cantidad
+    // ✅ SIEMPRE mostrar controles de cantidad
     const quantityHtml = `
       <div class="quantity-control">
         <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir">-</button>
@@ -479,4 +468,3 @@ function displayProducts(list) {
   productTableBody.innerHTML = "";
   productTableBody.appendChild(frag);
 }
-

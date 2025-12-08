@@ -44,6 +44,19 @@ function detectDeviceLabel() {
   return "Dispositivo web";
 }
 
+// ================== DESCRIPCIÓN ROBUSTA ==================
+// Permite que el frontend funcione aunque la hoja no tenga columna "descripcion"
+function getProductDescription(prod) {
+  if (!prod) return "";
+  const d =
+    prod.description ??
+    prod.descripcion ??
+    prod["descripción"] ??
+    prod.detalle ??
+    "";
+  return String(d || "").trim();
+}
+
 // ======== BROWSER ID (IDENTIFICADOR DE NAVEGADOR) ========
 function generateBrowserId() {
   // 1) Si el navegador soporta randomUUID
@@ -52,7 +65,6 @@ function generateBrowserId() {
       return window.crypto.randomUUID();
     }
   } catch (e) {}
-
   // 2) Si soporta getRandomValues
   try {
     const cryptoObj = window.crypto || window.msCrypto;
@@ -64,7 +76,6 @@ function generateBrowserId() {
         .join("");
     }
   } catch (e) {}
-
   // 3) Fallback simple
   return Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 10);
 }
@@ -134,7 +145,6 @@ function testImageOnce(url, timeout = 1200) {
   return new Promise(resolve => {
     const img = new Image();
     let done = false;
-
     const timer = setTimeout(() => {
       if (!done) {
         done = true;
@@ -142,7 +152,6 @@ function testImageOnce(url, timeout = 1200) {
         resolve(false);
       }
     }, timeout);
-
     img.onload = () => {
       if (!done) {
         done = true;
@@ -157,7 +166,6 @@ function testImageOnce(url, timeout = 1200) {
         resolve(false);
       }
     };
-
     img.decoding = "async";
     img.loading = "eager";
     img.src = url;
@@ -178,7 +186,6 @@ async function resolveImageForCode(code) {
   if (!code) return null;
   const id = String(code).trim();
   if (!id) return null;
-
   const url = `${IMG_BASE_PATH}${encodeURIComponent(id)}.webp`;
   const ok = await testImageOnce(url, 400);
   return ok ? url : null;
@@ -196,20 +203,19 @@ function updateNavButtons() {
 
 async function showPreviewForProduct(prod) {
   if (!prod) return;
-
   const requestId = ++lastPreviewRequestId;
-
   const name = (prod.name || "").trim();
-  const descriptionText = prod.description || "Sin descripción para este producto.";
+
+  // ✅ Usa descripción robusta
+  const descriptionText =
+    getProductDescription(prod) || "Sin descripción para este producto.";
 
   previewName.textContent = name ? name.toUpperCase() : "";
   previewCaption.textContent = descriptionText;
   previewCaption.classList.remove("loading");
-
   previewImg.style.display = "none";
   previewImg.src = "";
   previewImg.alt = name ? `Foto ${name}` : "Imagen del producto";
-
   updateNavButtons();
 
   if (imageStatus) {
@@ -242,21 +248,16 @@ async function showPreviewForProduct(prod) {
 
 function showRelativeProduct(step) {
   if (!currentFilteredProducts || currentFilteredProducts.length === 0) return;
-
   const len = currentFilteredProducts.length;
-
   if (currentPreviewProductIndex == null || currentPreviewProductIndex < 0) {
     currentPreviewProductIndex = 0;
   }
-
   let newIndex = currentPreviewProductIndex + step;
   if (newIndex < 0) newIndex = len - 1;
   if (newIndex >= len) newIndex = 0;
-
   const prod = currentFilteredProducts[newIndex];
   currentPreviewProductIndex = newIndex;
   currentPreviewProductId = prod.id;
-
   showPreviewForProduct(prod);
 }
 
@@ -276,7 +277,6 @@ if (galleryNextBtn) {
 (function addSwipe(el) {
   if (!el) return;
   let startX = null;
-
   el.addEventListener(
     "touchstart",
     e => {
@@ -284,13 +284,11 @@ if (galleryNextBtn) {
     },
     { passive: true }
   );
-
   el.addEventListener(
     "touchend",
     e => {
       if (startX == null) return;
       const dx = e.changedTouches[0].clientX - startX;
-
       if (Math.abs(dx) > 40) {
         if (dx > 0) showRelativeProduct(-1);
         else showRelativeProduct(1);
@@ -320,13 +318,10 @@ if (previewImg) {
   previewImg.addEventListener("click", () => {
     const src = previewImg.currentSrc || previewImg.src;
     if (!src) return;
-
     const alt =
       previewImg.alt ||
       (previewName && previewName.textContent) ||
       "Imagen ampliada del producto";
-
     openImageModal(src, alt);
   });
 }
-

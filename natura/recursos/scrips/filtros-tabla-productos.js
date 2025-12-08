@@ -1,49 +1,15 @@
 // ================== FILTROS (CATEGORÍA / MARCA / BÚSQUEDA) ==================
-
-// ---------- NUEVO: control de visibilidad desde la hoja ----------
-/**
- * Recomendado en hoja:
- *   mostrar_catalogo = SI / NO
- *
- * También soporta:
- *   visible_catalogo, publicar, visible, mostrar
- * y campos inversos:
- *   ocultar, oculto, no_mostrar, hidden, hide
- *
- * Regla:
- * - Si existe un campo de "mostrar/visible/publicar", ese manda.
- * - Si no existe, pero hay campo de "ocultar", se aplica inversión.
- * - Si no hay nada, se muestra por defecto.
- */
-const SHOW_FIELD_CANDIDATES = [
-  "mostrar_catalogo",
-  "visible_catalogo",
-  "publicar",
-  "visible",
-  "mostrar"
-];
-const HIDE_FIELD_CANDIDATES = [
-  "ocultar",
-  "oculto",
-  "no_mostrar",
-  "hidden",
-  "hide"
-];
-
-function normalizeFlagValue(v) {
-  if (v == null) return null;
-  const s = String(v).trim().toLowerCase();
-  if (!s) return null;
-  // Verdaderos
-  if (["1", "true", "si", "sí", "yes", "y", "mostrar", "publicar", "visible"].includes(s)) {
-    return true;
-  }
-  // Falsos
-  if (["0", "false", "no", "n", "ocultar", "hide", "hidden", "inactivo", "inactive"].includes(s)) {
-    return false;
-  }
-  return null;
-}
+//
+// ✅ NUEVA REGLA DE VISIBILIDAD (SEGÚN TU SOLICITUD):
+// - Los productos con stock = 0 SÍ deben estar disponibles como los demás.
+// - Los NO disponibles serán únicamente los que en la columna
+//   "mostrar_catalogo" tengan la palabra "no" (sin discriminar capitalización).
+//
+// Regla:
+// - Si existe el campo mostrar_catalogo y su valor es "no" => NO mostrar.
+// - Cualquier otro valor (incluyendo vacío) => mostrar.
+// - Si la columna no existe => mostrar por defecto.
+//
 
 function hasOwn(obj, key) {
   return obj && Object.prototype.hasOwnProperty.call(obj, key);
@@ -52,32 +18,20 @@ function hasOwn(obj, key) {
 function shouldShowInCatalog(p) {
   if (!p) return false;
 
-  // 1) Campos explícitos de mostrar
-  for (const key of SHOW_FIELD_CANDIDATES) {
-    if (hasOwn(p, key)) {
-      const flag = normalizeFlagValue(p[key]);
-      if (flag === true) return true;
-      if (flag === false) return false;
-      // si es ambiguo, seguimos buscando otros campos
-    }
+  if (hasOwn(p, "mostrar_catalogo")) {
+    const s = String(p.mostrar_catalogo ?? "")
+      .trim()
+      .toLowerCase();
+    if (s === "no") return false;
   }
 
-  // 2) Campos explícitos de ocultar (semántica invertida)
-  for (const key of HIDE_FIELD_CANDIDATES) {
-    if (hasOwn(p, key)) {
-      const flag = normalizeFlagValue(p[key]);
-      if (flag === true) return false;  // "ocultar = SI" => no mostrar
-      if (flag === false) return true;  // "ocultar = NO" => mostrar
-    }
-  }
-
-  // 3) Por defecto se muestra
   return true;
 }
 
-// ✅ MEJORADO:
-// Limpia el carrito de productos que ya no estén disponibles/visibles
-// y también de productos agotados (stock <= 0).
+// ✅ MEJORADO (según nueva regla):
+// Limpia el carrito SOLO de productos que ya no estén visibles
+// o que ya no existan en el backend.
+// NO elimina por stock.
 function pruneCartAgainstVisibleProducts() {
   try {
     if (!cart || typeof cart !== "object") return;
@@ -88,8 +42,8 @@ function pruneCartAgainstVisibleProducts() {
 
     Object.keys(cart).forEach(id => {
       const p = allowedMap.get(String(id));
-      // Si no existe o está agotado, eliminar del carrito
-      if (!p || Number(p.stock) <= 0) {
+      // Si no existe o ya no es visible => eliminar del carrito
+      if (!p) {
         delete cart[id];
         changed = true;
       }
@@ -119,8 +73,10 @@ function getSavedFilters() {
 function saveFiltersToStorage() {
   const catInput = categoryMenu.querySelector('input[name="category"]:checked');
   const brandInput = brandMenu.querySelector('input[name="brand"]:checked');
+
   const cat = catInput ? catInput.value : "Todas";
   const brand = brandInput ? brandInput.value : "Todas";
+
   localStorage.setItem(LS_FILTERS_KEY, JSON.stringify({ category: cat, brand }));
 }
 
@@ -242,7 +198,6 @@ function setupFilterListenersOnce() {
     filterAndDisplayProducts();
     updateCategoryButtonLabel();
     closeDropdowns();
-
     // Si se selecciona algo, cerramos el panel de filtros en móvil
     if (filtersRow && filtersRow.classList.contains("is-open")) {
       filtersRow.classList.remove("is-open");
@@ -255,7 +210,6 @@ function setupFilterListenersOnce() {
     filterAndDisplayProducts();
     updateBrandButtonLabel();
     closeDropdowns();
-
     // También cerramos el panel de filtros al elegir marca en móvil
     if (filtersRow && filtersRow.classList.contains("is-open")) {
       filtersRow.classList.remove("is-open");
@@ -325,6 +279,7 @@ async function fetchProductsFromBackend() {
   try {
     const resp = await fetch(APPS_SCRIPT_URL + "?action=getAll&ts=" + Date.now());
     if (!resp.ok) throw new Error("Error de red al cargar productos");
+
     const data = await resp.json();
     if (data.status !== "success" || !Array.isArray(data.products)) {
       throw new Error(data.message || "Respuesta inválida del servidor");
@@ -346,10 +301,10 @@ async function fetchProductsFromBackend() {
       };
     });
 
-    // 2) Aplicamos visibilidad de catálogo
+    // 2) Aplicamos la nueva visibilidad por mostrar_catalogo
     products = normalized.filter(shouldShowInCatalog);
 
-    // 3) Limpiamos carrito de productos ocultos/inexistentes/agostados
+    // 3) Limpiamos carrito solo por visibilidad/ existencia
     pruneCartAgainstVisibleProducts();
 
     refreshFilters();
@@ -363,7 +318,7 @@ async function fetchProductsFromBackend() {
 }
 
 /**
- * Orden por defecto → ahora alfabético por nombre de producto.
+ * Orden por defecto → alfabético por nombre de producto.
  * Si hay empate, se usa el id como desempate.
  */
 function sortByOrdenThenId(list) {
@@ -398,14 +353,16 @@ function syncPreviewWithFilteredList() {
   // En PC: intentar mantener el producto que ya estaba seleccionado.
   const isMobile = window.innerWidth <= 768;
   let index = -1;
+
   if (!isMobile && currentPreviewProductId != null) {
     index = currentFilteredProducts.findIndex(
       p => String(p.id) === String(currentPreviewProductId)
     );
   }
-  if (index === -1) index = 0;
 
+  if (index === -1) index = 0;
   const prod = currentFilteredProducts[index];
+
   currentPreviewProductIndex = index;
   currentPreviewProductId = prod.id;
   showPreviewForProduct(prod);
@@ -468,34 +425,29 @@ function displayProducts(list) {
   }
 
   const frag = document.createDocumentFragment();
+
   list.forEach(p => {
     const item = cart[p.id];
     const qty = item ? item.quantity : 0;
     const unitPrice = p.valor_unitario || 0;
     const subtotal = qty * unitPrice;
-    const isOutOfStock = p.stock <= 0;
 
     const tr = document.createElement("tr");
     tr.setAttribute("data-product-id", p.id);
-    if (isOutOfStock) tr.classList.add("product-row-out-of-stock");
 
     const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
 
-    let quantityHtml = "";
-    if (isOutOfStock) {
-      quantityHtml = `<span class="stock-status-msg">AGOTADO</span>`;
-    } else {
-      quantityHtml = `
-        <div class="quantity-control">
-          <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir">-</button>
-          <input type="number" class="quantity-input" min="0" value="${qty}"
-            data-price="${unitPrice}" data-id="${escapeAttr(p.id)}" data-name="${escapeAttr(
-        p.name
-      )}">
-          <button type="button" class="quantity-btn increase-btn" aria-label="Aumentar">+</button>
-        </div>
-      `;
-    }
+    // ✅ NUEVO: SIEMPRE mostrar controles de cantidad
+    const quantityHtml = `
+      <div class="quantity-control">
+        <button type="button" class="quantity-btn decrease-btn" aria-label="Disminuir">-</button>
+        <input type="number" class="quantity-input" min="0" value="${qty}"
+          data-price="${unitPrice}" data-id="${escapeAttr(p.id)}" data-name="${escapeAttr(
+      p.name
+    )}">
+        <button type="button" class="quantity-btn increase-btn" aria-label="Aumentar">+</button>
+      </div>
+    `;
 
     tr.innerHTML = `
       <td data-label="Foto">
@@ -520,6 +472,7 @@ function displayProducts(list) {
         subtotal
       )}</td>
     `;
+
     frag.appendChild(tr);
   });
 

@@ -12,6 +12,14 @@ window.Arcadia = window.Arcadia || {};
     PUNTOS_VENTA: ['Almendros','Aroma','Ferrocarril','Flora','Irotama','Libertador','Minca','Neguanje','Orient','Playa','Reserva','Rodadero'],
     EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones ARCADIA','Doctor Ahorro','Heritage','Distribuidora'],
 
+    // ✅ Tipos donde NO aplica Tercero / Destino (se desactiva el campo)
+    TIPOS_SIN_TERCERO: [
+      'Efectivo POS del comprobante diario',
+      'Ventas con QR',
+      'Ventas con tarjeta debito',
+      'Ventas con tarjeta credito'
+    ],
+
     // Tipos que obligan a escoger empresa del grupo
     TIPOS_REQUIEREN_EMPRESA: [
       'Ventas a crédito (descuentos por nómina)',
@@ -20,6 +28,7 @@ window.Arcadia = window.Arcadia || {};
       'Ventas a crédito a empresas del grupo'
     ],
 
+    // Claves de totales (siguen existiendo para la captura local)
     TOTAL_KEYS: [
       {key:'total_esperado_tesoreria', label:'Total dinero a recibir por tesoreria'},
       {key:'total_gastos_efectivo',   label:'Total gastos en efectivo'},

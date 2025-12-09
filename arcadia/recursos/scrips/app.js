@@ -9,13 +9,9 @@ window.Arcadia = window.Arcadia || {};
     reporte: {
       desde: null,
       hasta: null,
-      tipo: 'totales',
-      matriz: null,
       detalles: [],
       detallesSource: 'server',
-      cursor: { puntosConDatos: [], puntoIndex: 0, currentPuntoFilter: null },
-      detallesRange: { desde: null, hasta: null },
-      totalesRange: { desde: null, hasta: null }
+      detallesRange: { desde: null, hasta: null }
     },
     reportUnlocked: false
   };
@@ -30,23 +26,26 @@ window.Arcadia = window.Arcadia || {};
   const App = {
     init(){
       this.populatePuntoVentaSelect();
-      this.populatePuntoEnviarSelect();
       this.loadSession();
       this.bindNav();
       this.bindCaptureEvents();
       this.bindReportEvents();
-      this.bindReportNavEvents();
       this.updateNetworkStatus();
 
       window.addEventListener('online', () => this.updateNetworkStatus());
       window.addEventListener('offline', () => this.updateNetworkStatus());
 
       const ayer = Utils.yesterdayISO();
-      UI.fechaDesde.value = ayer;
-      UI.fechaHasta.value = ayer;
+      if (UI.fechaDesde) UI.fechaDesde.value = ayer;
+      if (UI.fechaHasta) UI.fechaHasta.value = ayer;
 
       UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
-      setDetallesOptionLabel();
+
+      // Asegura que el campo de clave no tenga valor residual
+      if (UI.reportPass) UI.reportPass.value = '';
+
+      // Oculta visualización del reporte por requerimiento
+      UI.reportTableWrapper?.classList.add('hidden');
     },
 
     /* ---------- Helpers de reglas ---------- */
@@ -54,11 +53,15 @@ window.Arcadia = window.Arcadia || {};
       return (CONFIG.TIPOS_REQUIEREN_EMPRESA || []).includes(tipo);
     },
 
+    // ✅ Nuevo: tipos donde el campo Tercero/Destino NO aplica
+    disableTerceroForTipo(tipo){
+      return (CONFIG.TIPOS_SIN_TERCERO || []).includes(tipo);
+    },
+
     validateEmpresaGrupo(records){
       const faltantes = (records || []).filter(r =>
         this.requiresEmpresaForTipo(r.tipo) && !String(r.tercero || '').trim()
       );
-
       if (faltantes.length) {
         const tipos = Array.from(new Set(faltantes.map(f => f.tipo)));
         alert(
@@ -77,8 +80,7 @@ window.Arcadia = window.Arcadia || {};
         if (!state.reportUnlocked) {
           UI.reportGate.classList.remove('hidden');
           UI.reportControls.classList.add('hidden');
-        } else {
-          this.updateReportNavBar();
+          if (UI.reportPass) UI.reportPass.value = '';
         }
       });
 
@@ -103,13 +105,18 @@ window.Arcadia = window.Arcadia || {};
       if(name==='capture' && !(state.session.date && state.session.pos)){
         UI.fechaInput.value = Utils.yesterdayISO();
       }
-      if(name==='report' && !state.reportUnlocked){
-        UI.reportGate.classList.remove('hidden');
-        UI.reportControls.classList.add('hidden');
-      }
+
       if(name==='report'){
-        this.updateReportNavBar();
-        setDetallesOptionLabel();
+        UI.reportTag.textContent = 'Reporte';
+        UI.reportTableWrapper?.classList.add('hidden');
+
+        if (!state.reportUnlocked) {
+          UI.reportGate.classList.remove('hidden');
+          UI.reportControls.classList.add('hidden');
+          if (UI.reportPass) UI.reportPass.value = '';
+        } else {
+          this.updateExportButtonsVisibility();
+        }
       }
     },
 
@@ -120,21 +127,14 @@ window.Arcadia = window.Arcadia || {};
       CONFIG.PUNTOS_VENTA.forEach(pv => { select.innerHTML += `<option value="${pv}">${pv}</option>`; });
     },
 
-    populatePuntoEnviarSelect(){
-      const select = UI.puntoEnviar;
-      if(!select) return;
-      select.innerHTML = '<option value="Todos">Todos</option>';
-      CONFIG.PUNTOS_VENTA.forEach(pv => { select.innerHTML += `<option value="${pv}">${pv}</option>`; });
-    },
-
     bindCaptureEvents(){
       document.getElementById('start-session-btn').addEventListener('click', () => {
         const fecha = UI.fechaInput.value;
         const puntoVenta = UI.puntoVentaInput.value;
 
-        if (!fecha || !puntoVenta) { 
-          alert('Por favor, seleccione fecha y punto de venta.'); 
-          return; 
+        if (!fecha || !puntoVenta) {
+          alert('Por favor, seleccione fecha y punto de venta.');
+          return;
         }
 
         const ayer = Utils.yesterdayISO();
@@ -142,7 +142,6 @@ window.Arcadia = window.Arcadia || {};
           return;
         }
 
-        // Advertencia por datos de sesión anterior (si existen)
         const prevKey = this.getStorageKey();
         if (prevKey && localStorage.getItem(prevKey)) {
           if (!confirm('Hay datos locales de la sesión anterior. Si cambias de sesión podrían perderse. ¿Continuar?')) {
@@ -207,7 +206,6 @@ window.Arcadia = window.Arcadia || {};
       UI.recordsBody.addEventListener('click', (e) => this.handleTableClick(e));
 
       document.getElementById('sendAllBtn').addEventListener('click', () => this.handleSendAll());
-      document.getElementById('sendWhatsAppBtn').addEventListener('click', () => this.handleSendWhatsApp());
       document.getElementById('clearAllBtn').addEventListener('click', () => this.handleClearAll());
     },
 
@@ -221,13 +219,14 @@ window.Arcadia = window.Arcadia || {};
       const tr = target.closest('tr');
       if (!tr) return;
 
-      // Recalcular total solo si cambia valor/devoluciones
       if (field === 'valor' || field === 'devoluciones') {
         const val = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const dev = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
         const total = val - dev;
+
         const totalCell = tr.querySelector('.col-total');
         if (totalCell) totalCell.textContent = Utils.formatCurrency(total);
+
         this.updateTotalsDisplay();
       }
 
@@ -288,12 +287,14 @@ window.Arcadia = window.Arcadia || {};
 
     createInitialRows(){
       UI.recordsBody.innerHTML = '';
+
       const initialData = [
         { tipo: 'Efectivo POS del comprobante diario', category: 'efectivo', styleHint: 'efectivo' },
         { tipo: 'Ventas con QR', category: 'electronica', styleHint: 'electronica' },
         { tipo: 'Ventas con tarjeta debito', category: 'electronica', styleHint: 'electronica' },
         { tipo: 'Ventas con tarjeta credito', category: 'electronica', styleHint: 'electronica' },
       ];
+
       initialData.forEach(data => this.addRow(data, true));
       this.saveRecords();
     },
@@ -321,8 +322,8 @@ window.Arcadia = window.Arcadia || {};
 
       const total = Utils.safeNumber(record.valor) - Utils.safeNumber(record.devoluciones);
 
-      // Para ciertos tipos es obligatorio escoger empresa del grupo
       const requiereEmpresa = this.requiresEmpresaForTipo(record.tipo);
+      const terceroDisabled = this.disableTerceroForTipo(record.tipo);
 
       let terceroCellHtml = `<input type="text" class="table-input" data-field="tercero" value="${record.tercero || ''}">`;
 
@@ -336,6 +337,18 @@ window.Arcadia = window.Arcadia || {};
             <option value="">Seleccione empresa del grupo...</option>
             ${optionsHtml}
           </select>
+        `;
+      } else if (terceroDisabled) {
+        // ✅ Desactiva el campo para los tipos definidos en CONFIG.TIPOS_SIN_TERCERO
+        terceroCellHtml = `
+          <input
+            type="text"
+            class="table-input"
+            data-field="tercero"
+            value=""
+            placeholder="No aplica"
+            disabled
+          >
         `;
       }
 
@@ -381,7 +394,6 @@ window.Arcadia = window.Arcadia || {};
         }
       });
 
-      // Fórmulas solicitadas
       const ventasNetoEfectivo = efectivo - credito;
       const ventasElectronicas = electronica;
       const ventasCredito      = credito;
@@ -449,9 +461,10 @@ window.Arcadia = window.Arcadia || {};
 
     async handleSendAll(){
       const records = this.getRecordsFromTable();
-      if (records.length === 0) { 
-        alert('No hay registros con valores para guardar.'); 
-        return; 
+
+      if (records.length === 0) {
+        alert('No hay registros con valores para guardar.');
+        return;
       }
 
       if (!this.validateEmpresaGrupo(records)) return;
@@ -460,9 +473,9 @@ window.Arcadia = window.Arcadia || {};
       btn.disabled = true;
       btn.textContent = 'Guardando...';
 
+      // ✅ Solo detalles (se eliminan totales enviados a la hoja)
       const detailData = records.map(r => {
         const empresaGrupoVal = this.requiresEmpresaForTipo(r.tipo) ? (r.tercero || '') : '';
-
         return {
           fecha: state.session.date,
           puntoVenta: state.session.pos,
@@ -472,36 +485,12 @@ window.Arcadia = window.Arcadia || {};
           valor: r.valor,
           devoluciones: r.devoluciones,
           total: r.total,
-
-          // Campos extra para compatibilidad con nuevo encabezado en hoja
           empresaGrupo: empresaGrupoVal,
           "Nombre de la empresa del grupo": empresaGrupoVal
         };
       });
 
-      const c = this.getCalculatedState().summary;
-
-      const summaryData = [
-        { tipo: 'Total ventas en efectivo', valor: c.ventasNetoEfectivo },
-        { tipo: 'Total ventas por medios electronicos', valor: c.ventasElectronicas },
-        { tipo: 'Total ventas a credito', valor: c.ventasCredito },
-        { tipo: 'Total ventas', valor: c.ventasGlobal },
-        { tipo: 'Total gastos en efectivo', valor: c.gastosEfectivo },
-        { tipo: 'Total dinero a recibir por tesoreria', valor: c.esperadoTesoreria },
-      ].map(item => ({
-        fecha: state.session.date,
-        puntoVenta: state.session.pos,
-        tipo: item.tipo,
-        tercero: '',
-        detalle: '',
-        valor: item.valor,
-        devoluciones: 0,
-        total: item.valor,
-        empresaGrupo: '',
-        "Nombre de la empresa del grupo": ''
-      }));
-
-      const dataToSend = [...detailData, ...summaryData];
+      const dataToSend = [...detailData];
 
       try{
         const url = CONFIG.SCRIPT_URL + (CONFIG.API_KEY ? ('?key='+encodeURIComponent(CONFIG.API_KEY)) : '');
@@ -513,6 +502,7 @@ window.Arcadia = window.Arcadia || {};
 
         const text = await response.text();
         let result;
+
         try {
           result = JSON.parse(text);
         } catch {
@@ -531,61 +521,6 @@ window.Arcadia = window.Arcadia || {};
         btn.disabled = false;
         btn.textContent = '📤 Guardar Todo en la Nube';
       }
-    },
-
-    handleSendWhatsApp(){
-      if (!state.session.date || !state.session.pos) return;
-
-      const rows = this.getRecordsFromTable();
-      if (rows.length === 0) {
-        alert('No hay registros con valores para enviar.');
-        return;
-      }
-
-      if (!this.validateEmpresaGrupo(rows)) return;
-
-      const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
-      const oneLine = (s) => String(s ?? '')
-        .replace(/[\r\n]+/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .replace(/\|+/g, '/')
-        .trim();
-
-      const bloques = [];
-      bloques.push(`*Punto que reporta:* ${state.session.pos}`);
-      bloques.push(`*Fecha que se reporta:* ${state.session.date}`);
-
-      const detalleLineas = [
-        '*Detalle de ventas*',
-        ...rows.map(r => {
-          const terceroTxt = oneLine(r.tercero) || '-';
-          const detalleTxt = oneLine(r.detalle) || '-';
-          return `*${r.tipo}*\n${state.session.pos} | ${terceroTxt} | ${detalleTxt} | ${money(r.total)}`;
-        })
-      ];
-      bloques.push(detalleLineas.join('\n\n'));
-
-      const t = this.getCalculatedState().summary;
-      const totales = [
-        '*Totales*',
-        `*Efectivo neto (efectivo - crédito):* ${money(t.ventasNetoEfectivo)}`,
-        `*Total ventas por medios electronicos:* ${money(t.ventasElectronicas)}`,
-        `*Total ventas a credito:* ${money(t.ventasCredito)}`,
-        `*Total ventas:* ${money(t.ventasGlobal)}`,
-        `*Total gastos en efectivo:* ${money(t.gastosEfectivo)}`,
-        `*Total dinero a recibir por tesoreria:* ${money(t.esperadoTesoreria)}`
-      ].join('\n\n');
-      bloques.push(totales);
-
-      const finalMessage = bloques.join('\n\n');
-
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
-      const url = isMobile
-        ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
-        : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
-
-      window.open(url,'_blank');
     },
 
     handleClearAll(){
@@ -608,11 +543,16 @@ window.Arcadia = window.Arcadia || {};
       return `${CONFIG.LS_RECORDS_KEY}_${state.session.date}_${state.session.pos}`;
     },
 
-    saveSession(){ localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify(state.session)); },
-    loadSession(){ state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null }; },
+    saveSession(){
+      localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify(state.session));
+    },
+
+    loadSession(){
+      state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null };
+    },
 
     saveRecords(){
-      const key = this.getStorageKey(); 
+      const key = this.getStorageKey();
       if (!key) return;
 
       const records = [];
@@ -634,7 +574,7 @@ window.Arcadia = window.Arcadia || {};
     },
 
     loadRecords(){
-      const key = this.getStorageKey(); 
+      const key = this.getStorageKey();
       if (!key) return;
 
       const savedRecords = JSON.parse(localStorage.getItem(key)) || [];
@@ -647,7 +587,7 @@ window.Arcadia = window.Arcadia || {};
       }
     },
 
-    /* ---------- Reporte (protegido) ---------- */
+    /* ---------- Reporte (protegido y simplificado) ---------- */
     bindReportEvents(){
       UI.btnGateOpen.addEventListener('click', () => {
         const pass = (UI.reportPass.value || '').trim();
@@ -657,687 +597,242 @@ window.Arcadia = window.Arcadia || {};
         state.reportUnlocked = true;
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
+        this.toggleExportButtons(true);
+        this.updateExportButtonsVisibility();
 
-        this.toggleShareButtons(false);
-        this.updateReportNavBar();
-        setDetallesOptionLabel();
-        this.populatePuntoEnviarSelect();
-      });
-
-      UI.tipoReporte.addEventListener('change', () => {
-        state.reporte.tipo = UI.tipoReporte.value;
-        UI.reportTag.textContent = (state.reporte.tipo === 'detalles') ? 'Reporte de detalles (servidor)' : 'Reporte de totales';
-        UI.reportTableWrapper.classList.toggle('details-mode', state.reporte.tipo === 'detalles');
-
-        if (state.reporte.desde && state.reporte.hasta) {
-          this.repintarSegunTipo();
-          this.updateReportNavBar();
-        }
-        setDetallesOptionLabel();
-      });
-
-      UI.btnCargarReporte.addEventListener('click', () => {
-        if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
-        this.cargarReporte();
+        if (UI.reportPass) UI.reportPass.value = '';
       });
 
       UI.btnExportarExcel.addEventListener('click', () => {
         if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
-        this.exportarExcelPorPuntosConfigurados();
+        this.exportarExcelDetalles();
       });
 
-      UI.btnEnviarWhatsAppReporte.addEventListener('click', () => {
+      UI.btnExportarHTML?.addEventListener('click', () => {
         if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
-        this.handleSendWhatsAppReporte();
-      });
-
-      UI.btnExportarHTML.addEventListener('click', () => {
-        if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
-        this.exportarHTMLPorPunto();
+        this.exportarHTMLDetalles();
       });
     },
 
-    bindReportNavEvents(){
-      UI.navPrevBtn.addEventListener('click', () => {
-        if (state.reporte.tipo === 'detalles') this.navPrevPunto();
-        else this.navPrevDia();
-      });
-
-      UI.navNextBtn.addEventListener('click', () => {
-        if (state.reporte.tipo === 'detalles') this.navNextPunto();
-        else this.navNextDia();
-      });
+    toggleExportButtons(enabled){
+      if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = !enabled;
+      if (UI.btnExportarHTML) UI.btnExportarHTML.disabled = !enabled;
     },
 
-    updateReportNavBar(){
-      const { tipo, desde, hasta, cursor } = state.reporte;
-      const rangoUnDia = !!(desde && hasta && desde === hasta);
-      const show = (tipo === 'detalles' && rangoUnDia) || (tipo === 'totales' && rangoUnDia);
-
-      UI.reportNav.classList.toggle('hidden', !show);
-
-      if (!show) { 
-        UI.navInfo.textContent = ''; 
-        return; 
-      }
-
-      if (tipo === 'detalles') {
-        const puntosConDatos = Array.from(new Set(
-          (state.reporte.detalles || [])
-            .filter(r => r.fecha === desde)
-            .map(r => r.punto || r.puntoVenta || '')
-        ));
-
-        cursor.puntosConDatos = puntosConDatos.length ? puntosConDatos : CONFIG.PUNTOS_VENTA.slice();
-        if (cursor.puntoIndex >= cursor.puntosConDatos.length) cursor.puntoIndex = 0;
-
-        cursor.currentPuntoFilter = cursor.puntosConDatos[cursor.puntoIndex] || null;
-        UI.navInfo.textContent = `Día: ${desde} — Punto: ${cursor.currentPuntoFilter || 'N/A'}`;
-
-        this.pintarTablaDetalles();
+    updateExportButtonsVisibility(){
+      const xlsxSupported = !!(window.XLSX && window.XLSX.utils);
+      // Si hay soporte XLSX: ocultar HTML
+      if (xlsxSupported) {
+        UI.btnExportarHTML?.classList.add('hidden');
       } else {
-        UI.navInfo.textContent = `Día: ${desde}`;
+        // Sin XLSX: se mantiene HTML como respaldo
+        UI.btnExportarHTML?.classList.remove('hidden');
       }
     },
 
-    navPrevPunto(){
-      const c = state.reporte.cursor;
-      if (!c.puntosConDatos.length) return;
+    buildDetallesPlano(desde, hasta){
+      const all = state.reporte.detalles || [];
+      const rows = all.filter(r => {
+        const f = r.fecha || '';
+        const tipo = String(r.tipo || '');
+        return (f >= desde && f <= hasta) && !tipo.startsWith('Total ');
+      });
 
-      c.puntoIndex = (c.puntoIndex - 1 + c.puntosConDatos.length) % c.puntosConDatos.length;
-      c.currentPuntoFilter = c.puntosConDatos[c.puntoIndex];
+      return rows.map(r => {
+        const valor = Number(r.valor) || 0;
+        const devol = Number(r.devoluciones) || 0;
+        const total = (r.total !== undefined && r.total !== null && r.total !== '')
+          ? Number(r.total)
+          : (valor - devol);
 
-      this.pintarTablaDetalles();
-      UI.navInfo.textContent = `Día: ${state.reporte.desde} — Punto: ${c.currentPuntoFilter}`;
+        return {
+          Fecha: r.fecha || '',
+          Punto: r.punto || r.puntoVenta || '',
+          Tipo: r.tipo || '',
+          Tercero: r.tercero || '',
+          Detalle: r.detalle || '',
+          Valor: Math.round(valor),
+          Devoluciones: Math.round(devol),
+          Total: Math.round(total)
+        };
+      });
     },
 
-    navNextPunto(){
-      const c = state.reporte.cursor;
-      if (!c.puntosConDatos.length) return;
-
-      c.puntoIndex = (c.puntoIndex + 1) % c.puntosConDatos.length;
-      c.currentPuntoFilter = c.puntosConDatos[c.puntoIndex];
-
-      this.pintarTablaDetalles();
-      UI.navInfo.textContent = `Día: ${state.reporte.desde} — Punto: ${c.currentPuntoFilter}`;
-    },
-
-    navPrevDia(){
-      const { desde, hasta } = state.reporte;
-      if (!(desde && hasta && desde === hasta)) return;
-
-      const newDay = Utils.dateAddDays(desde, -1);
-      UI.fechaDesde.value = newDay; 
-      UI.fechaHasta.value = newDay;
-      this.cargarReporte();
-    },
-
-    navNextDia(){
-      const { desde, hasta } = state.reporte;
-      if (!(desde && hasta && desde === hasta)) return;
-
-      const newDay = Utils.dateAddDays(desde, 1);
-      UI.fechaDesde.value = newDay; 
-      UI.fechaHasta.value = newDay;
-      this.cargarReporte();
-    },
-
-    toggleShareButtons(enabled){
-      UI.btnExportarExcel.disabled = !enabled;
-      UI.btnEnviarWhatsAppReporte.disabled = !enabled;
-      UI.btnExportarHTML.disabled = !enabled;
-    },
-
-    async cargarReporte(){
+    async exportarExcelDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
-      if(!desde || !hasta){ alert('Seleccione el rango de fechas.'); return; }
+
+      if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
-      state.reporte.desde = desde;
-      state.reporte.hasta = hasta;
-
-      this.toggleShareButtons(false);
-
-      const rangoTxt = desde===hasta ? `del ${desde}` : `del ${desde} al ${hasta}`;
-      UI.reportStatus.textContent = 'Cargando detalles del servidor para calcular totales...';
+      UI.reportStatus.textContent = 'Cargando detalles del servidor...';
 
       try{
-        const detallesSrv = await Api.cargarDetallesDesdeServidor(desde, hasta);
-        state.reporte.detalles = detallesSrv;
-        state.reporte.detallesSource = 'server';
-        state.reporte.detallesRange = { desde, hasta };
+        await this.ensureDataForRange(desde, hasta);
+        const data = this.buildDetallesPlano(desde, hasta);
 
-        this.calcularMatrizGeneral();
-        state.reporte.totalesRange = { desde, hasta };
-
-        if (state.reporte.tipo === 'detalles') {
-          setDetallesOptionLabel();
-          state.reporte.cursor.puntoIndex = 0;
-          this.pintarTablaDetalles();
-          UI.reportStatus.textContent = `Detalles ${rangoTxt} (servidor). Filas: ${detallesSrv.length}.`;
-        } else {
-          this.pintarTablaTotales();
-          UI.reportStatus.textContent = `Totales calculados ${rangoTxt}.`;
-        }
-
-        this.toggleShareButtons(true);
-      }catch(e){
-        console.error(e);
-        state.reporte.detalles = [];
-        state.reporte.matriz = null;
-        UI.reportStatus.textContent = 'Error al cargar datos del servidor.';
-      }
-
-      this.updateReportNavBar();
-    },
-
-    calcularMatrizGeneral(){
-      const rows = state.reporte.detalles || [];
-      const matriz = {};
-
-      CONFIG.PUNTOS_VENTA.forEach(p => {
-        const pointRows = rows.filter(r => (r.punto === p || r.puntoVenta === p));
-        matriz[p] = this.calculateMetricsForRows(pointRows);
-      });
-
-      state.reporte.matriz = matriz;
-    },
-
-    calculateMetricsForRows(rows){
-      let raw_efectivo = 0, electronica = 0, credito = 0, gasto = 0;
-
-      rows.forEach(r => {
-        let val = 0;
-        if(r.total !== undefined && r.total !== null && r.total !== '') {
-          val = Number(r.total);
-        } else {
-          val = Number(r.valor) || 0;
-        }
-
-        const tipoOriginal = (r.tipo || '');
-        const tipo = normalizeText(tipoOriginal);
-
-        if (tipo.startsWith('total ')) return;
-
-        // Efectivo base
-        if (tipo.includes('efectivo pos')) {
-          raw_efectivo += val;
+        if (!data.length){
+          alert('No hay detalles para exportar en el rango seleccionado.');
+          UI.reportStatus.textContent = 'Sin datos para exportar.';
           return;
         }
 
-        // Medios electrónicos
-        if (tipo.includes('qr') || tipo.includes('tarjeta debito') || tipo.includes('tarjeta credito') || tipo.includes('tarjeta')) {
-          // Nota: las ventas a crédito NO deberían incluir "tarjeta", pero dejamos la regla original que evita confusión
-          electronica += val;
+        const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
+
+        // ✅ Intento XLSX con SheetJS
+        if (window.XLSX && window.XLSX.utils) {
+          const ws = window.XLSX.utils.json_to_sheet(data, { skipHeader: false });
+          const wb = window.XLSX.utils.book_new();
+          window.XLSX.utils.book_append_sheet(wb, ws, 'Detalles');
+          const filename = `reporte_detalles_${rangeTxt}.xlsx`;
+          window.XLSX.writeFile(wb, filename);
+          UI.reportStatus.textContent = `Excel XLSX generado (${data.length} filas).`;
           return;
         }
 
-        // Créditos (incluye kardex)
-        if (tipo.includes('faltantes en kardex') || tipo.includes('kardex')) {
-          credito += val;
-          return;
-        }
-
-        if (tipo.includes('credito')) {
-          // Evitar que algo raro con "tarjeta" se cuele como crédito
-          if (!tipo.includes('tarjeta')) {
-            credito += val;
-          }
-          return;
-        }
-
-        // Gastos
-        if (tipo.includes('gasto')) {
-          gasto += val;
-          return;
-        }
-      });
-
-      // Fórmulas solicitadas
-      const total_ventas_efectivo = raw_efectivo - credito;
-      const total_ventas_global = total_ventas_efectivo + electronica + credito;
-      const total_esperado_tesoreria = total_ventas_efectivo - gasto;
-
-      return {
-        total_ventas_efectivo,
-        total_ventas_electronicas: electronica,
-        total_ventas_credito: credito,
-        total_ventas_global,
-        total_gastos_efectivo: gasto,
-        total_esperado_tesoreria
-      };
-    },
-
-    repintarSegunTipo(){
-      if (state.reporte.tipo === 'detalles') this.pintarTablaDetalles();
-      else this.pintarTablaTotales();
-    },
-
-    pintarTablaTotales(){
-      const puntos = CONFIG.PUNTOS_VENTA;
-
-      UI.theadTot.innerHTML = '';
-      const trh = document.createElement('tr');
-      trh.innerHTML =
-        `<th>Concepto / Punto</th>` +
-        puntos.map(p=>`<th class="right">${p}</th>`).join('') +
-        `<th class="right">Total general</th>`;
-      UI.theadTot.appendChild(trh);
-
-      UI.tbodyTot.innerHTML = '';
-      CONFIG.TOTAL_KEYS.forEach(row=>{
-        const tr = document.createElement('tr');
-        let totalGeneral = 0;
-
-        const celdas = puntos.map(p=>{
-          const v = state.reporte.matriz?.[p]?.[row.key] || 0;
-          totalGeneral += v;
-          return `<td class="right">${Utils.formatCurrency(v)}</td>`;
-        }).join('');
-
-        tr.innerHTML =
-          `<td><strong>${row.label}</strong></td>` +
-          `${celdas}` +
-          `<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
-
-        UI.tbodyTot.appendChild(tr);
-      });
-
-      UI.tfootTot.innerHTML = '';
-    },
-
-    pintarTablaDetalles(){
-      const rows = state.reporte.detalles || [];
-      const { desde, hasta, cursor } = state.reporte;
-
-      const rangoUnDia = (desde && hasta && desde === hasta);
-      const filtroPunto = (rangoUnDia ? (cursor.currentPuntoFilter || null) : null);
-
-      const rowsFiltradas = (filtroPunto)
-        ? rows.filter(r => r.fecha === desde && ((r.punto || r.puntoVenta) === filtroPunto))
-        : rows;
-
-      UI.theadTot.innerHTML = '';
-      const trh = document.createElement('tr');
-      trh.innerHTML = `
-        <th>Fecha</th>
-        <th>Punto</th>
-        <th>Tipo</th>
-        <th>Tercero / Destino</th>
-        <th>Detalle</th>
-        <th class="right">Valor</th>`;
-      UI.theadTot.appendChild(trh);
-
-      UI.tbodyTot.innerHTML = '';
-      let totalGeneral = 0;
-
-      rowsFiltradas.forEach(r => {
-        const punto = r.punto || r.puntoVenta || '';
-        const valMostrar = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
-        totalGeneral += valMostrar || 0;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${Utils.escapeHtml(r.fecha || '')}</td>
-          <td>${Utils.escapeHtml(punto)}</td>
-          <td><strong>${Utils.escapeHtml(r.tipo || '')}</strong></td>
-          <td>${Utils.escapeHtml(r.tercero || '')}</td>
-          <td>${Utils.escapeHtml(r.detalle || '')}</td>
-          <td class="right">${Utils.formatCurrency(valMostrar || 0)}</td>
+        // ⛑️ Fallback XLS (HTML -> Excel)
+        const th = `
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Fecha</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Punto</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Tipo</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Tercero</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Detalle</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Valor</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Devoluciones</th>
+          <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Total</th>
         `;
-        UI.tbodyTot.appendChild(tr);
-      });
 
-      UI.tfootTot.innerHTML = '';
-      const trf = document.createElement('tr');
-      trf.innerHTML =
-        `<td colspan="5" class="right"><strong>Total general (filas visibles)</strong></td>` +
-        `<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
-      UI.tfootTot.appendChild(trf);
-    },
+        const filasHtml = data.map(r => `
+          <tr>
+            <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.Fecha)}</td>
+            <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.Punto)}</td>
+            <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.Tipo)}</td>
+            <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.Tercero)}</td>
+            <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.Detalle)}</td>
+            <td style="border:1px solid #ddd; mso-number-format:'\\#\\,\\#\\#0'; text-align:right;">${r.Valor}</td>
+            <td style="border:1px solid #ddd; mso-number-format:'\\#\\,\\#\\#0'; text-align:right;">${r.Devoluciones}</td>
+            <td style="border:1px solid #ddd; mso-number-format:'\\#\\,\\#\\#0'; text-align:right;">${r.Total}</td>
+          </tr>
+        `).join('');
 
-    /* ===== Exportaciones y WhatsApp del reporte ===== */
-    async exportarExcelPorPuntosConfigurados(){
-      const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
-      if(!desde || !hasta){ alert('Primero carga el reporte.'); return; }
-
-      const puntoSel = UI.puntoEnviar?.value || 'Todos';
-      const modo = UI.modoEnvio?.value || 'ambos';
-
-      await this.ensureDataForRange(desde, hasta);
-
-      const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
-      const dateRange = Utils.getDatesInRange(desde, hasta);
-
-      let combinedHtml = "";
-      let countTables = 0;
-
-      basePoints.forEach(pt => {
-        let pointHeaderAdded = false;
-
-        dateRange.forEach(date => {
-          const all = state.reporte.detalles || [];
-
-          const dayRows = all.filter(r => {
-            const f = r.fecha || '';
-            const punto = r.punto || r.puntoVenta || '';
-            const t = (r.tipo || '');
-            return (f === date) && (punto === pt) && !t.startsWith('Total ');
-          });
-
-          const dayMetrics = this.calculateMetricsForRows(dayRows);
-
-          const hasActivity = (
-            dayMetrics.total_ventas_global > 0 ||
-            dayMetrics.total_gastos_efectivo > 0 ||
-            dayMetrics.total_esperado_tesoreria !== 0 ||
-            dayRows.length > 0
-          );
-
-          if (!hasActivity) return;
-
-          countTables++;
-
-          if(!pointHeaderAdded) {
-            combinedHtml += `<h2 style="color:#0056b3; margin-top:30px; border-bottom:2px solid #0056b3;">${pt.toUpperCase()}</h2>`;
-            pointHeaderAdded = true;
-          }
-
-          let filasHtml = "";
-
-          if (modo === 'detalles' || modo === 'ambos') {
-            filasHtml = dayRows.map(r=>{
-              const val = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
-              return `<tr>
-                <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.fecha||'')}</td>
-                <td style="border:1px solid #ddd;">${Utils.escapeHtml(pt)}</td>
-                <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.tipo||'')}</td>
-                <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.tercero||'')}</td>
-                <td style="border:1px solid #ddd;">${Utils.escapeHtml(r.detalle||'')}</td>
-                <td style="border:1px solid #ddd; mso-number-format:'\\#\\,\\#\\#0'; text-align:right;">${val}</td>
-              </tr>`;
-            }).join('');
-          }
-
-          let totalesHtml = "";
-
-          if (modo === 'totales' || modo === 'ambos'){
-            const m = dayMetrics;
-            const fila = (label, val, bg='#fff') =>
-              `<tr style="background:${bg}">
-                <td colspan="5" style="border:1px solid #ddd; font-weight:bold;">${label}</td>
-                <td style="border:1px solid #ddd; mso-number-format:'\\#\\,\\#\\#0'; text-align:right; font-weight:bold;">${val}</td>
-              </tr>`;
-
-            totalesHtml = [
-              fila('Total ventas', m.total_ventas_global),
-              fila('Total gastos en efectivo', m.total_gastos_efectivo),
-              fila('Total dinero a recibir por tesoreria', m.total_esperado_tesoreria, '#EAF4FF')
-            ].join('');
-          }
-
-          const th = `
-            <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Fecha</th>
-            <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Punto</th>
-            <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Tipo</th>
-            <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Tercero</th>
-            <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Detalle</th>
-            <th style="background:#e8f0fe; font-weight:bold; border:1px solid #999;">Valor</th>`;
-
-          combinedHtml += `
-            <table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; width:100%; margin-bottom:20px;">
+        const htmlDoc = `
+          <html xmlns:o="urn:schemas-microsoft-com:office:office"
+                xmlns:x="urn:schemas-microsoft-com:office:excel"
+                xmlns="http://www.w3.org/TR/REC-html40">
+          <head><meta charset="UTF-8"></head>
+          <body>
+            <table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; width:100%;">
               <thead><tr>${th}</tr></thead>
               <tbody>${filasHtml}</tbody>
-              <tfoot>${totalesHtml}</tfoot>
             </table>
-          `;
-        });
-      });
+          </body></html>
+        `.trim();
 
-      if (countTables === 0){ alert('No hay datos para exportar con la configuración actual.'); return; }
+        const blob = new Blob([htmlDoc], {type: 'application/vnd.ms-excel;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_detalles_${rangeTxt}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
 
-      const rangeTxt = (desde===hasta) ? desde : `${desde} al ${hasta}`;
-      const htmlDoc = `
-        <html xmlns:o="urn:schemas-microsoft-com:office:office"
-              xmlns:x="urn:schemas-microsoft-com:office:excel"
-              xmlns="http://www.w3.org/TR/REC-html40">
-        <head><meta charset="UTF-8"></head>
-        <body><h2>REPORTE CONSOLIDADO - ${rangeTxt}</h2>${combinedHtml}</body></html>`.trim();
-
-      const blob = new Blob([htmlDoc], {type: 'application/vnd.ms-excel;charset=utf-8;'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      const suf = (puntoSel==='Todos') ? 'todos' : puntoSel;
-
-      a.href = url;
-      a.download = `reporte_excel_${suf}_${(desde===hasta)?desde:(desde+'_'+hasta)}.xls`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      UI.reportStatus.textContent = `Excel generado (${countTables} tablas diarias).`;
+        // Habilita HTML como respaldo visible si no hay XLSX
+        this.updateExportButtonsVisibility();
+        UI.reportStatus.textContent = `Excel XLS generado (${data.length} filas).`;
+      }catch(e){
+        console.error(e);
+        UI.reportStatus.textContent = 'Error al exportar detalles.';
+        alert('No se pudo exportar el reporte.');
+      }
     },
 
-    async exportarHTMLPorPunto(){
+    async exportarHTMLDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
+      if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
-      const puntoSel = UI.puntoEnviar?.value || 'Todos';
-      const modo = UI.modoEnvio?.value || 'ambos';
+      UI.reportStatus.textContent = 'Cargando detalles del servidor...';
 
-      await this.ensureDataForRange(desde, hasta);
+      try{
+        await this.ensureDataForRange(desde, hasta);
+        const data = this.buildDetallesPlano(desde, hasta);
 
-      const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
-      const dateRange = Utils.getDatesInRange(desde, hasta);
+        if (!data.length){
+          alert('No hay detalles para exportar en el rango seleccionado.');
+          UI.reportStatus.textContent = 'Sin datos para exportar.';
+          return;
+        }
 
-      let combinedHtml = "";
-      let countTables = 0;
+        const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
+        const th = `<th>Fecha</th><th>Punto</th><th>Tipo</th><th>Tercero</th><th>Detalle</th><th>Valor</th><th>Devoluciones</th><th>Total</th>`;
 
-      basePoints.forEach(pt => {
-        let pointHeaderAdded = false;
+        const filasHtml = data.map(r => `
+          <tr>
+            <td>${Utils.escapeHtml(r.Fecha)}</td>
+            <td>${Utils.escapeHtml(r.Punto)}</td>
+            <td>${Utils.escapeHtml(r.Tipo)}</td>
+            <td>${Utils.escapeHtml(r.Tercero)}</td>
+            <td>${Utils.escapeHtml(r.Detalle)}</td>
+            <td style="text-align:right;">${Utils.formatNumber(r.Valor)}</td>
+            <td style="text-align:right;">${Utils.formatNumber(r.Devoluciones)}</td>
+            <td style="text-align:right;"><strong>${Utils.formatNumber(r.Total)}</strong></td>
+          </tr>
+        `).join('');
 
-        dateRange.forEach(date => {
-          const all = state.reporte.detalles || [];
-
-          const dayRows = all.filter(r => {
-            const f = r.fecha || '';
-            const punto = r.punto || r.puntoVenta || '';
-            const t = (r.tipo || '');
-            return (f === date) && (punto === pt) && !t.startsWith('Total ');
-          });
-
-          const dayMetrics = this.calculateMetricsForRows(dayRows);
-
-          const hasActivity = (
-            dayMetrics.total_ventas_global > 0 ||
-            dayMetrics.total_gastos_efectivo > 0 ||
-            dayMetrics.total_esperado_tesoreria !== 0 ||
-            dayRows.length > 0
-          );
-
-          if (!hasActivity) return;
-
-          countTables++;
-
-          if(!pointHeaderAdded) {
-            combinedHtml += `<h2 style="color:#0056b3; margin-top:30px; border-bottom:2px solid #0056b3;">${pt.toUpperCase()}</h2>`;
-            pointHeaderAdded = true;
-          }
-
-          let filasHtml = "";
-
-          if (modo === 'detalles' || modo === 'ambos'){
-            filasHtml = dayRows.map(r=>{
-              const val = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
-              return `<tr>
-                <td>${Utils.escapeHtml(r.fecha||'')}</td>
-                <td>${Utils.escapeHtml(pt)}</td>
-                <td>${Utils.escapeHtml(r.tipo||'')}</td>
-                <td>${Utils.escapeHtml(r.tercero||'')}</td>
-                <td>${Utils.escapeHtml(r.detalle||'')}</td>
-                <td style="text-align:right;">${Utils.formatNumber(val)}</td>
-              </tr>`;
-            }).join('');
-          }
-
-          let totalesHtml = "";
-
-          if (modo === 'totales' || modo === 'ambos'){
-            const m = dayMetrics;
-            const fila = (label, val, extraStyle='') =>
-              `<tr style="${extraStyle}">
-                <td colspan="5"><strong>${label}</strong></td>
-                <td style="text-align:right;"><strong>${Utils.formatNumber(val)}</strong></td>
-              </tr>`;
-
-            totalesHtml = [
-              fila('Total ventas', m.total_ventas_global),
-              fila('Total gastos en efectivo', m.total_gastos_efectivo),
-              fila('Total dinero a recibir por tesoreria', m.total_esperado_tesoreria, 'background:#EAF4FF;color:#0B5BD3;border-top:2px solid #0B5BD3;')
-            ].join('');
-          }
-
-          const th = `<th>fecha</th><th>punto</th><th>tipo</th><th>tercero</th><th>detalle</th><th>valor</th>`;
-
-          combinedHtml += `<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; width:100%; max-width:100%; margin-bottom:20px;">
-            <thead style="background:#e8f0fe;"><tr>${th}</tr></thead>
-            <tbody>${filasHtml}</tbody>
-            <tfoot>${totalesHtml}</tfoot>
-          </table>`;
-        });
-      });
-
-      if (countTables === 0){ alert('No hay puntos con valores mayores a cero.'); return; }
-
-      const htmlDoc = `<!DOCTYPE html>
+        const htmlDoc = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Reporte HTML</title>
+<title>Reporte Detalles</title>
 <style>
   body{font-family:Segoe UI,Arial,sans-serif;line-height:1.35;padding:12px;}
-  h3{color:#0b5bd3}
+  table{border-collapse:collapse;width:100%;}
+  th,td{border:1px solid #ddd;padding:6px 8px;}
+  thead th{background:#e8f0fe;}
 </style>
 </head>
-<body>${combinedHtml}</body>
+<body>
+  <table>
+    <thead><tr>${th}</tr></thead>
+    <tbody>${filasHtml}</tbody>
+  </table>
+</body>
 </html>`.trim();
 
-      const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
+        const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reporte_detalles_${rangeTxt}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
 
-      const suf = (puntoSel==='Todos') ? 'todos' : puntoSel;
-      a.download = `reporte_html_${suf}_${(desde===hasta)?desde:(desde+'_'+hasta)}.html`;
-
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-
-      UI.reportStatus.textContent = `HTML generado (${countTables} tablas).`;
-    },
-
-    async handleSendWhatsAppReporte(){
-      const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
-      if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
-
-      const puntoSel = UI.puntoEnviar?.value || 'Todos';
-      const modo = UI.modoEnvio?.value || 'ambos';
-
-      await this.ensureDataForRange(desde, hasta);
-
-      const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
-      const bloques = [];
-
-      const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
-      const oneLine = (s) => String(s ?? '')
-        .replace(/[\r\n]+/g, ' ')
-        .replace(/\s{2,}/g, ' ')
-        .replace(/\|+/g, '/')
-        .trim();
-
-      basePoints.forEach((pt, idx) => {
-        const globalMatriz = state.reporte.matriz?.[pt];
-        const hasGlobalData = (globalMatriz && (globalMatriz.total_ventas_global > 0 || globalMatriz.total_esperado_tesoreria !== 0));
-        if (!hasGlobalData) return;
-
-        const rangeTxt = (desde===hasta) ? desde : `${desde} al ${hasta}`;
-        const titulo = [`*PUNTO:* ${pt.toUpperCase()}`, `*FECHA:* ${rangeTxt.toUpperCase()}`];
-        const secciones = [titulo.join('\n')];
-
-        if (modo === 'detalles' || modo === 'ambos') {
-          const all = state.reporte.detalles || [];
-          const filas = all.filter(r => {
-            const f = r.fecha || '';
-            const t = r.tipo || '';
-            return (f >= desde && f <= hasta) && (r.punto === pt || r.puntoVenta === pt) && !t.startsWith('Total ');
-          });
-
-          if (filas.length){
-            const det = ['*Detalles*', ...filas.map(r => {
-              const val = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
-              return `*${r.tipo}*\n${oneLine(r.tercero)} | ${oneLine(r.detalle)} | ${money(val||0)}`;
-            })].join('\n\n');
-            secciones.push(det);
-          }
-        }
-
-        if (modo === 'totales' || modo === 'ambos') {
-          const m = globalMatriz;
-          const tot = ['*Totales*',
-            `Ventas Efec. Neto: ${money(m.total_ventas_efectivo)}`,
-            `Ventas Elect.: ${money(m.total_ventas_electronicas)}`,
-            `Ventas Crédito: ${money(m.total_ventas_credito)}`,
-            `*TOTAL VENTAS: ${money(m.total_ventas_global)}*`,
-            `Gastos: ${money(m.total_gastos_efectivo)}`,
-            `*TESORERIA: ${money(m.total_esperado_tesoreria)}*`
-          ].join('\n');
-          secciones.push(tot);
-        }
-
-        bloques.push(secciones.join('\n\n'));
-        if (idx < basePoints.length - 1){ bloques.push('--------------------'); }
-      });
-
-      if (bloques.length === 0){ alert('No hay puntos con movimiento.'); return; }
-
-      const finalMessage = bloques.join('\n\n');
-
-      const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
-      const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
-
-      const url = isMobile
-        ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
-        : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
-
-      window.open(url,'_blank');
+        UI.reportStatus.textContent = `HTML generado (${data.length} filas).`;
+      }catch(e){
+        console.error(e);
+        UI.reportStatus.textContent = 'Error al exportar HTML.';
+        alert('No se pudo exportar el HTML.');
+      }
     },
 
     async ensureDataForRange(desde, hasta){
       const r = state.reporte.detallesRange || {};
-
-      if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles) || state.reporte.detalles.length === 0) {
+      if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles)) {
         const detallesSrv = await Api.cargarDetallesDesdeServidor(desde, hasta);
-        state.reporte.detalles = detallesSrv;
+        state.reporte.detalles = detallesSrv || [];
         state.reporte.detallesRange = { desde, hasta };
         state.reporte.detallesSource = 'server';
-        this.calcularMatrizGeneral();
-        state.reporte.totalesRange = { desde, hasta };
       }
     }
   };
 
-  function setDetallesOptionLabel(){
-    const el = document.getElementById('opt-detalles-label');
-    if(!el) return;
-    el.textContent = 'Detalles (servidor: hoja de cálculo)';
-  }
-
-  // Exponer App por si luego quieres depurar desde consola
   A.App = App;
   A.state = state;
 
-  // Arranque seguro cuando el DOM ya existe
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => App.init());
   } else {

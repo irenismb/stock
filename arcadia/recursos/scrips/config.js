@@ -28,6 +28,32 @@ window.Arcadia = window.Arcadia || {};
       'Ventas a crédito a empresas del grupo'
     ],
 
+    // ✅ Tipos base por categoría para fórmulas del reporte exportado
+    TIPOS_EFECTIVO: [
+      'Efectivo POS del comprobante diario'
+    ],
+    TIPOS_ELECTRONICOS: [
+      'Ventas con QR',
+      'Ventas con tarjeta debito',
+      'Ventas con tarjeta credito'
+    ],
+    TIPOS_GASTO: [
+      'Gasto en efectivo'
+    ],
+
+    // ✅ Orden sugerido de tipos al exportar (para que se parezca al layout de la imagen)
+    EXPORT_TIPO_ORDER: [
+      'Efectivo POS del comprobante diario',
+      'Ventas con QR',
+      'Ventas con tarjeta debito',
+      'Ventas con tarjeta credito',
+      'Ventas a crédito (descuentos por nómina)',
+      'Ventas a crédito (fórmulas)',
+      'Ventas a crédito a empresas del grupo',
+      'Faltantes en kardex (descuentos por nomina)',
+      'Gasto en efectivo'
+    ],
+
     // Claves de totales (siguen existiendo para la captura local)
     TOTAL_KEYS: [
       {key:'total_esperado_tesoreria', label:'Total dinero a recibir por tesoreria'},

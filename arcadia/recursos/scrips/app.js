@@ -1,8 +1,6 @@
 window.Arcadia = window.Arcadia || {};
-
 (function (A) {
   'use strict';
-
   const { CONFIG, Utils, UI, Api } = A;
   const ADMIN_PASS = A.ADMIN_PASS;
 
@@ -21,6 +19,13 @@ window.Arcadia = window.Arcadia || {};
     },
     reportUnlocked: false
   };
+
+  function normalizeText(s){
+    return String(s || '')
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
 
   const App = {
     init(){
@@ -44,6 +49,27 @@ window.Arcadia = window.Arcadia || {};
       setDetallesOptionLabel();
     },
 
+    /* ---------- Helpers de reglas ---------- */
+    requiresEmpresaForTipo(tipo){
+      return (CONFIG.TIPOS_REQUIEREN_EMPRESA || []).includes(tipo);
+    },
+
+    validateEmpresaGrupo(records){
+      const faltantes = (records || []).filter(r =>
+        this.requiresEmpresaForTipo(r.tipo) && !String(r.tercero || '').trim()
+      );
+
+      if (faltantes.length) {
+        const tipos = Array.from(new Set(faltantes.map(f => f.tipo)));
+        alert(
+          'Debes seleccionar el Nombre de la empresa del grupo para estos conceptos antes de enviar:\n\n' +
+          tipos.map(t => `- ${t}`).join('\n')
+        );
+        return false;
+      }
+      return true;
+    },
+
     /* ---------- Navegación ---------- */
     bindNav(){
       UI.goReportBtn.addEventListener('click', () => {
@@ -55,9 +81,11 @@ window.Arcadia = window.Arcadia || {};
           this.updateReportNavBar();
         }
       });
+
       UI.goCaptureBtn.addEventListener('click', () => this.showSection('capture'));
       UI.backHome1.addEventListener('click', () => this.showSection('home'));
       UI.backHome2.addEventListener('click', () => this.showSection('home'));
+
       UI.resumeLastBtn.addEventListener('click', () => {
         if(state.session.date && state.session.pos){
           this.showSection('capture');
@@ -103,19 +131,77 @@ window.Arcadia = window.Arcadia || {};
       document.getElementById('start-session-btn').addEventListener('click', () => {
         const fecha = UI.fechaInput.value;
         const puntoVenta = UI.puntoVentaInput.value;
-        if (!fecha || !puntoVenta) { alert('Por favor, seleccione fecha y punto de venta.'); return; }
+
+        if (!fecha || !puntoVenta) { 
+          alert('Por favor, seleccione fecha y punto de venta.'); 
+          return; 
+        }
 
         const ayer = Utils.yesterdayISO();
-        if (fecha !== ayer && !confirm(`Vas a abrir la sesión para ${fecha} (no es el día anterior: ${ayer}). ¿Continuar?`)) return;
+        if (fecha !== ayer && !confirm(`Vas a abrir la sesión para ${fecha} (no es el día anterior: ${ayer}). ¿Continuar?`)) {
+          return;
+        }
 
-        if (localStorage.getItem(this.getStorageKey()) && !confirm('¿Iniciar nueva sesión? Se borrarán los datos no guardados de la sesión anterior.')) { return; }
+        // Advertencia por datos de sesión anterior (si existen)
+        const prevKey = this.getStorageKey();
+        if (prevKey && localStorage.getItem(prevKey)) {
+          if (!confirm('Hay datos locales de la sesión anterior. Si cambias de sesión podrían perderse. ¿Continuar?')) {
+            return;
+          }
+        }
+
         this.startSession(fecha, puntoVenta);
       });
 
-      document.getElementById('add-nomina-btn').addEventListener('click', () => this.addRow({ tipo: 'Ventas a crédito (descuentos por nómina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' }));
-      document.getElementById('add-formulas-btn').addEventListener('click', () => this.addRow({ tipo: 'Ventas a crédito (fórmulas)', category: 'credito', isRemovable: true, styleHint: 'credito-formulas' }));
-      document.getElementById('add-gasto-btn').addEventListener('click', () => this.addRow({ tipo: 'Gasto en efectivo', category: 'gasto', isRemovable: true, styleHint: 'gasto' }));
-      document.getElementById('add-interco-btn').addEventListener('click', () => this.addRow({ tipo: 'Ventas a crédito a empresas del grupo', category: 'credito', isRemovable: true, styleHint: 'interco' }));
+      document.getElementById('add-nomina-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Ventas a crédito (descuentos por nómina)',
+            category: 'credito',
+            isRemovable: true,
+            styleHint: 'credito-nomina'
+          })
+        );
+
+      document.getElementById('add-formulas-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Ventas a crédito (fórmulas)',
+            category: 'credito',
+            isRemovable: true,
+            styleHint: 'credito-formulas'
+          })
+        );
+
+      document.getElementById('add-kardex-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Faltantes en kardex (descuentos por nomina)',
+            category: 'credito',
+            isRemovable: true,
+            styleHint: 'credito-nomina'
+          })
+        );
+
+      document.getElementById('add-gasto-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Gasto en efectivo',
+            category: 'gasto',
+            isRemovable: true,
+            styleHint: 'gasto'
+          })
+        );
+
+      document.getElementById('add-interco-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Ventas a crédito a empresas del grupo',
+            category: 'credito',
+            isRemovable: true,
+            styleHint: 'interco'
+          })
+        );
 
       UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
       UI.recordsBody.addEventListener('click', (e) => this.handleTableClick(e));
@@ -128,26 +214,30 @@ window.Arcadia = window.Arcadia || {};
     handleTableInput(e){
       const target = e.target;
       if (!target.classList.contains('table-input')) return;
+
       const field = target.dataset.field;
-      if (field !== 'valor' && field !== 'devoluciones') return;
+      if (field !== 'valor' && field !== 'devoluciones' && field !== 'tercero' && field !== 'detalle') return;
 
       const tr = target.closest('tr');
       if (!tr) return;
 
-      const val = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
-      const dev = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
-      const total = val - dev;
+      // Recalcular total solo si cambia valor/devoluciones
+      if (field === 'valor' || field === 'devoluciones') {
+        const val = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
+        const dev = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
+        const total = val - dev;
+        const totalCell = tr.querySelector('.col-total');
+        if (totalCell) totalCell.textContent = Utils.formatCurrency(total);
+        this.updateTotalsDisplay();
+      }
 
-      const totalCell = tr.querySelector('.col-total');
-      if (totalCell) totalCell.textContent = Utils.formatCurrency(total);
-
-      this.updateTotalsDisplay();
       this.saveRecords();
     },
 
     handleTableClick(e){
       const btn = e.target.closest('button');
       if (!btn) return;
+
       if (btn.dataset.action === 'delete') {
         const tr = btn.closest('tr');
         if (tr && confirm('¿Eliminar fila?')) {
@@ -159,13 +249,40 @@ window.Arcadia = window.Arcadia || {};
     },
 
     startSession(date, pos, fromStorage = false){
-      state.session.date = date; state.session.pos = pos; this.saveSession();
-      UI.sessionDate.textContent = date; UI.sessionPos.textContent = pos;
+      state.session.date = date;
+      state.session.pos = pos;
+      this.saveSession();
+
+      UI.sessionDate.textContent = date;
+      UI.sessionPos.textContent = pos;
+
       document.getElementById('session-setup-fields').classList.add('hidden');
       UI.sessionInfo.classList.remove('hidden');
 
-      if (!fromStorage) { localStorage.removeItem(this.getStorageKey()); this.createInitialRows(); }
-      else { this.loadRecords(); }
+      const key = this.getStorageKey();
+
+      if (fromStorage) {
+        this.loadRecords();
+      } else {
+        if (key && localStorage.getItem(key)) {
+          const reanudar = confirm(
+            'Ya existen datos guardados localmente para esta fecha y punto.\n' +
+            '¿Deseas reanudarlos en lugar de iniciar desde cero?'
+          );
+
+          if (reanudar) {
+            this.loadRecords();
+          } else {
+            localStorage.removeItem(key);
+            this.createInitialRows();
+            this.saveRecords();
+          }
+        } else {
+          this.createInitialRows();
+          this.saveRecords();
+        }
+      }
+
       this.updateTotalsDisplay();
     },
 
@@ -182,19 +299,44 @@ window.Arcadia = window.Arcadia || {};
     },
 
     addRow(data = {}, skipSave = false){
-      const defaults = { id: Utils.uuidv4(), tipo: '', valor: 0, devoluciones: 0, tercero: '', detalle: '', isRemovable: false, category: 'default', styleHint: 'electronica' };
-      const record = { ...defaults, ...data };
+      const defaults = {
+        id: Utils.uuidv4(),
+        tipo: '',
+        valor: 0,
+        devoluciones: 0,
+        tercero: '',
+        detalle: '',
+        isRemovable: false,
+        category: 'default',
+        styleHint: 'electronica'
+      };
 
+      const record = { ...defaults, ...data };
       const tr = document.createElement('tr');
-      tr.dataset.id = record.id; tr.dataset.category = record.category; tr.dataset.styleHint = record.styleHint;
+
+      tr.dataset.id = record.id;
+      tr.dataset.category = record.category;
+      tr.dataset.styleHint = record.styleHint;
       tr.classList.add(`row-style-${record.styleHint}`);
 
       const total = Utils.safeNumber(record.valor) - Utils.safeNumber(record.devoluciones);
 
+      // Para ciertos tipos es obligatorio escoger empresa del grupo
+      const requiereEmpresa = this.requiresEmpresaForTipo(record.tipo);
+
       let terceroCellHtml = `<input type="text" class="table-input" data-field="tercero" value="${record.tercero || ''}">`;
-      if (record.tipo === 'Ventas a crédito a empresas del grupo') {
-        const optionsHtml = CONFIG.EMPRESAS_GRUPO.map(empresa => `<option value="${empresa}" ${record.tercero === empresa ? 'selected' : ''}>${empresa}</option>`).join('');
-        terceroCellHtml = `<select class="table-input" data-field="tercero"><option value="">Seleccione empresa...</option>${optionsHtml}</select>`;
+
+      if (requiereEmpresa) {
+        const optionsHtml = CONFIG.EMPRESAS_GRUPO
+          .map(empresa => `<option value="${empresa}" ${record.tercero === empresa ? 'selected' : ''}>${empresa}</option>`)
+          .join('');
+
+        terceroCellHtml = `
+          <select class="table-input" data-field="tercero">
+            <option value="">Seleccione empresa del grupo...</option>
+            ${optionsHtml}
+          </select>
+        `;
       }
 
       tr.innerHTML = `
@@ -206,16 +348,23 @@ window.Arcadia = window.Arcadia || {};
         <td><input type="text" class="table-input" data-field="detalle" value="${record.detalle || ''}"></td>
         <td class="col-action">${record.isRemovable ? '<button class="btn btn-danger btn-small" data-action="delete">Borrar</button>' : ''}</td>
       `;
+
       UI.recordsBody.appendChild(tr);
 
-      const firstInput = tr.querySelector('[data-field="valor"]'); if (firstInput) firstInput.focus();
+      const firstInput = tr.querySelector('[data-field="valor"]');
+      if (firstInput) firstInput.focus();
 
-      if (!skipSave) { this.saveRecords(); this.updateTotalsDisplay(); }
+      if (!skipSave) {
+        this.saveRecords();
+        this.updateTotalsDisplay();
+      }
+
       return tr;
     },
 
     getCalculatedState(){
       let efectivo = 0, electronica = 0, credito = 0, gasto = 0;
+
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
@@ -232,6 +381,7 @@ window.Arcadia = window.Arcadia || {};
         }
       });
 
+      // Fórmulas solicitadas
       const ventasNetoEfectivo = efectivo - credito;
       const ventasElectronicas = electronica;
       const ventasCredito      = credito;
@@ -239,21 +389,43 @@ window.Arcadia = window.Arcadia || {};
       const gastosEfectivo     = gasto;
       const esperadoTesoreria  = ventasNetoEfectivo - gastosEfectivo;
 
-      return { summary: { ventasNetoEfectivo, ventasElectronicas, ventasCredito, gastosEfectivo, ventasGlobal, esperadoTesoreria }};
+      return {
+        summary: {
+          ventasNetoEfectivo,
+          ventasElectronicas,
+          ventasCredito,
+          gastosEfectivo,
+          ventasGlobal,
+          esperadoTesoreria
+        }
+      };
     },
 
     updateTotalsDisplay(){
       const s = this.getCalculatedState().summary;
-      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total').textContent = Utils.formatCurrency(s.ventasNetoEfectivo);
-      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total').textContent = Utils.formatCurrency(s.ventasElectronicas);
-      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_credito"] .col-total').textContent = Utils.formatCurrency(s.ventasCredito);
-      UI.recordsFooter.querySelector('[data-summary-id="total_gastos_efectivo"] .col-total').textContent = Utils.formatCurrency(s.gastosEfectivo);
-      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_global"] .col-total').textContent = Utils.formatCurrency(s.ventasGlobal);
-      UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total').textContent = Utils.formatCurrency(s.esperadoTesoreria);
+
+      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total')
+        .textContent = Utils.formatCurrency(s.ventasNetoEfectivo);
+
+      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total')
+        .textContent = Utils.formatCurrency(s.ventasElectronicas);
+
+      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_credito"] .col-total')
+        .textContent = Utils.formatCurrency(s.ventasCredito);
+
+      UI.recordsFooter.querySelector('[data-summary-id="total_gastos_efectivo"] .col-total')
+        .textContent = Utils.formatCurrency(s.gastosEfectivo);
+
+      UI.recordsFooter.querySelector('[data-summary-id="total_ventas_global"] .col-total')
+        .textContent = Utils.formatCurrency(s.ventasGlobal);
+
+      UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total')
+        .textContent = Utils.formatCurrency(s.esperadoTesoreria);
     },
 
     getRecordsFromTable(){
       const records = [];
+
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
@@ -271,24 +443,41 @@ window.Arcadia = window.Arcadia || {};
           });
         }
       });
+
       return records;
     },
 
     async handleSendAll(){
       const records = this.getRecordsFromTable();
-      if (records.length === 0) { alert('No hay registros con valores para guardar.'); return; }
-      const btn = document.getElementById('sendAllBtn'); btn.disabled = true; btn.textContent = 'Guardando...';
+      if (records.length === 0) { 
+        alert('No hay registros con valores para guardar.'); 
+        return; 
+      }
 
-      const detailData = records.map(r => ({
-        fecha: state.session.date,
-        puntoVenta: state.session.pos,
-        tipo: r.tipo,
-        tercero: r.tercero,
-        detalle: r.detalle,
-        valor: r.valor,
-        devoluciones: r.devoluciones,
-        total: r.total
-      }));
+      if (!this.validateEmpresaGrupo(records)) return;
+
+      const btn = document.getElementById('sendAllBtn');
+      btn.disabled = true;
+      btn.textContent = 'Guardando...';
+
+      const detailData = records.map(r => {
+        const empresaGrupoVal = this.requiresEmpresaForTipo(r.tipo) ? (r.tercero || '') : '';
+
+        return {
+          fecha: state.session.date,
+          puntoVenta: state.session.pos,
+          tipo: r.tipo,
+          tercero: r.tercero,
+          detalle: r.detalle,
+          valor: r.valor,
+          devoluciones: r.devoluciones,
+          total: r.total,
+
+          // Campos extra para compatibilidad con nuevo encabezado en hoja
+          empresaGrupo: empresaGrupoVal,
+          "Nombre de la empresa del grupo": empresaGrupoVal
+        };
+      });
 
       const c = this.getCalculatedState().summary;
 
@@ -307,7 +496,9 @@ window.Arcadia = window.Arcadia || {};
         detalle: '',
         valor: item.valor,
         devoluciones: 0,
-        total: item.valor
+        total: item.valor,
+        empresaGrupo: '',
+        "Nombre de la empresa del grupo": ''
       }));
 
       const dataToSend = [...detailData, ...summaryData];
@@ -319,25 +510,51 @@ window.Arcadia = window.Arcadia || {};
           body: JSON.stringify(dataToSend),
           headers:{'Content-Type':'text/plain;charset=utf-8'}
         });
-        const result = await response.json();
-        if (result.result !== 'success') throw new Error(result.error || 'Error del servidor.');
-        alert('¡Registros guardados con éxito!'); btn.textContent = '✔️ Guardado';
+
+        const text = await response.text();
+        let result;
+        try {
+          result = JSON.parse(text);
+        } catch {
+          throw new Error('Respuesta no válida del servidor.');
+        }
+
+        if (!response.ok || result.result !== 'success') {
+          throw new Error(result.error || `Error del servidor (HTTP ${response.status}).`);
+        }
+
+        alert('¡Registros guardados con éxito!');
+        btn.textContent = '✔️ Guardado';
       }catch(error){
         console.error("Error al enviar datos:", error);
         alert('Error: No se pudieron guardar los registros.');
-        btn.disabled = false; btn.textContent = '📤 Guardar Todo en la Nube';
+        btn.disabled = false;
+        btn.textContent = '📤 Guardar Todo en la Nube';
       }
     },
 
     handleSendWhatsApp(){
       if (!state.session.date || !state.session.pos) return;
+
+      const rows = this.getRecordsFromTable();
+      if (rows.length === 0) {
+        alert('No hay registros con valores para enviar.');
+        return;
+      }
+
+      if (!this.validateEmpresaGrupo(rows)) return;
+
       const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
-      const oneLine = (s) => String(s ?? '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\|+/g, '/').trim();
+      const oneLine = (s) => String(s ?? '')
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\|+/g, '/')
+        .trim();
+
       const bloques = [];
       bloques.push(`*Punto que reporta:* ${state.session.pos}`);
       bloques.push(`*Fecha que se reporta:* ${state.session.date}`);
 
-      const rows = this.getRecordsFromTable();
       const detalleLineas = [
         '*Detalle de ventas*',
         ...rows.map(r => {
@@ -361,11 +578,13 @@ window.Arcadia = window.Arcadia || {};
       bloques.push(totales);
 
       const finalMessage = bloques.join('\n\n');
+
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
       const url = isMobile
         ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
         : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
+
       window.open(url,'_blank');
     },
 
@@ -393,7 +612,9 @@ window.Arcadia = window.Arcadia || {};
     loadSession(){ state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null }; },
 
     saveRecords(){
-      const key = this.getStorageKey(); if (!key) return;
+      const key = this.getStorageKey(); 
+      if (!key) return;
+
       const records = [];
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         records.push({
@@ -408,15 +629,22 @@ window.Arcadia = window.Arcadia || {};
           isRemovable: !!tr.querySelector('[data-action="delete"]'),
         });
       });
+
       localStorage.setItem(key, JSON.stringify(records));
     },
 
     loadRecords(){
-      const key = this.getStorageKey(); if (!key) return;
+      const key = this.getStorageKey(); 
+      if (!key) return;
+
       const savedRecords = JSON.parse(localStorage.getItem(key)) || [];
       UI.recordsBody.innerHTML = '';
-      if (savedRecords.length > 0) { savedRecords.forEach(rec => this.addRow(rec, true)); }
-      else { this.createInitialRows(); }
+
+      if (savedRecords.length > 0) {
+        savedRecords.forEach(rec => this.addRow(rec, true));
+      } else {
+        this.createInitialRows();
+      }
     },
 
     /* ---------- Reporte (protegido) ---------- */
@@ -425,9 +653,11 @@ window.Arcadia = window.Arcadia || {};
         const pass = (UI.reportPass.value || '').trim();
         if(!pass){ alert('Ingresa la clave.'); return; }
         if(pass !== ADMIN_PASS){ alert('Clave incorrecta.'); return; }
+
         state.reportUnlocked = true;
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
+
         this.toggleShareButtons(false);
         this.updateReportNavBar();
         setDetallesOptionLabel();
@@ -438,6 +668,7 @@ window.Arcadia = window.Arcadia || {};
         state.reporte.tipo = UI.tipoReporte.value;
         UI.reportTag.textContent = (state.reporte.tipo === 'detalles') ? 'Reporte de detalles (servidor)' : 'Reporte de totales';
         UI.reportTableWrapper.classList.toggle('details-mode', state.reporte.tipo === 'detalles');
+
         if (state.reporte.desde && state.reporte.hasta) {
           this.repintarSegunTipo();
           this.updateReportNavBar();
@@ -471,6 +702,7 @@ window.Arcadia = window.Arcadia || {};
         if (state.reporte.tipo === 'detalles') this.navPrevPunto();
         else this.navPrevDia();
       });
+
       UI.navNextBtn.addEventListener('click', () => {
         if (state.reporte.tipo === 'detalles') this.navNextPunto();
         else this.navNextDia();
@@ -480,11 +712,14 @@ window.Arcadia = window.Arcadia || {};
     updateReportNavBar(){
       const { tipo, desde, hasta, cursor } = state.reporte;
       const rangoUnDia = !!(desde && hasta && desde === hasta);
-
       const show = (tipo === 'detalles' && rangoUnDia) || (tipo === 'totales' && rangoUnDia);
+
       UI.reportNav.classList.toggle('hidden', !show);
 
-      if (!show) { UI.navInfo.textContent = ''; return; }
+      if (!show) { 
+        UI.navInfo.textContent = ''; 
+        return; 
+      }
 
       if (tipo === 'detalles') {
         const puntosConDatos = Array.from(new Set(
@@ -492,10 +727,13 @@ window.Arcadia = window.Arcadia || {};
             .filter(r => r.fecha === desde)
             .map(r => r.punto || r.puntoVenta || '')
         ));
+
         cursor.puntosConDatos = puntosConDatos.length ? puntosConDatos : CONFIG.PUNTOS_VENTA.slice();
         if (cursor.puntoIndex >= cursor.puntosConDatos.length) cursor.puntoIndex = 0;
+
         cursor.currentPuntoFilter = cursor.puntosConDatos[cursor.puntoIndex] || null;
         UI.navInfo.textContent = `Día: ${desde} — Punto: ${cursor.currentPuntoFilter || 'N/A'}`;
+
         this.pintarTablaDetalles();
       } else {
         UI.navInfo.textContent = `Día: ${desde}`;
@@ -505,16 +743,21 @@ window.Arcadia = window.Arcadia || {};
     navPrevPunto(){
       const c = state.reporte.cursor;
       if (!c.puntosConDatos.length) return;
+
       c.puntoIndex = (c.puntoIndex - 1 + c.puntosConDatos.length) % c.puntosConDatos.length;
       c.currentPuntoFilter = c.puntosConDatos[c.puntoIndex];
+
       this.pintarTablaDetalles();
       UI.navInfo.textContent = `Día: ${state.reporte.desde} — Punto: ${c.currentPuntoFilter}`;
     },
+
     navNextPunto(){
       const c = state.reporte.cursor;
       if (!c.puntosConDatos.length) return;
+
       c.puntoIndex = (c.puntoIndex + 1) % c.puntosConDatos.length;
       c.currentPuntoFilter = c.puntosConDatos[c.puntoIndex];
+
       this.pintarTablaDetalles();
       UI.navInfo.textContent = `Día: ${state.reporte.desde} — Punto: ${c.currentPuntoFilter}`;
     },
@@ -522,15 +765,20 @@ window.Arcadia = window.Arcadia || {};
     navPrevDia(){
       const { desde, hasta } = state.reporte;
       if (!(desde && hasta && desde === hasta)) return;
+
       const newDay = Utils.dateAddDays(desde, -1);
-      UI.fechaDesde.value = newDay; UI.fechaHasta.value = newDay;
+      UI.fechaDesde.value = newDay; 
+      UI.fechaHasta.value = newDay;
       this.cargarReporte();
     },
+
     navNextDia(){
       const { desde, hasta } = state.reporte;
       if (!(desde && hasta && desde === hasta)) return;
+
       const newDay = Utils.dateAddDays(desde, 1);
-      UI.fechaDesde.value = newDay; UI.fechaHasta.value = newDay;
+      UI.fechaDesde.value = newDay; 
+      UI.fechaHasta.value = newDay;
       this.cargarReporte();
     },
 
@@ -547,6 +795,7 @@ window.Arcadia = window.Arcadia || {};
 
       state.reporte.desde = desde;
       state.reporte.hasta = hasta;
+
       this.toggleShareButtons(false);
 
       const rangoTxt = desde===hasta ? `del ${desde}` : `del ${desde} al ${hasta}`;
@@ -585,10 +834,12 @@ window.Arcadia = window.Arcadia || {};
     calcularMatrizGeneral(){
       const rows = state.reporte.detalles || [];
       const matriz = {};
+
       CONFIG.PUNTOS_VENTA.forEach(p => {
         const pointRows = rows.filter(r => (r.punto === p || r.puntoVenta === p));
         matriz[p] = this.calculateMetricsForRows(pointRows);
       });
+
       state.reporte.matriz = matriz;
     },
 
@@ -603,22 +854,46 @@ window.Arcadia = window.Arcadia || {};
           val = Number(r.valor) || 0;
         }
 
-        const tipo = (r.tipo || '').toLowerCase();
+        const tipoOriginal = (r.tipo || '');
+        const tipo = normalizeText(tipoOriginal);
+
         if (tipo.startsWith('total ')) return;
 
+        // Efectivo base
         if (tipo.includes('efectivo pos')) {
           raw_efectivo += val;
-        } else if (tipo.includes('qr') || tipo.includes('tarjeta')) {
+          return;
+        }
+
+        // Medios electrónicos
+        if (tipo.includes('qr') || tipo.includes('tarjeta debito') || tipo.includes('tarjeta credito') || tipo.includes('tarjeta')) {
+          // Nota: las ventas a crédito NO deberían incluir "tarjeta", pero dejamos la regla original que evita confusión
           electronica += val;
-        } else if (tipo.includes('credito') || tipo.includes('crédito')) {
+          return;
+        }
+
+        // Créditos (incluye kardex)
+        if (tipo.includes('faltantes en kardex') || tipo.includes('kardex')) {
+          credito += val;
+          return;
+        }
+
+        if (tipo.includes('credito')) {
+          // Evitar que algo raro con "tarjeta" se cuele como crédito
           if (!tipo.includes('tarjeta')) {
             credito += val;
           }
-        } else if (tipo.includes('gasto')) {
+          return;
+        }
+
+        // Gastos
+        if (tipo.includes('gasto')) {
           gasto += val;
+          return;
         }
       });
 
+      // Fórmulas solicitadas
       const total_ventas_efectivo = raw_efectivo - credito;
       const total_ventas_global = total_ventas_efectivo + electronica + credito;
       const total_esperado_tesoreria = total_ventas_efectivo - gasto;
@@ -640,29 +915,41 @@ window.Arcadia = window.Arcadia || {};
 
     pintarTablaTotales(){
       const puntos = CONFIG.PUNTOS_VENTA;
+
       UI.theadTot.innerHTML = '';
       const trh = document.createElement('tr');
-      trh.innerHTML = `<th>Concepto / Punto</th>` + puntos.map(p=>`<th class="right">${p}</th>`).join('') + `<th class="right">Total general</th>`;
+      trh.innerHTML =
+        `<th>Concepto / Punto</th>` +
+        puntos.map(p=>`<th class="right">${p}</th>`).join('') +
+        `<th class="right">Total general</th>`;
       UI.theadTot.appendChild(trh);
 
       UI.tbodyTot.innerHTML = '';
       CONFIG.TOTAL_KEYS.forEach(row=>{
         const tr = document.createElement('tr');
         let totalGeneral = 0;
+
         const celdas = puntos.map(p=>{
-          const v = state.reporte.matriz?.[p]?.[row.key]||0;
+          const v = state.reporte.matriz?.[p]?.[row.key] || 0;
           totalGeneral += v;
           return `<td class="right">${Utils.formatCurrency(v)}</td>`;
         }).join('');
-        tr.innerHTML = `<td><strong>${row.label}</strong></td>${celdas}<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
+
+        tr.innerHTML =
+          `<td><strong>${row.label}</strong></td>` +
+          `${celdas}` +
+          `<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
+
         UI.tbodyTot.appendChild(tr);
       });
+
       UI.tfootTot.innerHTML = '';
     },
 
     pintarTablaDetalles(){
       const rows = state.reporte.detalles || [];
       const { desde, hasta, cursor } = state.reporte;
+
       const rangoUnDia = (desde && hasta && desde === hasta);
       const filtroPunto = (rangoUnDia ? (cursor.currentPuntoFilter || null) : null);
 
@@ -683,10 +970,11 @@ window.Arcadia = window.Arcadia || {};
 
       UI.tbodyTot.innerHTML = '';
       let totalGeneral = 0;
+
       rowsFiltradas.forEach(r => {
         const punto = r.punto || r.puntoVenta || '';
         const valMostrar = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
-        totalGeneral += valMostrar||0;
+        totalGeneral += valMostrar || 0;
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
@@ -702,7 +990,9 @@ window.Arcadia = window.Arcadia || {};
 
       UI.tfootTot.innerHTML = '';
       const trf = document.createElement('tr');
-      trf.innerHTML = `<td colspan="5" class="right"><strong>Total general (filas visibles)</strong></td><td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
+      trf.innerHTML =
+        `<td colspan="5" class="right"><strong>Total general (filas visibles)</strong></td>` +
+        `<td class="right"><strong>${Utils.formatCurrency(totalGeneral)}</strong></td>`;
       UI.tfootTot.appendChild(trf);
     },
 
@@ -727,6 +1017,7 @@ window.Arcadia = window.Arcadia || {};
 
         dateRange.forEach(date => {
           const all = state.reporte.detalles || [];
+
           const dayRows = all.filter(r => {
             const f = r.fecha || '';
             const punto = r.punto || r.puntoVenta || '';
@@ -735,16 +1026,25 @@ window.Arcadia = window.Arcadia || {};
           });
 
           const dayMetrics = this.calculateMetricsForRows(dayRows);
-          const hasActivity = (dayMetrics.total_ventas_global > 0 || dayMetrics.total_gastos_efectivo > 0 || dayMetrics.total_esperado_tesoreria !== 0 || dayRows.length > 0);
+
+          const hasActivity = (
+            dayMetrics.total_ventas_global > 0 ||
+            dayMetrics.total_gastos_efectivo > 0 ||
+            dayMetrics.total_esperado_tesoreria !== 0 ||
+            dayRows.length > 0
+          );
+
           if (!hasActivity) return;
 
           countTables++;
+
           if(!pointHeaderAdded) {
             combinedHtml += `<h2 style="color:#0056b3; margin-top:30px; border-bottom:2px solid #0056b3;">${pt.toUpperCase()}</h2>`;
             pointHeaderAdded = true;
           }
 
           let filasHtml = "";
+
           if (modo === 'detalles' || modo === 'ambos') {
             filasHtml = dayRows.map(r=>{
               const val = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
@@ -760,6 +1060,7 @@ window.Arcadia = window.Arcadia || {};
           }
 
           let totalesHtml = "";
+
           if (modo === 'totales' || modo === 'ambos'){
             const m = dayMetrics;
             const fila = (label, val, bg='#fff') =>
@@ -767,6 +1068,7 @@ window.Arcadia = window.Arcadia || {};
                 <td colspan="5" style="border:1px solid #ddd; font-weight:bold;">${label}</td>
                 <td style="border:1px solid #ddd; mso-number-format:'\\#\\,\\#\\#0'; text-align:right; font-weight:bold;">${val}</td>
               </tr>`;
+
             totalesHtml = [
               fila('Total ventas', m.total_ventas_global),
               fila('Total gastos en efectivo', m.total_gastos_efectivo),
@@ -806,12 +1108,14 @@ window.Arcadia = window.Arcadia || {};
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const suf = (puntoSel==='Todos') ? 'todos' : puntoSel;
+
       a.href = url;
       a.download = `reporte_excel_${suf}_${(desde===hasta)?desde:(desde+'_'+hasta)}.xls`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
+
       UI.reportStatus.textContent = `Excel generado (${countTables} tablas diarias).`;
     },
 
@@ -826,13 +1130,16 @@ window.Arcadia = window.Arcadia || {};
 
       const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
       const dateRange = Utils.getDatesInRange(desde, hasta);
+
       let combinedHtml = "";
       let countTables = 0;
 
       basePoints.forEach(pt => {
         let pointHeaderAdded = false;
+
         dateRange.forEach(date => {
           const all = state.reporte.detalles || [];
+
           const dayRows = all.filter(r => {
             const f = r.fecha || '';
             const punto = r.punto || r.puntoVenta || '';
@@ -841,16 +1148,25 @@ window.Arcadia = window.Arcadia || {};
           });
 
           const dayMetrics = this.calculateMetricsForRows(dayRows);
-          const hasActivity = (dayMetrics.total_ventas_global > 0 || dayMetrics.total_gastos_efectivo > 0 || dayMetrics.total_esperado_tesoreria !== 0 || dayRows.length > 0);
+
+          const hasActivity = (
+            dayMetrics.total_ventas_global > 0 ||
+            dayMetrics.total_gastos_efectivo > 0 ||
+            dayMetrics.total_esperado_tesoreria !== 0 ||
+            dayRows.length > 0
+          );
+
           if (!hasActivity) return;
 
           countTables++;
+
           if(!pointHeaderAdded) {
             combinedHtml += `<h2 style="color:#0056b3; margin-top:30px; border-bottom:2px solid #0056b3;">${pt.toUpperCase()}</h2>`;
             pointHeaderAdded = true;
           }
 
           let filasHtml = "";
+
           if (modo === 'detalles' || modo === 'ambos'){
             filasHtml = dayRows.map(r=>{
               const val = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
@@ -866,6 +1182,7 @@ window.Arcadia = window.Arcadia || {};
           }
 
           let totalesHtml = "";
+
           if (modo === 'totales' || modo === 'ambos'){
             const m = dayMetrics;
             const fila = (label, val, extraStyle='') =>
@@ -882,6 +1199,7 @@ window.Arcadia = window.Arcadia || {};
           }
 
           const th = `<th>fecha</th><th>punto</th><th>tipo</th><th>tercero</th><th>detalle</th><th>valor</th>`;
+
           combinedHtml += `<table border="1" cellspacing="0" cellpadding="4" style="border-collapse:collapse; width:100%; max-width:100%; margin-bottom:20px;">
             <thead style="background:#e8f0fe;"><tr>${th}</tr></thead>
             <tbody>${filasHtml}</tbody>
@@ -908,27 +1226,35 @@ window.Arcadia = window.Arcadia || {};
       const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
       const a = document.createElement('a');
       a.href = URL.createObjectURL(blob);
+
       const suf = (puntoSel==='Todos') ? 'todos' : puntoSel;
       a.download = `reporte_html_${suf}_${(desde===hasta)?desde:(desde+'_'+hasta)}.html`;
+
       document.body.appendChild(a);
       a.click();
       a.remove();
+
       UI.reportStatus.textContent = `HTML generado (${countTables} tablas).`;
     },
 
     async handleSendWhatsAppReporte(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
+
       const puntoSel = UI.puntoEnviar?.value || 'Todos';
       const modo = UI.modoEnvio?.value || 'ambos';
 
       await this.ensureDataForRange(desde, hasta);
 
       const basePoints = (puntoSel === 'Todos') ? CONFIG.PUNTOS_VENTA.slice() : [puntoSel];
-
       const bloques = [];
+
       const money = (n) => Utils.formatCurrency(n).replace(/\s/g,'');
-      const oneLine = (s) => String(s ?? '').replace(/[\r\n]+/g, ' ').replace(/\s{2,}/g, ' ').replace(/\|+/g, '/').trim();
+      const oneLine = (s) => String(s ?? '')
+        .replace(/[\r\n]+/g, ' ')
+        .replace(/\s{2,}/g, ' ')
+        .replace(/\|+/g, '/')
+        .trim();
 
       basePoints.forEach((pt, idx) => {
         const globalMatriz = state.reporte.matriz?.[pt];
@@ -946,6 +1272,7 @@ window.Arcadia = window.Arcadia || {};
             const t = r.tipo || '';
             return (f >= desde && f <= hasta) && (r.punto === pt || r.puntoVenta === pt) && !t.startsWith('Total ');
           });
+
           if (filas.length){
             const det = ['*Detalles*', ...filas.map(r => {
               const val = (r.total !== undefined) ? Number(r.total) : Number(r.valor);
@@ -975,16 +1302,20 @@ window.Arcadia = window.Arcadia || {};
       if (bloques.length === 0){ alert('No hay puntos con movimiento.'); return; }
 
       const finalMessage = bloques.join('\n\n');
+
       const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
       const base = isMobile ? 'https://wa.me' : 'https://web.whatsapp.com/send';
+
       const url = isMobile
         ? `${base}/${CONFIG.WHATSAPP_PHONE}?text=${encodeURIComponent(finalMessage)}`
         : `${base}?phone=${CONFIG.WHATSAPP_PHONE}&text=${encodeURIComponent(finalMessage)}`;
+
       window.open(url,'_blank');
     },
 
     async ensureDataForRange(desde, hasta){
       const r = state.reporte.detallesRange || {};
+
       if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles) || state.reporte.detalles.length === 0) {
         const detallesSrv = await Api.cargarDetallesDesdeServidor(desde, hasta);
         state.reporte.detalles = detallesSrv;
@@ -1012,5 +1343,5 @@ window.Arcadia = window.Arcadia || {};
   } else {
     App.init();
   }
-
 })(window.Arcadia);
+

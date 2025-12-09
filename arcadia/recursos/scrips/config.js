@@ -1,11 +1,8 @@
 // Namespace global
 window.Arcadia = window.Arcadia || {};
-
 (function (A) {
   'use strict';
-
   A.ADMIN_PASS = '2525';
-
   A.CONFIG = {
     LS_RECORDS_KEY: 'salesGridRecords_v2',
     LS_SESSION_KEY: 'sessionGrid_v2',
@@ -14,6 +11,15 @@ window.Arcadia = window.Arcadia || {};
     API_KEY: '',
     PUNTOS_VENTA: ['Almendros','Aroma','Ferrocarril','Flora','Irotama','Libertador','Minca','Neguanje','Orient','Playa','Reserva','Rodadero'],
     EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones ARCADIA','Doctor Ahorro','Heritage','Distribuidora'],
+
+    // Tipos que obligan a escoger empresa del grupo
+    TIPOS_REQUIEREN_EMPRESA: [
+      'Ventas a crédito (descuentos por nómina)',
+      'Ventas a crédito (fórmulas)',
+      'Faltantes en kardex (descuentos por nomina)',
+      'Ventas a crédito a empresas del grupo'
+    ],
+
     TOTAL_KEYS: [
       {key:'total_esperado_tesoreria', label:'Total dinero a recibir por tesoreria'},
       {key:'total_gastos_efectivo',   label:'Total gastos en efectivo'},
@@ -32,3 +38,4 @@ window.Arcadia = window.Arcadia || {};
     }
   };
 })(window.Arcadia);
+

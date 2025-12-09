@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Reporte de Caja — Inicio, Captura, Totales y Detalles</title>
+  <meta name="description" content="Aplicación de caja con inicio, captura diaria y reportes por rango (totales o detalles), protegida por clave y con exportación a Excel." />
+
+  <!-- CSS dividido (ubicado en /arcadia/recursos/stilos/) -->
+  <link rel="stylesheet" href="./recursos/stilos/base.css">
+  <link rel="stylesheet" href="./recursos/stilos/capture.css">
+  <link rel="stylesheet" href="./recursos/stilos/report.css">
+</head>
+
+<body>
+  <main class="container" id="app">
+    <header>
+      <h1>Reporte de Caja</h1>
+      <p class="muted">
+        Trabaja en el reporte <strong>actual</strong> o genera <strong>totales</strong> /
+        <strong>detalles</strong> por rango. El reporte está protegido por clave y exporta a
+        <strong>Excel</strong>.
+      </p>
+    </header>
+
+    <!-- ========================= HOME ========================= -->
+    <section id="home">
+      <div class="cards">
+        <article class="card">
+          <h3>Trabajar en lo actual</h3>
+          <p class="muted">Captura diaria con totales y envío a la nube.</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button id="go-capture" class="btn btn-success">Abrir captura</button>
+            <button id="resume-last" class="btn btn-ghost">Reanudar última sesión</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <h3>Reportes por rango</h3>
+          <p class="muted">Totales por punto o lista de detalles. <strong>Protegido por clave</strong>.</p>
+          <button id="go-report" class="btn btn-primary">Ir al reporte</button>
+        </article>
+      </div>
+    </section>
+
+    <hr/>
+
+    <!-- ======================= CAPTURA ======================== -->
+    <section id="capture" class="hidden">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <button class="btn btn-ghost" id="back-home-1">⬅ Volver al inicio</button>
+        <span class="tag" id="resume-hint" title="Se cargará/guardará automáticamente" style="display:none">
+          Captura actual
+        </span>
+      </div>
+
+      <section id="session-info-container">
+        <div id="session-setup-fields" class="form-grid">
+          <div>
+            <label for="fecha">Fecha del reporte</label>
+            <input id="fecha" type="date" required />
+          </div>
+          <div>
+            <label for="puntoVenta">Punto de venta</label>
+            <select id="puntoVenta" required></select>
+          </div>
+          <div style="align-self: end;">
+            <button id="start-session-btn" class="btn btn-success" style="width: 100%;">
+              Iniciar / Cambiar Sesión
+            </button>
+          </div>
+        </div>
+
+        <div id="session-info" class="hidden">
+          <div>
+            <strong>Fecha:</strong> <span id="session-date-display"></span> —
+            <strong>Punto:</strong> <span id="session-pos-display"></span>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div id="network-status" class="status-pill status-offline">Offline</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="actions-bar">
+        <button id="add-nomina-btn" class="btn btn-primary">Añadir Venta a Crédito (Nómina)</button>
+        <button id="add-formulas-btn" class="btn btn-info">Añadir Venta a Crédito (Fórmulas)</button>
+        <button id="add-interco-btn" class="btn btn-purple">Añadir Ventas a Crédito a Empresas del Grupo</button>
+        <button id="add-gasto-btn" class="btn btn-warning">Añadir Gasto en Efectivo</button>
+      </div>
+
+      <div class="records-container">
+        <table id="recordsTable">
+          <thead>
+            <tr>
+              <th style="width: 32%;">Tipo de Operación</th>
+              <th class="col-number" style="width: 12%;">Valor</th>
+              <th class="col-number" style="width: 12%;">Devoluciones</th>
+              <th class="col-number" style="width: 13%;">Total</th>
+              <th style="width: 15%;">Tercero / Destino</th>
+              <th style="width: 11%;">Detalle</th>
+              <th class="col-action" style="width: 5%;">Acción</th>
+            </tr>
+          </thead>
+
+          <tbody id="recordsListBody"></tbody>
+
+          <tfoot id="recordsTableFooter">
+            <tr data-summary-id="total_ventas_efectivo">
+              <td>Efectivo neto (efectivo - crédito)</td>
+              <td colspan="2"></td><td class="col-total"></td>
+              <td colspan="3"></td>
+            </tr>
+            <tr data-summary-id="total_ventas_electronicas">
+              <td>Total ventas por medios electronicos</td>
+              <td colspan="2"></td><td class="col-total"></td>
+              <td colspan="3"></td>
+            </tr>
+            <tr data-summary-id="total_ventas_credito">
+              <td>Total ventas a credito</td>
+              <td colspan="2"></td><td class="col-total"></td>
+              <td colspan="3"></td>
+            </tr>
+            <tr class="sub-grand-total" data-summary-id="total_ventas_global">
+              <td>Total ventas</td>
+              <td colspan="2"></td><td class="col-total"></td>
+              <td colspan="3"></td>
+            </tr>
+            <tr data-summary-id="total_gastos_efectivo">
+              <td>Total gastos en efectivo</td>
+              <td colspan="2"></td><td class="col-total"></td>
+              <td colspan="3"></td>
+            </tr>
+            <tr class="grand-total" data-summary-id="total_esperado_tesoreria">
+              <td>Total dinero a recibir por tesoreria</td>
+              <td colspan="2"></td><td class="col-total"></td>
+              <td colspan="3"></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div id="action-buttons-container"
+           class="actions-grid"
+           style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px">
+        <button id="sendAllBtn" class="btn btn-primary">📤 Guardar Todo en la Nube</button>
+        <button id="sendWhatsAppBtn" class="btn btn-whatsapp">✔️ Enviar Resumen por WhatsApp</button>
+        <button id="clearAllBtn" class="btn btn-danger">🗑️ Limpiar y Finalizar Reporte</button>
+      </div>
+    </section>
+
+    <!-- ======================== REPORTE ======================== -->
+    <section id="report" class="hidden">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <button class="btn btn-ghost" id="back-home-2">⬅ Volver al inicio</button>
+        <span class="tag" id="reportTag">Reporte</span>
+      </div>
+
+      <div id="reportGate" class="step-card">
+        <h3 class="step-title"><span class="badge">0</span> Desbloquear reporte</h3>
+        <div class="subgrid">
+          <div>
+            <label for="reportPass">Clave de administrador</label>
+            <input id="reportPass" type="password" placeholder="••••" />
+            <div class="helper">
+              Digite la clave de administrador <strong>****</strong>. Para poder imprimir reportes.
+              <code> Gracias</code>.
+            </div>
+          </div>
+          <div style="align-self:end">
+            <button id="btnGateOpen" class="btn btn-success" style="width:100%">Desbloquear</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="report-controls" class="hidden">
+        <div class="steps">
+          <div class="step-card">
+            <h3 class="step-title"><span class="badge">1</span> Elegir rango de fechas</h3>
+            <div class="subgrid">
+              <div>
+                <label for="fechaDesde">Desde</label>
+                <input id="fechaDesde" type="date" />
+              </div>
+              <div>
+                <label for="fechaHasta">Hasta</label>
+                <input id="fechaHasta" type="date" />
+              </div>
+            </div>
+            <div class="helper">
+              Usa el mismo día en ambos campos si deseas navegar con ⬅/➡ o enviar por punto específico.
+            </div>
+          </div>
+
+          <div class="step-card">
+            <h3 class="step-title"><span class="badge">2</span> Seleccionar tipo de reporte</h3>
+            <div class="subgrid">
+              <div>
+                <label for="tipoReporte">Tipo de reporte</label>
+                <select id="tipoReporte">
+                  <option value="totales">Totales por punto (calculado)</option>
+                  <option value="detalles" id="opt-detalles-label">Detalles (servidor)</option>
+                </select>
+              </div>
+              <div style="align-self:end">
+                <button id="btnCargarReporte" class="btn btn-primary" style="width:100%">Cargar reporte</button>
+              </div>
+            </div>
+            <div class="helper">La tabla se mostrará abajo. Los totales se calculan en base al detalle descargado.</div>
+          </div>
+
+          <div class="step-card">
+            <h3 class="step-title"><span class="badge">3</span> Compartir o exportar</h3>
+            <div class="subgrid">
+              <div>
+                <label for="modoEnvio">Contenido a enviar</label>
+                <select id="modoEnvio">
+                  <option value="detalles">Solo detalles</option>
+                  <option value="totales">Solo totales</option>
+                  <option value="ambos" selected>Ambos (detalles y totales)</option>
+                </select>
+              </div>
+              <div>
+                <label for="puntoEnviar">Punto a enviar</label>
+                <select id="puntoEnviar"></select>
+              </div>
+              <div style="align-self:end">
+                <button id="btnEnviarWhatsAppReporte" class="btn btn-whatsapp" style="width:100%" disabled>
+                  Enviar WhatsApp
+                </button>
+              </div>
+              <div style="align-self:end">
+                <button id="btnExportarExcel" class="btn btn-ghost" style="width:100%" disabled>
+                  Exportar Excel
+                </button>
+              </div>
+              <div style="align-self:end">
+                <button id="btnExportarHTML" class="btn btn-info" style="width:100%" disabled>
+                  Descargar HTML
+                </button>
+              </div>
+            </div>
+            <div class="helper">
+              Los botones se habilitan automáticamente cuando el reporte se ha cargado correctamente.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="report-nav" class="report-nav hidden">
+        <button id="nav-prev" class="btn btn-ghost btn-icon">⬅ Anterior</button>
+        <button id="nav-next" class="btn btn-ghost btn-icon">Siguiente ➡</button>
+        <span id="nav-info" class="nav-info"></span>
+      </div>
+
+      <div id="reportStatus" class="muted" style="margin:6px 0 10px" aria-live="polite"></div>
+
+      <div class="scroll-x" id="reportTableWrapper"
+           title="La tabla se ajusta al contenido; si hiciera falta, puedes desplazar horizontalmente.">
+        <table id="tablaTotales" class="table-compact">
+          <thead id="theadTotales"></thead>
+          <tbody id="tbodyTotales"></tbody>
+          <tfoot id="tfootTotales"></tfoot>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <!-- JS dividido (ubicado en /arcadia/recursos/scrips/) -->
+  <script src="./recursos/scrips/config.js"></script>
+  <script src="./recursos/scrips/utils.js"></script>
+  <script src="./recursos/scrips/api.js"></script>
+  <script src="./recursos/scrips/ui.js"></script>
+  <script src="./recursos/scrips/app.js"></script>
+</body>
+</html>
+

@@ -1,7 +1,6 @@
 window.Arcadia = window.Arcadia || {};
 (function (A) {
   'use strict';
-
   const { CONFIG, Utils, UI, Api } = A;
   const state = A.state;
   const ADMIN_PASS = A.ADMIN_PASS;
@@ -14,17 +13,13 @@ window.Arcadia = window.Arcadia || {};
         const pass = (UI.reportPass.value || '').trim();
         if(!pass){ alert('Ingresa la clave.'); return; }
         if(pass !== ADMIN_PASS){ alert('Clave incorrecta.'); return; }
-
         state.reportUnlocked = true;
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
-
         // Habilita botones en general y luego valida soporte real
         this.toggleExportButtons(true);
-
         // Intentar cargar librería si falta
         await this.refreshExportSupport();
-
         if (UI.reportPass) UI.reportPass.value = '';
       });
 
@@ -77,7 +72,6 @@ window.Arcadia = window.Arcadia || {};
 
     updateExportButtonsVisibility(){
       const excelSupported = this.isExcelLibAvailable();
-
       if (excelSupported) {
         UI.btnExportarHTML?.classList.add('hidden');
         if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = false;
@@ -122,12 +116,10 @@ window.Arcadia = window.Arcadia || {};
     sortDetallesParaExport(rows){
       const order = CONFIG.EXPORT_TIPO_ORDER || [];
       const idx = new Map(order.map((t,i)=>[t,i]));
-
       return [...rows].sort((a,b) => {
         const ia = idx.has(a.tipo) ? idx.get(a.tipo) : 9999;
         const ib = idx.has(b.tipo) ? idx.get(b.tipo) : 9999;
         if (ia !== ib) return ia - ib;
-
         const ta = this.normalizeText(a.tipo);
         const tb = this.normalizeText(b.tipo);
         if (ta < tb) return -1;
@@ -138,20 +130,16 @@ window.Arcadia = window.Arcadia || {};
 
     groupByFechaPunto(rows){
       const map = new Map();
-
       rows.forEach(r => {
         const key = `${r.fecha}__${r.punto}`;
         if (!map.has(key)) map.set(key, { fecha: r.fecha, punto: r.punto, items: [] });
         map.get(key).items.push(r);
       });
-
       const groups = Array.from(map.values());
-
       groups.sort((a,b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         return this.normalizeText(a.punto) < this.normalizeText(b.punto) ? -1 : 1;
       });
-
       groups.forEach(g => g.items = this.sortDetallesParaExport(g.items));
       return groups;
     },
@@ -159,7 +147,6 @@ window.Arcadia = window.Arcadia || {};
     buildReporteWorksheet(desde, hasta){
       const detalles = this.getDetallesFiltrados(desde, hasta);
       const groups = this.groupByFechaPunto(detalles);
-
       const HEADERS = ['Fecha','Punto','Tipo','Tercero','Detalle','Valor'];
 
       const thin = { style: 'thin', color: { rgb: '000000' } };
@@ -195,7 +182,6 @@ window.Arcadia = window.Arcadia || {};
       };
 
       const headerRow = () => HEADERS.map(h => ({ v: h, t: 's', s: styles.header }));
-
       const safeExcelStr = (s) => String(s || '').replace(/"/g, '""');
 
       const sumifsFormula = (valorRange, tipoRange, tipos = []) => {
@@ -244,6 +230,7 @@ window.Arcadia = window.Arcadia || {};
         });
 
         const lastDetailExcelRow = firstDetailExcelRow + items.length - 1;
+
         const tipoRange  = `$C$${firstDetailExcelRow}:$C$${lastDetailExcelRow}`;
         const valorRange = `$F$${firstDetailExcelRow}:$F$${lastDetailExcelRow}`;
 
@@ -435,10 +422,9 @@ window.Arcadia = window.Arcadia || {};
       URL.revokeObjectURL(url);
     },
 
-    /* ---------- Excel: XLS principal con respaldo XLSX ---------- */
+    /* ---------- Excel: XLSX principal con respaldo XLS ---------- */
     async exportarExcelDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
-
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
@@ -469,19 +455,20 @@ window.Arcadia = window.Arcadia || {};
         const wb = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
 
-        const filenameXls = `reporte_${rangeTxt}.xls`;
-
+        // ✅ Primero XLSX, si falla entonces XLS
+        const filenameXlsx = `reporte_${rangeTxt}.xlsx`;
         try{
-          window.XLSX.writeFile(wb, filenameXls, { bookType: 'xls', cellStyles: true });
-          UI.reportStatus.textContent = `Excel XLS generado con formato de reporte (${detalles.length} detalles).`;
-        }catch(err){
-          console.warn('[ExcelExport] fallo XLS, intentando XLSX:', err);
-          const filenameXlsx = `reporte_${rangeTxt}.xlsx`;
           window.XLSX.writeFile(wb, filenameXlsx, { bookType: 'xlsx', cellStyles: true });
-          UI.reportStatus.textContent = `Excel XLSX generado como respaldo (${detalles.length} detalles).`;
+          UI.reportStatus.textContent = `Excel XLSX generado con formato de reporte (${detalles.length} detalles).`;
+        }catch(err){
+          console.warn('[ExcelExport] fallo XLSX, intentando XLS:', err);
+          const filenameXls = `reporte_${rangeTxt}.xls`;
+          window.XLSX.writeFile(wb, filenameXls, { bookType: 'xls', cellStyles: true });
+          UI.reportStatus.textContent = `Excel XLS generado como respaldo (${detalles.length} detalles).`;
         }
 
         this.updateExportButtonsVisibility();
+
       }catch(e){
         console.error(e);
         UI.reportStatus.textContent = 'Error al exportar Excel.';
@@ -495,7 +482,6 @@ window.Arcadia = window.Arcadia || {};
 
     async exportarHTMLDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
-
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
@@ -513,11 +499,10 @@ window.Arcadia = window.Arcadia || {};
 
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
         const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
-
         const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
         this.downloadBlob(blob, `reporte_${rangeTxt}.html`);
-
         UI.reportStatus.textContent = `HTML generado con formato de reporte (${detallesCount} detalles).`;
+
       }catch(e){
         console.error(e);
         UI.reportStatus.textContent = 'Error al exportar HTML.';
@@ -537,3 +522,4 @@ window.Arcadia = window.Arcadia || {};
   });
 
 })(window.Arcadia);
+

@@ -172,7 +172,7 @@ window.Arcadia = window.Arcadia || {};
         number: {
           border: baseBorder,
           alignment: { horizontal: 'right', vertical: 'center' },
-          // ✅ sin decimales visibles (miles según configuración regional al abrir)
+          // ✅ sin decimales visibles
           numFmt: '#,##0'
         },
         totalRow: {
@@ -291,8 +291,8 @@ window.Arcadia = window.Arcadia || {};
         }
       });
 
-      const ws = XLSX.utils.aoa_to_sheet([]);
-      XLSX.utils.sheet_add_aoa(ws, aoa, { origin: 'A1' });
+      // ✅ Crear la hoja directamente desde el AOA para conservar mejor estilos
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
 
       // ✅ Inmoviliza la fila 1
       ws['!freeze'] = {
@@ -311,6 +311,24 @@ window.Arcadia = window.Arcadia || {};
         { wch: 32 },
         { wch: 14 }
       ];
+
+      // ✅ Reforzar formato de miles en columna Valor (F)
+      // Esto ayuda cuando algunos entornos ignoran el numFmt del estilo de celda en el AOA.
+      try {
+        const ref = ws['!ref'];
+        if (ref) {
+          const range = XLSX.utils.decode_range(ref);
+          const colValor = 5; // F (0-based)
+          for (let R = 1; R <= range.e.r; R++) { // desde fila 2
+            const addr = XLSX.utils.encode_cell({ r: R, c: colValor });
+            const cell = ws[addr];
+            if (cell && cell.t === 'n') {
+              cell.s = cell.s || {};
+              cell.s.numFmt = '#,##0';
+            }
+          }
+        }
+      } catch (_) {}
 
       return ws;
     },

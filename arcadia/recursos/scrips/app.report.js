@@ -13,13 +13,17 @@ window.Arcadia = window.Arcadia || {};
         const pass = (UI.reportPass.value || '').trim();
         if(!pass){ alert('Ingresa la clave.'); return; }
         if(pass !== ADMIN_PASS){ alert('Clave incorrecta.'); return; }
+
         state.reportUnlocked = true;
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
+
         // Habilita botones en general y luego valida soporte real
         this.toggleExportButtons(true);
-        // Intentar cargar librería si falta
+
+        // Intentar cargar librería si falta + ajustar estados
         await this.refreshExportSupport();
+
         if (UI.reportPass) UI.reportPass.value = '';
       });
 
@@ -45,6 +49,7 @@ window.Arcadia = window.Arcadia || {};
 
     async ensureExcelLibLoaded(){
       if (this.isExcelLibAvailable()) return true;
+
       const candidates = [
         './recursos/scrips/vendor/xlsx-js-style.full.min.js',
         'https://cdn.jsdelivr.net/npm/xlsx-js-style/dist/xlsx.full.min.js',
@@ -53,6 +58,7 @@ window.Arcadia = window.Arcadia || {};
         'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js',
         'https://unpkg.com/xlsx/dist/xlsx.full.min.js'
       ];
+
       for (const src of candidates) {
         if (this.isExcelLibAvailable()) break;
         try{
@@ -64,18 +70,20 @@ window.Arcadia = window.Arcadia || {};
           console.warn('[ExcelLoader] falló:', src, e);
         }
       }
+
       return this.isExcelLibAvailable();
     },
 
     updateExportButtonsVisibility(){
       const excelSupported = this.isExcelLibAvailable();
-      if (excelSupported) {
-        UI.btnExportarHTML?.classList.add('hidden');
-        if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = false;
-      } else {
-        UI.btnExportarHTML?.classList.remove('hidden');
-        if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = true;
-      }
+      const unlocked = !!state.reportUnlocked;
+
+      // ✅ El botón HTML debe estar siempre visible para descarga directa
+      if (UI.btnExportarHTML) UI.btnExportarHTML.classList.remove('hidden');
+
+      // Estados de habilitación coherentes
+      if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = !(unlocked && excelSupported);
+      if (UI.btnExportarHTML) UI.btnExportarHTML.disabled = !unlocked;
     },
 
     async refreshExportSupport(){
@@ -85,9 +93,9 @@ window.Arcadia = window.Arcadia || {};
       }finally{
         this.updateExportButtonsVisibility();
         if (this.isExcelLibAvailable()) {
-          UI.reportStatus.textContent = 'Librería de Excel lista.';
+          UI.reportStatus.textContent = 'Librería de Excel lista. También puedes descargar HTML.';
         } else {
-          UI.reportStatus.textContent = 'No se encontró la librería de Excel. Se habilita HTML como respaldo.';
+          UI.reportStatus.textContent = 'No se encontró la librería de Excel. Puedes descargar HTML.';
         }
       }
     },
@@ -164,7 +172,7 @@ window.Arcadia = window.Arcadia || {};
         number: {
           border: baseBorder,
           alignment: { horizontal: 'right', vertical: 'center' },
-          // ✅ sin decimales; Excel mostrará separador de miles según configuración regional
+          // ✅ sin decimales visibles (miles según configuración regional al abrir)
           numFmt: '#,##0'
         },
         totalRow: {
@@ -445,7 +453,7 @@ window.Arcadia = window.Arcadia || {};
 
         if (!this.isExcelLibAvailable()){
           UI.reportStatus.textContent = 'No se encontró la librería de Excel.';
-          alert('No se pudo generar el archivo porque la librería de Excel no está disponible. Usa el botón HTML como respaldo.');
+          alert('No se pudo generar el archivo porque la librería de Excel no está disponible. Puedes descargar HTML.');
           this.updateExportButtonsVisibility();
           return;
         }
@@ -474,7 +482,7 @@ window.Arcadia = window.Arcadia || {};
         UI.reportStatus.textContent = 'Error al exportar Excel.';
         alert(
           'No se pudo exportar el Excel. ' +
-          'Si el problema persiste, usa el botón HTML como respaldo.'
+          'Si el problema persiste, usa el botón HTML.'
         );
         this.updateExportButtonsVisibility();
       }

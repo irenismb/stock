@@ -18,12 +18,9 @@ window.Arcadia = window.Arcadia || {};
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
 
-        // Habilita botones en general y luego valida soporte real
         this.toggleExportButtons(true);
 
-        // Intentar cargar librería si falta + ajustar estados
         await this.refreshExportSupport();
-
         if (UI.reportPass) UI.reportPass.value = '';
       });
 
@@ -54,7 +51,6 @@ window.Arcadia = window.Arcadia || {};
         './recursos/scrips/vendor/xlsx-js-style.full.min.js',
         'https://cdn.jsdelivr.net/npm/xlsx-js-style/dist/xlsx.full.min.js',
         'https://unpkg.com/xlsx-js-style/dist/xlsx.full.min.js',
-        // fallback sin estilos (último recurso)
         'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js',
         'https://unpkg.com/xlsx/dist/xlsx.full.min.js'
       ];
@@ -70,7 +66,6 @@ window.Arcadia = window.Arcadia || {};
           console.warn('[ExcelLoader] falló:', src, e);
         }
       }
-
       return this.isExcelLibAvailable();
     },
 
@@ -78,10 +73,8 @@ window.Arcadia = window.Arcadia || {};
       const excelSupported = this.isExcelLibAvailable();
       const unlocked = !!state.reportUnlocked;
 
-      // ✅ El botón HTML debe estar siempre visible para descarga directa
       if (UI.btnExportarHTML) UI.btnExportarHTML.classList.remove('hidden');
 
-      // Estados de habilitación coherentes
       if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = !(unlocked && excelSupported);
       if (UI.btnExportarHTML) UI.btnExportarHTML.disabled = !unlocked;
     },
@@ -105,30 +98,48 @@ window.Arcadia = window.Arcadia || {};
        Columnas finales:
        Fecha | Punto | Tipo | Tercero | Detalle | Valor
        ========================================================= */
+
     getDetallesFiltrados(desde, hasta){
       const all = state.reporte.detalles || [];
+
       return all.filter(r => {
         const f = r.fecha || '';
         const p = r.punto || '';
-        const tipo = String(r.tipo || '');
-        if (!f || !p || !tipo) return false;
+        const tipoCanon = this.canonicalTipo(r.tipo || '');
+
+        if (!f || !p || !tipoCanon) return false;
         if (f < desde || f > hasta) return false;
-        if (tipo.startsWith('Total ')) return false;
+
+        // Excluir filas de totales preexistentes
+        if (String(tipoCanon).startsWith('Total ')) return false;
+
         return true;
-      });
+      }).map(r => ({
+        ...r,
+        tipo: this.canonicalTipo(r.tipo || '')
+      }));
     },
 
     sortDetallesParaExport(rows){
       const order = CONFIG.EXPORT_TIPO_ORDER || [];
-      const idx = new Map(order.map((t,i)=>[t,i]));
+
+      // índice por texto normalizado
+      const idx = new Map(order.map((t,i)=>[this.normalizeText(t), i]));
+
       return [...rows].sort((a,b) => {
-        const ia = idx.has(a.tipo) ? idx.get(a.tipo) : 9999;
-        const ib = idx.has(b.tipo) ? idx.get(b.tipo) : 9999;
+        const tipoA = this.canonicalTipo(a.tipo);
+        const tipoB = this.canonicalTipo(b.tipo);
+
+        const na = this.normalizeText(tipoA);
+        const nb = this.normalizeText(tipoB);
+
+        const ia = idx.has(na) ? idx.get(na) : 9999;
+        const ib = idx.has(nb) ? idx.get(nb) : 9999;
+
         if (ia !== ib) return ia - ib;
-        const ta = this.normalizeText(a.tipo);
-        const tb = this.normalizeText(b.tipo);
-        if (ta < tb) return -1;
-        if (ta > tb) return 1;
+
+        if (na < nb) return -1;
+        if (na > nb) return 1;
         return 0;
       });
     },
@@ -136,15 +147,20 @@ window.Arcadia = window.Arcadia || {};
     groupByFechaPunto(rows){
       const map = new Map();
       rows.forEach(r => {
-        const key = `${r.fecha}__${r.punto}`;
-        if (!map.has(key)) map.set(key, { fecha: r.fecha, punto: r.punto, items: [] });
-        map.get(key).items.push(r);
+        const tipoCanon = this.canonicalTipo(r.tipo || '');
+        const rr = { ...r, tipo: tipoCanon };
+
+        const key = `${rr.fecha}__${rr.punto}`;
+        if (!map.has(key)) map.set(key, { fecha: rr.fecha, punto: rr.punto, items: [] });
+        map.get(key).items.push(rr);
       });
+
       const groups = Array.from(map.values());
       groups.sort((a,b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         return this.normalizeText(a.punto) < this.normalizeText(b.punto) ? -1 : 1;
       });
+
       groups.forEach(g => g.items = this.sortDetallesParaExport(g.items));
       return groups;
     },
@@ -152,6 +168,7 @@ window.Arcadia = window.Arcadia || {};
     buildReporteWorksheet(desde, hasta){
       const detalles = this.getDetallesFiltrados(desde, hasta);
       const groups = this.groupByFechaPunto(detalles);
+
       const HEADERS = ['Fecha','Punto','Tipo','Tercero','Detalle','Valor'];
 
       const thin = { style: 'thin', color: { rgb: '000000' } };
@@ -160,7 +177,6 @@ window.Arcadia = window.Arcadia || {};
       const styles = {
         header: {
           font: { bold: true, color: { rgb: '000000' } },
-          // ✅ RGB(202,237,251)
           fill: { patternType: 'solid', fgColor: { rgb: 'CAEDFB' } },
           border: baseBorder,
           alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
@@ -172,7 +188,6 @@ window.Arcadia = window.Arcadia || {};
         number: {
           border: baseBorder,
           alignment: { horizontal: 'right', vertical: 'center' },
-          // ✅ sin decimales visibles
           numFmt: '#,##0'
         },
         totalRow: {
@@ -194,14 +209,13 @@ window.Arcadia = window.Arcadia || {};
       const sumifsFormula = (valorRange, tipoRange, tipos = []) => {
         if (!tipos.length) return '0';
         return tipos
-          .map(t => `SUMIFS(${valorRange},${tipoRange},"${safeExcelStr(t)}")`)
+          .map(t => `SUMIFS(${valorRange},${tipoRange},"${safeExcelStr(this.canonicalTipo(t))}")`)
           .join('+');
       };
 
       const sumByTipos = (items, tipos) => {
-        const set = new Set(tipos || []);
         return (items || []).reduce((acc, it) => {
-          if (!set.has(it.tipo)) return acc;
+          if (!this.isTipoInList(it.tipo, tipos)) return acc;
           const v = Number(it.valor || 0);
           return acc + v;
         }, 0);
@@ -226,10 +240,12 @@ window.Arcadia = window.Arcadia || {};
         const firstDetailExcelRow = excelHeaderRow + 1;
 
         items.forEach((r) => {
+          const tipoCanon = this.canonicalTipo(r.tipo);
+
           addRow([
             { v: fecha, t: 's', s: styles.cell },
             { v: punto, t: 's', s: styles.cell },
-            { v: r.tipo || '', t: 's', s: styles.cell },
+            { v: tipoCanon || '', t: 's', s: styles.cell },
             { v: r.tercero || '', t: 's', s: styles.cell },
             { v: r.detalle || '', t: 's', s: styles.cell },
             { v: Number(r.valor || 0), t: 'n', s: styles.number }
@@ -291,10 +307,8 @@ window.Arcadia = window.Arcadia || {};
         }
       });
 
-      // ✅ Crear la hoja directamente desde el AOA para conservar mejor estilos
       const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-      // ✅ Inmoviliza la fila 1
       ws['!freeze'] = {
         xSplit: 0,
         ySplit: 1,
@@ -312,8 +326,6 @@ window.Arcadia = window.Arcadia || {};
         { wch: 14 }
       ];
 
-      // ✅ Reforzar formato de miles en columna Valor (F)
-      // Esto ayuda cuando algunos entornos ignoran el numFmt del estilo de celda en el AOA.
       try {
         const ref = ws['!ref'];
         if (ref) {
@@ -350,9 +362,8 @@ window.Arcadia = window.Arcadia || {};
       `;
 
       const sumByTipos = (items, tipos) => {
-        const set = new Set(tipos || []);
         return (items || []).reduce((acc, it) => {
-          if (!set.has(it.tipo)) return acc;
+          if (!this.isTipoInList(it.tipo, tipos)) return acc;
           const v = Number(it.valor || 0);
           return acc + v;
         }, 0);
@@ -379,11 +390,13 @@ window.Arcadia = window.Arcadia || {};
 
         items.forEach(it => {
           const valor = Number(it.valor || 0);
+          const tipoCanon = this.canonicalTipo(it.tipo);
+
           filas.push(`
             <tr>
               <td style="border:1px solid #000;">${Utils.escapeHtml(g.fecha)}</td>
               <td style="border:1px solid #000;">${Utils.escapeHtml(g.punto)}</td>
-              <td style="border:1px solid #000;">${Utils.escapeHtml(it.tipo || '')}</td>
+              <td style="border:1px solid #000;">${Utils.escapeHtml(tipoCanon || '')}</td>
               <td style="border:1px solid #000;">${Utils.escapeHtml(it.tercero || '')}</td>
               <td style="border:1px solid #000;">${Utils.escapeHtml(it.detalle || '')}</td>
               <td style="border:1px solid #000;text-align:right;font-weight:600;">${Utils.formatNumber(valor)}</td>
@@ -481,8 +494,8 @@ window.Arcadia = window.Arcadia || {};
         const wb = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
 
-        // ✅ Primero XLSX, si falla entonces XLS
         const filenameXlsx = `reporte_${rangeTxt}.xlsx`;
+
         try{
           window.XLSX.writeFile(wb, filenameXlsx, { bookType: 'xlsx', cellStyles: true });
           UI.reportStatus.textContent = `Excel XLSX generado con formato de reporte (${detalles.length} detalles).`;
@@ -494,7 +507,6 @@ window.Arcadia = window.Arcadia || {};
         }
 
         this.updateExportButtonsVisibility();
-
       }catch(e){
         console.error(e);
         UI.reportStatus.textContent = 'Error al exportar Excel.';
@@ -526,9 +538,9 @@ window.Arcadia = window.Arcadia || {};
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
         const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
         const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
+
         this.downloadBlob(blob, `reporte_${rangeTxt}.html`);
         UI.reportStatus.textContent = `HTML generado con formato de reporte (${detallesCount} detalles).`;
-
       }catch(e){
         console.error(e);
         UI.reportStatus.textContent = 'Error al exportar HTML.';
@@ -538,14 +550,20 @@ window.Arcadia = window.Arcadia || {};
 
     async ensureDataForRange(desde, hasta){
       const r = state.reporte.detallesRange || {};
+
       if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles)) {
         const detallesSrv = await Api.cargarDetallesDesdeServidor(desde, hasta);
-        state.reporte.detalles = detallesSrv || [];
+
+        // ✅ Canonicalizar tipos al ingresar al estado del reporte
+        state.reporte.detalles = (detallesSrv || []).map(d => ({
+          ...d,
+          tipo: this.canonicalTipo(d.tipo || '')
+        }));
+
         state.reporte.detallesRange = { desde, hasta };
         state.reporte.detallesSource = 'server';
       }
     }
   });
-
 })(window.Arcadia);
 

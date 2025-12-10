@@ -3,6 +3,7 @@ window.Arcadia = window.Arcadia || {};
   'use strict';
   const { CONFIG, Utils, UI, Api } = A;
   const ADMIN_PASS = A.ADMIN_PASS;
+
   const state = {
     session: { date: null, pos: null },
     reporte: {
@@ -14,12 +15,14 @@ window.Arcadia = window.Arcadia || {};
     },
     reportUnlocked: false
   };
+
   function normalizeText(s){
     return String(s || '')
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '');
   }
+
   const App = {
     init(){
       this.populatePuntoVentaSelect();
@@ -30,13 +33,17 @@ window.Arcadia = window.Arcadia || {};
       this.updateNetworkStatus();
       window.addEventListener('online', () => this.updateNetworkStatus());
       window.addEventListener('offline', () => this.updateNetworkStatus());
+
       const ayer = Utils.yesterdayISO();
       if (UI.fechaDesde) UI.fechaDesde.value = ayer;
       if (UI.fechaHasta) UI.fechaHasta.value = ayer;
+
       UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
       if (UI.reportPass) UI.reportPass.value = '';
+
       UI.reportTableWrapper?.classList.add('hidden');
     },
+
     /* ---------- Helpers de reglas ---------- */
     requiresEmpresaForTipo(tipo){
       return (CONFIG.TIPOS_REQUIEREN_EMPRESA || []).includes(tipo);
@@ -58,6 +65,7 @@ window.Arcadia = window.Arcadia || {};
       }
       return true;
     },
+
     /* ---------- Navegación ---------- */
     bindNav(){
       UI.goReportBtn.addEventListener('click', () => {
@@ -79,16 +87,20 @@ window.Arcadia = window.Arcadia || {};
         }
       });
     },
+
     showSection(name){
       UI.home.classList.toggle('hidden', name!=='home');
       UI.capture.classList.toggle('hidden', name!=='capture');
       UI.report.classList.toggle('hidden', name!=='report');
+
       if(name==='capture' && !(state.session.date && state.session.pos)){
         UI.fechaInput.value = Utils.yesterdayISO();
       }
+
       if(name==='report'){
         UI.reportTag.textContent = 'Reporte';
         UI.reportTableWrapper?.classList.add('hidden');
+
         if (!state.reportUnlocked) {
           UI.reportGate.classList.remove('hidden');
           UI.reportControls.classList.add('hidden');
@@ -98,6 +110,7 @@ window.Arcadia = window.Arcadia || {};
         }
       }
     },
+
     /* ---------- Captura ---------- */
     populatePuntoVentaSelect(){
       const select = UI.puntoVentaInput;
@@ -106,26 +119,32 @@ window.Arcadia = window.Arcadia || {};
         select.innerHTML += `<option value="${pv}">${pv}</option>`;
       });
     },
+
     bindCaptureEvents(){
       document.getElementById('start-session-btn').addEventListener('click', () => {
         const fecha = UI.fechaInput.value;
         const puntoVenta = UI.puntoVentaInput.value;
+
         if (!fecha || !puntoVenta) {
           alert('Por favor, seleccione fecha y punto de venta.');
           return;
         }
+
         const ayer = Utils.yesterdayISO();
         if (fecha !== ayer && !confirm(`Vas a abrir la sesión para ${fecha} (no es el día anterior: ${ayer}). ¿Continuar?`)) {
           return;
         }
+
         const prevKey = this.getStorageKey();
         if (prevKey && localStorage.getItem(prevKey)) {
           if (!confirm('Hay datos locales de la sesión anterior. Si cambias de sesión podrían perderse. ¿Continuar?')) {
             return;
           }
         }
+
         this.startSession(fecha, puntoVenta);
       });
+
       document.getElementById('add-nomina-btn')
         .addEventListener('click', () =>
           this.addRow({
@@ -135,6 +154,7 @@ window.Arcadia = window.Arcadia || {};
             styleHint: 'credito-nomina'
           })
         );
+
       document.getElementById('add-formulas-btn')
         .addEventListener('click', () =>
           this.addRow({
@@ -144,6 +164,7 @@ window.Arcadia = window.Arcadia || {};
             styleHint: 'credito-formulas'
           })
         );
+
       document.getElementById('add-kardex-btn')
         .addEventListener('click', () =>
           this.addRow({
@@ -153,6 +174,7 @@ window.Arcadia = window.Arcadia || {};
             styleHint: 'credito-nomina'
           })
         );
+
       document.getElementById('add-gasto-btn')
         .addEventListener('click', () =>
           this.addRow({
@@ -162,6 +184,7 @@ window.Arcadia = window.Arcadia || {};
             styleHint: 'gasto'
           })
         );
+
       document.getElementById('add-interco-btn')
         .addEventListener('click', () =>
           this.addRow({
@@ -171,32 +194,43 @@ window.Arcadia = window.Arcadia || {};
             styleHint: 'interco'
           })
         );
+
       UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
       UI.recordsBody.addEventListener('change', (e) => this.handleTableInput(e));
       UI.recordsBody.addEventListener('click', (e) => this.handleTableClick(e));
+
       document.getElementById('sendAllBtn').addEventListener('click', () => this.handleSendAll());
       document.getElementById('clearAllBtn').addEventListener('click', () => this.handleClearAll());
     },
+
     handleTableInput(e){
       const target = e.target;
       if (!target.classList.contains('table-input')) return;
+
       const field = target.dataset.field;
       if (field !== 'valor' && field !== 'devoluciones' && field !== 'tercero' && field !== 'detalle') return;
+
       const tr = target.closest('tr');
       if (!tr) return;
+
       if (field === 'valor' || field === 'devoluciones') {
         const val = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const dev = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
         const total = val - dev;
+
         const totalCell = tr.querySelector('.col-total');
         if (totalCell) totalCell.textContent = Utils.formatCurrency(total);
+
         this.updateTotalsDisplay();
       }
+
       this.saveRecords();
     },
+
     handleTableClick(e){
       const btn = e.target.closest('button');
       if (!btn) return;
+
       if (btn.dataset.action === 'delete') {
         const tr = btn.closest('tr');
         if (tr && confirm('¿Eliminar fila?')) {
@@ -206,15 +240,21 @@ window.Arcadia = window.Arcadia || {};
         }
       }
     },
+
     startSession(date, pos, fromStorage = false){
       state.session.date = date;
       state.session.pos = pos;
+
       this.saveSession();
+
       UI.sessionDate.textContent = date;
       UI.sessionPos.textContent = pos;
+
       document.getElementById('session-setup-fields').classList.add('hidden');
       UI.sessionInfo.classList.remove('hidden');
+
       const key = this.getStorageKey();
+
       if (fromStorage) {
         this.loadRecords();
       } else {
@@ -235,8 +275,10 @@ window.Arcadia = window.Arcadia || {};
           this.saveRecords();
         }
       }
+
       this.updateTotalsDisplay();
     },
+
     createInitialRows(){
       UI.recordsBody.innerHTML = '';
       const initialData = [
@@ -248,6 +290,7 @@ window.Arcadia = window.Arcadia || {};
       initialData.forEach(data => this.addRow(data, true));
       this.saveRecords();
     },
+
     addRow(data = {}, skipSave = false){
       const defaults = {
         id: Utils.uuidv4(),
@@ -260,16 +303,21 @@ window.Arcadia = window.Arcadia || {};
         category: 'default',
         styleHint: 'electronica'
       };
+
       const record = { ...defaults, ...data };
       const tr = document.createElement('tr');
       tr.dataset.id = record.id;
       tr.dataset.category = record.category;
       tr.dataset.styleHint = record.styleHint;
       tr.classList.add(`row-style-${record.styleHint}`);
+
       const total = Utils.safeNumber(record.valor) - Utils.safeNumber(record.devoluciones);
+
       const requiereEmpresa = this.requiresEmpresaForTipo(record.tipo);
       const terceroDisabled = this.disableTerceroForTipo(record.tipo);
+
       let terceroCellHtml = `<input type="text" class="table-input" data-field="tercero" value="${record.tercero || ''}">`;
+
       if (requiereEmpresa) {
         const optionsHtml = CONFIG.EMPRESAS_GRUPO
           .map(empresa => `<option value="${empresa}" ${record.tercero === empresa ? 'selected' : ''}>${empresa}</option>`)
@@ -292,6 +340,7 @@ window.Arcadia = window.Arcadia || {};
           >
         `;
       }
+
       tr.innerHTML = `
         <td class="truncate" title="${Utils.escapeHtml(record.tipo)}">${Utils.escapeHtml(record.tipo)}</td>
         <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="valor" value="${record.valor || ''}" placeholder="0"></td>
@@ -301,22 +350,30 @@ window.Arcadia = window.Arcadia || {};
         <td><input type="text" class="table-input" data-field="detalle" value="${record.detalle || ''}"></td>
         <td class="col-action">${record.isRemovable ? '<button class="btn btn-danger btn-small" data-action="delete">Borrar</button>' : ''}</td>
       `;
+
       UI.recordsBody.appendChild(tr);
+
       const firstInput = tr.querySelector('[data-field="valor"]');
       if (firstInput) firstInput.focus();
+
       if (!skipSave) {
         this.saveRecords();
         this.updateTotalsDisplay();
       }
+
       return tr;
     },
+
     getCalculatedState(){
       let efectivo = 0, electronica = 0, credito = 0, gasto = 0;
+
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
         const currentTotal = valor - devoluciones;
+
         tr.querySelector('[data-field="total"]').textContent = Utils.formatCurrency(currentTotal);
+
         const category = tr.dataset.category;
         switch (category) {
           case 'efectivo': efectivo += currentTotal; break;
@@ -325,12 +382,14 @@ window.Arcadia = window.Arcadia || {};
           case 'gasto': gasto += currentTotal; break;
         }
       });
+
       const ventasNetoEfectivo = efectivo - credito;
       const ventasElectronicas = electronica;
       const ventasCredito      = credito;
       const ventasGlobal       = ventasNetoEfectivo + ventasElectronicas + ventasCredito;
       const gastosEfectivo     = gasto;
       const esperadoTesoreria  = ventasNetoEfectivo - gastosEfectivo;
+
       return {
         summary: {
           ventasNetoEfectivo,
@@ -342,8 +401,10 @@ window.Arcadia = window.Arcadia || {};
         }
       };
     },
+
     updateTotalsDisplay(){
       const s = this.getCalculatedState().summary;
+
       UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total')
         .textContent = Utils.formatCurrency(s.ventasNetoEfectivo);
       UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total')
@@ -357,11 +418,13 @@ window.Arcadia = window.Arcadia || {};
       UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total')
         .textContent = Utils.formatCurrency(s.esperadoTesoreria);
     },
+
     getRecordsFromTable(){
       const records = [];
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
+
         if (valor !== 0 || devoluciones !== 0) {
           records.push({
             id: tr.dataset.id,
@@ -377,16 +440,20 @@ window.Arcadia = window.Arcadia || {};
       });
       return records;
     },
+
     async handleSendAll(){
       const records = this.getRecordsFromTable();
       if (records.length === 0) {
         alert('No hay registros con valores para guardar.');
         return;
       }
+
       if (!this.validateEmpresaGrupo(records)) return;
+
       const btn = document.getElementById('sendAllBtn');
       btn.disabled = true;
       btn.textContent = 'Guardando...';
+
       const detailData = records.map(r => {
         const neto = Number(r.total || 0);
         return {
@@ -399,7 +466,9 @@ window.Arcadia = window.Arcadia || {};
           valor: neto
         };
       });
+
       const dataToSend = [...detailData];
+
       try{
         const url = CONFIG.SCRIPT_URL + (CONFIG.API_KEY ? ('?key='+encodeURIComponent(CONFIG.API_KEY)) : '');
         const response = await fetch(url, {
@@ -407,6 +476,7 @@ window.Arcadia = window.Arcadia || {};
           body: JSON.stringify(dataToSend),
           headers:{'Content-Type':'text/plain;charset=utf-8'}
         });
+
         const text = await response.text();
         let result;
         try {
@@ -414,9 +484,11 @@ window.Arcadia = window.Arcadia || {};
         } catch {
           throw new Error('Respuesta no válida del servidor.');
         }
+
         if (!response.ok || result.result !== 'success') {
           throw new Error(result.error || `Error del servidor (HTTP ${response.status}).`);
         }
+
         alert('¡Registros guardados con éxito!');
         btn.textContent = '✔️ Guardado';
       }catch(error){
@@ -426,6 +498,7 @@ window.Arcadia = window.Arcadia || {};
         btn.textContent = '📤 Guardar Todo en la Nube';
       }
     },
+
     handleClearAll(){
       if(confirm('¿Finalizar el reporte? Se limpiarán todos los registros y la sesión.')) {
         localStorage.removeItem(this.getStorageKey());
@@ -433,25 +506,31 @@ window.Arcadia = window.Arcadia || {};
         location.reload();
       }
     },
+
     updateNetworkStatus(){
       const online = navigator.onLine;
       UI.networkStatus?.classList.toggle('status-online', online);
       UI.networkStatus?.classList.toggle('status-offline', !online);
       if (UI.networkStatus) UI.networkStatus.textContent = online ? 'Online' : 'Offline';
     },
+
     getStorageKey(){
       if (!state.session.date || !state.session.pos) return null;
       return `${CONFIG.LS_RECORDS_KEY}_${state.session.date}_${state.session.pos}`;
     },
+
     saveSession(){
       localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify(state.session));
     },
+
     loadSession(){
       state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null };
     },
+
     saveRecords(){
       const key = this.getStorageKey();
       if (!key) return;
+
       const records = [];
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         records.push({
@@ -466,53 +545,75 @@ window.Arcadia = window.Arcadia || {};
           isRemovable: !!tr.querySelector('[data-action="delete"]'),
         });
       });
+
       localStorage.setItem(key, JSON.stringify(records));
     },
+
     loadRecords(){
       const key = this.getStorageKey();
       if (!key) return;
+
       const savedRecords = JSON.parse(localStorage.getItem(key)) || [];
       UI.recordsBody.innerHTML = '';
+
       if (savedRecords.length > 0) {
         savedRecords.forEach(rec => this.addRow(rec, true));
       } else {
         this.createInitialRows();
       }
     },
+
     /* ---------- Reporte (protegido y simplificado) ---------- */
     bindReportEvents(){
       UI.btnGateOpen.addEventListener('click', () => {
         const pass = (UI.reportPass.value || '').trim();
         if(!pass){ alert('Ingresa la clave.'); return; }
         if(pass !== ADMIN_PASS){ alert('Clave incorrecta.'); return; }
+
         state.reportUnlocked = true;
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
+
         this.toggleExportButtons(true);
         this.updateExportButtonsVisibility();
+
         if (UI.reportPass) UI.reportPass.value = '';
       });
+
       UI.btnExportarExcel.addEventListener('click', () => {
         if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
         this.exportarExcelDetalles();
       });
+
       UI.btnExportarHTML?.addEventListener('click', () => {
         if(!state.reportUnlocked){ alert('Debes desbloquear el reporte con la clave.'); return; }
         this.exportarHTMLDetalles();
       });
     },
+
     toggleExportButtons(enabled){
       if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = !enabled;
       if (UI.btnExportarHTML) UI.btnExportarHTML.disabled = !enabled;
     },
+
+    isExcelLibAvailable(){
+      return !!(window.XLSX && window.XLSX.utils && typeof window.XLSX.writeFile === 'function');
+    },
+
     updateExportButtonsVisibility(){
-      const xlsxSupported = !!(window.XLSX && window.XLSX.utils);
-      if (xlsxSupported) {
+      const excelSupported = this.isExcelLibAvailable();
+
+      // Si hay librería Excel, ocultamos el botón HTML.
+      // Si no hay, mostramos HTML y deshabilitamos Excel para evitar falsas expectativas.
+      if (excelSupported) {
         UI.btnExportarHTML?.classList.add('hidden');
+        if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = false;
       } else {
         UI.btnExportarHTML?.classList.remove('hidden');
+        if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = true;
       }
     },
+
     /* =========================================================
        ✅ FORMATO DE REPORTE (EXPORT)
        Columnas finales:
@@ -529,19 +630,24 @@ window.Arcadia = window.Arcadia || {};
         const f = r.fecha || '';
         const p = r.punto || '';
         const tipo = String(r.tipo || '');
+
         if (!f || !p || !tipo) return false;
         if (f < desde || f > hasta) return false;
         if (tipo.startsWith('Total ')) return false;
+
         return true;
       });
     },
+
     sortDetallesParaExport(rows){
       const order = CONFIG.EXPORT_TIPO_ORDER || [];
       const idx = new Map(order.map((t,i)=>[t,i]));
+
       return [...rows].sort((a,b) => {
         const ia = idx.has(a.tipo) ? idx.get(a.tipo) : 9999;
         const ib = idx.has(b.tipo) ? idx.get(b.tipo) : 9999;
         if (ia !== ib) return ia - ib;
+
         const ta = normalizeText(a.tipo);
         const tb = normalizeText(b.tipo);
         if (ta < tb) return -1;
@@ -549,24 +655,30 @@ window.Arcadia = window.Arcadia || {};
         return 0;
       });
     },
+
     groupByFechaPunto(rows){
       const map = new Map();
+
       rows.forEach(r => {
         const key = `${r.fecha}__${r.punto}`;
         if (!map.has(key)) map.set(key, { fecha: r.fecha, punto: r.punto, items: [] });
         map.get(key).items.push(r);
       });
+
       const groups = Array.from(map.values());
       groups.sort((a,b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         return normalizeText(a.punto) < normalizeText(b.punto) ? -1 : 1;
       });
+
       groups.forEach(g => g.items = this.sortDetallesParaExport(g.items));
       return groups;
     },
+
     buildReporteWorksheet(desde, hasta){
       const detalles = this.getDetallesFiltrados(desde, hasta);
       const groups = this.groupByFechaPunto(detalles);
+
       const HEADERS = [
         'Fecha',
         'Punto',
@@ -575,8 +687,10 @@ window.Arcadia = window.Arcadia || {};
         'Detalle',
         'Valor'
       ];
+
       const thin = { style: 'thin', color: { rgb: '000000' } };
       const baseBorder = { top: thin, bottom: thin, left: thin, right: thin };
+
       const styles = {
         header: {
           font: { bold: true, color: { rgb: '000000' } },
@@ -605,14 +719,18 @@ window.Arcadia = window.Arcadia || {};
           numFmt: '#,##0'
         }
       };
+
       const headerRow = () => HEADERS.map(h => ({ v: h, t: 's', s: styles.header }));
+
       const safeExcelStr = (s) => String(s || '').replace(/"/g, '""');
+
       const sumifsFormula = (valorRange, tipoRange, tipos = []) => {
         if (!tipos.length) return '0';
         return tipos
           .map(t => `SUMIFS(${valorRange},${tipoRange},"${safeExcelStr(t)}")`)
           .join('+');
       };
+
       const sumByTipos = (items, tipos) => {
         const set = new Set(tipos || []);
         return (items || []).reduce((acc, it) => {
@@ -621,21 +739,25 @@ window.Arcadia = window.Arcadia || {};
           return acc + v;
         }, 0);
       };
+
       const aoa = [];
       let rowCursor = 0;
-      const originRow = 1; // Ahora el primer encabezado queda en fila 1
+      const originRow = 1;
+
       const addRow = (cells) => {
         aoa.push(cells);
         rowCursor++;
       };
+
       groups.forEach(group => {
         const { fecha, punto, items } = group;
         if (!items.length) return;
-        // Encabezado del bloque
+
         addRow(headerRow());
         const excelHeaderRow = originRow + (rowCursor - 1);
-        // Detalle
+
         const firstDetailExcelRow = excelHeaderRow + 1;
+
         items.forEach((r) => {
           addRow([
             { v: fecha, t: 's', s: styles.cell },
@@ -646,26 +768,31 @@ window.Arcadia = window.Arcadia || {};
             { v: Number(r.valor || 0), t: 'n', s: styles.number }
           ]);
         });
+
         const lastDetailExcelRow = firstDetailExcelRow + items.length - 1;
-        // Con origin A1:
-        // A Fecha, B Punto, C Tipo, D Tercero, E Detalle, F Valor
+
         const tipoRange  = `$C$${firstDetailExcelRow}:$C$${lastDetailExcelRow}`;
         const valorRange = `$F$${firstDetailExcelRow}:$F$${lastDetailExcelRow}`;
+
         const creditoTypes     = CONFIG.TIPOS_REQUIEREN_EMPRESA || [];
         const efectivoTypes    = CONFIG.TIPOS_EFECTIVO || [];
         const electronicaTypes = CONFIG.TIPOS_ELECTRONICOS || [];
         const gastoTypes       = CONFIG.TIPOS_GASTO || [];
+
         const fCredito     = sumifsFormula(valorRange, tipoRange, creditoTypes);
         const fEfectivo    = sumifsFormula(valorRange, tipoRange, efectivoTypes);
         const fElectronica = sumifsFormula(valorRange, tipoRange, electronicaTypes);
         const fGasto       = sumifsFormula(valorRange, tipoRange, gastoTypes);
+
         const creditoVal      = sumByTipos(items, creditoTypes);
         const efectivoBruto   = sumByTipos(items, efectivoTypes);
         const electronicaVal  = sumByTipos(items, electronicaTypes);
         const gastoVal        = sumByTipos(items, gastoTypes);
+
         const efectivoNetoVal = efectivoBruto - creditoVal;
         const totalVentasVal  = efectivoNetoVal + electronicaVal + creditoVal;
         const tesoreriaVal    = efectivoNetoVal - gastoVal;
+
         const addTotalRow = (label, formula) => {
           addRow([
             { v: fecha, t: 's', s: styles.totalRow },
@@ -676,6 +803,7 @@ window.Arcadia = window.Arcadia || {};
             { f: formula, t: 'n', s: styles.totalNumber }
           ]);
         };
+
         if (efectivoNetoVal !== 0) {
           addTotalRow('Total ventas en efectivo', `=(${fEfectivo})-(${fCredito})`);
         }
@@ -695,9 +823,10 @@ window.Arcadia = window.Arcadia || {};
           addTotalRow('Total dinero a recibir por tesoreria', `=((${fEfectivo})-(${fCredito}))-(${fGasto})`);
         }
       });
+
       const ws = XLSX.utils.aoa_to_sheet([]);
       XLSX.utils.sheet_add_aoa(ws, aoa, { origin: 'A1' });
-      // ✅ Inmoviliza la fila 1
+
       ws['!freeze'] = {
         xSplit: 0,
         ySplit: 1,
@@ -705,21 +834,24 @@ window.Arcadia = window.Arcadia || {};
         activePane: 'bottomLeft',
         state: 'frozen'
       };
-      // Anchos aproximados
+
       ws['!cols'] = [
-        { wch: 12 },  // A Fecha
-        { wch: 14 },  // B Punto
-        { wch: 40 },  // C Tipo
-        { wch: 28 },  // D Tercero
-        { wch: 32 },  // E Detalle
-        { wch: 14 }   // F Valor
+        { wch: 12 },
+        { wch: 14 },
+        { wch: 40 },
+        { wch: 28 },
+        { wch: 32 },
+        { wch: 14 }
       ];
+
       return ws;
     },
+
     /* ---------- Generador HTML reutilizable ---------- */
     buildReporteHTMLString(desde, hasta){
       const detalles = this.getDetallesFiltrados(desde, hasta);
       const groups = this.groupByFechaPunto(detalles);
+
       const headerHtml = `
         <tr>
           <th style="background:#e8f0fe;font-weight:bold;border:1px solid #000;">Fecha</th>
@@ -730,6 +862,7 @@ window.Arcadia = window.Arcadia || {};
           <th style="background:#e8f0fe;font-weight:bold;border:1px solid #000;">Valor</th>
         </tr>
       `;
+
       const sumByTipos = (items, tipos) => {
         const set = new Set(tipos || []);
         return (items || []).reduce((acc, it) => {
@@ -738,7 +871,9 @@ window.Arcadia = window.Arcadia || {};
           return acc + v;
         }, 0);
       };
+
       const filas = [];
+
       const totalRow = (fecha, punto, label, value) => `
         <tr>
           <td style="border:1px solid #000;font-weight:bold;">${Utils.escapeHtml(fecha)}</td>
@@ -749,10 +884,13 @@ window.Arcadia = window.Arcadia || {};
           <td style="border:1px solid #000;text-align:right;font-weight:bold;">${Utils.formatNumber(value)}</td>
         </tr>
       `;
+
       groups.forEach(g => {
         const items = g.items || [];
         if (!items.length) return;
+
         filas.push(headerHtml);
+
         items.forEach(it => {
           const valor = Number(it.valor || 0);
           filas.push(`
@@ -766,17 +904,21 @@ window.Arcadia = window.Arcadia || {};
             </tr>
           `);
         });
+
         const creditoTypes     = CONFIG.TIPOS_REQUIEREN_EMPRESA || [];
         const efectivoTypes    = CONFIG.TIPOS_EFECTIVO || [];
         const electronicaTypes = CONFIG.TIPOS_ELECTRONICOS || [];
         const gastoTypes       = CONFIG.TIPOS_GASTO || [];
+
         const creditoVal      = sumByTipos(items, creditoTypes);
         const efectivoBruto   = sumByTipos(items, efectivoTypes);
         const electronicaVal  = sumByTipos(items, electronicaTypes);
         const gastoVal        = sumByTipos(items, gastoTypes);
+
         const efectivoNetoVal = efectivoBruto - creditoVal;
         const totalVentasVal  = efectivoNetoVal + electronicaVal + creditoVal;
         const tesoreriaVal    = efectivoNetoVal - gastoVal;
+
         if (efectivoNetoVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total ventas en efectivo', efectivoNetoVal));
         if (electronicaVal !== 0)  filas.push(totalRow(g.fecha, g.punto, 'Total ventas por medios electronicos', electronicaVal));
         if (creditoVal !== 0)      filas.push(totalRow(g.fecha, g.punto, 'Total ventas a credito', creditoVal));
@@ -784,6 +926,7 @@ window.Arcadia = window.Arcadia || {};
         if (gastoVal !== 0)        filas.push(totalRow(g.fecha, g.punto, 'Total gastos en efectivo', gastoVal));
         if (tesoreriaVal !== 0)    filas.push(totalRow(g.fecha, g.punto, 'Total dinero a recibir por tesoreria', tesoreriaVal));
       });
+
       const htmlDoc = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -803,8 +946,10 @@ window.Arcadia = window.Arcadia || {};
   </table>
 </body>
 </html>`.trim();
+
       return { htmlDoc, detallesCount: detalles.length };
     },
+
     /* ---------- Descarga de blobs ---------- */
     downloadBlob(blob, filename){
       const url = URL.createObjectURL(blob);
@@ -816,82 +961,79 @@ window.Arcadia = window.Arcadia || {};
       a.remove();
       URL.revokeObjectURL(url);
     },
-    /* ---------- Excel ---------- */
+
+    /* ---------- Excel: SOLO XLS ---------- */
     async exportarExcelDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
+
       UI.reportStatus.textContent = 'Cargando detalles del servidor...';
+
       try{
         await this.ensureDataForRange(desde, hasta);
+
         const detalles = this.getDetallesFiltrados(desde, hasta);
         if (!detalles.length){
           alert('No hay detalles para exportar en el rango seleccionado.');
           UI.reportStatus.textContent = 'Sin datos para exportar.';
           return;
         }
-        const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
-        const baseName = `reporte_${rangeTxt}`;
 
-        // ✅ Ruta principal: intenta XLSX y si falla usa XLS
-        if (window.XLSX && window.XLSX.utils) {
-          const ws = this.buildReporteWorksheet(desde, hasta);
-          const wb = window.XLSX.utils.book_new();
-          window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
-
-          // 1) Intento XLSX
-          try {
-            window.XLSX.writeFile(wb, `${baseName}.xlsx`, { bookType: 'xlsx', cellStyles: true });
-            UI.reportStatus.textContent = `Excel XLSX generado con formato de reporte (${detalles.length} detalles).`;
-            return;
-          } catch (errXlsx) {
-            console.warn('Fallo al generar XLSX, intentando XLS...', errXlsx);
-          }
-
-          // 2) Intento XLS mediante librería
-          try {
-            window.XLSX.writeFile(wb, `${baseName}.xls`, { bookType: 'xls', cellStyles: true });
-            UI.reportStatus.textContent = `Excel XLS generado como respaldo (${detalles.length} detalles).`;
-            return;
-          } catch (errXls) {
-            console.warn('Fallo al generar XLS con librería, usando modo compatible...', errXls);
-          }
-
-          // 3) Respaldo final: HTML compatible descargado como .xls
-          const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
-          const blob = new Blob([htmlDoc], { type:'application/vnd.ms-excel;charset=utf-8;' });
-          this.downloadBlob(blob, `${baseName}.xls`);
-          UI.reportStatus.textContent = `XLS generado en modo compatible (${detallesCount} detalles).`;
+        if (!this.isExcelLibAvailable()){
+          UI.reportStatus.textContent = 'No se encontró la librería de Excel.';
+          alert('No se pudo generar el XLS porque la librería de Excel no está disponible. Usa el botón HTML como respaldo.');
+          this.updateExportButtonsVisibility();
           return;
         }
 
-        // ✅ Sin librería
-        UI.reportStatus.textContent = 'No se encontró la librería de Excel. Verifica conexión o el CDN.';
-        alert('No se pudo generar el Excel porque la librería no está disponible. Intenta nuevamente con conexión a internet.');
-        this.updateExportButtonsVisibility();
+        const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
+        const ws = this.buildReporteWorksheet(desde, hasta);
+        const wb = window.XLSX.utils.book_new();
+        window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+
+        const filename = `reporte_${rangeTxt}.xls`;
+
+        // ✅ Intento directo a XLS (sin HTML dentro de este botón)
+        window.XLSX.writeFile(wb, filename, { bookType: 'xls', cellStyles: true });
+
+        UI.reportStatus.textContent = `Excel XLS generado con formato de reporte (${detalles.length} detalles).`;
       }catch(e){
         console.error(e);
-        UI.reportStatus.textContent = 'Error al exportar detalles.';
-        alert('No se pudo exportar el reporte.');
+        UI.reportStatus.textContent = 'Error al exportar XLS.';
+        alert(
+          'No se pudo exportar el XLS. ' +
+          'Si el problema persiste, usa el botón HTML como respaldo.'
+        );
+        this.updateExportButtonsVisibility();
       }
     },
+
     async exportarHTMLDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
+
       UI.reportStatus.textContent = 'Cargando detalles del servidor...';
+
       try{
         await this.ensureDataForRange(desde, hasta);
+
         const detalles = this.getDetallesFiltrados(desde, hasta);
         if (!detalles.length){
           alert('No hay detalles para exportar en el rango seleccionado.');
           UI.reportStatus.textContent = 'Sin datos para exportar.';
           return;
         }
+
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
         const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
+
         const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
         this.downloadBlob(blob, `reporte_${rangeTxt}.html`);
+
         UI.reportStatus.textContent = `HTML generado con formato de reporte (${detallesCount} detalles).`;
       }catch(e){
         console.error(e);
@@ -899,6 +1041,7 @@ window.Arcadia = window.Arcadia || {};
         alert('No se pudo exportar el HTML.');
       }
     },
+
     async ensureDataForRange(desde, hasta){
       const r = state.reporte.detallesRange || {};
       if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles)) {
@@ -909,8 +1052,10 @@ window.Arcadia = window.Arcadia || {};
       }
     }
   };
+
   A.App = App;
   A.state = state;
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => App.init());
   } else {

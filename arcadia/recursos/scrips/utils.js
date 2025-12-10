@@ -1,8 +1,6 @@
 window.Arcadia = window.Arcadia || {};
-
 (function (A) {
   'use strict';
-
   const Utils = {
     safeNumber(val){
       const cleanStr = String(val || '0').replace(/\./g, '').replace(/,/g, '.');
@@ -49,8 +47,76 @@ window.Arcadia = window.Arcadia || {};
         date.setDate(date.getDate() + 1);
       }
       return dates;
+    },
+
+    /* =========================================================
+       ✅ CARGA DINÁMICA DE SCRIPTS
+       - Útil para recuperar la librería de Excel si el CDN fijo
+         dejó de funcionar o el archivo local no está disponible.
+       ========================================================= */
+    loadScript(src, opts = {}){
+      const { test, timeoutMs = 12000 } = opts;
+      return new Promise((resolve, reject) => {
+        let done = false;
+        const finish = (ok, err) => {
+          if (done) return;
+          done = true;
+          ok ? resolve(true) : reject(err);
+        };
+
+        try{
+          if (typeof test === 'function' && test()) {
+            finish(true);
+            return;
+          }
+        }catch(_){}
+
+        // Evitar duplicar el mismo src exacto ya cargado
+        const already = Array.from(document.scripts || []).some(s => s && s.src && s.src === src);
+        if (already) {
+          try{
+            if (!test || test()) finish(true);
+            else finish(false, new Error('Script existente pero test no pasó: ' + src));
+          }catch(e){
+            finish(false, e);
+          }
+          return;
+        }
+
+        const s = document.createElement('script');
+        s.src = src;
+        s.async = true;
+
+        s.onload = () => {
+          try{
+            if (typeof test === 'function') {
+              if (test()) finish(true);
+              else finish(false, new Error('Script cargado pero test no pasó: ' + src));
+            } else {
+              finish(true);
+            }
+          }catch(e){
+            finish(false, e);
+          }
+        };
+
+        s.onerror = () => finish(false, new Error('No se pudo cargar el script: ' + src));
+
+        document.head.appendChild(s);
+
+        if (timeoutMs) {
+          setTimeout(() => {
+            try{
+              if (typeof test === 'function' && test()) finish(true);
+              else finish(false, new Error('Tiempo de espera al cargar: ' + src));
+            }catch(e){
+              finish(false, e);
+            }
+          }, timeoutMs);
+        }
+      });
     }
   };
-
   A.Utils = Utils;
 })(window.Arcadia);
+

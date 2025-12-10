@@ -211,11 +211,15 @@
   <script src="./recursos/scrips/utils.js"></script>
   <script src="./recursos/scrips/api.js"></script>
   <script src="./recursos/scrips/ui.js"></script>
+
   <!-- ✅ XLSX con soporte de estilos -->
   <!-- 1) Intento local (para trabajar offline) -->
   <script src="./recursos/scrips/vendor/xlsx-js-style.full.min.js"></script>
-  <!-- 2) Respaldo CDN (si hay internet) -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.full.min.js"></script>
+
+  <!-- 2) Se eliminó el CDN fijo.
+       La app intentará cargar automáticamente un CDN confiable si no detecta XLSX,
+       evitando fallos por cambios de URL/versiones o doble carga. -->
+
   <script src="./recursos/scrips/app.js"></script>
 </body>
 </html>

@@ -31,6 +31,7 @@ window.Arcadia = window.Arcadia || {};
       this.bindCaptureEvents();
       this.bindReportEvents();
       this.updateNetworkStatus();
+
       window.addEventListener('online', () => this.updateNetworkStatus());
       window.addEventListener('offline', () => this.updateNetworkStatus());
 
@@ -39,8 +40,8 @@ window.Arcadia = window.Arcadia || {};
       if (UI.fechaHasta) UI.fechaHasta.value = ayer;
 
       UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
-      if (UI.reportPass) UI.reportPass.value = '';
 
+      if (UI.reportPass) UI.reportPass.value = '';
       UI.reportTableWrapper?.classList.add('hidden');
     },
 
@@ -76,9 +77,11 @@ window.Arcadia = window.Arcadia || {};
           if (UI.reportPass) UI.reportPass.value = '';
         }
       });
+
       UI.goCaptureBtn.addEventListener('click', () => this.showSection('capture'));
       UI.backHome1.addEventListener('click', () => this.showSection('home'));
       UI.backHome2.addEventListener('click', () => this.showSection('home'));
+
       UI.resumeLastBtn.addEventListener('click', () => {
         if(state.session.date && state.session.pos){
           this.showSection('capture');
@@ -106,7 +109,8 @@ window.Arcadia = window.Arcadia || {};
           UI.reportControls.classList.add('hidden');
           if (UI.reportPass) UI.reportPass.value = '';
         } else {
-          this.updateExportButtonsVisibility();
+          // Intentar revalidar soporte Excel al entrar otra vez
+          this.refreshExportSupport();
         }
       }
     },
@@ -305,6 +309,7 @@ window.Arcadia = window.Arcadia || {};
       };
 
       const record = { ...defaults, ...data };
+
       const tr = document.createElement('tr');
       tr.dataset.id = record.id;
       tr.dataset.category = record.category;
@@ -424,7 +429,6 @@ window.Arcadia = window.Arcadia || {};
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
-
         if (valor !== 0 || devoluciones !== 0) {
           records.push({
             id: tr.dataset.id,
@@ -479,6 +483,7 @@ window.Arcadia = window.Arcadia || {};
 
         const text = await response.text();
         let result;
+
         try {
           result = JSON.parse(text);
         } catch {
@@ -565,17 +570,22 @@ window.Arcadia = window.Arcadia || {};
 
     /* ---------- Reporte (protegido y simplificado) ---------- */
     bindReportEvents(){
-      UI.btnGateOpen.addEventListener('click', () => {
+      UI.btnGateOpen.addEventListener('click', async () => {
         const pass = (UI.reportPass.value || '').trim();
+
         if(!pass){ alert('Ingresa la clave.'); return; }
         if(pass !== ADMIN_PASS){ alert('Clave incorrecta.'); return; }
 
         state.reportUnlocked = true;
+
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
 
+        // Habilita botones en general y luego valida soporte real
         this.toggleExportButtons(true);
-        this.updateExportButtonsVisibility();
+
+        // Intentar cargar librería si falta
+        await this.refreshExportSupport();
 
         if (UI.reportPass) UI.reportPass.value = '';
       });
@@ -600,6 +610,35 @@ window.Arcadia = window.Arcadia || {};
       return !!(window.XLSX && window.XLSX.utils && typeof window.XLSX.writeFile === 'function');
     },
 
+    async ensureExcelLibLoaded(){
+      if (this.isExcelLibAvailable()) return true;
+
+      // Intento 1: reinyectar el archivo local por si no cargó
+      const candidates = [
+        './recursos/scrips/vendor/xlsx-js-style.full.min.js',
+        'https://cdn.jsdelivr.net/npm/xlsx-js-style/dist/xlsx.full.min.js',
+        'https://unpkg.com/xlsx-js-style/dist/xlsx.full.min.js',
+        // fallback sin estilos (último recurso)
+        'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js',
+        'https://unpkg.com/xlsx/dist/xlsx.full.min.js'
+      ];
+
+      for (const src of candidates) {
+        if (this.isExcelLibAvailable()) break;
+        try{
+          await Utils.loadScript(src, {
+            test: () => this.isExcelLibAvailable(),
+            timeoutMs: 12000
+          });
+        }catch(e){
+          // Silencioso para el usuario, pero útil para depuración
+          console.warn('[ExcelLoader] falló:', src, e);
+        }
+      }
+
+      return this.isExcelLibAvailable();
+    },
+
     updateExportButtonsVisibility(){
       const excelSupported = this.isExcelLibAvailable();
 
@@ -611,6 +650,21 @@ window.Arcadia = window.Arcadia || {};
       } else {
         UI.btnExportarHTML?.classList.remove('hidden');
         if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = true;
+      }
+    },
+
+    async refreshExportSupport(){
+      // Solo tiene sentido si el reporte está desbloqueado o estamos en pantalla de reporte
+      try{
+        UI.reportStatus.textContent = 'Verificando librería de Excel...';
+        await this.ensureExcelLibLoaded();
+      }finally{
+        this.updateExportButtonsVisibility();
+        if (this.isExcelLibAvailable()) {
+          UI.reportStatus.textContent = 'Librería de Excel lista.';
+        } else {
+          UI.reportStatus.textContent = 'No se encontró la librería de Excel. Se habilita HTML como respaldo.';
+        }
       }
     },
 
@@ -630,11 +684,9 @@ window.Arcadia = window.Arcadia || {};
         const f = r.fecha || '';
         const p = r.punto || '';
         const tipo = String(r.tipo || '');
-
         if (!f || !p || !tipo) return false;
         if (f < desde || f > hasta) return false;
         if (tipo.startsWith('Total ')) return false;
-
         return true;
       });
     },
@@ -642,12 +694,10 @@ window.Arcadia = window.Arcadia || {};
     sortDetallesParaExport(rows){
       const order = CONFIG.EXPORT_TIPO_ORDER || [];
       const idx = new Map(order.map((t,i)=>[t,i]));
-
       return [...rows].sort((a,b) => {
         const ia = idx.has(a.tipo) ? idx.get(a.tipo) : 9999;
         const ib = idx.has(b.tipo) ? idx.get(b.tipo) : 9999;
         if (ia !== ib) return ia - ib;
-
         const ta = normalizeText(a.tipo);
         const tb = normalizeText(b.tipo);
         if (ta < tb) return -1;
@@ -658,19 +708,16 @@ window.Arcadia = window.Arcadia || {};
 
     groupByFechaPunto(rows){
       const map = new Map();
-
       rows.forEach(r => {
         const key = `${r.fecha}__${r.punto}`;
         if (!map.has(key)) map.set(key, { fecha: r.fecha, punto: r.punto, items: [] });
         map.get(key).items.push(r);
       });
-
       const groups = Array.from(map.values());
       groups.sort((a,b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         return normalizeText(a.punto) < normalizeText(b.punto) ? -1 : 1;
       });
-
       groups.forEach(g => g.items = this.sortDetallesParaExport(g.items));
       return groups;
     },
@@ -721,7 +768,6 @@ window.Arcadia = window.Arcadia || {};
       };
 
       const headerRow = () => HEADERS.map(h => ({ v: h, t: 's', s: styles.header }));
-
       const safeExcelStr = (s) => String(s || '').replace(/"/g, '""');
 
       const sumifsFormula = (valorRange, tipoRange, tipos = []) => {
@@ -754,8 +800,8 @@ window.Arcadia = window.Arcadia || {};
         if (!items.length) return;
 
         addRow(headerRow());
-        const excelHeaderRow = originRow + (rowCursor - 1);
 
+        const excelHeaderRow = originRow + (rowCursor - 1);
         const firstDetailExcelRow = excelHeaderRow + 1;
 
         items.forEach((r) => {
@@ -962,7 +1008,7 @@ window.Arcadia = window.Arcadia || {};
       URL.revokeObjectURL(url);
     },
 
-    /* ---------- Excel: SOLO XLS ---------- */
+    /* ---------- Excel: XLS principal con respaldo XLSX ---------- */
     async exportarExcelDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
 
@@ -981,9 +1027,13 @@ window.Arcadia = window.Arcadia || {};
           return;
         }
 
+        // ✅ Intentar cargar librería si falta
+        UI.reportStatus.textContent = 'Verificando librería de Excel...';
+        await this.ensureExcelLibLoaded();
+
         if (!this.isExcelLibAvailable()){
           UI.reportStatus.textContent = 'No se encontró la librería de Excel.';
-          alert('No se pudo generar el XLS porque la librería de Excel no está disponible. Usa el botón HTML como respaldo.');
+          alert('No se pudo generar el archivo porque la librería de Excel no está disponible. Usa el botón HTML como respaldo.');
           this.updateExportButtonsVisibility();
           return;
         }
@@ -993,17 +1043,24 @@ window.Arcadia = window.Arcadia || {};
         const wb = window.XLSX.utils.book_new();
         window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
 
-        const filename = `reporte_${rangeTxt}.xls`;
+        const filenameXls = `reporte_${rangeTxt}.xls`;
 
-        // ✅ Intento directo a XLS (sin HTML dentro de este botón)
-        window.XLSX.writeFile(wb, filename, { bookType: 'xls', cellStyles: true });
+        try{
+          window.XLSX.writeFile(wb, filenameXls, { bookType: 'xls', cellStyles: true });
+          UI.reportStatus.textContent = `Excel XLS generado con formato de reporte (${detalles.length} detalles).`;
+        }catch(err){
+          console.warn('[ExcelExport] fallo XLS, intentando XLSX:', err);
+          const filenameXlsx = `reporte_${rangeTxt}.xlsx`;
+          window.XLSX.writeFile(wb, filenameXlsx, { bookType: 'xlsx', cellStyles: true });
+          UI.reportStatus.textContent = `Excel XLSX generado como respaldo (${detalles.length} detalles).`;
+        }
 
-        UI.reportStatus.textContent = `Excel XLS generado con formato de reporte (${detalles.length} detalles).`;
+        this.updateExportButtonsVisibility();
       }catch(e){
         console.error(e);
-        UI.reportStatus.textContent = 'Error al exportar XLS.';
+        UI.reportStatus.textContent = 'Error al exportar Excel.';
         alert(
-          'No se pudo exportar el XLS. ' +
+          'No se pudo exportar el Excel. ' +
           'Si el problema persiste, usa el botón HTML como respaldo.'
         );
         this.updateExportButtonsVisibility();
@@ -1030,10 +1087,8 @@ window.Arcadia = window.Arcadia || {};
 
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
         const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
-
         const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
         this.downloadBlob(blob, `reporte_${rangeTxt}.html`);
-
         UI.reportStatus.textContent = `HTML generado con formato de reporte (${detallesCount} detalles).`;
       }catch(e){
         console.error(e);

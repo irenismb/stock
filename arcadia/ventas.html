@@ -206,6 +206,7 @@
       </div>
     </section>
   </main>
+
   <!-- JS dividido (ubicado en /arcadia/recursos/scrips/) -->
   <script src="./recursos/scrips/config.js"></script>
   <script src="./recursos/scrips/utils.js"></script>
@@ -216,11 +217,12 @@
   <!-- 1) Intento local (para trabajar offline) -->
   <script src="./recursos/scrips/vendor/xlsx-js-style.full.min.js"></script>
 
-  <!-- 2) Se eliminó el CDN fijo.
-       La app intentará cargar automáticamente un CDN confiable si no detecta XLSX,
-       evitando fallos por cambios de URL/versiones o doble carga. -->
-
-  <script src="./recursos/scrips/app.js"></script>
+  <!-- App modular (reemplaza app.js) -->
+  <script src="./recursos/scrips/app.state.js"></script>
+  <script src="./recursos/scrips/app.helpers.js"></script>
+  <script src="./recursos/scrips/app.capture.js"></script>
+  <script src="./recursos/scrips/app.report.js"></script>
+  <script src="./recursos/scrips/app.main.js"></script>
 </body>
 </html>
 

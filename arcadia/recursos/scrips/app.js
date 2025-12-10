@@ -40,7 +40,6 @@ window.Arcadia = window.Arcadia || {};
       if (UI.fechaHasta) UI.fechaHasta.value = ayer;
 
       UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
-
       if (UI.reportPass) UI.reportPass.value = '';
 
       UI.reportTableWrapper?.classList.add('hidden');
@@ -104,6 +103,7 @@ window.Arcadia = window.Arcadia || {};
       if(name==='report'){
         UI.reportTag.textContent = 'Reporte';
         UI.reportTableWrapper?.classList.add('hidden');
+
         if (!state.reportUnlocked) {
           UI.reportGate.classList.remove('hidden');
           UI.reportControls.classList.add('hidden');
@@ -199,7 +199,6 @@ window.Arcadia = window.Arcadia || {};
         );
 
       UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
-      // ✅ asegura guardado del select de Tercero
       UI.recordsBody.addEventListener('change', (e) => this.handleTableInput(e));
       UI.recordsBody.addEventListener('click', (e) => this.handleTableClick(e));
 
@@ -221,8 +220,10 @@ window.Arcadia = window.Arcadia || {};
         const val = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const dev = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
         const total = val - dev;
+
         const totalCell = tr.querySelector('.col-total');
         if (totalCell) totalCell.textContent = Utils.formatCurrency(total);
+
         this.updateTotalsDisplay();
       }
 
@@ -256,6 +257,7 @@ window.Arcadia = window.Arcadia || {};
       UI.sessionInfo.classList.remove('hidden');
 
       const key = this.getStorageKey();
+
       if (fromStorage) {
         this.loadRecords();
       } else {
@@ -304,6 +306,7 @@ window.Arcadia = window.Arcadia || {};
         category: 'default',
         styleHint: 'electronica'
       };
+
       const record = { ...defaults, ...data };
 
       const tr = document.createElement('tr');
@@ -323,7 +326,6 @@ window.Arcadia = window.Arcadia || {};
         const optionsHtml = CONFIG.EMPRESAS_GRUPO
           .map(empresa => `<option value="${empresa}" ${record.tercero === empresa ? 'selected' : ''}>${empresa}</option>`)
           .join('');
-
         terceroCellHtml = `
           <select class="table-input" data-field="tercero">
             <option value="">Seleccione empresa del grupo...</option>
@@ -459,12 +461,6 @@ window.Arcadia = window.Arcadia || {};
       btn.disabled = true;
       btn.textContent = 'Guardando...';
 
-      /*
-        ✅ Nuevo formato para hoja:
-        - Guardar VALOR ya neto (valor - devoluciones)
-        - Usar Tercero como campo final
-        - No enviar devoluciones ni total
-      */
       const detailData = records.map(r => {
         const neto = Number(r.total || 0);
         return {
@@ -472,7 +468,7 @@ window.Arcadia = window.Arcadia || {};
           puntoVenta: state.session.pos,
           tipo: r.tipo,
           tercero: r.tercero,
-          Tercero: r.tercero, // ✅ nombre esperado en hoja
+          Tercero: r.tercero,
           detalle: r.detalle,
           valor: neto
         };
@@ -618,14 +614,15 @@ window.Arcadia = window.Arcadia || {};
     },
 
     /* =========================================================
-       ✅ NUEVO FORMATO DE REPORTE
+       ✅ FORMATO DE REPORTE (EXPORT)
        Columnas finales:
        Fecha | Punto | Tipo | Tercero | Detalle | Valor
        - Valor ya viene neto desde la hoja
        - No se incluye Devoluciones ni Total
-       - Se mantienen totales por bloque (si no son cero)
+       - Totales por bloque si no son cero
+       - Ahora se escribe desde A1
+       - Se inmoviliza la fila 1
        ========================================================= */
-
     getDetallesFiltrados(desde, hasta){
       const all = state.reporte.detalles || [];
       return all.filter(r => {
@@ -661,13 +658,11 @@ window.Arcadia = window.Arcadia || {};
         if (!map.has(key)) map.set(key, { fecha: r.fecha, punto: r.punto, items: [] });
         map.get(key).items.push(r);
       });
-
       const groups = Array.from(map.values());
       groups.sort((a,b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         return normalizeText(a.punto) < normalizeText(b.punto) ? -1 : 1;
       });
-
       groups.forEach(g => g.items = this.sortDetallesParaExport(g.items));
       return groups;
     },
@@ -718,6 +713,7 @@ window.Arcadia = window.Arcadia || {};
       };
 
       const headerRow = () => HEADERS.map(h => ({ v: h, t: 's', s: styles.header }));
+
       const safeExcelStr = (s) => String(s || '').replace(/"/g, '""');
 
       const sumifsFormula = (valorRange, tipoRange, tipos = []) => {
@@ -738,7 +734,7 @@ window.Arcadia = window.Arcadia || {};
 
       const aoa = [];
       let rowCursor = 0;
-      const originRow = 2; // Encabezado inicial en fila 2
+      const originRow = 1; // Ahora el primer encabezado queda en fila 1
 
       const addRow = (cells) => {
         aoa.push(cells);
@@ -769,10 +765,10 @@ window.Arcadia = window.Arcadia || {};
 
         const lastDetailExcelRow = firstDetailExcelRow + items.length - 1;
 
-        // Con origin B2:
-        // B Fecha, C Punto, D Tipo, E Tercero, F Detalle, G Valor
-        const tipoRange  = `$D$${firstDetailExcelRow}:$D$${lastDetailExcelRow}`;
-        const valorRange = `$G$${firstDetailExcelRow}:$G$${lastDetailExcelRow}`;
+        // Con origin A1:
+        // A Fecha, B Punto, C Tipo, D Tercero, E Detalle, F Valor
+        const tipoRange  = `$C$${firstDetailExcelRow}:$C$${lastDetailExcelRow}`;
+        const valorRange = `$F$${firstDetailExcelRow}:$F$${lastDetailExcelRow}`;
 
         const creditoTypes     = CONFIG.TIPOS_REQUIEREN_EMPRESA || [];
         const efectivoTypes    = CONFIG.TIPOS_EFECTIVO || [];
@@ -784,11 +780,10 @@ window.Arcadia = window.Arcadia || {};
         const fElectronica = sumifsFormula(valorRange, tipoRange, electronicaTypes);
         const fGasto       = sumifsFormula(valorRange, tipoRange, gastoTypes);
 
-        // Valores numéricos para decidir si se muestran totales
-        const creditoVal     = sumByTipos(items, creditoTypes);
-        const efectivoBruto  = sumByTipos(items, efectivoTypes);
-        const electronicaVal = sumByTipos(items, electronicaTypes);
-        const gastoVal       = sumByTipos(items, gastoTypes);
+        const creditoVal      = sumByTipos(items, creditoTypes);
+        const efectivoBruto   = sumByTipos(items, efectivoTypes);
+        const electronicaVal  = sumByTipos(items, electronicaTypes);
+        const gastoVal        = sumByTipos(items, gastoTypes);
 
         const efectivoNetoVal = efectivoBruto - creditoVal;
         const totalVentasVal  = efectivoNetoVal + electronicaVal + creditoVal;
@@ -805,7 +800,6 @@ window.Arcadia = window.Arcadia || {};
           ]);
         };
 
-        // Totales (solo si el valor esperado no es 0)
         if (efectivoNetoVal !== 0) {
           addTotalRow('Total ventas en efectivo', `=(${fEfectivo})-(${fCredito})`);
         }
@@ -827,36 +821,33 @@ window.Arcadia = window.Arcadia || {};
       });
 
       const ws = XLSX.utils.aoa_to_sheet([]);
-      XLSX.utils.sheet_add_aoa(ws, aoa, { origin: 'B2' });
+      XLSX.utils.sheet_add_aoa(ws, aoa, { origin: 'A1' });
 
-      // ✅ Inmoviliza la fila 2
+      // ✅ Inmoviliza la fila 1
       ws['!freeze'] = {
         xSplit: 0,
-        ySplit: 2,
-        topLeftCell: 'A3',
+        ySplit: 1,
+        topLeftCell: 'A2',
         activePane: 'bottomLeft',
         state: 'frozen'
       };
 
-      // Anchos aproximados (A es “columna fantasma” por origin B)
+      // Anchos aproximados
       ws['!cols'] = [
-        { wch: 6 },   // A
-        { wch: 12 },  // B Fecha
-        { wch: 14 },  // C Punto
-        { wch: 40 },  // D Tipo
-        { wch: 28 },  // E Tercero
-        { wch: 32 },  // F Detalle
-        { wch: 14 }   // G Valor
+        { wch: 12 },  // A Fecha
+        { wch: 14 },  // B Punto
+        { wch: 40 },  // C Tipo
+        { wch: 28 },  // D Tercero
+        { wch: 32 },  // E Detalle
+        { wch: 14 }   // F Valor
       ];
 
       return ws;
     },
 
-    /* =========================
-       ✅ HTML base para reporte
-       (reutilizado por HTML y por XLS fallback)
-       ========================= */
-    buildReporteHtmlDocument(detalles){
+    /* ---------- Generador HTML reutilizable ---------- */
+    buildReporteHTMLString(desde, hasta){
+      const detalles = this.getDetallesFiltrados(desde, hasta);
       const groups = this.groupByFechaPunto(detalles);
 
       const headerHtml = `
@@ -879,6 +870,8 @@ window.Arcadia = window.Arcadia || {};
         }, 0);
       };
 
+      const filas = [];
+
       const totalRow = (fecha, punto, label, value) => `
         <tr>
           <td style="border:1px solid #000;font-weight:bold;">${Utils.escapeHtml(fecha)}</td>
@@ -889,8 +882,6 @@ window.Arcadia = window.Arcadia || {};
           <td style="border:1px solid #000;text-align:right;font-weight:bold;">${Utils.formatNumber(value)}</td>
         </tr>
       `;
-
-      const filas = [];
 
       groups.forEach(g => {
         const items = g.items || [];
@@ -917,21 +908,21 @@ window.Arcadia = window.Arcadia || {};
         const electronicaTypes = CONFIG.TIPOS_ELECTRONICOS || [];
         const gastoTypes       = CONFIG.TIPOS_GASTO || [];
 
-        const creditoVal     = sumByTipos(items, creditoTypes);
-        const efectivoBruto  = sumByTipos(items, efectivoTypes);
-        const electronicaVal = sumByTipos(items, electronicaTypes);
-        const gastoVal       = sumByTipos(items, gastoTypes);
+        const creditoVal      = sumByTipos(items, creditoTypes);
+        const efectivoBruto   = sumByTipos(items, efectivoTypes);
+        const electronicaVal  = sumByTipos(items, electronicaTypes);
+        const gastoVal        = sumByTipos(items, gastoTypes);
 
         const efectivoNetoVal = efectivoBruto - creditoVal;
         const totalVentasVal  = efectivoNetoVal + electronicaVal + creditoVal;
         const tesoreriaVal    = efectivoNetoVal - gastoVal;
 
         if (efectivoNetoVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total ventas en efectivo', efectivoNetoVal));
-        if (electronicaVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total ventas por medios electronicos', electronicaVal));
-        if (creditoVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total ventas a credito', creditoVal));
-        if (totalVentasVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total ventas', totalVentasVal));
-        if (gastoVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total gastos en efectivo', gastoVal));
-        if (tesoreriaVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total dinero a recibir por tesoreria', tesoreriaVal));
+        if (electronicaVal !== 0)  filas.push(totalRow(g.fecha, g.punto, 'Total ventas por medios electronicos', electronicaVal));
+        if (creditoVal !== 0)      filas.push(totalRow(g.fecha, g.punto, 'Total ventas a credito', creditoVal));
+        if (totalVentasVal !== 0)  filas.push(totalRow(g.fecha, g.punto, 'Total ventas', totalVentasVal));
+        if (gastoVal !== 0)        filas.push(totalRow(g.fecha, g.punto, 'Total gastos en efectivo', gastoVal));
+        if (tesoreriaVal !== 0)    filas.push(totalRow(g.fecha, g.punto, 'Total dinero a recibir por tesoreria', tesoreriaVal));
       });
 
       const htmlDoc = `<!DOCTYPE html>
@@ -954,16 +945,13 @@ window.Arcadia = window.Arcadia || {};
 </body>
 </html>`.trim();
 
-      return htmlDoc;
+      return { htmlDoc, detallesCount: detalles.length };
     },
 
-    /* =========================
-       ✅ Exportar Excel (.xls)
-       - Si XLSX existe: genera .xls real via SheetJS
-       - Si NO existe: genera .xls basado en HTML
-       ========================= */
+    /* ---------- Excel ---------- */
     async exportarExcelDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
@@ -981,21 +969,24 @@ window.Arcadia = window.Arcadia || {};
 
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
 
-        // ✅ Ruta 1: con librería XLSX disponible
+        // ✅ Ruta principal: genera XLSX real
         if (window.XLSX && window.XLSX.utils) {
           const ws = this.buildReporteWorksheet(desde, hasta);
           const wb = window.XLSX.utils.book_new();
           window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
 
-          const filename = `reporte_${rangeTxt}.xls`;
-          window.XLSX.writeFile(wb, filename, { bookType: 'xls', cellStyles: true });
+          const filename = `reporte_${rangeTxt}.xlsx`;
+          window.XLSX.writeFile(wb, filename, { bookType: 'xlsx', cellStyles: true });
 
           UI.reportStatus.textContent = `Excel generado con formato de reporte (${detalles.length} detalles).`;
           return;
         }
 
-        // ✅ Ruta 2 (importantísima): sin librería, igual generar .xls
-        await this.exportarXlsFallback(desde, hasta, detalles, rangeTxt);
+        // ✅ Sin librería: informamos claramente, y evitamos confusión con el botón HTML
+        UI.reportStatus.textContent = 'No se encontró la librería de Excel. Verifica conexión o el CDN.';
+        alert('No se pudo generar el Excel porque la librería no está disponible. Intenta nuevamente con conexión a internet.');
+
+        this.updateExportButtonsVisibility();
 
       }catch(e){
         console.error(e);
@@ -1004,44 +995,9 @@ window.Arcadia = window.Arcadia || {};
       }
     },
 
-    async exportarXlsFallback(desde, hasta, detalles, rangeTxt){
-      // Si no vienen detalles precargados por alguna razón, calcula aquí
-      const detallesOk = Array.isArray(detalles) && detalles.length
-        ? detalles
-        : this.getDetallesFiltrados(desde, hasta);
-
-      if (!detallesOk.length){
-        alert('No hay detalles para exportar en el rango seleccionado.');
-        UI.reportStatus.textContent = 'Sin datos para exportar.';
-        return;
-      }
-
-      const htmlDoc = this.buildReporteHtmlDocument(detallesOk);
-
-      // Truco clásico: Excel abre HTML con extensión .xls
-      const blob = new Blob(
-        ['\ufeff', htmlDoc],
-        { type: 'application/vnd.ms-excel;charset=utf-8;' }
-      );
-
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reporte_${rangeTxt}.xls`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-
-      UI.reportStatus.textContent =
-        `XLS generado en modo compatibilidad (${detallesOk.length} detalles).`;
-    },
-
-    /* =========================
-       ✅ Exportar HTML puro
-       ========================= */
     async exportarHTMLDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
+
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
@@ -1058,19 +1014,22 @@ window.Arcadia = window.Arcadia || {};
         }
 
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
-        const htmlDoc = this.buildReporteHtmlDocument(detalles);
+        const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
 
         const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
+
         a.href = url;
         a.download = `reporte_${rangeTxt}.html`;
+
         document.body.appendChild(a);
         a.click();
         a.remove();
+
         URL.revokeObjectURL(url);
 
-        UI.reportStatus.textContent = `HTML generado con formato de reporte (${detalles.length} detalles).`;
+        UI.reportStatus.textContent = `HTML generado con formato de reporte (${detallesCount} detalles).`;
 
       }catch(e){
         console.error(e);
@@ -1098,5 +1057,6 @@ window.Arcadia = window.Arcadia || {};
   } else {
     App.init();
   }
+
 })(window.Arcadia);
 

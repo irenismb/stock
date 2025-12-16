@@ -17,15 +17,6 @@ window.Arcadia = window.Arcadia || {};
     }
   }
 
-  /*
-    Ahora el servidor debe devolver (o se leerá desde la hoja):
-    - fecha
-    - punto
-    - tipo
-    - tercero
-    - detalle
-    - valor (ya neto)
-  */
   async function cargarDetallesDesdeServidor(desde, hasta){
     const url = `${CONFIG.SCRIPT_URL}?action=details&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${
       CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''
@@ -37,19 +28,25 @@ window.Arcadia = window.Arcadia || {};
       'Detalles'
     );
 
-    return (rows || []).map(r => ({
-      fecha: r.fecha || r.Fecha || '',
-      punto: r.punto || r.puntoVenta || r.Punto || '',
-      tipo: r.tipo || r.Tipo || '',
-      tercero:
-        r.tercero ||
-        r.Tercero ||
-        r["Tercero"] ||
-        '',
-      detalle: r.detalle || r.Detalle || '',
-      // ✅ valor ya debe venir neto desde la hoja
-      valor: Number(r.valor || r.Valor || 0)
-    }));
+    return (rows || []).map(r => {
+      const rawValor =
+        r.valor ?? r.Valor ?? r["Valor"] ?? r["VALOR"] ??
+        r.total ?? r.Total ?? r["Total"] ?? r["TOTAL"] ??
+        r.monto ?? r.Monto ?? r["Monto"] ?? r["MONTO"] ??
+        r.valorNeto ?? r.valorneto ?? r.Neto ?? r.neto ??
+        0;
+
+      return {
+        fecha: r.fecha || r.Fecha || '',
+        punto:
+          r.punto || r.puntoVenta || r.Punto || r.PuntoVenta ||
+          r["Punto de venta"] || r["Punto"] || '',
+        tipo: r.tipo || r.Tipo || r["Tipo"] || '',
+        tercero: r.tercero || r.Tercero || r["Tercero"] || '',
+        detalle: r.detalle || r.Detalle || r["Detalle"] || '',
+        valor: Utils.safeNumber(rawValor)
+      };
+    });
   }
 
   A.Api = { fetchJson, cargarDetallesDesdeServidor };

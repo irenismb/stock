@@ -1,13 +1,41 @@
 window.Arcadia = window.Arcadia || {};
 (function (A) {
   'use strict';
-
   const { CONFIG, Utils, UI } = A;
   const state = A.state;
   const App = A.App;
+  const LS_SHOW_FORMULAS = 'captureFooterShowFormulas_v1';
+  let footerMetaBuilt = false;
+  let showFooterFormulas = false;
+  const footerMeta = {};
+  const TERCERO_OTROS  = 'Otros';
+  const TERCERO_VARIAS = 'Varias';
+
+  function escapeAttr(s){ return Utils.escapeHtml(String(s ?? '')); }
+
+  function buildTerceroSelectHtml(selectedValue, { required = false } = {}){
+    const selected = String(selectedValue || '');
+    const empresas = CONFIG.EMPRESAS_GRUPO || [];
+    const placeholder = required
+      ? '<option value="">Seleccione...</option>'
+      : '<option value="">(Opcional) Seleccione...</option>';
+    const empresasOptions = empresas.map(e => {
+      const isSel = selected === e ? 'selected' : '';
+      return `<option value="${escapeAttr(e)}" ${isSel}>${escapeAttr(e)}</option>`;
+    }).join('');
+    const otrosSel  = selected === TERCERO_OTROS  ? 'selected' : '';
+    const variasSel = selected === TERCERO_VARIAS ? 'selected' : '';
+    return `
+      <select class="table-input" data-field="tercero" ${required ? 'required' : ''}>
+        ${placeholder}
+        ${empresasOptions}
+        <option value="${TERCERO_OTROS}" ${otrosSel}>${TERCERO_OTROS}</option>
+        <option value="${TERCERO_VARIAS}" ${variasSel}>${TERCERO_VARIAS}</option>
+      </select>
+    `;
+  }
 
   Object.assign(App, {
-    /* ---------- Captura ---------- */
     populatePuntoVentaSelect(){
       const select = UI.puntoVentaInput;
       select.innerHTML = '<option value="">Seleccione...</option>';
@@ -16,28 +44,107 @@ window.Arcadia = window.Arcadia || {};
       });
     },
 
+    /* =========================================================
+       FOOTER: mostrar/ocultar conceptos de fórmula
+       ========================================================= */
+    buildFooterFormulaMeta(){
+      const joinPlus = (arr) => (arr || []).filter(Boolean).join(' + ');
+      const joinMinus = (...parts) => parts.filter(p => String(p || '').trim()).join(' - ');
+      const efectivoTxt    = joinPlus(CONFIG.TIPOS_EFECTIVO || []);
+      const electronicaTxt = joinPlus(CONFIG.TIPOS_ELECTRONICOS || []);
+      const gastoTxt       = joinPlus(CONFIG.TIPOS_GASTO || []);
+
+      // ✅ Orden explícito para "Total ventas a crédito" (incluye Autoconsumo al final)
+      const creditoOrder = [
+        'Ventas a crédito (descuentos por nómina)',
+        'Ventas a crédito a empresas del grupo',
+        'Ventas a crédito (fórmulas)',
+        'Faltantes en kardex (descuentos por nomina)',
+        'Autoconsumo'
+      ];
+
+      // Aquí usamos TIPOS_REQUIEREN_EMPRESA porque define cuáles créditos/ítems exigen tercero
+      const creditoSet = new Set(CONFIG.TIPOS_REQUIEREN_EMPRESA || []);
+      const creditoOrdered = creditoOrder.filter(t => creditoSet.has(t));
+      const creditoExtras = (CONFIG.TIPOS_REQUIEREN_EMPRESA || []).filter(t => !creditoOrder.includes(t));
+      const creditoTiposFinal = [...creditoOrdered, ...creditoExtras];
+
+      const creditoConceptsTxt = joinPlus(creditoTiposFinal);
+
+      const efectivoNetoTxt = joinMinus(
+        efectivoTxt,
+        creditoConceptsTxt ? `(${creditoConceptsTxt})` : ''
+      );
+
+      const tesoreriaTxt = joinMinus(
+        efectivoTxt,
+        creditoConceptsTxt ? `(${creditoConceptsTxt})` : '',
+        gastoTxt ? `(${gastoTxt})` : ''
+      );
+
+      const totalVentasTxt = 'Total ventas en efectivo + Total ventas por medios electronicos + Total ventas a credito';
+
+      footerMeta['total_ventas_efectivo'] = { base: 'Efectivo neto', formula: efectivoNetoTxt };
+      footerMeta['total_ventas_electronicas'] = { base: 'Total ventas por medios electronicos', formula: electronicaTxt };
+      footerMeta['total_ventas_credito'] = { base: 'Total ventas a credito', formula: creditoConceptsTxt };
+      footerMeta['total_ventas_global'] = { base: 'Total ventas', formula: totalVentasTxt };
+      footerMeta['total_gastos_efectivo'] = { base: 'Total gastos en efectivo', formula: gastoTxt };
+      footerMeta['total_esperado_tesoreria'] = { base: 'Total dinero a recibir por tesoreria', formula: tesoreriaTxt };
+
+      footerMetaBuilt = true;
+    },
+
+    applyFooterLabels(){
+      if (!UI.recordsFooter) return;
+      if (!footerMetaBuilt) this.buildFooterFormulaMeta();
+      Object.keys(footerMeta).forEach(summaryId => {
+        const tr = UI.recordsFooter.querySelector(`[data-summary-id="${summaryId}"]`);
+        if (!tr) return;
+        const firstTd = tr.querySelector('td');
+        if (!firstTd) return;
+        const meta = footerMeta[summaryId] || {};
+        const base = String(meta.base || '').trim();
+        const formula = String(meta.formula || '').trim();
+        if (!base) return;
+        firstTd.textContent = (showFooterFormulas && formula) ? `${base} (${formula})` : base;
+      });
+    },
+
+    initFooterFormulaToggle(){
+      showFooterFormulas = (localStorage.getItem(LS_SHOW_FORMULAS) === '1');
+      this.applyFooterLabels();
+      const btn = document.getElementById('toggle-formulas-btn');
+      if (!btn) return;
+      const paintBtn = () => {
+        btn.textContent = showFooterFormulas ? '🙈 Ocultar fórmulas' : '👁️ Mostrar fórmulas';
+      };
+      paintBtn();
+      btn.addEventListener('click', () => {
+        showFooterFormulas = !showFooterFormulas;
+        localStorage.setItem(LS_SHOW_FORMULAS, showFooterFormulas ? '1' : '0');
+        this.applyFooterLabels();
+        paintBtn();
+      });
+    },
+
     bindCaptureEvents(){
       document.getElementById('start-session-btn').addEventListener('click', () => {
         const fecha = UI.fechaInput.value;
         const puntoVenta = UI.puntoVentaInput.value;
-
         if (!fecha || !puntoVenta) {
           alert('Por favor, seleccione fecha y punto de venta.');
           return;
         }
-
         const ayer = Utils.yesterdayISO();
         if (fecha !== ayer && !confirm(`Vas a abrir la sesión para ${fecha} (no es el día anterior: ${ayer}). ¿Continuar?`)) {
           return;
         }
-
         const prevKey = this.getStorageKey();
         if (prevKey && localStorage.getItem(prevKey)) {
           if (!confirm('Hay datos locales de la sesión anterior. Si cambias de sesión podrían perderse. ¿Continuar?')) {
             return;
           }
         }
-
         this.startSession(fecha, puntoVenta);
       });
 
@@ -71,16 +178,6 @@ window.Arcadia = window.Arcadia || {};
           })
         );
 
-      document.getElementById('add-gasto-btn')
-        .addEventListener('click', () =>
-          this.addRow({
-            tipo: 'Gasto en efectivo',
-            category: 'gasto',
-            isRemovable: true,
-            styleHint: 'gasto'
-          })
-        );
-
       document.getElementById('add-interco-btn')
         .addEventListener('click', () =>
           this.addRow({
@@ -91,18 +188,40 @@ window.Arcadia = window.Arcadia || {};
           })
         );
 
+      // ✅ Autoconsumo (crédito) -> Tercero/Destino obligatorio se controla desde TIPOS_REQUIEREN_EMPRESA
+      document.getElementById('add-autoconsumo-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Autoconsumo',
+            category: 'credito',
+            isRemovable: true,
+            styleHint: 'credito-formulas'
+          })
+        );
+
+      document.getElementById('add-gasto-btn')
+        .addEventListener('click', () =>
+          this.addRow({
+            tipo: 'Gasto en efectivo',
+            category: 'gasto',
+            isRemovable: true,
+            styleHint: 'gasto'
+          })
+        );
+
       UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
       UI.recordsBody.addEventListener('change', (e) => this.handleTableInput(e));
       UI.recordsBody.addEventListener('click', (e) => this.handleTableClick(e));
 
       document.getElementById('sendAllBtn').addEventListener('click', () => this.handleSendAll());
       document.getElementById('clearAllBtn').addEventListener('click', () => this.handleClearAll());
+
+      this.initFooterFormulaToggle();
     },
 
     handleTableInput(e){
       const target = e.target;
       if (!target.classList.contains('table-input')) return;
-
       const field = target.dataset.field;
       if (field !== 'valor' && field !== 'devoluciones' && field !== 'tercero' && field !== 'detalle') return;
 
@@ -117,14 +236,12 @@ window.Arcadia = window.Arcadia || {};
         if (totalCell) totalCell.textContent = Utils.formatCurrency(total);
         this.updateTotalsDisplay();
       }
-
       this.saveRecords();
     },
 
     handleTableClick(e){
       const btn = e.target.closest('button');
       if (!btn) return;
-
       if (btn.dataset.action === 'delete') {
         const tr = btn.closest('tr');
         if (tr && confirm('¿Eliminar fila?')) {
@@ -147,7 +264,6 @@ window.Arcadia = window.Arcadia || {};
       UI.sessionInfo.classList.remove('hidden');
 
       const key = this.getStorageKey();
-
       if (fromStorage) {
         this.loadRecords();
       } else {
@@ -169,6 +285,7 @@ window.Arcadia = window.Arcadia || {};
         }
       }
 
+      this.applyFooterLabels();
       this.updateTotalsDisplay();
     },
 
@@ -196,7 +313,6 @@ window.Arcadia = window.Arcadia || {};
         category: 'default',
         styleHint: 'electronica'
       };
-
       const record = { ...defaults, ...data };
 
       const tr = document.createElement('tr');
@@ -206,22 +322,12 @@ window.Arcadia = window.Arcadia || {};
       tr.classList.add(`row-style-${record.styleHint}`);
 
       const total = Utils.safeNumber(record.valor) - Utils.safeNumber(record.devoluciones);
-      const requiereEmpresa = this.requiresEmpresaForTipo(record.tipo);
+
       const terceroDisabled = this.disableTerceroForTipo(record.tipo);
+      const terceroRequired = this.requiresTerceroObligatorioForTipo(record.tipo);
 
-      let terceroCellHtml = `<input type="text" class="table-input" data-field="tercero" value="${record.tercero || ''}">`;
-
-      if (requiereEmpresa) {
-        const optionsHtml = CONFIG.EMPRESAS_GRUPO
-          .map(empresa => `<option value="${empresa}" ${record.tercero === empresa ? 'selected' : ''}>${empresa}</option>`)
-          .join('');
-        terceroCellHtml = `
-          <select class="table-input" data-field="tercero">
-            <option value="">Seleccione empresa del grupo...</option>
-            ${optionsHtml}
-          </select>
-        `;
-      } else if (terceroDisabled) {
+      let terceroCellHtml = '';
+      if (terceroDisabled) {
         terceroCellHtml = `
           <input
             type="text"
@@ -232,6 +338,9 @@ window.Arcadia = window.Arcadia || {};
             disabled
           >
         `;
+      } else {
+        // ✅ SIEMPRE select (sin escritura libre) y con required cuando aplique (Autoconsumo incluido)
+        terceroCellHtml = buildTerceroSelectHtml(record.tercero, { required: terceroRequired });
       }
 
       tr.innerHTML = `
@@ -253,7 +362,6 @@ window.Arcadia = window.Arcadia || {};
         this.saveRecords();
         this.updateTotalsDisplay();
       }
-
       return tr;
     },
 
@@ -271,7 +379,7 @@ window.Arcadia = window.Arcadia || {};
         switch (category) {
           case 'efectivo': efectivo += currentTotal; break;
           case 'electronica': electronica += currentTotal; break;
-          case 'credito': credito += currentTotal; break;
+          case 'credito': credito += currentTotal; break; // Autoconsumo entra aquí
           case 'gasto': gasto += currentTotal; break;
         }
       });
@@ -296,6 +404,7 @@ window.Arcadia = window.Arcadia || {};
     },
 
     updateTotalsDisplay(){
+      this.applyFooterLabels();
       const s = this.getCalculatedState().summary;
 
       UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total')
@@ -319,11 +428,9 @@ window.Arcadia = window.Arcadia || {};
 
     getRecordsFromTable(){
       const records = [];
-
       UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
         const valor = Utils.safeNumber(tr.querySelector('[data-field="valor"]').value);
         const devoluciones = Utils.safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
-
         if (valor !== 0 || devoluciones !== 0) {
           records.push({
             id: tr.dataset.id,
@@ -337,38 +444,60 @@ window.Arcadia = window.Arcadia || {};
           });
         }
       });
-
       return records;
     },
 
+    // =========================================================
+    // ✅ MODIFICADO: ahora envía DETALLES + TOTALES al Apps Script
+    // =========================================================
     async handleSendAll(){
       const records = this.getRecordsFromTable();
-
       if (records.length === 0) {
         alert('No hay registros con valores para guardar.');
         return;
       }
 
+      // ✅ Ahora Autoconsumo también exige tercero por estar en TIPOS_REQUIEREN_EMPRESA
       if (!this.validateEmpresaGrupo(records)) return;
 
       const btn = document.getElementById('sendAllBtn');
       btn.disabled = true;
       btn.textContent = 'Guardando...';
 
+      // ===== DETALLES =====
       const detailData = records.map(r => {
         const neto = Number(r.total || 0);
         return {
           fecha: state.session.date,
           puntoVenta: state.session.pos,
           tipo: r.tipo,
-          tercero: r.tercero,
-          Tercero: r.tercero,
-          detalle: r.detalle,
+          tercero: r.tercero || '',
+          detalle: r.detalle || '',
           valor: neto
         };
       });
 
-      const dataToSend = [...detailData];
+      // ===== TOTALES (NUEVO) =====
+      const s = this.getCalculatedState().summary;
+
+      // IMPORTANTE: deben coincidir con TOTALES_VALIDOS del Apps Script
+      const totalData = [
+        { tipo: 'Total ventas en efectivo',             valor: s.ventasNetoEfectivo },
+        { tipo: 'Total ventas por medios electronicos', valor: s.ventasElectronicas },
+        { tipo: 'Total ventas a credito',               valor: s.ventasCredito },
+        { tipo: 'Total ventas',                         valor: s.ventasGlobal },
+        { tipo: 'Total gastos en efectivo',             valor: s.gastosEfectivo },
+        { tipo: 'Total dinero a recibir por tesoreria', valor: s.esperadoTesoreria }
+      ].map(t => ({
+        fecha: state.session.date,
+        puntoVenta: state.session.pos,
+        tipo: t.tipo,
+        tercero: '',
+        detalle: '',
+        valor: Number(t.valor || 0)
+      }));
+
+      const dataToSend = [...detailData, ...totalData];
 
       try{
         const url = CONFIG.SCRIPT_URL + (CONFIG.API_KEY ? ('?key='+encodeURIComponent(CONFIG.API_KEY)) : '');
@@ -380,19 +509,16 @@ window.Arcadia = window.Arcadia || {};
 
         const text = await response.text();
         let result;
-
-        try {
-          result = JSON.parse(text);
-        } catch {
-          throw new Error('Respuesta no válida del servidor.');
-        }
+        try { result = JSON.parse(text); }
+        catch { throw new Error('Respuesta no válida del servidor.'); }
 
         if (!response.ok || result.result !== 'success') {
           throw new Error(result.error || `Error del servidor (HTTP ${response.status}).`);
         }
 
-        alert('¡Registros guardados con éxito!');
+        alert('¡Registros (detalles + totales) guardados con éxito!');
         btn.textContent = '✔️ Guardado';
+
       }catch(error){
         console.error("Error al enviar datos:", error);
         alert('Error: No se pudieron guardar los registros.');
@@ -445,5 +571,5 @@ window.Arcadia = window.Arcadia || {};
       }
     }
   });
-
 })(window.Arcadia);
+

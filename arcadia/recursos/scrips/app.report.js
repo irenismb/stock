@@ -7,19 +7,15 @@ window.Arcadia = window.Arcadia || {};
   const App = A.App;
 
   Object.assign(App, {
-    /* ---------- Reporte (protegido y simplificado) ---------- */
     bindReportEvents(){
       UI.btnGateOpen.addEventListener('click', async () => {
         const pass = (UI.reportPass.value || '').trim();
         if(!pass){ alert('Ingresa la clave.'); return; }
         if(pass !== ADMIN_PASS){ alert('Clave incorrecta.'); return; }
-
         state.reportUnlocked = true;
         UI.reportGate.classList.add('hidden');
         UI.reportControls.classList.remove('hidden');
-
         this.toggleExportButtons(true);
-
         await this.refreshExportSupport();
         if (UI.reportPass) UI.reportPass.value = '';
       });
@@ -46,7 +42,6 @@ window.Arcadia = window.Arcadia || {};
 
     async ensureExcelLibLoaded(){
       if (this.isExcelLibAvailable()) return true;
-
       const candidates = [
         './recursos/scrips/vendor/xlsx-js-style.full.min.js',
         'https://cdn.jsdelivr.net/npm/xlsx-js-style/dist/xlsx.full.min.js',
@@ -54,14 +49,10 @@ window.Arcadia = window.Arcadia || {};
         'https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js',
         'https://unpkg.com/xlsx/dist/xlsx.full.min.js'
       ];
-
       for (const src of candidates) {
         if (this.isExcelLibAvailable()) break;
         try{
-          await Utils.loadScript(src, {
-            test: () => this.isExcelLibAvailable(),
-            timeoutMs: 12000
-          });
+          await Utils.loadScript(src, { test: () => this.isExcelLibAvailable(), timeoutMs: 12000 });
         }catch(e){
           console.warn('[ExcelLoader] falló:', src, e);
         }
@@ -72,9 +63,7 @@ window.Arcadia = window.Arcadia || {};
     updateExportButtonsVisibility(){
       const excelSupported = this.isExcelLibAvailable();
       const unlocked = !!state.reportUnlocked;
-
       if (UI.btnExportarHTML) UI.btnExportarHTML.classList.remove('hidden');
-
       if (UI.btnExportarExcel) UI.btnExportarExcel.disabled = !(unlocked && excelSupported);
       if (UI.btnExportarHTML) UI.btnExportarHTML.disabled = !unlocked;
     },
@@ -85,92 +74,127 @@ window.Arcadia = window.Arcadia || {};
         await this.ensureExcelLibLoaded();
       }finally{
         this.updateExportButtonsVisibility();
-        if (this.isExcelLibAvailable()) {
-          UI.reportStatus.textContent = 'Librería de Excel lista. También puedes descargar HTML.';
-        } else {
-          UI.reportStatus.textContent = 'No se encontró la librería de Excel. Puedes descargar HTML.';
-        }
+        UI.reportStatus.textContent = this.isExcelLibAvailable()
+          ? 'Librería de Excel lista. Se exportarán detalles + totales desde la nube.'
+          : 'No se encontró la librería de Excel. Puedes descargar HTML. Se exportarán detalles + totales desde la nube.';
       }
     },
 
-    /* =========================================================
-       ✅ FORMATO DE REPORTE (EXPORT)
-       Columnas finales:
-       Fecha | Punto | Tipo | Tercero | Detalle | Valor
-       ========================================================= */
+    /* ===========================
+       Totales: resolver por CLAVE
+       =========================== */
+    resolveTotalKeyFromTipo(tipo){
+      const t = String(tipo || '').trim();
+      if (!t) return null;
+      const nt = this.normalizeText(t);
+      const map = CONFIG.TIPO_A_CLAVE || {};
+      for (const label in map) {
+        if (this.normalizeText(label) === nt) return map[label];
+      }
+      // fallback: por si llega "Total ..." pero con variantes no mapeadas
+      if (nt.startsWith('total ')) return '__unmapped_total__';
+      return null;
+    },
 
-    getDetallesFiltrados(desde, hasta){
+    getRowsFiltrados(desde, hasta){
       const all = state.reporte.detalles || [];
-
       return all.filter(r => {
-        const f = r.fecha || '';
-        const p = r.punto || '';
-        const tipoCanon = this.canonicalTipo(r.tipo || '');
-
-        if (!f || !p || !tipoCanon) return false;
+        const f = String(r.fecha || '').trim();
+        const p = String(r.punto || '').trim();
+        const tipo = String(r.tipo || '').trim();
+        if (!f || !p || !tipo) return false;
         if (f < desde || f > hasta) return false;
-
-        // Excluir filas de totales preexistentes
-        if (String(tipoCanon).startsWith('Total ')) return false;
-
         return true;
-      }).map(r => ({
-        ...r,
-        tipo: this.canonicalTipo(r.tipo || '')
-      }));
+      });
+    },
+
+    splitDetallesYTotales(rows){
+      const detalles = [];
+      const totales = [];
+      (rows || []).forEach(r => {
+        const k = this.resolveTotalKeyFromTipo(r.tipo);
+        if (k && k !== '__unmapped_total__') totales.push({ ...r, totalKey: k });
+        else if (k === '__unmapped_total__') totales.push({ ...r, totalKey: '__unmapped_total__' });
+        else detalles.push(r);
+      });
+      return { detalles, totales };
     },
 
     sortDetallesParaExport(rows){
       const order = CONFIG.EXPORT_TIPO_ORDER || [];
-
-      // índice por texto normalizado
-      const idx = new Map(order.map((t,i)=>[this.normalizeText(t), i]));
-
+      const idx = new Map(order.map((t,i)=>[t,i]));
       return [...rows].sort((a,b) => {
-        const tipoA = this.canonicalTipo(a.tipo);
-        const tipoB = this.canonicalTipo(b.tipo);
-
-        const na = this.normalizeText(tipoA);
-        const nb = this.normalizeText(tipoB);
-
-        const ia = idx.has(na) ? idx.get(na) : 9999;
-        const ib = idx.has(nb) ? idx.get(nb) : 9999;
-
+        const ia = idx.has(a.tipo) ? idx.get(a.tipo) : 9999;
+        const ib = idx.has(b.tipo) ? idx.get(b.tipo) : 9999;
         if (ia !== ib) return ia - ib;
-
-        if (na < nb) return -1;
-        if (na > nb) return 1;
+        const ta = this.normalizeText(a.tipo);
+        const tb = this.normalizeText(b.tipo);
+        if (ta < tb) return -1;
+        if (ta > tb) return 1;
         return 0;
       });
     },
 
     groupByFechaPunto(rows){
       const map = new Map();
-      rows.forEach(r => {
-        const tipoCanon = this.canonicalTipo(r.tipo || '');
-        const rr = { ...r, tipo: tipoCanon };
-
-        const key = `${rr.fecha}__${rr.punto}`;
-        if (!map.has(key)) map.set(key, { fecha: rr.fecha, punto: rr.punto, items: [] });
-        map.get(key).items.push(rr);
+      (rows || []).forEach(r => {
+        const key = `${r.fecha}__${r.punto}`;
+        if (!map.has(key)) map.set(key, { fecha: r.fecha, punto: r.punto, items: [] });
+        map.get(key).items.push(r);
       });
-
       const groups = Array.from(map.values());
       groups.sort((a,b) => {
         if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
         return this.normalizeText(a.punto) < this.normalizeText(b.punto) ? -1 : 1;
       });
-
       groups.forEach(g => g.items = this.sortDetallesParaExport(g.items));
       return groups;
     },
 
+    indexTotalesPorGrupo(totales){
+      // key: fecha__punto -> Map(totalKey -> {labelOriginal, valor})
+      const byGroup = new Map();
+      (totales || []).forEach(r => {
+        const key = `${r.fecha}__${r.punto}`;
+        if (!byGroup.has(key)) byGroup.set(key, new Map());
+        const m = byGroup.get(key);
+        const tk = r.totalKey || this.resolveTotalKeyFromTipo(r.tipo) || '__unmapped_total__';
+        m.set(tk, { label: String(r.tipo || '').trim(), valor: Number(r.valor || 0) });
+      });
+      return byGroup;
+    },
+
+    getTotalOrder(){
+      // usa el orden “oficial” de tu app
+      return (CONFIG.TOTAL_KEYS || []).map(x => ({ key: x.key, label: x.label }));
+    },
+
+    /* ===========================
+       Excel / HTML (detalles + totales nube)
+       =========================== */
     buildReporteWorksheet(desde, hasta){
-      const detalles = this.getDetallesFiltrados(desde, hasta);
-      const groups = this.groupByFechaPunto(detalles);
+      const rows = this.getRowsFiltrados(desde, hasta);
+      const { detalles, totales } = this.splitDetallesYTotales(rows);
+
+      const gruposDetalles = this.groupByFechaPunto(detalles);
+      const totalesIndex = this.indexTotalesPorGrupo(totales);
+
+      const keys = new Set();
+      gruposDetalles.forEach(g => keys.add(`${g.fecha}__${g.punto}`));
+      for (const k of totalesIndex.keys()) keys.add(k);
+
+      const groups = Array.from(keys).map(k => {
+        const [fecha, punto] = k.split('__');
+        const detGroup = gruposDetalles.find(g => `${g.fecha}__${g.punto}` === k);
+        return { fecha, punto, items: detGroup ? detGroup.items : [] };
+      });
+
+      groups.sort((a,b) => {
+        if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
+        return this.normalizeText(a.punto) < this.normalizeText(b.punto) ? -1 : 1;
+      });
 
       const HEADERS = ['Fecha','Punto','Tipo','Tercero','Detalle','Valor'];
-
       const thin = { style: 'thin', color: { rgb: '000000' } };
       const baseBorder = { top: thin, bottom: thin, left: thin, right: thin };
 
@@ -181,174 +205,91 @@ window.Arcadia = window.Arcadia || {};
           border: baseBorder,
           alignment: { horizontal: 'center', vertical: 'center', wrapText: true }
         },
-        cell: {
-          border: baseBorder,
-          alignment: { vertical: 'center', wrapText: true }
-        },
-        number: {
-          border: baseBorder,
-          alignment: { horizontal: 'right', vertical: 'center' },
-          numFmt: '#,##0'
-        },
-        totalRow: {
-          font: { bold: true },
-          border: baseBorder,
-          alignment: { vertical: 'center', wrapText: true }
-        },
-        totalNumber: {
-          font: { bold: true },
-          border: baseBorder,
-          alignment: { horizontal: 'right', vertical: 'center' },
-          numFmt: '#,##0'
-        }
-      };
-
-      const headerRow = () => HEADERS.map(h => ({ v: h, t: 's', s: styles.header }));
-      const safeExcelStr = (s) => String(s || '').replace(/"/g, '""');
-
-      const sumifsFormula = (valorRange, tipoRange, tipos = []) => {
-        if (!tipos.length) return '0';
-        return tipos
-          .map(t => `SUMIFS(${valorRange},${tipoRange},"${safeExcelStr(this.canonicalTipo(t))}")`)
-          .join('+');
-      };
-
-      const sumByTipos = (items, tipos) => {
-        return (items || []).reduce((acc, it) => {
-          if (!this.isTipoInList(it.tipo, tipos)) return acc;
-          const v = Number(it.valor || 0);
-          return acc + v;
-        }, 0);
+        cell: { border: baseBorder, alignment: { vertical: 'center', wrapText: true } },
+        number: { border: baseBorder, alignment: { horizontal: 'right', vertical: 'center' }, numFmt: '#,##0' },
+        totalRow: { font: { bold: true }, border: baseBorder, alignment: { vertical: 'center', wrapText: true } },
+        totalNumber: { font: { bold: true }, border: baseBorder, alignment: { horizontal: 'right', vertical: 'center' }, numFmt: '#,##0' }
       };
 
       const aoa = [];
-      let rowCursor = 0;
-      const originRow = 1;
+      const headerRow = () => HEADERS.map(h => ({ v: h, t: 's', s: styles.header }));
+      const addRow = (cells) => aoa.push(cells);
 
-      const addRow = (cells) => {
-        aoa.push(cells);
-        rowCursor++;
-      };
+      const totalOrder = this.getTotalOrder();
+      const missingNotes = [];
 
-      groups.forEach(group => {
-        const { fecha, punto, items } = group;
-        if (!items.length) return;
-
+      groups.forEach(g => {
         addRow(headerRow());
 
-        const excelHeaderRow = originRow + (rowCursor - 1);
-        const firstDetailExcelRow = excelHeaderRow + 1;
-
-        items.forEach((r) => {
-          const tipoCanon = this.canonicalTipo(r.tipo);
-
+        (g.items || []).forEach(r => {
           addRow([
-            { v: fecha, t: 's', s: styles.cell },
-            { v: punto, t: 's', s: styles.cell },
-            { v: tipoCanon || '', t: 's', s: styles.cell },
+            { v: g.fecha, t: 's', s: styles.cell },
+            { v: g.punto, t: 's', s: styles.cell },
+            { v: r.tipo || '', t: 's', s: styles.cell },
             { v: r.tercero || '', t: 's', s: styles.cell },
             { v: r.detalle || '', t: 's', s: styles.cell },
             { v: Number(r.valor || 0), t: 'n', s: styles.number }
           ]);
         });
 
-        const lastDetailExcelRow = firstDetailExcelRow + items.length - 1;
+        const key = `${g.fecha}__${g.punto}`;
+        const m = totalesIndex.get(key) || new Map();
 
-        const tipoRange  = `$C$${firstDetailExcelRow}:$C$${lastDetailExcelRow}`;
-        const valorRange = `$F$${firstDetailExcelRow}:$F$${lastDetailExcelRow}`;
+        const totalsReceived = Array.from(m.keys()).filter(k => k !== '__unmapped_total__').length;
+        if (!totalsReceived) {
+          missingNotes.push(`${g.fecha} / ${g.punto}: NO llegaron filas de totales desde la nube`);
+        }
 
-        const creditoTypes     = CONFIG.TIPOS_REQUIEREN_EMPRESA || [];
-        const efectivoTypes    = CONFIG.TIPOS_EFECTIVO || [];
-        const electronicaTypes = CONFIG.TIPOS_ELECTRONICOS || [];
-        const gastoTypes       = CONFIG.TIPOS_GASTO || [];
+        totalOrder.forEach(t => {
+          const found = m.get(t.key);
+          const labelOut = (found && found.label) ? found.label : t.label;
+          const valOut = found ? Number(found.valor || 0) : 0;
+          if (!found) missingNotes.push(`${g.fecha} / ${g.punto}: falta "${t.label}" (se exporta 0)`);
 
-        const fCredito     = sumifsFormula(valorRange, tipoRange, creditoTypes);
-        const fEfectivo    = sumifsFormula(valorRange, tipoRange, efectivoTypes);
-        const fElectronica = sumifsFormula(valorRange, tipoRange, electronicaTypes);
-        const fGasto       = sumifsFormula(valorRange, tipoRange, gastoTypes);
-
-        const creditoVal      = sumByTipos(items, creditoTypes);
-        const efectivoBruto   = sumByTipos(items, efectivoTypes);
-        const electronicaVal  = sumByTipos(items, electronicaTypes);
-        const gastoVal        = sumByTipos(items, gastoTypes);
-
-        const efectivoNetoVal = efectivoBruto - creditoVal;
-        const totalVentasVal  = efectivoNetoVal + electronicaVal + creditoVal;
-        const tesoreriaVal    = efectivoNetoVal - gastoVal;
-
-        const addTotalRow = (label, formula) => {
           addRow([
-            { v: fecha, t: 's', s: styles.totalRow },
-            { v: punto, t: 's', s: styles.totalRow },
-            { v: label, t: 's', s: styles.totalRow },
+            { v: g.fecha, t: 's', s: styles.totalRow },
+            { v: g.punto, t: 's', s: styles.totalRow },
+            { v: labelOut, t: 's', s: styles.totalRow },
             { v: '', t: 's', s: styles.totalRow },
             { v: '', t: 's', s: styles.totalRow },
-            { f: formula, t: 'n', s: styles.totalNumber }
+            { v: valOut, t: 'n', s: styles.totalNumber }
           ]);
-        };
-
-        if (efectivoNetoVal !== 0) {
-          addTotalRow('Total ventas en efectivo', `=(${fEfectivo})-(${fCredito})`);
-        }
-        if (electronicaVal !== 0) {
-          addTotalRow('Total ventas por medios electronicos', `=(${fElectronica})`);
-        }
-        if (creditoVal !== 0) {
-          addTotalRow('Total ventas a credito', `=(${fCredito})`);
-        }
-        if (totalVentasVal !== 0) {
-          addTotalRow('Total ventas', `=(${fEfectivo})+(${fElectronica})`);
-        }
-        if (gastoVal !== 0) {
-          addTotalRow('Total gastos en efectivo', `=(${fGasto})`);
-        }
-        if (tesoreriaVal !== 0) {
-          addTotalRow('Total dinero a recibir por tesoreria', `=((${fEfectivo})-(${fCredito}))-(${fGasto})`);
-        }
+        });
       });
 
+      if (missingNotes.length) {
+        console.warn('[TotalesExport] Avisos:\n' + missingNotes.join('\n'));
+        UI.reportStatus.textContent =
+          'Aviso: faltan totales desde la nube (se exportaron como 0).';
+      }
+
       const ws = XLSX.utils.aoa_to_sheet(aoa);
-
-      ws['!freeze'] = {
-        xSplit: 0,
-        ySplit: 1,
-        topLeftCell: 'A2',
-        activePane: 'bottomLeft',
-        state: 'frozen'
-      };
-
-      ws['!cols'] = [
-        { wch: 12 },
-        { wch: 14 },
-        { wch: 40 },
-        { wch: 28 },
-        { wch: 32 },
-        { wch: 14 }
-      ];
-
-      try {
-        const ref = ws['!ref'];
-        if (ref) {
-          const range = XLSX.utils.decode_range(ref);
-          const colValor = 5; // F (0-based)
-          for (let R = 1; R <= range.e.r; R++) { // desde fila 2
-            const addr = XLSX.utils.encode_cell({ r: R, c: colValor });
-            const cell = ws[addr];
-            if (cell && cell.t === 'n') {
-              cell.s = cell.s || {};
-              cell.s.numFmt = '#,##0';
-            }
-          }
-        }
-      } catch (_) {}
-
+      ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft', state: 'frozen' };
+      ws['!cols'] = [{ wch: 12 },{ wch: 14 },{ wch: 40 },{ wch: 28 },{ wch: 32 },{ wch: 14 }];
       return ws;
     },
 
-    /* ---------- Generador HTML reutilizable ---------- */
     buildReporteHTMLString(desde, hasta){
-      const detalles = this.getDetallesFiltrados(desde, hasta);
-      const groups = this.groupByFechaPunto(detalles);
+      const rows = this.getRowsFiltrados(desde, hasta);
+      const { detalles, totales } = this.splitDetallesYTotales(rows);
+
+      const gruposDetalles = this.groupByFechaPunto(detalles);
+      const totalesIndex = this.indexTotalesPorGrupo(totales);
+
+      const keys = new Set();
+      gruposDetalles.forEach(g => keys.add(`${g.fecha}__${g.punto}`));
+      for (const k of totalesIndex.keys()) keys.add(k);
+
+      const groups = Array.from(keys).map(k => {
+        const [fecha, punto] = k.split('__');
+        const detGroup = gruposDetalles.find(g => `${g.fecha}__${g.punto}` === k);
+        return { fecha, punto, items: detGroup ? detGroup.items : [] };
+      });
+
+      groups.sort((a,b) => {
+        if (a.fecha !== b.fecha) return a.fecha < b.fecha ? -1 : 1;
+        return this.normalizeText(a.punto) < this.normalizeText(b.punto) ? -1 : 1;
+      });
 
       const headerHtml = `
         <tr>
@@ -361,16 +302,6 @@ window.Arcadia = window.Arcadia || {};
         </tr>
       `;
 
-      const sumByTipos = (items, tipos) => {
-        return (items || []).reduce((acc, it) => {
-          if (!this.isTipoInList(it.tipo, tipos)) return acc;
-          const v = Number(it.valor || 0);
-          return acc + v;
-        }, 0);
-      };
-
-      const filas = [];
-
       const totalRow = (fecha, punto, label, value) => `
         <tr>
           <td style="border:1px solid #000;font-weight:bold;">${Utils.escapeHtml(fecha)}</td>
@@ -382,21 +313,20 @@ window.Arcadia = window.Arcadia || {};
         </tr>
       `;
 
-      groups.forEach(g => {
-        const items = g.items || [];
-        if (!items.length) return;
+      const filas = [];
+      const totalOrder = this.getTotalOrder();
+      const missingNotes = [];
 
+      groups.forEach(g => {
         filas.push(headerHtml);
 
-        items.forEach(it => {
+        (g.items || []).forEach(it => {
           const valor = Number(it.valor || 0);
-          const tipoCanon = this.canonicalTipo(it.tipo);
-
           filas.push(`
             <tr>
               <td style="border:1px solid #000;">${Utils.escapeHtml(g.fecha)}</td>
               <td style="border:1px solid #000;">${Utils.escapeHtml(g.punto)}</td>
-              <td style="border:1px solid #000;">${Utils.escapeHtml(tipoCanon || '')}</td>
+              <td style="border:1px solid #000;">${Utils.escapeHtml(it.tipo || '')}</td>
               <td style="border:1px solid #000;">${Utils.escapeHtml(it.tercero || '')}</td>
               <td style="border:1px solid #000;">${Utils.escapeHtml(it.detalle || '')}</td>
               <td style="border:1px solid #000;text-align:right;font-weight:600;">${Utils.formatNumber(valor)}</td>
@@ -404,40 +334,45 @@ window.Arcadia = window.Arcadia || {};
           `);
         });
 
-        const creditoTypes     = CONFIG.TIPOS_REQUIEREN_EMPRESA || [];
-        const efectivoTypes    = CONFIG.TIPOS_EFECTIVO || [];
-        const electronicaTypes = CONFIG.TIPOS_ELECTRONICOS || [];
-        const gastoTypes       = CONFIG.TIPOS_GASTO || [];
+        const key = `${g.fecha}__${g.punto}`;
+        const m = totalesIndex.get(key) || new Map();
 
-        const creditoVal      = sumByTipos(items, creditoTypes);
-        const efectivoBruto   = sumByTipos(items, efectivoTypes);
-        const electronicaVal  = sumByTipos(items, electronicaTypes);
-        const gastoVal        = sumByTipos(items, gastoTypes);
+        const totalsReceived = Array.from(m.keys()).filter(k => k !== '__unmapped_total__').length;
+        if (!totalsReceived) missingNotes.push(`${g.fecha} / ${g.punto}: NO llegaron filas de totales desde la nube`);
 
-        const efectivoNetoVal = efectivoBruto - creditoVal;
-        const totalVentasVal  = efectivoNetoVal + electronicaVal + creditoVal;
-        const tesoreriaVal    = efectivoNetoVal - gastoVal;
-
-        if (efectivoNetoVal !== 0) filas.push(totalRow(g.fecha, g.punto, 'Total ventas en efectivo', efectivoNetoVal));
-        if (electronicaVal !== 0)  filas.push(totalRow(g.fecha, g.punto, 'Total ventas por medios electronicos', electronicaVal));
-        if (creditoVal !== 0)      filas.push(totalRow(g.fecha, g.punto, 'Total ventas a credito', creditoVal));
-        if (totalVentasVal !== 0)  filas.push(totalRow(g.fecha, g.punto, 'Total ventas', totalVentasVal));
-        if (gastoVal !== 0)        filas.push(totalRow(g.fecha, g.punto, 'Total gastos en efectivo', gastoVal));
-        if (tesoreriaVal !== 0)    filas.push(totalRow(g.fecha, g.punto, 'Total dinero a recibir por tesoreria', tesoreriaVal));
+        totalOrder.forEach(t => {
+          const found = m.get(t.key);
+          const labelOut = (found && found.label) ? found.label : t.label;
+          const valOut = found ? Number(found.valor || 0) : 0;
+          if (!found) missingNotes.push(`${g.fecha} / ${g.punto}: falta "${t.label}" (se exporta 0)`);
+          filas.push(totalRow(g.fecha, g.punto, labelOut, valOut));
+        });
       });
 
+      if (missingNotes.length) {
+        console.warn('[TotalesExportHTML] Avisos:\n' + missingNotes.join('\n'));
+        UI.reportStatus.textContent =
+          'Aviso: faltan totales desde la nube (se exportaron como 0).';
+      }
+
+      const title = (CONFIG.REPORT_TITLE || 'Reporte').trim();
+      const rangeLabel = (desde === hasta) ? `Fecha: ${desde}` : `Rango: ${desde} a ${hasta}`;
       const htmlDoc = `<!DOCTYPE html>
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Reporte</title>
+<title>${Utils.escapeHtml(title)}</title>
 <style>
-  body{font-family:Segoe UI,Arial,sans-serif;line-height:1.35;padding:10px;}
+  body{font-family:Segoe UI,Arial,sans-serif;line-height:1.35;padding:12px;}
+  h2{margin:0 0 6px 0;}
+  .meta{color:#555;margin:0 0 12px 0;}
   table{border-collapse:collapse;width:100%;}
   th,td{padding:6px 8px;}
 </style>
 </head>
 <body>
+  <h2>${Utils.escapeHtml(title)}</h2>
+  <div class="meta">${Utils.escapeHtml(rangeLabel)}</div>
   <table>
     <tbody>
       ${filas.join('')}
@@ -449,7 +384,6 @@ window.Arcadia = window.Arcadia || {};
       return { htmlDoc, detallesCount: detalles.length };
     },
 
-    /* ---------- Descarga de blobs ---------- */
     downloadBlob(blob, filename){
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -461,29 +395,33 @@ window.Arcadia = window.Arcadia || {};
       URL.revokeObjectURL(url);
     },
 
-    /* ---------- Excel: XLSX principal con respaldo XLS ---------- */
+    safeBaseFilename(){
+      const base = (CONFIG.REPORT_TITLE || 'Reporte').trim() || 'Reporte';
+      return base.replace(/[^\w\-]+/g, '_').replace(/_+/g, '_').replace(/^_+|_+$/g,'');
+    },
+
     async exportarExcelDetalles(){
       const desde = UI.fechaDesde.value, hasta = UI.fechaHasta.value;
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
-      UI.reportStatus.textContent = 'Cargando detalles del servidor...';
-
+      UI.reportStatus.textContent = 'Cargando detalles y totales desde la nube...';
       try{
         await this.ensureDataForRange(desde, hasta);
 
-        const detalles = this.getDetallesFiltrados(desde, hasta);
+        const rows = this.getRowsFiltrados(desde, hasta);
+        const { detalles, totales } = this.splitDetallesYTotales(rows);
+
+        UI.reportStatus.textContent = `Recibido desde nube: ${detalles.length} detalles y ${totales.length} totales.`;
+
         if (!detalles.length){
           alert('No hay detalles para exportar en el rango seleccionado.');
           UI.reportStatus.textContent = 'Sin datos para exportar.';
           return;
         }
 
-        UI.reportStatus.textContent = 'Verificando librería de Excel...';
         await this.ensureExcelLibLoaded();
-
         if (!this.isExcelLibAvailable()){
-          UI.reportStatus.textContent = 'No se encontró la librería de Excel.';
           alert('No se pudo generar el archivo porque la librería de Excel no está disponible. Puedes descargar HTML.');
           this.updateExportButtonsVisibility();
           return;
@@ -492,28 +430,19 @@ window.Arcadia = window.Arcadia || {};
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
         const ws = this.buildReporteWorksheet(desde, hasta);
         const wb = window.XLSX.utils.book_new();
-        window.XLSX.utils.book_append_sheet(wb, ws, 'Reporte');
+        const sheetName = (CONFIG.REPORT_TITLE || 'Reporte').slice(0,31);
+        window.XLSX.utils.book_append_sheet(wb, ws, sheetName);
 
-        const filenameXlsx = `reporte_${rangeTxt}.xlsx`;
-
-        try{
-          window.XLSX.writeFile(wb, filenameXlsx, { bookType: 'xlsx', cellStyles: true });
-          UI.reportStatus.textContent = `Excel XLSX generado con formato de reporte (${detalles.length} detalles).`;
-        }catch(err){
-          console.warn('[ExcelExport] fallo XLSX, intentando XLS:', err);
-          const filenameXls = `reporte_${rangeTxt}.xls`;
-          window.XLSX.writeFile(wb, filenameXls, { bookType: 'xls', cellStyles: true });
-          UI.reportStatus.textContent = `Excel XLS generado como respaldo (${detalles.length} detalles).`;
-        }
+        const baseName = this.safeBaseFilename();
+        const filenameXlsx = `${baseName}_${rangeTxt}.xlsx`;
+        window.XLSX.writeFile(wb, filenameXlsx, { bookType: 'xlsx', cellStyles: true });
 
         this.updateExportButtonsVisibility();
+
       }catch(e){
         console.error(e);
         UI.reportStatus.textContent = 'Error al exportar Excel.';
-        alert(
-          'No se pudo exportar el Excel. ' +
-          'Si el problema persiste, usa el botón HTML.'
-        );
+        alert('No se pudo exportar el Excel. Si el problema persiste, usa el botón HTML.');
         this.updateExportButtonsVisibility();
       }
     },
@@ -523,12 +452,15 @@ window.Arcadia = window.Arcadia || {};
       if(!desde || !hasta){ alert('Selecciona el rango de fechas.'); return; }
       if(desde > hasta){ alert('La fecha "Desde" no puede ser mayor que "Hasta".'); return; }
 
-      UI.reportStatus.textContent = 'Cargando detalles del servidor...';
-
+      UI.reportStatus.textContent = 'Cargando detalles y totales desde la nube...';
       try{
         await this.ensureDataForRange(desde, hasta);
 
-        const detalles = this.getDetallesFiltrados(desde, hasta);
+        const rows = this.getRowsFiltrados(desde, hasta);
+        const { detalles, totales } = this.splitDetallesYTotales(rows);
+
+        UI.reportStatus.textContent = `Recibido desde nube: ${detalles.length} detalles y ${totales.length} totales.`;
+
         if (!detalles.length){
           alert('No hay detalles para exportar en el rango seleccionado.');
           UI.reportStatus.textContent = 'Sin datos para exportar.';
@@ -538,9 +470,11 @@ window.Arcadia = window.Arcadia || {};
         const rangeTxt = (desde===hasta) ? desde : `${desde}_${hasta}`;
         const { htmlDoc, detallesCount } = this.buildReporteHTMLString(desde, hasta);
         const blob = new Blob([htmlDoc], {type:'text/html;charset=utf-8;'});
+        const baseName = this.safeBaseFilename();
 
-        this.downloadBlob(blob, `reporte_${rangeTxt}.html`);
-        UI.reportStatus.textContent = `HTML generado con formato de reporte (${detallesCount} detalles).`;
+        this.downloadBlob(blob, `${baseName}_${rangeTxt}.html`);
+        UI.reportStatus.textContent = `HTML generado (${detallesCount} detalles).`;
+
       }catch(e){
         console.error(e);
         UI.reportStatus.textContent = 'Error al exportar HTML.';
@@ -548,18 +482,46 @@ window.Arcadia = window.Arcadia || {};
       }
     },
 
+    // =========================================================
+    // ✅ MODIFICADO: cargar DETALLES (action=details) + TOTALES (action=report)
+    // =========================================================
     async ensureDataForRange(desde, hasta){
       const r = state.reporte.detallesRange || {};
-
       if (r.desde !== desde || r.hasta !== hasta || !Array.isArray(state.reporte.detalles)) {
+
+        // 1) Detalles (sin totales)
         const detallesSrv = await Api.cargarDetallesDesdeServidor(desde, hasta);
 
-        // ✅ Canonicalizar tipos al ingresar al estado del reporte
-        state.reporte.detalles = (detallesSrv || []).map(d => ({
-          ...d,
-          tipo: this.canonicalTipo(d.tipo || '')
-        }));
+        // 2) Totales (endpoint report)
+        const urlTotales = `${CONFIG.SCRIPT_URL}?action=report&from=${encodeURIComponent(desde)}&to=${encodeURIComponent(hasta)}${
+          CONFIG.API_KEY ? '&key='+encodeURIComponent(CONFIG.API_KEY) : ''
+        }`;
 
+        let totalesRaw = [];
+        try{
+          totalesRaw = await Api.fetchJson(
+            urlTotales,
+            { headers: { 'Accept': 'application/json' } },
+            'Totales'
+          );
+        }catch(err){
+          console.warn('[Totales] No se pudieron cargar desde la nube:', err);
+          totalesRaw = [];
+        }
+
+        const totalesSrv = (totalesRaw || []).map(t => ({
+          fecha: t.fecha || t.Fecha || '',
+          punto:
+            t.punto || t.puntoVenta || t.Punto || t.PuntoVenta ||
+            t["Punto de venta"] || t["Punto"] || '',
+          tipo: t.tipo || t.Tipo || t["Tipo"] || '',
+          tercero: '',
+          detalle: '',
+          valor: Utils.safeNumber(t.valor ?? t.Valor ?? t["Valor"] ?? 0)
+        })).filter(x => String(x.fecha||'').trim() && String(x.punto||'').trim() && String(x.tipo||'').trim());
+
+        // 3) Unir para que splitDetallesYTotales() encuentre los totales
+        state.reporte.detalles = [...(detallesSrv || []), ...totalesSrv];
         state.reporte.detallesRange = { desde, hasta };
         state.reporte.detallesSource = 'server';
       }

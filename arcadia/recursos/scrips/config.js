@@ -4,6 +4,8 @@ window.Arcadia = window.Arcadia || {};
   'use strict';
   A.ADMIN_PASS = '2525';
   A.CONFIG = {
+    REPORT_TITLE: 'Reporte de caja ARCADIA',
+
     LS_RECORDS_KEY: 'salesGridRecords_v2',
     LS_SESSION_KEY: 'sessionGrid_v2',
     WHATSAPP_PHONE: '573007248537',
@@ -12,23 +14,26 @@ window.Arcadia = window.Arcadia || {};
     PUNTOS_VENTA: ['Almendros','Aroma','Ferrocarril','Flora','Irotama','Libertador','Minca','Neguanje','Orient','Playa','Reserva','Rodadero'],
     EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones ARCADIA','Doctor Ahorro','Heritage','Distribuidora'],
 
-    // ✅ Tipos donde NO aplica Tercero / Destino (se desactiva el campo)
-    TIPOS_SIN_TERCERO: [
-      'Efectivo POS del comprobante diario',
-      'Ventas con QR',
-      'Ventas con tarjeta debito',
-      'Ventas con tarjeta credito'
-    ],
+    TIPOS_SIN_TERCERO: [],
 
-    // Tipos que obligan a escoger empresa del grupo
+    // ✅ Tipos donde Tercero/Destino es obligatorio (incluye Autoconsumo)
     TIPOS_REQUIEREN_EMPRESA: [
       'Ventas a crédito (descuentos por nómina)',
       'Ventas a crédito (fórmulas)',
       'Faltantes en kardex (descuentos por nomina)',
-      'Ventas a crédito a empresas del grupo'
+      'Ventas a crédito a empresas del grupo',
+      'Autoconsumo'
     ],
 
-    // ✅ Tipos base por categoría para fórmulas del reporte exportado
+    // ✅ Créditos = lo que suma en "Total ventas a crédito" (incluye Autoconsumo)
+    TIPOS_CREDITO: [
+      'Ventas a crédito (descuentos por nómina)',
+      'Ventas a crédito a empresas del grupo',
+      'Ventas a crédito (fórmulas)',
+      'Faltantes en kardex (descuentos por nomina)',
+      'Autoconsumo'
+    ],
+
     TIPOS_EFECTIVO: [
       'Efectivo POS del comprobante diario'
     ],
@@ -41,7 +46,6 @@ window.Arcadia = window.Arcadia || {};
       'Gasto en efectivo'
     ],
 
-    // ✅ Orden sugerido de tipos al exportar (para que se parezca al layout de la imagen)
     EXPORT_TIPO_ORDER: [
       'Efectivo POS del comprobante diario',
       'Ventas con QR',
@@ -51,10 +55,10 @@ window.Arcadia = window.Arcadia || {};
       'Ventas a crédito (fórmulas)',
       'Ventas a crédito a empresas del grupo',
       'Faltantes en kardex (descuentos por nomina)',
+      'Autoconsumo',
       'Gasto en efectivo'
     ],
 
-    // Claves de totales (siguen existiendo para la captura local)
     TOTAL_KEYS: [
       {key:'total_esperado_tesoreria', label:'Total dinero a recibir por tesoreria'},
       {key:'total_gastos_efectivo',   label:'Total gastos en efectivo'},
@@ -63,6 +67,7 @@ window.Arcadia = window.Arcadia || {};
       {key:'total_ventas_efectivo',   label:'Efectivo neto (efectivo - crédito)'},
       {key:'total_ventas_electronicas',label:'Total ventas por medios electronicos'}
     ],
+
     TIPO_A_CLAVE: {
       'Total dinero a recibir por tesoreria':'total_esperado_tesoreria',
       'Total gastos en efectivo':'total_gastos_efectivo',

@@ -1,8 +1,7 @@
 window.Arcadia = window.Arcadia || {};
 (function (A) {
   'use strict';
-
-  const { Utils, UI } = A;
+  const { Utils, UI, CONFIG } = A;
   const state = A.state;
   const App = A.App;
 
@@ -10,11 +9,9 @@ window.Arcadia = window.Arcadia || {};
     init(){
       this.populatePuntoVentaSelect();
       this.loadSession();
-
       this.bindNav();
       this.bindCaptureEvents();
       this.bindReportEvents();
-
       this.updateNetworkStatus();
 
       window.addEventListener('online', () => this.updateNetworkStatus());
@@ -28,6 +25,9 @@ window.Arcadia = window.Arcadia || {};
 
       if (UI.reportPass) UI.reportPass.value = '';
       UI.reportTableWrapper?.classList.add('hidden');
+
+      // ✅ Nombre del reporte en tag
+      if (UI.reportTag) UI.reportTag.textContent = CONFIG.REPORT_TITLE || 'Reporte';
     },
 
     /* ---------- Navegación ---------- */
@@ -64,7 +64,7 @@ window.Arcadia = window.Arcadia || {};
       }
 
       if(name==='report'){
-        UI.reportTag.textContent = 'Reporte';
+        if (UI.reportTag) UI.reportTag.textContent = CONFIG.REPORT_TITLE || 'Reporte';
         UI.reportTableWrapper?.classList.add('hidden');
 
         if (!state.reportUnlocked) {
@@ -72,7 +72,6 @@ window.Arcadia = window.Arcadia || {};
           UI.reportControls.classList.add('hidden');
           if (UI.reportPass) UI.reportPass.value = '';
         } else {
-          // Intentar revalidar soporte Excel al entrar otra vez
           this.refreshExportSupport();
         }
       }
@@ -85,5 +84,5 @@ window.Arcadia = window.Arcadia || {};
   } else {
     App.init();
   }
-
 })(window.Arcadia);
+

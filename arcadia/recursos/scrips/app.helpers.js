@@ -6,99 +6,51 @@ window.Arcadia = window.Arcadia || {};
   const App = A.App = A.App || {};
 
   function normalizeText(s){
+    // ✅ Normalización más robusta para comparaciones:
+    // - minúsculas
+    // - sin tildes
+    // - colapsa espacios
+    // - elimina puntuación (deja letras/números/espacios)
     return String(s || '')
       .toLowerCase()
-      .trim()
       .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '');
-  }
-
-  // Cache simple de sets normalizados para evitar recalcular
-  const _normSetCache = new Map();
-
-  function getNormalizedSet(list){
-    const arr = Array.isArray(list) ? list : [];
-    const key = arr.join('||'); // suficiente para estas listas fijas de config
-    if (_normSetCache.has(key)) return _normSetCache.get(key);
-    const set = new Set(arr.map(normalizeText));
-    _normSetCache.set(key, set);
-    return set;
+      .replace(/[\u0300-\u036f]/g, '')     // sin tildes
+      .replace(/[^a-z0-9]+/g, ' ')         // quita puntuación/símbolos
+      .replace(/\s+/g, ' ')                // colapsa espacios
+      .trim();
   }
 
   Object.assign(App, {
     normalizeText,
 
-    /* =========================================================
-       ✅ Normalización y equivalencias de tipos
-       - Evita fallos por tildes o mínimas variaciones.
-       - Se usa en validaciones, reglas y exportaciones.
-       ========================================================= */
-
-    getAllTiposCanonicos(){
-      if (this._allTiposCanonicosCache) return this._allTiposCanonicosCache;
-
-      const raw = [
-        ...(CONFIG.TIPOS_SIN_TERCERO || []),
-        ...(CONFIG.TIPOS_REQUIEREN_EMPRESA || []),
-        ...(CONFIG.TIPOS_EFECTIVO || []),
-        ...(CONFIG.TIPOS_ELECTRONICOS || []),
-        ...(CONFIG.TIPOS_GASTO || []),
-        ...(CONFIG.EXPORT_TIPO_ORDER || [])
-      ];
-
-      const uniq = [];
-      const seenNorm = new Set();
-      raw.forEach(t => {
-        const n = normalizeText(t);
-        if (!n) return;
-        if (seenNorm.has(n)) return;
-        seenNorm.add(n);
-        uniq.push(t);
-      });
-
-      this._allTiposCanonicosCache = uniq;
-      return uniq;
-    },
-
-    isTipoInList(tipo, list){
-      const nTipo = normalizeText(tipo);
-      if (!nTipo) return false;
-      const set = getNormalizedSet(list);
-      return set.has(nTipo);
-    },
-
-    canonicalTipo(tipo){
-      const raw = String(tipo || '').trim();
-      if (!raw) return '';
-      const n = normalizeText(raw);
-
-      const canon = this.getAllTiposCanonicos();
-      for (const t of canon) {
-        if (normalizeText(t) === n) return t;
-      }
-      // Si no coincide con ningún conocido, devolver el original
-      return raw;
-    },
-
     /* ---------- Helpers de reglas ---------- */
     requiresEmpresaForTipo(tipo){
-      return this.isTipoInList(tipo, CONFIG.TIPOS_REQUIEREN_EMPRESA || []);
+      return (CONFIG.TIPOS_REQUIEREN_EMPRESA || []).includes(tipo);
     },
-
     disableTerceroForTipo(tipo){
-      return this.isTipoInList(tipo, CONFIG.TIPOS_SIN_TERCERO || []);
+      return (CONFIG.TIPOS_SIN_TERCERO || []).includes(tipo);
     },
-
+    // ✅ Gastos: obligatorio tercero/destino (maneja variantes como "Gasto en efectivo1")
+    isGastoTipo(tipo){
+      const t = String(tipo || '');
+      if ((CONFIG.TIPOS_GASTO || []).includes(t)) return true;
+      const nt = this.normalizeText(t);
+      return nt.startsWith('gasto en efectivo');
+    },
+    // ✅ Regla final: obligatorio en créditos (según fórmulas) y en gastos en efectivo
+    requiresTerceroObligatorioForTipo(tipo){
+      return this.requiresEmpresaForTipo(tipo) || this.isGastoTipo(tipo);
+    },
+    // ✅ Valida que en conceptos obligatorios NO quede vacío
     validateEmpresaGrupo(records){
       const faltantes = (records || []).filter(r =>
-        this.requiresEmpresaForTipo(r.tipo) && !String(r.tercero || '').trim()
+        this.requiresTerceroObligatorioForTipo(r.tipo) &&
+        !String(r.tercero || '').trim()
       );
       if (faltantes.length) {
-        const tipos = Array.from(
-          new Set(faltantes.map(f => this.canonicalTipo(f.tipo)))
-        );
+        const tipos = Array.from(new Set(faltantes.map(f => f.tipo)));
         alert(
-          'Debes seleccionar el Tercero (empresa del grupo) para estos conceptos antes de enviar:\n\n' +
+          'Debes seleccionar el Tercero / Destino para estos conceptos antes de enviar:\n\n' +
           tipos.map(t => `- ${t}`).join('\n')
         );
         return false;
@@ -119,11 +71,9 @@ window.Arcadia = window.Arcadia || {};
       if (!state.session.date || !state.session.pos) return null;
       return `${CONFIG.LS_RECORDS_KEY}_${state.session.date}_${state.session.pos}`;
     },
-
     saveSession(){
       localStorage.setItem(CONFIG.LS_SESSION_KEY, JSON.stringify(state.session));
     },
-
     loadSession(){
       state.session = JSON.parse(localStorage.getItem(CONFIG.LS_SESSION_KEY)) || { date: null, pos: null };
     }

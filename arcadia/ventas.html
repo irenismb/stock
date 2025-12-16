@@ -3,9 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Reporte de Caja — Inicio, Captura y Exportación</title>
+  <title>Reporte de caja ARCADIA</title>
   <meta name="description" content="Aplicación de caja con inicio, captura diaria y exportación por rango, protegida por clave." />
-  <!-- CSS dividido (ubicado en /arcadia/recursos/stilos/) -->
   <link rel="stylesheet" href="./recursos/stilos/base.css">
   <link rel="stylesheet" href="./recursos/stilos/capture.css">
   <link rel="stylesheet" href="./recursos/stilos/report.css">
@@ -13,7 +12,7 @@
 <body>
   <main class="container" id="app">
     <header>
-      <h1>Reporte de Caja</h1>
+      <h1>Reporte de caja ARCADIA</h1>
       <p class="muted">
         Trabaja en el reporte <strong>actual</strong> o exporta <strong>detalles</strong> por rango.
         El reporte está protegido por clave y exporta a <strong>Excel</strong>.
@@ -66,13 +65,17 @@
             </button>
           </div>
         </div>
+
         <div id="session-info" class="hidden">
           <div>
             <strong>Fecha:</strong> <span id="session-date-display"></span> —
             <strong>Punto:</strong> <span id="session-pos-display"></span>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <div id="network-status" class="status-pill status-offline">Offline</div>
+            <button id="toggle-formulas-btn" class="btn btn-ghost btn-small" type="button">
+              👁️ Mostrar fórmulas
+            </button>
           </div>
         </div>
       </section>
@@ -82,6 +85,7 @@
         <button id="add-formulas-btn" class="btn btn-info">Añadir Venta a Crédito (Fórmulas)</button>
         <button id="add-kardex-btn" class="btn btn-info">Añadir Faltantes en Kardex (Descuentos por Nómina)</button>
         <button id="add-interco-btn" class="btn btn-purple">Añadir Ventas a Crédito a Empresas del Grupo</button>
+        <button id="add-autoconsumo-btn" class="btn btn-info">Añadir Autoconsumo</button>
         <button id="add-gasto-btn" class="btn btn-warning">Añadir Gasto en Efectivo</button>
       </div>
 
@@ -101,7 +105,7 @@
           <tbody id="recordsListBody"></tbody>
           <tfoot id="recordsTableFooter">
             <tr data-summary-id="total_ventas_efectivo">
-              <td>Efectivo neto (efectivo - crédito)</td>
+              <td>Efectivo neto</td>
               <td colspan="2"></td><td class="col-total"></td>
               <td colspan="3"></td>
             </tr>
@@ -146,7 +150,7 @@
     <section id="report" class="hidden">
       <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
         <button class="btn btn-ghost" id="back-home-2">⬅ Volver al inicio</button>
-        <span class="tag" id="reportTag">Reporte</span>
+        <span class="tag" id="reportTag">Reporte de caja ARCADIA</span>
       </div>
 
       <div id="reportGate" class="step-card">
@@ -193,7 +197,6 @@
                 </button>
               </div>
               <div style="align-self:end">
-                <!-- ✅ Visible siempre para descarga directa -->
                 <button id="btnExportarHTML" class="btn btn-info" style="width:100%" disabled>
                   Descargar HTML
                 </button>
@@ -210,9 +213,7 @@
 
       <div id="reportStatus" class="muted" style="margin:6px 0 10px" aria-live="polite"></div>
 
-      <!-- Tabla de visualización deshabilitada por requerimiento -->
-      <div class="scroll-x hidden" id="reportTableWrapper"
-           title="Visualización deshabilitada.">
+      <div class="scroll-x hidden" id="reportTableWrapper" title="Visualización deshabilitada.">
         <table id="tablaTotales" class="table-compact">
           <thead id="theadTotales"></thead>
           <tbody id="tbodyTotales"></tbody>
@@ -222,17 +223,11 @@
     </section>
   </main>
 
-  <!-- JS dividido (ubicado en /arcadia/recursos/scrips/) -->
   <script src="./recursos/scrips/config.js"></script>
   <script src="./recursos/scrips/utils.js"></script>
   <script src="./recursos/scrips/api.js"></script>
   <script src="./recursos/scrips/ui.js"></script>
-
-  <!-- ✅ XLSX con soporte de estilos -->
-  <!-- 1) Intento local (para trabajar offline) -->
   <script src="./recursos/scrips/vendor/xlsx-js-style.full.min.js"></script>
-
-  <!-- App modular (reemplaza app.js) -->
   <script src="./recursos/scrips/app.state.js"></script>
   <script src="./recursos/scrips/app.helpers.js"></script>
   <script src="./recursos/scrips/app.capture.js"></script>

@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comparador (Móvil, paso a paso)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root{
+    --ink:#0f172a; --muted:#64748b; --line:#e2e8f0; --bg:#f8fafc; --card:#ffffff;
+    --accent:#4f46e5; --accent-ink:#fff; --best:#e8fff0; --warn:#fff8e7;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Segoe UI,Arial,sans-serif}
+  header{padding:12px 16px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+  h1{margin:0;font-size:16px}
+  main{margin:auto;max-width:480px;padding:16px;display:grid;gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .step-title{font-weight:600;margin:0 0 8px}
+  .help{color:var(--muted);font-size:12px;margin-top:6px}
+  .field{display:grid;gap:6px;margin-top:6px}
+  label{font-size:13px;color:#334155}
+  input,select,button{font:inherit;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff;outline:none}
+  input:focus,select:focus{border-color:#94a3b8;box-shadow:0 0 0 3px #e2e8f0}
+  .nav{display:flex;gap:8px;margin-top:12px}
+  .nav button{flex:1}
+  .primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+  .ghost{background:#fff}
+  .dots{display:flex;gap:6px;justify-content:center;margin-top:6px}
+  .dot{width:7px;height:7px;border-radius:999px;background:#cbd5e1;opacity:.6}
+  .dot.on{background:#475569;opacity:1}
+  table{border-collapse:collapse;width:100%;font-size:13px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:center}
+  thead th{background:#f1f5ff}
+  .best{background:var(--best)}
+  .diff{background:var(--warn);font-weight:600}
+  .hidden{display:none}
+  .err{color:#b91c1c;font-size:12px;margin-top:4px}
+  .headrow{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .small{font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body>
+<header><h1>Comparador de precios — asistente</h1></header>
+
+<main>
+  <!-- Paso a paso -->
+  <section id="wizard" class="card" aria-live="polite">
+    <h2 class="step-title" id="stepTitle">—</h2>
+    <div id="stepBody"></div>
+    <div class="err" id="err"></div>
+    <div class="nav">
+      <button id="btnBack" class="ghost" type="button">Atrás</button>
+      <button id="btnNext" class="primary" type="button">Siguiente</button>
+    </div>
+    <div class="dots" id="dots"></div>
+  </section>
+
+  <!-- Desglose directo (sin resumen) -->
+  <section id="details" class="card hidden" aria-hidden="true">
+    <div class="headrow">
+      <strong>Desglose</strong>
+      <div>
+        <span id="buyInfo" class="small">Cantidad a llevar: —</span>
+        <button id="btnReset" type="button" class="ghost" style="margin-left:8px">Analizar otro producto</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>tienda</th>
+          <th>equivalente (g/ml)</th>
+          <th>precio / unidad</th>
+          <th>cantidad a llevar</th>
+          <th>total a pagar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><output id="n1_o"></output></td>
+          <td><output id="eq1"></output></td>
+          <td><output id="ppu1"></output></td>
+          <td><output id="qty1"></output></td>
+          <td><output id="total1"></output></td>
+        </tr>
+        <tr>
+          <td><output id="n2_o"></output></td>
+          <td><output id="eq2"></output></td>
+          <td><output id="ppu2"></output></td>
+          <td><output id="qty2"></output></td>
+          <td><output id="total2"></output></td>
+        </tr>
+        <tr class="diff">
+          <td>diferencia (T1 − T2)</td>
+          <td><output id="eq_d"></output></td>
+          <td><output id="ppu_d"></output></td>
+          <td>—</td>
+          <td><output id="total_d"></output></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</main>
+
+<script>
+  // Utilidades
+  const G_POR_LB=453.59237, ML_POR_L=1000;
+  const $=id=>document.getElementById(id);
+  const clean=s=>{
+    const t=String(s??"").trim().replace(/\s+/g,"").replace(/\./g,"").replace(/,/g,".");
+    return t===""?NaN:Number(t);
+  };
+  const money=(n)=>`$${Number(n).toLocaleString("es-CO",{maximumFractionDigits:2})}`;
+  const canon=(c,u)=>{
+    u=String(u||"").toLowerCase().trim();
+    if(u==="g")  return {v:c,t:"g",  kind:"mass"};
+    if(u==="kg") return {v:c*1000,t:"g",  kind:"mass"};
+    if(u==="lb") return {v:c*G_POR_LB,t:"g",  kind:"mass"};
+    if(u==="ml") return {v:c,t:"ml", kind:"vol"};
+    if(u==="l")  return {v:c*ML_POR_L,t:"ml", kind:"vol"};
+    return {v:NaN,t:"",kind:""};
+  };
+  const kindOf=u=> (u==="g"||u==="kg"||u==="lb") ? "mass"
+                   : (u==="ml"||u==="l") ? "vol" : "";
+
+  // Estado (precio total = 1000 por defecto; editable)
+  const defaults=()=>({
+    s1:{name:"Tienda 1",qty:500,unit:"g",price:1000},
+    s2:{name:"Tienda 2",qty:500,unit:"g",price:1000},
+    buyQty:1000
+  });
+  let state = defaults();
+
+  // Pasos (sin nombres de tiendas)
+  const steps=[
+    { key:"s1.qty",    title:"Tienda 1 — cantidad",     render:() => inputNumber("s1.qty","Cantidad (ej: 500)") },
+    { key:"s1.unit",   title:"Tienda 1 — unidad",       render:() => selectUnit("s1.unit") },
+    { key:"s1.price",  title:"Tienda 1 — precio total", render:() => inputNumber("s1.price","Precio total (ej: 2400)") },
+
+    { key:"s2.qty",    title:"Tienda 2 — cantidad",     render:() => inputNumber("s2.qty","Cantidad (ej: 500)") },
+    { key:"s2.unit",   title:"Tienda 2 — unidad",       render:() => selectUnit("s2.unit") },
+    { key:"s2.price",  title:"Tienda 2 — precio total", render:() => inputNumber("s2.price","Precio total (ej: 2500)") },
+
+    { key:"buyQty",    title:"Cantidad a llevar",       render:() => inputNumber("buyQty","Cantidad (ej: 1000)", false, 1000) }
+  ];
+  let step=0;
+
+  // Renderizadores
+  function inputNumber(path,placeholder,allowEmpty=false,defVal){
+    const val=get(path);
+    const shown = (allowEmpty && (val===undefined||val===null)) ? "" : (val ?? (defVal ?? ""));
+    const el=document.createElement("div");
+    el.className="field";
+    el.innerHTML=`
+      <label>${placeholder}</label>
+      <input id="fld" type="text" inputmode="decimal" placeholder="${allowEmpty?"(puede ir vacío)":"0,00"}" value="${shown}">
+      ${allowEmpty?'<div class="help">Puedes dejarlo vacío ahora; se exigirá antes de calcular.</div>':'<div class="help">Usa coma o punto. Ej: 0,5 • 500</div>'}
+    `;
+    return el;
+  }
+  function selectUnit(path){
+    const val=String(get(path)||"g").toLowerCase();
+    const el=document.createElement("div");
+    el.className="field";
+    el.innerHTML=`
+      <label>Unidad</label>
+      <select id="fld">
+        <option value="g">g (gramos)</option>
+        <option value="kg">kg (kilogramos)</option>
+        <option value="lb">lb (libras)</option>
+        <option value="ml">ml (mililitros)</option>
+        <option value="l">l (litros)</option>
+      </select>
+      <div class="help">Ambas tiendas deben ser del mismo tipo: peso (g/kg/lb) o volumen (ml/l).</div>
+    `;
+    setTimeout(()=>{ el.querySelector("#fld").value=val; },0);
+    return el;
+  }
+
+  // Acceso a estado
+  function get(path){ return path.split(".").reduce((o,k)=>o?.[k],state); }
+  function set(path,value){
+    const keys=path.split(".");
+    let o=state;
+    for(let i=0;i<keys.length-1;i++) o=o[keys[i]];
+    o[keys.at(-1)]=value;
+  }
+
+  // Render de paso
+  function render(){
+    $("err").textContent="";
+    const s=steps[step];
+    $("stepTitle").textContent=s.title;
+    $("stepBody").replaceChildren(s.render());
+    const fld=$("stepBody").querySelector("#fld");
+    if(fld){ setTimeout(()=>fld.focus(),50); fld.addEventListener("keydown",e=>{ if(e.key==="Enter") next(); }); }
+    $("btnBack").disabled=step===0;
+    $("btnNext").textContent=step===steps.length-1?"Calcular":"Siguiente";
+    $("dots").innerHTML=steps.map((_,i)=>`<span class="dot ${i===step?"on":""}"></span>`).join("");
+  }
+
+  // Validación (incluye tipo de unidad)
+  function validate(){
+    const s=steps[step].key;
+    const fld=$("stepBody").querySelector("#fld");
+    if(!fld) return true;
+
+    if(s.endsWith(".qty") || s==="buyQty" || s.endsWith(".price")){
+      const num=clean(fld.value);
+      if(Number.isNaN(num)||num<=0){ $("err").textContent="Número inválido."; return false; }
+      set(s,num); return true;
+    }
+
+    if(s.endsWith(".unit")){
+      const chosen=String(fld.value).toLowerCase();
+      const thisKind=kindOf(chosen);
+      const otherUnit = s.startsWith("s1.") ? state.s2.unit : state.s1.unit;
+      const otherKind = kindOf(String(otherUnit||""));
+      if(otherKind && thisKind && thisKind!==otherKind){
+        $("err").textContent="Tipo de unidad incompatible (peso vs volumen). Cambia la unidad.";
+        return false;
+      }
+      set(s, chosen);
+      return true;
+    }
+    return true;
+  }
+
+  function back(){ if(step>0){ step--; render(); } }
+  function next(){
+    if(!validate()) return;
+    if(step<steps.length-1){ step++; render(); return; }
+    computeAndShow();
+  }
+
+  $("btnBack").addEventListener("click", back);
+  $("btnNext").addEventListener("click", next);
+
+  // Cálculo y tabla
+  function computeAndShow(){
+    const {s1,s2,buyQty}=state;
+    const a1=canon(Number(s1.qty),s1.unit);
+    const a2=canon(Number(s2.qty),s2.unit);
+    if(!a1.t||!a2.t||a1.t!==a2.t){
+      step=1; render(); $("err").textContent="Las unidades deben coincidir (mismo tipo)."; return;
+    }
+    const ppu1=s1.price/a1.v, ppu2=s2.price/a2.v;
+    const total1=ppu1*buyQty, total2=ppu2*buyQty;
+
+    $("buyInfo").textContent=`Cantidad a llevar: ${buyQty} ${a1.t}`;
+    $("n1_o").textContent=s1.name; $("n2_o").textContent=s2.name;
+    $("eq1").textContent=`${a1.v.toFixed(2)} ${a1.t}`; $("eq2").textContent=`${a2.v.toFixed(2)} ${a2.t}`;
+    $("ppu1").textContent=`${money(ppu1)}/${a1.t}`;   $("ppu2").textContent=`${money(ppu2)}/${a1.t}`;
+    $("qty1").textContent=`${buyQty} ${a1.t}`;        $("qty2").textContent=`${buyQty} ${a1.t}`;
+    $("total1").textContent=money(total1);            $("total2").textContent=money(total2);
+
+    $("eq_d").textContent=`${(a1.v-a2.v).toFixed(2)} ${a1.t}`;
+    $("ppu_d").textContent=`${money(ppu1-ppu2)}/${a1.t}`;
+    $("total_d").textContent=money(total1-total2);
+
+    const row1 = $("ppu1").closest("tr");
+    const row2 = $("ppu2").closest("tr");
+    row1.classList.remove("best"); row2.classList.remove("best");
+    if(ppu1 < ppu2) row1.classList.add("best"); else if(ppu2 < ppu1) row2.classList.add("best");
+
+    $("wizard").classList.add("hidden");
+    $("details").classList.remove("hidden");
+    $("details").setAttribute("aria-hidden","false");
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  // Reiniciar sin recargar
+  $("btnReset").addEventListener("click", ()=>{
+    state = defaults();
+    step = 0;
+    $("details").classList.add("hidden");
+    $("details").setAttribute("aria-hidden","true");
+    $("wizard").classList.remove("hidden");
+    $("err").textContent="";
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  });
+
+  // Inicio
+  render();
+</script>
+</body>
+</html>

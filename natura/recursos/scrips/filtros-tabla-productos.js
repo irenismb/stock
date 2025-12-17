@@ -13,7 +13,6 @@
 function hasOwn(obj, key) {
   return obj && Object.prototype.hasOwnProperty.call(obj, key);
 }
-
 function shouldShowInCatalog(p) {
   if (!p) return false;
   if (hasOwn(p, "mostrar_catalogo")) {
@@ -62,7 +61,6 @@ function getSavedFilters() {
     return {};
   }
 }
-
 function saveFiltersToStorage() {
   const catInput = categoryMenu.querySelector('input[name="category"]:checked');
   const brandInput = brandMenu.querySelector('input[name="brand"]:checked');
@@ -70,7 +68,6 @@ function saveFiltersToStorage() {
   const brand = brandInput ? brandInput.value : "Todas";
   localStorage.setItem(LS_FILTERS_KEY, JSON.stringify({ category: cat, brand }));
 }
-
 function updateCategoryButtonLabel() {
   const sel = categoryMenu.querySelector('input[name="category"]:checked');
   if (sel && sel.value !== "Todas") {
@@ -80,7 +77,6 @@ function updateCategoryButtonLabel() {
     categoryToggleBtn.textContent = "Categorías ▾";
   }
 }
-
 function updateBrandButtonLabel() {
   const sel = brandMenu.querySelector('input[name="brand"]:checked');
   if (sel && sel.value !== "Todas") {
@@ -90,7 +86,6 @@ function updateBrandButtonLabel() {
     brandToggleBtn.textContent = "Marcas ▾";
   }
 }
-
 function closeDropdowns() {
   document.querySelectorAll(".custom-dropdown.open").forEach(dd => {
     dd.classList.remove("open");
@@ -100,7 +95,6 @@ function closeDropdowns() {
     if (btn) btn.setAttribute("aria-expanded", "false");
   });
 }
-
 function refreshFilters() {
   const categoryMap = new Map();
   products.forEach(p => {
@@ -177,7 +171,6 @@ function refreshFilters() {
   updateCategoryButtonLabel();
   updateBrandButtonLabel();
 }
-
 function setupFilterListenersOnce() {
   if (filterListenersAttached) return;
   filterListenersAttached = true;
@@ -303,8 +296,10 @@ async function fetchProductsFromBackend() {
     filterAndDisplayProducts();
   } catch (err) {
     console.error("Error al cargar productos:", err);
+
+    // ✅ CAMBIO: mensaje menos “tipo error” para evitar señales de Soft 404
     productTableBody.innerHTML =
-      '<tr><td colspan="7" style="text-align:center;">Error al cargar productos.</td></tr>';
+      '<tr><td colspan="7" style="text-align:center;">Estamos actualizando el catálogo. Compra por WhatsApp: +57 304 208 8961</td></tr>';
   }
 }
 
@@ -355,7 +350,6 @@ function syncPreviewWithFilteredList() {
   currentPreviewProductId = prod.id;
   showPreviewForProduct(prod);
 }
-
 function filterAndDisplayProducts() {
   let list = [...products];
 
@@ -377,7 +371,6 @@ function filterAndDisplayProducts() {
   const terms = normalizeText(searchInput.value)
     .split(/\s+/)
     .filter(Boolean);
-
   if (terms.length > 0) {
     list = list.filter(p => {
       const desc = p.description ?? p.descripcion ?? p["descripción"] ?? p.detalle ?? "";
@@ -405,7 +398,6 @@ function filterAndDisplayProducts() {
   // Ajustar vista previa (con comportamiento especial en móvil)
   syncPreviewWithFilteredList();
 }
-
 function displayProducts(list) {
   if (!Array.isArray(list) || list.length === 0) {
     productTableBody.innerHTML =
@@ -414,16 +406,13 @@ function displayProducts(list) {
   }
 
   const frag = document.createDocumentFragment();
-
   list.forEach(p => {
     const item = cart[p.id];
     const qty = item ? item.quantity : 0;
     const unitPrice = p.valor_unitario || 0;
     const subtotal = qty * unitPrice;
-
     const tr = document.createElement("tr");
     tr.setAttribute("data-product-id", p.id);
-
     const thumbSrc = IMG_BASE_PATH + encodeURIComponent(p.id) + ".webp";
 
     // ✅ SIEMPRE mostrar controles de cantidad
@@ -461,10 +450,10 @@ function displayProducts(list) {
         subtotal
       )}</td>
     `;
-
     frag.appendChild(tr);
   });
 
   productTableBody.innerHTML = "";
   productTableBody.appendChild(frag);
 }
+

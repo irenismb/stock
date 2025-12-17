@@ -1,0 +1,42 @@
+/* ✅ Bloque visible para SEO (evita Soft 404 si falla el render del JS) */
+.seo-intro{
+  max-width:1200px;
+  margin:0 auto 12px;
+  padding:12px 14px;
+  background:rgba(255,255,255,0.96);
+  border:1px solid rgba(148,163,184,0.35);
+  border-radius:16px;
+  box-shadow:0 10px 24px rgba(15,23,42,0.10);
+  color:#0f172a;
+}
+
+.seo-intro h2{
+  margin:0 0 6px 0;
+  font-size:18px;
+  letter-spacing:.02em;
+}
+
+.seo-intro p{
+  margin:6px 0;
+  line-height:1.5;
+  color:#334155;
+}
+
+.seo-intro a{
+  color:#2563eb;
+  font-weight:700;
+  text-decoration:none;
+}
+.seo-intro a:hover{
+  text-decoration:underline;
+}
+
+.seo-noscript{
+  max-width:1200px;
+  margin:0 auto 12px;
+  padding:10px 14px;
+  background:#fff7ed;
+  border:1px solid #fed7aa;
+  border-radius:14px;
+  color:#7c2d12;
+}

@@ -20,7 +20,6 @@ function loadCartFromStorage() {
 function updateCart() {
   const items = Object.values(cart);
   let total = 0;
-
   if (items.length === 0) {
     cartList.innerHTML =
       '<li class="cart-item"><span class="cart-item-title">El carrito está vacío.</span></li>';
@@ -40,7 +39,6 @@ function updateCart() {
       })
       .join("");
   }
-
   totalPriceElement.textContent = "Total: " + currencyFormatter.format(total);
   localStorage.setItem(LS_CART_KEY, JSON.stringify(cart));
 }
@@ -61,6 +59,29 @@ function buildClientWhatsAppMsg(
   return msg;
 }
 
+// ✅ Nuevo: detectar móvil vs PC (app en móvil, web en PC)
+function isMobileDevice() {
+  try {
+    const ua = (navigator.userAgent || "").toLowerCase();
+    const byUA = /android|iphone|ipad|ipod|iemobile|opera mini/.test(ua);
+    const byPointer = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
+    return Boolean(byUA || byPointer);
+  } catch (e) {
+    return false;
+  }
+}
+
+function buildWhatsAppUrl(phone, msg) {
+  const p = String(phone || "").replace(/[^\d]/g, ""); // solo dígitos
+  const t = String(msg || "");
+  if (isMobileDevice()) {
+    // App en móvil (o prompt)
+    return `https://wa.me/${encodeURIComponent(p)}?text=${encodeURIComponent(t)}`;
+  }
+  // Web solo en PC
+  return `https://web.whatsapp.com/send?phone=${encodeURIComponent(p)}&text=${encodeURIComponent(t)}`;
+}
+
 function handleWhatsAppClick() {
   const items = Object.values(cart).filter(it => it.quantity > 0);
   if (!items.length) {
@@ -69,8 +90,12 @@ function handleWhatsAppClick() {
   }
   const phone = DEFAULT_WHATSAPP;
   const msg = buildClientWhatsAppMsg(items);
-  const url = `https://wa.me/${encodeURIComponent(phone)}?text=${encodeURIComponent(msg)}`;
+
+  // ✅ Cambio clave: app en móvil / web en PC
+  const url = buildWhatsAppUrl(phone, msg);
+
   window.open(url, "_blank");
+
   // ✅ Guard extra por robustez
   if (typeof sendVisitEvent === "function") {
     sendVisitEvent("update", { clickText: "whatsapp_compra" });
@@ -106,7 +131,6 @@ productTableBody.addEventListener("click", e => {
   const incBtn = e.target.closest(".increase-btn");
   const tr = e.target.closest("tr");
   if (!tr) return;
-
   const productId = tr.getAttribute("data-product-id");
 
   // Clic en la miniatura → vista previa + modal grande
@@ -114,7 +138,6 @@ productTableBody.addEventListener("click", e => {
   if (thumbImg) {
     let idx = -1;
     let prod = null;
-
     if (productId) {
       idx = currentFilteredProducts.findIndex(p => String(p.id) === String(productId));
       if (idx !== -1) {
@@ -123,18 +146,15 @@ productTableBody.addEventListener("click", e => {
         prod = products.find(p => String(p.id) === String(productId));
       }
     }
-
     if (prod) {
       currentPreviewProductIndex = idx !== -1 ? idx : 0;
       currentPreviewProductId = prod.id;
       showPreviewForProduct(prod);
-
       const clickName = prod.name || prod.nombre || "";
       if (clickName && typeof sendVisitEvent === "function") {
         sendVisitEvent("update", { clickText: clickName + " (imagen)" });
       }
     }
-
     const src = thumbImg.currentSrc || thumbImg.src;
     const alt = thumbImg.alt || (prod && prod.name) || "Imagen del producto";
     openImageModal(src, alt);
@@ -145,17 +165,13 @@ productTableBody.addEventListener("click", e => {
   const input = tr.querySelector(".quantity-input");
   if (decBtn || incBtn) {
     if (!input) return;
-
     let qty = parseInt(input.value, 10);
     if (!Number.isFinite(qty) || qty < 0) qty = 0;
-
     const price = Number(input.dataset.price) || 0;
     const id = input.dataset.id;
     const name = input.dataset.name || "";
-
     if (incBtn) qty += 1;
     if (decBtn) qty = Math.max(0, qty - 1);
-
     input.value = qty;
     updateRowTotal(tr, qty, price);
     updateCartEntry(id, name, price, qty);
@@ -166,9 +182,7 @@ productTableBody.addEventListener("click", e => {
   if (e.target.closest(".quantity-control") || e.target.classList.contains("quantity-input")) {
     return;
   }
-
   if (!productId) return;
-
   let idx = currentFilteredProducts.findIndex(p => String(p.id) === String(productId));
   let prod;
   if (idx !== -1) {
@@ -176,14 +190,12 @@ productTableBody.addEventListener("click", e => {
   } else {
     prod = products.find(p => String(p.id) === String(productId));
   }
-
   if (prod) {
     currentPreviewProductIndex = idx !== -1 ? idx : 0;
     currentPreviewProductId = prod.id;
     showPreviewForProduct(prod);
-
     const clickName = prod.name || prod.nombre || "";
-    if (clickName && typeof sendVisitEvent === "function") {
+    if (typeof sendVisitEvent === "function") {
       sendVisitEvent("update", { clickText: clickName });
     }
   }
@@ -192,17 +204,13 @@ productTableBody.addEventListener("click", e => {
 productTableBody.addEventListener("change", e => {
   const input = e.target;
   if (!input.classList.contains("quantity-input")) return;
-
   const tr = input.closest("tr");
   if (!tr) return;
-
   let qty = parseInt(input.value, 10);
   if (!Number.isFinite(qty) || qty < 0) qty = 0;
-
   const price = Number(input.dataset.price) || 0;
   const id = input.dataset.id;
   const name = input.dataset.name || "";
-
   input.value = qty;
   updateRowTotal(tr, qty, price);
   updateCartEntry(id, name, price, qty);
@@ -212,17 +220,13 @@ productTableBody.addEventListener("change", e => {
 cartList.addEventListener("click", e => {
   const btn = e.target.closest(".remove-item-btn");
   if (!btn) return;
-
   const id = btn.dataset.id;
   if (!id) return;
-
   delete cart[id];
-
   const row = productTableBody.querySelector(`tr[data-product-id="${id}"]`);
   if (row) {
     const input = row.querySelector(".quantity-input");
     if (input) input.value = 0;
-
     const totalCell = row.querySelector(".total-pay");
     if (totalCell) totalCell.textContent = currencyFormatter.format(0);
   }
@@ -251,14 +255,12 @@ function openCartModal() {
   cartModal.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
 }
-
 function closeCartModal() {
   if (!cartModal) return;
   cartModal.classList.remove("open");
   cartModal.setAttribute("aria-hidden", "true");
   document.body.style.overflow = "";
 }
-
 if (mobileCartBtn && cartModal) {
   mobileCartBtn.addEventListener("click", openCartModal);
 }
@@ -268,7 +270,6 @@ if (cartModalClose) {
 if (cartModalBackdrop) {
   cartModalBackdrop.addEventListener("click", closeCartModal);
 }
-
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && cartModal && cartModal.classList.contains("open")) {
     closeCartModal();
@@ -289,22 +290,16 @@ function setupAutoRefresh() {
 
 // ================== INICIALIZACIÓN GENERAL ==================
 (function init() {
-  // Generar / recuperar identificador de navegador lo antes posible
   ensureBrowserId();
-
   loadCartFromStorage();
   updateCart();
   fetchProductsFromBackend();
   setupAutoRefresh();
-
   userName = detectDeviceLabel();
   ensureSessionId();
-
   if (typeof sendVisitEvent === "function") {
     sendVisitEvent("start");
   }
-
-  // ✅ GUARD: evita ruptura si el orden de scripts cambia en el futuro
   if (typeof initClientLocation === "function") {
     initClientLocation();
   }
@@ -331,14 +326,11 @@ window.addEventListener("beforeunload", function () {
  */
 (function setStaticBackgrounds() {
   try {
-    // 🔁 AJUSTA AQUÍ LAS EXTENSIONES SI NO SON .webp
     const pageBg   = "recursos/otras_imagenes/logo_pagina.webp";
     const panelBg  = "recursos/otras_imagenes/logo_panel_de_controles.webp";
     const headerBg = "recursos/otras_imagenes/logo_encabezado.webp";
-
     console.log("[Fondos] Usando:", { pageBg, panelBg, headerBg });
 
-    // 1) Fondo general de la página
     if (pageBg) {
       document.body.style.backgroundImage = `url("${pageBg}")`;
       document.body.style.backgroundSize = "cover";
@@ -347,7 +339,6 @@ window.addEventListener("beforeunload", function () {
       document.body.style.backgroundAttachment = "fixed";
     }
 
-    // 2) Fondo del contenedor principal
     const container = document.querySelector(".container");
     if (container && panelBg) {
       container.style.backgroundImage = `url("${panelBg}")`;
@@ -356,7 +347,6 @@ window.addEventListener("beforeunload", function () {
       container.style.backgroundRepeat = "no-repeat";
     }
 
-    // 3) Fondo del encabezado
     const header = document.querySelector(".site-header");
     if (header && headerBg) {
       header.style.backgroundImage = `url("${headerBg}")`;

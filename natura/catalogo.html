@@ -525,9 +525,18 @@
                aria-label="Buscar producto" />
         <select id="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
         <select id="brand" aria-label="Filtrar por marca"><option value="">Todas las marcas</option></select>
+
+        <!-- ✅ NUEVO: Ordenar (reemplaza Limpiar) y va después de Marcas -->
+        <select id="sort" aria-label="Ordenar productos">
+          <option value="">Ordenar</option>
+          <option value="price_asc">Precio: menor a mayor</option>
+          <option value="price_desc">Precio: mayor a menor</option>
+          <option value="name_asc">Nombre: A → Z</option>
+        </select>
+
         <button class="btn-acc" id="btn-cart" type="button">Ver carrito</button>
-        <button class="btn-ghost" id="btn-clear" type="button">Limpiar</button>
       </div>
+
       <!-- ✅ Iconos centrados + WhatsApp adaptable (app en móvil, web en PC) -->
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
         <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
@@ -1007,14 +1016,12 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
     const IMG_DIR = "recursos/imagenes_de_productos";
     const IMG_EXTS = ["webp","jpg","jpeg","png"];
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
-
     // ✅ URLs absolutas para datos estructurados (evita errores "image" en Product)
     const SITE_BASE = "https://irenismb.github.io/stock/natura/";
     const FALLBACK_IMAGE = SITE_BASE + "recursos/otras_imagenes/logo_empresa.png";
     function productImageAbsoluteUrl(id){
       return SITE_BASE + IMG_DIR + "/" + encodeURIComponent(id) + ".webp";
     }
-
     function toNumberCOP(s){ return Number(String(s ?? "").replace(/[^\d]/g,"")) || 0; }
     function normalizeText(t){
       return (t || "")
@@ -1288,6 +1295,7 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
     // =========================
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
+    const sortSel = document.getElementById("sort"); // ✅ NUEVO
     const qInp = document.getElementById("q");
     const grid = document.getElementById("grid");
     const countEl = document.getElementById("count");
@@ -1305,18 +1313,22 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
       const q = (u.searchParams.get("q") || "").trim();
       const cat = (u.searchParams.get("cat") || "").trim();
       const br = (u.searchParams.get("brand") || "").trim();
+      const sort = (u.searchParams.get("sort") || "").trim(); // ✅ NUEVO
       if (q) qInp.value = q;
       if (cat) catSel.value = cat;
       if (br) brandSel.value = br;
+      if (sort && sortSel) sortSel.value = sort;
     }
     function writeStateToUrl(){
       const u = new URL(location.href);
       const q = qInp.value.trim();
       const cat = catSel.value;
       const br = brandSel.value;
+      const sort = sortSel ? sortSel.value : ""; // ✅ NUEVO
       if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
       if (cat) u.searchParams.set("cat", cat); else u.searchParams.delete("cat");
       if (br) u.searchParams.set("brand", br); else u.searchParams.delete("brand");
+      if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort"); // ✅ NUEVO
       history.replaceState(null, "", u.toString());
     }
     // =========================
@@ -1332,10 +1344,8 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
           "itemListElement": list.slice(0, 500).map((p, i) => {
             const productUrl = baseUrl + "#p-" + encodeURIComponent(p.id);
             const imgUrl = productImageAbsoluteUrl(p.id);
-
             // ✅ Agregamos image (obligatorio para Product en tu caso) y description (opcional)
             const desc = `Producto Natura: ${p.name}. Categoría: ${p.category || "Natura"}. Compra por WhatsApp.`;
-
             return {
               "@type":"ListItem",
               "position": i + 1,
@@ -1368,8 +1378,10 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
     function render(){
       const cat = catSel.value;
       const br = brandSel.value;
+      const sortMode = sortSel ? sortSel.value : ""; // ✅ NUEVO
       const terms = normalizeText(qInp.value).split(/\s+/).filter(Boolean);
-      const filtered = all.filter(p=>{
+
+      let filtered = all.filter(p=>{
         if(cat && p.category !== cat) return false;
         if(br && p.brand !== br) return false;
         if(terms.length){
@@ -1377,6 +1389,21 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
         }
         return true;
       });
+
+      // ✅ NUEVO: Ordenar
+      if(sortMode === "price_asc"){
+        filtered.sort((a,b)=> (a.price||0) - (b.price||0) || String(a.id).localeCompare(String(b.id)));
+      }else if(sortMode === "price_desc"){
+        filtered.sort((a,b)=> (b.price||0) - (a.price||0) || String(a.id).localeCompare(String(b.id)));
+      }else if(sortMode === "name_asc"){
+        filtered.sort((a,b)=>{
+          const cmp = String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" });
+          if(cmp !== 0) return cmp;
+          return String(a.id).localeCompare(String(b.id));
+        });
+      }
+      // (sortMode vacío => orden original del TSV)
+
       countEl.textContent = `${filtered.length} producto(s) encontrado(s).`;
       grid.innerHTML = "";
       for(const p of filtered){
@@ -1460,16 +1487,12 @@ Protector Solar Facial Stick FPS 50 Todo Tipo de Piel	Protección solar	Natura	6
     // EVENTOS
     // =========================
     document.getElementById("btn-cart").onclick = openCartModal;
-    document.getElementById("btn-clear").onclick = ()=>{
-      qInp.value = "";
-      catSel.value = "";
-      brandSel.value = "";
-      render();
-      qInp.focus();
-    };
+
     qInp.addEventListener("input", render);
     catSel.addEventListener("change", render);
     brandSel.addEventListener("change", render);
+    if(sortSel) sortSel.addEventListener("change", render); // ✅ NUEVO
+
     // Init
     document.getElementById("y").textContent = String(new Date().getFullYear());
     readStateFromUrl();

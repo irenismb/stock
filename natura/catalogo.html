@@ -1,518 +1,507 @@
-<!DOCTYPE html>
-<html lang="es">
+<!doctype html>
+<html lang="es-CO">
 <head>
-  <meta charset="UTF-8" />
-  <title>Irenismb Stock Natura - Catálogo con Búsqueda Inteligente</title>
-  <!-- ✅ SEO BÁSICO -->
-  <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html">
-  <meta name="description" content="Catálogo Natura (y más) con búsqueda inteligente, filtros por marca y categoría, y compra fácil por WhatsApp. Envíos a toda Colombia y pago contra entrega en Santa Marta.">
-  <meta name="robots" content="index,follow,max-image-preview:large">
-  <link rel="alternate" hreflang="es-CO" href="https://irenismb.github.io/stock/natura/catalogo.html">
-  <!-- Favicon / ícono de pestaña -->
-  <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
-  <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
-  <!-- Metadatos para compartir en redes (Open Graph para WhatsApp/Facebook) -->
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html">
-  <meta property="og:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
-  <meta property="og:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-  <meta property="og:image:type" content="image/png">
-  <meta property="og:image:width" content="800">
-  <meta property="og:image:height" content="800">
-  <meta property="og:site_name" content="Irenismb Stock Natura">
-  <meta property="og:locale" content="es_CO">
-  <!-- Metadatos Twitter -->
-  <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Irenismb Stock Natura - Catálogo con Búsqueda Inteligente">
-  <meta name="twitter:description" content="Explora el catálogo Natura con búsqueda inteligente, filtros por marca y categorías, y compra fácil por WhatsApp.">
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-  <!-- Hojas de estilos divididas (carpeta stilos) -->
-  <link rel="stylesheet" href="recursos/stilos/01-base.css">
-  <link rel="stylesheet" href="recursos/stilos/02-moderno.css">
-  <link rel="stylesheet" href="recursos/stilos/03-refinamiento.css">
-  <link rel="stylesheet" href="recursos/stilos/04-extras-modal-stock.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#0b0f14" />
+
+  <title><<<NOMBRE_EMPRESA>>> | Catálogo y compras por WhatsApp</title>
+  <meta name="description" content="<<<NOMBRE_EMPRESA>>> en <<<CIUDAD>>>. Catálogo de fragancias y cuidado personal (Natura, Avon, Ésika). Compra fácil por WhatsApp: <<<WHATSAPP_TEXTO>>>." />
+  <meta name="robots" content="index,follow" />
+  <link rel="canonical" href="<<<URL_PUBLICA_DE_TU_CATALOGO>>>" />
+
+  <!-- Iconos (opcionales) -->
+  <link rel="icon" href="favicon.ico" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="<<<NOMBRE_EMPRESA>>> | Catálogo" />
+  <meta property="og:description" content="Compra por WhatsApp. Precios, stock y entrega según disponibilidad." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="<<<URL_PUBLICA_DE_TU_CATALOGO>>>" />
+  <meta property="og:image" content="<<<URL_IMAGEN_COMPARTIR>>>" />
+
+  <style>
+    :root{
+      --bg:#0b0f14;--card:#121826;--txt:#e7edf5;--mut:#a9b4c2;--acc:#20c997;--br:14px;
+      --line:#22304a;--soft:#0e1524;--shadow:0 12px 35px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;background:linear-gradient(180deg,#0b0f14,#0c1220);color:var(--txt)}
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+    .skip{position:absolute;left:-999px;top:auto;width:1px;height:1px;overflow:hidden}
+    .skip:focus{left:16px;top:16px;width:auto;height:auto;background:#fff;color:#000;padding:10px 12px;border-radius:10px;z-index:9999}
+
+    header{padding:18px 0 10px}
+    .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+    .brand{display:flex;align-items:center;gap:12px}
+    .logo{
+      width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#20c997,#2dd4bf);
+      display:grid;place-items:center;color:#05120d;font-weight:900;box-shadow:var(--shadow)
+    }
+    .brand h1{margin:0;font-size:18px;line-height:1.1}
+    .brand p{margin:2px 0 0;color:var(--mut);font-size:12px}
+
+    .nav{display:flex;gap:10px;flex-wrap:wrap}
+    .nav a{padding:10px 12px;border:1px solid var(--line);background:rgba(18,24,38,.65);border-radius:12px;text-decoration:none;font-size:13px}
+    .nav a:hover{border-color:#2a3b5c}
+
+    .hero{margin:14px 0 10px;background:rgba(18,24,38,.55);border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:var(--shadow)}
+    .hero h2{margin:0 0 6px;font-size:18px}
+    .hero p{margin:6px 0;color:var(--mut);line-height:1.45}
+
+    .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+    input,select,button{
+      border-radius:12px;border:1px solid #263246;background:var(--soft);color:var(--txt);
+      padding:10px 12px;font-size:14px
+    }
+    input{flex:1;min-width:220px}
+    button{cursor:pointer}
+    .btn-acc{background:linear-gradient(90deg,#20c997,#2dd4bf);border:none;color:#04120d;font-weight:800}
+    .btn-ghost{background:rgba(18,24,38,.6)}
+    main{padding:8px 0 30px}
+
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin-top:14px}
+    .card{background:rgba(18,24,38,.92);border:1px solid var(--line);border-radius:var(--br);overflow:hidden}
+    .img{aspect-ratio:4/3;background:#0b1220;display:flex;align-items:center;justify-content:center}
+    .img img{width:100%;height:100%;object-fit:cover}
+    .pad{padding:12px}
+    .name{font-weight:900;margin:0 0 6px}
+    .meta{color:var(--mut);font-size:12px;margin:0 0 8px}
+    .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .price{font-weight:900}
+    .stock{font-size:12px;color:var(--mut)}
+    .pill{display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;border:1px solid #2a3b5c;color:var(--mut)}
+    .section{
+      margin-top:18px;background:rgba(18,24,38,.55);border:1px solid var(--line);
+      border-radius:18px;padding:14px;box-shadow:var(--shadow)
+    }
+    .section h3{margin:0 0 8px;font-size:16px}
+    .section p,.section li{color:var(--mut);line-height:1.55}
+    .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
+    .social{display:flex;gap:10px;flex-wrap:wrap}
+    .social a{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;text-decoration:none;background:rgba(14,21,36,.6)}
+    .social svg{width:18px;height:18px}
+    .map{border-radius:14px;overflow:hidden;border:1px solid var(--line);background:#0b1220}
+    iframe{width:100%;height:320px;border:0}
+
+    details{margin-top:14px;background:rgba(18,24,38,.35);border:1px dashed #2a3b5c;border-radius:12px;padding:10px}
+    details > summary{cursor:pointer;font-weight:800}
+    pre{white-space:pre-wrap;word-break:break-word;color:#d6deea;margin:10px 0 0}
+
+    footer{padding:22px 0;color:var(--mut);font-size:12px}
+    footer a{text-decoration:none;border-bottom:1px dashed #2a3b5c}
+    .wa-float{
+      position:fixed;right:16px;bottom:16px;z-index:999;
+      display:flex;align-items:center;gap:10px;
+      padding:12px 14px;border-radius:999px;border:1px solid #1f3a32;
+      background:linear-gradient(90deg,#20c997,#2dd4bf);color:#04120d;font-weight:900;
+      box-shadow:var(--shadow);text-decoration:none
+    }
+  </style>
 </head>
+
 <body>
-  <!-- ENCABEZADO PRINCIPAL -->
-  <header class="site-header">
-    <div class="site-header-inner">
-      <div class="site-brand">
-        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura">
+  <a class="skip" href="#catalogo">Saltar al catálogo</a>
+
+  <header class="wrap">
+    <div class="topbar">
+      <div class="brand">
+        <div class="logo" aria-label="Logo"><span><<<LOGO>>></span></div>
         <div>
-          <h1>IRENISMB STOCK NATURA</h1>
-          <!-- ✅ Ajuste SEO elegante (sin franja) -->
-          <p>Catálogo Natura en Santa Marta • Envíos a toda Colombia • Pago contra entrega</p>
+          <h1><<<NOMBRE_EMPRESA>>></h1>
+          <p>Fragancias, cuidado personal y regalos · <<<CIUDAD>>> · Compra por WhatsApp</p>
         </div>
       </div>
-      <div class="site-badge">
-        Natura · Maquillaje · Cuidado personal
-      </div>
+
+      <nav class="nav" aria-label="Secciones">
+        <a href="#catalogo">Catálogo</a>
+        <a href="#sobre">Sobre nosotros</a>
+        <a href="#ubicacion">Ubicación</a>
+        <a href="#faq">Preguntas</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
     </div>
+
+    <section class="hero" aria-label="Presentación">
+      <h2>Compra rápida por WhatsApp</h2>
+      <p>
+        Encuentra tu producto, revisa el precio y envíanos el pedido por WhatsApp.
+        Marcas: <b>Natura</b>, <b>Avon</b> y <b>Ésika</b>. Stock sujeto a disponibilidad.
+      </p>
+
+      <div class="bar">
+        <input id="q" type="search" placeholder="Buscar (ej: Ekos Castaña, Kaiak, Chronos...)" />
+        <select id="cat"><option value="">Todas las categorías</option></select>
+        <select id="brand"><option value="">Todas las marcas</option></select>
+        <button class="btn-acc" id="btn-wa">Comprar por WhatsApp (carrito)</button>
+        <button class="btn-ghost" id="btn-clear" type="button">Vaciar carrito</button>
+      </div>
+
+      <p style="margin-top:10px;font-size:12px;color:var(--mut)">
+        Imágenes: guarda tus fotos como <b>img/1.jpg</b>, <b>img/2.jpg</b>, etc. (el número es el <b>Id</b>).
+      </p>
+    </section>
   </header>
 
-  <!-- ✅ SOLO para usuarios sin JavaScript (no es contenido oculto) -->
-  <noscript>
-    <div class="seo-noscript" role="note">
-      <h2>Catálogo Natura en Santa Marta</h2>
-      <p>Productos originales Natura, Avon y Ésika. Envíos a toda Colombia y pago contra entrega en Santa Marta.</p>
-      <p>
-        <a href="https://wa.me/573042088961" rel="noopener noreferrer">
-          Comprar por WhatsApp: +57 304 208 8961
+  <main class="wrap">
+    <section id="catalogo" aria-label="Catálogo">
+      <div id="grid" class="grid"></div>
+
+      <!-- Importante: los nombres quedan EN el HTML (mejor para SEO que esconderlos) -->
+      <details open>
+        <summary>Lista completa de productos (datos en el HTML)</summary>
+        <p style="margin:8px 0 0;color:var(--mut);font-size:12px">
+          Puedes pegar aquí toda tu tabla (con TABs). El catálogo se arma desde esta lista.
+        </p>
+        <pre id="productos-tsv">Nombre producto	Categoria	Marca	Valor unitario	Stock	Total	mostrar_catalogo	Id
+Aguas Citrico 150 ml	Fragancias	Natura	40.000	0	0	si	1
+Aguas Jabuticaba 150 ml	Fragancias	Natura	40.000	1	40.000	si	2
+Aguas Lirio 150 ml	Fragancias	Natura	40.000	2	80.000	si	3
+Aguas Tropicales 150 ml	Fragancias	Natura	40.000	1	40.000	si	4
+Humor Beijo Femenino 75 ml	Fragancias	Natura	70.000	4	280.000	si	5
+<!-- 👇 Pega aquí TODAS tus filas restantes, tal cual las tienes -->
+</pre>
+      </details>
+    </section>
+
+    <section id="sobre" class="section" aria-label="Sobre nosotros">
+      <h3>Sobre nosotros</h3>
+      <div class="cols">
+        <div>
+          <p>
+            En <b><<<NOMBRE_EMPRESA>>></b> te ayudamos a elegir fragancias, cuidado facial/corporal y combos de regalo.
+            Compras por WhatsApp con atención personalizada y recomendaciones según tu preferencia.
+          </p>
+          <ul>
+            <li>Asesoría para elegir fragancia (día/noche, dulce, cítrica, amaderada, etc.)</li>
+            <li>Combos de regalo disponibles</li>
+            <li>Entrega/recogida: <<<DETALLE_ENTREGA_O_RECOGIDA>>></li>
+          </ul>
+        </div>
+        <div>
+          <p><b>Marcas</b>: Natura · Avon · Ésika</p>
+          <p><b>Categorías</b>: Fragancias, cuidado facial, cuidado corporal, cuidado capilar, protección solar, maquillaje, regalos y combos.</p>
+          <p><b>Horarios</b>: <<<HORARIO>>></p>
+        </div>
+      </div>
+
+      <div class="social" style="margin-top:10px" aria-label="Redes sociales">
+        <a href="<<<LINK_WHATSAPP>>>" target="_blank" rel="noopener">
+          <svg viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><path d="M19.11 17.46c-.28-.14-1.64-.81-1.9-.9-.25-.09-.44-.14-.62.14-.19.28-.71.9-.87 1.08-.16.19-.32.21-.6.07-.28-.14-1.16-.43-2.21-1.36-.82-.73-1.37-1.63-1.53-1.9-.16-.28-.02-.43.12-.57.12-.12.28-.32.41-.48.14-.16.19-.28.28-.46.09-.19.05-.36-.02-.5-.07-.14-.62-1.49-.85-2.04-.22-.53-.45-.46-.62-.46h-.53c-.19 0-.5.07-.76.36-.25.28-.98.95-.98 2.32s1 2.69 1.14 2.88c.14.19 1.97 3.01 4.78 4.22.67.29 1.19.46 1.6.59.67.21 1.27.18 1.75.11.53-.08 1.64-.67 1.87-1.32.23-.65.23-1.21.16-1.32-.07-.11-.25-.18-.53-.32z"/><path d="M16.04 2.67c-7.2 0-13.07 5.86-13.07 13.07 0 2.3.61 4.55 1.76 6.53L3 29.33l7.22-1.9a13.02 13.02 0 0 0 5.82 1.38h.01c7.2 0 13.07-5.86 13.07-13.07S23.24 2.67 16.04 2.67zm0 23.46h-.01c-1.9 0-3.76-.51-5.38-1.48l-.38-.23-4.29 1.13 1.15-4.18-.25-.43a10.9 10.9 0 0 1-1.66-5.65c0-6.02 4.9-10.92 10.92-10.92 6.02 0 10.92 4.9 10.92 10.92 0 6.02-4.9 10.92-10.92 10.92z"/></svg>
+          WhatsApp
         </a>
+        <a href="<<<LINK_INSTAGRAM>>>" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5zm10 2H7a3 3 0 0 0-3 3v10a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V7a3 3 0 0 0-3-3zm-5 4a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0 2a3 3 0 1 0 0 6 3 3 0 0 0 0-6zm5.5-.9a.6.6 0 1 1 0 1.2.6.6 0 0 1 0-1.2z"/></svg>
+          Instagram
+        </a>
+        <a href="<<<LINK_FACEBOOK>>>" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 22v-8h3l1-4h-4V7.5c0-1.2.3-2 2-2H17V2h-3c-3 0-5 2-5 5v3H6v4h3v8h4z"/></svg>
+          Facebook
+        </a>
+      </div>
+    </section>
+
+    <section id="ubicacion" class="section" aria-label="Ubicación">
+      <h3>Ubicación</h3>
+      <div class="cols">
+        <div>
+          <p><b>Dirección</b>: <<<DIRECCION_COMPLETA>>></p>
+          <p><b>Ciudad</b>: <<<CIUDAD>>>, Colombia</p>
+          <p><b>Teléfono / WhatsApp</b>: <<<WHATSAPP_TEXTO>>></p>
+          <p class="small">Si no tienes local físico, puedes poner “Atención 100% por WhatsApp en <<<CIUDAD>>>” y un punto de entrega.</p>
+        </div>
+        <div class="map" aria-label="Mapa">
+          <!-- Reemplaza el src por el embed real de Google Maps (Compartir > Insertar mapa) -->
+          <iframe loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+            src="<<<GOOGLE_MAPS_EMBED_URL>>>"
+            title="Mapa de <<<NOMBRE_EMPRESA>>>"></iframe>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section" aria-label="Preguntas frecuentes">
+      <h3>Preguntas frecuentes</h3>
+      <details>
+        <summary>¿Cómo compro por WhatsApp?</summary>
+        <p>Entra al catálogo, presiona “Comprar” en el producto o usa “Comprar por WhatsApp (carrito)”. Te llegará un mensaje listo para enviar.</p>
+      </details>
+      <details>
+        <summary>¿Los precios y el stock se actualizan?</summary>
+        <p>Sí, editando la tabla de productos (TSV) dentro de esta misma página. Si cambias stock a 0, el botón se desactiva.</p>
+      </details>
+      <details>
+        <summary>¿Hacen envíos?</summary>
+        <p><<<RESPUESTA_ENVIOS>>></p>
+      </details>
+    </section>
+
+    <section id="contacto" class="section" aria-label="Contacto y datos de empresa">
+      <h3>Datos de la empresa</h3>
+      <p>
+        <b><<<NOMBRE_EMPRESA>>></b> · <<<CIUDAD>>> · Colombia<br/>
+        <b>WhatsApp</b>: <<<WHATSAPP_TEXTO>>> · <b>Email</b>: <<<EMAIL>>><br/>
+        <b>Dirección</b>: <<<DIRECCION_COMPLETA>>>
       </p>
-      <p>Activa JavaScript para ver el catálogo completo.</p>
-    </div>
-  </noscript>
 
-  <!-- CONTENEDOR PRINCIPAL -->
-  <main aria-label="Catálogo de productos">
-    <div class="container">
-      <!-- PANEL IZQUIERDO: BUSCADOR + TABLA -->
-      <div class="left-panel">
-        <div class="controls-panel">
-          <div class="products-header">
-            <!-- Fila superior: solo buscador -->
-            <div class="controls-top">
-              <input
-                id="searchInput"
-                type="text"
-                autocomplete="off"
-                inputmode="search"
-                placeholder="🔍 Buscar por nombre, marca, categoría..."
-              >
-            </div>
-            <!-- Fila inferior: filtros + redes -->
-            <div class="controls-bottom">
-              <div class="filters-row">
-                <button id="sortPriceBtn" type="button" class="natura-pill-btn">Ordenar por precio</button>
+      <!-- “Etiquetas” útiles (NO keywords meta; mejor texto real + enlaces internos) -->
+      <p class="small">
+        Etiquetas: perfumes, fragancias, Natura, Avon, Ésika, Ekos, Kaiak, Humor, Ilía, Luna, Chronos, cuidado facial, protector solar, cremas corporales, regalos y combos, <<<CIUDAD>>>.
+      </p>
+    </section>
 
-                <!-- Filtro por categorías -->
-                <div class="custom-dropdown" id="categoryDropdown">
-                  <button
-                    type="button"
-                    id="categoryToggleBtn"
-                    class="dropdown-toggle-btn natura-pill-btn"
-                    aria-haspopup="listbox"
-                    aria-expanded="false"
-                  >
-                    Categorías ▾
-                  </button>
-                  <div id="categoryMenu" class="custom-menu" aria-hidden="true"></div>
-                </div>
-
-                <!-- Filtro por marcas -->
-                <div class="custom-dropdown" id="brandDropdown">
-                  <button
-                    type="button"
-                    id="brandToggleBtn"
-                    class="dropdown-toggle-btn natura-pill-btn"
-                    aria-haspopup="listbox"
-                    aria-expanded="false"
-                  >
-                    Marcas ▾
-                  </button>
-                  <div id="brandMenu" class="custom-menu" aria-hidden="true"></div>
-                </div>
-
-                <!-- Botón PDF (versión de escritorio / dentro del panel de filtros) -->
-                <button id="pdfBtn" class="pdf-btn natura-pill-btn" type="button">Descargar PDF</button>
-              </div>
-
-              <!-- Iconos de redes sociales y ubicación -->
-              <div class="social-icons">
-                <a
-                  href="https://www.facebook.com/marketplace/profile/100084865295132"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook Irenismb Stock"
-                >
-                  <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook">
-                </a>
-                <a
-                  href="https://www.instagram.com/irenismb_stocknaturasm"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram Irenismb Stock"
-                >
-                  <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram">
-                </a>
-                <a
-                  href="https://www.tiktok.com/@irenismbstocknatura"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="TikTok Irenismb Stock"
-                >
-                  <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok">
-                </a>
-                <a
-                  href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Ubicación en Google Maps"
-                >
-                  <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps">
-                </a>
-                <a
-                  href="https://wa.me/573042088961"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="WhatsApp Irenismb Stock"
-                >
-                  <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp">
-                </a>
-
-                <!-- Botón PDF específico para móvil, alineado con redes -->
-                <button
-                  id="pdfBtnMobile"
-                  class="pdf-btn pdf-btn-mobile natura-pill-btn"
-                  type="button"
-                  aria-label="Descargar PDF del catálogo"
-                >
-                  Descargar PDF
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Fila de acciones principales en móvil (Carrito / Filtros / Sobre Nosotros) -->
-        <div class="mobile-actions-row" id="mobileActionsRow">
-          <button id="mobileCartBtn" type="button" class="mobile-action-btn natura-pill-btn">
-            Ver Carrito
-          </button>
-          <button id="mobileFiltersBtn" type="button" class="mobile-action-btn natura-pill-btn">
-            Filtros
-          </button>
-          <button id="aboutBtn" class="mobile-action-btn about-btn natura-pill-btn" type="button">
-            Sobre Nosotros
-          </button>
-        </div>
-
-        <!-- TABLA DE PRODUCTOS -->
-        <div class="table-wrapper">
-          <table class="product-table" aria-label="Listado de productos">
-            <thead>
-              <tr>
-                <th>Imagen</th>
-                <th>Nombre producto</th>
-                <th>Categoría</th>
-                <th>Marca</th>
-                <th>Valor unitario</th>
-                <th>Cantidad</th>
-                <th>Total a pagar</th>
-              </tr>
-            </thead>
-            <tbody id="productTableBody">
-              <tr>
-                <td colspan="7" style="text-align:center;">Cargando productos...</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- PANEL DERECHO: CARRITO + SOBRE NOSOTROS -->
-      <div class="right-panel">
-        <!-- Vista previa del producto (se mantiene en el DOM pero se oculta con CSS) -->
-        <div id="productPreview" class="preview" aria-live="polite">
-          <div class="stage" role="region" aria-label="Imagen del producto">
-            <button class="nav prev" id="galleryPrevBtn" aria-label="Producto anterior">‹</button>
-            <img id="previewImg" alt="Vista previa del producto" />
-            <div id="imageStatus" class="image-status" aria-live="polite"></div>
-            <button class="nav next" id="galleryNextBtn" aria-label="Producto siguiente">›</button>
-          </div>
-          <div id="previewName" class="product-name"></div>
-          <div id="previewCaption" class="caption">
-            Haz clic en un producto para ver su descripción
-          </div>
-        </div>
-
-        <!-- Carrito: panel en escritorio, modal en móvil -->
-        <div id="cartModal" class="cart-modal" aria-hidden="true">
-          <div id="cartModalBackdrop" class="cart-modal-backdrop"></div>
-          <div
-            class="cart-modal-content"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Carrito de compras"
-          >
-            <button
-              type="button"
-              id="cartModalClose"
-              class="cart-modal-close"
-              aria-label="Cerrar carrito de compras"
-            >
-              ×
-            </button>
-            <div class="cart-container" id="cartContainer">
-              <h3>🛒 Carrito de Compras</h3>
-              <ul id="cartList">
-                <li class="cart-item">
-                  <span class="cart-item-title">El carrito está vacío.</span>
-                </li>
-              </ul>
-              <div id="totalPrice">Total: 0</div>
-              <button id="whatsappBtn">Comprar por WhatsApp</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- ✅ SOBRE NOSOTROS (MEJORADO PARA SEO) -->
-        <!-- Nota: todo lo agregado está SOLO aquí, como pediste -->
-        <div class="contact-info" id="aboutInfo">
-          <h3>✨ Sobre Nosotros ✨</h3>
-
-          <!-- Contenido principal (estático, legible por Google) -->
-          <section aria-label="Información de Irenismb Stock Natura">
-            <h2 style="margin:6px 0 6px;font-size:16px;">IRENISMB STOCK NATURA en Santa Marta</h2>
-
-            <p class="store-description">
-              Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura,
-              Avon y Ésika. Aquí puedes ver el catálogo en línea, buscar por marca y categoría, y hacer tu pedido fácil por WhatsApp.
-              Ofrecemos envíos a toda Colombia y pago contra entrega en Santa Marta (según cobertura).
-            </p>
-
-            <ul style="text-align:left; margin:10px 0 10px; padding-left:18px; line-height:1.5;">
-              <li><strong>Qué vendemos:</strong> fragancias, maquillaje, cuidado facial y corporal, capilar, bebé, protección solar, regalos y combos.</li>
-              <li><strong>Cómo compras:</strong> seleccionas productos en el catálogo y envías tu pedido por WhatsApp.</li>
-              <li><strong>Envíos:</strong> a toda Colombia.</li>
-              <li><strong>Pago:</strong> contra entrega en Santa Marta (según cobertura) o acordado por WhatsApp.</li>
-            </ul>
-
-            <p style="margin:8px 0;">
-              <strong>Compra rápida por WhatsApp:</strong>
-              <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">
-                +57 304 208 8961
-              </a>
-            </p>
-
-            <p style="margin:6px 0 10px;">
-              <strong>Ubicación:</strong>
-              <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">
-                Santa Marta (ver en Google Maps)
-              </a>
-            </p>
-
-            <hr style="border:none;border-top:1px solid rgba(0,0,0,.08);margin:10px 0;">
-
-            <!-- FAQ visible (bueno para SEO + confianza) -->
-            <section aria-label="Preguntas frecuentes">
-              <h2 style="margin:6px 0 8px;font-size:16px;">Preguntas frecuentes</h2>
-
-              <details>
-                <summary><strong>¿Venden Natura original?</strong></summary>
-                <p style="margin:6px 0 10px;">
-                  Sí. Te asesoramos por WhatsApp para confirmar disponibilidad, referencias y detalles del producto.
-                </p>
-              </details>
-
-              <details>
-                <summary><strong>¿Hacen envíos a otras ciudades?</strong></summary>
-                <p style="margin:6px 0 10px;">
-                  Sí, enviamos a toda Colombia. Escríbenos por WhatsApp para confirmar tiempos y cobertura.
-                </p>
-              </details>
-
-              <details>
-                <summary><strong>¿Cómo confirmo precio y stock?</strong></summary>
-                <p style="margin:6px 0 10px;">
-                  El catálogo se actualiza constantemente. Antes de pagar, confirmamos por WhatsApp el total y la disponibilidad.
-                </p>
-              </details>
-            </section>
-
-            <!-- ✅ Datos estructurados (JSON-LD) en el body, dentro de Sobre Nosotros -->
-            <!-- LocalBusiness -->
-            <script type="application/ld+json">
-            {
-              "@context": "https://schema.org",
-              "@type": "LocalBusiness",
-              "name": "IRENISMB STOCK NATURA",
-              "image": "https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png",
-              "url": "https://irenismb.github.io/stock/natura/catalogo.html",
-              "telephone": "+57 304 208 8961",
-              "address": {
-                "@type": "PostalAddress",
-                "addressLocality": "Santa Marta",
-                "addressRegion": "Magdalena",
-                "addressCountry": "CO"
-              },
-              "geo": {
-                "@type": "GeoCoordinates",
-                "latitude": 11.244833370782679,
-                "longitude": -74.19066001689564
-              },
-              "areaServed": "CO",
-              "sameAs": [
-                "https://www.facebook.com/marketplace/profile/100084865295132",
-                "https://www.instagram.com/irenismb_stocknaturasm",
-                "https://www.tiktok.com/@irenismbstocknatura"
-              ]
-            }
-            </script>
-
-            <!-- FAQPage -->
-            <script type="application/ld+json">
-            {
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              "mainEntity": [
-                {
-                  "@type": "Question",
-                  "name": "¿Venden Natura original?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Sí. Te asesoramos por WhatsApp para confirmar disponibilidad, referencias y detalles del producto."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "¿Hacen envíos a otras ciudades?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Sí, enviamos a toda Colombia. Escríbenos por WhatsApp para confirmar tiempos y cobertura."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "¿Cómo confirmo precio y stock?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "El catálogo se actualiza constantemente. Antes de pagar, confirmamos por WhatsApp el total y la disponibilidad."
-                  }
-                }
-              ]
-            }
-            </script>
-          </section>
-        </div>
-      </div>
-    </div>
-  </main>
-
-  <!-- Modal de imagen ampliada (lightbox) -->
-  <div id="imageModal" class="image-modal" aria-hidden="true">
-    <div id="imageModalBackdrop" class="image-modal-backdrop"></div>
-    <div
-      class="image-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Imagen ampliada del producto"
-    >
-      <button
-        type="button"
-        id="imageModalClose"
-        class="image-modal-close"
-        aria-label="Cerrar imagen ampliada"
-      >
-        ×
-      </button>
-      <img id="imageModalImg" alt="Imagen ampliada del producto">
-    </div>
-  </div>
-
-  <!-- Modal de exportación a PDF -->
-  <div id="pdfModal" class="pdf-modal" aria-hidden="true">
-    <div id="pdfModalBackdrop" class="pdf-modal-backdrop"></div>
-    <div
-      class="pdf-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Exportar catálogo a PDF"
-    >
-      <button
-        type="button"
-        id="pdfModalClose"
-        class="pdf-modal-close"
-        aria-label="Cerrar exportación PDF"
-      >
-        ×
-      </button>
-      <div class="pdf-modal-header">
-        <h3>📄 Exportar catálogo a PDF</h3>
-        <p class="pdf-modal-hint">
-          Selecciona los productos que quieres incluir. Máximo 6 productos por página en el PDF.
+    <footer>
+      <div class="wrap" style="padding:0">
+        <p>© <span id="y"></span> <<<NOMBRE_EMPRESA>>>. Todos los derechos reservados.</p>
+        <p>
+          <a href="catalogo.html">Catálogo</a> ·
+          <a href="#ubicacion">Ubicación</a> ·
+          <a href="#contacto">Contacto</a>
         </p>
       </div>
+    </footer>
+  </main>
 
-      <!-- Subtítulo personalizado -->
-      <div class="pdf-title-row">
-        <label for="pdfCustomTitle" class="pdf-title-label">Subtítulo del catálogo (opcional)</label>
-        <input
-          id="pdfCustomTitle"
-          class="pdf-title-input"
-          type="text"
-          maxlength="60"
-          placeholder="Ej: Catálogo Navideño, Especial Mamá, Promos de Abril..."
-          autocomplete="off"
-        >
-      </div>
+  <!-- Botón flotante WhatsApp -->
+  <a class="wa-float" href="<<<LINK_WHATSAPP>>>" target="_blank" rel="noopener" aria-label="Comprar por WhatsApp">
+    WhatsApp
+  </a>
 
-      <div class="pdf-actions">
-        <button type="button" id="pdfSelectFilteredBtn">Usar filtrados</button>
-        <button type="button" id="pdfSelectCartBtn">Usar carrito</button>
-        <button type="button" id="pdfSelectAllBtn">Seleccionar todo</button>
-        <button type="button" id="pdfSelectNoneBtn">Quitar selección</button>
-      </div>
+  <!-- Datos estructurados (Schema.org) para Google -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "name": "<<<NOMBRE_EMPRESA>>>",
+        "url": "<<<URL_PUBLICA_DE_TU_CATALOGO>>>",
+        "inLanguage": "es-CO"
+      },
+      {
+        "@type": "LocalBusiness",
+        "name": "<<<NOMBRE_EMPRESA>>>",
+        "image": "<<<URL_IMAGEN_COMPARTIR>>>",
+        "url": "<<<URL_PUBLICA_DE_TU_CATALOGO>>>",
+        "telephone": "<<<WHATSAPP_TEXTO>>>",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "<<<DIRECCION_COMPLETA>>>",
+          "addressLocality": "<<<CIUDAD>>>",
+          "addressCountry": "CO"
+        },
+        "sameAs": [
+          "<<<LINK_INSTAGRAM>>>",
+          "<<<LINK_FACEBOOK>>>"
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Cómo compro por WhatsApp?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Entra al catálogo, presiona “Comprar” en el producto o usa “Comprar por WhatsApp (carrito)”. El mensaje queda listo para enviar." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Los precios y el stock se actualizan?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí. Edita la tabla de productos dentro de esta página. Si stock queda en 0, el botón de compra se desactiva." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
 
-      <div id="pdfProductList" class="pdf-product-list" role="list"></div>
+  <script>
+    // 1) CAMBIA ESTO:
+    const WHATSAPP_NUMBER = "57XXXXXXXXXX"; // Ej: 573001112233 (sin +, sin espacios)
+    const IMG_DIR = "img";                 // Carpeta donde están 1.jpg, 2.jpg, etc.
+    const IMG_EXTS = ["jpg","jpeg","png","webp"];
 
-      <div class="pdf-footer">
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfIncludePrices" checked>
-          Incluir precios
-        </label>
-        <!-- ✅ CHECK total -->
-        <label class="pdf-option">
-          <input type="checkbox" id="pdfIncludeTotal">
-          Incluir total al final
-        </label>
-        <button type="button" id="pdfGenerateBtn" class="pdf-generate-btn">
-          Generar PDF
-        </button>
-      </div>
-    </div>
-  </div>
+    const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
-  <!-- Modal "Sobre Nosotros" para móviles -->
-  <div id="aboutModal" class="about-modal" aria-hidden="true">
-    <div id="aboutModalBackdrop" class="about-modal-backdrop"></div>
-    <div
-      class="about-modal-content"
-      role="dialog"
-      aria-modal="true"
-      aria-label="Información sobre Irenismb Stock Natura"
-    >
-      <button
-        type="button"
-        id="aboutModalClose"
-        class="about-modal-close"
-        aria-label="Cerrar información Sobre Nosotros"
-      >
-        ×
-      </button>
-      <h3 class="about-modal-title">Sobre Nosotros</h3>
-      <div id="aboutModalBody" class="about-modal-body">
-        <!-- Se rellena dinámicamente desde .contact-info para no duplicar textos -->
-      </div>
-    </div>
-  </div>
+    function toNumberCOP(s){
+      return Number(String(s ?? "").replace(/[^\d]/g,"")) || 0;
+    }
 
-  <!-- Librería PDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <!-- Scripts divididos (carpeta scrips) -->
-  <script src="recursos/scrips/config-estado-dom.js"></script>
-  <script src="recursos/scrips/utilidades-imagenes-galeria.js"></script>
-  <!-- ✅ IMPORTANTE: mover visitas antes del init del carrito -->
-  <script src="recursos/scrips/visitas-ubicacion.js"></script>
-  <!-- ✅ FIX móvil: reubicar buscador y mantener botones en una sola fila -->
-  <script src="recursos/scrips/layout-movil-buscador.js"></script>
-  <script src="recursos/scrips/filtros-tabla-productos.js"></script>
-  <script src="recursos/scrips/carrito-whatsapp-init.js"></script>
-  <script src="recursos/scrips/sobre-nosotros.js"></script>
-  <script src="recursos/scrips/exportar-pdf-catalogo.js"></script>
+    function parseTSV(text){
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+      if(lines.length < 2) return [];
+      const headers = lines.shift().split("\t").map(h => h.trim());
+      const idx = Object.fromEntries(headers.map((h,i)=>[h,i]));
+
+      return lines.map(line=>{
+        const cols = line.split("\t");
+        const name = (cols[idx["Nombre producto"]] ?? "").trim();
+        const category = (cols[idx["Categoria"]] ?? "").trim();
+        const brand = (cols[idx["Marca"]] ?? "").trim();
+        const price = toNumberCOP(cols[idx["Valor unitario"]]);
+        const stock = Number((cols[idx["Stock"]] ?? "0").replace(/[^\d]/g,"")) || 0;
+        const show = (cols[idx["mostrar_catalogo"]] ?? "").trim().toLowerCase();
+        const id = String((cols[idx["Id"]] ?? "").trim());
+
+        return { id, name, category, brand, price, stock, show };
+      }).filter(p => p.name && p.id);
+    }
+
+    function waLink(text){
+      return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);
+    }
+
+    function makeImg(id){
+      const img = document.createElement("img");
+      img.alt = "Producto " + id;
+      let tryIdx = 0;
+
+      const setSrc = ()=>{ img.src = `${IMG_DIR}/${id}.${IMG_EXTS[tryIdx]}`; };
+      img.onerror = ()=>{
+        tryIdx++;
+        if(tryIdx < IMG_EXTS.length) setSrc();
+        else img.remove();
+      };
+      setSrc();
+      return img;
+    }
+
+    const raw = document.getElementById("productos-tsv").textContent;
+    const all = parseTSV(raw).filter(p => p.show === "si");
+
+    // Carrito simple (se guarda en el navegador)
+    const cart = JSON.parse(localStorage.getItem("cart") || "{}"); // {id:{id,name,price,qty}}
+
+    function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); }
+
+    function cartMessage(){
+      const items = Object.values(cart);
+      if(!items.length) return "Hola, quiero información del catálogo.";
+      const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format(it.price * it.qty)}`);
+      const total = items.reduce((s,it)=>s+it.price*it.qty,0);
+      return `Hola, quiero comprar:\n${lines.join("\n")}\n\nTotal: ${fmtCOP.format(total)}`;
+    }
+
+    // Filtros
+    const catSel = document.getElementById("cat");
+    const brandSel = document.getElementById("brand");
+    const qInp = document.getElementById("q");
+    const grid = document.getElementById("grid");
+
+    function fillSelect(sel, values){
+      for(const v of values){
+        const opt = document.createElement("option");
+        opt.value = v; opt.textContent = v;
+        sel.appendChild(opt);
+      }
+    }
+
+    fillSelect(catSel, [...new Set(all.map(p=>p.category).filter(Boolean))].sort());
+    fillSelect(brandSel, [...new Set(all.map(p=>p.brand).filter(Boolean))].sort());
+
+    function render(){
+      const q = qInp.value.trim().toLowerCase();
+      const cat = catSel.value;
+      const br = brandSel.value;
+
+      const filtered = all.filter(p=>{
+        if(cat && p.category !== cat) return false;
+        if(br && p.brand !== br) return false;
+        if(q && !p.name.toLowerCase().includes(q)) return false;
+        return true;
+      });
+
+      grid.innerHTML = "";
+      for(const p of filtered){
+        const card = document.createElement("article");
+        card.className = "card";
+        card.id = "p-" + p.id;
+
+        const imgBox = document.createElement("div");
+        imgBox.className = "img";
+        imgBox.appendChild(makeImg(p.id));
+
+        const pad = document.createElement("div");
+        pad.className = "pad";
+
+        const name = document.createElement("p");
+        name.className = "name";
+        name.textContent = p.name;
+
+        const meta = document.createElement("p");
+        meta.className = "meta";
+        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}`;
+
+        const row1 = document.createElement("div");
+        row1.className = "row";
+
+        const price = document.createElement("span");
+        price.className = "price";
+        price.textContent = fmtCOP.format(p.price);
+
+        const stock = document.createElement("span");
+        stock.className = "stock";
+        stock.innerHTML = p.stock > 0 ? `<span class="pill">Stock: ${p.stock}</span>` : `<span class="pill">Agotado</span>`;
+
+        row1.appendChild(price);
+        row1.appendChild(stock);
+
+        const row2 = document.createElement("div");
+        row2.className = "row";
+        row2.style.marginTop = "10px";
+
+        const add = document.createElement("button");
+        add.textContent = "Agregar";
+        add.disabled = (p.stock <= 0);
+        add.onclick = ()=>{
+          cart[p.id] = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0 };
+          cart[p.id].qty += 1;
+          saveCart();
+          add.textContent = "Agregado ✓";
+          setTimeout(()=>add.textContent="Agregar", 900);
+        };
+
+        const buy = document.createElement("button");
+        buy.className = "btn-acc";
+        buy.textContent = "Comprar";
+        buy.disabled = (p.stock <= 0);
+        buy.onclick = ()=>{
+          const msg = `Hola, quiero comprar: ${p.name} (Id: ${p.id}). Precio: ${fmtCOP.format(p.price)}.`;
+          window.open(waLink(msg), "_blank", "noopener");
+        };
+
+        row2.appendChild(add);
+        row2.appendChild(buy);
+
+        pad.appendChild(name);
+        pad.appendChild(meta);
+        pad.appendChild(row1);
+        pad.appendChild(row2);
+
+        card.appendChild(imgBox);
+        card.appendChild(pad);
+
+        grid.appendChild(card);
+      }
+    }
+
+    document.getElementById("btn-wa").onclick = ()=>{
+      window.open(waLink(cartMessage()), "_blank", "noopener");
+    };
+
+    document.getElementById("btn-clear").onclick = ()=>{
+      for(const k of Object.keys(cart)) delete cart[k];
+      saveCart();
+      alert("Carrito vaciado.");
+    };
+
+    qInp.addEventListener("input", render);
+    catSel.addEventListener("change", render);
+    brandSel.addEventListener("change", render);
+
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    render();
+  </script>
 </body>
 </html>
 

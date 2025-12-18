@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="es-CO">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Irenismb Stock Natura en Santa Marta | Catálogo y compra por WhatsApp</title>
+  <meta name="description" content="Tienda de productos originales Natura en Santa Marta: fragancias, frescores y más. Envíos a toda Colombia y pago contra entrega en Santa Marta. Compra fácil por WhatsApp." />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+
+  <!-- Canonical de la portada -->
+  <link rel="canonical" href="https://irenismb.github.io/stock/natura/" />
+
+  <!-- Open Graph / WhatsApp / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://irenismb.github.io/stock/natura/">
+  <meta property="og:title" content="Irenismb Stock Natura | Catálogo y compra por WhatsApp">
+  <meta property="og:description" content="Productos originales Natura en Santa Marta. Envíos a toda Colombia y pago contra entrega en Santa Marta.">
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
+  <meta property="og:locale" content="es_CO">
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo y compra por WhatsApp">
+  <meta name="twitter:description" content="Productos originales Natura en Santa Marta. Envíos a toda Colombia y pago contra entrega en Santa Marta.">
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png">
+
+  <!-- Icono -->
+  <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.webp">
+  <link rel="shortcut icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png">
+
+  <style>
+    :root{
+      --bg:#0b1220;
+      --card:#0f172a;
+      --text:#e5e7eb;
+      --muted:#94a3b8;
+      --brand1:#22c55e;
+      --brand2:#2563eb;
+      --accent:#a3e635;
+      --radius:16px;
+      --max:980px;
+    }
+    *{ box-sizing:border-box; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, #0b2a55 0%, var(--bg) 45%, #070b14 100%);
+      color:var(--text);
+      padding:18px;
+    }
+    a{ color:inherit; }
+    .wrap{
+      max-width:var(--max);
+      margin:0 auto;
+    }
+    header{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      justify-content:space-between;
+      padding:14px 14px;
+      border:1px solid rgba(148,163,184,.25);
+      border-radius:var(--radius);
+      background: rgba(15,23,42,.75);
+      backdrop-filter: blur(10px);
+    }
+    .brand{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      min-width:0;
+    }
+    .brand img{
+      width:52px;height:52px;border-radius:14px;object-fit:cover;
+      box-shadow:0 12px 28px rgba(0,0,0,.45);
+      background:#fff;
+    }
+    .brand h1{
+      margin:0;
+      font-size:18px;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      line-height:1.15;
+    }
+    .brand p{
+      margin:4px 0 0;
+      color:var(--muted);
+      font-size:13px;
+    }
+    .badge{
+      padding:8px 12px;
+      border-radius:999px;
+      background: linear-gradient(90deg, var(--brand1), var(--accent));
+      color:#052e16;
+      font-weight:700;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    main{ margin-top:14px; }
+    .hero{
+      border-radius:var(--radius);
+      border:1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.7);
+      padding:16px;
+      display:grid;
+      grid-template-columns: 1.2fr .8fr;
+      gap:14px;
+    }
+    .hero h2{
+      margin:0 0 8px;
+      font-size:20px;
+    }
+    .hero p{
+      margin:0 0 12px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+    .cta{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+    }
+    .btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      padding:12px 14px;
+      border-radius:999px;
+      text-decoration:none;
+      font-weight:800;
+      border:1px solid rgba(148,163,184,.25);
+      background: rgba(2,6,23,.35);
+    }
+    .btn-primary{
+      border:none;
+      background: linear-gradient(90deg, var(--brand1), var(--brand2));
+      color:#fff;
+      box-shadow:0 18px 40px rgba(34,197,94,.15);
+    }
+    .btn-primary:hover{ filter:brightness(1.05); }
+    .btn-ghost{
+      color:var(--text);
+      background: rgba(148,163,184,.08);
+    }
+    .card{
+      margin-top:14px;
+      border-radius:var(--radius);
+      border:1px solid rgba(148,163,184,.25);
+      background: rgba(15,23,42,.6);
+      padding:14px;
+    }
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:12px;
+    }
+    h3{ margin:0 0 8px; }
+    ul{ margin:8px 0 0; padding-left:18px; }
+    li{ margin:6px 0; color:var(--text); }
+    .muted{ color:var(--muted); }
+    .contact a{ text-decoration:none; }
+    .map{
+      width:100%;
+      border:0;
+      border-radius:14px;
+      overflow:hidden;
+      min-height:260px;
+      background:#0b1220;
+    }
+    details{
+      border:1px solid rgba(148,163,184,.18);
+      border-radius:14px;
+      padding:10px 12px;
+      background: rgba(2,6,23,.25);
+      margin-top:10px;
+    }
+    summary{ cursor:pointer; font-weight:800; }
+    footer{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:12.5px;
+      text-align:center;
+    }
+    @media (max-width: 840px){
+      .hero{ grid-template-columns: 1fr; }
+      .grid{ grid-template-columns: 1fr; }
+      header{ flex-direction:column; align-items:flex-start; }
+      .badge{ align-self:stretch; text-align:center; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52">
+        <div>
+          <h1>IRENISMB STOCK NATURA</h1>
+          <p>Catálogo Natura en Santa Marta • Envíos a toda Colombia • Pago contra entrega (Santa Marta)</p>
+        </div>
+      </div>
+      <div class="badge">Compra fácil por WhatsApp</div>
+    </header>
+
+    <main>
+      <section class="hero" aria-label="Portada del catálogo">
+        <div>
+          <h2>Productos originales Natura (y más) con entrega rápida</h2>
+          <p>
+            Encuentra fragancias y frescores Natura en Santa Marta, con envío a toda Colombia.
+            Si estás en Santa Marta, puedes pedir <strong>pago contra entrega</strong>.
+            Para ver precios, disponibilidad y armar tu pedido, entra al catálogo.
+          </p>
+
+          <div class="cta">
+            <a class="btn btn-primary" href="catalogo.html" aria-label="Ir al catálogo con búsqueda y carrito">🛍️ Ver Catálogo</a>
+            <a class="btn btn-ghost" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="Comprar por WhatsApp">💬 WhatsApp</a>
+            <a class="btn btn-ghost" href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ver ubicación en Google Maps">📍 Ubicación</a>
+          </div>
+
+          <p class="muted" style="margin-top:10px;">
+            Tip: en el catálogo puedes buscar por nombre, marca o categoría y generar un PDF con selección.
+          </p>
+        </div>
+
+        <div class="card contact" style="margin:0;">
+          <h3>Contacto</h3>
+          <p class="muted" style="margin:0 0 8px;">
+            Atención por WhatsApp y envíos nacionales.
+          </p>
+          <p style="margin:0 0 6px;"><strong>WhatsApp:</strong> <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">+57 304 208 8961</a></p>
+          <p style="margin:0 0 6px;"><strong>Teléfono:</strong> <a href="tel:+573042088961">+57 304 208 8961</a></p>
+          <p style="margin:0 0 10px;"><strong>Ciudad:</strong> Santa Marta, Magdalena (Colombia)</p>
+
+          <p style="margin:0 0 6px;"><strong>Redes:</strong></p>
+          <p style="margin:0; display:flex; flex-wrap:wrap; gap:8px;">
+            <a class="btn btn-ghost" href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer">Instagram</a>
+            <a class="btn btn-ghost" href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer">Facebook</a>
+            <a class="btn btn-ghost" href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer">TikTok</a>
+          </p>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Productos disponibles">
+        <h3>Productos destacados</h3>
+        <p class="muted" style="margin:0;">
+          Algunos de nuestros productos más buscados (consulta precios y disponibilidad en el catálogo):
+        </p>
+        <div class="grid" style="margin-top:10px;">
+          <div>
+            <h3 style="font-size:14px; margin:0 0 6px;">Aguas & Humor</h3>
+            <ul>
+              <li>Aguas Cítrico 150 ml</li>
+              <li>Aguas Jabuticaba 150 ml</li>
+              <li>Aguas Lirio 150 ml</li>
+              <li>Aguas Tropicales 150 ml</li>
+              <li>Humor Beijo Femenino 75 ml</li>
+              <li>Combo Agua de Jabuticaba + Crema</li>
+            </ul>
+          </div>
+          <div>
+            <h3 style="font-size:14px; margin:0 0 6px;">Línea Ekos</h3>
+            <ul>
+              <li>Ekos Chuva 75 ml</li>
+              <li>Ekos Amazó Femenino Miniatura Frescor 75 ml</li>
+              <li>Ekos Açaí Frescor 150 ml</li>
+              <li>Ekos Castaña Frescor 150 ml</li>
+              <li>Ekos Estoraque Frescor 150 ml</li>
+              <li>Ekos Ishpink Frescor 150 ml</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-label="Ubicación">
+        <h3>Ubicación en Santa Marta</h3>
+        <p class="muted" style="margin:0 0 10px;">
+          Escanea o abre el mapa para llegar al punto físico / zona de atención.
+        </p>
+        <iframe
+          class="map"
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          src="https://www.google.com/maps?q=11.244833370782679,-74.19066001689564&z=16&output=embed"
+          title="Mapa de ubicación Irenismb Stock Natura">
+        </iframe>
+      </section>
+
+      <section class="card" aria-label="Preguntas frecuentes">
+        <h3>Preguntas frecuentes</h3>
+
+        <details>
+          <summary>¿Hacen envíos a toda Colombia?</summary>
+          <p class="muted">Sí. Coordinamos envío nacional. Escríbenos por WhatsApp y te confirmamos tiempos y costo según ciudad.</p>
+        </details>
+
+        <details>
+          <summary>¿Hay pago contra entrega?</summary>
+          <p class="muted">Sí, para Santa Marta (según zona). Para otras ciudades se coordina el método de pago y el envío.</p>
+        </details>
+
+        <details>
+          <summary>¿Cómo compro?</summary>
+          <p class="muted">Entra al catálogo, agrega productos al carrito y presiona “Comprar por WhatsApp”. Te llega el pedido listo para enviar.</p>
+        </details>
+      </section>
+
+      <footer>
+        © <span id="y"></span> Irenismb Stock Natura • Santa Marta, Colombia
+      </footer>
+    </main>
+  </div>
+
+  <!-- JSON-LD (datos estructurados para Google) -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CosmeticsStore",
+        "name": "Irenismb Stock Natura",
+        "url": "https://irenismb.github.io/stock/natura/",
+        "image": "https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png",
+        "telephone": "+573042088961",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "Santa Marta",
+          "addressRegion": "Magdalena",
+          "addressCountry": "CO"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": 11.244833370782679,
+          "longitude": -74.19066001689564
+        },
+        "areaServed": "CO",
+        "sameAs": [
+          "https://www.instagram.com/irenismb_stocknaturasm",
+          "https://www.facebook.com/marketplace/profile/100084865295132",
+          "https://www.tiktok.com/@irenismbstocknatura"
+        ]
+      },
+      {
+        "@type": "ItemList",
+        "name": "Productos destacados Irenismb Stock Natura",
+        "itemListElement": [
+          { "@type": "ListItem", "position": 1, "name": "Aguas Cítrico 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 2, "name": "Aguas Jabuticaba 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 3, "name": "Aguas Lirio 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 4, "name": "Aguas Tropicales 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 5, "name": "Humor Beijo Femenino 75 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 6, "name": "Combo Agua de Jabuticaba + Crema", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 7, "name": "Ekos Chuva 75 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 8, "name": "Ekos Amazó Femenino Miniatura Frescor 75 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 9, "name": "Ekos Açaí Frescor 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 10, "name": "Ekos Castaña Frescor 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 11, "name": "Ekos Estoraque Frescor 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" },
+          { "@type": "ListItem", "position": 12, "name": "Ekos Ishpink Frescor 150 ml", "url": "https://irenismb.github.io/stock/natura/catalogo.html" }
+        ]
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Hacen envíos a toda Colombia?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí. Coordinamos envío nacional y confirmamos tiempos y costo por WhatsApp." }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Hay pago contra entrega?",
+            "acceptedAnswer": { "@type": "Answer", "text": "Sí, para Santa Marta (según zona). Para otras ciudades se coordina método de pago y envío." }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+
+  <noscript>
+    <div style="max-width:980px;margin:12px auto;padding:12px;border:1px solid #334155;border-radius:14px;background:#0f172a;color:#e5e7eb;">
+      <strong>JavaScript está desactivado.</strong>
+      <p style="margin:8px 0 0;">Abre el catálogo aquí: <a href="catalogo.html" style="color:#a3e635;">catalogo.html</a></p>
+    </div>
+  </noscript>
+
+  <!--
+    Si INSISTES en redirección automática (no recomendada para SEO), descomenta esto:
+    <script>
+      setTimeout(() => { window.location.href = "catalogo.html"; }, 3500);
+    </script>
+  -->
+</body>
+</html>

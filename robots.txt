@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://irenismb.github.io/stock/sitemap.xml
+Sitemap: https://irenismb.github.io/sitemap.xml

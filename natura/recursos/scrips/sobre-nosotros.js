@@ -12,16 +12,23 @@
     if (aboutModalBody.dataset.filled === "1") return;
 
     const contactInfo = document.querySelector(".contact-info");
-    if (contactInfo) {
-      const desc = contactInfo.querySelector(".store-description");
-      if (desc) {
-        // Clonamos solo la descripción para no duplicar el título
-        aboutModalBody.appendChild(desc.cloneNode(true));
-      } else {
-        aboutModalBody.textContent = contactInfo.textContent || "";
-      }
-      aboutModalBody.dataset.filled = "1";
-    }
+    if (!contactInfo) return;
+
+    // Clonar TODO el contenido del "Sobre Nosotros", pero sin repetir el <h3> del contenedor.
+    const clone = contactInfo.cloneNode(true);
+
+    // Quitar el primer h3 si existe (el modal ya tiene su propio título)
+    const firstTitle = clone.querySelector("h3");
+    if (firstTitle) firstTitle.remove();
+
+    // Pasar el contenido al modal
+    aboutModalBody.innerHTML = "";
+    Array.from(clone.childNodes).forEach(node => {
+      // Evitar meter nodos vacíos inútiles
+      aboutModalBody.appendChild(node.cloneNode(true));
+    });
+
+    aboutModalBody.dataset.filled = "1";
   }
 
   function openAboutModal() {
@@ -46,10 +53,10 @@
   if (aboutModalBackdrop) {
     aboutModalBackdrop.addEventListener("click", closeAboutModal);
   }
-
   document.addEventListener("keydown", e => {
     if (e.key === "Escape" && aboutModal.classList.contains("open")) {
       closeAboutModal();
     }
   });
 })();
+

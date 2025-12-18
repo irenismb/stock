@@ -2,14 +2,18 @@
 const APPS_SCRIPT_URL =
   "https://script.google.com/macros/s/AKfycbwgRlyQfToDd8O7JOyRP0XXdryqpksSTu04zuhaZHYnun59S0ALXR_vnHZGfY5ch7SP/exec";
 
+// ✅ Unificado: WhatsApp real (mismo número que el catálogo simple)
 const DEFAULT_WHATSAPP = "573042088961";
-const AUTO_REFRESH_MS = 20000;
 
+// ✅ PDF desactivado (ya no se usa)
+const ENABLE_PDF = false;
+
+const AUTO_REFRESH_MS = 20000;
 const LS_FILTERS_KEY = "naturaFilters";
 const LS_CART_KEY = "shoppingCart";
 const BROWSER_ID_LS_KEY = "naturaBrowserId";
 
-// ✅ NUEVO: subtítulo personalizado del PDF
+// (Se deja la key por compatibilidad por si existía guardada; ya no se usa)
 const LS_PDF_SUBTITLE_KEY = "naturaPdfSubtitle";
 
 // Servicio externo para IP pública + ciudad
@@ -22,7 +26,6 @@ const currencyFormatter = new Intl.NumberFormat("es-CO", {
 });
 
 // ================== IMÁGENES (carpetas y extensiones) ==================
-// Para productos se usa .webp; en otras imágenes se prueban varios formatos
 const IMG_EXTS = ["webp", "jpeg", "jpg", "png"];
 const IMG_BASE_PATH = "recursos/imagenes_de_productos/";
 const OTRAS_IMG_BASE_PATH = "recursos/otras_imagenes/";
@@ -50,6 +53,40 @@ let currentFilteredProducts = [];
 let currentPreviewProductIndex = -1;
 let currentPreviewProductId = null;
 
+// ================== HELPERS (robustez) ==================
+const NOOP_CLASSLIST = {
+  add() {},
+  remove() {},
+  toggle() { return false; },
+  contains() { return false; }
+};
+
+function makeNoopEl() {
+  return {
+    addEventListener() {},
+    removeEventListener() {},
+    setAttribute() {},
+    getAttribute() { return null; },
+    removeAttribute() {},
+    querySelector() { return null; },
+    querySelectorAll() { return []; },
+    appendChild() {},
+    remove() {},
+    focus() {},
+    blur() {},
+    click() {},
+    classList: NOOP_CLASSLIST,
+    style: {},
+    dataset: {},
+    innerHTML: "",
+    textContent: "",
+    value: "",
+    disabled: true
+  };
+}
+const NOOP_EL = makeNoopEl();
+const NOOP_INPUT = Object.assign(makeNoopEl(), { checked: false });
+
 // ================== REFERENCIAS AL DOM ==================
 const searchInput = document.getElementById("searchInput");
 const productTableBody = document.getElementById("productTableBody");
@@ -67,6 +104,7 @@ const filtersRow = document.querySelector(".filters-row");
 const mobileFiltersBtn = document.getElementById("mobileFiltersBtn");
 const mobileCartBtn = document.getElementById("mobileCartBtn");
 const mobileActionsRow = document.getElementById("mobileActionsRow");
+
 const productPreview = document.getElementById("productPreview");
 const previewImg = document.getElementById("previewImg");
 const previewCaption = document.getElementById("previewCaption");
@@ -86,22 +124,21 @@ const cartModal = document.getElementById("cartModal");
 const cartModalClose = document.getElementById("cartModalClose");
 const cartModalBackdrop = document.getElementById("cartModalBackdrop");
 
-// ================== EXPORTACIÓN PDF (DOM) ==================
-const pdfBtn = document.getElementById("pdfBtn");
-// NUEVO: botón extra PDF en la barra de redes (móvil)
-const pdfBtnMobile = document.getElementById("pdfBtnMobile");
-const pdfModal = document.getElementById("pdfModal");
-const pdfModalClose = document.getElementById("pdfModalClose");
-const pdfModalBackdrop = document.getElementById("pdfModalBackdrop");
-const pdfProductList = document.getElementById("pdfProductList");
-const pdfSelectFilteredBtn = document.getElementById("pdfSelectFilteredBtn");
-const pdfSelectCartBtn = document.getElementById("pdfSelectCartBtn");
-const pdfSelectAllBtn = document.getElementById("pdfSelectAllBtn");
-const pdfSelectNoneBtn = document.getElementById("pdfSelectNoneBtn");
-const pdfGenerateBtn = document.getElementById("pdfGenerateBtn");
-const pdfIncludePrices = document.getElementById("pdfIncludePrices");
-const pdfCustomTitle = document.getElementById("pdfCustomTitle");
-
-// ✅ NUEVO: check para total al final del PDF
-const pdfIncludeTotal = document.getElementById("pdfIncludeTotal");
+// ================== EXPORTACIÓN PDF (DESACTIVADO) ==================
+// Para evitar errores si quedó algún script antiguo intentando usar estos IDs,
+// los exponemos como elementos "no-op" cuando ENABLE_PDF = false.
+const pdfBtn = ENABLE_PDF ? (document.getElementById("pdfBtn") || NOOP_EL) : NOOP_EL;
+const pdfBtnMobile = ENABLE_PDF ? (document.getElementById("pdfBtnMobile") || NOOP_EL) : NOOP_EL;
+const pdfModal = ENABLE_PDF ? (document.getElementById("pdfModal") || NOOP_EL) : NOOP_EL;
+const pdfModalClose = ENABLE_PDF ? (document.getElementById("pdfModalClose") || NOOP_EL) : NOOP_EL;
+const pdfModalBackdrop = ENABLE_PDF ? (document.getElementById("pdfModalBackdrop") || NOOP_EL) : NOOP_EL;
+const pdfProductList = ENABLE_PDF ? (document.getElementById("pdfProductList") || NOOP_EL) : NOOP_EL;
+const pdfSelectFilteredBtn = ENABLE_PDF ? (document.getElementById("pdfSelectFilteredBtn") || NOOP_EL) : NOOP_EL;
+const pdfSelectCartBtn = ENABLE_PDF ? (document.getElementById("pdfSelectCartBtn") || NOOP_EL) : NOOP_EL;
+const pdfSelectAllBtn = ENABLE_PDF ? (document.getElementById("pdfSelectAllBtn") || NOOP_EL) : NOOP_EL;
+const pdfSelectNoneBtn = ENABLE_PDF ? (document.getElementById("pdfSelectNoneBtn") || NOOP_EL) : NOOP_EL;
+const pdfGenerateBtn = ENABLE_PDF ? (document.getElementById("pdfGenerateBtn") || NOOP_EL) : NOOP_EL;
+const pdfIncludePrices = ENABLE_PDF ? (document.getElementById("pdfIncludePrices") || NOOP_INPUT) : NOOP_INPUT;
+const pdfCustomTitle = ENABLE_PDF ? (document.getElementById("pdfCustomTitle") || NOOP_EL) : NOOP_EL;
+const pdfIncludeTotal = ENABLE_PDF ? (document.getElementById("pdfIncludeTotal") || NOOP_INPUT) : NOOP_INPUT;
 

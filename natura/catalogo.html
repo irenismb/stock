@@ -44,10 +44,11 @@
       --pill:#0e1524;
       --danger:#ef4444;
 
-      /* Iconos redes: tamaño y separación adaptativos para que SIEMPRE quepan en una sola fila */
-      --social-size: clamp(30px, 9.5vw, 38px);
-      --social-gap: clamp(4px, 2vw, 10px);
+      /* Iconos redes: para que entren en 1 fila incluso en pantallas pequeñas */
+      --social-size: clamp(26px, 8.5vw, 38px);
+      --social-gap: clamp(3px, 1.6vw, 10px);
     }
+
     *{box-sizing:border-box}
     html,body{max-width:100%;overflow-x:hidden}
     body{
@@ -58,6 +59,7 @@
     }
     a{color:inherit}
     .wrap{max-width:1100px;margin:0 auto}
+
     .site-header{ padding:16px 16px 10px; }
     .site-header-inner{
       display:flex;
@@ -103,6 +105,7 @@
       font-weight:800;
       white-space:nowrap;
     }
+
     header .intro{ padding:14px 16px 8px; }
     .about-card{
       border:1px solid var(--line);
@@ -122,7 +125,7 @@
       font-size:13px;
     }
 
-    /* ✅ MÓVILES: texto "Sobre nosotros" centrado */
+    /* ✅ MÓVILES: texto centrado */
     @media (max-width:768px){
       .about-card.about-collapsed .about-text{
         display:-webkit-box;
@@ -148,6 +151,7 @@
       outline:2px solid var(--focus);
       outline-offset:2px;
     }
+
     .btn-acc{
       background:linear-gradient(90deg,#20c997,#2dd4bf);
       border:none;color:#04120d;font-weight:900;
@@ -172,21 +176,24 @@
       font-weight:900;
     }
 
-    /* ✅ Redes: siempre una fila, sin saltar */
+    /* ✅ Redes: siempre una fila */
     .social-icons{
       display:flex;
       align-items:center;
       justify-content:center;
       gap:var(--social-gap);
-      flex-wrap:nowrap;            /* clave: no permitir wrap */
+      flex-wrap:nowrap;
       margin-top:12px;
       padding:10px 12px;
       border:1px solid var(--line);
       border-radius:16px;
       background:rgba(18,24,38,.45);
       width:100%;
-      overflow:hidden;             /* por seguridad (con tamaños clamp no debería cortar) */
+      overflow-x:auto;          /* seguridad: si algún celular es ultra estrecho, no hace salto */
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;    /* Firefox */
     }
+    .social-icons::-webkit-scrollbar{ display:none; } /* Chrome/Safari */
     .social-icons a{
       display:inline-flex;
       align-items:center;
@@ -200,7 +207,6 @@
       flex:0 0 auto;
     }
     .social-icons a:hover{border-color:#3b82f6}
-
     .social-icons img{
       width:calc(var(--social-size) * 0.58);
       height:calc(var(--social-size) * 0.58);
@@ -220,6 +226,7 @@
       padding:10px 0 6px;
     }
     .count{font-size:12px;color:var(--mut)}
+
     .grid{
       display:grid;
       gap:12px;
@@ -235,6 +242,7 @@
     @media (max-width:420px){
       .grid{ grid-template-columns:repeat(1, minmax(0, 1fr)); }
     }
+
     .card{
       background:rgba(18,24,38,.92);
       border:1px solid var(--line);
@@ -261,18 +269,35 @@
     .meta{color:var(--mut);font-size:12px;margin:0}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .price{font-weight:950}
+
     .pill{
       display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;
       border:1px solid #2a3b5c;color:var(--mut);
       background:rgba(11,18,32,.35);
       white-space:nowrap;
     }
+
+    /* ✅ Contador del carrito (círculo dentro del botón Ver carrito) */
+    #cartCount{
+      margin-left:8px;
+      border-color: rgba(0,0,0,.18);
+      background: rgba(255,255,255,.25);
+      color:#04120d;
+    }
+    #cartCount.has-items{
+      background: linear-gradient(90deg,#f59e0b,#f97316);
+      color:#1f1300;
+      border-color: rgba(0,0,0,.25);
+    }
+
     .actions{display:flex;gap:10px;flex-wrap:wrap}
     .actions button{flex:1 1 110px}
+
     details{margin-top:18px;background:rgba(18,24,38,.6);border:1px dashed #2a3b5c;border-radius:12px;padding:10px}
     details > summary{cursor:pointer;font-weight:900}
     pre{white-space:pre-wrap;word-break:break-word;color:#d6deea}
     .small{font-size:12px;color:var(--mut)}
+
     .cart-modal{
       position:fixed;
       inset:0;
@@ -443,6 +468,7 @@
       font-weight:950;
       color:var(--txt);
     }
+
     .img-modal{
       position:fixed;
       inset:0;
@@ -496,6 +522,7 @@
       align-items:center;
       justify-content:center;
     }
+
     @media (max-width:720px){
       .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
@@ -605,9 +632,7 @@
 
         <button class="btn-acc" id="btn-cart" type="button">
           Ver carrito WhatsApp
-          <span id="cartCount" class="pill" style="margin-left:8px; border-color: rgba(0,0,0,.18); background: rgba(255,255,255,.25); color:#04120d;">
-            0
-          </span>
+          <span id="cartCount" class="pill">0</span>
         </button>
       </div>
 
@@ -1125,6 +1150,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       }
       return `https://web.whatsapp.com/send?phone=${encodeURIComponent(WHATSAPP_NUMBER)}${msg ? `&text=${encodeURIComponent(msg)}` : ""}`;
     }
+
     (function syncTopWhatsApp(){
       const a = document.getElementById("waTopLink");
       if (!a) return;
@@ -1188,6 +1214,13 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     }
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
+
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape"){
+        if(imgModal && imgModal.classList.contains("open")) closeImgModal();
+        if(cartModal && cartModal.classList.contains("open")) closeCartModal();
+      }
+    });
 
     function makeImg(id, name){
       const img = document.createElement("img");
@@ -1265,9 +1298,12 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     function cartTotalQty(){
       return cartItemsArray().reduce((s,it)=> s + (it.qty || 0), 0);
     }
+
     function refreshCartCount(){
       if(!cartCountEl) return;
-      cartCountEl.textContent = String(cartTotalQty());
+      const qty = cartTotalQty();
+      cartCountEl.textContent = String(qty);
+      cartCountEl.classList.toggle("has-items", qty > 0);  // ✅ naranja si > 0
     }
 
     function saveCart(){
@@ -1314,13 +1350,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       cartModal.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
     }
-
-    document.addEventListener("keydown", (e)=>{
-      if(e.key === "Escape"){
-        if(imgModal && imgModal.classList.contains("open")) closeImgModal();
-        if(cartModal && cartModal.classList.contains("open")) closeCartModal();
-      }
-    });
 
     function renderCartModal(){
       const items = cartItemsArray();
@@ -1577,11 +1606,10 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           qtyPill.textContent = `En carrito: ${q}`;
           removeBtn.disabled = q <= 0;
 
-          // ✅ Cambia el color del botón Agregar si ya hay unidades en el carrito
+          /* ✅ Agregar cambia de color si ya hay en carrito */
           addBtn.classList.toggle("in-cart", q > 0);
         }
 
-        // ✅ aplica estado al cargar cada tarjeta
         refreshCardQty();
 
         addBtn.onclick = ()=>{
@@ -1632,7 +1660,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     if(sortSel) sortSel.addEventListener("change", render);
 
     readStateFromUrl();
-    refreshCartCount();
+    refreshCartCount();   // ✅ al cargar aplica naranja si hay items guardados
     render();
   </script>
 </body>

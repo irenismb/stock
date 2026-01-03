@@ -571,14 +571,7 @@
           <option value="price_desc">Precio: mayor a menor</option>
           <option value="name_asc">Nombre: A → Z</option>
         </select>
-
-        <!-- MEJORA: contador de items en el botón del carrito -->
-        <button class="btn-acc" id="btn-cart" type="button">
-          Ver carrito WhatsApp
-          <span id="cartCount" class="pill" style="margin-left:8px; border-color: rgba(0,0,0,.18); background: rgba(255,255,255,.25); color:#04120d;">
-            0
-          </span>
-        </button>
+        <button class="btn-acc" id="btn-cart" type="button">Ver carrito WhatsApp</button>
       </div>
       <noscript>
         <div style="margin-top:12px;border:1px solid #22304a;border-radius:14px;padding:12px;background:rgba(18,24,38,.55);">
@@ -991,8 +984,8 @@ Chronos Serum Intensivo Reductor Oleosidad 30 ml - Repuesto	Cuidado facial	Natur
 Tododia Mango Rosa y Agua De Coco Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.000	386
 Tododia Cereza y Avellana Desodorante Femenino En Roll-On 70 ml	Cuidado corporal	Natura	20.000	387
 Tododia Sin Perfume Desodorante Femenino En Roll-On 70 ml	Cuidado corporal	Natura	 20.000  	388
-Tododia Manzana Caramelizada y Vainilla Crema Corporal 400 ml	Cuidado corporal	Natura	1	389
-Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Natura	1	390
+Tododia Manzana Caramelizada y Vainilla Crema Corporal 400 ml	Cuidado corporal	Natura		389
+Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Natura		390
 </pre>
     </details>
   </main>
@@ -1028,7 +1021,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
     const SITE_BASE = "https://irenismb.github.io/stock/natura/";
     const FALLBACK_IMAGE = SITE_BASE + "recursos/otras_imagenes/logo_empresa.png";
-
     function productImageAbsoluteUrl(id){
       return SITE_BASE + IMG_DIR + "/" + encodeURIComponent(id) + ".webp";
     }
@@ -1127,12 +1119,10 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       if(!card.dataset.expanded) card.dataset.expanded = "0";
       apply();
     })();
-
     const imgModal = document.getElementById("imgModal");
     const imgModalImg = document.getElementById("imgModalImg");
     const imgModalClose = document.getElementById("imgModalClose");
     const imgModalBackdrop = document.getElementById("imgModalBackdrop");
-
     function openImgModal(src, alt){
       if(!imgModal || !imgModalImg || !src) return;
       imgModalImg.src = src;
@@ -1150,42 +1140,31 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     }
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
-
     document.addEventListener("keydown", (e)=>{
       if(e.key === "Escape"){
         if(imgModal && imgModal.classList.contains("open")) closeImgModal();
         if(cartModal && cartModal.classList.contains("open")) closeCartModal();
       }
     });
-
     function makeImg(id, name){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : ("Producto " + id);
       img.loading = "lazy";
       img.decoding = "async";
       let tryIdx = 0;
-
       const setSrc = ()=>{ img.src = `${IMG_DIR}/${encodeURIComponent(id)}.${IMG_EXTS[tryIdx]}`; };
-
-      // MEJORA: si no existe la foto, usar placeholder en vez de borrar
       img.onerror = ()=>{
         tryIdx++;
         if(tryIdx < IMG_EXTS.length) setSrc();
-        else{
-          img.src = FALLBACK_IMAGE;
-          img.style.cursor = "default";
-        }
+        else img.remove();
       };
-
       img.addEventListener("click", ()=>{
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
-
       setSrc();
       return img;
     }
-
     function makeCartThumb(id, name){
       const img = document.createElement("img");
       img.className = "cart-thumb";
@@ -1193,62 +1172,28 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       img.loading = "lazy";
       img.decoding = "async";
       let tryIdx = 0;
-
       const setSrc = ()=>{ img.src = `${IMG_DIR}/${encodeURIComponent(id)}.${IMG_EXTS[tryIdx]}`; };
-
-      // MEJORA: si no existe la miniatura, usar placeholder (no esconder)
       img.onerror = ()=>{
         tryIdx++;
         if(tryIdx < IMG_EXTS.length) setSrc();
         else{
-          img.src = FALLBACK_IMAGE;
-          img.style.display = "";
+          img.src = "";
+          img.style.display = "none";
         }
       };
-
       img.addEventListener("click", ()=>{
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
-
       setSrc();
       return img;
     }
-
     const raw = document.getElementById("productos-tsv").textContent;
     const all = parseTSV(raw);
-
-    // MEJORA: localStorage seguro (si el JSON está dañado, no se cae la página)
-    const cart = (() => {
-      try{
-        const rawCart = localStorage.getItem("cart");
-        const parsed = JSON.parse(rawCart || "{}");
-        return (parsed && typeof parsed === "object") ? parsed : {};
-      }catch(e){
-        localStorage.removeItem("cart");
-        return {};
-      }
-    })();
-
-    // Contador del carrito en el botón
-    const cartCountEl = document.getElementById("cartCount");
-
+    const cart = JSON.parse(localStorage.getItem("cart") || "{}");
+    function saveCart(){ localStorage.setItem("cart", JSON.stringify(cart)); }
     function cartItemsArray(){ return Object.values(cart).filter(it => it && it.qty > 0); }
     function cartTotalValue(){ return cartItemsArray().reduce((s,it)=> s + (it.price * it.qty), 0); }
-
-    function cartTotalQty(){
-      return cartItemsArray().reduce((s,it)=> s + (it.qty || 0), 0);
-    }
-    function refreshCartCount(){
-      if(!cartCountEl) return;
-      cartCountEl.textContent = String(cartTotalQty());
-    }
-
-    function saveCart(){
-      localStorage.setItem("cart", JSON.stringify(cart));
-      refreshCartCount();
-    }
-
     function cartMessage(){
       const items = cartItemsArray();
       if(!items.length) return "Hola, quiero información del catálogo.";
@@ -1256,7 +1201,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       const total = cartTotalValue();
       return `Hola, quiero comprar:\n${lines.join("\n")}\n\nTotal: ${fmtCOP.format(total)}`;
     }
-
     function setCartQty(id, name, price, qty){
       const q = Math.max(0, Number(qty) || 0);
       if(!q) delete cart[id];
@@ -1269,14 +1213,12 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       }
       saveCart();
     }
-
     const cartModal = document.getElementById("cartModal");
     const cartModalClose = document.getElementById("cartModalClose");
     const cartModalBackdrop = document.getElementById("cartModalBackdrop");
     const cartItemsEl = document.getElementById("cartItems");
     const cartTotalEl = document.getElementById("cartTotal");
     const cartBuyBtn = document.getElementById("cartBuyBtn");
-
     function openCartModal(){
       renderCartModal();
       cartModal.classList.add("open");
@@ -1288,27 +1230,22 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       cartModal.setAttribute("aria-hidden", "true");
       document.body.style.overflow = "";
     }
-
     function renderCartModal(){
       const items = cartItemsArray();
       const total = cartTotalValue();
       cartTotalEl.textContent = "Total: " + fmtCOP.format(total);
-
       if(!items.length){
         cartItemsEl.innerHTML = `<div class="cart-empty">El carrito está vacío. Agrega productos desde el catálogo.</div>`;
         return;
       }
-
       const frag = document.createDocumentFragment();
       items.forEach(it=>{
         const row = document.createElement("div");
         row.className = "cart-item";
         row.setAttribute("data-id", it.id);
-
         const left = document.createElement("div");
         left.className = "cart-item-left";
         left.appendChild(makeCartThumb(it.id, it.name));
-
         const main = document.createElement("div");
         main.className = "cart-item-main";
         main.innerHTML = `
@@ -1318,7 +1255,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
         main.querySelector(".cart-item-name").textContent = it.name;
         main.querySelector(".cart-item-sub").textContent = `Id: ${it.id} · Precio: ${fmtCOP.format(it.price)}`;
         left.appendChild(main);
-
         const controls = document.createElement("div");
         controls.className = "cart-controls";
         controls.innerHTML = `
@@ -1326,28 +1262,23 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           <span class="cart-qty" aria-label="Cantidad">${it.qty}</span>
           <button class="cart-qty-btn" type="button" data-act="inc" aria-label="Aumentar">+</button>
         `;
-
         const subtotal = document.createElement("div");
         subtotal.className = "cart-subtotal";
         subtotal.textContent = fmtCOP.format(it.price * it.qty);
-
         const remove = document.createElement("button");
         remove.className = "cart-remove";
         remove.type = "button";
         remove.textContent = "Eliminar";
         remove.setAttribute("data-act", "remove");
-
         row.appendChild(left);
         row.appendChild(controls);
         row.appendChild(subtotal);
         row.appendChild(remove);
         frag.appendChild(row);
       });
-
       cartItemsEl.innerHTML = "";
       cartItemsEl.appendChild(frag);
     }
-
     cartItemsEl.addEventListener("click", (e)=>{
       const btn = e.target.closest("button");
       if(!btn) return;
@@ -1355,19 +1286,15 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       if(!itemRow) return;
       const id = itemRow.getAttribute("data-id");
       if(!id || !cart[id]) return;
-
       const act = btn.getAttribute("data-act");
       const current = cart[id];
       let newQty = current.qty;
-
       if(act === "inc") newQty += 1;
       if(act === "dec") newQty = Math.max(0, newQty - 1);
       if(act === "remove") newQty = 0;
-
       setCartQty(id, current.name, current.price, newQty);
       renderCartModal();
     });
-
     cartBuyBtn.addEventListener("click", ()=>{
       const items = cartItemsArray();
       if(!items.length){
@@ -1376,17 +1303,14 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       }
       window.open(waLink(cartMessage()), "_blank", "noopener");
     });
-
     cartModalClose.addEventListener("click", closeCartModal);
     cartModalBackdrop.addEventListener("click", closeCartModal);
-
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
     const sortSel = document.getElementById("sort");
     const qInp = document.getElementById("q");
     const grid = document.getElementById("grid");
     const countEl = document.getElementById("count");
-
     function fillSelect(sel, values){
       for(const v of values){
         const opt = document.createElement("option");
@@ -1394,10 +1318,8 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
         sel.appendChild(opt);
       }
     }
-
     fillSelect(catSel, [...new Set(all.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"})));
     fillSelect(brandSel, [...new Set(all.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"})));
-
     function readStateFromUrl(){
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
@@ -1421,7 +1343,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
       history.replaceState(null, "", u.toString());
     }
-
     function updateProductsJsonLd(list){
       try{
         const baseUrl = "https://irenismb.github.io/stock/natura/catalogo.html";
@@ -1459,13 +1380,11 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
         document.getElementById("ld-products").textContent = JSON.stringify(itemList);
       }catch(e){}
     }
-
     function render(){
       const cat = catSel.value;
       const br = brandSel.value;
       const sortMode = sortSel ? sortSel.value : "";
       const terms = normalizeText(qInp.value).split(/\s+/).filter(Boolean);
-
       let filtered = all.filter(p=>{
         if(cat && p.category !== cat) return false;
         if(br && p.brand !== br) return false;
@@ -1474,7 +1393,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
         }
         return true;
       });
-
       if(sortMode === "price_asc"){
         filtered.sort((a,b)=> (a.price||0) - (b.price||0) || String(a.id).localeCompare(String(b.id)));
       }else if(sortMode === "price_desc"){
@@ -1486,65 +1404,50 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           return String(a.id).localeCompare(String(b.id));
         });
       }
-
       countEl.textContent = `${filtered.length} producto(s) encontrado(s).`;
       grid.innerHTML = "";
-
       for(const p of filtered){
         const card = document.createElement("article");
         card.className = "card";
         card.id = "p-" + p.id;
-
         const imgBox = document.createElement("div");
         imgBox.className = "img";
         imgBox.appendChild(makeImg(p.id, p.name));
-
         const pad = document.createElement("div");
         pad.className = "pad";
-
         const name = document.createElement("h3");
         name.className = "name";
         name.textContent = p.name;
-
         const meta = document.createElement("p");
         meta.className = "meta";
         meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}`;
-
         const row1 = document.createElement("div");
         row1.className = "row";
-
         const price = document.createElement("span");
         price.className = "price";
         price.textContent = fmtCOP.format(p.price);
-
         const qtyPill = document.createElement("span");
         qtyPill.className = "pill";
         const initialQty = (cart[p.id]?.qty || 0);
         qtyPill.textContent = `En carrito: ${initialQty}`;
-
         row1.appendChild(price);
         row1.appendChild(qtyPill);
-
         const actions = document.createElement("div");
         actions.className = "actions";
-
         const removeBtn = document.createElement("button");
         removeBtn.type = "button";
         removeBtn.className = "btn-danger";
         removeBtn.textContent = "Quitar";
         removeBtn.disabled = initialQty <= 0;
-
         const addBtn = document.createElement("button");
         addBtn.type = "button";
         addBtn.className = "btn-acc";
         addBtn.textContent = "Agregar";
-
         function refreshCardQty(){
           const q = (cart[p.id]?.qty || 0);
           qtyPill.textContent = `En carrito: ${q}`;
           removeBtn.disabled = q <= 0;
         }
-
         addBtn.onclick = ()=>{
           const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0 };
           cur.qty = (cur.qty || 0) + 1;
@@ -1555,7 +1458,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           setTimeout(()=>addBtn.textContent="Agregar", 900);
           if(cartModal.classList.contains("open")) renderCartModal();
         };
-
         removeBtn.onclick = ()=>{
           const cur = cart[p.id];
           if(!cur) return;
@@ -1568,32 +1470,25 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           setTimeout(()=>removeBtn.textContent="Quitar", 900);
           if(cartModal.classList.contains("open")) renderCartModal();
         };
-
         actions.appendChild(removeBtn);
         actions.appendChild(addBtn);
-
         pad.appendChild(name);
         pad.appendChild(meta);
         pad.appendChild(row1);
         pad.appendChild(actions);
-
         card.appendChild(imgBox);
         card.appendChild(pad);
         grid.appendChild(card);
       }
-
       writeStateToUrl();
       updateProductsJsonLd(filtered);
     }
-
     document.getElementById("btn-cart").onclick = openCartModal;
     qInp.addEventListener("input", render);
     catSel.addEventListener("change", render);
     brandSel.addEventListener("change", render);
     if(sortSel) sortSel.addEventListener("change", render);
-
     readStateFromUrl();
-    refreshCartCount(); // MEJORA: inicializa el contador al cargar
     render();
   </script>
 </body>

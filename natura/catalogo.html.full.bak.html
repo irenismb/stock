@@ -30,6 +30,7 @@
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preload" as="image" href="recursos/otras_imagenes/logo_empresa.png" />
+
   <style>
     :root{
       --bg:#0b0f14;
@@ -42,7 +43,12 @@
       --focus:#60a5fa;
       --pill:#0e1524;
       --danger:#ef4444;
+
+      /* Iconos redes: para que entren en 1 fila incluso en pantallas pequeñas */
+      --social-size: clamp(26px, 8.5vw, 38px);
+      --social-gap: clamp(3px, 1.6vw, 10px);
     }
+
     *{box-sizing:border-box}
     html,body{max-width:100%;overflow-x:hidden}
     body{
@@ -53,6 +59,7 @@
     }
     a{color:inherit}
     .wrap{max-width:1100px;margin:0 auto}
+
     .site-header{ padding:16px 16px 10px; }
     .site-header-inner{
       display:flex;
@@ -98,6 +105,7 @@
       font-weight:800;
       white-space:nowrap;
     }
+
     header .intro{ padding:14px 16px 8px; }
     .about-card{
       border:1px solid var(--line);
@@ -116,6 +124,8 @@
       padding:8px 12px;
       font-size:13px;
     }
+
+    /* ✅ MÓVILES: texto centrado */
     @media (max-width:768px){
       .about-card.about-collapsed .about-text{
         display:-webkit-box;
@@ -123,10 +133,13 @@
         -webkit-line-clamp:2;
         overflow:hidden;
       }
+      #aboutText{ text-align:center; }
+      .about-toggle{ align-self:center; }
     }
     @media (min-width:769px){
       .about-toggle{ display:none; }
     }
+
     .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
     input,select,button{
       border-radius:12px;border:1px solid #263246;background:var(--pill);
@@ -138,10 +151,18 @@
       outline:2px solid var(--focus);
       outline-offset:2px;
     }
+
     .btn-acc{
       background:linear-gradient(90deg,#20c997,#2dd4bf);
       border:none;color:#04120d;font-weight:900;
     }
+
+    /* ✅ Botón "Agregar" cuando el producto ya está en el carrito */
+    .btn-acc.in-cart{
+      background: linear-gradient(90deg,#f59e0b,#f97316);
+      color:#1f1300;
+    }
+
     .btn-ghost{
       background:transparent;
       border:1px solid #2a3b5c;
@@ -154,46 +175,58 @@
       color:#fecaca;
       font-weight:900;
     }
+
+    /* ✅ Redes: siempre una fila */
     .social-icons{
       display:flex;
       align-items:center;
       justify-content:center;
-      gap:10px;
-      flex-wrap:wrap;
+      gap:var(--social-gap);
+      flex-wrap:nowrap;
       margin-top:12px;
       padding:10px 12px;
       border:1px solid var(--line);
       border-radius:16px;
       background:rgba(18,24,38,.45);
       width:100%;
+      overflow-x:auto;          /* seguridad: si algún celular es ultra estrecho, no hace salto */
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;    /* Firefox */
     }
+    .social-icons::-webkit-scrollbar{ display:none; } /* Chrome/Safari */
     .social-icons a{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      width:38px;height:38px;
+      width:var(--social-size);
+      height:var(--social-size);
       border-radius:999px;
       border:1px solid rgba(255,255,255,.08);
       background:rgba(11,18,32,.35);
       text-decoration:none;
+      flex:0 0 auto;
     }
     .social-icons a:hover{border-color:#3b82f6}
     .social-icons img{
-      width:22px;height:22px;
+      width:calc(var(--social-size) * 0.58);
+      height:calc(var(--social-size) * 0.58);
       object-fit:contain;
       border-radius:999px;
     }
     .social-icons svg{
-      width:22px;height:22px;
+      width:calc(var(--social-size) * 0.58);
+      height:calc(var(--social-size) * 0.58);
       fill:var(--txt);
       display:block;
     }
+
     main{max-width:1100px;margin:0 auto;padding:0 16px 20px}
     .topline{
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
       padding:10px 0 6px;
     }
     .count{font-size:12px;color:var(--mut)}
+
     .grid{
       display:grid;
       gap:12px;
@@ -209,6 +242,7 @@
     @media (max-width:420px){
       .grid{ grid-template-columns:repeat(1, minmax(0, 1fr)); }
     }
+
     .card{
       background:rgba(18,24,38,.92);
       border:1px solid var(--line);
@@ -235,18 +269,35 @@
     .meta{color:var(--mut);font-size:12px;margin:0}
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .price{font-weight:950}
+
     .pill{
       display:inline-block;font-size:11px;padding:4px 8px;border-radius:999px;
       border:1px solid #2a3b5c;color:var(--mut);
       background:rgba(11,18,32,.35);
       white-space:nowrap;
     }
+
+    /* ✅ Contador del carrito (círculo dentro del botón Ver carrito) */
+    #cartCount{
+      margin-left:8px;
+      border-color: rgba(0,0,0,.18);
+      background: rgba(255,255,255,.25);
+      color:#04120d;
+    }
+    #cartCount.has-items{
+      background: linear-gradient(90deg,#f59e0b,#f97316);
+      color:#1f1300;
+      border-color: rgba(0,0,0,.25);
+    }
+
     .actions{display:flex;gap:10px;flex-wrap:wrap}
     .actions button{flex:1 1 110px}
+
     details{margin-top:18px;background:rgba(18,24,38,.6);border:1px dashed #2a3b5c;border-radius:12px;padding:10px}
     details > summary{cursor:pointer;font-weight:900}
     pre{white-space:pre-wrap;word-break:break-word;color:#d6deea}
     .small{font-size:12px;color:var(--mut)}
+
     .cart-modal{
       position:fixed;
       inset:0;
@@ -417,6 +468,7 @@
       font-weight:950;
       color:var(--txt);
     }
+
     .img-modal{
       position:fixed;
       inset:0;
@@ -470,6 +522,7 @@
       align-items:center;
       justify-content:center;
     }
+
     @media (max-width:720px){
       .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
@@ -478,6 +531,7 @@
       *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
     }
   </style>
+
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -510,6 +564,7 @@
   </script>
   <script type="application/ld+json" id="ld-products">{}</script>
 </head>
+
 <body>
   <header class="site-header">
     <div class="wrap site-header-inner">
@@ -522,18 +577,20 @@
       </div>
       <div class="badge">Natura · Maquillaje · Cuidado personal</div>
     </div>
+
     <div class="wrap intro">
       <section class="about-card" id="aboutCard" aria-label="Sobre nosotros y contacto">
         <p class="small about-text" id="aboutText">
-          ✨ Sobre Nosotros: Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura, AVON y Esika.
+          Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura, AVON y Esika.
           Te asesoramos por WhatsApp, vía telefónica o de manera presencial en el barrio los Almendros. Dirección: Calle 10A #20A-06. Teléfono: +57 304 208 8961.
- Realizamos envíos nacionales e Internacionales.
+          Realizamos envíos nacionales e Internacionales.
         </p>
         <button class="btn-ghost about-toggle" id="aboutToggle" type="button"
                 aria-expanded="false" aria-controls="aboutText">
           Ver más
         </button>
       </section>
+
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
         <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
           <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook" />
@@ -559,6 +616,7 @@
           </svg>
         </a>
       </div>
+
       <div class="bar" role="search" aria-label="Buscar y filtrar productos">
         <input id="q" type="search" inputmode="search"
                placeholder="🔍 Buscar por nombre, marca, categoría..."
@@ -572,14 +630,12 @@
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
-        <!-- MEJORA: contador de items en el botón del carrito -->
         <button class="btn-acc" id="btn-cart" type="button">
           Ver carrito WhatsApp
-          <span id="cartCount" class="pill" style="margin-left:8px; border-color: rgba(0,0,0,.18); background: rgba(255,255,255,.25); color:#04120d;">
-            0
-          </span>
+          <span id="cartCount" class="pill">0</span>
         </button>
       </div>
+
       <noscript>
         <div style="margin-top:12px;border:1px solid #22304a;border-radius:14px;padding:12px;background:rgba(18,24,38,.55);">
           <h2 style="margin:0 0 6px;font-size:16px;">Catálogo Natura en Santa Marta</h2>
@@ -596,11 +652,13 @@
       </noscript>
     </div>
   </header>
+
   <main class="wrap">
     <div class="topline">
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
+
     <details>
       <summary>Lista completa (datos en el HTML)</summary>
       <pre id="productos-tsv">Nombre producto	Categoria	Marca	Valor unitario	id
@@ -996,6 +1054,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
 </pre>
     </details>
   </main>
+
   <div class="cart-modal" id="cartModal" aria-hidden="true" role="dialog" aria-label="Carrito">
     <div class="cart-modal-backdrop" id="cartModalBackdrop"></div>
     <div class="cart-modal-content" role="document" aria-label="Contenido del carrito">
@@ -1014,6 +1073,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       </div>
     </div>
   </div>
+
   <div class="img-modal" id="imgModal" aria-hidden="true" role="dialog" aria-label="Imagen ampliada">
     <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
     <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Cerrar">✕</button>
@@ -1021,6 +1081,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       <img id="imgModalImg" alt="Imagen ampliada del producto" />
     </div>
   </div>
+
   <script>
     const WHATSAPP_NUMBER = "573042088961";
     const IMG_DIR = "recursos/imagenes_de_productos";
@@ -1071,6 +1132,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
         return { id, name, category, brand, price, searchKey };
       }).filter(p => p.name && p.id);
     }
+
     function isMobileDevice(){
       try{
         const ua = (navigator.userAgent || "").toLowerCase();
@@ -1088,12 +1150,14 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       }
       return `https://web.whatsapp.com/send?phone=${encodeURIComponent(WHATSAPP_NUMBER)}${msg ? `&text=${encodeURIComponent(msg)}` : ""}`;
     }
+
     (function syncTopWhatsApp(){
       const a = document.getElementById("waTopLink");
       if (!a) return;
       a.href = waLink("");
       a.setAttribute("aria-label", isMobileDevice() ? "WhatsApp" : "WhatsApp Web");
     })();
+
     (function initAboutCollapse(){
       const card = document.getElementById("aboutCard");
       const btn = document.getElementById("aboutToggle");
@@ -1167,7 +1231,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
 
       const setSrc = ()=>{ img.src = `${IMG_DIR}/${encodeURIComponent(id)}.${IMG_EXTS[tryIdx]}`; };
 
-      // MEJORA: si no existe la foto, usar placeholder en vez de borrar
       img.onerror = ()=>{
         tryIdx++;
         if(tryIdx < IMG_EXTS.length) setSrc();
@@ -1196,7 +1259,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
 
       const setSrc = ()=>{ img.src = `${IMG_DIR}/${encodeURIComponent(id)}.${IMG_EXTS[tryIdx]}`; };
 
-      // MEJORA: si no existe la miniatura, usar placeholder (no esconder)
       img.onerror = ()=>{
         tryIdx++;
         if(tryIdx < IMG_EXTS.length) setSrc();
@@ -1218,7 +1280,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     const raw = document.getElementById("productos-tsv").textContent;
     const all = parseTSV(raw);
 
-    // MEJORA: localStorage seguro (si el JSON está dañado, no se cae la página)
     const cart = (() => {
       try{
         const rawCart = localStorage.getItem("cart");
@@ -1230,18 +1291,19 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       }
     })();
 
-    // Contador del carrito en el botón
     const cartCountEl = document.getElementById("cartCount");
 
     function cartItemsArray(){ return Object.values(cart).filter(it => it && it.qty > 0); }
     function cartTotalValue(){ return cartItemsArray().reduce((s,it)=> s + (it.price * it.qty), 0); }
-
     function cartTotalQty(){
       return cartItemsArray().reduce((s,it)=> s + (it.qty || 0), 0);
     }
+
     function refreshCartCount(){
       if(!cartCountEl) return;
-      cartCountEl.textContent = String(cartTotalQty());
+      const qty = cartTotalQty();
+      cartCountEl.textContent = String(qty);
+      cartCountEl.classList.toggle("has-items", qty > 0);  // ✅ naranja si > 0
     }
 
     function saveCart(){
@@ -1543,7 +1605,12 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           const q = (cart[p.id]?.qty || 0);
           qtyPill.textContent = `En carrito: ${q}`;
           removeBtn.disabled = q <= 0;
+
+          /* ✅ Agregar cambia de color si ya hay en carrito */
+          addBtn.classList.toggle("in-cart", q > 0);
         }
+
+        refreshCardQty();
 
         addBtn.onclick = ()=>{
           const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0 };
@@ -1593,7 +1660,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     if(sortSel) sortSel.addEventListener("change", render);
 
     readStateFromUrl();
-    refreshCartCount(); // MEJORA: inicializa el contador al cargar
+    refreshCartCount();   // ✅ al cargar aplica naranja si hay items guardados
     render();
   </script>
 </body>

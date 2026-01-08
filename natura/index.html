@@ -3,39 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Irenismb Stock Natura en Santa Marta | Compra por WhatsApp y Catálogo</title>
 
-  <meta name="description" content="Irenismb Stock Natura en Santa Marta: fragancias, cuidado personal, maquillaje y más. Compra por WhatsApp o explora el catálogo online." />
+  <title>Irenismb Stock Natura en Santa Marta | Entra al catálogo y compra por WhatsApp</title>
+  <meta name="description" content="Irenismb Stock Natura en Santa Marta: entra al catálogo, elige tus productos y haz tu pedido por WhatsApp. Fragancias, cuidado personal, maquillaje y más." />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet=-1,max-video-preview=-1" />
   <meta name="theme-color" content="#0b0f14" />
   <meta name="format-detection" content="telephone=no" />
 
-  <!-- ✅ AJUSTA si cambias dominio/ruta -->
+  <!-- ✅ URL base (index.html se sirve como /) -->
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/" />
   <link rel="alternate" hreflang="es-CO" href="https://irenismb.github.io/stock/natura/" />
 
+  <!-- Favicons -->
   <link rel="icon" type="image/webp" href="recursos/otras_imagenes/logo_empresa.webp" />
   <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.png" />
   <link rel="apple-touch-icon" href="recursos/otras_imagenes/logo_empresa.png" />
 
-  <!-- Open Graph / Social -->
+  <!-- Social (usar logo por ahora) -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/" />
-  <meta property="og:title" content="Irenismb Stock Natura | Santa Marta | Compra por WhatsApp" />
-  <meta property="og:description" content="Catálogo Natura en Santa Marta. Compra fácil por WhatsApp o explora el catálogo online." />
-  <!-- Recomendado: crea esta imagen 1200x630 para compartir bonito -->
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/og-1200x630.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:image:alt" content="Irenismb Stock Natura en Santa Marta - Compra por WhatsApp" />
+  <meta property="og:title" content="Irenismb Stock Natura | Santa Marta | Catálogo y compra por WhatsApp" />
+  <meta property="og:description" content="Entra al catálogo, elige tus productos y haz tu pedido por WhatsApp. Santa Marta." />
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Irenismb Stock Natura en Santa Marta" />
   <meta property="og:site_name" content="Irenismb Stock Natura" />
   <meta property="og:locale" content="es_CO" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irenismb Stock Natura | Santa Marta" />
-  <meta name="twitter:description" content="Compra por WhatsApp o visita el catálogo online." />
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/og-1200x630.png" />
+  <meta name="twitter:description" content="Entra al catálogo y haz tu pedido por WhatsApp." />
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png" />
 
+  <!-- Performance -->
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preload" as="image" href="recursos/otras_imagenes/logo_empresa.png" />
@@ -50,9 +50,8 @@
       --line:#22304a;
       --focus:#60a5fa;
       --pill:#0e1524;
-      --danger:#ef4444;
-      --br:16px;
       --shadow: 0 22px 60px rgba(0,0,0,.45);
+      --br:18px;
 
       --social-size: clamp(28px, 8.5vw, 40px);
       --social-gap: clamp(4px, 1.6vw, 12px);
@@ -62,21 +61,44 @@
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background: radial-gradient(1000px 600px at 20% -20%, rgba(32,201,151,.20), transparent 55%),
-                  radial-gradient(900px 520px at 90% 10%, rgba(96,165,250,.18), transparent 55%),
-                  linear-gradient(180deg,#0b0f14,#0c1220);
+      background:
+        radial-gradient(1000px 600px at 20% -20%, rgba(32,201,151,.20), transparent 55%),
+        radial-gradient(900px 520px at 90% 10%, rgba(96,165,250,.18), transparent 55%),
+        linear-gradient(180deg,#0b0f14,#0c1220);
       color:var(--txt);
     }
     a{color:inherit}
     .wrap{max-width:1100px;margin:0 auto}
-    .pad{padding:16px}
+    .sr-only{
+      position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;
+    }
+    .skip{
+      position:absolute;left:12px;top:10px;z-index:99999;
+      background:#0b1220;border:1px solid rgba(255,255,255,.12);
+      padding:10px 12px;border-radius:12px;
+      transform:translateY(-140%);
+      transition:transform .2s ease;
+      text-decoration:none;font-weight:900;
+    }
+    .skip:focus{transform:translateY(0)}
+    .pill{
+      display:inline-flex;align-items:center;gap:8px;
+      border:1px solid rgba(255,255,255,.10);
+      background:rgba(11,18,32,.35);
+      color:var(--mut);
+      padding:7px 10px;
+      border-radius:999px;
+      font-size:12.5px;
+      white-space:nowrap;
+    }
+    .dot{width:8px;height:8px;border-radius:999px;background:rgba(32,201,151,.85)}
 
     /* Header */
-    .site-header{padding:16px}
-    .site-header-inner{
+    header{padding:16px}
+    .head{
       border:1px solid var(--line);
       background:rgba(18,24,38,.55);
-      border-radius:20px;
+      border-radius:22px;
       padding:14px;
       display:flex;
       align-items:center;
@@ -105,48 +127,38 @@
     .hero{
       margin-top:14px;
       border:1px solid var(--line);
-      border-radius:22px;
+      border-radius:24px;
       background:rgba(18,24,38,.55);
-      box-shadow: var(--shadow);
+      box-shadow:var(--shadow);
       overflow:hidden;
     }
     .hero-inner{
       display:grid;
-      grid-template-columns: 1.2fr .8fr;
+      grid-template-columns: 1.15fr .85fr;
       gap:14px;
       padding:18px;
-      align-items:center;
+      align-items:start;
     }
-    @media (max-width:900px){
+    @media (max-width:920px){
       .hero-inner{grid-template-columns:1fr}
     }
     .hero h2{
       margin:0 0 10px;
-      font-size:28px;
+      font-size:30px;
       line-height:1.1;
       letter-spacing:-.02em;
     }
     .hero p{
-      margin:0 0 14px;
+      margin:0 0 12px;
       color:var(--mut);
-      line-height:1.5;
-      font-size:14.5px;
+      line-height:1.55;
+      font-size:14.7px;
     }
-    .hero-cards{
-      display:grid;
-      gap:10px;
-    }
-    .mini{
-      border:1px solid rgba(255,255,255,.08);
-      background:rgba(11,18,32,.35);
-      border-radius:18px;
-      padding:12px 12px;
-    }
-    .mini strong{display:block;margin-bottom:4px}
-    .mini span{color:var(--mut);font-size:13px;line-height:1.35;display:block}
+    .kpis{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0 0}
+    .kpis .pill{flex:0 0 auto}
 
     /* Buttons */
-    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+    .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
     .btn{
       border-radius:14px;
       border:1px solid #263246;
@@ -154,14 +166,15 @@
       color:var(--txt);
       padding:12px 14px;
       font-size:14px;
-      font-weight:900;
+      font-weight:950;
       cursor:pointer;
       text-decoration:none;
       display:inline-flex;
       align-items:center;
       gap:10px;
-      flex: 1 1 210px;
+      flex: 1 1 220px;
       justify-content:center;
+      min-height:44px;
     }
     .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
     .btn-acc{
@@ -177,7 +190,7 @@
 
     /* Social */
     .social{
-      margin-top:12px;
+      margin-top:14px;
       display:flex;
       align-items:center;
       justify-content:center;
@@ -219,17 +232,19 @@
     }
 
     /* Sections */
-    main{padding:0 16px 24px}
+    main{padding:0 16px 26px}
     .section{
       margin-top:14px;
       border:1px solid var(--line);
-      border-radius:22px;
+      border-radius:24px;
       background:rgba(18,24,38,.55);
-      box-shadow: 0 18px 50px rgba(0,0,0,.25);
+      box-shadow: 0 18px 50px rgba(0,0,0,.22);
       overflow:hidden;
     }
     .section-inner{padding:16px}
     .section h3{margin:0 0 10px;font-size:18px}
+    .muted{color:var(--mut);line-height:1.55;margin:0}
+
     .grid2{
       display:grid;
       grid-template-columns: repeat(2, minmax(0,1fr));
@@ -237,6 +252,7 @@
       margin-top:10px;
     }
     @media (max-width:860px){ .grid2{grid-template-columns:1fr} }
+
     .tile{
       border:1px solid rgba(255,255,255,.08);
       background:rgba(11,18,32,.35);
@@ -253,8 +269,8 @@
       background:rgba(11,18,32,.25);
       padding:12px;
     }
-    details > summary{cursor:pointer;font-weight:900}
-    details p{margin:10px 0 0;color:var(--mut);line-height:1.45}
+    details > summary{cursor:pointer;font-weight:950}
+    details p{margin:10px 0 0;color:var(--mut);line-height:1.5}
 
     /* Footer */
     footer{
@@ -287,12 +303,17 @@
       background:rgba(6,45,22,.55);
     }
 
+    @media (max-width:720px){
+      .badge{width:100%;text-align:center}
+      .head{padding:12px}
+      .hero h2{font-size:26px}
+    }
     @media (prefers-reduced-motion: reduce){
       *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
     }
   </style>
 
-  <!-- ✅ Schema: Store + WebSite + FAQ -->
+  <!-- ✅ Schema: WebSite + Store + FAQ (SEO local) -->
   <script type="application/ld+json">
   {
     "@context":"https://schema.org",
@@ -309,11 +330,12 @@
         "@id":"https://irenismb.github.io/stock/natura/#store",
         "name":"Irenismb Stock Natura",
         "url":"https://irenismb.github.io/stock/natura/",
-        "description":"Catálogo Natura en Santa Marta. Compra fácil por WhatsApp o explora el catálogo online.",
+        "description":"Irenismb Stock Natura en Santa Marta: entra al catálogo, elige tus productos y haz tu pedido por WhatsApp.",
         "telephone":"+57 304 208 8961",
         "image":[
           "https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png"
         ],
+        "logo":"https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png",
         "address":{
           "@type":"PostalAddress",
           "streetAddress":"Calle 10A #20A-06 barrio Los Almendros",
@@ -331,6 +353,27 @@
           { "@type":"City", "name":"Santa Marta" },
           { "@type":"Country", "name":"Colombia" }
         ],
+        "hasOfferCatalog":{
+          "@type":"OfferCatalog",
+          "name":"Catálogo de productos",
+          "url":"https://irenismb.github.io/stock/natura/catalogo.html"
+        },
+        "contactPoint":{
+          "@type":"ContactPoint",
+          "telephone":"+57 304 208 8961",
+          "contactType":"customer support",
+          "availableLanguage":["es"],
+          "hoursAvailable":[
+            {
+              "@type":"OpeningHoursSpecification",
+              "dayOfWeek":[
+                "Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"
+              ],
+              "opens":"00:00",
+              "closes":"23:59"
+            }
+          ]
+        },
         "sameAs":[
           "https://www.facebook.com/marketplace/profile/100084865295132",
           "https://www.instagram.com/irenismb_stocknaturasm",
@@ -347,7 +390,15 @@
             "name":"¿Cómo compro?",
             "acceptedAnswer":{
               "@type":"Answer",
-              "text":"Puedes entrar al catálogo, agregar productos al carrito y luego presionar “Comprar por WhatsApp”. También puedes escribirnos directamente por WhatsApp para asesoría."
+              "text":"Entra al catálogo, agrega productos al carrito y presiona “Comprar por WhatsApp”. También puedes escribirnos directamente para asesoría."
+            }
+          },
+          {
+            "@type":"Question",
+            "name":"¿Cuál es el horario de atención?",
+            "acceptedAnswer":{
+              "@type":"Answer",
+              "text":"Puedes escribirnos por WhatsApp a cualquier hora (incluso madrugada). Respondemos apenas veamos tu mensaje."
             }
           },
           {
@@ -363,7 +414,7 @@
             "name":"¿Dónde están ubicados?",
             "acceptedAnswer":{
               "@type":"Answer",
-              "text":"Estamos en Santa Marta, barrio Los Almendros. Dirección: Calle 10A #20A-06. También atendemos por WhatsApp y teléfono."
+              "text":"Santa Marta, barrio Los Almendros. Dirección: Calle 10A #20A-06. También atendemos por WhatsApp y teléfono."
             }
           }
         ]
@@ -374,37 +425,45 @@
 </head>
 
 <body>
-  <header class="site-header">
-    <div class="wrap site-header-inner">
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+
+  <header class="wrap" aria-label="Encabezado">
+    <div class="head">
       <div class="brand">
         <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="56" height="56" />
         <div>
           <h1>IRENISMB STOCK NATURA</h1>
-          <p>Santa Marta • Compra por WhatsApp • Envíos nacionales e internacionales</p>
+          <p>Santa Marta • Entra al catálogo y compra por WhatsApp</p>
         </div>
       </div>
       <div class="badge">Natura · Avon · Ésika</div>
     </div>
 
-    <section class="wrap hero" aria-label="Presentación">
+    <section class="hero" aria-label="Presentación principal">
       <div class="hero-inner">
         <div>
-          <h2>Compra fácil por WhatsApp o entra al catálogo</h2>
+          <h2>Explora el catálogo y haz tu pedido por WhatsApp</h2>
           <p>
-            Encuentra fragancias, cuidado personal, maquillaje y más. Te asesoramos por WhatsApp, llamada o presencialmente en Santa Marta.
-            Arma tu carrito en el catálogo y compra en minutos.
+            Fragancias, cuidado personal, maquillaje y más. Puedes escribirnos a cualquier hora (incluso madrugada).
+            Respondemos apenas veamos tu mensaje.
           </p>
 
-          <div class="btns">
-            <a class="btn btn-acc" id="btnWhatsApp" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">
-              <span aria-hidden="true">💬</span> Escribir por WhatsApp
-            </a>
+          <div class="kpis" aria-label="Beneficios rápidos">
+            <span class="pill"><span class="dot" aria-hidden="true"></span> Compra en minutos</span>
+            <span class="pill"><span class="dot" aria-hidden="true"></span> Asesoría por WhatsApp</span>
+            <span class="pill"><span class="dot" aria-hidden="true"></span> Envíos nacionales e internacionales</span>
+          </div>
+
+          <div class="btns" aria-label="Acciones principales">
             <a class="btn btn-ghost" href="catalogo.html">
-              <span aria-hidden="true">🛍️</span> Ir al catálogo de productos
+              <span aria-hidden="true">🛍️</span> Entrar al catálogo
+            </a>
+            <a class="btn btn-acc" id="btnWhatsApp" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">
+              <span aria-hidden="true">💬</span> Pedir por WhatsApp
             </a>
           </div>
 
-          <div class="social" aria-label="Redes sociales y ubicación">
+          <div class="social" aria-label="Redes sociales, ubicación y llamada">
             <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
               <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook" />
             </a>
@@ -428,50 +487,60 @@
           </div>
         </div>
 
-        <div class="hero-cards" aria-label="Datos rápidos">
-          <div class="mini">
-            <strong>📍 Ubicación</strong>
-            <span>Barrio Los Almendros, Santa Marta<br>Dirección: Calle 10A #20A-06</span>
+        <div aria-label="Información clave">
+          <div class="tile" style="margin-bottom:12px">
+            <h4>📍 Ubicación</h4>
+            <p>Barrio Los Almendros, Santa Marta<br>Dirección: Calle 10A #20A-06</p>
+            <p style="margin-top:10px">
+              <a class="btn btn-ghost" style="padding:10px 12px;flex:0 0 auto" href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">
+                Ver en Google Maps
+              </a>
+            </p>
           </div>
-          <div class="mini">
-            <strong>📞 Contacto</strong>
-            <span>WhatsApp y llamadas: +57 304 208 8961</span>
+
+          <div class="tile" style="margin-bottom:12px">
+            <h4>📞 Contacto</h4>
+            <p>WhatsApp y llamadas: +57 304 208 8961</p>
+            <p style="margin-top:10px" class="muted">WhatsApp 24/7: escríbenos a cualquier hora. Respondemos apenas veamos tu mensaje.</p>
           </div>
-          <div class="mini">
-            <strong>🚚 Envíos</strong>
-            <span>Nacionales e internacionales (costos y tiempos por WhatsApp)</span>
+
+          <div class="tile">
+            <h4>🧾 Cómo comprar</h4>
+            <p>1) Entra al catálogo<br>2) Agrega al carrito<br>3) Envía el pedido por WhatsApp</p>
           </div>
         </div>
       </div>
     </section>
   </header>
 
-  <main class="wrap">
-    <section class="section" aria-label="Servicios y confianza">
+  <main class="wrap" id="contenido">
+    <section class="section" aria-label="Confianza y beneficios">
       <div class="section-inner">
-        <h3>¿Por qué comprar con nosotros?</h3>
+        <h3>Compra con confianza</h3>
+        <p class="muted">Información clara, pedido sencillo y confirmación por WhatsApp antes de finalizar.</p>
+
         <div class="grid2">
           <div class="tile">
-            <h4>Asesoría rápida</h4>
-            <p>Te ayudamos a escoger productos y resolver dudas por WhatsApp o llamada, con atención clara y directa.</p>
+            <h4>✅ Asesoría rápida</h4>
+            <p>Te ayudamos a escoger productos y resolver dudas por WhatsApp o llamada.</p>
           </div>
           <div class="tile">
-            <h4>Compra en 2 pasos</h4>
-            <p>Entra al catálogo, arma tu carrito y envía el pedido por WhatsApp. Fácil y sin registros.</p>
+            <h4>✅ Pedido sin registros</h4>
+            <p>Armas el carrito en el catálogo y lo envías por WhatsApp. Sin cuentas ni formularios.</p>
           </div>
           <div class="tile">
-            <h4>Atención en Santa Marta</h4>
-            <p>Puedes comprar con asesoría presencial en el barrio Los Almendros, o coordinar entrega y envío.</p>
+            <h4>✅ Envíos</h4>
+            <p>Nacionales e internacionales. Costos y tiempos se confirman por WhatsApp según destino.</p>
           </div>
           <div class="tile">
-            <h4>Transparencia</h4>
-            <p>Confirmamos disponibilidad, total y forma de entrega antes de finalizar el pedido por WhatsApp.</p>
+            <h4>✅ Confirmación antes de pagar</h4>
+            <p>Verificamos disponibilidad y total del pedido por WhatsApp antes de coordinar pago/entrega.</p>
           </div>
         </div>
 
         <div class="btns" style="margin-top:14px">
-          <a class="btn btn-ghost" href="catalogo.html">🧾 Ver catálogo ahora</a>
-          <a class="btn btn-acc" id="btnWhatsApp2" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">💬 Comprar por WhatsApp</a>
+          <a class="btn btn-ghost" href="catalogo.html">🛍️ Ver catálogo ahora</a>
+          <a class="btn btn-acc" id="btnWhatsApp2" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">💬 Pedir por WhatsApp</a>
         </div>
       </div>
     </section>
@@ -486,31 +555,36 @@
         </details>
 
         <details>
-          <summary>¿Hacen envíos?</summary>
-          <p>Sí. Realizamos envíos a nivel nacional e internacional. Confirmamos tiempos y costos por WhatsApp según destino.</p>
+          <summary>¿Cuál es el horario de atención?</summary>
+          <p>Puedes escribirnos por WhatsApp a cualquier hora (incluso madrugada). Respondemos apenas veamos tu mensaje.</p>
         </details>
 
         <details>
-          <summary>¿Dónde están ubicados?</summary>
-          <p>Santa Marta, barrio Los Almendros. Dirección: Calle 10A #20A-06. También atendemos por WhatsApp y teléfono.</p>
+          <summary>¿Hacen envíos?</summary>
+          <p>Sí. Realizamos envíos a nivel nacional e internacional. Confirmamos tiempos y costos por WhatsApp según destino.</p>
         </details>
 
         <details>
           <summary>¿Qué medios de pago aceptan?</summary>
           <p>Se confirman por WhatsApp según el tipo de pedido (por ejemplo: transferencia, efectivo presencial y otros acuerdos).</p>
         </details>
+
+        <details>
+          <summary>¿Dónde están ubicados?</summary>
+          <p>Santa Marta, barrio Los Almendros. Dirección: Calle 10A #20A-06.</p>
+        </details>
       </div>
     </section>
 
-    <section class="section" aria-label="Llamado final a la acción">
+    <section class="section" aria-label="Llamado final">
       <div class="section-inner">
         <h3>Listo para comprar</h3>
-        <p style="margin:0;color:var(--mut);line-height:1.5">
+        <p class="muted">
           Si ya sabes lo que buscas, entra al catálogo. Si quieres asesoría, escríbenos por WhatsApp y te ayudamos.
         </p>
         <div class="btns" style="margin-top:12px">
-          <a class="btn btn-acc" id="btnWhatsApp3" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">💬 Hablar por WhatsApp</a>
           <a class="btn btn-ghost" href="catalogo.html">🛍️ Abrir catálogo</a>
+          <a class="btn btn-acc" id="btnWhatsApp3" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">💬 Hablar por WhatsApp</a>
         </div>
       </div>
     </section>
@@ -519,21 +593,20 @@
       <div class="section" style="margin-top:14px">
         <div class="section-inner">
           <h3>Compra por WhatsApp</h3>
-          <p style="margin:0;color:var(--mut);line-height:1.5">
-            Activa JavaScript para una mejor experiencia. Igual puedes comprar por WhatsApp.
-          </p>
+          <p class="muted">Activa JavaScript para una mejor experiencia. Igual puedes comprar por WhatsApp.</p>
           <p style="margin:10px 0 0">
-            <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" style="font-weight:900">Escribir por WhatsApp</a>
+            <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" style="font-weight:950">Escribir por WhatsApp</a>
           </p>
         </div>
       </div>
     </noscript>
   </main>
 
-  <footer class="wrap">
+  <footer class="wrap" aria-label="Pie de página">
     <div style="padding:0 16px">
       © <span id="year"></span> Irenismb Stock Natura · Santa Marta, Colombia ·
-      <a href="catalogo.html">Catálogo</a> · <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">Ubicación</a>
+      <a href="catalogo.html">Catálogo</a> ·
+      <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer">Ubicación</a>
       <div style="margin-top:6px;opacity:.9">
         Nota: Marcas y productos pertenecen a sus respectivos propietarios.
       </div>
@@ -564,8 +637,7 @@
     }
 
     const msg = "Hola, vengo desde la página principal. Quiero información y disponibilidad.";
-    const links = ["btnWhatsApp","btnWhatsApp2","btnWhatsApp3","waFloat"];
-    links.forEach(id=>{
+    ["btnWhatsApp","btnWhatsApp2","btnWhatsApp3","waFloat"].forEach(id=>{
       const el = document.getElementById(id);
       if(el) el.href = waLink(msg);
     });

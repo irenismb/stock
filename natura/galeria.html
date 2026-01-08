@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Galería | Irenismb Stock Natura</title>
+  <meta name="description" content="Galería de fotos: conoce nuestro local, equipo y más. Irenismb Stock Natura en Santa Marta." />
+  <meta name="robots" content="index,follow" />
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png" />
+
+  <style>
+    :root{
+      --bg:#0b0f14; --txt:#e7edf5; --mut:#a9b4c2; --line:#22304a;
+      --shadow: 0 22px 60px rgba(0,0,0,.45); --focus:#60a5fa;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
+      background: radial-gradient(1000px 600px at 20% -20%, rgba(32,201,151,.20), transparent 55%),
+                  radial-gradient(900px 520px at 90% 10%, rgba(96,165,250,.18), transparent 55%),
+                  linear-gradient(180deg,#0b0f14,#0c1220);
+      color:var(--txt);
+    }
+    a{color:inherit}
+    .wrap{max-width:1100px;margin:0 auto;padding:16px}
+    header{
+      border:1px solid var(--line);
+      background:rgba(18,24,38,.55);
+      border-radius:22px;
+      padding:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{width:56px;height:56px;border-radius:18px;object-fit:cover;background:#0b1220;border:1px solid rgba(255,255,255,.06)}
+    .brand h1{margin:0;font-size:18px;letter-spacing:.08em;text-transform:uppercase}
+    .brand p{margin:3px 0 0;font-size:12.5px;color:var(--mut);line-height:1.35}
+    .btns{display:flex;gap:10px;flex-wrap:wrap}
+    .btn{
+      border-radius:14px;
+      border:1px solid #263246;
+      background:rgba(11,18,32,.35);
+      color:var(--txt);
+      padding:10px 12px;
+      font-size:14px;
+      font-weight:900;
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      min-height:44px;
+    }
+    .btn:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+    .btn-acc{border:none;background:linear-gradient(90deg,#20c997,#2dd4bf);color:#04120d}
+
+    .card{
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius:24px;
+      background:rgba(18,24,38,.55);
+      box-shadow: 0 18px 50px rgba(0,0,0,.22);
+      overflow:hidden;
+    }
+    .card-inner{padding:16px}
+    h2{margin:0 0 8px;font-size:22px}
+    .muted{margin:0;color:var(--mut);line-height:1.55}
+
+    .grid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0,1fr));
+      gap:12px;
+      margin-top:14px;
+    }
+    @media (max-width:960px){ .grid{grid-template-columns: repeat(2, minmax(0,1fr));} }
+    @media (max-width:560px){ .grid{grid-template-columns: 1fr;} }
+
+    figure{
+      margin:0;
+      border:1px solid rgba(255,255,255,.08);
+      background:rgba(11,18,32,.35);
+      border-radius:18px;
+      overflow:hidden;
+    }
+    figure button{all:unset;cursor:pointer;display:block;width:100%}
+    figure img{width:100%;height:220px;object-fit:cover;display:block;background:#0b1220}
+    figcaption{padding:10px 12px;color:var(--mut);font-size:13.5px;line-height:1.35}
+
+    /* Lightbox */
+    .lb{
+      position:fixed; inset:0; background:rgba(0,0,0,.78);
+      display:none; align-items:center; justify-content:center;
+      z-index:99999; padding:18px;
+    }
+    .lb.open{display:flex}
+    .lb-card{
+      max-width:min(980px, 96vw); max-height:86vh;
+      border:1px solid rgba(255,255,255,.14);
+      border-radius:18px; background:rgba(12,18,32,.9);
+      overflow:hidden; box-shadow: var(--shadow);
+    }
+    .lb-top{
+      display:flex; justify-content:space-between; align-items:center; gap:10px;
+      padding:10px 12px; border-bottom:1px solid rgba(255,255,255,.10);
+      color:var(--mut); font-size:13px;
+    }
+    .lb-close{
+      border:1px solid rgba(255,255,255,.18);
+      background:transparent; color:var(--txt);
+      border-radius:12px; padding:8px 10px;
+      font-weight:900; cursor:pointer;
+    }
+    .lb-close:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+    .lb img{
+      width:100%; height:auto; display:block;
+      max-height: calc(86vh - 44px);
+      object-fit:contain; background:#000;
+    }
+
+    .status{
+      margin-top:12px;
+      padding:12px;
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius:16px;
+      color:var(--mut);
+      background:rgba(11,18,32,.25);
+      line-height:1.5;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="56" height="56" />
+        <div>
+          <h1>IRENISMB STOCK NATURA</h1>
+          <p>Galería • Conócenos</p>
+        </div>
+      </div>
+
+      <div class="btns">
+        <a class="btn" href="index.html">🏠 Inicio</a>
+        <a class="btn" href="catalogo.html">🛍️ Catálogo</a>
+        <a class="btn btn-acc" href="https://wa.me/573042088961?text=Hola%2C%20vengo%20desde%20la%20galer%C3%ADa.%20Quiero%20informaci%C3%B3n%20y%20disponibilidad." target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="card-inner">
+        <h2>Fotos de nuestro local y equipo</h2>
+        <p class="muted">Esta página carga automáticamente todas las imágenes que estén en <b>recursos/galeria/</b>.</p>
+
+        <div id="status" class="status">Cargando imágenes…</div>
+        <div id="grid" class="grid" aria-label="Galería"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Lightbox -->
+  <div class="lb" id="lb" aria-hidden="true">
+    <div class="lb-card" role="dialog" aria-modal="true" aria-label="Vista ampliada de imagen">
+      <div class="lb-top">
+        <div id="lbTitle">Imagen</div>
+        <button class="lb-close" id="lbClose" type="button">Cerrar ✕</button>
+      </div>
+      <img id="lbImg" src="" alt="">
+    </div>
+  </div>
+
+  <script>
+    // ✅ AJUSTA SOLO SI HICIERA FALTA:
+    const OWNER = "irenismb";
+    const REPO  = "stock";
+    const DIR   = "natura/recursos/galeria"; // carpeta dentro del repo
+
+    // Extensiones permitidas
+    const IMG_EXT = new Set(["jpg","jpeg","png","webp","gif","avif"]);
+
+    const statusEl = document.getElementById("status");
+    const gridEl = document.getElementById("grid");
+
+    function cleanTitle(filename){
+      const base = filename.replace(/\.[^.]+$/, "");
+      return base
+        .replace(/[_-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+
+    async function listFiles(branch){
+      const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${DIR}?ref=${branch}`;
+      const r = await fetch(url, { headers: { "Accept": "application/vnd.github+json" } });
+      if (!r.ok) throw new Error(`No se pudo leer la carpeta (${branch}).`);
+      const data = await r.json();
+      if (!Array.isArray(data)) throw new Error("Respuesta inesperada.");
+      return data;
+    }
+
+    async function getGalleryItems(){
+      // Probamos main y luego master (por si tu repo usa master)
+      const branches = ["main","master"];
+      let lastErr = null;
+
+      for (const br of branches){
+        try{
+          const data = await listFiles(br);
+          const files = data
+            .filter(x => x && x.type === "file" && typeof x.name === "string")
+            .filter(x => {
+              const ext = x.name.toLowerCase().split(".").pop();
+              return IMG_EXT.has(ext);
+            })
+            .map(x => x.name);
+
+          if (files.length === 0){
+            return { files: [], branch: br };
+          }
+          // Orden por nombre (puedes cambiar a otro criterio)
+          files.sort((a,b) => a.localeCompare(b, "es", { numeric:true, sensitivity:"base" }));
+          return { files, branch: br };
+        }catch(e){
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error("No se pudo cargar la galería.");
+    }
+
+    function createCard(filename){
+      const title = cleanTitle(filename) || "Imagen";
+      const src = `recursos/galeria/${encodeURIComponent(filename)}`;
+
+      const fig = document.createElement("figure");
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.addEventListener("click", () => openLB(src, title));
+
+      const img = document.createElement("img");
+      img.src = src;
+      img.alt = title;
+      img.loading = "lazy";
+      img.decoding = "async";
+
+      const cap = document.createElement("figcaption");
+      cap.textContent = title;
+
+      btn.appendChild(img);
+      fig.appendChild(btn);
+      fig.appendChild(cap);
+
+      return fig;
+    }
+
+    // Lightbox
+    const lb = document.getElementById("lb");
+    const lbImg = document.getElementById("lbImg");
+    const lbTitle = document.getElementById("lbTitle");
+    const lbClose = document.getElementById("lbClose");
+
+    function openLB(src, title){
+      lbImg.src = src;
+      lbImg.alt = title || "Imagen ampliada";
+      lbTitle.textContent = title || "Imagen";
+      lb.classList.add("open");
+      lb.setAttribute("aria-hidden", "false");
+      lbClose.focus();
+    }
+    function closeLB(){
+      lb.classList.remove("open");
+      lb.setAttribute("aria-hidden", "true");
+      lbImg.src = "";
+      lbImg.alt = "";
+    }
+    lbClose.addEventListener("click", closeLB);
+    lb.addEventListener("click", (e)=>{ if (e.target === lb) closeLB(); });
+    document.addEventListener("keydown", (e)=>{ if (e.key === "Escape" && lb.classList.contains("open")) closeLB(); });
+
+    // Carga automática
+    (async function init(){
+      try{
+        const { files, branch } = await getGalleryItems();
+
+        if (!files.length){
+          statusEl.textContent = "No encontré imágenes en recursos/galeria/. Agrega fotos (jpg, png, webp...) y recarga.";
+          return;
+        }
+
+        statusEl.textContent = `Mostrando ${files.length} imagen(es) · (${branch})`;
+        const frag = document.createDocumentFragment();
+        files.forEach(name => frag.appendChild(createCard(name)));
+        gridEl.appendChild(frag);
+
+      }catch(err){
+        statusEl.innerHTML =
+          `No pude cargar la galería automáticamente.<br>` +
+          `Revisa que el repo sea público y que exista la carpeta <b>${DIR}</b>.<br>` +
+          `Detalle: ${String(err && err.message ? err.message : err)}`;
+      }
+    })();
+  </script>
+</body>
+</html>

@@ -3,28 +3,54 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Galería | Irenismb Stock Natura</title>
+
+  <title>Galería | Irenismb Stock Natura en Santa Marta</title>
   <meta name="description" content="Galería de fotos: conoce nuestro local, equipo y más. Irenismb Stock Natura en Santa Marta." />
   <meta name="robots" content="index,follow" />
   <meta name="theme-color" content="#0b0f14" />
+
+  <!-- Ajusta si cambias la URL -->
+  <link rel="canonical" href="https://irenismb.github.io/stock/natura/galeria.html" />
+
+  <!-- Social -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://irenismb.github.io/stock/natura/galeria.html" />
+  <meta property="og:title" content="Galería | Irenismb Stock Natura" />
+  <meta property="og:description" content="Conoce nuestro local, equipo y más." />
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:alt" content="Irenismb Stock Natura" />
+  <meta property="og:locale" content="es_CO" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Galería | Irenismb Stock Natura" />
+  <meta name="twitter:description" content="Conoce nuestro local, equipo y más." />
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png" />
+
   <link rel="icon" type="image/png" href="recursos/otras_imagenes/logo_empresa.png" />
 
   <style>
     :root{
-      --bg:#0b0f14; --txt:#e7edf5; --mut:#a9b4c2; --line:#22304a;
-      --shadow: 0 22px 60px rgba(0,0,0,.45); --focus:#60a5fa;
+      --txt:#e7edf5;
+      --mut:#a9b4c2;
+      --line:#22304a;
+      --shadow: 0 22px 60px rgba(0,0,0,.45);
+      --focus:#60a5fa;
     }
     *{box-sizing:border-box}
+    html,body{max-width:100%;overflow-x:hidden}
     body{
       margin:0;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
-      background: radial-gradient(1000px 600px at 20% -20%, rgba(32,201,151,.20), transparent 55%),
-                  radial-gradient(900px 520px at 90% 10%, rgba(96,165,250,.18), transparent 55%),
-                  linear-gradient(180deg,#0b0f14,#0c1220);
+      background:
+        radial-gradient(1000px 600px at 20% -20%, rgba(32,201,151,.20), transparent 55%),
+        radial-gradient(900px 520px at 90% 10%, rgba(96,165,250,.18), transparent 55%),
+        linear-gradient(180deg,#0b0f14,#0c1220);
       color:var(--txt);
     }
     a{color:inherit}
     .wrap{max-width:1100px;margin:0 auto;padding:16px}
+
     header{
       border:1px solid var(--line);
       background:rgba(18,24,38,.55);
@@ -37,9 +63,13 @@
       flex-wrap:wrap;
     }
     .brand{display:flex;align-items:center;gap:12px}
-    .brand img{width:56px;height:56px;border-radius:18px;object-fit:cover;background:#0b1220;border:1px solid rgba(255,255,255,.06)}
+    .brand img{
+      width:56px;height:56px;border-radius:18px;
+      object-fit:cover;background:#0b1220;border:1px solid rgba(255,255,255,.06)
+    }
     .brand h1{margin:0;font-size:18px;letter-spacing:.08em;text-transform:uppercase}
     .brand p{margin:3px 0 0;font-size:12.5px;color:var(--mut);line-height:1.35}
+
     .btns{display:flex;gap:10px;flex-wrap:wrap}
     .btn{
       border-radius:14px;
@@ -67,14 +97,12 @@
       overflow:hidden;
     }
     .card-inner{padding:16px}
-    h2{margin:0 0 8px;font-size:22px}
-    .muted{margin:0;color:var(--mut);line-height:1.55}
 
+    /* Galería */
     .grid{
       display:grid;
       grid-template-columns: repeat(3, minmax(0,1fr));
       gap:12px;
-      margin-top:14px;
     }
     @media (max-width:960px){ .grid{grid-template-columns: repeat(2, minmax(0,1fr));} }
     @media (max-width:560px){ .grid{grid-template-columns: 1fr;} }
@@ -88,7 +116,17 @@
     }
     figure button{all:unset;cursor:pointer;display:block;width:100%}
     figure img{width:100%;height:220px;object-fit:cover;display:block;background:#0b1220}
-    figcaption{padding:10px 12px;color:var(--mut);font-size:13.5px;line-height:1.35}
+
+    /* Aviso mínimo solo si falla */
+    .warn{
+      margin-bottom:12px;
+      padding:12px;
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius:16px;
+      color:var(--mut);
+      background:rgba(11,18,32,.25);
+      line-height:1.5;
+    }
 
     /* Lightbox */
     .lb{
@@ -120,16 +158,6 @@
       max-height: calc(86vh - 44px);
       object-fit:contain; background:#000;
     }
-
-    .status{
-      margin-top:12px;
-      padding:12px;
-      border:1px dashed rgba(255,255,255,.18);
-      border-radius:16px;
-      color:var(--mut);
-      background:rgba(11,18,32,.25);
-      line-height:1.5;
-    }
   </style>
 </head>
 
@@ -140,23 +168,21 @@
         <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="56" height="56" />
         <div>
           <h1>IRENISMB STOCK NATURA</h1>
-          <p>Galería • Conócenos</p>
+          <p>Galería</p>
         </div>
       </div>
 
-      <div class="btns">
+      <div class="btns" aria-label="Navegación">
         <a class="btn" href="index.html">🏠 Inicio</a>
         <a class="btn" href="catalogo.html">🛍️ Catálogo</a>
-        <a class="btn btn-acc" href="https://wa.me/573042088961?text=Hola%2C%20vengo%20desde%20la%20galer%C3%ADa.%20Quiero%20informaci%C3%B3n%20y%20disponibilidad." target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
+        <a class="btn btn-acc"
+           href="https://wa.me/573042088961?text=Hola%2C%20vengo%20desde%20la%20galer%C3%ADa.%20Quiero%20informaci%C3%B3n%20y%20disponibilidad."
+           target="_blank" rel="noopener noreferrer">💬 WhatsApp</a>
       </div>
     </header>
 
     <section class="card">
       <div class="card-inner">
-        <h2>Fotos de nuestro local y equipo</h2>
-        <p class="muted">Esta página carga automáticamente todas las imágenes que estén en <b>recursos/galeria/</b>.</p>
-
-        <div id="status" class="status">Cargando imágenes…</div>
         <div id="grid" class="grid" aria-label="Galería"></div>
       </div>
     </section>
@@ -166,7 +192,7 @@
   <div class="lb" id="lb" aria-hidden="true">
     <div class="lb-card" role="dialog" aria-modal="true" aria-label="Vista ampliada de imagen">
       <div class="lb-top">
-        <div id="lbTitle">Imagen</div>
+        <div id="lbTitle">Foto</div>
         <button class="lb-close" id="lbClose" type="button">Cerrar ✕</button>
       </div>
       <img id="lbImg" src="" alt="">
@@ -174,24 +200,13 @@
   </div>
 
   <script>
-    // ✅ AJUSTA SOLO SI HICIERA FALTA:
+    // ✅ AJUSTA SOLO SI HICIERA FALTA
     const OWNER = "irenismb";
     const REPO  = "stock";
     const DIR   = "natura/recursos/galeria"; // carpeta dentro del repo
 
-    // Extensiones permitidas
     const IMG_EXT = new Set(["jpg","jpeg","png","webp","gif","avif"]);
-
-    const statusEl = document.getElementById("status");
     const gridEl = document.getElementById("grid");
-
-    function cleanTitle(filename){
-      const base = filename.replace(/\.[^.]+$/, "");
-      return base
-        .replace(/[_-]+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
 
     async function listFiles(branch){
       const url = `https://api.github.com/repos/${OWNER}/${REPO}/contents/${DIR}?ref=${branch}`;
@@ -203,7 +218,6 @@
     }
 
     async function getGalleryItems(){
-      // Probamos main y luego master (por si tu repo usa master)
       const branches = ["main","master"];
       let lastErr = null;
 
@@ -212,16 +226,9 @@
           const data = await listFiles(br);
           const files = data
             .filter(x => x && x.type === "file" && typeof x.name === "string")
-            .filter(x => {
-              const ext = x.name.toLowerCase().split(".").pop();
-              return IMG_EXT.has(ext);
-            })
+            .filter(x => IMG_EXT.has(x.name.toLowerCase().split(".").pop()))
             .map(x => x.name);
 
-          if (files.length === 0){
-            return { files: [], branch: br };
-          }
-          // Orden por nombre (puedes cambiar a otro criterio)
           files.sort((a,b) => a.localeCompare(b, "es", { numeric:true, sensitivity:"base" }));
           return { files, branch: br };
         }catch(e){
@@ -231,29 +238,26 @@
       throw lastErr || new Error("No se pudo cargar la galería.");
     }
 
-    function createCard(filename){
-      const title = cleanTitle(filename) || "Imagen";
+    function createCard(filename, idx){
+      // ✅ Nada de nombres de archivo: solo numeración
+      const label = `Foto ${idx + 1}`;
       const src = `recursos/galeria/${encodeURIComponent(filename)}`;
 
       const fig = document.createElement("figure");
 
       const btn = document.createElement("button");
       btn.type = "button";
-      btn.addEventListener("click", () => openLB(src, title));
+      btn.setAttribute("aria-label", label);
+      btn.addEventListener("click", () => openLB(src, label));
 
       const img = document.createElement("img");
       img.src = src;
-      img.alt = title;
+      img.alt = label;             // accesible sin exponer nombre real del archivo
       img.loading = "lazy";
       img.decoding = "async";
 
-      const cap = document.createElement("figcaption");
-      cap.textContent = title;
-
       btn.appendChild(img);
       fig.appendChild(btn);
-      fig.appendChild(cap);
-
       return fig;
     }
 
@@ -265,8 +269,8 @@
 
     function openLB(src, title){
       lbImg.src = src;
-      lbImg.alt = title || "Imagen ampliada";
-      lbTitle.textContent = title || "Imagen";
+      lbImg.alt = title || "Foto";
+      lbTitle.textContent = title || "Foto";
       lb.classList.add("open");
       lb.setAttribute("aria-hidden", "false");
       lbClose.focus();
@@ -284,23 +288,18 @@
     // Carga automática
     (async function init(){
       try{
-        const { files, branch } = await getGalleryItems();
+        const { files } = await getGalleryItems();
+        if (!files.length) return;
 
-        if (!files.length){
-          statusEl.textContent = "No encontré imágenes en recursos/galeria/. Agrega fotos (jpg, png, webp...) y recarga.";
-          return;
-        }
-
-        statusEl.textContent = `Mostrando ${files.length} imagen(es) · (${branch})`;
         const frag = document.createDocumentFragment();
-        files.forEach(name => frag.appendChild(createCard(name)));
+        files.forEach((name, idx) => frag.appendChild(createCard(name, idx)));
         gridEl.appendChild(frag);
 
       }catch(err){
-        statusEl.innerHTML =
-          `No pude cargar la galería automáticamente.<br>` +
-          `Revisa que el repo sea público y que exista la carpeta <b>${DIR}</b>.<br>` +
-          `Detalle: ${String(err && err.message ? err.message : err)}`;
+        const warn = document.createElement("div");
+        warn.className = "warn";
+        warn.textContent = "No se pudo cargar la galería. Revisa que el repo sea público y que exista la carpeta recursos/galeria.";
+        gridEl.parentElement.insertBefore(warn, gridEl);
       }
     })();
   </script>

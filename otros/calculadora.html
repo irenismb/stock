@@ -1,0 +1,1863 @@
+<!DOCTYPE html> 
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+  <title>Calculadora v1.0</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background:#f5f5f5; color:#11181C;
+    }
+    body.dark-mode { background:#151718; color:#ECEDEE; }
+
+    .container { max-width:100%; height:100vh; display:flex; flex-direction:column; }
+    .header {
+      padding:20px;
+      background: linear-gradient(135deg, #0a7ea4 0%, #0a5a7a 100%);
+      color:white; text-align:center;
+      box-shadow:0 2px 8px rgba(0,0,0,0.1);
+    }
+    .header h1 { font-size:28px; margin-bottom:4px; }
+    .header p { font-size:12px; opacity:0.9; }
+
+    /* ===== CALCULADORA ESTÁNDAR ===== */
+    .standard-calculator {
+      flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px;
+      background:#f5f5f5;
+    }
+    body.dark-mode .standard-calculator { background:#151718; }
+
+    .calc-container {
+      background:white; border-radius:12px; padding:20px;
+      box-shadow:0 4px 20px rgba(0,0,0,0.15); max-width:400px; width:100%;
+    }
+    body.dark-mode .calc-container { background:#1e2022; }
+
+    .calc-display {
+      background:#1a1a1a; color:#fff; text-align:right; padding:20px 15px;
+      font-family:'Courier New', monospace; font-size:48px; border-radius:8px;
+      margin-bottom:20px; min-height:80px; display:flex; align-items:center; justify-content:flex-end;
+      overflow:hidden;
+    }
+    body.dark-mode .calc-display { background:#0a0a0a; }
+
+    .calc-row { display:flex; gap:8px; margin-bottom:8px; }
+
+    .calc-btn {
+      flex:1; padding:20px 10px; border:none; border-radius:8px; font-size:18px;
+      font-weight:500; cursor:pointer; transition:all .2s; text-align:center;
+      min-height:60px; display:flex; align-items:center; justify-content:center;
+      user-select:none;
+    }
+    .calc-btn:active { transform:scale(0.95); opacity:0.8; }
+
+    .calc-btn-memory { background:#e6e6e6; color:#333; }
+    body.dark-mode .calc-btn-memory { background:#2d2d2d; color:#ccc; }
+
+    .calc-btn-operator { background:#f0f0f0; color:#333; }
+    body.dark-mode .calc-btn-operator { background:#333; color:#ccc; }
+
+    .calc-btn-number { background:#f8f8f8; color:#333; }
+    body.dark-mode .calc-btn-number { background:#2a2a2a; color:#ccc; }
+
+    .calc-btn-equals { background:#0a7ea4; color:white; font-size:24px; }
+    .calc-btn-equals:active { background:#086c8c; }
+
+    .calc-btn:hover { filter:brightness(0.95); }
+    body.dark-mode .calc-btn:hover { filter:brightness(1.2); }
+
+    .config-btn-row { margin-top:16px; padding-top:16px; border-top:1px solid #e0e0e0; }
+    body.dark-mode .config-btn-row { border-top-color:#333; }
+
+    .footer {
+      padding:12px; background:white; border-top:1px solid #E5E7EB; text-align:center;
+      font-size:12px; color:#687076;
+    }
+    body.dark-mode .footer { background:#1e2022; border-top-color:#334155; color:#9BA1A6; }
+
+    /* ===== Pixel minimizador (discreto) ===== */
+    .pixel-minimizer {
+      position:fixed; bottom:20px; right:20px; width:1px; height:1px; background:#0a7ea4;
+      border-radius:50%; cursor:pointer; z-index:3000; transition:all .3s ease;
+    }
+    .pixel-minimizer:hover, .pixel-minimizer.expanded {
+      width:50px; height:50px; background:#0a7ea4; box-shadow:0 0 15px rgba(10,126,164,0.5);
+    }
+    .pixel-minimizer.expanded::after {
+      content:'⬆'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      color:white; font-size:20px; font-weight:bold;
+    }
+    .pixel-minimizer:hover::after {
+      content:'🔍'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+      color:white; font-size:20px; font-weight:bold;
+    }
+
+    /* ===== MODAL (base) ===== */
+    .modal-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      z-index:2500;
+      padding:16px;
+    }
+    .modal-backdrop.open{ display:flex; }
+
+    .modal-card{
+      width:min(980px, 100%);
+      max-height:92vh;
+      overflow:hidden;
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      display:flex;
+      flex-direction:column;
+    }
+    body.dark-mode .modal-card{ background:#1e2022; }
+
+    .modal-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:12px 14px;
+      border-bottom:1px solid #E5E7EB;
+      gap:12px;
+    }
+    body.dark-mode .modal-header{ border-bottom-color:#334155; }
+
+    .modal-title{ font-weight:900; }
+    .modal-close{
+      border:none;
+      background:transparent;
+      font-size:18px;
+      cursor:pointer;
+      color:#687076;
+      padding:6px 10px;
+      border-radius:10px;
+    }
+    .modal-close:active{ opacity:.7; }
+    body.dark-mode .modal-close{ color:#9BA1A6; }
+
+    .modal-body{
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+      flex:1;
+    }
+
+    /* ===== MINI MODAL CONTRASEÑA ===== */
+    .password-card{
+      width:min(460px, 100%);
+      max-height:92vh;
+      overflow:hidden;
+      background:#fff;
+      border-radius:16px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      display:flex;
+      flex-direction:column;
+    }
+    body.dark-mode .password-card{ background:#1e2022; }
+
+    .password-body{
+      padding:18px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .password-help{
+      font-size:13px;
+      color:#687076;
+      line-height:1.35;
+    }
+    body.dark-mode .password-help{ color:#9BA1A6; }
+
+    .password-input{
+      width:100%;
+      padding:12px 12px;
+      border:1px solid #E5E7EB;
+      border-radius:10px;
+      font-size:14px;
+      background:white;
+      color:#11181C;
+    }
+    body.dark-mode .password-input{
+      background:#151718;
+      border-color:#334155;
+      color:#ECEDEE;
+    }
+    .password-input:focus{
+      outline:none;
+      border-color:#0a7ea4;
+      box-shadow:0 0 0 3px rgba(10,126,164,.12);
+    }
+
+    .password-error{
+      min-height:16px;
+      font-size:12px;
+      font-weight:800;
+      color:#EF4444;
+    }
+
+    .password-actions{
+      display:flex;
+      gap:10px;
+      margin-top:6px;
+    }
+    .password-actions .button{ flex:1; }
+
+    /* ===== TABS (dentro del modal) ===== */
+    .tabs {
+      display:flex; background:#f5f5f5; border-bottom:1px solid #E5E7EB; overflow-x:auto;
+    }
+    body.dark-mode .tabs { background:#1e2022; border-bottom-color:#334155; }
+
+    .tab-button {
+      flex:1; padding:12px 16px; border:none; background:none; cursor:pointer;
+      font-size:14px; font-weight:500; color:#687076;
+      border-bottom:3px solid transparent; transition:all .2s ease;
+      white-space:nowrap;
+    }
+    body.dark-mode .tab-button { color:#9BA1A6; }
+    .tab-button.active { color:#0a7ea4; border-bottom-color:#0a7ea4; }
+    .tab-button:active { opacity:.7; }
+
+    .content { flex:1; overflow-y:auto; display:none; min-height:0; }
+    .content.active { display:flex; flex-direction:column; }
+
+    /* ===== “pantalla GPS” ===== */
+    .calculator-screen {
+      flex:1; padding:20px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px;
+    }
+    .calculator-card {
+      background:white; border-radius:20px; padding:30px;
+      box-shadow:0 4px 16px rgba(0,0,0,0.1);
+      text-align:center; max-width:420px; width:100%;
+    }
+    body.dark-mode .calculator-card { background:#1e2022; box-shadow:0 4px 16px rgba(0,0,0,0.3); }
+    .calculator-icon { font-size:80px; margin-bottom:12px; }
+    .status-text { font-size:14px; color:#687076; margin-bottom:10px; font-weight:600; }
+    body.dark-mode .status-text { color:#9BA1A6; }
+
+    .time-display {
+      font-size:48px; font-weight:bold; color:#0a7ea4; margin-bottom:12px;
+      font-family:'Courier New', monospace;
+    }
+    .divider { height:1px; background:#E5E7EB; margin:18px 0; }
+    body.dark-mode .divider { background:#334155; }
+
+    .info-row { display:flex; justify-content:space-between; padding:8px 0; font-size:14px; }
+    .info-label { color:#687076; }
+    body.dark-mode .info-label { color:#9BA1A6; }
+    .info-value { font-weight:700; color:#11181C; }
+    body.dark-mode .info-value { color:#ECEDEE; }
+
+    .button {
+      padding:12px 24px; border:none; border-radius:12px; font-size:16px; font-weight:700;
+      cursor:pointer; transition:all .2s ease;
+    }
+    .button-primary {
+      background:#0a7ea4; color:white; width:100%; padding:16px; border-radius:16px;
+    }
+    .button-primary:active { transform:scale(.98); opacity:.9; }
+
+    .button-secondary {
+      background:#E5E7EB; color:#11181C; padding:12px 16px; font-size:14px; border-radius:12px;
+    }
+    body.dark-mode .button-secondary { background:#334155; color:#ECEDEE; }
+    .button-secondary:active { opacity:.75; }
+
+    .row-actions { display:flex; gap:10px; width:100%; }
+    .row-actions .button { flex:1; }
+
+    /* ===== MAPA ===== */
+    #leafletMap { flex:1; width:100%; height:100%; min-height:360px; }
+    .map-controls {
+      padding:16px; background:white; border-top:1px solid #E5E7EB; display:flex; gap:8px; flex-wrap:wrap;
+    }
+    body.dark-mode .map-controls { background:#1e2022; border-top-color:#334155; }
+
+    .date-selector {
+      padding:8px 12px; border:1px solid #E5E7EB; border-radius:8px; background:white;
+      cursor:pointer; font-size:12px; white-space:nowrap;
+    }
+    body.dark-mode .date-selector { background:#151718; border-color:#334155; color:#ECEDEE; }
+
+    /* ===== Registros / Favoritos ===== */
+    .records-screen, .favorites-screen { padding:16px; }
+
+    .record-date-header{
+      margin:16px 4px 8px;
+      font-size:14px;
+      font-weight:900;
+      color:#0a7ea4;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+    }
+    body.dark-mode .record-date-header { color:#60A5FA; }
+
+    .record-hour-header{
+      margin:10px 4px 6px;
+      font-size:12px;
+      font-weight:900;
+      color:#687076;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:8px;
+      text-transform:uppercase;
+      letter-spacing:.3px;
+    }
+    body.dark-mode .record-hour-header { color:#9BA1A6; }
+
+    details.record-date-group,
+    details.record-hour-group { border-radius:12px; }
+
+    summary.record-date-header,
+    summary.record-hour-header {
+      list-style:none;
+      cursor:pointer;
+      user-select:none;
+    }
+    summary.record-date-header::-webkit-details-marker,
+    summary.record-hour-header::-webkit-details-marker { display:none; }
+
+    .collapse-icon {
+      display:inline-block;
+      transition:transform .15s ease;
+      font-weight:900;
+      opacity:.8;
+    }
+    details:not([open]) .collapse-icon { transform:rotate(-90deg); }
+
+    .record-item {
+      background:white; border:1px solid #E5E7EB; border-radius:12px; padding:16px; margin-bottom:12px;
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+    }
+    body.dark-mode .record-item { background:#1e2022; border-color:#334155; }
+
+    .record-info { flex:1; }
+    .record-time { font-size:14px; font-weight:800; color:#11181C; }
+    body.dark-mode .record-time { color:#ECEDEE; }
+    .record-coords { font-size:12px; color:#687076; font-family:'Courier New', monospace; margin-top:4px; }
+    body.dark-mode .record-coords { color:#9BA1A6; }
+
+    .record-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .btn-small { padding:6px 12px; font-size:12px; border:none; border-radius:6px; cursor:pointer; transition:all .2s; }
+    .btn-maps { background:#22C55E; color:white; }
+    .btn-delete { background:#EF4444; color:white; }
+    .btn-favorite { background:#F59E0B; color:white; }
+    .btn-small:active { opacity:.8; }
+
+    .favorite-item {
+      background:white; border:2px solid #F59E0B; border-radius:12px; padding:16px; margin-bottom:12px;
+    }
+    body.dark-mode .favorite-item { background:#1e2022; }
+    .favorite-label { font-size:12px; color:#F59E0B; font-weight:800; margin-bottom:8px; }
+
+    .empty-state { text-align:center; padding:40px 20px; color:#687076; }
+    body.dark-mode .empty-state { color:#9BA1A6; }
+    .empty-state-icon { font-size:48px; margin-bottom:16px; }
+
+    /* ===== Configuración ===== */
+    .settings-screen { padding:20px; }
+    .setting-group { background:white; border-radius:12px; padding:16px; margin-bottom:16px; }
+    body.dark-mode .setting-group { background:#1e2022; }
+    .setting-label { font-size:14px; font-weight:800; color:#11181C; margin-bottom:12px; }
+    body.dark-mode .setting-label { color:#ECEDEE; }
+
+    .setting-input {
+      width:100%; padding:10px; border:1px solid #E5E7EB; border-radius:8px; font-size:14px;
+      background:white; color:#11181C;
+    }
+    body.dark-mode .setting-input { background:#151718; border-color:#334155; color:#ECEDEE; }
+    .setting-input:focus { outline:none; border-color:#0a7ea4; box-shadow:0 0 0 3px rgba(10,126,164,.12); }
+
+    .toggle-switch { display:flex; align-items:center; gap:12px; }
+    .switch { position:relative; display:inline-block; width:50px; height:28px; }
+    .switch input { opacity:0; width:0; height:0; }
+    .slider {
+      position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0;
+      background-color:#ccc; transition:.3s; border-radius:28px;
+    }
+    .slider:before {
+      position:absolute; content:""; height:22px; width:22px; left:3px; bottom:3px;
+      background:white; transition:.3s; border-radius:50%;
+    }
+    input:checked + .slider { background-color:#0a7ea4; }
+    input:checked + .slider:before { transform:translateX(22px); }
+
+    @media (max-width:600px){
+      .header h1 { font-size:20px; }
+      .calc-container { padding:15px; }
+      .calc-display { font-size:36px; padding:15px 10px; min-height:70px; }
+      .calc-btn { padding:15px 8px; font-size:16px; min-height:50px; }
+      .tab-button { font-size:12px; padding:10px 8px; }
+      #leafletMap { min-height:300px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🧮 Calculadora v1.0</h1>
+      <p>Estándar</p>
+    </div>
+
+    <!-- Calculadora Estándar -->
+    <div class="standard-calculator" id="standardCalculator">
+      <div class="calc-container">
+        <div class="calc-display" id="calcDisplay">0</div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-memory">MC</button>
+          <button class="calc-btn calc-btn-memory">MR</button>
+          <button class="calc-btn calc-btn-memory">M+</button>
+          <button class="calc-btn calc-btn-memory">M-</button>
+          <button class="calc-btn calc-btn-memory">MS</button>
+          <button class="calc-btn calc-btn-memory">MV</button>
+        </div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-operator">%</button>
+          <button class="calc-btn calc-btn-operator">CE</button>
+          <button class="calc-btn calc-btn-operator">C</button>
+          <button class="calc-btn calc-btn-operator">1/x</button>
+          <button class="calc-btn calc-btn-operator">x²</button>
+          <button class="calc-btn calc-btn-operator">√</button>
+        </div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-number">7</button>
+          <button class="calc-btn calc-btn-number">8</button>
+          <button class="calc-btn calc-btn-number">9</button>
+          <button class="calc-btn calc-btn-operator">/</button>
+        </div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-number">4</button>
+          <button class="calc-btn calc-btn-number">5</button>
+          <button class="calc-btn calc-btn-number">6</button>
+          <button class="calc-btn calc-btn-operator">*</button>
+        </div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-number">1</button>
+          <button class="calc-btn calc-btn-number">2</button>
+          <button class="calc-btn calc-btn-number">3</button>
+          <button class="calc-btn calc-btn-operator">-</button>
+        </div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-number">+/-</button>
+          <button class="calc-btn calc-btn-number">0</button>
+          <button class="calc-btn calc-btn-number">.</button>
+          <button class="calc-btn calc-btn-operator">+</button>
+        </div>
+
+        <div class="calc-row">
+          <button class="calc-btn calc-btn-equals" style="flex:1;">=</button>
+        </div>
+
+        <div class="calc-row config-btn-row">
+          <button class="calc-btn calc-btn-memory" id="configBtn"
+            style="flex:1; background:#0a7ea4; color:white;">
+            Config
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">Calculadora v1.0</div>
+  </div>
+
+  <div class="pixel-minimizer" id="pixelMinimizer" title="Mostrar/Ocultar"></div>
+
+  <!-- ===== MINI MODAL: CONTRASEÑA ===== -->
+  <div class="modal-backdrop" id="passwordModal" aria-hidden="true">
+    <div class="password-card" role="dialog" aria-modal="true" aria-labelledby="passwordModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="passwordModalTitle">Acceso a Config</div>
+        <button class="modal-close" id="passwordModalCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="password-body">
+        <div class="password-help">
+          Ingresa la contraseña para abrir <strong>Config / GPS</strong>.
+        </div>
+
+        <input
+          type="password"
+          id="passwordInput"
+          class="password-input"
+          placeholder="Contraseña"
+          autocomplete="current-password"
+        />
+
+        <div class="password-error" id="passwordError"></div>
+
+        <div class="password-actions">
+          <button class="button button-secondary" id="passwordCancelBtn">Cancelar</button>
+          <button class="button button-primary" id="passwordSubmitBtn">Abrir</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL CONFIG (GPS + pestañas) ===== -->
+  <div class="modal-backdrop" id="configModal" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="configModalTitle">
+      <div class="modal-header">
+        <div class="modal-title" id="configModalTitle">Config / GPS</div>
+        <button class="modal-close" id="configModalCloseBtn" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="tabs" id="modalTabsBar">
+          <button class="tab-button active" data-tab="calculator">Calculadora</button>
+          <button class="tab-button" data-tab="mapTab">Mapa</button>
+          <button class="tab-button" data-tab="records">Registros</button>
+          <button class="tab-button" data-tab="favorites">Favoritos</button>
+          <button class="tab-button" data-tab="settings">Opciones</button>
+        </div>
+
+        <!-- Calculadora GPS -->
+        <div class="content active" id="calculator">
+          <div class="calculator-screen">
+            <div class="calculator-card">
+              <div class="calculator-icon">🧮</div>
+              <div class="status-text" id="status">SISTEMA INACTIVO</div>
+              <div class="time-display" id="timer">10:00</div>
+
+              <div class="divider"></div>
+
+              <div>
+                <div class="info-row">
+                  <span class="info-label">Operaciones:</span>
+                  <span class="info-value" id="cycles">0</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Intervalo:</span>
+                  <span class="info-value" id="interval">10:00</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">GPS (duración):</span>
+                  <span class="info-value" id="gpsActive">01:00</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Modo discreto:</span>
+                  <span class="info-value" id="discreteMode">Deshabilitado</span>
+                </div>
+              </div>
+
+              <div class="row-actions" style="margin-top:16px;">
+                <button class="button button-primary" id="startBtn">Iniciar</button>
+              </div>
+
+              <div class="row-actions" style="margin-top:10px;">
+                <button class="button button-secondary" id="closeConfigBtn">Cerrar Config</button>
+              </div>
+
+              <div class="row-actions" style="margin-top:10px;">
+                <button class="button button-secondary" id="manualBtn">Registrar ahora</button>
+                <button class="button button-secondary" id="permBtn">Ver permisos</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mapa -->
+        <div class="content" id="mapTab">
+          <div style="flex:1; position:relative; min-height:0;">
+            <div id="leafletMap"></div>
+          </div>
+          <div class="map-controls">
+            <select id="dateSelector" class="date-selector"></select>
+            <select id="hourSelector" class="date-selector"></select>
+            <button class="button button-secondary" id="refreshMapBtn">Actualizar</button>
+            <button class="button button-secondary" id="manualBtnMap">Registrar ahora</button>
+          </div>
+        </div>
+
+        <!-- Registros -->
+        <div class="content" id="records">
+          <div class="records-screen">
+            <div id="recordsList"></div>
+          </div>
+        </div>
+
+        <!-- Favoritos -->
+        <div class="content" id="favorites">
+          <div class="favorites-screen">
+            <div id="favoritesList"></div>
+          </div>
+        </div>
+
+        <!-- Configuración -->
+        <div class="content" id="settings">
+          <div class="settings-screen">
+            <div class="setting-group">
+              <label class="setting-label">Intervalo de ciclo (segundos)</label>
+              <input type="number" id="cycleDurationInput" class="setting-input" min="10" step="10" value="600">
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">GPS activo (segundos)</label>
+              <input type="number" id="gpsActiveDurationInput" class="setting-input" min="5" step="5" value="60">
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Modo discreto</label>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" id="discreteModeToggle">
+                  <span class="slider"></span>
+                </label>
+                <span id="discreteModeLabel">Deshabilitado</span>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <label class="setting-label">Tema oscuro</label>
+              <div class="toggle-switch">
+                <label class="switch">
+                  <input type="checkbox" id="darkModeToggle">
+                  <span class="slider"></span>
+                </label>
+                <span id="darkModeLabel">Deshabilitado</span>
+              </div>
+            </div>
+
+            <div class="setting-group">
+              <div class="setting-label">Diagnóstico</div>
+              <div class="record-coords" id="diagText">—</div>
+            </div>
+
+            <button class="button button-secondary" id="exportBtn" style="width:100%;">Exportar datos</button>
+            <button class="button button-secondary" id="clearBtn"
+              style="width:100%; margin-top:8px; background:#EF4444; color:white;">Limpiar todo</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // CALCULADORA ESTÁNDAR
+    // =========================
+    let calcValue = '0';
+    let previousValue = null;
+    let operator = null;
+    let waitingForNewValue = false;
+
+    function updateCalcDisplay() {
+      const display = document.getElementById('calcDisplay');
+      display.textContent = calcValue;
+    }
+
+    function inputDigit(digit) {
+      if (waitingForNewValue) {
+        calcValue = digit;
+        waitingForNewValue = false;
+      } else {
+        calcValue = calcValue === '0' ? digit : calcValue + digit;
+      }
+      updateCalcDisplay();
+    }
+
+    function inputDecimal() {
+      if (waitingForNewValue) {
+        calcValue = '0.';
+        waitingForNewValue = false;
+        updateCalcDisplay();
+        return;
+      }
+      if (!calcValue.includes('.')) {
+        calcValue += '.';
+        updateCalcDisplay();
+      }
+    }
+
+    function handleOperator(nextOperator) {
+      const inputValue = parseFloat(calcValue);
+
+      if (previousValue === null) {
+        previousValue = inputValue;
+      } else if (operator) {
+        const currentValue = previousValue || 0;
+        let newValue;
+
+        switch(operator) {
+          case '+': newValue = currentValue + inputValue; break;
+          case '-': newValue = currentValue - inputValue; break;
+          case '*': newValue = currentValue * inputValue; break;
+          case '/': newValue = currentValue / inputValue; break;
+          default: return;
+        }
+
+        calcValue = String(newValue);
+        previousValue = newValue;
+        updateCalcDisplay();
+      }
+
+      waitingForNewValue = true;
+      operator = nextOperator;
+    }
+
+    function resetCalculator() {
+      calcValue = '0';
+      previousValue = null;
+      operator = null;
+      waitingForNewValue = false;
+      updateCalcDisplay();
+    }
+
+    function calculate() {
+      if (previousValue !== null && operator) {
+        const inputValue = parseFloat(calcValue);
+        let result;
+
+        switch(operator) {
+          case '+': result = previousValue + inputValue; break;
+          case '-': result = previousValue - inputValue; break;
+          case '*': result = previousValue * inputValue; break;
+          case '/': result = previousValue / inputValue; break;
+          default: return;
+        }
+
+        calcValue = String(result);
+        previousValue = null;
+        operator = null;
+        waitingForNewValue = true;
+        updateCalcDisplay();
+      }
+    }
+
+    function handleSpecialOperation(op) {
+      const value = parseFloat(calcValue);
+      let result;
+
+      switch(op) {
+        case 'percent': result = value / 100; break;
+        case 'clearEntry': calcValue = '0'; updateCalcDisplay(); return;
+        case 'clear': resetCalculator(); return;
+        case 'reciprocal': result = 1 / value; break;
+        case 'square': result = value * value; break;
+        case 'sqrt': result = Math.sqrt(value); break;
+        case 'plusMinus': result = value * -1; break;
+        default: return;
+      }
+
+      calcValue = String(result);
+      waitingForNewValue = true;
+      updateCalcDisplay();
+    }
+
+    // =========================
+    // ESTADO GLOBAL GPS
+    // =========================
+    const state = {
+      isRunning: false,
+      isGPSActive: false,
+      timeRemaining: 600000,
+      cyclesCompleted: 0,
+      lastLocation: null,
+
+      cycleDuration: 600000,
+      gpsActiveDuration: 60000,
+
+      discreteMode: false,
+      isMinimized: false,
+      darkMode: false,
+
+      days: {},
+      favorites: [],
+
+      // Modal/tab state
+      configOpen: false,
+      lastFullTab: 'calculator',
+
+      mapSelectedDate: '',
+      mapSelectedHour: '',
+      mapView: null,
+
+      map: null,
+      markers: [],
+      polyline: null,
+
+      lastError: null,
+      lastDiag: null,
+    };
+
+    // =========================
+    // BLOQUEO DE CONFIG POR CONTRASEÑA (mini modal)
+    // =========================
+    const CONFIG_PASSWORD = 'wrj';
+    const CONFIG_UNLOCK_KEY = 'configUnlocked'; // solo por sesión (pestaña)
+
+    function isConfigUnlocked() {
+      return sessionStorage.getItem(CONFIG_UNLOCK_KEY) === '1';
+    }
+
+    function setConfigUnlocked() {
+      sessionStorage.setItem(CONFIG_UNLOCK_KEY, '1');
+    }
+
+    function openPasswordModal() {
+      if (state.isMinimized) return;
+
+      const modal = document.getElementById('passwordModal');
+      const input = document.getElementById('passwordInput');
+      const err = document.getElementById('passwordError');
+
+      if (err) err.textContent = '';
+      if (input) input.value = '';
+
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+
+      setTimeout(() => { if (input) input.focus(); }, 50);
+    }
+
+    function closePasswordModal() {
+      const modal = document.getElementById('passwordModal');
+      const err = document.getElementById('passwordError');
+      const input = document.getElementById('passwordInput');
+
+      if (modal) {
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden', 'true');
+      }
+      if (err) err.textContent = '';
+      if (input) input.value = '';
+    }
+
+    function showPasswordError(text) {
+      const err = document.getElementById('passwordError');
+      if (err) err.textContent = text || '';
+    }
+
+    function submitPassword() {
+      const input = document.getElementById('passwordInput');
+      const value = (input?.value || '').trim();
+
+      if (!value) {
+        showPasswordError('Ingresa la contraseña');
+        if (input) input.focus();
+        return;
+      }
+
+      if (value === CONFIG_PASSWORD) {
+        setConfigUnlocked();
+        closePasswordModal();
+        updateDiag('Config desbloqueada');
+        openConfigModal();
+        return;
+      }
+
+      showPasswordError('Contraseña incorrecta');
+      updateDiag('Contraseña incorrecta');
+      if (input) {
+        input.select();
+        input.focus();
+      }
+    }
+
+    // =========================
+    // ALMACENAMIENTO
+    // =========================
+    function saveState() {
+      localStorage.setItem('gpsTrackerState', JSON.stringify({
+        cyclesCompleted: state.cyclesCompleted,
+        lastLocation: state.lastLocation,
+        cycleDuration: state.cycleDuration,
+        gpsActiveDuration: state.gpsActiveDuration,
+        discreteMode: state.discreteMode,
+        isMinimized: state.isMinimized,
+        darkMode: state.darkMode,
+        days: state.days,
+        favorites: state.favorites,
+
+        lastFullTab: state.lastFullTab,
+        mapSelectedDate: state.mapSelectedDate,
+        mapSelectedHour: state.mapSelectedHour,
+        mapView: state.mapView,
+      }));
+    }
+
+    function loadState() {
+      const saved = localStorage.getItem('gpsTrackerState');
+      if (!saved) return;
+      try {
+        const data = JSON.parse(saved);
+
+        state.lastLocation = data.lastLocation || null;
+        state.cycleDuration = data.cycleDuration || 600000;
+        state.gpsActiveDuration = data.gpsActiveDuration || 60000;
+        state.discreteMode = !!data.discreteMode;
+        state.isMinimized = !!data.isMinimized;
+        state.darkMode = !!data.darkMode;
+        state.days = data.days || {};
+        state.favorites = data.favorites || [];
+
+        state.lastFullTab = data.lastFullTab || 'calculator';
+        state.mapSelectedDate = data.mapSelectedDate || '';
+        state.mapSelectedHour = data.mapSelectedHour || '';
+        state.mapView = data.mapView || null;
+
+        state.cyclesCompleted = countAllLocations();
+
+        if (state.discreteMode) {
+          state.isMinimized = true;
+        }
+      } catch {
+        localStorage.removeItem('gpsTrackerState');
+      }
+    }
+
+    // =========================
+    // UTILIDADES
+    // =========================
+    function formatTime(ms) {
+      const seconds = Math.floor(ms / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+    }
+
+    function getDateKey(timestamp) {
+      const date = new Date(timestamp);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getHourKey(timestamp) {
+      return new Date(timestamp).getHours();
+    }
+
+    function hourLabel(hourKey) {
+      const h = String(hourKey).padStart(2, '0');
+      return `${h}:00`;
+    }
+
+    function cleanupEmptyBuckets() {
+      for (const [dateKey, day] of Object.entries(state.days)) {
+        if (!day.hours) { delete state.days[dateKey]; continue; }
+        for (const [hourKey, hour] of Object.entries(day.hours)) {
+          if (!hour.locations || hour.locations.length === 0) delete day.hours[hourKey];
+        }
+        if (!day.hours || Object.keys(day.hours).length === 0) delete state.days[dateKey];
+      }
+    }
+
+    function countAllLocations() {
+      let total = 0;
+      Object.values(state.days).forEach(day => {
+        Object.values(day.hours || {}).forEach(hour => {
+          total += (hour.locations || []).length;
+        });
+      });
+      return total;
+    }
+
+    // =========================
+    // PERMISOS / GEO
+    // =========================
+    async function getGeoPermissionState() {
+      if (!navigator.permissions || !navigator.permissions.query) return 'unknown';
+      try {
+        const res = await navigator.permissions.query({ name: 'geolocation' });
+        return res.state;
+      } catch {
+        return 'unknown';
+      }
+    }
+
+    function isSecureContextForGeo() {
+      return window.isSecureContext || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    }
+
+    async function showPermissionDiagnostic() {
+      const perm = await getGeoPermissionState();
+      const secure = isSecureContextForGeo();
+      updateDiag(`Permiso geolocalización: ${perm} | Contexto seguro: ${secure ? 'sí' : 'no'}`);
+    }
+
+    function getLocationOnce(options) {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) return reject(new Error('Geolocalización no soportada'));
+
+        navigator.geolocation.getCurrentPosition(
+          (pos) => resolve({
+            latitude: pos.coords.latitude,
+            longitude: pos.coords.longitude,
+            accuracy: pos.coords.accuracy,
+            timestamp: Date.now(),
+          }),
+          (err) => {
+            let message = 'Error desconocido';
+            if (err && typeof err.code === 'number') {
+              if (err.code === err.PERMISSION_DENIED) message = 'Permiso denegado';
+              else if (err.code === err.POSITION_UNAVAILABLE) message = 'Ubicación no disponible';
+              else if (err.code === err.TIMEOUT) message = 'Tiempo agotado';
+            }
+            reject(new Error(message));
+          },
+          options
+        );
+      });
+    }
+
+    async function getLocationRobust() {
+      const perm = await getGeoPermissionState();
+
+      if (!isSecureContextForGeo()) {
+        throw new Error('Geolocalización bloqueada: usa https o localhost');
+      }
+      if (perm === 'denied') {
+        throw new Error('Permiso denegado: habilita ubicación en el navegador');
+      }
+
+      try {
+        return await getLocationOnce({ enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
+      } catch {
+        return await getLocationOnce({ enableHighAccuracy: false, timeout: 25000, maximumAge: 10000 });
+      }
+    }
+
+    // =========================
+    // ALMACENAMIENTO DE UBICACIÓN
+    // =========================
+    function addLocationToStorage(location) {
+      const dateKey = getDateKey(location.timestamp);
+      const hourKey = getHourKey(location.timestamp);
+
+      if (!state.days[dateKey]) state.days[dateKey] = { date: dateKey, hours: {} };
+      if (!state.days[dateKey].hours[hourKey]) state.days[dateKey].hours[hourKey] = { hour: hourKey, locations: [] };
+
+      state.days[dateKey].hours[hourKey].locations.push(location);
+      state.lastLocation = location;
+
+      state.cyclesCompleted = countAllLocations();
+
+      saveState();
+    }
+
+    // =========================
+    // FAVORITOS
+    // =========================
+    function addToFavorites(lat, lng, label, accuracy = null, timestamp = null) {
+      state.favorites.push({
+        latitude: lat,
+        longitude: lng,
+        label: label || new Date().toLocaleString('es-ES'),
+        accuracy: (typeof accuracy === 'number') ? accuracy : null,
+        timestamp: timestamp || Date.now(),
+      });
+      saveState();
+      updateFavoritesList();
+      updateDiag(`Favorito guardado: ${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+    }
+
+    function deleteFavorite(idx) {
+      state.favorites.splice(idx, 1);
+      saveState();
+      updateFavoritesList();
+      updateDiag('Favorito eliminado');
+    }
+
+    // =========================
+    // CICLO GPS
+    // =========================
+    let cycleInterval = null;
+    let gpsTimeout = null;
+    let cycleStartTime = null;
+
+    async function registerLocationNow() {
+      state.isGPSActive = true;
+      updateUI();
+
+      try {
+        const location = await getLocationRobust();
+        addLocationToStorage(location);
+
+        updateDateSelector();
+        updateHourSelector();
+        updateRecordsList();
+        updateFavoritesList();
+        if (state.configOpen && state.lastFullTab === 'mapTab') updateMap();
+
+        updateDiag(`OK: ${location.latitude.toFixed(5)}, ${location.longitude.toFixed(5)}`);
+      } catch (error) {
+        state.lastError = error?.message || String(error);
+        updateDiag(`ERROR: ${state.lastError}`);
+      } finally {
+        if (gpsTimeout) clearTimeout(gpsTimeout);
+        gpsTimeout = setTimeout(() => {
+          state.isGPSActive = false;
+          updateUI();
+        }, state.gpsActiveDuration);
+      }
+    }
+
+    async function registerFavoriteNow() {
+      state.isGPSActive = true;
+      updateUI();
+
+      try {
+        const location = await getLocationRobust();
+        state.lastLocation = location;
+        saveState();
+
+        addToFavorites(
+          location.latitude,
+          location.longitude,
+          new Date(location.timestamp).toLocaleString('es-ES'),
+          location.accuracy,
+          location.timestamp
+        );
+      } catch (error) {
+        state.lastError = error?.message || String(error);
+        updateDiag(`ERROR: ${state.lastError}`);
+      } finally {
+        if (gpsTimeout) clearTimeout(gpsTimeout);
+        gpsTimeout = setTimeout(() => {
+          state.isGPSActive = false;
+          updateUI();
+        }, state.gpsActiveDuration);
+      }
+    }
+
+    function startCycle() {
+      if (state.isRunning) return;
+      state.isRunning = true;
+      cycleStartTime = Date.now();
+      state.timeRemaining = state.cycleDuration;
+
+      registerLocationNow();
+
+      cycleInterval = setInterval(() => {
+        const elapsed = Date.now() - cycleStartTime;
+        state.timeRemaining = Math.max(0, state.cycleDuration - elapsed);
+
+        if (state.timeRemaining === 0) {
+          cycleStartTime = Date.now();
+          state.timeRemaining = state.cycleDuration;
+          registerLocationNow();
+        }
+        updateUI();
+      }, 1000);
+
+      updateUI();
+    }
+
+    function stopCycle() {
+      if (cycleInterval) clearInterval(cycleInterval);
+      if (gpsTimeout) clearTimeout(gpsTimeout);
+
+      cycleInterval = null;
+      gpsTimeout = null;
+      cycleStartTime = null;
+
+      state.isRunning = false;
+      state.isGPSActive = false;
+      state.timeRemaining = state.cycleDuration;
+
+      updateUI();
+    }
+
+    // =========================
+    // UI (diagnóstico, tema, modal, tabs)
+    // =========================
+    function updateDiag(text) {
+      state.lastDiag = text;
+      const el = document.getElementById('diagText');
+      if (el) el.textContent = text || '—';
+      saveState();
+    }
+
+    function applyDarkMode(isDark) {
+      state.darkMode = !!isDark;
+      document.body.classList.toggle('dark-mode', state.darkMode);
+
+      const t = document.getElementById('darkModeToggle');
+      const l = document.getElementById('darkModeLabel');
+      if (t) t.checked = state.darkMode;
+      if (l) l.textContent = state.darkMode ? 'Habilitado' : 'Deshabilitado';
+
+      saveState();
+    }
+
+    function openConfigModal() {
+      if (state.isMinimized) return; // si está minimizado, no abrir modal
+
+      // Si NO está desbloqueado, abrir mini modal y salir
+      if (!isConfigUnlocked()) {
+        openPasswordModal();
+        return;
+      }
+
+      state.configOpen = true;
+
+      const modal = document.getElementById('configModal');
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden', 'false');
+
+      // activar última pestaña
+      activateTab(state.lastFullTab || 'calculator');
+
+      // si entra directo a mapa, invalida tamaño
+      if ((state.lastFullTab || 'calculator') === 'mapTab') {
+        setTimeout(() => {
+          initMap();
+          if (state.map) state.map.invalidateSize(true);
+          updateMap();
+        }, 180);
+      }
+
+      updateUI();
+    }
+
+    function closeConfigModal() {
+      state.configOpen = false;
+
+      const modal = document.getElementById('configModal');
+      modal.classList.remove('open');
+      modal.setAttribute('aria-hidden', 'true');
+
+      updateUI();
+    }
+
+    function updateUI() {
+      // Si está minimizado, ocultar todo y cerrar modal(s)
+      const pixelMinimizer = document.getElementById('pixelMinimizer');
+      const container = document.querySelector('.container');
+      const modal = document.getElementById('configModal');
+      const passModal = document.getElementById('passwordModal');
+
+      if (state.isMinimized) {
+        if (container) container.style.display = 'none';
+        if (pixelMinimizer) pixelMinimizer.classList.add('expanded');
+
+        if (passModal && passModal.classList.contains('open')) closePasswordModal();
+        if (modal && modal.classList.contains('open')) closeConfigModal();
+      } else {
+        if (container) container.style.display = 'flex';
+        if (pixelMinimizer) pixelMinimizer.classList.remove('expanded');
+      }
+
+      // GPS UI (existe dentro del modal siempre, aunque esté oculto)
+      const statusEl = document.getElementById('status');
+      const timerEl = document.getElementById('timer');
+      const cyclesEl = document.getElementById('cycles');
+      const intervalEl = document.getElementById('interval');
+      const gpsEl = document.getElementById('gpsActive');
+      const dmEl = document.getElementById('discreteMode');
+      const dmLabel = document.getElementById('discreteModeLabel');
+      const startBtn = document.getElementById('startBtn');
+
+      if (statusEl) {
+        statusEl.textContent = state.isRunning ? 'SISTEMA ACTIVO' : 'SISTEMA INACTIVO';
+        statusEl.style.color = state.isRunning ? '#22C55E' : '#EF4444';
+      }
+      if (timerEl) timerEl.textContent = formatTime(state.timeRemaining);
+      if (cyclesEl) cyclesEl.textContent = state.cyclesCompleted;
+      if (intervalEl) intervalEl.textContent = formatTime(state.cycleDuration);
+      if (gpsEl) gpsEl.textContent = formatTime(state.gpsActiveDuration);
+
+      const dmText = state.discreteMode ? 'Habilitado' : 'Deshabilitado';
+      if (dmEl) {
+        dmEl.textContent = dmText;
+        dmEl.style.color = state.discreteMode ? '#22C55E' : '#EF4444';
+      }
+      if (dmLabel) dmLabel.textContent = dmText;
+
+      const dmToggle = document.getElementById('discreteModeToggle');
+      if (dmToggle) dmToggle.checked = state.discreteMode;
+
+      if (startBtn) {
+        startBtn.textContent = state.isRunning ? 'Detener' : 'Iniciar';
+        startBtn.style.background = state.isRunning ? '#EF4444' : '#0a7ea4';
+      }
+    }
+
+    function activateTab(tabId) {
+      const modal = document.getElementById('configModal');
+      if (!modal) return;
+
+      modal.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+      modal.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+
+      const btn = modal.querySelector(`.tab-button[data-tab="${tabId}"]`);
+      if (btn) btn.classList.add('active');
+
+      const panel = document.getElementById(tabId);
+      if (panel) panel.classList.add('active');
+
+      state.lastFullTab = tabId;
+      saveState();
+
+      if (tabId === 'mapTab') {
+        setTimeout(() => {
+          initMap();
+          if (state.map) state.map.invalidateSize(true);
+          updateMap();
+        }, 180);
+      } else if (tabId === 'records') updateRecordsList();
+      else if (tabId === 'favorites') updateFavoritesList();
+      else if (tabId === 'settings') {
+        // refrescar valores inputs al entrar
+        const cd = document.getElementById('cycleDurationInput');
+        const gd = document.getElementById('gpsActiveDurationInput');
+        if (cd) cd.value = Math.round(state.cycleDuration / 1000);
+        if (gd) gd.value = Math.round(state.gpsActiveDuration / 1000);
+      }
+    }
+
+    // =========================
+    // MAPA
+    // =========================
+    function initMap() {
+      if (state.map) return;
+
+      let initialCenter = [19.4326, -99.1332];
+      let initialZoom = 13;
+
+      if (state.mapView && Array.isArray(state.mapView.center) && typeof state.mapView.zoom === 'number') {
+        initialCenter = state.mapView.center;
+        initialZoom = state.mapView.zoom;
+      } else if (state.lastLocation) {
+        initialCenter = [state.lastLocation.latitude, state.lastLocation.longitude];
+        initialZoom = 15;
+      }
+
+      state.map = L.map('leafletMap').setView(initialCenter, initialZoom);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19,
+      }).addTo(state.map);
+
+      state.map.on('moveend', () => {
+        const c = state.map.getCenter();
+        state.mapView = { center: [c.lat, c.lng], zoom: state.map.getZoom() };
+        saveState();
+      });
+    }
+
+    function updateMap() {
+      if (!state.map) initMap();
+
+      state.markers.forEach(m => state.map.removeLayer(m));
+      state.markers = [];
+      if (state.polyline) state.map.removeLayer(state.polyline);
+      state.polyline = null;
+
+      const dateSel = document.getElementById('dateSelector');
+      const hourSel = document.getElementById('hourSelector');
+
+      const selectedDate = dateSel ? dateSel.value : '';
+      const selectedHour = hourSel ? hourSel.value : '';
+
+      if (!selectedDate || !state.days[selectedDate]) return;
+
+      let locations = [];
+      const dayData = state.days[selectedDate];
+
+      if (selectedHour && selectedHour !== 'all') {
+        const hourData = dayData.hours?.[selectedHour];
+        if (hourData?.locations?.length) locations = [...hourData.locations];
+      } else {
+        Object.values(dayData.hours || {}).forEach(h => locations.push(...(h.locations || [])));
+      }
+
+      locations.sort((a,b) => a.timestamp - b.timestamp);
+      if (locations.length === 0) return;
+
+      const coords = locations.map(l => [l.latitude, l.longitude]);
+      state.polyline = L.polyline(coords, { color:'#0a7ea4', weight:3 }).addTo(state.map);
+
+      locations.forEach((loc, idx) => {
+        const isFirst = idx === 0;
+        const isLast = idx === locations.length - 1;
+        const color = isFirst ? '#22C55E' : isLast ? '#EF4444' : '#0a7ea4';
+
+        const marker = L.circleMarker([loc.latitude, loc.longitude], {
+          radius: 8, fillColor: color, color: color, weight: 2, opacity: 1, fillOpacity: .85
+        }).bindPopup(`
+          <strong>Punto ${idx + 1}</strong><br>
+          ${new Date(loc.timestamp).toLocaleTimeString('es-ES')}<br>
+          ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}<br>
+          <a href="https://www.google.com/maps/search/?api=1&query=${loc.latitude},${loc.longitude}" target="_blank" rel="noopener">Abrir en Maps</a>
+        `).addTo(state.map);
+
+        state.markers.push(marker);
+      });
+
+      state.map.fitBounds(L.latLngBounds(coords), { padding:[50,50] });
+    }
+
+    function updateDateSelector() {
+      cleanupEmptyBuckets();
+
+      const selector = document.getElementById('dateSelector');
+      if (!selector) return;
+
+      const dates = Object.keys(state.days).sort().reverse();
+      selector.innerHTML = '';
+
+      if (dates.length === 0) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '— sin datos —';
+        selector.appendChild(opt);
+        state.mapSelectedDate = '';
+        saveState();
+        return;
+      }
+
+      dates.forEach(date => {
+        const option = document.createElement('option');
+        option.value = date;
+        const dayCount = Object.values(state.days[date].hours || {}).reduce((sum, h) => sum + (h.locations?.length || 0), 0);
+        option.textContent = `${date} (${dayCount} puntos)`;
+        selector.appendChild(option);
+      });
+
+      const wanted = state.mapSelectedDate;
+      selector.value = (wanted && state.days[wanted]) ? wanted : dates[0];
+
+      state.mapSelectedDate = selector.value;
+      saveState();
+    }
+
+    function updateHourSelector() {
+      const dateSel = document.getElementById('dateSelector');
+      const hourSel = document.getElementById('hourSelector');
+      if (!dateSel || !hourSel) return;
+
+      const selectedDate = dateSel.value;
+      hourSel.innerHTML = '';
+
+      if (!selectedDate || !state.days[selectedDate]) {
+        const opt = document.createElement('option');
+        opt.value = '';
+        opt.textContent = '— hora —';
+        hourSel.appendChild(opt);
+        state.mapSelectedHour = '';
+        saveState();
+        return;
+      }
+
+      const hoursObj = state.days[selectedDate].hours || {};
+      const hours = Object.keys(hoursObj).sort((a,b) => Number(b) - Number(a));
+
+      const optAll = document.createElement('option');
+      optAll.value = 'all';
+      optAll.textContent = 'Todas las horas';
+      hourSel.appendChild(optAll);
+
+      hours.forEach(h => {
+        const option = document.createElement('option');
+        option.value = h;
+        const count = (hoursObj[h].locations || []).length;
+        option.textContent = `${hourLabel(h)} (${count})`;
+        hourSel.appendChild(option);
+      });
+
+      const wanted = state.mapSelectedHour;
+      const canUseWanted = wanted && (wanted === 'all' || hoursObj[wanted]);
+      if (canUseWanted) hourSel.value = wanted;
+      else hourSel.value = hours.length ? hours[0] : 'all';
+
+      state.mapSelectedHour = hourSel.value;
+      saveState();
+    }
+
+    // =========================
+    // REGISTROS
+    // =========================
+    function openMaps(lat, lng) {
+      window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`, '_blank', 'noopener');
+    }
+
+    function deleteLocation(timestamp) {
+      for (const day of Object.values(state.days)) {
+        for (const hour of Object.values(day.hours || {})) {
+          hour.locations = (hour.locations || []).filter(l => l.timestamp !== timestamp);
+        }
+      }
+
+      cleanupEmptyBuckets();
+      state.cyclesCompleted = countAllLocations();
+      saveState();
+
+      updateRecordsList();
+      updateDateSelector();
+      updateHourSelector();
+      if (state.configOpen && state.lastFullTab === 'mapTab') updateMap();
+
+      updateUI();
+      updateDiag('Registro eliminado');
+    }
+
+    function updateRecordsList() {
+      const recordsList = document.getElementById('recordsList');
+      if (!recordsList) return;
+
+      cleanupEmptyBuckets();
+
+      const dates = Object.keys(state.days).sort().reverse();
+      if (dates.length === 0) {
+        recordsList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📍</div><p>Sin registros</p></div>';
+        return;
+      }
+
+      let html = '';
+      dates.forEach(dateKey => {
+        const day = state.days[dateKey];
+        const dayCount = Object.values(day.hours || {}).reduce((sum, h) => sum + (h.locations?.length || 0), 0);
+
+        html += `
+          <details class="record-date-group" open>
+            <summary class="record-date-header">
+              <span>📅 ${dateKey}</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span>${dayCount} punto(s)</span>
+                <span class="collapse-icon">▾</span>
+              </span>
+            </summary>
+        `;
+
+        const hours = Object.keys(day.hours || {}).sort((a,b) => Number(b) - Number(a));
+        hours.forEach(hourKey => {
+          const hourData = day.hours[hourKey];
+          const locs = [...(hourData.locations || [])].sort((a,b) => b.timestamp - a.timestamp);
+
+          html += `
+            <details class="record-hour-group" open>
+              <summary class="record-hour-header">
+                <span>🕒 ${hourLabel(hourKey)}</span>
+                <span style="display:flex;align-items:center;gap:8px;">
+                  <span>${locs.length}</span>
+                  <span class="collapse-icon">▾</span>
+                </span>
+              </summary>
+          `;
+
+          html += locs.map((loc) => `
+            <div class="record-item">
+              <div class="record-info">
+                <div class="record-time">${new Date(loc.timestamp).toLocaleString('es-ES')}</div>
+                <div class="record-coords">${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)} (±${Math.round(loc.accuracy || 0)}m)</div>
+              </div>
+              <div class="record-actions">
+                <button class="btn-small btn-maps" onclick="openMaps(${loc.latitude}, ${loc.longitude})">Maps</button>
+                <button class="btn-small btn-favorite" onclick="addToFavorites(${loc.latitude}, ${loc.longitude}, '${new Date(loc.timestamp).toLocaleString('es-ES')}')">★</button>
+                <button class="btn-small btn-delete" onclick="deleteLocation(${loc.timestamp})">✕</button>
+              </div>
+            </div>
+          `).join('');
+
+          html += `</details>`;
+        });
+
+        html += `</details>`;
+      });
+
+      recordsList.innerHTML = html;
+    }
+
+    // =========================
+    // FAVORITOS
+    // =========================
+    function updateFavoritesList() {
+      const favoritesList = document.getElementById('favoritesList');
+      if (!favoritesList) return;
+
+      if (!state.favorites || state.favorites.length === 0) {
+        favoritesList.innerHTML = '<div class="empty-state"><div class="empty-state-icon">⭐</div><p>Sin favoritos</p></div>';
+        return;
+      }
+
+      const sorted = [...state.favorites].sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0));
+      const groups = {};
+      sorted.forEach(f => {
+        const t = f.timestamp || Date.now();
+        const dk = getDateKey(t);
+        if (!groups[dk]) groups[dk] = [];
+        groups[dk].push(f);
+      });
+
+      const groupDates = Object.keys(groups).sort().reverse();
+      let html = '';
+
+      groupDates.forEach(dateKey => {
+        const items = groups[dateKey] || [];
+        html += `
+          <details class="record-date-group" open>
+            <summary class="record-date-header">
+              <span>⭐ ${dateKey}</span>
+              <span style="display:flex;align-items:center;gap:8px;">
+                <span>${items.length} favorito(s)</span>
+                <span class="collapse-icon">▾</span>
+              </span>
+            </summary>
+        `;
+
+        html += items.map((fav) => {
+          const idx = state.favorites.indexOf(fav);
+          const acc = (typeof fav.accuracy === 'number') ? ` (±${Math.round(fav.accuracy)}m)` : '';
+          return `
+            <div class="favorite-item">
+              <div class="favorite-label">⭐ ${fav.label || ''}</div>
+              <div class="record-coords">${Number(fav.latitude).toFixed(6)}, ${Number(fav.longitude).toFixed(6)}${acc}</div>
+              <div class="record-actions" style="margin-top:12px;">
+                <button class="btn-small btn-maps" onclick="openMaps(${fav.latitude}, ${fav.longitude})">Maps</button>
+                <button class="btn-small btn-delete" onclick="deleteFavorite(${idx})">Eliminar</button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        html += `</details>`;
+      });
+
+      favoritesList.innerHTML = html;
+    }
+
+    // =========================
+    // EVENTOS (CALC + MODAL + SETTINGS)
+    // =========================
+
+    // Números (incluye +/- corregido)
+    document.querySelectorAll('.calc-btn-number').forEach(button => {
+      button.addEventListener('click', () => {
+        const digit = button.textContent;
+        if (digit >= '0' && digit <= '9') inputDigit(digit);
+        else if (digit === '.') inputDecimal();
+        else if (digit === '+/-') handleSpecialOperation('plusMinus');
+      });
+    });
+
+    // Operadores
+    document.querySelectorAll('.calc-btn-operator').forEach(button => {
+      button.addEventListener('click', () => {
+        const op = button.textContent;
+        if (op === '+' || op === '-' || op === '*' || op === '/') handleOperator(op);
+        else if (op === '%') handleSpecialOperation('percent');
+        else if (op === 'CE') handleSpecialOperation('clearEntry');
+        else if (op === 'C') handleSpecialOperation('clear');
+        else if (op === '1/x') handleSpecialOperation('reciprocal');
+        else if (op === 'x²') handleSpecialOperation('square');
+        else if (op === '√') handleSpecialOperation('sqrt');
+      });
+    });
+
+    // Memoria (sin funcionalidad)
+    document.querySelectorAll('.calc-btn-memory').forEach(button => {
+      button.addEventListener('click', () => {});
+    });
+
+    document.querySelector('.calc-btn-equals').addEventListener('click', calculate);
+
+    // Abrir Config: si no está desbloqueado -> mini modal
+    document.getElementById('configBtn').addEventListener('click', () => {
+      if (state.isMinimized) return;
+      if (isConfigUnlocked()) openConfigModal();
+      else openPasswordModal();
+    });
+
+    // ===== Eventos mini modal contraseña =====
+    document.getElementById('passwordSubmitBtn').addEventListener('click', submitPassword);
+    document.getElementById('passwordCancelBtn').addEventListener('click', closePasswordModal);
+    document.getElementById('passwordModalCloseBtn').addEventListener('click', closePasswordModal);
+
+    // Cerrar mini modal al tocar el fondo
+    document.getElementById('passwordModal').addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'passwordModal') closePasswordModal();
+    });
+
+    // Enter en input para enviar
+    document.getElementById('passwordInput').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') submitPassword();
+      if (e.key === 'Escape') closePasswordModal();
+    });
+
+    // Cerrar modal (botones)
+    document.getElementById('closeConfigBtn').addEventListener('click', closeConfigModal);
+    document.getElementById('configModalCloseBtn').addEventListener('click', closeConfigModal);
+
+    // Cerrar al tocar el fondo
+    document.getElementById('configModal').addEventListener('click', (e) => {
+      if (e.target && e.target.id === 'configModal') closeConfigModal();
+    });
+
+    // ESC para cerrar (prioridad: mini modal)
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        const pass = document.getElementById('passwordModal');
+        if (pass && pass.classList.contains('open')) { closePasswordModal(); return; }
+
+        const modal = document.getElementById('configModal');
+        if (modal.classList.contains('open')) closeConfigModal();
+      }
+    });
+
+    // Tabs del modal
+    document.querySelectorAll('#configModal .tab-button').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const tabId = e.target.dataset.tab;
+        activateTab(tabId);
+      });
+    });
+
+    // Botones GPS
+    document.getElementById('startBtn').addEventListener('click', () => {
+      state.isRunning ? stopCycle() : startCycle();
+    });
+
+    document.getElementById('manualBtn').addEventListener('click', registerFavoriteNow);
+    document.getElementById('manualBtnMap').addEventListener('click', registerFavoriteNow);
+    document.getElementById('permBtn').addEventListener('click', showPermissionDiagnostic);
+
+    // Inputs settings
+    document.getElementById('cycleDurationInput').addEventListener('change', (e) => {
+      const v = Math.max(10, parseInt(e.target.value || '600', 10));
+      state.cycleDuration = v * 1000;
+      state.timeRemaining = state.cycleDuration;
+      saveState();
+      updateUI();
+    });
+
+    document.getElementById('gpsActiveDurationInput').addEventListener('change', (e) => {
+      const v = Math.max(5, parseInt(e.target.value || '60', 10));
+      state.gpsActiveDuration = v * 1000;
+      saveState();
+      updateUI();
+    });
+
+    document.getElementById('discreteModeToggle').addEventListener('change', (e) => {
+      state.discreteMode = e.target.checked;
+      if (state.discreteMode) state.isMinimized = true;
+      saveState();
+      updateUI();
+    });
+
+    document.getElementById('darkModeToggle').addEventListener('change', (e) => {
+      applyDarkMode(e.target.checked);
+    });
+
+    // Mapa filtros
+    document.getElementById('refreshMapBtn').addEventListener('click', updateMap);
+
+    document.getElementById('dateSelector').addEventListener('change', (e) => {
+      state.mapSelectedDate = e.target.value || '';
+      saveState();
+      updateHourSelector();
+      updateMap();
+    });
+
+    document.getElementById('hourSelector').addEventListener('change', (e) => {
+      state.mapSelectedHour = e.target.value || '';
+      saveState();
+      updateMap();
+    });
+
+    // Exportar
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const data = JSON.stringify({
+        cyclesCompleted: state.cyclesCompleted,
+        days: state.days,
+        favorites: state.favorites,
+        exportDate: new Date().toISOString(),
+      }, null, 2);
+
+      const blob = new Blob([data], { type:'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `gps-data-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      updateDiag('Exportación generada');
+    });
+
+    // Limpiar
+    document.getElementById('clearBtn').addEventListener('click', () => {
+      state.days = {};
+      state.lastLocation = null;
+      state.favorites = [];
+      state.lastError = null;
+
+      cleanupEmptyBuckets();
+      state.cyclesCompleted = 0;
+
+      state.mapSelectedDate = '';
+      state.mapSelectedHour = '';
+
+      saveState();
+
+      updateRecordsList();
+      updateDateSelector();
+      updateHourSelector();
+      updateFavoritesList();
+      updateUI();
+
+      updateDiag('Datos eliminados');
+    });
+
+    // Pixel minimizador
+    document.getElementById('pixelMinimizer').addEventListener('click', () => {
+      state.isMinimized = !state.isMinimized;
+      // Si desminimiza, no forzamos abrir modal
+      saveState();
+      updateUI();
+    });
+
+    // =========================
+    // INICIALIZACIÓN
+    // =========================
+    loadState();
+
+    // tema inicial
+    if (!localStorage.getItem('gpsTrackerState')) {
+      const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      applyDarkMode(prefersDark);
+    } else {
+      applyDarkMode(state.darkMode);
+    }
+
+    // inicializar calc
+    updateCalcDisplay();
+
+    // inicializar selects/listas (funcionan aunque el modal esté cerrado porque existen en DOM)
+    updateDateSelector();
+    updateHourSelector();
+    updateRecordsList();
+    updateFavoritesList();
+
+    // UI estado
+    updateUI();
+
+    (async () => {
+      const perm = await getGeoPermissionState();
+      updateDiag(`Permiso inicial: ${perm} | Seguro: ${isSecureContextForGeo() ? 'sí' : 'no'}`);
+    })();
+  </script>
+</body>
+</html>

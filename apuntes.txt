@@ -1,0 +1,6 @@
+no quitar de esta carpeta, los tres archivos que en ella estan:
+google8559800fc0ba033d
+robots
+sitemap
+
+sirven para que google indexe la las paginas, del sitio.

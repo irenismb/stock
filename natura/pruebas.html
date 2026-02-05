@@ -189,11 +189,11 @@
       border-radius:16px;
       background:rgba(18,24,38,.45);
       width:100%;
-      overflow-x:auto;          /* seguridad: si algún celular es ultra estrecho, no hace salto */
+      overflow-x:auto;
       -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;    /* Firefox */
+      scrollbar-width: none;
     }
-    .social-icons::-webkit-scrollbar{ display:none; } /* Chrome/Safari */
+    .social-icons::-webkit-scrollbar{ display:none; }
     .social-icons a{
       display:inline-flex;
       align-items:center;
@@ -523,6 +523,23 @@
       justify-content:center;
     }
 
+    /* ✅ Consentimiento ubicación */
+    #locCard .row-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+    }
+    #locCard .row-actions button{
+      flex:1 1 180px;
+    }
+    #locStatus{
+      margin:0;
+      color:var(--mut);
+      font-size:12px;
+      line-height:1.45;
+    }
+
     @media (max-width:720px){
       .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
@@ -589,6 +606,18 @@
                 aria-expanded="false" aria-controls="aboutText">
           Ver más
         </button>
+      </section>
+
+      <!-- ✅ Tarjeta consentimiento ubicación (sin alertas) -->
+      <section class="about-card" id="locCard" aria-label="Registro de ubicación" hidden>
+        <p class="small about-text" style="margin:0;">
+          Registro de ubicación (opcional): si lo activas, el sitio guardará coordenadas cada 5 minutos en una hoja de Google.
+        </p>
+        <p id="locStatus"></p>
+        <div class="row-actions">
+          <button class="btn-acc" id="locEnableBtn" type="button">Activar</button>
+          <button class="btn-ghost" id="locDisableBtn" type="button">No activar</button>
+        </div>
       </section>
 
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
@@ -915,7 +944,7 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
       if(!cartCountEl) return;
       const qty = cartTotalQty();
       cartCountEl.textContent = String(qty);
-      cartCountEl.classList.toggle("has-items", qty > 0);  // ✅ naranja si > 0
+      cartCountEl.classList.toggle("has-items", qty > 0);
     }
 
     function saveCart(){
@@ -1042,13 +1071,10 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
       renderCartModal();
     });
 
+    // ✅ Sin alert(): si está vacío, abre WhatsApp con mensaje genérico
     cartBuyBtn.addEventListener("click", ()=>{
       const items = cartItemsArray();
-      if(!items.length){
-        alert("El carrito está vacío. Agrega productos antes de comprar por WhatsApp.");
-        return;
-      }
-      window.open(waLink(cartMessage()), "_blank", "noopener");
+      window.open(waLink(items.length ? cartMessage() : "Hola, quiero información del catálogo."), "_blank", "noopener");
     });
 
     cartModalClose.addEventListener("click", closeCartModal);
@@ -1217,8 +1243,6 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
           const q = (cart[p.id]?.qty || 0);
           qtyPill.textContent = `En carrito: ${q}`;
           removeBtn.disabled = q <= 0;
-
-          /* ✅ Agregar cambia de color si ya hay en carrito */
           addBtn.classList.toggle("in-cart", q > 0);
         }
 
@@ -1272,70 +1296,146 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
     if(sortSel) sortSel.addEventListener("change", render);
 
     readStateFromUrl();
-    refreshCartCount();   // ✅ al cargar aplica naranja si hay items guardados
+    refreshCartCount();
     render();
   </script>
 
   <!-- ======================================================
-       ✅ BLOQUE NUEVO: REGISTRO AUTOMÁTICO DE UBICACIÓN
-       - No muestra alertas/notificaciones
-       - Inicia al abrir la página
-       - Intervalo por defecto: 5 minutos (configurable)
+       ✅ REGISTRO DE UBICACIÓN (con consentimiento)
+       - NO usa alert()
+       - Si el usuario activa una vez, luego arranca automático
+       - Intervalo: 5 minutos
+       - Endpoint: tu Web App ya publicado
        ====================================================== -->
-	<script>
-	  const LOCATION_LOG_INTERVAL_MINUTES = 5;
-	  const LOCATION_LOG_ENDPOINT = "const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/XXXXX/exec";
+  <script>
+    const LOCATION_LOG_INTERVAL_MINUTES = 5;
+    const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbziDZs4lGVMb7pvH-Wq0UbsgwPXs4PuJWex0sly4F8MfY4fcYr5A6Z4OV8ch67hUshM/exec";
+    const LOCATION_STORAGE_KEY = "irenismb_location_log_enabled";
 
+    (function(){
+      const card = document.getElementById("locCard");
+      const btnEnable = document.getElementById("locEnableBtn");
+      const btnDisable = document.getElementById("locDisableBtn");
+      const statusEl = document.getElementById("locStatus");
 
-	  (function(){
-		const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
-		let timerId = null;
+      const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
+      let timerId = null;
 
-		function sendGet(lat, lng, acc){
-		  try{
-			const qs = new URLSearchParams({
-			  lat: String(lat),
-			  lng: String(lng),
-			  acc: acc == null ? "" : String(acc),
-			  ts: String(Date.now()),
-			  cb: Math.random().toString(36).slice(2)
-			});
-			const img = new Image();
-			img.referrerPolicy = "no-referrer";
-			img.src = LOCATION_LOG_ENDPOINT + "?" + qs.toString();
-		  }catch(e){}
-		}
+      function setStatus(msg){
+        if(statusEl) statusEl.textContent = msg || "";
+      }
 
-		function logOnce(){
-		  try{
-			if (!("geolocation" in navigator)) return;
-			navigator.geolocation.getCurrentPosition(
-			  (pos)=>{
-				try{
-				  const c = pos && pos.coords;
-				  if(!c) return;
-				  sendGet(c.latitude, c.longitude, c.accuracy);
-				}catch(e){}
-			  },
-			  ()=>{},
-			  { enableHighAccuracy:false, timeout:15000, maximumAge: intervalMs }
-			);
-		  }catch(e){}
-		}
+      function canGeo(){
+        return ("geolocation" in navigator);
+      }
 
-		function start(){
-		  if (timerId) return;
-		  logOnce();
-		  timerId = setInterval(logOnce, intervalMs);
-		}
+      function enabled(){
+        return localStorage.getItem(LOCATION_STORAGE_KEY) === "1";
+      }
 
-		if (document.readyState === "loading"){
-		  document.addEventListener("DOMContentLoaded", start, { once:true });
-		}else{
-		  start();
-		}
-	  })();
-	</script>
+      function setEnabled(v){
+        localStorage.setItem(LOCATION_STORAGE_KEY, v ? "1" : "0");
+      }
+
+      function sendPing(lat, lng, acc){
+        try{
+          const payload = new URLSearchParams({
+            lat: String(lat),
+            lng: String(lng),
+            acc: acc == null ? "" : String(acc),
+            ts: String(Date.now()),
+            cb: Math.random().toString(36).slice(2)
+          });
+
+          // Preferir sendBeacon (sin CORS y sin “errores de imagen”)
+          if (navigator.sendBeacon){
+            navigator.sendBeacon(LOCATION_LOG_ENDPOINT, payload);
+            return;
+          }
+
+          // Fallback GET no-cors
+          fetch(LOCATION_LOG_ENDPOINT + "?" + payload.toString(), {
+            method: "GET",
+            mode: "no-cors",
+            cache: "no-store",
+            keepalive: true
+          }).catch(()=>{});
+        }catch(e){}
+      }
+
+      function logOnce(){
+        try{
+          if(!enabled() || !canGeo()) return;
+          navigator.geolocation.getCurrentPosition(
+            (pos)=>{
+              try{
+                const c = pos && pos.coords;
+                if(!c) return;
+                sendPing(c.latitude, c.longitude, c.accuracy);
+              }catch(e){}
+            },
+            ()=>{},
+            { enableHighAccuracy:false, timeout:15000, maximumAge: intervalMs }
+          );
+        }catch(e){}
+      }
+
+      function start(){
+        if(timerId) return;
+        logOnce();
+        timerId = setInterval(logOnce, intervalMs);
+      }
+
+      function stop(){
+        if(timerId){
+          clearInterval(timerId);
+          timerId = null;
+        }
+      }
+
+      function initUI(){
+        if(!card) return;
+
+        if(!canGeo()){
+          card.hidden = true;
+          return;
+        }
+
+        if(enabled()){
+          card.hidden = true;
+          start();
+          return;
+        }
+
+        // Mostrar tarjeta solo si aún no está habilitado
+        card.hidden = false;
+        setStatus("Si activas, el navegador pedirá permiso de ubicación (esto es obligatorio).");
+
+        if(btnEnable){
+          btnEnable.addEventListener("click", ()=>{
+            setEnabled(true);
+            card.hidden = true;
+            setStatus("");
+            start();
+          });
+        }
+        if(btnDisable){
+          btnDisable.addEventListener("click", ()=>{
+            setEnabled(false);
+            stop();
+            card.hidden = true;
+            setStatus("");
+          });
+        }
+      }
+
+      if (document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", initUI, { once:true });
+      }else{
+        initUI();
+      }
+    })();
+  </script>
 
 </body>
 </html>

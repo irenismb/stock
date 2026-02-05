@@ -1,0 +1,295 @@
+const SPREADSHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
+const SHEET_NAME = ""; // vacío = primera hoja
+const TZ = "America/Bogota";
+
+/**
+ * ✅ MODO POR DEFECTO DEL SERVIDOR:
+ * - "PING": guarda 1 fila por cada request (abrir + cada 5 min)
+ * - "LOAD": guarda 1 fila por cada carga (dedup por load_id si llega)
+ */
+const SERVER_DEFAULT_MODE = "PING"; // "PING" o "LOAD"
+
+/**
+ * ✅ Si el HTML manda ?mode=PING o ?mode=LOAD, lo respetamos.
+ * (Tu HTML actual manda mode)
+ */
+const RESPECT_CLIENT_MODE_PARAM = true;
+
+/**
+ * ✅ Dirección (reverse geocoding)
+ */
+const WRITE_ADDRESS = true;     // true = llena columna "direccion"
+const ADDRESS_CACHE_SECONDS = 21600; // 6 horas
+const ADDRESS_CACHE_EMPTY_SECONDS = 120; // 2 min si sale vacía
+
+/**
+ * Encabezados requeridos (se crean si no existen).
+ */
+const REQUIRED_HEADERS = [
+  "coordenadas",
+  "direccion",
+  "fecha",
+  "hora",
+  "minutos",
+  "accuracy",
+  "mode",
+  "load_id",
+  "visit_id",
+  "timestamp_ms",
+  "user_agent"
+];
+
+function doGet(e)  { return handleRequest_(e); }
+function doPost(e) { return handleRequest_(e); }
+
+// Ejecuta esta función 1 vez desde el editor para autorizar permisos:
+function authTest(){
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+  if (!sh) return;
+  sh.getRange(1,1).getValue();
+}
+
+// ✅ Ejecuta 1 vez para autorizar geocoder (si WRITE_ADDRESS=true)
+function geoAuthTest(){
+  const res = Maps.newGeocoder().reverseGeocode(4.7110, -74.0721);
+  Logger.log(JSON.stringify(res));
+}
+
+function handleRequest_(e){
+  let lock = null;
+
+  try{
+    const p = parseParams_(e);
+
+    const lat = toNum_(p.lat);
+    const lng = toNum_(p.lng);
+    const acc = toNum_(p.acc);
+
+    // Sin coords válidas -> ok silencioso
+    if (!isFinite(lat) || !isFinite(lng)) return ok_();
+
+    const modeClient = String(p.mode || "").toUpperCase().trim();
+    const mode = (RESPECT_CLIENT_MODE_PARAM && (modeClient === "PING" || modeClient === "LOAD"))
+      ? modeClient
+      : String(SERVER_DEFAULT_MODE || "PING").toUpperCase();
+
+    const loadId  = String(p.load_id || "").trim();  // id por carga (HTML)
+    const visitId = String(p.visit_id || "").trim(); // por si lo usas luego
+
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(2000)) return ok_();
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+    if (!sh) return ok_();
+
+    // Asegurar encabezados y mapear columnas
+    const headerIndex = ensureHeaders_(sh, REQUIRED_HEADERS);
+
+    // ✅ DEDUP para LOAD: si ya existe load_id, no escribimos otra fila
+    if (mode === "LOAD" && loadId && headerIndex.load_id != null){
+      if (alreadyLoggedByLoadId_(sh, headerIndex.load_id + 1, loadId)){
+        return ok_();
+      }
+    }
+
+    const now = new Date();
+    const dateStr   = Utilities.formatDate(now, TZ, "yyyy-MM-dd");
+    const timeStr   = Utilities.formatDate(now, TZ, "HH:mm");
+    const minuteStr = Utilities.formatDate(now, TZ, "mm");
+
+    const coordText = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    const mapsUrl   = `https://www.google.com/maps?q=${encodeURIComponent(coordText)}`;
+
+    // Dirección (opcional)
+    let address = "";
+    if (WRITE_ADDRESS){
+      address = reverseGeocodeCached_(lat, lng) || "";
+    }
+
+    const lastCol = sh.getLastColumn();
+    const row = new Array(lastCol).fill("");
+
+    if (headerIndex.fecha != null)        row[headerIndex.fecha]        = dateStr;
+    if (headerIndex.hora != null)         row[headerIndex.hora]         = timeStr;
+    if (headerIndex.minutos != null)      row[headerIndex.minutos]      = minuteStr;
+    if (headerIndex.direccion != null)    row[headerIndex.direccion]    = address;
+    if (headerIndex.accuracy != null)     row[headerIndex.accuracy]     = isFinite(acc) ? String(acc) : "";
+    if (headerIndex.mode != null)         row[headerIndex.mode]         = mode;
+    if (headerIndex.load_id != null)      row[headerIndex.load_id]      = loadId;
+    if (headerIndex.visit_id != null)     row[headerIndex.visit_id]     = visitId;
+    if (headerIndex.timestamp_ms != null) row[headerIndex.timestamp_ms] = String(Date.now());
+    if (headerIndex.user_agent != null)   row[headerIndex.user_agent]   = String(p.ua || p.user_agent || "");
+
+    const nextRow = Math.max(2, sh.getLastRow() + 1);
+    sh.getRange(nextRow, 1, 1, lastCol).setValues([row]);
+
+    // Coordenadas como hipervínculo REAL (no fórmula)
+    if (headerIndex.coordenadas != null){
+      const cell = sh.getRange(nextRow, headerIndex.coordenadas + 1);
+      const rich = SpreadsheetApp.newRichTextValue()
+        .setText(coordText)
+        .setLinkUrl(mapsUrl)
+        .build();
+      cell.setRichTextValue(rich);
+    }
+
+    // Cachear load_id escrito (para dedup rápido)
+    if (mode === "LOAD" && loadId){
+      try{
+        CacheService.getScriptCache().put("load_" + loadId, "1", 21600); // 6h
+      }catch(_){}
+    }
+
+  }catch(err){
+    // Silencio total (como lo pediste)
+  }finally{
+    try{ if (lock) lock.releaseLock(); }catch(_){}
+  }
+
+  return ok_();
+}
+
+function ok_(){
+  return ContentService
+    .createTextOutput("ok")
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+function parseParams_(e){
+  const out = Object.assign({}, (e && e.parameter) || {});
+  try{
+    const raw = e && e.postData && e.postData.contents;
+    if (!raw) return out;
+
+    const ct = String(e.postData.type || "").toLowerCase();
+    if (ct.includes("application/json")){
+      const j = JSON.parse(raw);
+      if (j && typeof j === "object"){
+        Object.keys(j).forEach(k => out[k] = String(j[k]));
+      }
+      return out;
+    }
+
+    raw.split("&").forEach(part => {
+      if(!part) return;
+      const kv = part.split("=");
+      const k = kv[0];
+      const v = kv.slice(1).join("=");
+      if(!k) return;
+      out[decodeURIComponent(k)] = decodeURIComponent(v || "");
+    });
+  }catch(_){}
+  return out;
+}
+
+function toNum_(x){ return Number(x); }
+
+function norm_(s){
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function ensureHeaders_(sh, required){
+  const lastCol = Math.max(1, sh.getLastColumn());
+  const headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  const idx = {};
+  headerRow.forEach((h, i) => idx[norm_(h)] = i);
+
+  let changed = false;
+  const extended = headerRow.slice();
+
+  required.forEach(h => {
+    const key = norm_(h);
+    if (idx[key] == null){
+      extended.push(h);
+      idx[key] = extended.length - 1;
+      changed = true;
+    }
+  });
+
+  if (changed){
+    sh.getRange(1, 1, 1, extended.length).setValues([extended]);
+  }
+
+  return {
+    coordenadas:  idx[norm_("coordenadas")],
+    direccion:    idx[norm_("direccion")],
+    fecha:        idx[norm_("fecha")],
+    hora:         idx[norm_("hora")],
+    minutos:      idx[norm_("minutos")],
+    accuracy:     idx[norm_("accuracy")],
+    mode:         idx[norm_("mode")],
+    load_id:      idx[norm_("load_id")],
+    visit_id:     idx[norm_("visit_id")],
+    timestamp_ms: idx[norm_("timestamp_ms")],
+    user_agent:   idx[norm_("user_agent")]
+  };
+}
+
+/**
+ * ✅ Dedup para modo LOAD: evita 2 filas con el mismo load_id.
+ * - Primero revisa Cache (rápido)
+ * - Si no, escanea las últimas N filas de la columna load_id
+ */
+function alreadyLoggedByLoadId_(sh, loadIdCol1Based, loadId){
+  try{
+    const cache = CacheService.getScriptCache();
+    const hit = cache.get("load_" + loadId);
+    if (hit) return true;
+  }catch(_){}
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return false;
+
+  const N = 800; // escaneo de últimas 800 filas (ajústalo si quieres)
+  const start = Math.max(2, lastRow - N + 1);
+  const num = lastRow - start + 1;
+
+  const values = sh.getRange(start, loadIdCol1Based, num, 1).getValues();
+  for (let i = values.length - 1; i >= 0; i--){
+    if (String(values[i][0] || "").trim() === loadId){
+      try{
+        CacheService.getScriptCache().put("load_" + loadId, "1", 21600);
+      }catch(_){}
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * ✅ Reverse geocode con cache (no cachea vacío por muchas horas)
+ */
+function reverseGeocodeCached_(lat, lng){
+  try{
+    const cache = CacheService.getScriptCache();
+    const key = "addr_" + lat.toFixed(5) + "_" + lng.toFixed(5);
+
+    const cached = cache.get(key);
+    if (cached != null) return cached;
+
+    const res = Maps.newGeocoder().reverseGeocode(lat, lng);
+
+    let addr = "";
+    if (res && res.results && res.results.length){
+      addr = res.results[0].formatted_address || "";
+    }
+
+    if (addr){
+      cache.put(key, addr, ADDRESS_CACHE_SECONDS);
+      return addr;
+    }
+
+    cache.put(key, "", ADDRESS_CACHE_EMPTY_SECONDS);
+    return "";
+  }catch(e){
+    return "";
+  }
+}

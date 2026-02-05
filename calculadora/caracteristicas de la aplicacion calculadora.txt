@@ -11,6 +11,7 @@ quiero que la pagina pueda registrar la ubicacion, en una hoja de calculo de goo
 el enlace a la pagina es:
 https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit?usp=sharing
 
+
 en enlace del appscrip es:
 https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
 

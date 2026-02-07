@@ -1,0 +1,1 @@
+Quiero que, si no se pueden obtener coordenadas por GPS, se obtengan por cualquier otro medio (de más preciso a menos preciso). Y si no hay internet o no se pudo enviar a la hoja, que se guarde y se envíe después cuando vuelvan las condiciones.”

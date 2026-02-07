@@ -3,6 +3,10 @@ const SPREADSHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
 const SHEET_NAME = ""; // vacío = primera hoja
 const TZ = "America/Bogota";
 
+// ✅ Coordenada fija (punto de referencia) para calcular distancia
+const REF_LAT = 11.244958;
+const REF_LNG = -74.190684;
+
 // ✅ Dirección (reverse geocoding)
 const WRITE_ADDRESS = true;
 const ADDRESS_CACHE_SECONDS = 21600;       // 6h
@@ -13,6 +17,7 @@ const ADDRESS_CACHE_EMPTY_SECONDS = 120;   // 2min si sale vacía
 const REQUIRED_HEADERS = [
   "navegador",
   "coordenadas",
+  "distancia (m)",
   "direccion",
   "fecha",
   "hora"
@@ -31,19 +36,14 @@ const UNWANTED_HEADERS = [
 ];
 
 // ===================== DEDUPLICACIÓN =====================
-// ✅ Cada vez que entra un registro (fila vacía al final), elimina duplicados
-const DEDUPE_EACH_WRITE = true;
+// ✅ IMPORTANTE: desactivado para NO eliminar filas duplicadas
+const DEDUPE_EACH_WRITE = false;
 
-// Cuántas filas hacia atrás revisar en cada escritura.
-// - Si pones 2000 revisa solo las últimas 2000 filas (más rápido).
-// - Si pones 0 (o negativo), revisa TODA la hoja (más completo, puede ser más lento).
+// Cuántas filas hacia atrás revisar en cada escritura (no aplica si DEDUPE_EACH_WRITE=false)
 const DEDUPE_LOOKBACK_ROWS = 2000;
 
-// Define qué hace que una fila sea "repetida".
-// Por defecto: mismo navegador + coordenadas + fecha + hora
+// Define qué hace que una fila sea "repetida" (no aplica si DEDUPE_EACH_WRITE=false)
 const DEDUPE_KEY_FIELDS = ["navegador", "coordenadas", "fecha", "hora"];
-// Si quieres dedupe "1 registro por minuto por usuario" (sin importar coordenadas), usa:
-// const DEDUPE_KEY_FIELDS = ["navegador", "fecha", "hora"];
 
 // ===================== ENDPOINTS =====================
 function doGet(e)  { return handleRequest_(e); }
@@ -77,7 +77,8 @@ function handleRequest_(e){
     const lng = Number(p.lng);
 
     // ✅ user_id viene desde la web y se guardará en la columna "navegador"
-    const userId = String(p.user_id || "").trim();
+    // Acepta también "navegador" por si lo envías con ese nombre.
+    const userId = String((p.user_id || p.navegador || "")).trim();
 
     // sin coords válidas -> ok silencioso
     if (!isFinite(lat) || !isFinite(lng)) return ok_();
@@ -94,10 +95,13 @@ function handleRequest_(e){
 
     const now = new Date();
     const dateStr = Utilities.formatDate(now, TZ, "yyyy-MM-dd");
-    const timeStr = Utilities.formatDate(now, TZ, "HH:mm"); // incluye minutos
+    const timeStr = Utilities.formatDate(now, TZ, "HH:mm:ss"); // ✅ incluye segundos
 
     const coordText = `${lat.toFixed(6)},${lng.toFixed(6)}`;
     const mapsUrl   = `https://www.google.com/maps?q=${encodeURIComponent(coordText)}`;
+
+    // ✅ distancia en metros desde REF_LAT/REF_LNG hasta lat/lng del visitante
+    const distanceMeters = Math.round(haversineMeters_(REF_LAT, REF_LNG, lat, lng));
 
     let address = "";
     if (WRITE_ADDRESS){
@@ -107,10 +111,11 @@ function handleRequest_(e){
 
     const row = new Array(lastCol).fill("");
 
-    if (headerIndex.navegador != null)  row[headerIndex.navegador]  = userId;
-    if (headerIndex.fecha != null)      row[headerIndex.fecha]      = dateStr;
-    if (headerIndex.hora != null)       row[headerIndex.hora]       = timeStr;
-    if (headerIndex.direccion != null)  row[headerIndex.direccion]  = address;
+    if (headerIndex.navegador != null)      row[headerIndex.navegador]      = userId;
+    if (headerIndex.fecha != null)          row[headerIndex.fecha]          = dateStr;
+    if (headerIndex.hora != null)           row[headerIndex.hora]           = timeStr;
+    if (headerIndex.direccion != null)      row[headerIndex.direccion]      = address;
+    if (headerIndex.distancia_m != null)    row[headerIndex.distancia_m]    = distanceMeters; // ✅ número (metros)
 
     // ✅ escribe en la siguiente fila vacía
     const nextRow = Math.max(2, sh.getLastRow() + 1);
@@ -126,7 +131,7 @@ function handleRequest_(e){
       cell.setRichTextValue(rich);
     }
 
-    // ✅ borrar duplicados cada vez que entra un registro
+    // ✅ NO dedupe (porque lo pediste)
     if (DEDUPE_EACH_WRITE){
       dedupeOnEachWrite_(sh, headerIndex, DEDUPE_LOOKBACK_ROWS);
     }
@@ -138,6 +143,26 @@ function handleRequest_(e){
   }
 
   return ok_();
+}
+
+// ===================== DISTANCIA (HAVERSINE) =====================
+function haversineMeters_(lat1, lng1, lat2, lng2){
+  const R = 6371000; // metros
+  const toRad = (x) => x * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const aLat1 = toRad(lat1);
+  const aLat2 = toRad(lat2);
+
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(aLat1) * Math.cos(aLat2) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+
+  const c = 2 * Math.asin(Math.sqrt(a));
+  return R * c;
 }
 
 // ===================== RESPUESTA OK =====================
@@ -209,11 +234,12 @@ function ensureHeaders_(sh, required){
   }
 
   return {
-    navegador:    idx[norm_("navegador")],
-    coordenadas:  idx[norm_("coordenadas")],
-    direccion:    idx[norm_("direccion")],
-    fecha:        idx[norm_("fecha")],
-    hora:         idx[norm_("hora")]
+    navegador:     idx[norm_("navegador")],
+    coordenadas:   idx[norm_("coordenadas")],
+    distancia_m:   idx[norm_("distancia (m)")],
+    direccion:     idx[norm_("direccion")],
+    fecha:         idx[norm_("fecha")],
+    hora:          idx[norm_("hora")]
   };
 }
 
@@ -356,7 +382,7 @@ function removeUnwantedColumns(){
   });
 }
 
-// ===================== ✅ DEDUPE (se ejecuta en cada escritura) =====================
+// ===================== ✅ DEDUPE (queda disponible pero DESACTIVADO) =====================
 function normalizeCoord_(s){
   return String(s || "").trim().replace(/\s+/g, "");
 }
@@ -386,6 +412,7 @@ function buildKeyFromDisplayRow_(displayRow, headerIndex){
 /**
  * Elimina duplicados inmediatamente después de escribir.
  * Regla: conserva la fila MÁS RECIENTE y borra las anteriores con la misma llave.
+ * (Actualmente NO se ejecuta porque DEDUPE_EACH_WRITE=false)
  */
 function dedupeOnEachWrite_(sh, headerIndex, lookbackRows){
   const lastRow = sh.getLastRow();

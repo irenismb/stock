@@ -44,6 +44,7 @@
       --pill:#0e1524;
       --danger:#ef4444;
 
+      /* Iconos redes: para que entren en 1 fila incluso en pantallas pequeñas */
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
     }
@@ -124,6 +125,7 @@
       font-size:13px;
     }
 
+    /* ✅ MÓVILES: texto centrado */
     @media (max-width:768px){
       .about-card.about-collapsed .about-text{
         display:-webkit-box;
@@ -154,10 +156,13 @@
       background:linear-gradient(90deg,#20c997,#2dd4bf);
       border:none;color:#04120d;font-weight:900;
     }
+
+    /* ✅ Botón "Agregar" cuando el producto ya está en el carrito */
     .btn-acc.in-cart{
       background: linear-gradient(90deg,#f59e0b,#f97316);
       color:#1f1300;
     }
+
     .btn-ghost{
       background:transparent;
       border:1px solid #2a3b5c;
@@ -171,6 +176,7 @@
       font-weight:900;
     }
 
+    /* ✅ Redes: siempre una fila */
     .social-icons{
       display:flex;
       align-items:center;
@@ -183,11 +189,11 @@
       border-radius:16px;
       background:rgba(18,24,38,.45);
       width:100%;
-      overflow-x:auto;
+      overflow-x:auto;          /* seguridad: si algún celular es ultra estrecho, no hace salto */
       -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
+      scrollbar-width: none;    /* Firefox */
     }
-    .social-icons::-webkit-scrollbar{ display:none; }
+    .social-icons::-webkit-scrollbar{ display:none; } /* Chrome/Safari */
     .social-icons a{
       display:inline-flex;
       align-items:center;
@@ -271,6 +277,7 @@
       white-space:nowrap;
     }
 
+    /* ✅ Contador del carrito (círculo dentro del botón Ver carrito) */
     #cartCount{
       margin-left:8px;
       border-color: rgba(0,0,0,.18);
@@ -1296,7 +1303,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       if(!cartCountEl) return;
       const qty = cartTotalQty();
       cartCountEl.textContent = String(qty);
-      cartCountEl.classList.toggle("has-items", qty > 0);
+      cartCountEl.classList.toggle("has-items", qty > 0);  // ✅ naranja si > 0
     }
 
     function saveCart(){
@@ -1310,6 +1317,19 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format(it.price * it.qty)}`);
       const total = cartTotalValue();
       return `Hola, quiero comprar:\n${lines.join("\n")}\n\nTotal: ${fmtCOP.format(total)}`;
+    }
+
+    function setCartQty(id, name, price, qty){
+      const q = Math.max(0, Number(qty) || 0);
+      if(!q) delete cart[id];
+      else{
+        cart[id] = cart[id] || { id, name, price, qty: 0 };
+        cart[id].id = id;
+        cart[id].name = name;
+        cart[id].price = Number(price) || 0;
+        cart[id].qty = q;
+      }
+      saveCart();
     }
 
     const cartModal = document.getElementById("cartModal");
@@ -1406,14 +1426,17 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       if(act === "dec") newQty = Math.max(0, newQty - 1);
       if(act === "remove") newQty = 0;
 
-      if(!newQty) delete cart[id]; else cart[id].qty = newQty;
-      saveCart();
+      setCartQty(id, current.name, current.price, newQty);
       renderCartModal();
     });
 
     cartBuyBtn.addEventListener("click", ()=>{
       const items = cartItemsArray();
-      window.open(waLink(items.length ? cartMessage() : "Hola, quiero información del catálogo."), "_blank", "noopener");
+      if(!items.length){
+        alert("El carrito está vacío. Agrega productos antes de comprar por WhatsApp.");
+        return;
+      }
+      window.open(waLink(cartMessage()), "_blank", "noopener");
     });
 
     cartModalClose.addEventListener("click", closeCartModal);
@@ -1582,6 +1605,8 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
           const q = (cart[p.id]?.qty || 0);
           qtyPill.textContent = `En carrito: ${q}`;
           removeBtn.disabled = q <= 0;
+
+          /* ✅ Agregar cambia de color si ya hay en carrito */
           addBtn.classList.toggle("in-cart", q > 0);
         }
 
@@ -1635,159 +1660,8 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     if(sortSel) sortSel.addEventListener("change", render);
 
     readStateFromUrl();
-    refreshCartCount();
+    refreshCartCount();   // ✅ al cargar aplica naranja si hay items guardados
     render();
   </script>
-
-  <!-- ======================================================
-       ✅ REGISTRO DE UBICACIÓN (2 MODOS) + USER_ID EN "navegador"
-       - LOCATION_MODE="PING": al abrir + cada X min
-       - LOCATION_MODE="LOAD": solo 1 vez por cada carga (abrir enlace / F5)
-       - En ambos casos se manda load_id (nuevo en cada carga)
-       ====================================================== -->
-  <script>
-    // ====== CAMBIA SOLO ESTO ======
-    const LOCATION_MODE = "LOAD"; // "PING" o "LOAD"
-    const LOCATION_LOG_INTERVAL_MINUTES = 1; // solo aplica si LOCATION_MODE="PING"
-    // ==============================
-
-    const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
-
-    (function(){
-      const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
-      let timerId = null;
-
-      // ✅ ID único por CARGA de página (nuevo con F5 / abrir enlace)
-      const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
-
-      function canGeo(){
-        return ("geolocation" in navigator);
-      }
-
-      // ✅ USER_ID único por navegador (persistente en localStorage)
-      const USER_ID_KEY = "irenismb_user_id";
-
-      function getUserId(){
-        try{
-          let id = localStorage.getItem(USER_ID_KEY);
-          if(id) return id;
-
-          id = (window.crypto && typeof window.crypto.randomUUID === "function")
-            ? window.crypto.randomUUID()
-            : (Date.now() + "-" + Math.random().toString(16).slice(2));
-
-          localStorage.setItem(USER_ID_KEY, id);
-          return id;
-        }catch(e){
-          // si localStorage está bloqueado, usa uno temporal (no persistente)
-          return (Date.now() + "-" + Math.random().toString(16).slice(2));
-        }
-      }
-
-      const USER_ID = getUserId();
-
-      function sendPing(lat, lng, acc){
-        try{
-          const payload = new URLSearchParams({
-            lat: String(lat),
-            lng: String(lng),
-            acc: acc == null ? "" : String(acc),
-            ts: String(Date.now()),
-            load_id: LOAD_ID,
-            mode: LOCATION_MODE,
-
-            // ✅ esto te llena la columna "navegador" con el USER_ID
-            navegador: USER_ID,
-
-            // ✅ extra por si tu Apps Script lo lee como user_id
-            user_id: USER_ID,
-
-            cb: Math.random().toString(36).slice(2)
-          });
-
-          fetch(LOCATION_LOG_ENDPOINT + "?" + payload.toString(), {
-            method: "GET",
-            mode: "no-cors",
-            cache: "no-store",
-            keepalive: true
-          }).catch(()=>{
-            try{
-              const img = new Image();
-              img.src = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
-            }catch(e2){}
-          });
-        }catch(e){}
-      }
-
-      function logOnce(){
-        try{
-          navigator.geolocation.getCurrentPosition(
-            (pos)=>{
-              const c = pos && pos.coords;
-              if(!c) return;
-              sendPing(c.latitude, c.longitude, c.accuracy);
-            },
-            ()=>{},
-            { enableHighAccuracy:false, timeout:15000, maximumAge: 0 }
-          );
-        }catch(e){}
-      }
-
-      function startPingMode(){
-        logOnce(); // al abrir
-        if(timerId) return;
-        timerId = setInterval(logOnce, intervalMs);
-      }
-
-      function startLoadMode(){
-        logOnce(); // solo una vez por carga
-      }
-
-      function startAccordingMode(){
-        const m = String(LOCATION_MODE || "").toUpperCase();
-        if (m === "LOAD") startLoadMode();
-        else startPingMode();
-      }
-
-      function requestPermissionAndStart(){
-        if(!canGeo()) return;
-
-        if(navigator.permissions && navigator.permissions.query){
-          navigator.permissions.query({ name: "geolocation" }).then((perm)=>{
-            if(perm.state === "granted"){
-              startAccordingMode();
-            }else if(perm.state === "prompt"){
-              navigator.geolocation.getCurrentPosition(
-                (pos)=>{
-                  const c = pos && pos.coords;
-                  if(c) sendPing(c.latitude, c.longitude, c.accuracy);
-                  const m = String(LOCATION_MODE || "").toUpperCase();
-                  if (m === "PING"){
-                    if(!timerId) timerId = setInterval(logOnce, intervalMs);
-                  }
-                },
-                ()=>{},
-                { enableHighAccuracy:false, timeout:15000, maximumAge:0 }
-              );
-            }else{
-              // denied: no hacemos nada
-            }
-          }).catch(()=>{
-            startAccordingMode();
-          });
-          return;
-        }
-
-        startAccordingMode();
-      }
-
-      if (document.readyState === "loading"){
-        document.addEventListener("DOMContentLoaded", requestPermissionAndStart, { once:true });
-      }else{
-        requestPermissionAndStart();
-      }
-    })();
-  </script>
-
 </body>
 </html>

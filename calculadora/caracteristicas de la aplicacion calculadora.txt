@@ -14,6 +14,11 @@ https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed
 
 en enlace del appscrip es:
 https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
+https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
+https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
+https://script.google.com/macros/s/AKfycbzq5HvGLI1tXtFAHVSe8On4pgKi4eqzP_PUaCiUhCNLqtKFBYOC16MEKolUJH7LxV0a/exec
+https://script.google.com/macros/s/AKfycbyxqPYMClr1uSqTSYjbz013DoXY_1jGTafEUXuS58XpFv6bb2gIhCb3F1wpBlECArsO/exec
+
 
 ESTO YA NO:
 - la palicacion debe tener todas las opciones actuales visibles solo despues de pulsar un boton llamado Config, asi que lo que debe presentar inicialmente es una calculadora sencilla.

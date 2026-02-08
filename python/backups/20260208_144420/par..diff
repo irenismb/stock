@@ -1,0 +1,136 @@
+```diff
+*** a/image_renamer_single.py
+--- b/image_renamer_single.py
+***************
+*** 1,50 ****
+  def sanitize_filename(text: str) -> str:
+      text = str(text)
+      return re.sub(r"[^A-Za-z0-9_-]", "_", text)
++ 
++ 
++ def to_underscore_text(text: str) -> str:
++     """
++     Convierte texto a formato consistente con guion bajo:
++     - Reemplaza caracteres no permitidos por '_'
++     - Colapsa múltiples '_' seguidos a uno solo
++     Nota: NO hace .strip('_') para conservar '_' si vienen del saneado.
++     """
++     s = "" if text is None else str(text)
++     s = sanitize_filename(s)
++     s = re.sub(r"_+", "_", s)
++     return s
+***************
+*** 250,360 ****
+  def update_product_in_file(
+      path: str,
+      row_number: int,
+      code_col_index: int,
+      name_col_index: int,
+      category_col_index: int = -1,
+      brand_col_index: int = -1,
+      unit_price_col_index: int = -1,
+      stock_col_index: int = -1,
+      sheet_name: str = None,
+      has_headers: bool = True,
+      header_row_number: int = 1,
+      new_code: str = "",
+      new_name: str = "",
+      new_category: str = "",
+      new_brand: str = "",
+      new_unit_price: str = "",
+      new_stock: str = ""
+  ):
+      try:
++         # ✅ Asegurar que lo que se GUARDA en Excel/CSV use guion bajo
++         new_code = to_underscore_text(new_code)
++         new_name = to_underscore_text(new_name)
++ 
+          p = Path(path)
+          if not p.exists():
+              return (False, "El archivo no existe.")
+          ext = p.suffix.lower()
+          if row_number <= 0:
+              return (False, "Fila inválida (row_number).")
+***************
+*** 420,520 ****
+  def add_products_to_excel(
+      path: str,
+      products_to_add: list,
+      code_col_index: int,
+      name_col_index: int,
+      sheet_name: str = None,
+      header_row_number: int = 1,
+  ):
+      """
+      Agrega productos nuevos al final del Excel.
+@@
+      """
+      if not HAS_OPENPYXL:
+          return (False, "No está instalado openpyxl.", 0)
+@@
+              # Agregar los productos
+              rows_added = 0
+              for product in products_to_add:
+                  last_row += 1
+-                 code = str(product.get("code", ""))
+-                 name = str(product.get("name", ""))
++                 # ✅ Asegurar guion bajo en lo que se agrega al Excel
++                 code = to_underscore_text(product.get("code", ""))
++                 name = to_underscore_text(product.get("name", ""))
+  
+                  if code_col_index >= 0:
+                      ws.cell(row=last_row, column=code_col_index + 1).value = code
+                  if name_col_index >= 0:
+                      ws.cell(row=last_row, column=name_col_index + 1).value = name
+***************
+*** 980,1100 ****
+      def on_assign_codes_to_images(self):
+@@
+          for i, img_path in enumerate(images_without_code[:num_to_assign]):
+              new_code = str(available_codes[i])
+  
+              try:
+                  # Construir nuevo nombre según el modo de renombrado
+                  mode = str(getattr(self, "rename_mode_var", None).get() if hasattr(self, "rename_mode_var") else "code").lower()
+  
+-                 if mode == "code":
+-                     new_stem = new_code
+-                 else:
+-                     # Para 'name' o 'both', usamos solo el código ya que no tenemos nombre del Excel
+-                     new_stem = new_code
++                 # ✅ Conservar el nombre original y anteponer el código con "_"
++                 original_part = to_underscore_text(img_path.stem).lstrip("_-").strip()
++                 if original_part and original_part != to_underscore_text(new_code):
++                     new_stem = f"{new_code}{FILENAME_PART_SEPARATOR}{original_part}"
++                 else:
++                     new_stem = new_code
+  
+                  new_stem = self._clean_stem(new_stem) if hasattr(self, "_clean_stem") else sanitize_filename(new_stem)
+                  if not new_stem:
+                      errors += 1
+                      continue
+***************
+*** 1100,1220 ****
+      def on_add_missing_products_to_excel(self):
+@@
+-         # Preparar la lista de productos a agregar
+-         products_to_add = []
+-         for code_key, img_path in missing_products.items():
+-             products_to_add.append({
+-                 "code": code_key,
+-                 "name": ""  # Vacío por defecto
+-             })
++         # Preparar lista: Nombre deducido del archivo y normalizado con '_'
++         products_to_add = []
++         for code_key, img_path in missing_products.items():
++             stem_safe = to_underscore_text(img_path.stem)
++             ck_safe = to_underscore_text(code_key)
++ 
++             name_guess = ""
++             if ck_safe and stem_safe.startswith(ck_safe):
++                 name_guess = stem_safe[len(ck_safe):]
++             else:
++                 name_guess = stem_safe
++ 
++             name_guess = (name_guess or "").lstrip("_-").strip()
++             products_to_add.append({"code": code_key, "name": name_guess})

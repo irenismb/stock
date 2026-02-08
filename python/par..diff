@@ -1,128 +1,120 @@
 diff --git a/python/renombrar imagenes con codigos-catalogo.py b/python/renombrar imagenes con codigos-catalogo.py
-index cf08695119a5f5ecd8a897797d005de84f1efa7b..6511c9b81afc92a0494805d093f6421b409a99b9 100644
---- a/renombrar imagenes con codigos-catalogo.py	
-+++ b/renombrar imagenes con codigos-catalogo.py	
-@@ -390,66 +390,66 @@ def default_stripped_path(source_html: str) -> str:
- def sidecar_paths_for_stripped(stripped_html: str):
-     base = os.path.splitext(os.path.abspath(stripped_html))[0]
-     return base + CATALOG_TSV_SUFFIX, base + CATALOG_META_SUFFIX
+index 5d86e71107eb829dffb7d08b39f41c7da857217f..3b8876962bf14f5bf49356fdd4c6a28e5f0a9f45 100644
+--- a/python/renombrar imagenes con codigos-catalogo.py	
++++ b/python/renombrar imagenes con codigos-catalogo.py	
+@@ -628,68 +628,109 @@ def _parse_number_for_excel(s: str):
+ def update_product_in_file(
+     path: str,
+     row_number: int,
+     code_col_index: int,
+     name_col_index: int,
+     category_col_index: int = -1,
+     brand_col_index: int = -1,
+     unit_price_col_index: int = -1,
+     stock_col_index: int = -1,
+     sheet_name: str = None,
+     has_headers: bool = True,
+     header_row_number: int = 1,
+     new_code: str = "",
+     new_name: str = "",
+     new_category: str = "",
+     new_brand: str = "",
+     new_unit_price: str = "",
+     new_stock: str = ""
+ ):
+     try:
+         # ✅ NUEVO: asegurar guion bajo en lo que se guarda en Excel/CSV
+         new_code = to_underscore_text(new_code)
+         new_name = to_underscore_text(new_name)
  
+         p = Path(path)
+-        ...
++        if not p.exists() or p.is_dir():
++            return (False, "La ruta del archivo no existe o es una carpeta.")
++
++        ext = p.suffix.lower()
++        if row_number <= 0:
++            return (False, "Fila inválida (row_number).")
++
++        if header_row_number < 1:
++            header_row_number = 1
++
++        if has_headers and row_number == header_row_number:
++            return (False, "La fila a editar corresponde al encabezado.")
++
+         if ext == ".csv":
+             return _update_csv_row(
+-                ...
++                p,
++                row_number=int(row_number),
++                code_col_index=int(code_col_index),
++                name_col_index=int(name_col_index),
++                category_col_index=int(category_col_index),
++                brand_col_index=int(brand_col_index),
++                unit_price_col_index=int(unit_price_col_index),
++                stock_col_index=int(stock_col_index),
+                 new_code=new_code,
+                 new_name=new_name,
+-                ...
++                new_category=new_category,
++                new_brand=new_brand,
++                new_unit_price=new_unit_price,
++                new_stock=new_stock,
+             )
  
- def _detect_newline_style(text: str) -> str:
-     return "\r\n" if "\r\n" in text else "\n"
+         if ext in {".xlsx", ".xlsm"}:
+-            ...
++            if not HAS_OPENPYXL:
++                return (False, "No está instalado openpyxl. Instala con: pip install openpyxl")
+             return _update_xlsx_row(
+-                ...
++                p,
++                row_number=int(row_number),
++                code_col_index=int(code_col_index),
++                name_col_index=int(name_col_index),
++                category_col_index=int(category_col_index),
++                brand_col_index=int(brand_col_index),
++                unit_price_col_index=int(unit_price_col_index),
++                stock_col_index=int(stock_col_index),
++                sheet_name=sheet_name,
+                 new_code=new_code,
+                 new_name=new_name,
+-                ...
++                new_category=new_category,
++                new_brand=new_brand,
++                new_unit_price=new_unit_price,
++                new_stock=new_stock,
+             )
  
- 
- # =========================
- #  Excel: raíz del programa
- # =========================
- 
- def program_root_dir() -> str:
-     if getattr(sys, "frozen", False):
-         return os.path.dirname(os.path.abspath(sys.executable))
-     return os.path.dirname(os.path.abspath(__file__))
- 
- 
- def default_excel_path() -> str:
-     return os.path.join(program_root_dir(), f"{EXCEL_BASE_NAME}.xlsx")
- 
- 
- def make_next_excel_path(base_path: str):
++        return (False, "Extensión no soportada (solo .csv, .xlsx, .xlsm).")
++
++    except PermissionError:
++        return (False, "Permiso denegado. ¿El archivo está abierto en Excel?")
++    except Exception as e:
++        return (False, str(e))
++
+ def append_products_to_file(
+     path: str,
+     products_to_add: List[dict],
+     code_col_index: int,
+     name_col_index: int,
+     sheet_name: str = None,
+     has_headers: bool = True,
+     header_row_number: int = 1,
+ ):
      """
--    Si base_path existe, devuelve base_1.xlsx, base_2.xlsx, ... (sufijo ascendente)
-+    Si base_path existe, devuelve base (1).xlsx, base (2).xlsx, ... (sufijo ascendente)
-     Retorna (path, existed_base)
+     Agrega nuevas filas al final del archivo (CSV/XLSX/XLSM) con Id y Nombre producto.
+     products_to_add: lista de dicts: {"code": "...", "name": "..."}.
+     Retorna (ok: bool, err: str, added_count: int)
      """
-     base_path = os.path.abspath(base_path)
-     if not os.path.exists(base_path):
-         return base_path, False
+     try:
+         p = Path(path)
+         if not p.exists() or p.is_dir():
+             return (False, "La ruta del archivo no existe o es una carpeta.", 0)
  
-     folder = os.path.dirname(base_path)
-     filename = os.path.basename(base_path)
-     stem, ext = os.path.splitext(filename)
-     if not ext:
-         ext = ".xlsx"
+         ext = p.suffix.lower()
+         if not products_to_add:
+             return (True, "", 0)
  
-     n = 1
-     while True:
--        candidate = os.path.join(folder, f"{stem}_{n}{ext}")
-+        candidate = os.path.join(folder, f"{stem} ({n}){ext}")
-         if not os.path.exists(candidate):
-             return candidate, True
-         n += 1
- 
- 
- def _safe_str(v) -> str:
-     if v is None:
-         return ""
-     if isinstance(v, float):
-         if v.is_integer():
-             return str(int(v))
-         return str(v).strip()
-     return str(v).strip()
- 
- 
- def _excel_write_header_style(ws, ncols: int):
-     bold = Font(bold=True)
-     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
-     for c in range(1, ncols + 1):
-         cell = ws.cell(row=1, column=c)
-         cell.font = bold
-         cell.alignment = center
- 
- 
- def _autosize_columns(ws, max_row: int, max_col: int, min_w=10, max_w=60):
-@@ -830,52 +830,52 @@ def compute_diffs_and_build_new_html_exact(source_html: str, excel_rows_by_id: d
-     if not diffs:
-         return diffs, None, {"modified": 0, "new": 0, "deleted": 0}
- 
-     out = []
-     out.append(_tsv_line(header_cols[:5], nl))
- 
-     for rid in excel_order_ids:
-         row5 = excel_rows_by_id.get(rid)
-         if not row5:
-             continue
- 
-         row5_out = (list(row5) + [""] * 5)[:5]
-         row5_out[4] = rid
-         row5_out[3] = _format_price_for_html(row5_out[3], price_style)
-         out.append(_tsv_line(row5_out, nl))
- 
-     new_inner = "".join(out)
-     new_html = html[:inner_start] + new_inner + html[inner_end:]
-     return diffs, (new_html, had_bom, enc), {"modified": modified, "new": added, "deleted": deleted}
- 
- 
- def apply_overwrite_html(source_html: str, new_html_tuple, make_backup: bool = False):
-     new_html, had_bom, enc = new_html_tuple
- 
-     if make_backup and os.path.exists(source_html):
--        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
--        backup_path = f"{source_html}.bak_{ts}"
-+        ts = datetime.now().strftime("%Y%m%d %H%M%S")
-+        backup_path = f"{source_html}.bak {ts}"
-         try:
-             shutil.copy2(source_html, backup_path)
-         except Exception:
-             pass
- 
-     tmp_path = source_html + ".tmp_write"
-     write_text_preserve_bom(tmp_path, new_html, had_bom, enc)
-     os.replace(tmp_path, source_html)
- 
- 
- # =========================
- #  UI Tkinter (mejorada)
- # =========================
- 
- class App(tk.Tk):
-     def __init__(self):
-         super().__init__()
-         self.settings = load_settings()
- 
-         self.title("Catálogo TSV (HTML ↔ Excel) — SIN_CATALOGO")
-         self.geometry("1040x720")
-         self.minsize(980, 660)
-         self.resizable(True, True)
- 
-         self.source_var = tk.StringVar(value="")
+         if header_row_number < 1:
+             header_row_number = 1

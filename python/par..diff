@@ -1,8 +1,7 @@
 diff --git a/cortar y pegar catalogo-quitar productos-pagina web.py b/cortar y pegar catalogo-quitar productos-pagina web.py
-index 1111111..2222222 100644
 --- a/cortar y pegar catalogo-quitar productos-pagina web.py
 +++ b/cortar y pegar catalogo-quitar productos-pagina web.py
-@@ -1,16 +1,17 @@
+@@ -1,4 +1,4 @@
  # cortar y pegar catalogo-quitar productos-pagina web.py
  import json
  import os
@@ -14,61 +13,18 @@ index 1111111..2222222 100644
  from bisect import bisect_left
  from pathlib import Path
  from typing import List
- 
- import tkinter as tk
- from tkinter import ttk, messagebox, filedialog
- import tkinter.font as tkfont
- 
-@@ -44,6 +45,7 @@ IMAGE_EXTENSIONS = {
-     ".tif", ".tiff", ".webp",
- }
- 
-+_INVALID_FS_CHARS_RE = re.compile(r'[<>:"/\\|?*\x00-\x1F]+')
- 
- def normalize_text(text: str) -> str:
-     if text is None:
-         return ""
-@@ -60,6 +62,25 @@ def sanitize_filename(text: str) -> str:
-     text = str(text)
-     return re.sub(r"[^A-Za-z0-9_-]", "_", text)
- 
-+def sanitize_filename_for_filesystem(text: str) -> str:
-+    """
-+    Sanitiza un texto para usarlo como nombre de archivo (stem) sin "auto-guion-bajo".
-+    - Convierte '_' a espacio para evitar que el programa produzca nombres con '_' al renombrar
-+    - Reemplaza SOLO caracteres inválidos del sistema de archivos (especialmente Windows) por espacios
-+    - Colapsa espacios múltiples
-+    - Evita terminar en '.' o ' ' (restricción de Windows)
-+    Nota: NO toca letras con acentos (Windows las permite).
-+    """
-+    s = "" if text is None else str(text)
-+    s = s.replace("_", " ")
-+    s = unicodedata.normalize("NFC", s)
-+    s = _INVALID_FS_CHARS_RE.sub(" ", s)
-+    s = re.sub(r"\s+", " ", s).strip()
-+    s = s.rstrip(" .")
-+    return s
-+
- def sanitize_filename(text: str) -> str:
-     text = str(text)
-     return re.sub(r"[^A-Za-z0-9_-]", "_", text)
-@@ -1075,20 +1096,27 @@ class RenameUIMixin:
-     def on_statusbar_rename_apply(self, event=None):
-         if getattr(self, "_get_view_mode", lambda: "single")() != "single":
-             messagebox.showinfo("Renombrar", "En la vista de coincidencias no se puede renombrar. Abre una imagen individual.")
-             return
-@@ -1112,16 +1140,23 @@ class RenameUIMixin:
- 
+@@ -1152,16 +1152,20 @@ class RenameUIMixin:
      def _clean_stem(self, text: str) -> str:
 -        safe = sanitize_filename(text)
 -        safe = re.sub(r"_+", "_", safe).strip("_")
 -        return safe
-+        # IMPORTANTE: al renombrar NO queremos que el programa convierta todo a '_'
-+        # (por ejemplo espacios). Mantener espacios y solo limpiar caracteres inválidos.
-+        safe = sanitize_filename_for_filesystem(text)
-+        # defensa extra: colapsar espacios y recortar
-+        safe = re.sub(r"\s+", " ", safe).strip()
-+        return safe
++        # NO "limpiar" ni sanitizar: solo evitar que el programa genere '_' automáticamente.
++        # Regla: convertir '_' -> espacio y mantener lo demás tal cual.
++        s = "" if text is None else str(text)
++        s = s.replace("_", " ")
++        # mínimo: quitar extremos para evitar nombres vacíos por error de entrada
++        s = s.strip()
++        return s
  
      def _unique_path_same_folder(self, base_path: Path, new_stem: str) -> Path:
          ext = base_path.suffix
@@ -80,7 +36,7 @@ index 1111111..2222222 100644
          counter = 1
          while True:
 -            cand = base_path.with_name(f"{new_stem}_{counter}{ext}")
-+            # Evitar '_' también en los sufijos de colisión
++            # Evitar también '_' en el sufijo automático por colisión
 +            cand = base_path.with_name(f"{new_stem} ({counter}){ext}")
              if not cand.exists() and cand != base_path:
                  return cand

@@ -1,59 +1,162 @@
 diff --git a/python/renombrar imagenes con codigos-catalogo.py b/python/renombrar imagenes con codigos-catalogo.py
-index 3b8876962bf14f5bf49356fdd4c6a28e5f0a9f45..8d1b90cebdf118441d3688ed780656a27d6d5c2f 100644
+index 8d1b90cebdf118441d3688ed780656a27d6d5c2f..9a39b07e3b57c5b712eb36c57bc7b27ad3a95b63 100644
 --- a/python/renombrar imagenes con codigos-catalogo.py	
 +++ b/python/renombrar imagenes con codigos-catalogo.py	
-@@ -19,54 +19,50 @@ import tkinter.font as tkfont
- # =========================
+@@ -3089,50 +3089,66 @@ class RenameUIMixin:
+             return []
  
- BASE_DIR = Path(__file__).resolve().parent
- ARCHIVOS_DIR = BASE_DIR / "archivos"
- ARCHIVOS_DIR.mkdir(parents=True, exist_ok=True)
+         # Ordena ocupados dentro del rango
+         occ = sorted([x for x in occupied_ints if isinstance(x, int) and min_int <= x <= max_int])
  
- CONFIG_FILE = ARCHIVOS_DIR / "image_renamer_config.json"
+         out = []
+         cur = int(min_int)
  
- FILENAME_PART_SEPARATOR = "_"
+         for x in occ:
+             if len(out) >= need:
+                 break
+             if x < cur:
+                 continue
+             while cur < x and len(out) < need:
+                 out.append(cur)
+                 cur += 1
+             cur = x + 1
  
- IMAGE_EXTENSIONS = {
-     ".jpg", ".jpeg", ".png", ".gif", ".bmp",
-     ".tif", ".tiff", ".webp",
- }
+         while cur <= max_int and len(out) < need:
+             if cur not in occupied_ints:
+                 out.append(cur)
+             cur += 1
  
+         return out
  
- def normalize_text(text: str) -> str:
-     if text is None:
-         return ""
-     text = str(text).lower()
-     text = unicodedata.normalize("NFD", text)
-     text = "".join(c for c in text if not unicodedata.combining(c))
-     return text
++    def _iter_available_codes_after_max(self, max_int: int, occupied_ints: set, need: int):
++        """
++        Genera códigos disponibles a partir de (max_int + 1), evitando ocupados.
++        """
++        if need <= 0:
++            return []
++
++        out = []
++        cur = int(max_int) + 1
++        while len(out) < need:
++            if cur not in occupied_ints:
++                out.append(cur)
++            cur += 1
++
++        return out
++
+     def _extract_name_from_stem_after_code(self, stem: str, code_key: str) -> str:
+         """
+         Intenta obtener nombre del producto desde el nombre del archivo.
+         Ej: '12345_Shampoo_Azul' -> 'Shampoo Azul'
+         """
+         if not stem:
+             return ""
  
+         sep = FILENAME_PART_SEPARATOR or "_"
+         raw = str(stem)
  
--def sanitize_filename(text: str) -> str:
--    text = str(text)
--    return re.sub(r"[^A-Za-z0-9_-]", "_", text)
--
- def sanitize_filename(text: str) -> str:
-     text = str(text)
-     return re.sub(r"[^A-Za-z0-9_-]", "_", text)
+         # intentar con separador principal
+         if sep and sep in raw:
+             first, rest = raw.split(sep, 1)
+             if sanitize_filename(first) == str(code_key):
+                 name = rest
+             else:
+                 name = ""
+         else:
+             name = ""
  
- def to_underscore_text(text: str) -> str:
-     """
-     Convierte texto a formato consistente con guion bajo:
-     - Reemplaza caracteres no permitidos por '_'
-     - Colapsa múltiples '_' seguidos a uno solo
-     Nota: NO hace .strip("_") para conservar '_' si vienen del saneado.
-     """
-     s = "" if text is None else str(text)
-     s = sanitize_filename(s)
-     s = re.sub(r"_+", "_", s)
-     return s
+         # fallback: si no salió, intenta con '_' (común)
+         if not name and "_" in raw:
+             first, rest = raw.split("_", 1)
+             if sanitize_filename(first) == str(code_key):
+@@ -3187,67 +3203,82 @@ class RenameUIMixin:
  
+         # Detectar imágenes sin código válido al inicio
+         scope_files = []
+         try:
+             scope_files = self._iter_scope_image_files(recursive=recursive)
+         except Exception:
+             scope_files = []
  
+         targets = []
+         for path in scope_files:
+             try:
+                 ck = extract_code_key_from_stem(path.stem)
+             except Exception:
+                 ck = ""
+             if not looks_like_product_code(ck):
+                 targets.append(path)
  
- # =========================
- # UI WIDGETS (antes ui_widgets.py)
- # =========================
+         if not targets:
+             messagebox.showinfo("Códigos", "No encontré imágenes sin código válido para asignar.")
+             return
  
- class ToolTip:
-     def __init__(self, widget, text, delay=500):
-         self.widget = widget
+         # Ocupados: lo que ya existe en Excel + lo que ya usan imágenes con código numérico
+         used_images_ints = self._scan_used_code_ints_in_images(recursive=recursive)
+         occupied = set(excel_ints) | set(used_images_ints)
+ 
+-        avail = self._iter_available_codes_in_range(min_int, max_int, occupied, need=len(targets))
+-        if not avail:
+-            messagebox.showerror(
+-                "Códigos",
+-                "No hay códigos disponibles (huecos) entre el menor y el mayor Id del Excel.\n"
+-                "Si necesitas más códigos, amplía el rango en el Excel o define otra estrategia."
++        avail_in_range = self._iter_available_codes_in_range(min_int, max_int, occupied, need=len(targets))
++        avail = list(avail_in_range)
++        if len(avail) < len(targets):
++            avail.extend(
++                self._iter_available_codes_after_max(
++                    max_int,
++                    occupied,
++                    need=(len(targets) - len(avail)),
++                )
+             )
+-            return
+ 
+         if len(avail) < len(targets):
+             msg_extra = (
+                 f"Imágenes sin código: {len(targets)}\n"
+                 f"Códigos disponibles: {len(avail)}\n\n"
+                 "Se asignarán códigos solo a la cantidad disponible."
+             )
+         else:
+-            msg_extra = f"Imágenes sin código detectadas: {len(targets)}"
++            holes_found = len(avail_in_range) > 0
++            uses_after_max = len(avail) > len(avail_in_range)
++            if holes_found and uses_after_max:
++                msg_extra = (
++                    f"Imágenes sin código detectadas: {len(targets)}\n"
++                    "Se usarán los huecos disponibles y luego se continuará desde el mayor Id."
++                )
++            elif uses_after_max and not holes_found:
++                msg_extra = (
++                    f"Imágenes sin código detectadas: {len(targets)}\n"
++                    "No hay huecos en el rango del Excel; se continuará desde el mayor Id."
++                )
++            else:
++                msg_extra = f"Imágenes sin código detectadas: {len(targets)}"
+ 
+         go = messagebox.askyesno(
+             "Asignar códigos",
+             "Esto RENOMBRARÁ archivos de imagen agregando un Id al inicio.\n\n"
+             f"Alcance: {alcance}\n"
+             f"Rango Excel: {min_int} .. {max_int}\n\n"
+             f"{msg_extra}\n\n"
+             "¿Deseas continuar?"
+         )
+         if not go:
+             return
+ 
+         assigned = 0
+         errors = 0
+ 
+         # Renombrar, asignando en orden ascendente
+         for i, img_path in enumerate(targets[:len(avail)]):
+             try:
+                 code_int = avail[i]
+                 code_str = self._format_code_with_width(code_int, width)
+ 
+                 # Nuevo nombre: CODIGO + _ + NOMBRE_ACTUAL
+                 new_stem_raw = f"{code_str}{FILENAME_PART_SEPARATOR}{img_path.stem}"
+                 new_stem = self._clean_stem(new_stem_raw) if hasattr(self, "_clean_stem") else sanitize_filename(new_stem_raw)
+ 

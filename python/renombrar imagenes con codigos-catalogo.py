@@ -3111,6 +3111,24 @@ class RenameUIMixin:
 
         return out
 
+    def _iter_available_codes_with_fallback(self, min_int: int, max_int: int, occupied_ints: set, need: int):
+        """
+        Genera códigos disponibles primero dentro de [min_int, max_int] y, si no hay
+        suficientes, continúa desde (max_int + 1) hacia arriba evitando ocupados.
+        """
+        if need <= 0:
+            return []
+
+        out = self._iter_available_codes_in_range(min_int, max_int, occupied_ints, need)
+
+        cur = int(max_int) + 1
+        while len(out) < need:
+            if cur not in occupied_ints:
+                out.append(cur)
+            cur += 1
+
+        return out
+
     def _extract_name_from_stem_after_code(self, stem: str, code_key: str) -> str:
         """
         Intenta obtener nombre del producto desde el nombre del archivo.
@@ -3209,14 +3227,7 @@ class RenameUIMixin:
         used_images_ints = self._scan_used_code_ints_in_images(recursive=recursive)
         occupied = set(excel_ints) | set(used_images_ints)
 
-        avail = self._iter_available_codes_in_range(min_int, max_int, occupied, need=len(targets))
-        if not avail:
-            messagebox.showerror(
-                "Códigos",
-                "No hay códigos disponibles (huecos) entre el menor y el mayor Id del Excel.\n"
-                "Si necesitas más códigos, amplía el rango en el Excel o define otra estrategia."
-            )
-            return
+        avail = self._iter_available_codes_with_fallback(min_int, max_int, occupied, need=len(targets))
 
         if len(avail) < len(targets):
             msg_extra = (
@@ -3225,7 +3236,14 @@ class RenameUIMixin:
                 "Se asignarán códigos solo a la cantidad disponible."
             )
         else:
-            msg_extra = f"Imágenes sin código detectadas: {len(targets)}"
+            uses_after_max = any(c > max_int for c in avail)
+            if uses_after_max:
+                msg_extra = (
+                    f"Imágenes sin código detectadas: {len(targets)}\n"
+                    "No hay huecos en el rango del Excel; se continuará desde el mayor Id."
+                )
+            else:
+                msg_extra = f"Imágenes sin código detectadas: {len(targets)}"
 
         go = messagebox.askyesno(
             "Asignar códigos",

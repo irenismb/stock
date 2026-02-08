@@ -1,162 +1,81 @@
 diff --git a/python/renombrar imagenes con codigos-catalogo.py b/python/renombrar imagenes con codigos-catalogo.py
-index 8d1b90cebdf118441d3688ed780656a27d6d5c2f..9a39b07e3b57c5b712eb36c57bc7b27ad3a95b63 100644
+index ee319d840697be8c8fc44f8ebdca3df6b2cc6537..3fd1b4ec3c4b6cf5d3b77de9f088e60838f9bd50 100644
 --- a/python/renombrar imagenes con codigos-catalogo.py	
 +++ b/python/renombrar imagenes con codigos-catalogo.py	
-@@ -3089,50 +3089,66 @@ class RenameUIMixin:
-             return []
+@@ -3034,55 +3034,72 @@ class ProductsUIMixin:
+         product["code"] = new_code
+         product["name"] = new_name
+         product["search_text"] = normalize_text(f"{new_code} {new_name} {product.get('category','')} {product.get('brand','')} {product.get('unit_price','')} {product.get('stock','')}")
  
-         # Ordena ocupados dentro del rango
-         occ = sorted([x for x in occupied_ints if isinstance(x, int) and min_int <= x <= max_int])
+         # reconstruir índices + refrescar vista
+         self.code_to_name = build_code_to_name_index(getattr(self, "products", []) or [])
+         self.apply_search_filter()
  
-         out = []
-         cur = int(min_int)
+     # ---- fin edición TreeView ----
  
-         for x in occ:
-             if len(out) >= need:
-                 break
-             if x < cur:
-                 continue
-             while cur < x and len(out) < need:
-                 out.append(cur)
-                 cur += 1
-             cur = x + 1
  
-         while cur <= max_int and len(out) < need:
-             if cur not in occupied_ints:
-                 out.append(cur)
-             cur += 1
+ class RenameUIMixin:
  
-         return out
- 
-+    def _iter_available_codes_after_max(self, max_int: int, occupied_ints: set, need: int):
-+        """
-+        Genera códigos disponibles a partir de (max_int + 1), evitando ocupados.
-+        """
-+        if need <= 0:
-+            return []
-+
-+        out = []
-+        cur = int(max_int) + 1
-+        while len(out) < need:
-+            if cur not in occupied_ints:
-+                out.append(cur)
-+            cur += 1
-+
-+        return out
-+
-     def _extract_name_from_stem_after_code(self, stem: str, code_key: str) -> str:
+     # =========================
+     # NUEVO: Asignar códigos disponibles a imágenes sin código
+     # =========================
+     def _excel_numeric_code_stats(self):
          """
-         Intenta obtener nombre del producto desde el nombre del archivo.
-         Ej: '12345_Shampoo_Azul' -> 'Shampoo Azul'
+         Retorna (ok, err, excel_ints_set, min_int, max_int, width)
+         width = longitud máxima encontrada en códigos numéricos (para zfill).
          """
-         if not stem:
-             return ""
+         products = list(getattr(self, "products", []) or [])
+         nums = []
+         widths = []
+         for p in products:
+-            c = str(p.get("code", "") or "").strip()
+-            if c.isdigit():
++            raw_code = str(p.get("code", "") or "").strip()
++            if not raw_code:
++                continue
++            if re.search(r"[A-Za-z]", raw_code):
++                continue
++            cleaned = raw_code.replace(" ", "").replace("\u00a0", "")
++            digits_only = "".join(ch for ch in cleaned if ch.isdigit())
++            if cleaned.isdigit():
++                try:
++                    nums.append(int(cleaned))
++                    widths.append(len(digits_only) if digits_only else len(cleaned))
++                except Exception:
++                    pass
++                continue
++            parsed = _parse_number_for_excel(cleaned)
++            if isinstance(parsed, (int, float)) and float(parsed).is_integer():
+                 try:
+-                    nums.append(int(c))
+-                    widths.append(len(c))
++                    nums.append(int(parsed))
++                    if digits_only:
++                        widths.append(len(digits_only))
++                    else:
++                        widths.append(len(str(int(parsed))))
+                 except Exception:
+                     pass
  
-         sep = FILENAME_PART_SEPARATOR or "_"
-         raw = str(stem)
+         if not nums:
+             return (False, "No encontré Id numéricos en el Excel para calcular huecos.", set(), 0, 0, 0)
  
-         # intentar con separador principal
-         if sep and sep in raw:
-             first, rest = raw.split(sep, 1)
-             if sanitize_filename(first) == str(code_key):
-                 name = rest
-             else:
-                 name = ""
-         else:
-             name = ""
+         min_int = min(nums)
+         max_int = max(nums)
+         width = max(widths) if widths else len(str(max_int))
+         return (True, "", set(nums), int(min_int), int(max_int), int(width))
  
-         # fallback: si no salió, intenta con '_' (común)
-         if not name and "_" in raw:
-             first, rest = raw.split("_", 1)
-             if sanitize_filename(first) == str(code_key):
-@@ -3187,67 +3203,82 @@ class RenameUIMixin:
- 
-         # Detectar imágenes sin código válido al inicio
-         scope_files = []
+     def _format_code_with_width(self, n: int, width: int) -> str:
          try:
-             scope_files = self._iter_scope_image_files(recursive=recursive)
+             if width and width > 1:
+                 return str(int(n)).zfill(int(width))
          except Exception:
-             scope_files = []
+             pass
+         return str(int(n))
  
-         targets = []
-         for path in scope_files:
-             try:
-                 ck = extract_code_key_from_stem(path.stem)
-             except Exception:
-                 ck = ""
-             if not looks_like_product_code(ck):
-                 targets.append(path)
- 
-         if not targets:
-             messagebox.showinfo("Códigos", "No encontré imágenes sin código válido para asignar.")
-             return
- 
-         # Ocupados: lo que ya existe en Excel + lo que ya usan imágenes con código numérico
-         used_images_ints = self._scan_used_code_ints_in_images(recursive=recursive)
-         occupied = set(excel_ints) | set(used_images_ints)
- 
--        avail = self._iter_available_codes_in_range(min_int, max_int, occupied, need=len(targets))
--        if not avail:
--            messagebox.showerror(
--                "Códigos",
--                "No hay códigos disponibles (huecos) entre el menor y el mayor Id del Excel.\n"
--                "Si necesitas más códigos, amplía el rango en el Excel o define otra estrategia."
-+        avail_in_range = self._iter_available_codes_in_range(min_int, max_int, occupied, need=len(targets))
-+        avail = list(avail_in_range)
-+        if len(avail) < len(targets):
-+            avail.extend(
-+                self._iter_available_codes_after_max(
-+                    max_int,
-+                    occupied,
-+                    need=(len(targets) - len(avail)),
-+                )
-             )
--            return
- 
-         if len(avail) < len(targets):
-             msg_extra = (
-                 f"Imágenes sin código: {len(targets)}\n"
-                 f"Códigos disponibles: {len(avail)}\n\n"
-                 "Se asignarán códigos solo a la cantidad disponible."
-             )
-         else:
--            msg_extra = f"Imágenes sin código detectadas: {len(targets)}"
-+            holes_found = len(avail_in_range) > 0
-+            uses_after_max = len(avail) > len(avail_in_range)
-+            if holes_found and uses_after_max:
-+                msg_extra = (
-+                    f"Imágenes sin código detectadas: {len(targets)}\n"
-+                    "Se usarán los huecos disponibles y luego se continuará desde el mayor Id."
-+                )
-+            elif uses_after_max and not holes_found:
-+                msg_extra = (
-+                    f"Imágenes sin código detectadas: {len(targets)}\n"
-+                    "No hay huecos en el rango del Excel; se continuará desde el mayor Id."
-+                )
-+            else:
-+                msg_extra = f"Imágenes sin código detectadas: {len(targets)}"
- 
-         go = messagebox.askyesno(
-             "Asignar códigos",
-             "Esto RENOMBRARÁ archivos de imagen agregando un Id al inicio.\n\n"
-             f"Alcance: {alcance}\n"
-             f"Rango Excel: {min_int} .. {max_int}\n\n"
-             f"{msg_extra}\n\n"
-             "¿Deseas continuar?"
-         )
-         if not go:
-             return
- 
-         assigned = 0
-         errors = 0
- 
-         # Renombrar, asignando en orden ascendente
-         for i, img_path in enumerate(targets[:len(avail)]):
-             try:
-                 code_int = avail[i]
-                 code_str = self._format_code_with_width(code_int, width)
- 
-                 # Nuevo nombre: CODIGO + _ + NOMBRE_ACTUAL
-                 new_stem_raw = f"{code_str}{FILENAME_PART_SEPARATOR}{img_path.stem}"
-                 new_stem = self._clean_stem(new_stem_raw) if hasattr(self, "_clean_stem") else sanitize_filename(new_stem_raw)
- 
+     def _iter_available_codes_in_range(self, min_int: int, max_int: int, occupied_ints: set, need: int):
+         """
+         Genera códigos disponibles (enteros) en [min_int, max_int] excluyendo occupied_ints,
+         sin iterar todo el rango completo; se detiene al alcanzar 'need'.
+         """
+         if need <= 0:

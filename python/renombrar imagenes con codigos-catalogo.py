@@ -3056,11 +3056,28 @@ class RenameUIMixin:
         nums = []
         widths = []
         for p in products:
-            c = str(p.get("code", "") or "").strip()
-            if c.isdigit():
+            raw_code = str(p.get("code", "") or "").strip()
+            if not raw_code:
+                continue
+            if re.search(r"[A-Za-z]", raw_code):
+                continue
+            cleaned = raw_code.replace(" ", "").replace("\u00a0", "")
+            digits_only = "".join(ch for ch in cleaned if ch.isdigit())
+            if cleaned.isdigit():
                 try:
-                    nums.append(int(c))
-                    widths.append(len(c))
+                    nums.append(int(cleaned))
+                    widths.append(len(digits_only) if digits_only else len(cleaned))
+                except Exception:
+                    pass
+                continue
+            parsed = _parse_number_for_excel(cleaned)
+            if isinstance(parsed, (int, float)) and float(parsed).is_integer():
+                try:
+                    nums.append(int(parsed))
+                    if digits_only:
+                        widths.append(len(digits_only))
+                    else:
+                        widths.append(len(str(int(parsed))))
                 except Exception:
                     pass
 

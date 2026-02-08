@@ -1,43 +1,128 @@
-diff --git a/cortar y pegar catalogo-quitar productos-pagina web.py b/cortar y pegar catalogo-quitar productos-pagina web.py
---- a/cortar y pegar catalogo-quitar productos-pagina web.py
-+++ b/cortar y pegar catalogo-quitar productos-pagina web.py
-@@ -1,4 +1,4 @@
- # cortar y pegar catalogo-quitar productos-pagina web.py
- import json
- import os
- import re
- import sys
- import csv
- import unicodedata
- import subprocess
- from bisect import bisect_left
- from pathlib import Path
- from typing import List
-@@ -1152,16 +1152,20 @@ class RenameUIMixin:
-     def _clean_stem(self, text: str) -> str:
--        safe = sanitize_filename(text)
--        safe = re.sub(r"_+", "_", safe).strip("_")
--        return safe
-+        # NO "limpiar" ni sanitizar: solo evitar que el programa genere '_' automáticamente.
-+        # Regla: convertir '_' -> espacio y mantener lo demás tal cual.
-+        s = "" if text is None else str(text)
-+        s = s.replace("_", " ")
-+        # mínimo: quitar extremos para evitar nombres vacíos por error de entrada
-+        s = s.strip()
-+        return s
+diff --git a/python/renombrar imagenes con codigos-catalogo.py b/python/renombrar imagenes con codigos-catalogo.py
+index cf08695119a5f5ecd8a897797d005de84f1efa7b..6511c9b81afc92a0494805d093f6421b409a99b9 100644
+--- a/renombrar imagenes con codigos-catalogo.py	
++++ b/renombrar imagenes con codigos-catalogo.py	
+@@ -390,66 +390,66 @@ def default_stripped_path(source_html: str) -> str:
+ def sidecar_paths_for_stripped(stripped_html: str):
+     base = os.path.splitext(os.path.abspath(stripped_html))[0]
+     return base + CATALOG_TSV_SUFFIX, base + CATALOG_META_SUFFIX
  
-     def _unique_path_same_folder(self, base_path: Path, new_stem: str) -> Path:
-         ext = base_path.suffix
-         candidate = base_path.with_name(f"{new_stem}{ext}")
-         if candidate == base_path:
-             return candidate
-         if not candidate.exists():
-             return candidate
-         counter = 1
-         while True:
--            cand = base_path.with_name(f"{new_stem}_{counter}{ext}")
-+            # Evitar también '_' en el sufijo automático por colisión
-+            cand = base_path.with_name(f"{new_stem} ({counter}){ext}")
-             if not cand.exists() and cand != base_path:
-                 return cand
-             counter += 1
+ 
+ def _detect_newline_style(text: str) -> str:
+     return "\r\n" if "\r\n" in text else "\n"
+ 
+ 
+ # =========================
+ #  Excel: raíz del programa
+ # =========================
+ 
+ def program_root_dir() -> str:
+     if getattr(sys, "frozen", False):
+         return os.path.dirname(os.path.abspath(sys.executable))
+     return os.path.dirname(os.path.abspath(__file__))
+ 
+ 
+ def default_excel_path() -> str:
+     return os.path.join(program_root_dir(), f"{EXCEL_BASE_NAME}.xlsx")
+ 
+ 
+ def make_next_excel_path(base_path: str):
+     """
+-    Si base_path existe, devuelve base_1.xlsx, base_2.xlsx, ... (sufijo ascendente)
++    Si base_path existe, devuelve base (1).xlsx, base (2).xlsx, ... (sufijo ascendente)
+     Retorna (path, existed_base)
+     """
+     base_path = os.path.abspath(base_path)
+     if not os.path.exists(base_path):
+         return base_path, False
+ 
+     folder = os.path.dirname(base_path)
+     filename = os.path.basename(base_path)
+     stem, ext = os.path.splitext(filename)
+     if not ext:
+         ext = ".xlsx"
+ 
+     n = 1
+     while True:
+-        candidate = os.path.join(folder, f"{stem}_{n}{ext}")
++        candidate = os.path.join(folder, f"{stem} ({n}){ext}")
+         if not os.path.exists(candidate):
+             return candidate, True
+         n += 1
+ 
+ 
+ def _safe_str(v) -> str:
+     if v is None:
+         return ""
+     if isinstance(v, float):
+         if v.is_integer():
+             return str(int(v))
+         return str(v).strip()
+     return str(v).strip()
+ 
+ 
+ def _excel_write_header_style(ws, ncols: int):
+     bold = Font(bold=True)
+     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
+     for c in range(1, ncols + 1):
+         cell = ws.cell(row=1, column=c)
+         cell.font = bold
+         cell.alignment = center
+ 
+ 
+ def _autosize_columns(ws, max_row: int, max_col: int, min_w=10, max_w=60):
+@@ -830,52 +830,52 @@ def compute_diffs_and_build_new_html_exact(source_html: str, excel_rows_by_id: d
+     if not diffs:
+         return diffs, None, {"modified": 0, "new": 0, "deleted": 0}
+ 
+     out = []
+     out.append(_tsv_line(header_cols[:5], nl))
+ 
+     for rid in excel_order_ids:
+         row5 = excel_rows_by_id.get(rid)
+         if not row5:
+             continue
+ 
+         row5_out = (list(row5) + [""] * 5)[:5]
+         row5_out[4] = rid
+         row5_out[3] = _format_price_for_html(row5_out[3], price_style)
+         out.append(_tsv_line(row5_out, nl))
+ 
+     new_inner = "".join(out)
+     new_html = html[:inner_start] + new_inner + html[inner_end:]
+     return diffs, (new_html, had_bom, enc), {"modified": modified, "new": added, "deleted": deleted}
+ 
+ 
+ def apply_overwrite_html(source_html: str, new_html_tuple, make_backup: bool = False):
+     new_html, had_bom, enc = new_html_tuple
+ 
+     if make_backup and os.path.exists(source_html):
+-        ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+-        backup_path = f"{source_html}.bak_{ts}"
++        ts = datetime.now().strftime("%Y%m%d %H%M%S")
++        backup_path = f"{source_html}.bak {ts}"
+         try:
+             shutil.copy2(source_html, backup_path)
+         except Exception:
+             pass
+ 
+     tmp_path = source_html + ".tmp_write"
+     write_text_preserve_bom(tmp_path, new_html, had_bom, enc)
+     os.replace(tmp_path, source_html)
+ 
+ 
+ # =========================
+ #  UI Tkinter (mejorada)
+ # =========================
+ 
+ class App(tk.Tk):
+     def __init__(self):
+         super().__init__()
+         self.settings = load_settings()
+ 
+         self.title("Catálogo TSV (HTML ↔ Excel) — SIN_CATALOGO")
+         self.geometry("1040x720")
+         self.minsize(980, 660)
+         self.resizable(True, True)
+ 
+         self.source_var = tk.StringVar(value="")

@@ -650,23 +650,64 @@ def update_product_in_file(
         new_name = to_underscore_text(new_name)
 
         p = Path(path)
-        ...
+        if not p.exists() or p.is_dir():
+            return (False, "La ruta del archivo no existe o es una carpeta.")
+
+        ext = p.suffix.lower()
+        if row_number <= 0:
+            return (False, "Fila inválida (row_number).")
+
+        if header_row_number < 1:
+            header_row_number = 1
+
+        if has_headers and row_number == header_row_number:
+            return (False, "La fila a editar corresponde al encabezado.")
+
         if ext == ".csv":
             return _update_csv_row(
-                ...
+                p,
+                row_number=int(row_number),
+                code_col_index=int(code_col_index),
+                name_col_index=int(name_col_index),
+                category_col_index=int(category_col_index),
+                brand_col_index=int(brand_col_index),
+                unit_price_col_index=int(unit_price_col_index),
+                stock_col_index=int(stock_col_index),
                 new_code=new_code,
                 new_name=new_name,
-                ...
+                new_category=new_category,
+                new_brand=new_brand,
+                new_unit_price=new_unit_price,
+                new_stock=new_stock,
             )
 
         if ext in {".xlsx", ".xlsm"}:
-            ...
+            if not HAS_OPENPYXL:
+                return (False, "No está instalado openpyxl. Instala con: pip install openpyxl")
             return _update_xlsx_row(
-                ...
+                p,
+                row_number=int(row_number),
+                code_col_index=int(code_col_index),
+                name_col_index=int(name_col_index),
+                category_col_index=int(category_col_index),
+                brand_col_index=int(brand_col_index),
+                unit_price_col_index=int(unit_price_col_index),
+                stock_col_index=int(stock_col_index),
+                sheet_name=sheet_name,
                 new_code=new_code,
                 new_name=new_name,
-                ...
+                new_category=new_category,
+                new_brand=new_brand,
+                new_unit_price=new_unit_price,
+                new_stock=new_stock,
             )
+
+        return (False, "Extensión no soportada (solo .csv, .xlsx, .xlsm).")
+
+    except PermissionError:
+        return (False, "Permiso denegado. ¿El archivo está abierto en Excel?")
+    except Exception as e:
+        return (False, str(e))
 
 def append_products_to_file(
     path: str,

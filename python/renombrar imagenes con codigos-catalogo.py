@@ -45,10 +45,6 @@ def sanitize_filename(text: str) -> str:
     text = str(text)
     return re.sub(r"[^A-Za-z0-9_-]", "_", text)
 
-def sanitize_filename(text: str) -> str:
-    text = str(text)
-    return re.sub(r"[^A-Za-z0-9_-]", "_", text)
-
 def to_underscore_text(text: str) -> str:
     """
     Convierte texto a formato consistente con guion bajo:

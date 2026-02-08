@@ -1,0 +1,59 @@
+diff --git a/python/renombrar imagenes con codigos-catalogo.py b/python/renombrar imagenes con codigos-catalogo.py
+index 3b8876962bf14f5bf49356fdd4c6a28e5f0a9f45..8d1b90cebdf118441d3688ed780656a27d6d5c2f 100644
+--- a/python/renombrar imagenes con codigos-catalogo.py	
++++ b/python/renombrar imagenes con codigos-catalogo.py	
+@@ -19,54 +19,50 @@ import tkinter.font as tkfont
+ # =========================
+ 
+ BASE_DIR = Path(__file__).resolve().parent
+ ARCHIVOS_DIR = BASE_DIR / "archivos"
+ ARCHIVOS_DIR.mkdir(parents=True, exist_ok=True)
+ 
+ CONFIG_FILE = ARCHIVOS_DIR / "image_renamer_config.json"
+ 
+ FILENAME_PART_SEPARATOR = "_"
+ 
+ IMAGE_EXTENSIONS = {
+     ".jpg", ".jpeg", ".png", ".gif", ".bmp",
+     ".tif", ".tiff", ".webp",
+ }
+ 
+ 
+ def normalize_text(text: str) -> str:
+     if text is None:
+         return ""
+     text = str(text).lower()
+     text = unicodedata.normalize("NFD", text)
+     text = "".join(c for c in text if not unicodedata.combining(c))
+     return text
+ 
+ 
+-def sanitize_filename(text: str) -> str:
+-    text = str(text)
+-    return re.sub(r"[^A-Za-z0-9_-]", "_", text)
+-
+ def sanitize_filename(text: str) -> str:
+     text = str(text)
+     return re.sub(r"[^A-Za-z0-9_-]", "_", text)
+ 
+ def to_underscore_text(text: str) -> str:
+     """
+     Convierte texto a formato consistente con guion bajo:
+     - Reemplaza caracteres no permitidos por '_'
+     - Colapsa múltiples '_' seguidos a uno solo
+     Nota: NO hace .strip("_") para conservar '_' si vienen del saneado.
+     """
+     s = "" if text is None else str(text)
+     s = sanitize_filename(s)
+     s = re.sub(r"_+", "_", s)
+     return s
+ 
+ 
+ 
+ # =========================
+ # UI WIDGETS (antes ui_widgets.py)
+ # =========================
+ 
+ class ToolTip:
+     def __init__(self, widget, text, delay=500):
+         self.widget = widget

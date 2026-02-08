@@ -150,66 +150,6 @@
       outline-offset:2px;
     }
 
-    /* =========================================================
-       ✅ TICKER EN EL MISMO INPUT (LUPA SE MUEVE CON EL TEXTO)
-       - Usa EXACTAMENTE el placeholder del input (incluye 🔍)
-       - Scroll infinito suave, sin “saltos”
-       - No rompe responsive (el wrapper es el flex item)
-       ========================================================= */
-    .search-wrap{
-      position:relative;
-      flex:1 1 220px;
-      min-width:220px;
-      --marquee-distance: 0px;
-      --marquee-duration: 14s;
-    }
-    .search-wrap input{
-      width:100%;
-    }
-    .search-ticker{
-      position:absolute;
-      inset:0;
-      border-radius:12px;
-      display:flex;
-      align-items:center;
-      padding:10px 12px;   /* respeta alto/padding original */
-      overflow:hidden;
-      pointer-events:none;
-      z-index:2;
-      opacity:0;
-      transition:opacity .15s ease;
-      color:var(--mut);
-    }
-    .search-wrap.show-ticker .search-ticker{ opacity:1; }
-    .search-wrap.show-ticker input::placeholder{ color:transparent; }
-
-    .ticker-inner{
-      display:flex;
-      width:max-content;
-      will-change:transform;
-      transform:translate3d(0,0,0);
-      animation: marquee var(--marquee-duration) linear infinite;
-    }
-    .ticker-seq{
-      display:flex;
-      align-items:center;
-      width:max-content;
-    }
-    .ticker-item{
-      white-space:nowrap;
-      padding-right:48px;
-    }
-
-    @keyframes marquee{
-      from{ transform: translate3d(0,0,0); }
-      to{ transform: translate3d(calc(-1 * var(--marquee-distance)),0,0); }
-    }
-
-    @media (prefers-reduced-motion: reduce){
-      .ticker-inner{ animation:none; transform:none; }
-    }
-    /* ========================================================= */
-
     .btn-acc{
       background:linear-gradient(90deg,#20c997,#2dd4bf);
       border:none;color:#04120d;font-weight:900;
@@ -671,17 +611,9 @@
       </div>
 
       <div class="bar" role="search" aria-label="Buscar y filtrar productos">
-        <!-- ✅ MISMO INPUT: ticker infinito con el placeholder (incluye 🔍) -->
-        <div class="search-wrap" id="searchWrap">
-          <div class="search-ticker" id="searchTicker" aria-hidden="true">
-            <div class="ticker-inner" id="tickerInner"></div>
-          </div>
-
-          <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Buscar aqui, por nombre, marca, categoría..."
-                 aria-label="Buscar producto" />
-        </div>
-
+        <input id="q" type="search" inputmode="search"
+               placeholder="🔍 Buscar por nombre, marca, categoría..."
+               aria-label="Buscar producto" />
         <select id="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
         <select id="brand" aria-label="Filtrar por marca"><option value="">Todas las marcas</option></select>
         <select id="sort" aria-label="Ordenar productos">
@@ -918,6 +850,7 @@ Tododia Frutos Rojos Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.0
 Tododia Hojas De Limon y Guanabana Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.000	193
 Tododia Flor De Jengibre y Mandarina Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.000	194
 Tododia Ciruela y Flor De Vainilla Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.000	195
+Tododia Manzana Caramelizada y Vainilla Crema Corporal 400 ml	Cuidado corporal	Natura	38.000	196
 Tododia Flor De Pera y Melisa Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.000	197
 Tododia Mango Rosa y Agua De Coco Crema Corporal Repuesto 400 ml	Cuidado corporal	Natura	30.000	198
 Tododia Hojas De Limon y Guanabana Crema Corporal Repuesto 400 ml	Cuidado corporal	Natura	30.000	199
@@ -1108,9 +1041,9 @@ Chronos Serum Intensivo Reductor Oleosidad 30 ml - Envase	Cuidado facial	Natura	
 Chronos Serum Intensivo Reductor Oleosidad 30 ml - Repuesto	Cuidado facial	Natura	80.000	385
 Tododia Mango Rosa y Agua De Coco Crema Corporal 400 ml - Envase	Cuidado corporal	Natura	38.000	386
 Tododia Cereza y Avellana Desodorante Femenino En Roll-On 70 ml	Cuidado corporal	Natura	20.000	387
-Tododia Sin Perfume Desodorante Femenino En Roll-On 70 ml	Cuidado corporal	Natura	20.000	388
-Tododia Manzana Caramelizada y Vainilla Crema Corporal 400 ml	Cuidado corporal	Natura	38.000	389
-Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Natura	2	390
+Tododia Sin Perfume Desodorante Femenino En Roll-On 70 ml	Cuidado corporal	Natura	 20.000  	388
+Tododia Manzana Caramelizada y Vainilla Crema Corporal 400 ml	Cuidado corporal	Natura	1	389
+Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Natura	1	390
 </pre>
     </details>
   </main>
@@ -1493,79 +1426,6 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     const grid = document.getElementById("grid");
     const countEl = document.getElementById("count");
 
-    /* ============================
-       ✅ TICKER: INIT + LOOP SUAVE
-       - Duplica la secuencia y anima exactamente su ancho
-       - Velocidad constante en px/s
-       - Se oculta cuando hay foco o texto escrito
-       ============================ */
-    const searchWrap = document.getElementById("searchWrap");
-    const searchTicker = document.getElementById("searchTicker");
-    const tickerInner = document.getElementById("tickerInner");
-
-    function updateTickerVisibility(){
-      if(!searchWrap || !qInp) return;
-      const empty = !String(qInp.value || "").trim();
-      const focused = (document.activeElement === qInp);
-      searchWrap.classList.toggle("show-ticker", empty && !focused);
-    }
-
-    function rebuildSearchTicker(){
-      if(!searchWrap || !searchTicker || !tickerInner || !qInp) return;
-
-      const text = String(qInp.getAttribute("placeholder") || "").trim();
-      if(!text){
-        tickerInner.innerHTML = "";
-        searchWrap.style.setProperty("--marquee-distance", "0px");
-        return;
-      }
-
-      tickerInner.innerHTML = "";
-
-      const seq = document.createElement("div");
-      seq.className = "ticker-seq";
-      tickerInner.appendChild(seq);
-
-      const available = Math.max(1, searchTicker.clientWidth || searchWrap.clientWidth || 1);
-      const target = Math.max(280, Math.floor(available * 1.7)); // evita ver el duplicado completo a la vez
-
-      let guard = 0;
-      while(seq.scrollWidth < target && guard < 60){
-        const item = document.createElement("span");
-        item.className = "ticker-item";
-        item.textContent = text; // incluye 🔍
-        seq.appendChild(item);
-        guard++;
-      }
-
-      const seqWidth = seq.scrollWidth || 0;
-      if(seqWidth <= 0) return;
-
-      const clone = seq.cloneNode(true);
-      tickerInner.appendChild(clone);
-
-      const SPEED_PX_PER_SEC = 60;
-      const duration = Math.max(8, seqWidth / SPEED_PX_PER_SEC);
-
-      searchWrap.style.setProperty("--marquee-distance", seqWidth + "px");
-      searchWrap.style.setProperty("--marquee-duration", duration.toFixed(2) + "s");
-    }
-
-    (function initSearchTicker(){
-      updateTickerVisibility();
-      rebuildSearchTicker();
-
-      qInp.addEventListener("focus", updateTickerVisibility);
-      qInp.addEventListener("blur", updateTickerVisibility);
-
-      let raf = null;
-      window.addEventListener("resize", ()=>{
-        if(raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(()=> rebuildSearchTicker());
-      });
-    })();
-    /* ============================ */
-
     function fillSelect(sel, values){
       for(const v of values){
         const opt = document.createElement("option");
@@ -1769,26 +1629,20 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
     }
 
     document.getElementById("btn-cart").onclick = openCartModal;
-
-    // ✅ input: render + ticker
-    qInp.addEventListener("input", ()=>{
-      updateTickerVisibility();
-      render();
-    });
-
+    qInp.addEventListener("input", render);
     catSel.addEventListener("change", render);
     brandSel.addEventListener("change", render);
     if(sortSel) sortSel.addEventListener("change", render);
 
     readStateFromUrl();
     refreshCartCount();
-    updateTickerVisibility();
-    rebuildSearchTicker();
     render();
   </script>
 
   <!-- ======================================================
        ✅ REGISTRO DE UBICACIÓN (compatible con tu Apps Script)
+       - Envía: lat, lng, acc, fuente/src, navegador, user_id
+       - Si NO hay ubicación: envía una fila con fuente=SIN_UBICACION
        ====================================================== -->
   <script>
     // ====== CAMBIA SOLO ESTO ======
@@ -1802,7 +1656,10 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
       let timerId = null;
 
+      // ID único por carga de página
       const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
+
+      // USER_ID persistente por navegador
       const USER_ID_KEY = "irenismb_user_id";
 
       function getUserId(){
@@ -1828,6 +1685,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
         return ("geolocation" in navigator);
       }
 
+      // Heurística simple usando accuracy (m)
       function guessFuenteFromAccuracy(acc){
         const a = Number(acc);
         if(!isFinite(a)) return "GEO";
@@ -1849,12 +1707,15 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
             lng: String(lng),
             acc: acc === "" ? "" : String(acc),
 
+            // Apps Script lee fuente o src
             fuente: fuente,
             src: fuente,
 
+            // Apps Script guarda en columna "navegador" y también acepta "user_id"
             navegador: USER_ID,
             user_id: USER_ID,
 
+            // extras (no afectan)
             load_id: LOAD_ID,
             mode: String(LOCATION_MODE || ""),
             ts: String(Date.now()),
@@ -1863,6 +1724,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
 
           const url = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
 
+          // sendBeacon (mejor para no perder el envío)
           if (navigator.sendBeacon){
             try{
               const blob = new Blob([], { type: "text/plain" });
@@ -1871,6 +1733,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
             }catch(_){}
           }
 
+          // fetch GET
           fetch(url, {
             method: "GET",
             mode: "no-cors",
@@ -1889,6 +1752,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       function logNoGeoOnce(){
         if(loggedNoGeo) return;
         loggedNoGeo = true;
+        // Sin coords, pero sí registra navegador/fecha/hora/fuente en tu Apps Script
         sendLog({ lat:"", lng:"", acc:"", fuente:"SIN_UBICACION" });
       }
 
@@ -1919,9 +1783,10 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
               });
             },
             (err)=>{
+              // 1 = PERMISSION_DENIED
               if(err && err.code === 1){
                 logNoGeoOnce();
-                stopTimer();
+                stopTimer(); // en PING no insiste si ya negaron permisos
               }
             },
             { enableHighAccuracy:true, timeout:30000, maximumAge: 0 }
@@ -1941,6 +1806,7 @@ Erva Doce Unisex Desodorante Antitranspirante Roll-On 70 ml	Cuidado corporal	Nat
       }
 
       function start(){
+        // Arranca al cargar (si niega permisos, igual registra SIN_UBICACION una sola vez)
         startAccordingMode();
       }
 

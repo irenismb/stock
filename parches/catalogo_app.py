@@ -426,6 +426,7 @@ def _autosize_columns(ws, max_row: int, max_col: int, min_w=10, max_w=60, skip_c
 
 
 IMAGE_EXTS = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp"}
+SKIP_FILES_LOWER = {"thumbs.db", "desktop.ini", ".ds_store"}
 CM_TO_INCH = 1.0 / 2.54
 EXCEL_DPI = 96
 IMG_SIZE_CM = 5.0
@@ -434,7 +435,12 @@ ROW_HEIGHT_PT = IMG_SIZE_CM * CM_TO_INCH * 72
 TREE_ROW_HEIGHT_PX = IMG_SIZE_PX
 
 
-def parse_product_from_image_filename(filename: str):
+def _ext_without_dot(path_or_name: str) -> str:
+    ext = os.path.splitext(str(path_or_name or ""))[1].lower()
+    return ext[1:] if ext.startswith(".") else ext
+
+
+def parse_product_from_file_filename(filename: str):
     base = os.path.basename(filename)
     name_no_ext, _ = os.path.splitext(base)
     parts = name_no_ext.split("_")
@@ -464,6 +470,7 @@ def parse_product_from_image_filename(filename: str):
 
     return {
         "imagen": base,
+        "extension": _ext_without_dot(base),
         "codigo": codigo,
         "nombre": nombre,
         "categoria": categoria,
@@ -480,40 +487,48 @@ def load_products_from_folder(images_dir: str):
         return products
 
     for fn in sorted(os.listdir(images_dir)):
+        if fn.lower() in SKIP_FILES_LOWER:
+            continue
         p = os.path.join(images_dir, fn)
         if not os.path.isfile(p):
             continue
-        ext = os.path.splitext(fn)[1].lower()
-        if ext in IMAGE_EXTS:
-            products.append(parse_product_from_image_filename(p))
+        products.append(parse_product_from_file_filename(p))
     return products
 
 
-def _find_image_for_codigo(images_dir: str, codigo: str):
+def _find_file_for_codigo(images_dir: str, codigo: str):
     if not images_dir or not os.path.isdir(images_dir) or not codigo:
         return ""
     try:
         pref = f"{codigo}_"
+        matches_img = []
+        matches_any = []
         for fn in os.listdir(images_dir):
-            ext = os.path.splitext(fn)[1].lower()
-            if ext not in IMAGE_EXTS:
+            p = os.path.join(images_dir, fn)
+            if not os.path.isfile(p):
                 continue
-            if fn.startswith(pref):
-                return os.path.join(images_dir, fn)
+            if not fn.startswith(pref):
+                continue
+            ext = os.path.splitext(fn)[1].lower()
+            if ext in IMAGE_EXTS:
+                matches_img.append(p)
+            else:
+                matches_any.append(p)
+        if matches_img:
+            return sorted(matches_img)[0]
+        if matches_any:
+            return sorted(matches_any)[0]
     except Exception:
         return ""
     return ""
 
 
 def export_products_to_excel(products: list[dict], excel_path: str, images_dir: str = ""):
-    if XLImage is None:
-        raise RuntimeError("openpyxl no pudo cargar soporte de imágenes. Instala Pillow (pip install pillow).")
-
     wb = Workbook()
     ws = wb.active
     ws.title = EXCEL_SHEET_NAME
 
-    headers = ["Codigo", "Nombre producto", "Categoria", "Marca", "Valor unitario", "Stock", "Imagen"]
+    headers = ["Codigo", "Nombre producto", "Categoria", "Marca", "Valor unitario", "Stock", "Extension", "Imagen"]
     for c, h in enumerate(headers, start=1):
         ws.cell(row=1, column=c, value=h)
 
@@ -521,7 +536,8 @@ def export_products_to_excel(products: list[dict], excel_path: str, images_dir: 
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{max(2, len(products) + 1)}"
 
-    ws.column_dimensions["G"].width = 30
+    ws.column_dimensions["G"].width = 12
+    ws.column_dimensions["H"].width = 30
     ws.row_dimensions[1].height = 18
 
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -535,7 +551,8 @@ def export_products_to_excel(products: list[dict], excel_path: str, images_dir: 
         marca = str(prod.get("marca", "")).strip()
         valor = str(prod.get("valor_unitario", "")).strip()
         stock = str(prod.get("stock", "")).strip()
-        imagen = str(prod.get("imagen", "")).strip()
+        filename = str(prod.get("imagen", "")).strip()
+        extension = str(prod.get("extension", "")).strip() or _ext_without_dot(filename)
 
         ws.row_dimensions[idx].height = ROW_HEIGHT_PT
 
@@ -559,22 +576,27 @@ def export_products_to_excel(products: list[dict], excel_path: str, images_dir: 
         else:
             ws.cell(row=idx, column=6, value=stock).alignment = center
 
-        ws.cell(row=idx, column=7, value=imagen).alignment = center
+        ws.cell(row=idx, column=7, value=extension).alignment = center
+        ws.cell(row=idx, column=8, value=filename).alignment = center
 
         img_path = prod.get("path", "")
-        if not img_path and images_dir and imagen:
-            img_path = os.path.join(images_dir, imagen)
-        if img_path and os.path.exists(img_path):
+        if not img_path and images_dir and filename:
+            img_path = os.path.join(images_dir, filename)
+
+        ext = os.path.splitext(img_path or "")[1].lower()
+        if img_path and os.path.exists(img_path) and ext in IMAGE_EXTS:
+            if XLImage is None:
+                raise RuntimeError("openpyxl no pudo cargar soporte de imágenes. Instala Pillow (pip install pillow).")
             try:
                 xl_img = XLImage(img_path)
                 xl_img.width = IMG_SIZE_PX
                 xl_img.height = IMG_SIZE_PX
-                xl_img.anchor = f"G{idx}"
+                xl_img.anchor = f"H{idx}"
                 ws.add_image(xl_img)
             except Exception:
                 pass
 
-    _autosize_columns(ws, max_row=max(2, len(products) + 1), max_col=len(headers), skip_cols=[7])
+    _autosize_columns(ws, max_row=max(2, len(products) + 1), max_col=len(headers), skip_cols=[8])
     wb.save(excel_path)
     return excel_path
 
@@ -675,17 +697,13 @@ def export_catalog_html_to_excel(source_html: str, excel_path: str, images_dir: 
     if [norm_text(c) for c in header_cols[:6]] != [norm_text(c) for c in EXPECTED_COLS]:
         raise RuntimeError("El encabezado TSV no coincide con el esperado; no se exporta.")
 
-    header6 = header_cols[:6]
     rows6 = [r[:6] + ([""] * (6 - len(r))) if len(r) < 6 else r[:6] for r in rows]
-
-    if XLImage is None:
-        raise RuntimeError("openpyxl no pudo cargar soporte de imágenes. Instala Pillow (pip install pillow).")
 
     wb = Workbook()
     ws = wb.active
     ws.title = EXCEL_SHEET_NAME
 
-    headers = ["Codigo", "Nombre producto", "Categoria", "Marca", "Valor unitario", "Stock", "Imagen"]
+    headers = ["Codigo", "Nombre producto", "Categoria", "Marca", "Valor unitario", "Stock", "Extension", "Imagen"]
     for c, name in enumerate(headers, start=1):
         ws.cell(row=1, column=c, value=name)
 
@@ -693,7 +711,8 @@ def export_catalog_html_to_excel(source_html: str, excel_path: str, images_dir: 
     ws.freeze_panes = "A2"
     ws.auto_filter.ref = f"A1:{get_column_letter(len(headers))}{max(1, len(rows6) + 1)}"
 
-    ws.column_dimensions["G"].width = 30
+    ws.column_dimensions["G"].width = 12
+    ws.column_dimensions["H"].width = 30
     ws.row_dimensions[1].height = 18
 
     center = Alignment(horizontal="center", vertical="center", wrap_text=True)
@@ -730,19 +749,27 @@ def export_catalog_html_to_excel(source_html: str, excel_path: str, images_dir: 
         else:
             ws.cell(row=r_idx, column=6, value=stock).alignment = center
 
-        img_path = _find_image_for_codigo(images_dir, codigo) if images_dir else ""
-        ws.cell(row=r_idx, column=7, value=os.path.basename(img_path) if img_path else "").alignment = center
-        if img_path and os.path.exists(img_path):
+        file_path = _find_file_for_codigo(images_dir, codigo) if images_dir else ""
+        filename = os.path.basename(file_path) if file_path else ""
+        ext_no_dot = _ext_without_dot(filename) if filename else ""
+
+        ws.cell(row=r_idx, column=7, value=ext_no_dot).alignment = center
+        ws.cell(row=r_idx, column=8, value=filename).alignment = center
+
+        ext = os.path.splitext(file_path or "")[1].lower()
+        if file_path and os.path.exists(file_path) and ext in IMAGE_EXTS:
+            if XLImage is None:
+                raise RuntimeError("openpyxl no pudo cargar soporte de imágenes. Instala Pillow (pip install pillow).")
             try:
-                xl_img = XLImage(img_path)
+                xl_img = XLImage(file_path)
                 xl_img.width = IMG_SIZE_PX
                 xl_img.height = IMG_SIZE_PX
-                xl_img.anchor = f"G{r_idx}"
+                xl_img.anchor = f"H{r_idx}"
                 ws.add_image(xl_img)
             except Exception:
                 pass
 
-    _autosize_columns(ws, max_row=max(2, len(rows6) + 1), max_col=len(headers), skip_cols=[7])
+    _autosize_columns(ws, max_row=max(2, len(rows6) + 1), max_col=len(headers), skip_cols=[8])
     wb.save(excel_path)
     return excel_path, len(rows6), existed
 
@@ -875,7 +902,7 @@ class App(tk.Tk):
         super().__init__()
         self.settings = load_settings()
 
-        self.title("Catálogo (Imágenes ↔ HTML ↔ Excel)")
+        self.title("Catálogo (Archivos ↔ HTML ↔ Excel)")
         self.geometry("1180x740")
         self.minsize(1060, 660)
         self.resizable(True, True)
@@ -884,7 +911,7 @@ class App(tk.Tk):
         self.excel_var = tk.StringVar(value="")
         self.images_dir_var = tk.StringVar(value="")
 
-        self.status_var = tk.StringVar(value="Selecciona el catalogo.html fuente y/o una carpeta de imágenes.")
+        self.status_var = tk.StringVar(value="Selecciona el catalogo.html fuente y/o una carpeta de archivos.")
         self.state_var = tk.StringVar(value="Estado: (sin archivo)")
         self.backup_var = tk.BooleanVar(value=False)
 
@@ -978,7 +1005,7 @@ class App(tk.Tk):
         m_file = tk.Menu(menubar, tearoff=0)
         m_file.add_command(label="Seleccionar FUENTE (HTML)…", command=self.pick_source)
         m_file.add_command(label="Seleccionar Excel…", command=self.pick_excel)
-        m_file.add_command(label="Seleccionar carpeta de imágenes…", command=self.pick_images_folder)
+        m_file.add_command(label="Seleccionar carpeta de archivos…", command=self.pick_images_folder)
         m_file.add_separator()
         m_file.add_command(label="Abrir carpeta de trabajo", command=self.on_open_folder)
         m_file.add_separator()
@@ -995,9 +1022,9 @@ class App(tk.Tk):
         messagebox.showinfo(
             "Acerca de",
             "Herramienta para:\n"
-            "• Cargar productos desde imágenes (codigo_nombre_categoria_marca_valorunitario_stock.ext)\n"
+            "• Cargar productos desde archivos (imagen o txt) con nombre: codigo_nombre_categoria_marca_valorunitario_stock.ext\n"
             "• Editar campos en la interfaz (Codigo, Nombre producto, Categoria, Marca, Valor unitario, Stock)\n"
-            "• Exportar a Excel con imagen (5cm x 5cm)\n"
+            "• Exportar a Excel con columna Extension + nombre de archivo, e imagen (5cm x 5cm) cuando aplique\n"
             "• Actualizar el HTML fuente desde el Excel virtual o desde un Excel externo\n"
         )
 
@@ -1007,8 +1034,8 @@ class App(tk.Tk):
 
         header = ttk.Frame(root, style="App.TFrame")
         header.pack(fill="x", pady=(0, 10))
-        ttk.Label(header, text="Catálogo (Imágenes ↔ HTML ↔ Excel)", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(header, text="Excel virtual desde imágenes · Edición en tabla · Exportar con imagen · Actualizar HTML", style="Sub.TLabel").pack(anchor="w", pady=(2, 0))
+        ttk.Label(header, text="Catálogo (Archivos ↔ HTML ↔ Excel)", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(header, text="Excel virtual desde archivos · Edición en tabla · Exportar · Actualizar HTML", style="Sub.TLabel").pack(anchor="w", pady=(2, 0))
 
         nb = ttk.Notebook(root)
         nb.pack(fill="both", expand=True)
@@ -1045,7 +1072,7 @@ class App(tk.Tk):
             folder_cmd=lambda: self.open_folder(self.excel_var.get())
         )
         self._build_path_row(
-            lf_paths, 2, "Carpeta de imágenes:", self.images_dir_var,
+            lf_paths, 2, "Carpeta de archivos:", self.images_dir_var,
             browse=self.pick_images_folder, open_cmd=lambda: self.open_path(self.images_dir_var.get()),
             folder_cmd=lambda: self.open_folder(self.images_dir_var.get())
         )
@@ -1084,7 +1111,7 @@ class App(tk.Tk):
         ttk.Button(btns, text="Refrescar estado", command=self.refresh_state).pack(side="left")
         ttk.Button(btns, text="Copiar estado", command=self.copy_state).pack(side="left", padx=(8, 0))
 
-        lf_virtual = ttk.LabelFrame(tab_cat, text="Excel virtual (desde imágenes)", style="Card.TLabelframe")
+        lf_virtual = ttk.LabelFrame(tab_cat, text="Excel virtual (desde archivos)", style="Card.TLabelframe")
         lf_virtual.pack(fill="both", expand=True, padx=0, pady=0)
 
         topbar = ttk.Frame(lf_virtual, style="Card.TFrame")
@@ -1256,13 +1283,13 @@ class App(tk.Tk):
             initialdir = last_dir
 
         path = filedialog.askdirectory(
-            title="Selecciona la carpeta de imágenes",
+            title="Selecciona la carpeta de archivos",
             initialdir=initialdir
         )
         if path:
             self.images_dir_var.set(path)
             self.settings = remember_paths(self.settings, images_dir=path)
-            self.status_var.set("Carpeta de imágenes seleccionada.")
+            self.status_var.set("Carpeta seleccionada.")
             self.on_load_images()
             self.refresh_state()
 
@@ -1314,7 +1341,7 @@ class App(tk.Tk):
         lines = [
             f"Fuente: {src_state}",
             f"Excel: {excel_ok}",
-            f"Imágenes: {img_ok}",
+            f"Carpeta: {img_ok}",
             f"Virtual: {visible}/{total} productos",
         ]
         self.state_var.set("Estado: " + "   |   ".join(lines))
@@ -1324,7 +1351,7 @@ class App(tk.Tk):
             warn.append("FUENTE:\n" + src_msg)
 
         if img_ok == "OK" and total == 0:
-            warn.append("VIRTUAL:\nNo se encontraron imágenes soportadas en la carpeta.")
+            warn.append("VIRTUAL:\nNo se encontraron archivos en la carpeta.")
         if total > 0:
             dups = self._find_duplicate_codigos()
             if dups:
@@ -1376,6 +1403,10 @@ class App(tk.Tk):
         if not img_path or not os.path.exists(img_path):
             return None
 
+        ext = os.path.splitext(img_path)[1].lower()
+        if ext not in IMAGE_EXTS:
+            return None
+
         if PILImage is not None and ImageTk is not None:
             try:
                 im = PILImage.open(img_path)
@@ -1385,7 +1416,6 @@ class App(tk.Tk):
             except Exception:
                 return None
 
-        ext = os.path.splitext(img_path)[1].lower()
         if ext in (".png", ".gif"):
             try:
                 return tk.PhotoImage(file=img_path)
@@ -1396,13 +1426,13 @@ class App(tk.Tk):
     def on_load_images(self):
         imgdir = self.images_dir_var.get().strip()
         if not imgdir or not os.path.isdir(imgdir):
-            messagebox.showwarning("Falta carpeta", "Selecciona una carpeta de imágenes válida.")
+            messagebox.showwarning("Falta carpeta", "Selecciona una carpeta válida.")
             return
 
         self.products_all = load_products_from_folder(imgdir)
         self._apply_view()
         self.settings = remember_paths(self.settings, images_dir=imgdir)
-        self.status_var.set(f"Cargados {len(self.products_all)} productos desde imágenes.")
+        self.status_var.set(f"Cargados {len(self.products_all)} productos desde la carpeta.")
         self.refresh_state()
 
     def _value_by_column(self, prod: dict, col_name: str) -> str:
@@ -1855,7 +1885,7 @@ class App(tk.Tk):
 
     def on_export_virtual_excel(self):
         if not self.products_all:
-            messagebox.showwarning("Sin productos", "Carga primero una carpeta de imágenes para crear el Excel virtual.")
+            messagebox.showwarning("Sin productos", "Carga primero una carpeta para crear el Excel virtual.")
             return
 
         dups = self._find_duplicate_codigos()
@@ -1943,7 +1973,7 @@ class App(tk.Tk):
             messagebox.showerror("No existe", "El archivo FUENTE no existe.")
             return
         if not self.products_all:
-            messagebox.showwarning("Sin productos", "Carga primero una carpeta de imágenes.")
+            messagebox.showwarning("Sin productos", "Carga primero una carpeta.")
             return
 
         dups = self._find_duplicate_codigos()

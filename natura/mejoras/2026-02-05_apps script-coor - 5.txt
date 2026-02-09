@@ -1,0 +1,449 @@
+// ===================== CONFIGURACIÓN =====================
+const SPREADSHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
+const SHEET_NAME = ""; // vacío = primera hoja
+const TZ = "America/Bogota";
+
+// ✅ Coordenada fija (punto de referencia) para calcular distancia
+const REF_LAT = 11.244958;
+const REF_LNG = -74.190684;
+
+// ✅ Dirección (reverse geocoding)
+const WRITE_ADDRESS = true;
+const ADDRESS_CACHE_SECONDS = 21600;       // 6h
+const ADDRESS_CACHE_EMPTY_SECONDS = 120;   // 2min si sale vacía
+
+// ✅ SOLO estas columnas se crearán/escribirán
+// ✅ 'navegador' guardará el user_id
+const REQUIRED_HEADERS = [
+  "navegador",
+  "coordenadas",
+  "distancia (m)",
+  "direccion",
+  "fecha",
+  "hora"
+];
+
+// ✅ (Opcional) Columnas que quieres eliminar de la hoja existente
+const UNWANTED_HEADERS = [
+  "minutos",
+  "geo_status",
+  "accuracy",
+  "mode",
+  "load_id",
+  "visit_id",
+  "timestamp_ms",
+  "user_agent"
+];
+
+// ===================== DEDUPLICACIÓN =====================
+// ✅ IMPORTANTE: desactivado para NO eliminar filas duplicadas
+const DEDUPE_EACH_WRITE = false;
+
+// Cuántas filas hacia atrás revisar en cada escritura (no aplica si DEDUPE_EACH_WRITE=false)
+const DEDUPE_LOOKBACK_ROWS = 2000;
+
+// Define qué hace que una fila sea "repetida" (no aplica si DEDUPE_EACH_WRITE=false)
+const DEDUPE_KEY_FIELDS = ["navegador", "coordenadas", "fecha", "hora"];
+
+// ===================== ENDPOINTS =====================
+function doGet(e)  { return handleRequest_(e); }
+function doPost(e) { return handleRequest_(e); }
+
+// Ejecuta 1 vez desde el editor para autorizar Spreadsheet
+function authTest(){
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+  if (!sh) return;
+  sh.getRange(1, 1).getValue();
+}
+
+// ✅ Ejecuta 1 vez para autorizar Maps (si WRITE_ADDRESS=true)
+function geoAuthTest(){
+  const res = Maps.newGeocoder()
+    .setLanguage("es")
+    .setRegion("co")
+    .reverseGeocode(4.7110, -74.0721);
+  Logger.log(JSON.stringify(res));
+}
+
+// ===================== LÓGICA PRINCIPAL =====================
+function handleRequest_(e){
+  let lock = null;
+
+  try{
+    const p = parseParams_(e);
+
+    const lat = Number(p.lat);
+    const lng = Number(p.lng);
+
+    // ✅ user_id viene desde la web y se guardará en la columna "navegador"
+    // Acepta también "navegador" por si lo envías con ese nombre.
+    const userId = String((p.user_id || p.navegador || "")).trim();
+
+    // sin coords válidas -> ok silencioso
+    if (!isFinite(lat) || !isFinite(lng)) return ok_();
+
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(2000)) return ok_();
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+    if (!sh) return ok_();
+
+    const headerIndex = ensureHeaders_(sh, REQUIRED_HEADERS);
+    const lastCol = sh.getLastColumn();
+
+    const now = new Date();
+    const dateStr = Utilities.formatDate(now, TZ, "yyyy-MM-dd");
+    const timeStr = Utilities.formatDate(now, TZ, "HH:mm:ss"); // ✅ incluye segundos
+
+    const coordText = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    const mapsUrl   = `https://www.google.com/maps?q=${encodeURIComponent(coordText)}`;
+
+    // ✅ distancia en metros desde REF_LAT/REF_LNG hasta lat/lng del visitante
+    const distanceMeters = Math.round(haversineMeters_(REF_LAT, REF_LNG, lat, lng));
+
+    let address = "";
+    if (WRITE_ADDRESS){
+      const geo = reverseGeocodeCached_(lat, lng);
+      address = geo.address || "";
+    }
+
+    const row = new Array(lastCol).fill("");
+
+    if (headerIndex.navegador != null)      row[headerIndex.navegador]      = userId;
+    if (headerIndex.fecha != null)          row[headerIndex.fecha]          = dateStr;
+    if (headerIndex.hora != null)           row[headerIndex.hora]           = timeStr;
+    if (headerIndex.direccion != null)      row[headerIndex.direccion]      = address;
+    if (headerIndex.distancia_m != null)    row[headerIndex.distancia_m]    = distanceMeters; // ✅ número (metros)
+
+    // ✅ escribe en la siguiente fila vacía
+    const nextRow = Math.max(2, sh.getLastRow() + 1);
+    sh.getRange(nextRow, 1, 1, lastCol).setValues([row]);
+
+    // ✅ Coordenadas como hipervínculo REAL
+    if (headerIndex.coordenadas != null){
+      const cell = sh.getRange(nextRow, headerIndex.coordenadas + 1);
+      const rich = SpreadsheetApp.newRichTextValue()
+        .setText(coordText)
+        .setLinkUrl(mapsUrl)
+        .build();
+      cell.setRichTextValue(rich);
+    }
+
+    // ✅ NO dedupe (porque lo pediste)
+    if (DEDUPE_EACH_WRITE){
+      dedupeOnEachWrite_(sh, headerIndex, DEDUPE_LOOKBACK_ROWS);
+    }
+
+  }catch(_){
+    // silencio total
+  }finally{
+    try{ if (lock) lock.releaseLock(); }catch(_){}
+  }
+
+  return ok_();
+}
+
+// ===================== DISTANCIA (HAVERSINE) =====================
+function haversineMeters_(lat1, lng1, lat2, lng2){
+  const R = 6371000; // metros
+  const toRad = (x) => x * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const aLat1 = toRad(lat1);
+  const aLat2 = toRad(lat2);
+
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(aLat1) * Math.cos(aLat2) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+
+  const c = 2 * Math.asin(Math.sqrt(a));
+  return R * c;
+}
+
+// ===================== RESPUESTA OK =====================
+function ok_(){
+  return ContentService
+    .createTextOutput("ok")
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+// ===================== PARSEO PARAMS =====================
+function parseParams_(e){
+  const out = Object.assign({}, (e && e.parameter) || {});
+  try{
+    const raw = e && e.postData && e.postData.contents;
+    if (!raw) return out;
+
+    const ct = String(e.postData.type || "").toLowerCase();
+    if (ct.includes("application/json")){
+      const j = JSON.parse(raw);
+      if (j && typeof j === "object"){
+        Object.keys(j).forEach(k => out[k] = String(j[k]));
+      }
+      return out;
+    }
+
+    raw.split("&").forEach(part => {
+      if(!part) return;
+      const kv = part.split("=");
+      const k = kv[0];
+      const v = kv.slice(1).join("=");
+      if(!k) return;
+      out[decodeURIComponent(k)] = decodeURIComponent(v || "");
+    });
+  }catch(_){}
+  return out;
+}
+
+// ===================== HEADERS =====================
+function norm_(s){
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function ensureHeaders_(sh, required){
+  const lastCol = Math.max(1, sh.getLastColumn());
+  const headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  const idx = {};
+  headerRow.forEach((h, i) => idx[norm_(h)] = i);
+
+  let changed = false;
+  const extended = headerRow.slice();
+
+  required.forEach(h => {
+    const key = norm_(h);
+    if (idx[key] == null){
+      extended.push(h);
+      idx[key] = extended.length - 1;
+      changed = true;
+    }
+  });
+
+  if (changed){
+    sh.getRange(1, 1, 1, extended.length).setValues([extended]);
+  }
+
+  return {
+    navegador:     idx[norm_("navegador")],
+    coordenadas:   idx[norm_("coordenadas")],
+    distancia_m:   idx[norm_("distancia (m)")],
+    direccion:     idx[norm_("direccion")],
+    fecha:         idx[norm_("fecha")],
+    hora:          idx[norm_("hora")]
+  };
+}
+
+// ===================== REVERSE GEOCODING + CACHE =====================
+function reverseGeocodeCached_(lat, lng){
+  try{
+    const cache = CacheService.getScriptCache();
+
+    // 🔧 menos precisión para que el cache funcione con jitter del GPS (≈11m)
+    const key = "addr_" + lat.toFixed(4) + "_" + lng.toFixed(4);
+
+    const cached = cache.get(key);
+    if (cached != null){
+      const sep = cached.indexOf("|");
+      if (sep >= 0) return { status: cached.slice(0, sep), address: cached.slice(sep + 1) };
+      return { status: "CACHED", address: cached };
+    }
+
+    const res = Maps.newGeocoder()
+      .setLanguage("es")
+      .setRegion("co")
+      .reverseGeocode(lat, lng);
+
+    const status = String(res && res.status ? res.status : "");
+    let addr = "";
+
+    if (status === "OK" && res.results && res.results.length){
+      addr = res.results[0].formatted_address || "";
+    }
+
+    const toStore = status + "|" + addr;
+    cache.put(key, toStore, addr ? ADDRESS_CACHE_SECONDS : ADDRESS_CACHE_EMPTY_SECONDS);
+
+    return { status: status || "NO_STATUS", address: addr };
+  }catch(_){
+    return { status: "EXCEPTION", address: "" };
+  }
+}
+
+// ===================== UTIL: PARSEAR "lat,lng" =====================
+function parseCoordText_(s){
+  const txt = String(s || "").trim();
+  if (!txt) return null;
+
+  // extrae los primeros 2 números (lat y lng)
+  const m = txt.match(/-?\d+(?:\.\d+)?/g);
+  if (!m || m.length < 2) return null;
+
+  const lat = Number(m[0]);
+  const lng = Number(m[1]);
+  if (!isFinite(lat) || !isFinite(lng)) return null;
+
+  return { lat, lng };
+}
+
+// ===================== 1) RELLENAR DIRECCIONES VIEJAS =====================
+function fillMissingAddresses(){
+  const BATCH_SIZE = 200;
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+  if (!sh) return;
+
+  const headerIndex = ensureHeaders_(sh, REQUIRED_HEADERS);
+  if (headerIndex.coordenadas == null || headerIndex.direccion == null) return;
+
+  const coordCol = headerIndex.coordenadas + 1;
+  const dirCol   = headerIndex.direccion + 1;
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return;
+
+  const props = PropertiesService.getScriptProperties();
+  let startRow = Number(props.getProperty("BACKFILL_NEXT_ROW") || "2");
+  if (startRow < 2) startRow = 2;
+  if (startRow > lastRow) {
+    props.deleteProperty("BACKFILL_NEXT_ROW");
+    return;
+  }
+
+  const endRow = Math.min(lastRow, startRow + BATCH_SIZE - 1);
+  const numRows = endRow - startRow + 1;
+
+  const coords = sh.getRange(startRow, coordCol, numRows, 1).getDisplayValues();
+  const dirs   = sh.getRange(startRow, dirCol,   numRows, 1).getValues();
+
+  let changed = false;
+
+  for (let i = 0; i < numRows; i++){
+    const currentDir = String(dirs[i][0] || "").trim();
+    if (currentDir) continue;
+
+    const coordText = String(coords[i][0] || "").trim();
+    const parsed = parseCoordText_(coordText);
+    if (!parsed) continue;
+
+    const geo = reverseGeocodeCached_(parsed.lat, parsed.lng);
+    const addr = String(geo.address || "").trim();
+    if (addr){
+      dirs[i][0] = addr;
+      changed = true;
+    }
+  }
+
+  if (changed){
+    sh.getRange(startRow, dirCol, numRows, 1).setValues(dirs);
+  }
+
+  if (endRow >= lastRow){
+    props.deleteProperty("BACKFILL_NEXT_ROW");
+  }else{
+    props.setProperty("BACKFILL_NEXT_ROW", String(endRow + 1));
+  }
+}
+
+function resetBackfill(){
+  PropertiesService.getScriptProperties().deleteProperty("BACKFILL_NEXT_ROW");
+}
+
+// ===================== 2) (OPCIONAL) BORRAR COLUMNAS QUE NO QUIERES =====================
+function removeUnwantedColumns(){
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+  if (!sh) return;
+
+  const lastCol = sh.getLastColumn();
+  if (lastCol < 1) return;
+
+  const headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+  const unwantedSet = new Set(UNWANTED_HEADERS.map(h => norm_(h)));
+
+  const colsToDelete = [];
+  for (let i = 0; i < headerRow.length; i++){
+    const key = norm_(headerRow[i]);
+    if (unwantedSet.has(key)) colsToDelete.push(i + 1);
+  }
+
+  colsToDelete.sort((a, b) => b - a).forEach(col1Based => {
+    sh.deleteColumn(col1Based);
+  });
+}
+
+// ===================== ✅ DEDUPE (queda disponible pero DESACTIVADO) =====================
+function normalizeCoord_(s){
+  return String(s || "").trim().replace(/\s+/g, "");
+}
+
+function buildKeyFromDisplayRow_(displayRow, headerIndex){
+  const get = (name) => {
+    const idx = headerIndex[name];
+    return idx == null ? "" : String(displayRow[idx] || "").trim();
+  };
+
+  const obj = {
+    navegador: get("navegador"),
+    coordenadas: normalizeCoord_(get("coordenadas")),
+    fecha: get("fecha"),
+    hora: get("hora"),
+    direccion: get("direccion")
+  };
+
+  const parts = DEDUPE_KEY_FIELDS.map(f => String(obj[f] || "").trim());
+  const key = parts.join("|");
+
+  // si la llave queda vacía, no deduplica
+  if (key.replace(/\|/g, "").trim() === "") return "";
+  return key;
+}
+
+/**
+ * Elimina duplicados inmediatamente después de escribir.
+ * Regla: conserva la fila MÁS RECIENTE y borra las anteriores con la misma llave.
+ * (Actualmente NO se ejecuta porque DEDUPE_EACH_WRITE=false)
+ */
+function dedupeOnEachWrite_(sh, headerIndex, lookbackRows){
+  const lastRow = sh.getLastRow();
+  const lastCol = sh.getLastColumn();
+  if (lastRow < 3 || lastCol < 1) return;
+
+  const nRaw = Number(lookbackRows);
+  const scanAll = !isFinite(nRaw) || nRaw <= 0;
+
+  const startRow = scanAll ? 2 : Math.max(2, lastRow - Math.max(1, nRaw) + 1);
+  const numRows = lastRow - startRow + 1;
+  if (numRows <= 1) return;
+
+  const data = sh.getRange(startRow, 1, numRows, lastCol).getDisplayValues();
+
+  const seen = new Set();
+  const rowsToDelete = [];
+
+  // Recorremos de abajo hacia arriba para CONSERVAR la más reciente
+  for (let i = data.length - 1; i >= 0; i--){
+    const key = buildKeyFromDisplayRow_(data[i], headerIndex);
+    if (!key) continue;
+
+    const absoluteRow = startRow + i;
+    if (seen.has(key)){
+      rowsToDelete.push(absoluteRow); // más vieja -> borrar
+    }else{
+      seen.add(key);
+    }
+  }
+
+  // borrar de abajo hacia arriba
+  rowsToDelete.sort((a, b) => b - a).forEach(r => sh.deleteRow(r));
+}

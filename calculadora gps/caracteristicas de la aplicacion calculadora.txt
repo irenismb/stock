@@ -1,0 +1,32 @@
+quiero que la pagina pueda registrar la ubicacion, en una hoja de calculo de google drive de la siguiente manera:
+
+- el intervalo predeterminado de registro de ubicacion debe ser de 5 minutos, pero se puede cambiar en el codigo.
+
+- no debe mostrar ningun mensaje emergente ni notificacion por esta nueva funcionalidad, ni siquiera por errores.
+
+- el monitoreo se iniciara automaticamente al abrir la pagina web.
+
+- los registros deben guardarse en una hoja de calculo, con un hipervinculo, de tal forma que al dar clic en registro me mostrara la ubicacion a la que hace referencia en google maps. en una columna la fecha del registro en formato aaaa-mm-dd, en otra columna, la hora con minutos incluidos, en este formato HH:MM en formato de 24 horas. debe captar de forma automatica los encabezados de la fila 1 de la hoja de calculo y colocar cada dato en la columna correspondiente, estos son: coordenadas, fecha, hora, minutos.
+
+el enlace a la pagina es:
+https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit?usp=sharing
+
+
+en enlace del appscrip es:
+https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
+https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
+https://script.google.com/macros/s/AKfycbyicApvUxxFKFF1iCdyvy1DDgUMxm_tVlY0MTE6DkwZqJxQGSuXjW1pQaIrDIzhHtr2/exec
+https://script.google.com/macros/s/AKfycbzq5HvGLI1tXtFAHVSe8On4pgKi4eqzP_PUaCiUhCNLqtKFBYOC16MEKolUJH7LxV0a/exec
+https://script.google.com/macros/s/AKfycbyxqPYMClr1uSqTSYjbz013DoXY_1jGTafEUXuS58XpFv6bb2gIhCb3F1wpBlECArsO/exec
+
+
+ESTO YA NO:
+- la palicacion debe tener todas las opciones actuales visibles solo despues de pulsar un boton llamado Config, asi que lo que debe presentar inicialmente es una calculadora sencilla.
+- te pedi que inicialmente se muestre una calculadora sencilla, lo demas solo debera aparecer si se presiona Config.
+la calculadora que debe mostrar es una como la de la imagen y no debe mostrar nada de lo de la segunda imagen sino despues de presionar config. - para mostrar lo que se muestra despues de presionar el boton config, debe pedir una clave que sera wrj - para que sirve el modo discreto.
+- para mostrar lo que se muestra despues de presionar el boton config, debe pedir una clave que sera wrj
+- el boton "regitrar ahora" debe registrar la informacion en la pestaña favoritos solamente.
+- en la pestaña mapa, debo poder ver en un mapa todas las ubicaciones pertenecientes a un dia y hora especificos que yo seleccione.
+- los registros de las ubicaciones deben agruparse por dia y luego por hora que se podran expandir y contraer.
+- el programa debe recordar todas las opciones y demas cosas modificadas y/o escogidas por el usuario, para no tener que andar haciendo lo mismo cada vez, que configure, o modifique opciones.
+- se debe llamar Calculadora.

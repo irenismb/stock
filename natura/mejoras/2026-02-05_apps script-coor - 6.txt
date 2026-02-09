@@ -1,0 +1,292 @@
+// ===================== CONFIGURACIÓN =====================
+const SPREADSHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
+const SHEET_NAME = ""; // vacío = primera hoja
+const TZ = "America/Bogota";
+
+// ✅ Coordenada fija (punto de referencia) para calcular distancia
+const REF_LAT = 11.244958;
+const REF_LNG = -74.190684;
+
+// ✅ Dirección (reverse geocoding)
+const WRITE_ADDRESS = true;
+
+// ✅ Cache para reverse geocoding (mientras más decimales, más exacto, pero menos cache-hit)
+const ADDRESS_CACHE_SECONDS = 21600;       // 6h
+const ADDRESS_CACHE_EMPTY_SECONDS = 120;   // 2min si sale vacía
+const ADDRESS_CACHE_DECIMALS = 6;          // <- antes era “más preciso”: 6 es buena opción
+
+// ✅ SOLO estas columnas se crearán/escribirán
+// ✅ 'navegador' guardará el user_id
+// ✅ 'precision' guardará acc (metros)
+// ✅ 'fuente' guardará la fuente (GPS / WI-FI / CELULAR / GEO / SIN_UBICACION / etc.)
+const REQUIRED_HEADERS = [
+  "navegador",
+  "coordenadas",
+  "precision",
+  "fuente",
+  "distancia (m)",
+  "direccion",
+  "fecha",
+  "hora"
+];
+
+// ===================== ENDPOINTS =====================
+function doGet(e)  { return handleRequest_(e); }
+function doPost(e) { return handleRequest_(e); }
+
+// Ejecuta 1 vez desde el editor para autorizar Spreadsheet
+function authTest(){
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+  if (!sh) return;
+  sh.getRange(1, 1).getValue();
+}
+
+// ✅ Ejecuta 1 vez para autorizar Maps (si WRITE_ADDRESS=true)
+function geoAuthTest(){
+  const res = Maps.newGeocoder()
+    .setLanguage("es")
+    .setRegion("co")
+    .reverseGeocode(4.7110, -74.0721);
+  Logger.log(JSON.stringify(res));
+}
+
+// ===================== LÓGICA PRINCIPAL =====================
+function handleRequest_(e){
+  let lock = null;
+
+  try{
+    const p = parseParams_(e);
+
+    // lat/lng pueden venir vacíos si no hay ubicación
+    const latTxt = String(p.lat == null ? "" : p.lat).trim();
+    const lngTxt = String(p.lng == null ? "" : p.lng).trim();
+
+    const lat = (latTxt === "") ? NaN : Number(latTxt);
+    const lng = (lngTxt === "") ? NaN : Number(lngTxt);
+    const hasCoords = isFinite(lat) && isFinite(lng);
+
+    // user_id => columna "navegador"
+    const userId = String((p.user_id || p.navegador || "")).trim();
+
+    // accuracy/acc => columna "precision"
+    const accTxt = String(p.acc == null ? "" : p.acc).trim();
+    const accNum = (accTxt === "") ? NaN : Number(accTxt);
+    const accVal = isFinite(accNum) ? accNum : "";
+
+    // fuente => columna "fuente"
+    let fuenteVal = String((p.fuente || p.src || "")).trim();
+    if (!fuenteVal){
+      fuenteVal = hasCoords ? "GEO" : "SIN_UBICACION";
+    }
+
+    // Dirección opcional enviada por cliente (si algún día la envías)
+    const clientAddress = String((p.direccion || "")).trim();
+
+    lock = LockService.getScriptLock();
+    if (!lock.tryLock(2000)) return ok_();
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+    if (!sh) return ok_();
+
+    const headerIndex = ensureHeaders_(sh, REQUIRED_HEADERS);
+    const lastCol = sh.getLastColumn();
+
+    const now = new Date();
+    const dateStr = Utilities.formatDate(now, TZ, "yyyy-MM-dd");
+    const timeStr = Utilities.formatDate(now, TZ, "HH:mm:ss"); // con segundos
+
+    let coordText = "";
+    let mapsUrl = "";
+    let distanceMeters = "";
+
+    if (hasCoords){
+      coordText = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+      mapsUrl   = `https://www.google.com/maps?q=${encodeURIComponent(coordText)}`;
+      distanceMeters = Math.round(haversineMeters_(REF_LAT, REF_LNG, lat, lng));
+    }
+
+    // Dirección: si hay coords y WRITE_ADDRESS => reverse geocode
+    // Si NO hay coords => usa la que mande el cliente (si la manda) o en blanco
+    let address = "";
+    if (hasCoords && WRITE_ADDRESS){
+      const geo = reverseGeocodeCached_(lat, lng);
+      address = geo.address || "";
+    } else {
+      address = clientAddress || "";
+    }
+
+    // arma fila (si no hay coords, igual se guarda navegador/fecha/hora/fuente/precision/direccion)
+    const row = new Array(lastCol).fill("");
+
+    if (headerIndex.navegador != null)   row[headerIndex.navegador]   = userId;
+    if (headerIndex.fecha != null)       row[headerIndex.fecha]       = dateStr;
+    if (headerIndex.hora != null)        row[headerIndex.hora]        = timeStr;
+    if (headerIndex.fuente != null)      row[headerIndex.fuente]      = fuenteVal;
+    if (headerIndex.precision != null)   row[headerIndex.precision]   = accVal;
+    if (headerIndex.direccion != null)   row[headerIndex.direccion]   = address;
+
+    if (headerIndex.distancia_m != null) row[headerIndex.distancia_m] = distanceMeters;
+
+    // pon texto simple en coordenadas (por si no aplica hyperlink)
+    if (headerIndex.coordenadas != null) row[headerIndex.coordenadas] = coordText;
+
+    // escribe en la siguiente fila vacía
+    const nextRow = Math.max(2, sh.getLastRow() + 1);
+    sh.getRange(nextRow, 1, 1, lastCol).setValues([row]);
+
+    // Coordenadas como hipervínculo REAL (solo si hay coords)
+    if (hasCoords && headerIndex.coordenadas != null){
+      const cell = sh.getRange(nextRow, headerIndex.coordenadas + 1);
+      const rich = SpreadsheetApp.newRichTextValue()
+        .setText(coordText)
+        .setLinkUrl(mapsUrl)
+        .build();
+      cell.setRichTextValue(rich);
+    }
+
+  }catch(_){
+    // silencio total
+  }finally{
+    try{ if (lock) lock.releaseLock(); }catch(_){}
+  }
+
+  return ok_();
+}
+
+// ===================== DISTANCIA (HAVERSINE) =====================
+function haversineMeters_(lat1, lng1, lat2, lng2){
+  const R = 6371000; // metros
+  const toRad = (x) => x * Math.PI / 180;
+
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+
+  const aLat1 = toRad(lat1);
+  const aLat2 = toRad(lat2);
+
+  const a =
+    Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(aLat1) * Math.cos(aLat2) *
+    Math.sin(dLng/2) * Math.sin(dLng/2);
+
+  const c = 2 * Math.asin(Math.sqrt(a));
+  return R * c;
+}
+
+// ===================== RESPUESTA OK =====================
+function ok_(){
+  return ContentService
+    .createTextOutput("ok")
+    .setMimeType(ContentService.MimeType.TEXT);
+}
+
+// ===================== PARSEO PARAMS =====================
+function parseParams_(e){
+  const out = Object.assign({}, (e && e.parameter) || {});
+  try{
+    const raw = e && e.postData && e.postData.contents;
+    if (!raw) return out;
+
+    const ct = String(e.postData.type || "").toLowerCase();
+    if (ct.includes("application/json")){
+      const j = JSON.parse(raw);
+      if (j && typeof j === "object"){
+        Object.keys(j).forEach(k => out[k] = String(j[k]));
+      }
+      return out;
+    }
+
+    raw.split("&").forEach(part => {
+      if(!part) return;
+      const kv = part.split("=");
+      const k = kv[0];
+      const v = kv.slice(1).join("=");
+      if(!k) return;
+      out[decodeURIComponent(k)] = decodeURIComponent(v || "");
+    });
+  }catch(_){}
+  return out;
+}
+
+// ===================== HEADERS =====================
+function norm_(s){
+  return String(s || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function ensureHeaders_(sh, required){
+  const lastCol = Math.max(1, sh.getLastColumn());
+  const headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
+
+  const idx = {};
+  headerRow.forEach((h, i) => idx[norm_(h)] = i);
+
+  let changed = false;
+  const extended = headerRow.slice();
+
+  required.forEach(h => {
+    const key = norm_(h);
+    if (idx[key] == null){
+      extended.push(h);
+      idx[key] = extended.length - 1;
+      changed = true;
+    }
+  });
+
+  if (changed){
+    sh.getRange(1, 1, 1, extended.length).setValues([extended]);
+  }
+
+  return {
+    navegador:     idx[norm_("navegador")],
+    coordenadas:   idx[norm_("coordenadas")],
+    precision:     idx[norm_("precision")],
+    fuente:        idx[norm_("fuente")],
+    distancia_m:   idx[norm_("distancia (m)")],
+    direccion:     idx[norm_("direccion")],
+    fecha:         idx[norm_("fecha")],
+    hora:          idx[norm_("hora")]
+  };
+}
+
+// ===================== REVERSE GEOCODING + CACHE =====================
+function reverseGeocodeCached_(lat, lng){
+  try{
+    const cache = CacheService.getScriptCache();
+
+    // ✅ más preciso que toFixed(4) (antes sentías mejor precisión)
+    const key = "addr_" + lat.toFixed(ADDRESS_CACHE_DECIMALS) + "_" + lng.toFixed(ADDRESS_CACHE_DECIMALS);
+
+    const cached = cache.get(key);
+    if (cached != null){
+      const sep = cached.indexOf("|");
+      if (sep >= 0) return { status: cached.slice(0, sep), address: cached.slice(sep + 1) };
+      return { status: "CACHED", address: cached };
+    }
+
+    const res = Maps.newGeocoder()
+      .setLanguage("es")
+      .setRegion("co")
+      .reverseGeocode(lat, lng);
+
+    const status = String(res && res.status ? res.status : "");
+    let addr = "";
+
+    if (status === "OK" && res.results && res.results.length){
+      addr = res.results[0].formatted_address || "";
+    }
+
+    const toStore = status + "|" + addr;
+    cache.put(key, toStore, addr ? ADDRESS_CACHE_SECONDS : ADDRESS_CACHE_EMPTY_SECONDS);
+
+    return { status: status || "NO_STATUS", address: addr };
+  }catch(_){
+    return { status: "EXCEPTION", address: "" };
+  }
+}

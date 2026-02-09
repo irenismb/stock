@@ -1,0 +1,700 @@
+/**
+ * ============================================
+ * CONFIGURACIÓN GENERAL
+ * ============================================
+ */
+const SPREADSHEET_ID    = "1B0p9D64kMN-oLLW3gD77iaWtLqlVBOgC-J2GyUgrhJ0";
+const CATALOG_SHEET_NAME = "catalogo";
+const VISITS_SHEET_NAME  = "visitas";
+
+// Catálogo
+const START_ROW  = 3; // primera fila con datos reales en "catalogo"
+const HEADER_ROW = 2; // fila donde están los títulos de columnas en "catalogo"
+
+// Visitas
+const VISITS_HEADER_ROW = 1; // fila de encabezados en "visitas"
+const VISITS_START_ROW  = 2; // primera fila con datos reales en "visitas"
+
+// URLs para redes sociales que usará el HTML (acción social)
+const SOCIAL_WHATSAPP_URL  = "https://wa.me/573042088961";
+const SOCIAL_INSTAGRAM_URL = "https://www.instagram.com/irenismb_stocknaturasm";
+const SOCIAL_FACEBOOK_URL  = "https://www.facebook.com/marketplace/profile/100084865295132";
+
+/**
+ * Devuelve el libro principal.
+ */
+function getBook_() {
+  return SpreadsheetApp.openById(SPREADSHEET_ID);
+}
+
+/**
+ * Normaliza encabezados para compararlos (minúsculas y recorte).
+ */
+function normalizeHeader_(s) {
+  return String(s || "")
+    .trim()
+    .toLowerCase();
+}
+
+/**
+ * Busca índice (0-based) de una lista de posibles nombres de columna.
+ */
+function findHeaderIndex_(headers, names) {
+  if (!Array.isArray(names)) {
+    names = [names];
+  }
+  const normHeaders = headers.map(normalizeHeader_);
+  for (var i = 0; i < names.length; i++) {
+    var target = normalizeHeader_(names[i]);
+    var idx = normHeaders.indexOf(target);
+    if (idx !== -1) return idx;
+  }
+  return -1;
+}
+
+/**
+ * ============================================
+ * CONFIGURACIÓN DE COLUMNAS: CATALOGO
+ * ============================================
+ *
+ * Hoja "catalogo"
+ * Se buscan las columnas por nombre (Id, Descripcion, Orden, etc.)
+ */
+function getCatalogColumnConfig_(sheet) {
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(HEADER_ROW, 1, 1, lastCol).getValues()[0];
+
+  // Columnas obligatorias: Id, Descripcion
+  const idIdx    = findHeaderIndex_(headers, ["Id", "ID", "Codigo", "Código", "Cód.", "Cod", "cod", "codigo"]);
+  const descIdx  = findHeaderIndex_(headers, [
+    "Descripcion",
+    "Descripción",
+    "Descripcion producto",
+    "Descripción producto",
+    "Detalle",
+    "Detalle producto"
+  ]);
+  // La columna "Orden" pasa a ser opcional (puede no existir)
+  const ordenIdx = findHeaderIndex_(headers, ["Orden", "Orden catalogo", "Orden catálogo", "Ordenamiento"]);
+
+  if (idIdx === -1)   throw new Error('No se encontró la columna "Id/Código" en la hoja "' + CATALOG_SHEET_NAME + '".');
+  if (descIdx === -1) throw new Error('No se encontró la columna "Descripcion/Descripción" en la hoja "' + CATALOG_SHEET_NAME + '".');
+  // Ya NO validamos ordenIdx; si vale -1, simplemente no se usará esa columna
+
+  // Otras columnas: si no se encuentran por nombre, se asume posición “clásica”
+  // A: Nombre, B: Categoría, C: Marca, D: Valor unitario, E: Stock
+  const nameIdx = (function(){
+    const ix = findHeaderIndex_(headers, ["Nombre", "Nombre producto", "Producto"]);
+    return ix !== -1 ? ix : 0;
+  })();
+  const categoryIdx = (function(){
+    const ix = findHeaderIndex_(headers, ["Categoria", "Categoría"]);
+    return ix !== -1 ? ix : 1;
+  })();
+  const marcaIdx = (function(){
+    const ix = findHeaderIndex_(headers, "Marca");
+    return ix !== -1 ? ix : 2;
+  })();
+  const priceIdx = (function(){
+    const ix = findHeaderIndex_(headers, ["Valor unitario", "Precio"]);
+    return ix !== -1 ? ix : 3;
+  })();
+  const stockIdx = (function(){
+    const ix = findHeaderIndex_(headers, ["Stock", "Existencia"]);
+    return ix !== -1 ? ix : 4;
+  })();
+
+  return {
+    lastCol:     lastCol,
+    nameIdx:     nameIdx,
+    categoryIdx: categoryIdx,
+    marcaIdx:    marcaIdx,
+    priceIdx:    priceIdx,
+    stockIdx:    stockIdx,
+    idIdx:       idIdx,
+    descIdx:     descIdx,
+    ordenIdx:    ordenIdx   // puede ser -1 si no existe columna "Orden"
+  };
+}
+
+/**
+ * ============================================
+ * CONFIGURACIÓN DE COLUMNAS: VISITAS
+ * ============================================
+ *
+ * Hoja "visitas"
+ * Columnas esperadas (mínimo):
+ *  - Fecha de entrada
+ *  - Hora de entrada
+ *  - Id              ← identificador del navegador (browserId)
+ *  - Usuario
+ *  - IP publica
+ *  - Ciudad
+ *  - Clic en los productos
+ *  - Palabras buscadas
+ *
+ * La columna de SessionId es OPCIONAL.
+ */
+function getVisitsColumnConfig_(sheet) {
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(VISITS_HEADER_ROW, 1, 1, lastCol).getValues()[0];
+
+  // Columna de identificador de sesión (opcional)
+  const sessionIdIdx = findHeaderIndex_(headers, [
+    "sessionid",
+    "id sesion",
+    "id sesión",
+    "id de sesion",
+    "id de sesión",
+    "sesionid",
+    "sesiónid",
+    "id session"
+  ]);
+
+  const fechaEntradaIdx = findHeaderIndex_(headers, [
+    "fecha de entrada",
+    "fecha entrada"
+  ]);
+  const horaEntradaIdx = findHeaderIndex_(headers, [
+    "hora de entrada",
+    "hora entrada"
+  ]);
+
+  // NUEVO: columna Id para browserId (obligatoria ahora)
+  const idIdx = findHeaderIndex_(headers, [
+    "id",
+    "identificador",
+    "id navegador",
+    "browserid",
+    "browser id"
+  ]);
+
+  const usuarioIdx = findHeaderIndex_(headers, [
+    "usuario",
+    "nombre usuario",
+    "alias"
+  ]);
+  const ipPublicaIdx = findHeaderIndex_(headers, [
+    "ip publica",
+    "ip pública",
+    "ip public",
+    "ip"
+  ]);
+  const ciudadIdx = findHeaderIndex_(headers, [
+    "ciudad",
+    "city"
+  ]);
+  const clicProductosIdx = findHeaderIndex_(headers, [
+    "clic en los productos",
+    "click en los productos",
+    "clic productos",
+    "productos clic"
+  ]);
+  const palabrasBuscadasIdx = findHeaderIndex_(headers, [
+    "palabras buscadas",
+    "busquedas",
+    "búsquedas",
+    "terminos buscados",
+    "términos buscados"
+  ]);
+
+  // Estas columnas SÍ deben existir según tu diseño:
+  if (fechaEntradaIdx === -1)     throw new Error('No se encontró la columna "Fecha de entrada" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (horaEntradaIdx === -1)      throw new Error('No se encontró la columna "Hora de entrada" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (idIdx === -1)               throw new Error('No se encontró la columna "Id" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (usuarioIdx === -1)          throw new Error('No se encontró la columna "Usuario" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (ipPublicaIdx === -1)        throw new Error('No se encontró la columna "IP publica" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (ciudadIdx === -1)           throw new Error('No se encontró la columna "Ciudad" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (clicProductosIdx === -1)    throw new Error('No se encontró la columna "Clic en los productos" en la hoja "' + VISITS_SHEET_NAME + '".');
+  if (palabrasBuscadasIdx === -1) throw new Error('No se encontró la columna "Palabras buscadas" en la hoja "' + VISITS_SHEET_NAME + '".');
+
+  return {
+    lastCol:             lastCol,
+    sessionIdIdx:        sessionIdIdx,   // puede ser -1
+    idIdx:               idIdx,         // Id del navegador (browserId)
+    fechaEntradaIdx:     fechaEntradaIdx,
+    horaEntradaIdx:      horaEntradaIdx,
+    usuarioIdx:          usuarioIdx,
+    ipPublicaIdx:        ipPublicaIdx,
+    ciudadIdx:           ciudadIdx,
+    clicProductosIdx:    clicProductosIdx,
+    palabrasBuscadasIdx: palabrasBuscadasIdx
+  };
+}
+
+/**
+ * ============================================
+ * doGet
+ *  - GET .../exec?action=getAll
+ *  - GET .../exec?action=listProducts
+ *  - GET .../exec?action=products
+ *  - GET .../exec?action=logVisit   (registro de visitas, usa browserId)
+ *  - GET .../exec?action=visit      (compatibilidad antigua)
+ *  - GET .../exec?action=visits     (resumen visitas)
+ *  - GET .../exec?action=social     (URLs redes sociales)
+ * ============================================
+ */
+function doGet(e) {
+  var action = e && e.parameter && e.parameter.action ? e.parameter.action : "getAll";
+
+  // Listado de productos
+  if (action === "getAll" || action === "listProducts" || action === "products") {
+    return listProducts_();
+  }
+
+  // Registro de visita basado en parámetros GET
+  if (action === "logVisit") {
+    var payload = buildVisitPayloadFromGet_(e);
+    recordVisitSessionEvent_(payload);
+    return json_({ status: "success" });
+  }
+
+  // Registro simple de visita (compatibilidad antigua)
+  if (action === "visit") {
+    var simplePayload = {
+      sessionId: (e && e.parameter && e.parameter.sessionId) || "",
+      phase: "start",
+      userName: "",
+      ipPublica: "",
+      ciudad: "",
+      clickText: "entrada_catalogo",
+      searchText: "",
+      browserId: ""
+    };
+    recordVisitSessionEvent_(simplePayload);
+    return json_({ status: "success" });
+  }
+
+  // Resumen de visitas para la tarjeta lateral
+  if (action === "visits") {
+    return json_(getVisitsSummary_());
+  }
+
+  // URLs de redes sociales
+  if (action === "social") {
+    return json_(getSocialInfo_());
+  }
+
+  return json_({ status: "error", message: "Acción GET no soportada." });
+}
+
+/**
+ * ============================================
+ * doPost
+ *  - action=logVisit   → registra visita con JSON (opcional)
+ * ============================================
+ */
+function doPost(e) {
+  var out;
+  try {
+    var data = e && e.postData && e.postData.contents
+      ? JSON.parse(e.postData.contents)
+      : {};
+
+    var action = data.action || "";
+
+    if (action === "logVisit") {
+      var payload = buildVisitPayloadFromPost_(data);
+      recordVisitSessionEvent_(payload);
+      out = { status: "success" };
+    } else {
+      out = { status: "error", message: "Acción POST no soportada." };
+    }
+  } catch (err) {
+    out = { status: "error", message: err.message };
+  }
+  return json_(out);
+}
+
+/**
+ * ============================================
+ * LECTURA DE CATÁLOGO
+ * ============================================
+ *
+ * Lee la hoja "catalogo" y devuelve JSON de productos.
+ */
+function listProducts_() {
+  var ss = getBook_();
+  var sheet = ss.getSheetByName(CATALOG_SHEET_NAME);
+  if (!sheet) {
+    return json_({
+      status: "error",
+      message: 'No se encontró la hoja "' + CATALOG_SHEET_NAME + '"'
+    });
+  }
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow < START_ROW) {
+    return json_({ status: "success", products: [], ts: Date.now() });
+  }
+
+  var cfg = getCatalogColumnConfig_(sheet);
+  var numRows = lastRow - START_ROW + 1;
+  var values = sheet.getRange(START_ROW, 1, numRows, cfg.lastCol).getValues();
+
+  var products = [];
+  for (var i = 0; i < values.length; i++) {
+    var row = values[i];
+
+    var id   = row[cfg.idIdx];
+    var name = row[cfg.nameIdx];
+    if (!id || !name) continue; // saltar filas vacías o sin ID
+
+    var priceRaw  = row[cfg.priceIdx] || 0;
+    var stockRaw  = row[cfg.stockIdx] || 0;
+    var descRaw   = row[cfg.descIdx] || "";
+    // Si no existe columna "Orden", usamos cadena vacía
+    var ordenRaw  = (cfg.ordenIdx >= 0 ? row[cfg.ordenIdx] : "");
+
+    var ordenNum = Number(String(ordenRaw).replace(/[^\d\-]/g, ""));
+    if (isNaN(ordenNum)) ordenNum = 0;
+
+    var idStr        = String(id).trim();
+    var nameStr      = String(name).trim();
+    var categoryStr  = String(row[cfg.categoryIdx] || "").trim();
+    var marcaStr     = String(row[cfg.marcaIdx] || "").trim();
+    var price        = Number(String(priceRaw).replace(/[^\d]/g, "")) || 0;
+    var stock        = Number(String(stockRaw).replace(/[^\d]/g, "")) || 0;
+    var desc         = String(descRaw || "").trim();
+
+    products.push({
+      // Claves en español (compatibles con tu front)
+      id:             idStr,
+      codigo:         idStr,
+      nombre:         nameStr,
+      descripcion:    desc,
+      categoria:      categoryStr,
+      marca:          marcaStr,
+      precio:         price,
+      precioVenta:    price,
+      stock:          stock,
+      orden:          ordenNum,
+      // Claves en inglés (por si las usas también)
+      name:           nameStr,
+      description:    desc,
+      category:       categoryStr,
+      valor_unitario: price
+    });
+  }
+
+  return json_({
+    status: "success",
+    products: products,
+    ts: Date.now()
+  });
+}
+
+/**
+ * ============================================
+ * PAYLOADS PARA VISITAS
+ * ============================================
+ */
+
+/**
+ * Construye el payload estándar de visita a partir de una llamada GET.
+ * Recibe también browserId (identificador del navegador).
+ */
+function buildVisitPayloadFromGet_(e) {
+  var p = (e && e.parameter) || {};
+  return {
+    sessionId: String(p.sessionId || "").trim(),
+    phase:     String(p.phase || p.etapa || "").trim().toLowerCase(), // "start", "update", "end"
+    userName:  String(p.userName || p.usuario || "").trim(),
+    ipPublica: String(p.ipPublica || p.ip || "").trim(),
+    ciudad:    String(p.ciudad || p.city || "").trim(),
+    clickText: String(p.clickText || p.click || "").trim(),
+    searchText:String(p.searchText || p.search || "").trim(),
+    browserId: String(p.browserId || p.browser_id || "").trim() // ← Id navegador
+  };
+}
+
+/**
+ * Construye el payload estándar de visita a partir de una llamada POST (JSON).
+ */
+function buildVisitPayloadFromPost_(data) {
+  return {
+    sessionId: String(data.sessionId || "").trim(),
+    phase:     String(data.phase || data.etapa || "").trim().toLowerCase(),
+    userName:  String(data.userName || data.usuario || "").trim(),
+    ipPublica: String(data.ipPublica || data.ip || "").trim(),
+    ciudad:    String(data.ciudad || data.city || "").trim(),
+    clickText: String(data.clickText || data.click || "").trim(),
+    searchText:String(data.searchText || data.search || "").trim(),
+    browserId: String(data.browserId || data.browser_id || "").trim() // ← Id navegador
+  };
+}
+
+/**
+ * Registra / actualiza una fila de visita en la hoja "visitas".
+ *
+ * - Si NO hay columna SessionId, o no llega sessionId:
+ *      → siempre se añade una fila nueva con fecha/hora de entrada.
+ * - Si hay SessionId y valor:
+ *      → se agrupan eventos por sessionId (clics, búsquedas).
+ * - La columna "Id" guarda el browserId (identificador del navegador).
+ */
+function recordVisitSessionEvent_(payload) {
+  var ss = getBook_();
+  var sheet = ss.getSheetByName(VISITS_SHEET_NAME);
+  if (!sheet) {
+    throw new Error('No se encontró la hoja "' + VISITS_SHEET_NAME + '"');
+  }
+
+  var cfg = getVisitsColumnConfig_(sheet);
+  var lastRow = sheet.getLastRow();
+  if (lastRow < VISITS_HEADER_ROW) {
+    lastRow = VISITS_HEADER_ROW;
+  }
+
+  var sessionId = String(payload.sessionId || "").trim();
+  var phase     = String(payload.phase || "").trim().toLowerCase();
+  var userName  = payload.userName || "";
+  var ipPublica = payload.ipPublica || "";
+  var ciudad    = payload.ciudad || "";
+  var clickText = payload.clickText || "";
+  var searchText= payload.searchText || "";
+  var browserId = payload.browserId || "";
+
+  var now = new Date();
+  var tz  = Session.getScriptTimeZone();
+  var fechaStr = Utilities.formatDate(now, tz, "yyyy-MM-dd");
+  var horaStr  = Utilities.formatDate(now, tz, "hh:mm a");
+
+  // Normalizar fase: si viene vacía, la tratamos como "update"
+  if (!phase) {
+    phase = "update";
+  }
+
+  var hasSessionCol   = (cfg.sessionIdIdx !== -1);
+  var canUseSessionId = (hasSessionCol && sessionId);
+
+  // ===== MODO SIN SessionId (fila nueva en cada evento) =====
+  if (!canUseSessionId) {
+    var rowNew = new Array(cfg.lastCol).fill("");
+
+    if (hasSessionCol) {
+      rowNew[cfg.sessionIdIdx] = ""; // queda vacío
+    }
+
+    rowNew[cfg.fechaEntradaIdx] = fechaStr;
+    rowNew[cfg.horaEntradaIdx]  = horaStr;
+
+    if (browserId) rowNew[cfg.idIdx]            = browserId;      // ← aquí guardamos el navegador
+    if (userName)  rowNew[cfg.usuarioIdx]       = userName;
+    if (ipPublica) rowNew[cfg.ipPublicaIdx]     = ipPublica;
+    if (ciudad)    rowNew[cfg.ciudadIdx]        = ciudad;
+    if (clickText) rowNew[cfg.clicProductosIdx] = clickText;
+    if (searchText)rowNew[cfg.palabrasBuscadasIdx] = searchText;
+
+    sheet.getRange(lastRow + 1, 1, 1, cfg.lastCol).setValues([rowNew]);
+    return;
+  }
+
+  // ===== MODO AGRUPADO POR SessionId =====
+  var sessionRow = -1;
+  var dataRange = sheet.getRange(
+    VISITS_START_ROW,
+    cfg.sessionIdIdx + 1,
+    Math.max(lastRow - VISITS_START_ROW + 1, 0),
+    1
+  ).getValues();
+
+  for (var i = 0; i < dataRange.length; i++) {
+    var val = String(dataRange[i][0] || "").trim();
+    if (val && val === sessionId) {
+      sessionRow = VISITS_START_ROW + i;
+      break;
+    }
+  }
+
+  // Si no existe fila para ese sessionId, la creamos al final.
+  if (sessionRow === -1) {
+    sessionRow = lastRow + 1;
+
+    var rowArr = new Array(cfg.lastCol).fill("");
+
+    rowArr[cfg.sessionIdIdx]    = sessionId;
+    rowArr[cfg.fechaEntradaIdx] = fechaStr;
+    rowArr[cfg.horaEntradaIdx]  = horaStr;
+
+    if (browserId) rowArr[cfg.idIdx]            = browserId;
+    if (userName)  rowArr[cfg.usuarioIdx]       = userName;
+    if (ipPublica) rowArr[cfg.ipPublicaIdx]     = ipPublica;
+    if (ciudad)    rowArr[cfg.ciudadIdx]        = ciudad;
+    if (clickText) rowArr[cfg.clicProductosIdx] = clickText;
+    if (searchText)rowArr[cfg.palabrasBuscadasIdx] = searchText;
+
+    sheet.getRange(sessionRow, 1, 1, cfg.lastCol).setValues([rowArr]);
+    return;
+  }
+
+  // Si la fila ya existe, la leemos para actualizarla
+  var rowValues = sheet.getRange(sessionRow, 1, 1, cfg.lastCol).getValues()[0];
+
+  // Si la fase es "start" y aún no hay fecha/hora de entrada,
+  // podemos inicializarlas (por seguridad).
+  if (phase === "start") {
+    if (!rowValues[cfg.fechaEntradaIdx]) {
+      rowValues[cfg.fechaEntradaIdx] = fechaStr;
+    }
+    if (!rowValues[cfg.horaEntradaIdx]) {
+      rowValues[cfg.horaEntradaIdx] = horaStr;
+    }
+  }
+
+  // Si tenemos browserId y la celda Id está vacía, la rellenamos
+  if (browserId && !rowValues[cfg.idIdx]) {
+    rowValues[cfg.idIdx] = browserId;
+  }
+
+  // Actualizamos Usuario / IP / Ciudad sólo si vienen datos nuevos
+  if (userName) {
+    rowValues[cfg.usuarioIdx] = userName;
+  }
+  if (ipPublica) {
+    rowValues[cfg.ipPublicaIdx] = ipPublica;
+  }
+  if (ciudad) {
+    rowValues[cfg.ciudadIdx] = ciudad;
+  }
+
+  // Acumulamos clics en productos (lista separada por coma)
+  if (clickText) {
+    var currentClicks = String(rowValues[cfg.clicProductosIdx] || "").trim();
+    if (currentClicks) {
+      // Evitamos duplicar exactamente el mismo texto consecutivo
+      if (currentClicks.split(",").map(function(s){return s.trim();}).pop() !== clickText) {
+        currentClicks = currentClicks + ", " + clickText;
+      }
+    } else {
+      currentClicks = clickText;
+    }
+    rowValues[cfg.clicProductosIdx] = currentClicks;
+  }
+
+  // Acumulamos palabras buscadas sin usar coma (separador " · ")
+  if (searchText) {
+    var currentSearches = String(rowValues[cfg.palabrasBuscadasIdx] || "").trim();
+    if (currentSearches) {
+      var lastPart = currentSearches.split("·").map(function(s){return s.trim();}).pop();
+      if (lastPart !== searchText) {
+        currentSearches = currentSearches + " · " + searchText;
+      }
+    } else {
+      currentSearches = searchText;
+    }
+    rowValues[cfg.palabrasBuscadasIdx] = currentSearches;
+  }
+
+  sheet.getRange(sessionRow, 1, 1, cfg.lastCol).setValues([rowValues]);
+}
+
+/**
+ * Devuelve un pequeño resumen para la tarjeta de "Visitas a este catálogo".
+ */
+function getVisitsSummary_() {
+  var result = {
+    status: "success",
+    total: 0,
+    lastVisit: "",
+    sessionId: ""
+  };
+
+  var ss = getBook_();
+  var sheet = ss.getSheetByName(VISITS_SHEET_NAME);
+  if (!sheet) {
+    result.status = "error";
+    result.message = 'No se encontró la hoja "' + VISITS_SHEET_NAME + '"';
+    return result;
+  }
+
+  var lastRow = sheet.getLastRow();
+  if (lastRow <= VISITS_HEADER_ROW) {
+    // No hay datos
+    return result;
+  }
+
+  var cfg = getVisitsColumnConfig_(sheet);
+
+  // Total de filas de datos
+  result.total = lastRow - VISITS_HEADER_ROW;
+
+  // Última visita: tomamos la última fila con datos
+  var lastData = sheet.getRange(lastRow, 1, 1, cfg.lastCol).getValues()[0];
+  var fechaVal = lastData[cfg.fechaEntradaIdx];
+  var horaVal  = lastData[cfg.horaEntradaIdx];
+
+  var tz = Session.getScriptTimeZone();
+  var fechaStr = fechaVal instanceof Date
+    ? Utilities.formatDate(fechaVal, tz, "yyyy-MM-dd")
+    : String(fechaVal || "");
+  var horaStr = horaVal instanceof Date
+    ? Utilities.formatDate(horaVal, tz, "HH:mm")
+    : String(horaVal || "");
+
+  result.lastVisit = (fechaStr + " " + horaStr).trim();
+
+  // SessionId sólo si existe esa columna
+  if (cfg.sessionIdIdx !== -1) {
+    var sessionIdVal = lastData[cfg.sessionIdIdx];
+    result.sessionId = String(sessionIdVal || "").trim();
+  }
+
+  return result;
+}
+
+/**
+ * Devuelve las URLs de redes sociales para los botones de contacto.
+ */
+function getSocialInfo_() {
+  var tz = Session.getScriptTimeZone();
+  var updatedAt = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd");
+  return {
+    status: "success",
+    whatsapp:  SOCIAL_WHATSAPP_URL || null,
+    instagram: SOCIAL_INSTAGRAM_URL || null,
+    facebook:  SOCIAL_FACEBOOK_URL || null,
+    updatedAt: updatedAt
+  };
+}
+
+/**
+ * ============================================
+ * UTILIDADES GENERALES
+ * ============================================
+ */
+function json_(obj) {
+  return ContentService
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
+ * Prueba manual sencilla: crea/actualiza una sesión de ejemplo.
+ * (Ejecutar desde el editor si quieres probar sin front-end.)
+ */
+function testAppendVisit() {
+  var payloadStart = {
+    sessionId: "TEST-123",
+    phase: "start",
+    userName: "Martin",
+    ipPublica: "186.85.40.82",
+    ciudad: "Santa Marta",
+    clickText: "",
+    searchText: "",
+    browserId: "test-browser-id-123"
+  };
+  recordVisitSessionEvent_(payloadStart);
+
+  var payloadClick = {
+    sessionId: "TEST-123",
+    phase: "update",
+    userName: "",
+    ipPublica: "",
+    ciudad: "",
+    clickText: "Aguas Citrico 150 ml",
+    searchText: "Perfume de agua",
+    browserId: "test-browser-id-123"
+  };
+  recordVisitSessionEvent_(payloadClick);
+}

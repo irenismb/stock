@@ -315,6 +315,36 @@
       object-fit:cover;
       cursor:zoom-in;
     }
+
+    .noimg{
+      width:100%;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:8px;
+      color:var(--mut);
+      text-align:center;
+      padding:14px;
+    }
+    .noimg svg{
+      width:42px;height:42px;
+      fill:var(--mut);
+      opacity:.95;
+    }
+    .noimg .noimg-title{
+      font-weight:950;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      font-size:12px;
+    }
+    .noimg .noimg-sub{
+      font-size:11px;
+      line-height:1.35;
+      color:rgba(169,180,194,.9);
+    }
+
     .pad{padding:12px;display:flex;flex-direction:column;gap:10px}
     .name{font-weight:950;margin:0;font-size:15px;line-height:1.25}
     .meta{color:var(--mut);font-size:12px;margin:0}
@@ -438,6 +468,26 @@
       flex:0 0 auto;
       cursor:zoom-in;
     }
+    .noimg-thumb{
+      width:46px;
+      height:46px;
+      border-radius:12px;
+      background:rgba(11,18,32,.35);
+      border:1px solid rgba(255,255,255,.10);
+      color:var(--mut);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 auto;
+      cursor:default;
+    }
+    .noimg-thumb svg{
+      width:22px;height:22px;
+      fill:var(--mut);
+      opacity:.95;
+      display:block;
+    }
+
     .cart-item-main{
       flex:1 1 auto;
       min-width:0;
@@ -745,8 +795,12 @@
 
   <script>
     const WHATSAPP_NUMBER = "573042088961";
+
     const IMG_DIR = "recursos/imagenes_de_productos";
-    const IMG_EXTS = ["webp","jpg","jpeg","png"];
+    const IMAGE_EXTS = ["webp","jpg","jpeg","png"];
+    const NON_IMAGE_EXTS = ["txt"];
+    const SUPPORTED_EXTS = [...IMAGE_EXTS, ...NON_IMAGE_EXTS];
+
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
     const SITE_BASE = "https://irenismb.github.io/stock/natura/";
@@ -756,7 +810,7 @@
     const GITHUB_REPO = "stock";
     const GITHUB_PRODUCTS_DIR = "natura/recursos/imagenes_de_productos";
 
-    const PRODUCTS_CACHE_KEY = "irenismb_products_cache_v2";
+    const PRODUCTS_CACHE_KEY = "irenismb_products_cache_v3";
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function normalizeText(t){
@@ -787,7 +841,11 @@
     function encodePath(p){
       return encodeURI(String(p || ""));
     }
+    function isImageExt(ext){
+      return IMAGE_EXTS.includes(String(ext || "").toLowerCase());
+    }
     function productImageAbsoluteUrlFromFilename(filename){
+      if(!filename) return FALLBACK_IMAGE;
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
@@ -854,6 +912,25 @@
       }catch(_){}
     }
 
+    function pickBetterRepresentative(existing, candidate){
+      if(!existing) return candidate;
+
+      const eImg = !!existing.hasImage;
+      const cImg = !!candidate.hasImage;
+
+      if(eImg && !cImg) return existing;
+      if(!eImg && cImg) return candidate;
+
+      if(eImg && cImg){
+        const eExt = String(existing.fileExt || extOf(existing.srcFilename || existing.imgFilename || "")).toLowerCase();
+        const cExt = String(candidate.fileExt || extOf(candidate.srcFilename || candidate.imgFilename || "")).toLowerCase();
+        if(preferredExtScore(cExt) < preferredExtScore(eExt)) return candidate;
+        return existing;
+      }
+
+      return existing;
+    }
+
     async function loadProductsFromImagesFolder(){
       const cached = readProductsCache();
       if(cached && cached.length) return cached;
@@ -878,26 +955,23 @@
 
       for(const filename of files){
         const ext = extOf(filename);
-        if(!IMG_EXTS.includes(ext)) continue;
+        if(!SUPPORTED_EXTS.includes(ext)) continue;
 
         const base = baseOf(filename);
         const parsed = parseProductFromBaseName(base);
         if(!parsed) continue;
 
-        const existing = byId.get(parsed.id);
+        const hasImage = isImageExt(ext);
         const candidate = {
           ...parsed,
-          imgFilename: filename
+          srcFilename: filename,
+          fileExt: ext,
+          hasImage,
+          imgFilename: hasImage ? filename : null
         };
 
-        if(!existing){
-          byId.set(parsed.id, candidate);
-        }else{
-          const eExt = extOf(existing.imgFilename);
-          if(preferredExtScore(ext) < preferredExtScore(eExt)){
-            byId.set(parsed.id, candidate);
-          }
-        }
+        const existing = byId.get(parsed.id);
+        byId.set(parsed.id, pickBetterRepresentative(existing, candidate));
       }
 
       const products = Array.from(byId.values())
@@ -989,6 +1063,30 @@
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
+    function makeNoImgCardPlaceholder(){
+      const wrap = document.createElement("div");
+      wrap.className = "noimg";
+      wrap.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM6 20V4h6v7h7v9z"/>
+        </svg>
+        <div class="noimg-title">Sin imagen</div>
+        <div class="noimg-sub">Producto cargado desde archivo .txt</div>
+      `;
+      return wrap;
+    }
+
+    function makeNoImgThumb(){
+      const d = document.createElement("div");
+      d.className = "noimg-thumb";
+      d.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM6 20V4h6v7h7v9z"/>
+        </svg>
+      `;
+      return d;
+    }
+
     document.addEventListener("keydown", (e)=>{
       if(e.key === "Escape"){
         if(imgModal && imgModal.classList.contains("open")) closeImgModal();
@@ -997,6 +1095,10 @@
     });
 
     function makeImgFromFilename(filename, name){
+      if(!filename){
+        return makeNoImgCardPlaceholder();
+      }
+
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
@@ -1019,6 +1121,10 @@
     }
 
     function makeCartThumbFromFilename(filename, name){
+      if(!filename){
+        return makeNoImgThumb();
+      }
+
       const img = document.createElement("img");
       img.className = "cart-thumb";
       img.alt = name ? ("Foto " + name) : "Foto del producto";
@@ -1103,7 +1209,7 @@
           price: p.price,
           qty: newQty,
           stock: p.stock,
-          imgFilename: p.imgFilename
+          imgFilename: p.imgFilename || null
         };
 
         cart[id] = newObj;
@@ -1387,7 +1493,7 @@
                 "@type":"Product",
                 "name": p.name,
                 "description": desc,
-                "image": [imgUrl, FALLBACK_IMAGE],
+                "image": [imgUrl],
                 "category": p.category || undefined,
                 "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
                 "sku": String(p.id),
@@ -1455,7 +1561,8 @@
 
         const meta = document.createElement("p");
         meta.className = "meta";
-        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}`;
+        const fileTag = p.hasImage ? "" : " · Archivo: TXT";
+        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id} · Stock: ${Number.isFinite(p.stock) ? p.stock : 0}${fileTag}`;
 
         const row1 = document.createElement("div");
         row1.className = "row";
@@ -1514,12 +1621,12 @@
             return;
           }
 
-          const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename };
+          const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename || null };
           cur.qty = (safeInt(cur.qty, 0)) + 1;
           cur.stock = p.stock;
           cur.name = p.name;
           cur.price = p.price;
-          cur.imgFilename = p.imgFilename;
+          cur.imgFilename = p.imgFilename || null;
 
           cart[p.id] = cur;
           saveCart();

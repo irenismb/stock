@@ -120,7 +120,12 @@
       gap:10px;
       margin-top:12px;
     }
-    .about-text{ margin:0; }
+	  .about-text{
+	  margin:0;
+	  font-size:12px;
+	  line-height:1.35;
+	  }
+
     .about-toggle{
       align-self:flex-start;
       border-radius:999px;
@@ -130,6 +135,7 @@
 
     @media (max-width:768px){
       .about-card.about-collapsed .about-text{
+	  .about-text{ font-size:11px; }
         display:-webkit-box;
         -webkit-box-orient:vertical;
         -webkit-line-clamp:2;
@@ -316,35 +322,6 @@
       cursor:zoom-in;
     }
 
-    .noimg{
-      width:100%;
-      height:100%;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
-      justify-content:center;
-      gap:8px;
-      color:var(--mut);
-      text-align:center;
-      padding:14px;
-    }
-    .noimg svg{
-      width:42px;height:42px;
-      fill:var(--mut);
-      opacity:.95;
-    }
-    .noimg .noimg-title{
-      font-weight:950;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      font-size:12px;
-    }
-    .noimg .noimg-sub{
-      font-size:11px;
-      line-height:1.35;
-      color:rgba(169,180,194,.9);
-    }
-
     .pad{padding:12px;display:flex;flex-direction:column;gap:10px}
     .name{font-weight:950;margin:0;font-size:15px;line-height:1.25}
     .meta{color:var(--mut);font-size:12px;margin:0}
@@ -467,25 +444,6 @@
       border:1px solid rgba(255,255,255,.10);
       flex:0 0 auto;
       cursor:zoom-in;
-    }
-    .noimg-thumb{
-      width:46px;
-      height:46px;
-      border-radius:12px;
-      background:rgba(11,18,32,.35);
-      border:1px solid rgba(255,255,255,.10);
-      color:var(--mut);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      flex:0 0 auto;
-      cursor:default;
-    }
-    .noimg-thumb svg{
-      width:22px;height:22px;
-      fill:var(--mut);
-      opacity:.95;
-      display:block;
     }
 
     .cart-item-main{
@@ -794,6 +752,13 @@
   </div>
 
   <script>
+    const APP_FLAGS = {
+      SHOW_STOCK_QUANTITY: false,
+      SHOW_STOCK_STATUS_TEXT: false,
+      ENABLE_GPS_LOCATION: false
+    };
+    window.APP_FLAGS = APP_FLAGS;
+
     const WHATSAPP_NUMBER = "573042088961";
 
     const IMG_DIR = "recursos/imagenes_de_productos";
@@ -1063,30 +1028,6 @@
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
-    function makeNoImgCardPlaceholder(){
-      const wrap = document.createElement("div");
-      wrap.className = "noimg";
-      wrap.innerHTML = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM6 20V4h6v7h7v9z"/>
-        </svg>
-        <div class="noimg-title">Sin imagen</div>
-        <div class="noimg-sub">Producto cargado desde archivo .txt</div>
-      `;
-      return wrap;
-    }
-
-    function makeNoImgThumb(){
-      const d = document.createElement("div");
-      d.className = "noimg-thumb";
-      d.innerHTML = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zm0 2.5L18.5 9H14zM6 20V4h6v7h7v9z"/>
-        </svg>
-      `;
-      return d;
-    }
-
     document.addEventListener("keydown", (e)=>{
       if(e.key === "Escape"){
         if(imgModal && imgModal.classList.contains("open")) closeImgModal();
@@ -1095,24 +1036,33 @@
     });
 
     function makeImgFromFilename(filename, name){
-      if(!filename){
-        return makeNoImgCardPlaceholder();
-      }
-
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
       img.decoding = "async";
 
-      const srcRel = `${IMG_DIR}/${filename}`;
-      img.src = encodePath(srcRel);
+      let zoomable = Boolean(filename);
+
+      function setNonZoom(){
+        zoomable = false;
+        img.style.cursor = "default";
+      }
+
+      if(!filename){
+        img.src = FALLBACK_IMAGE;
+        setNonZoom();
+      }else{
+        const srcRel = `${IMG_DIR}/${filename}`;
+        img.src = encodePath(srcRel);
+      }
 
       img.onerror = ()=>{
         img.src = FALLBACK_IMAGE;
-        img.style.cursor = "default";
+        setNonZoom();
       };
 
       img.addEventListener("click", ()=>{
+        if(!zoomable) return;
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
@@ -1121,24 +1071,34 @@
     }
 
     function makeCartThumbFromFilename(filename, name){
-      if(!filename){
-        return makeNoImgThumb();
-      }
-
       const img = document.createElement("img");
       img.className = "cart-thumb";
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
       img.decoding = "async";
 
-      const srcRel = `${IMG_DIR}/${filename}`;
-      img.src = encodePath(srcRel);
+      let zoomable = Boolean(filename);
+
+      function setNonZoom(){
+        zoomable = false;
+        img.style.cursor = "default";
+      }
+
+      if(!filename){
+        img.src = FALLBACK_IMAGE;
+        setNonZoom();
+      }else{
+        const srcRel = `${IMG_DIR}/${filename}`;
+        img.src = encodePath(srcRel);
+      }
 
       img.onerror = ()=>{
         img.src = FALLBACK_IMAGE;
+        setNonZoom();
       };
 
       img.addEventListener("click", ()=>{
+        if(!zoomable) return;
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
@@ -1561,8 +1521,21 @@
 
         const meta = document.createElement("p");
         meta.className = "meta";
-        const fileTag = p.hasImage ? "" : " · Archivo: TXT";
-        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id} · Stock: ${Number.isFinite(p.stock) ? p.stock : 0}${fileTag}`;
+
+        const fileTag = "";
+
+        let stockPart = "";
+        const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
+
+        if (APP_FLAGS.SHOW_STOCK_QUANTITY){
+          stockPart = ` · Stock: ${stockVal}`;
+        } else if (APP_FLAGS.SHOW_STOCK_STATUS_TEXT){
+          stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
+        } else {
+          stockPart = "";
+        }
+
+        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}${fileTag}`;
 
         const row1 = document.createElement("div");
         row1.className = "row";
@@ -1604,7 +1577,7 @@
           addBtn.classList.toggle("in-cart", q > 0);
 
           if(maxStock <= 0){
-            addBtn.textContent = "Sin stock";
+            addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
           }else{
             addBtn.textContent = "Agregar";
           }
@@ -1633,7 +1606,11 @@
           refreshCardQty();
 
           if(addBtn.disabled){
-            addBtn.textContent = (p.stock > 0) ? "Límite ✓" : "Sin stock";
+            if(maxStock > 0){
+              addBtn.textContent = "Límite ✓";
+            }else{
+              addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
+            }
           }else{
             addBtn.textContent = "Agregado ✓";
             setTimeout(()=>{ if(!addBtn.disabled) addBtn.textContent="Agregar"; }, 900);
@@ -1722,6 +1699,10 @@
     const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
 
     (function(){
+      if (window.APP_FLAGS && window.APP_FLAGS.ENABLE_GPS_LOCATION === false){
+        return;
+      }
+
       const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
       let timerId = null;
 

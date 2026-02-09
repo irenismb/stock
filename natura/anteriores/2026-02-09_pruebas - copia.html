@@ -315,6 +315,7 @@
       object-fit:cover;
       cursor:zoom-in;
     }
+
     .pad{padding:12px;display:flex;flex-direction:column;gap:10px}
     .name{font-weight:950;margin:0;font-size:15px;line-height:1.25}
     .meta{color:var(--mut);font-size:12px;margin:0}
@@ -438,6 +439,7 @@
       flex:0 0 auto;
       cursor:zoom-in;
     }
+
     .cart-item-main{
       flex:1 1 auto;
       min-width:0;
@@ -744,9 +746,20 @@
   </div>
 
   <script>
+    const APP_FLAGS = {
+      SHOW_STOCK_QUANTITY: false,
+      SHOW_STOCK_STATUS_TEXT: false,
+      ENABLE_GPS_LOCATION: false
+    };
+    window.APP_FLAGS = APP_FLAGS;
+
     const WHATSAPP_NUMBER = "573042088961";
+
     const IMG_DIR = "recursos/imagenes_de_productos";
-    const IMG_EXTS = ["webp","jpg","jpeg","png"];
+    const IMAGE_EXTS = ["webp","jpg","jpeg","png"];
+    const NON_IMAGE_EXTS = ["txt"];
+    const SUPPORTED_EXTS = [...IMAGE_EXTS, ...NON_IMAGE_EXTS];
+
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
     const SITE_BASE = "https://irenismb.github.io/stock/natura/";
@@ -756,7 +769,7 @@
     const GITHUB_REPO = "stock";
     const GITHUB_PRODUCTS_DIR = "natura/recursos/imagenes_de_productos";
 
-    const PRODUCTS_CACHE_KEY = "irenismb_products_cache_v2";
+    const PRODUCTS_CACHE_KEY = "irenismb_products_cache_v3";
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function normalizeText(t){
@@ -787,7 +800,11 @@
     function encodePath(p){
       return encodeURI(String(p || ""));
     }
+    function isImageExt(ext){
+      return IMAGE_EXTS.includes(String(ext || "").toLowerCase());
+    }
     function productImageAbsoluteUrlFromFilename(filename){
+      if(!filename) return FALLBACK_IMAGE;
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
@@ -854,6 +871,25 @@
       }catch(_){}
     }
 
+    function pickBetterRepresentative(existing, candidate){
+      if(!existing) return candidate;
+
+      const eImg = !!existing.hasImage;
+      const cImg = !!candidate.hasImage;
+
+      if(eImg && !cImg) return existing;
+      if(!eImg && cImg) return candidate;
+
+      if(eImg && cImg){
+        const eExt = String(existing.fileExt || extOf(existing.srcFilename || existing.imgFilename || "")).toLowerCase();
+        const cExt = String(candidate.fileExt || extOf(candidate.srcFilename || candidate.imgFilename || "")).toLowerCase();
+        if(preferredExtScore(cExt) < preferredExtScore(eExt)) return candidate;
+        return existing;
+      }
+
+      return existing;
+    }
+
     async function loadProductsFromImagesFolder(){
       const cached = readProductsCache();
       if(cached && cached.length) return cached;
@@ -878,26 +914,23 @@
 
       for(const filename of files){
         const ext = extOf(filename);
-        if(!IMG_EXTS.includes(ext)) continue;
+        if(!SUPPORTED_EXTS.includes(ext)) continue;
 
         const base = baseOf(filename);
         const parsed = parseProductFromBaseName(base);
         if(!parsed) continue;
 
-        const existing = byId.get(parsed.id);
+        const hasImage = isImageExt(ext);
         const candidate = {
           ...parsed,
-          imgFilename: filename
+          srcFilename: filename,
+          fileExt: ext,
+          hasImage,
+          imgFilename: hasImage ? filename : null
         };
 
-        if(!existing){
-          byId.set(parsed.id, candidate);
-        }else{
-          const eExt = extOf(existing.imgFilename);
-          if(preferredExtScore(ext) < preferredExtScore(eExt)){
-            byId.set(parsed.id, candidate);
-          }
-        }
+        const existing = byId.get(parsed.id);
+        byId.set(parsed.id, pickBetterRepresentative(existing, candidate));
       }
 
       const products = Array.from(byId.values())
@@ -1002,15 +1035,28 @@
       img.loading = "lazy";
       img.decoding = "async";
 
-      const srcRel = `${IMG_DIR}/${filename}`;
-      img.src = encodePath(srcRel);
+      let zoomable = Boolean(filename);
+
+      function setNonZoom(){
+        zoomable = false;
+        img.style.cursor = "default";
+      }
+
+      if(!filename){
+        img.src = FALLBACK_IMAGE;
+        setNonZoom();
+      }else{
+        const srcRel = `${IMG_DIR}/${filename}`;
+        img.src = encodePath(srcRel);
+      }
 
       img.onerror = ()=>{
         img.src = FALLBACK_IMAGE;
-        img.style.cursor = "default";
+        setNonZoom();
       };
 
       img.addEventListener("click", ()=>{
+        if(!zoomable) return;
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
@@ -1025,14 +1071,28 @@
       img.loading = "lazy";
       img.decoding = "async";
 
-      const srcRel = `${IMG_DIR}/${filename}`;
-      img.src = encodePath(srcRel);
+      let zoomable = Boolean(filename);
+
+      function setNonZoom(){
+        zoomable = false;
+        img.style.cursor = "default";
+      }
+
+      if(!filename){
+        img.src = FALLBACK_IMAGE;
+        setNonZoom();
+      }else{
+        const srcRel = `${IMG_DIR}/${filename}`;
+        img.src = encodePath(srcRel);
+      }
 
       img.onerror = ()=>{
         img.src = FALLBACK_IMAGE;
+        setNonZoom();
       };
 
       img.addEventListener("click", ()=>{
+        if(!zoomable) return;
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
@@ -1103,7 +1163,7 @@
           price: p.price,
           qty: newQty,
           stock: p.stock,
-          imgFilename: p.imgFilename
+          imgFilename: p.imgFilename || null
         };
 
         cart[id] = newObj;
@@ -1387,7 +1447,7 @@
                 "@type":"Product",
                 "name": p.name,
                 "description": desc,
-                "image": [imgUrl, FALLBACK_IMAGE],
+                "image": [imgUrl],
                 "category": p.category || undefined,
                 "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
                 "sku": String(p.id),
@@ -1455,7 +1515,21 @@
 
         const meta = document.createElement("p");
         meta.className = "meta";
-        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}`;
+
+        const fileTag = "";
+
+        let stockPart = "";
+        const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
+
+        if (APP_FLAGS.SHOW_STOCK_QUANTITY){
+          stockPart = ` · Stock: ${stockVal}`;
+        } else if (APP_FLAGS.SHOW_STOCK_STATUS_TEXT){
+          stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
+        } else {
+          stockPart = "";
+        }
+
+        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}${fileTag}`;
 
         const row1 = document.createElement("div");
         row1.className = "row";
@@ -1497,7 +1571,7 @@
           addBtn.classList.toggle("in-cart", q > 0);
 
           if(maxStock <= 0){
-            addBtn.textContent = "Sin stock";
+            addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
           }else{
             addBtn.textContent = "Agregar";
           }
@@ -1514,19 +1588,23 @@
             return;
           }
 
-          const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename };
+          const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename || null };
           cur.qty = (safeInt(cur.qty, 0)) + 1;
           cur.stock = p.stock;
           cur.name = p.name;
           cur.price = p.price;
-          cur.imgFilename = p.imgFilename;
+          cur.imgFilename = p.imgFilename || null;
 
           cart[p.id] = cur;
           saveCart();
           refreshCardQty();
 
           if(addBtn.disabled){
-            addBtn.textContent = (p.stock > 0) ? "Límite ✓" : "Sin stock";
+            if(maxStock > 0){
+              addBtn.textContent = "Límite ✓";
+            }else{
+              addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
+            }
           }else{
             addBtn.textContent = "Agregado ✓";
             setTimeout(()=>{ if(!addBtn.disabled) addBtn.textContent="Agregar"; }, 900);
@@ -1615,6 +1693,10 @@
     const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
 
     (function(){
+      if (window.APP_FLAGS && window.APP_FLAGS.ENABLE_GPS_LOCATION === false){
+        return;
+      }
+
       const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
       let timerId = null;
 

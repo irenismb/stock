@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -121,9 +121,9 @@
       margin-top:12px;
     }
 	  .about-text{
-	  margin:0;
-	  font-size:12px;
-	  line-height:1.35;
+	    margin:0;
+	    font-size:12px;
+	    line-height:1.35;
 	  }
 
     .about-toggle{
@@ -134,8 +134,8 @@
     }
 
     @media (max-width:768px){
+      .about-text{ font-size:11px; }
       .about-card.about-collapsed .about-text{
-	  .about-text{ font-size:11px; }
         display:-webkit-box;
         -webkit-box-orient:vertical;
         -webkit-line-clamp:2;
@@ -615,7 +615,8 @@
       "https://www.facebook.com/marketplace/profile/100084865295132",
       "https://www.instagram.com/irenismb_stocknaturasm",
       "https://www.tiktok.com/@irenismbstocknatura",
-      "https://www.youtube.com/@irenismendoza3615"
+      "https://www.youtube.com/@irenismendoza3615",
+      "https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
     ]
   }
   </script>
@@ -664,6 +665,13 @@
         <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
           <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps" />
         </a>
+
+        <!-- ✅ NUEVO: Google Business (después de Maps) -->
+        <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
+           target="_blank" rel="noopener noreferrer" aria-label="Google Business">
+          <img src="recursos/otras_imagenes/google_business.webp" alt="Google Business" />
+        </a>
+
         <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
           <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp" />
         </a>
@@ -755,9 +763,18 @@
     const APP_FLAGS = {
       SHOW_STOCK_QUANTITY: false,
       SHOW_STOCK_STATUS_TEXT: false,
-      ENABLE_GPS_LOCATION: true
+      ENABLE_GPS_LOCATION: true,
+
+      // ✅ NUEVO:
+      // false  => permite agregar sin limitar por stock (incluso stock=0 o superar stock)
+      // true   => aplica límite por stock como antes
+      ENFORCE_STOCK_LIMITS: false
     };
     window.APP_FLAGS = APP_FLAGS;
+
+    function shouldEnforceStockLimits(){
+      return !!(window.APP_FLAGS && window.APP_FLAGS.ENFORCE_STOCK_LIMITS === true);
+    }
 
     const WHATSAPP_NUMBER = "573042088961";
 
@@ -1144,7 +1161,9 @@
     }
 
     function sanitizeCartWithStock(){
+      const enforce = shouldEnforceStockLimits();
       let changed = false;
+
       for(const key of Object.keys(cart)){
         const it = cart[key];
         if(!it || !it.id){
@@ -1159,9 +1178,14 @@
           changed = true;
           continue;
         }
+
         const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
         const qty = Math.max(0, safeInt(it.qty, 0));
-        const newQty = (maxStock > 0) ? Math.min(qty, maxStock) : 0;
+
+        // ✅ Si enforce=false, NO se limita por stock
+        const newQty = enforce
+          ? ((maxStock > 0) ? Math.min(qty, maxStock) : 0)
+          : qty;
 
         const newObj = {
           id: p.id,
@@ -1177,6 +1201,7 @@
 
         if(newQty !== qty) changed = true;
       }
+
       if(changed) saveCart(); else refreshCartCount();
     }
 
@@ -1208,6 +1233,7 @@
     }
 
     function renderCartModal(){
+      const enforce = shouldEnforceStockLimits();
       const items = cartItemsArray();
       const total = cartTotalValue();
       cartTotalEl.textContent = "Total: " + fmtCOP.format(total);
@@ -1251,7 +1277,11 @@
 
         const incBtn = controls.querySelector('button[data-act="inc"]');
         const maxStock = Number.isFinite(it.stock) ? it.stock : 0;
-        if(incBtn) incBtn.disabled = !(maxStock > 0) || (Number(it.qty)||0) >= maxStock;
+
+        // ✅ Si enforce=false, nunca se deshabilita por stock
+        if(incBtn){
+          incBtn.disabled = enforce ? (!(maxStock > 0) || (Number(it.qty)||0) >= maxStock) : false;
+        }
 
         const subtotal = document.createElement("div");
         subtotal.className = "cart-subtotal";
@@ -1282,6 +1312,7 @@
       const id = itemRow.getAttribute("data-id");
       if(!id || !cart[id]) return;
 
+      const enforce = shouldEnforceStockLimits();
       const act = btn.getAttribute("data-act");
       const current = cart[id];
 
@@ -1289,7 +1320,11 @@
       let newQty = safeInt(current.qty, 0);
 
       if(act === "inc"){
-        if(maxStock > 0 && newQty < maxStock) newQty += 1;
+        if(!enforce){
+          newQty += 1;
+        }else{
+          if(maxStock > 0 && newQty < maxStock) newQty += 1;
+        }
       }
       if(act === "dec"){
         newQty = Math.max(0, newQty - 1);
@@ -1474,6 +1509,8 @@
     }
 
     function render(){
+      const enforce = shouldEnforceStockLimits();
+
       const cat = catSel.value;
       const br = brandSel.value;
       const sortMode = sortSel ? sortSel.value : "";
@@ -1571,12 +1608,15 @@
           removeBtn.disabled = q <= 0;
 
           const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
-          const canAdd = (maxStock > 0) && (q < maxStock);
+
+          // ✅ Si enforce=false, siempre se puede agregar
+          const canAdd = !enforce ? true : ((maxStock > 0) && (q < maxStock));
 
           addBtn.disabled = !canAdd;
           addBtn.classList.toggle("in-cart", q > 0);
 
-          if(maxStock <= 0){
+          // Textos (si enforce=false, no mostrar "Sin stock" en el botón)
+          if(enforce && maxStock <= 0){
             addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
           }else{
             addBtn.textContent = "Agregar";
@@ -1586,12 +1626,16 @@
         refreshCardQty();
 
         addBtn.onclick = ()=>{
+          const enforceNow = shouldEnforceStockLimits();
           const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
           const currentQty = safeInt(cart[p.id]?.qty, 0);
 
-          if(!(maxStock > 0) || currentQty >= maxStock){
-            refreshCardQty();
-            return;
+          // ✅ Si enforce=true, se respeta el límite; si enforce=false, se permite siempre
+          if(enforceNow){
+            if(!(maxStock > 0) || currentQty >= maxStock){
+              refreshCardQty();
+              return;
+            }
           }
 
           const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename || null };
@@ -1605,7 +1649,8 @@
           saveCart();
           refreshCardQty();
 
-          if(addBtn.disabled){
+          // Feedback visual
+          if(shouldEnforceStockLimits() && addBtn.disabled){
             if(maxStock > 0){
               addBtn.textContent = "Límite ✓";
             }else{

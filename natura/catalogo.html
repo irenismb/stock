@@ -580,6 +580,41 @@
       justify-content:center;
     }
 
+    /* ✅ Etiquetas del botón carrito (para acortar en móvil sin cambiar accesibilidad) */
+    #btn-cart .btn-cart-label-short{ display:none; }
+
+    /* ✅ NUEVO: En móvil, "Ordenar" + "Carrito" en la misma línea y mismo tamaño */
+    @media (max-width:560px){
+      .bar{ align-items:stretch; }
+
+      /* Búsqueda ocupa toda la fila */
+      .bar .search-wrap{ flex:1 1 100%; min-width:0; }
+
+      /* Dos columnas por fila para selects y botón */
+      #cat, #brand, #sort, #btn-cart{
+        flex:1 1 calc(50% - 5px);
+        min-width:0;
+      }
+
+      /* Igualar altura/feeling en móviles (iOS/Android) */
+      .bar select, .bar button{ min-height:44px; }
+
+      /* Carrito: que no se agrande por salto de línea */
+      #btn-cart{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      /* Mostrar texto corto en móvil para asegurar que quepa */
+      #btn-cart .btn-cart-label{ display:none; }
+      #btn-cart .btn-cart-label-short{ display:inline; }
+    }
+
     @media (max-width:720px){
       .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
@@ -702,8 +737,9 @@
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
-        <button class="btn-acc" id="btn-cart" type="button">
-          Ver carrito WhatsApp
+        <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
+          <span class="btn-cart-label">Ver carrito WhatsApp</span>
+          <span class="btn-cart-label-short" aria-hidden="true">Carrito</span>
           <span id="cartCount" class="pill">0</span>
         </button>
       </div>

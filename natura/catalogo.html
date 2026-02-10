@@ -1,8 +1,9 @@
-<!doctype html> 
+<!doctype html>
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <meta http-equiv="x-dns-prefetch-control" content="on" />
   <title>Irenismb Stock Natura | Catálogo en Santa Marta | Compra por WhatsApp</title>
   <meta name="description" content="Catálogo Natura en Santa Marta: fragancias, cuidado personal, maquillaje y más. Compra fácil por WhatsApp." />
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet=-1,max-video-preview=-1" />
@@ -33,7 +34,7 @@
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preconnect" href="https://api.github.com" crossorigin />
-  <link rel="preload" as="image" href="recursos/otras_imagenes/logo_empresa.png" />
+  <link rel="preload" as="image" href="recursos/otras_imagenes/logo_empresa.png" fetchpriority="high" />
 
   <style>
     :root{
@@ -120,12 +121,11 @@
       gap:10px;
       margin-top:12px;
     }
-	  .about-text{
-	    margin:0;
-	    font-size:12px;
-	    line-height:1.35;
-	  }
-
+    .about-text{
+      margin:0;
+      font-size:12px;
+      line-height:1.35;
+    }
     .about-toggle{
       align-self:flex-start;
       border-radius:999px;
@@ -308,6 +308,10 @@
       display:flex;
       flex-direction:column;
       min-height:100%;
+
+      /* ✅ rendimiento: no renderizar fuera de pantalla hasta que haga falta */
+      content-visibility:auto;
+      contain-intrinsic-size: 420px 520px;
     }
     .img{
       aspect-ratio:4/3;
@@ -583,23 +587,18 @@
     /* ✅ Etiquetas del botón carrito (para acortar en móvil sin cambiar accesibilidad) */
     #btn-cart .btn-cart-label-short{ display:none; }
 
-    /* ✅ NUEVO: En móvil, "Ordenar" + "Carrito" en la misma línea y mismo tamaño */
+    /* ✅ En móvil: "Ordenar" + "Carrito" en la misma línea y mismo tamaño */
     @media (max-width:560px){
       .bar{ align-items:stretch; }
-
-      /* Búsqueda ocupa toda la fila */
       .bar .search-wrap{ flex:1 1 100%; min-width:0; }
 
-      /* Dos columnas por fila para selects y botón */
       #cat, #brand, #sort, #btn-cart{
         flex:1 1 calc(50% - 5px);
         min-width:0;
       }
 
-      /* Igualar altura/feeling en móviles (iOS/Android) */
       .bar select, .bar button{ min-height:44px; }
 
-      /* Carrito: que no se agrande por salto de línea */
       #btn-cart{
         display:flex;
         align-items:center;
@@ -610,7 +609,6 @@
         text-overflow:ellipsis;
       }
 
-      /* Mostrar texto corto en móvil para asegurar que quepa */
       #btn-cart .btn-cart-label{ display:none; }
       #btn-cart .btn-cart-label-short{ display:inline; }
     }
@@ -686,29 +684,28 @@
 
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
         <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-          <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook" />
+          <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
         </a>
         <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-          <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram" />
+          <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
         </a>
         <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-          <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok" />
+          <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
         </a>
         <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-          <img src="recursos/otras_imagenes/youtube.png" alt="YouTube" />
+          <img src="recursos/otras_imagenes/youtube.png" alt="YouTube" loading="lazy" decoding="async" />
         </a>
         <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
-          <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps" />
+          <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
         </a>
 
-        <!-- ✅ NUEVO: Google Business (después de Maps) -->
         <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
            target="_blank" rel="noopener noreferrer" aria-label="Google Business">
-          <img src="recursos/otras_imagenes/google_business.webp" alt="Google Business" />
+          <img src="recursos/otras_imagenes/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
         </a>
 
         <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-          <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp" />
+          <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
         </a>
         <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -796,20 +793,35 @@
   </div>
 
   <script>
+    /* ==========================
+       ✅ OPTIMIZACIONES CLAVE
+       - 1 sola llamada rápida a GitHub (Contents API) en vez de tree recursivo
+       - Cache con "stale-while-revalidate": pinta rápido con cache y actualiza en segundo plano
+       - Debounce en búsqueda para evitar renders excesivos
+       - Render por bloques (chunked) para no congelar el móvil
+       - JSON-LD y ticker se calculan en idle para mejorar percepción de carga
+       ========================== */
+
     const APP_FLAGS = {
       SHOW_STOCK_QUANTITY: false,
       SHOW_STOCK_STATUS_TEXT: false,
       ENABLE_GPS_LOCATION: true,
 
-      // ✅ NUEVO:
-      // false  => permite agregar sin limitar por stock (incluso stock=0 o superar stock)
-      // true   => aplica límite por stock como antes
+      // false => permite agregar sin limitar por stock
+      // true  => aplica límite por stock
       ENFORCE_STOCK_LIMITS: false
     };
     window.APP_FLAGS = APP_FLAGS;
 
     function shouldEnforceStockLimits(){
       return !!(window.APP_FLAGS && window.APP_FLAGS.ENFORCE_STOCK_LIMITS === true);
+    }
+
+    // Utilidad idle
+    const _hasIdle = ("requestIdleCallback" in window);
+    function runIdle(fn, timeout=1200){
+      if(_hasIdle) return requestIdleCallback(fn, { timeout });
+      return setTimeout(fn, Math.min(250, timeout));
     }
 
     const WHATSAPP_NUMBER = "573042088961";
@@ -826,9 +838,12 @@
 
     const GITHUB_OWNER = "irenismb";
     const GITHUB_REPO = "stock";
-    const GITHUB_PRODUCTS_DIR = "natura/recursos/imagenes_de_productos";
 
-    const PRODUCTS_CACHE_KEY = "irenismb_products_cache_v3";
+    // ruta real en repo (para Contents API)
+    const GITHUB_PRODUCTS_PATH = "natura/recursos/imagenes_de_productos";
+
+    // Mantengo compatibilidad con tu cache anterior
+    const PRODUCTS_CACHE_KEYS = ["irenismb_products_cache_v4", "irenismb_products_cache_v3"];
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function normalizeText(t){
@@ -867,11 +882,13 @@
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
+    // ✅ importante: permitir cache del navegador (más rápido que no-store)
     async function fetchJson(url){
       const res = await fetch(url, {
         method:"GET",
         headers:{ "Accept":"application/vnd.github+json" },
-        cache:"no-store"
+        cache:"force-cache",
+        credentials:"omit"
       });
       if(!res.ok){
         const text = await res.text().catch(()=> "");
@@ -909,24 +926,36 @@
       return (ext in order) ? order[ext] : 99;
     }
 
-    function readProductsCache(){
-      try{
-        const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
-        if(!raw) return null;
-        const obj = JSON.parse(raw);
-        if(!obj || typeof obj !== "object") return null;
-        if(!Array.isArray(obj.products)) return null;
-        if(!Number.isFinite(obj.ts)) return null;
-        if((Date.now() - obj.ts) > PRODUCTS_CACHE_TTL_MS) return null;
-        return obj.products;
-      }catch(_){
-        return null;
+    function readProductsCacheObj(){
+      for(const key of PRODUCTS_CACHE_KEYS){
+        try{
+          const raw = localStorage.getItem(key);
+          if(!raw) continue;
+          const obj = JSON.parse(raw);
+          if(!obj || typeof obj !== "object") continue;
+          if(!Array.isArray(obj.products)) continue;
+          if(!Number.isFinite(obj.ts)) continue;
+          return obj;
+        }catch(_){}
       }
+      return null;
+    }
+
+    function readProductsCache(allowStale){
+      const obj = readProductsCacheObj();
+      if(!obj) return null;
+      const age = Date.now() - obj.ts;
+      const isFresh = age <= PRODUCTS_CACHE_TTL_MS;
+      if(!allowStale && !isFresh) return null;
+      return { products: obj.products, isFresh };
     }
 
     function writeProductsCache(products){
       try{
-        localStorage.setItem(PRODUCTS_CACHE_KEY, JSON.stringify({ ts: Date.now(), products: products || [] }));
+        localStorage.setItem(PRODUCTS_CACHE_KEYS[0], JSON.stringify({
+          ts: Date.now(),
+          products: products || []
+        }));
       }catch(_){}
     }
 
@@ -945,28 +974,18 @@
         if(preferredExtScore(cExt) < preferredExtScore(eExt)) return candidate;
         return existing;
       }
-
       return existing;
     }
 
-    async function loadProductsFromImagesFolder(){
-      const cached = readProductsCache();
-      if(cached && cached.length) return cached;
+    // ✅ NUEVO: Contents API (rápido, 1 sola llamada)
+    async function fetchProductsViaContentsApi(){
+      const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/contents/${GITHUB_PRODUCTS_PATH}`;
+      const list = await fetchJson(url);
+      if(!Array.isArray(list)) throw new Error("Respuesta inesperada de GitHub Contents.");
 
-      const repoInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}`);
-      const branch = String(repoInfo && repoInfo.default_branch ? repoInfo.default_branch : "main");
-
-      const branchInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/branches/${encodeURIComponent(branch)}`);
-      const sha = branchInfo && branchInfo.commit && branchInfo.commit.sha ? branchInfo.commit.sha : "";
-      if(!sha) throw new Error("No se pudo obtener el SHA del branch.");
-
-      const tree = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/git/trees/${encodeURIComponent(sha)}?recursive=1`);
-      const nodes = (tree && Array.isArray(tree.tree)) ? tree.tree : [];
-
-      const dirPrefix = GITHUB_PRODUCTS_DIR.replace(/\/+$/,"") + "/";
-      const files = nodes
-        .filter(n => n && n.type === "blob" && typeof n.path === "string" && n.path.startsWith(dirPrefix))
-        .map(n => n.path.slice(dirPrefix.length))
+      const files = list
+        .filter(x => x && x.type === "file" && typeof x.name === "string")
+        .map(x => x.name)
         .filter(fn => fn && !fn.includes("/"));
 
       const byId = new Map();
@@ -995,8 +1014,54 @@
       const products = Array.from(byId.values())
         .sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" }) || String(a.id).localeCompare(String(b.id)));
 
-      writeProductsCache(products);
       return products;
+    }
+
+    // 🔁 Fallback (por si Contents API falla por tamaño/limitaciones)
+    async function fetchProductsViaTreeFallback(){
+      // comportamiento parecido al original, pero manteniendo cache del navegador
+      const repoInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}`);
+      const branch = String(repoInfo && repoInfo.default_branch ? repoInfo.default_branch : "main");
+      const branchInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/branches/${encodeURIComponent(branch)}`);
+      const sha = branchInfo && branchInfo.commit && branchInfo.commit.sha ? branchInfo.commit.sha : "";
+      if(!sha) throw new Error("No se pudo obtener el SHA del branch.");
+
+      const tree = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/git/trees/${encodeURIComponent(sha)}?recursive=1`);
+      const nodes = (tree && Array.isArray(tree.tree)) ? tree.tree : [];
+
+      const dirPrefix = (GITHUB_PRODUCTS_PATH.replace(/\/+$/,"") + "/");
+      const files = nodes
+        .filter(n => n && n.type === "blob" && typeof n.path === "string" && n.path.startsWith(dirPrefix))
+        .map(n => n.path.slice(dirPrefix.length))
+        .filter(fn => fn && !fn.includes("/"));
+
+      const byId = new Map();
+      for(const filename of files){
+        const ext = extOf(filename);
+        if(!SUPPORTED_EXTS.includes(ext)) continue;
+        const base = baseOf(filename);
+        const parsed = parseProductFromBaseName(base);
+        if(!parsed) continue;
+
+        const hasImage = isImageExt(ext);
+        const candidate = { ...parsed, srcFilename: filename, fileExt: ext, hasImage, imgFilename: hasImage ? filename : null };
+
+        const existing = byId.get(parsed.id);
+        byId.set(parsed.id, pickBetterRepresentative(existing, candidate));
+      }
+
+      return Array.from(byId.values())
+        .sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" }) || String(a.id).localeCompare(String(b.id)));
+    }
+
+    async function loadProductsFresh(){
+      try{
+        const products = await fetchProductsViaContentsApi();
+        return products;
+      }catch(_){
+        // fallback robusto
+        return await fetchProductsViaTreeFallback();
+      }
     }
 
     function isMobileDevice(){
@@ -1005,7 +1070,7 @@
         const byUA = /android|iphone|ipad|ipod|iemobile|opera mini/.test(ua);
         const byPointer = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
         return Boolean(byUA || byPointer);
-      }catch(e){
+      }catch(_){
         return false;
       }
     }
@@ -1080,13 +1145,6 @@
     }
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
-
-    document.addEventListener("keydown", (e)=>{
-      if(e.key === "Escape"){
-        if(imgModal && imgModal.classList.contains("open")) closeImgModal();
-        if(cartModal && cartModal.classList.contains("open")) closeCartModal();
-      }
-    });
 
     function makeImgFromFilename(filename, name){
       const img = document.createElement("img");
@@ -1167,7 +1225,7 @@
         const rawCart = localStorage.getItem("cart");
         const parsed = JSON.parse(rawCart || "{}");
         return (parsed && typeof parsed === "object") ? parsed : {};
-      }catch(e){
+      }catch(_){
         localStorage.removeItem("cart");
         return {};
       }
@@ -1218,7 +1276,6 @@
         const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
         const qty = Math.max(0, safeInt(it.qty, 0));
 
-        // ✅ Si enforce=false, NO se limita por stock
         const newQty = enforce
           ? ((maxStock > 0) ? Math.min(qty, maxStock) : 0)
           : qty;
@@ -1314,7 +1371,6 @@
         const incBtn = controls.querySelector('button[data-act="inc"]');
         const maxStock = Number.isFinite(it.stock) ? it.stock : 0;
 
-        // ✅ Si enforce=false, nunca se deshabilita por stock
         if(incBtn){
           incBtn.disabled = enforce ? (!(maxStock > 0) || (Number(it.qty)||0) >= maxStock) : false;
         }
@@ -1384,6 +1440,13 @@
     cartModalClose.addEventListener("click", closeCartModal);
     cartModalBackdrop.addEventListener("click", closeCartModal);
 
+    document.addEventListener("keydown", (e)=>{
+      if(e.key === "Escape"){
+        if(imgModal && imgModal.classList.contains("open")) closeImgModal();
+        if(cartModal && cartModal.classList.contains("open")) closeCartModal();
+      }
+    });
+
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
     const sortSel = document.getElementById("sort");
@@ -1443,20 +1506,6 @@
       searchWrap.style.setProperty("--marquee-duration", duration.toFixed(2) + "s");
     }
 
-    (function initSearchTicker(){
-      updateTickerVisibility();
-      rebuildSearchTicker();
-
-      qInp.addEventListener("focus", updateTickerVisibility);
-      qInp.addEventListener("blur", updateTickerVisibility);
-
-      let raf = null;
-      window.addEventListener("resize", ()=>{
-        if(raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(()=> rebuildSearchTicker());
-      });
-    })();
-
     function clearSelectButKeepFirst(sel){
       const first = sel.querySelector("option[value='']");
       sel.innerHTML = "";
@@ -1489,6 +1538,8 @@
       if (br) brandSel.value = br;
       if (sort && sortSel) sortSel.value = sort;
     }
+
+    let _urlTimer = null;
     function writeStateToUrl(){
       const u = new URL(location.href);
       const q = qInp.value.trim();
@@ -1501,7 +1552,12 @@
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
       history.replaceState(null, "", u.toString());
     }
+    function scheduleWriteStateToUrl(){
+      clearTimeout(_urlTimer);
+      _urlTimer = setTimeout(writeStateToUrl, 180);
+    }
 
+    let _ldJob = 0;
     function updateProductsJsonLd(list){
       try{
         const baseUrl = "https://irenismb.github.io/stock/natura/catalogo.html";
@@ -1540,13 +1596,158 @@
             };
           })
         };
-        document.getElementById("ld-products").textContent = JSON.stringify(itemList);
-      }catch(e){}
+        const el = document.getElementById("ld-products");
+        if(el) el.textContent = JSON.stringify(itemList);
+      }catch(_){}
     }
 
-    function render(){
+    function scheduleJsonLdUpdate(filtered){
+      const job = ++_ldJob;
+      runIdle(()=>{
+        if(job !== _ldJob) return;
+        updateProductsJsonLd(filtered);
+      }, 1400);
+    }
+
+    // ✅ Template (más rápido que crear todos los nodos a mano)
+    const cardTemplate = document.createElement("template");
+    cardTemplate.innerHTML = `
+      <article class="card">
+        <div class="img"></div>
+        <div class="pad">
+          <h3 class="name"></h3>
+          <p class="meta"></p>
+          <div class="row">
+            <span class="price"></span>
+            <span class="pill" data-role="qty"></span>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn-danger" data-act="dec">Quitar</button>
+            <button type="button" class="btn-acc" data-act="inc">Agregar</button>
+          </div>
+        </div>
+      </article>
+    `;
+
+    function stockMetaText(p){
+      const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
+      let stockPart = "";
+      if (APP_FLAGS.SHOW_STOCK_QUANTITY){
+        stockPart = ` · Stock: ${stockVal}`;
+      } else if (APP_FLAGS.SHOW_STOCK_STATUS_TEXT){
+        stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
+      } else {
+        stockPart = "";
+      }
+      return `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}`;
+    }
+
+    function refreshCardUI(card, p){
+      const enforce = shouldEnforceStockLimits();
+      const id = String(p.id);
+      const q = (cart[id]?.qty || 0);
+
+      const qtyPill = card.querySelector('[data-role="qty"]');
+      const decBtn = card.querySelector('button[data-act="dec"]');
+      const incBtn = card.querySelector('button[data-act="inc"]');
+
+      if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
+      if(decBtn) decBtn.disabled = q <= 0;
+
+      const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+      const canAdd = !enforce ? true : ((maxStock > 0) && (q < maxStock));
+
+      if(incBtn){
+        incBtn.disabled = !canAdd;
+        incBtn.classList.toggle("in-cart", q > 0);
+        if(enforce && maxStock <= 0){
+          incBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
+        }else{
+          incBtn.textContent = "Agregar";
+        }
+      }
+    }
+
+    function makeCard(p){
+      const card = cardTemplate.content.firstElementChild.cloneNode(true);
+      card.id = "p-" + p.id;
+      card.dataset.id = String(p.id);
+
+      const imgBox = card.querySelector(".img");
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
+
+      card.querySelector(".name").textContent = p.name;
+      card.querySelector(".meta").textContent = stockMetaText(p);
+      card.querySelector(".price").textContent = fmtCOP.format(p.price);
+
+      refreshCardUI(card, p);
+      return card;
+    }
+
+    // Delegación de eventos (evita handlers por tarjeta)
+    grid.addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      const card = e.target.closest(".card");
+      if(!card) return;
+      const id = card.dataset.id;
+      if(!id) return;
+
+      const p = productById.get(String(id));
+      if(!p) return;
+
+      const act = btn.getAttribute("data-act");
       const enforce = shouldEnforceStockLimits();
 
+      if(act === "inc"){
+        const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+        const currentQty = safeInt(cart[id]?.qty, 0);
+
+        if(enforce){
+          if(!(maxStock > 0) || currentQty >= maxStock){
+            refreshCardUI(card, p);
+            return;
+          }
+        }
+
+        const cur = cart[id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename || null };
+        cur.qty = safeInt(cur.qty, 0) + 1;
+        cur.stock = p.stock;
+        cur.name = p.name;
+        cur.price = p.price;
+        cur.imgFilename = p.imgFilename || null;
+        cart[id] = cur;
+
+        saveCart();
+        refreshCardUI(card, p);
+
+        btn.textContent = "Agregado ✓";
+        setTimeout(()=> refreshCardUI(card, p), 900);
+
+        if(cartModal.classList.contains("open")) renderCartModal();
+        return;
+      }
+
+      if(act === "dec"){
+        const cur = cart[id];
+        if(!cur) return;
+
+        cur.qty = Math.max(0, safeInt(cur.qty, 0) - 1);
+        if(!cur.qty) delete cart[id];
+        else cart[id] = cur;
+
+        saveCart();
+        refreshCardUI(card, p);
+
+        btn.textContent = "Quitado ✓";
+        setTimeout(()=> refreshCardUI(card, p), 900);
+
+        if(cartModal.classList.contains("open")) renderCartModal();
+        return;
+      }
+    });
+
+    function buildFilteredList(){
       const cat = catSel.value;
       const br = brandSel.value;
       const sortMode = sortSel ? sortSel.value : "";
@@ -1572,198 +1773,123 @@
           return String(a.id).localeCompare(String(b.id));
         });
       }
+      return filtered;
+    }
+
+    let _renderToken = 0;
+    function render(){
+      const token = ++_renderToken;
+      const filtered = buildFilteredList();
 
       countEl.textContent = `${filtered.length} producto(s) encontrado(s).`;
-      grid.innerHTML = "";
+      grid.textContent = "";
 
-      for(const p of filtered){
-        const card = document.createElement("article");
-        card.className = "card";
-        card.id = "p-" + p.id;
+      // Render por bloques para no congelar móviles
+      const CHUNK = 60;
+      let i = 0;
 
-        const imgBox = document.createElement("div");
-        imgBox.className = "img";
-        imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
+      function drawChunk(){
+        if(token !== _renderToken) return;
 
-        const pad = document.createElement("div");
-        pad.className = "pad";
-
-        const name = document.createElement("h3");
-        name.className = "name";
-        name.textContent = p.name;
-
-        const meta = document.createElement("p");
-        meta.className = "meta";
-
-        const fileTag = "";
-
-        let stockPart = "";
-        const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
-
-        if (APP_FLAGS.SHOW_STOCK_QUANTITY){
-          stockPart = ` · Stock: ${stockVal}`;
-        } else if (APP_FLAGS.SHOW_STOCK_STATUS_TEXT){
-          stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
-        } else {
-          stockPart = "";
+        const frag = document.createDocumentFragment();
+        const end = Math.min(i + CHUNK, filtered.length);
+        for(; i < end; i++){
+          frag.appendChild(makeCard(filtered[i]));
         }
+        grid.appendChild(frag);
 
-        meta.textContent = `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}${fileTag}`;
-
-        const row1 = document.createElement("div");
-        row1.className = "row";
-
-        const price = document.createElement("span");
-        price.className = "price";
-        price.textContent = fmtCOP.format(p.price);
-
-        const qtyPill = document.createElement("span");
-        qtyPill.className = "pill";
-        const initialQty = (cart[p.id]?.qty || 0);
-        qtyPill.textContent = `En carrito: ${initialQty}`;
-
-        row1.appendChild(price);
-        row1.appendChild(qtyPill);
-
-        const actions = document.createElement("div");
-        actions.className = "actions";
-
-        const removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "btn-danger";
-        removeBtn.textContent = "Quitar";
-
-        const addBtn = document.createElement("button");
-        addBtn.type = "button";
-        addBtn.className = "btn-acc";
-        addBtn.textContent = "Agregar";
-
-        function refreshCardQty(){
-          const q = (cart[p.id]?.qty || 0);
-          qtyPill.textContent = `En carrito: ${q}`;
-          removeBtn.disabled = q <= 0;
-
-          const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
-
-          // ✅ Si enforce=false, siempre se puede agregar
-          const canAdd = !enforce ? true : ((maxStock > 0) && (q < maxStock));
-
-          addBtn.disabled = !canAdd;
-          addBtn.classList.toggle("in-cart", q > 0);
-
-          // Textos (si enforce=false, no mostrar "Sin stock" en el botón)
-          if(enforce && maxStock <= 0){
-            addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
-          }else{
-            addBtn.textContent = "Agregar";
-          }
+        if(i < filtered.length){
+          requestAnimationFrame(drawChunk);
         }
-
-        refreshCardQty();
-
-        addBtn.onclick = ()=>{
-          const enforceNow = shouldEnforceStockLimits();
-          const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
-          const currentQty = safeInt(cart[p.id]?.qty, 0);
-
-          // ✅ Si enforce=true, se respeta el límite; si enforce=false, se permite siempre
-          if(enforceNow){
-            if(!(maxStock > 0) || currentQty >= maxStock){
-              refreshCardQty();
-              return;
-            }
-          }
-
-          const cur = cart[p.id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename || null };
-          cur.qty = (safeInt(cur.qty, 0)) + 1;
-          cur.stock = p.stock;
-          cur.name = p.name;
-          cur.price = p.price;
-          cur.imgFilename = p.imgFilename || null;
-
-          cart[p.id] = cur;
-          saveCart();
-          refreshCardQty();
-
-          // Feedback visual
-          if(shouldEnforceStockLimits() && addBtn.disabled){
-            if(maxStock > 0){
-              addBtn.textContent = "Límite ✓";
-            }else{
-              addBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
-            }
-          }else{
-            addBtn.textContent = "Agregado ✓";
-            setTimeout(()=>{ if(!addBtn.disabled) addBtn.textContent="Agregar"; }, 900);
-          }
-
-          if(cartModal.classList.contains("open")) renderCartModal();
-        };
-
-        removeBtn.onclick = ()=>{
-          const cur = cart[p.id];
-          if(!cur) return;
-
-          cur.qty = Math.max(0, safeInt(cur.qty, 0) - 1);
-          if(!cur.qty) delete cart[p.id];
-          else cart[p.id] = cur;
-
-          saveCart();
-          refreshCardQty();
-
-          removeBtn.textContent = "Quitado ✓";
-          setTimeout(()=> removeBtn.textContent="Quitar", 900);
-
-          if(cartModal.classList.contains("open")) renderCartModal();
-        };
-
-        actions.appendChild(removeBtn);
-        actions.appendChild(addBtn);
-
-        pad.appendChild(name);
-        pad.appendChild(meta);
-        pad.appendChild(row1);
-        pad.appendChild(actions);
-
-        card.appendChild(imgBox);
-        card.appendChild(pad);
-        grid.appendChild(card);
       }
+      drawChunk();
 
-      writeStateToUrl();
-      updateProductsJsonLd(filtered);
+      scheduleWriteStateToUrl();
+      scheduleJsonLdUpdate(filtered);
     }
 
     document.getElementById("btn-cart").onclick = openCartModal;
 
+    // ✅ Debounce búsqueda (reduce renders)
+    let _qTimer = null;
     qInp.addEventListener("input", ()=>{
       updateTickerVisibility();
-      render();
+      clearTimeout(_qTimer);
+      _qTimer = setTimeout(render, 70);
     });
 
     catSel.addEventListener("change", render);
     brandSel.addEventListener("change", render);
     if(sortSel) sortSel.addEventListener("change", render);
 
+    // Ticker en idle (para mejorar primera pintura)
+    runIdle(()=>{
+      updateTickerVisibility();
+      rebuildSearchTicker();
+
+      qInp.addEventListener("focus", updateTickerVisibility);
+      qInp.addEventListener("blur", updateTickerVisibility);
+
+      let raf = null;
+      window.addEventListener("resize", ()=>{
+        if(raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(()=> rebuildSearchTicker());
+      });
+    }, 1000);
+
+    // Carga rápida con cache + refresh en segundo plano
+    function bootstrapFromProducts(products){
+      all = products || [];
+      productById = new Map(all.map(p => [String(p.id), p]));
+
+      const cats = [...new Set(all.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+      const brands = [...new Set(all.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+      fillSelect(catSel, cats);
+      fillSelect(brandSel, brands);
+
+      readStateFromUrl();
+      sanitizeCartWithStock();
+      refreshCartCount();
+      render();
+    }
+
     async function init(){
       try{
         countEl.textContent = "Cargando productos…";
 
-        all = await loadProductsFromImagesFolder();
-        productById = new Map(all.map(p => [String(p.id), p]));
+        const cached = readProductsCache(true);
+        if(cached && cached.products && cached.products.length){
+          // ✅ pinta INMEDIATO
+          bootstrapFromProducts(cached.products);
 
-        const cats = [...new Set(all.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
-        const brands = [...new Set(all.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
-        fillSelect(catSel, cats);
-        fillSelect(brandSel, brands);
+          // 🔄 si estaba viejo, refresca en background sin bloquear
+          if(!cached.isFresh){
+            runIdle(async ()=>{
+              try{
+                const fresh = await loadProductsFresh();
+                writeProductsCache(fresh);
+                bootstrapFromProducts(fresh);
+              }catch(_){}
+            }, 1200);
+          }else{
+            // incluso si es fresh, refresco suave (por si hay cambios)
+            runIdle(async ()=>{
+              try{
+                const fresh = await loadProductsFresh();
+                writeProductsCache(fresh);
+                bootstrapFromProducts(fresh);
+              }catch(_){}
+            }, 2500);
+          }
+          return;
+        }
 
-        readStateFromUrl();
-        sanitizeCartWithStock();
+        // Sin cache => carga normal
+        const fresh = await loadProductsFresh();
+        writeProductsCache(fresh);
+        bootstrapFromProducts(fresh);
 
-        updateTickerVisibility();
-        rebuildSearchTicker();
-        render();
-      }catch(e){
+      }catch(_){
         countEl.textContent = "No se pudo cargar el catálogo. Verifica tu conexión e intenta recargar.";
         grid.innerHTML = "";
         refreshCartCount();
@@ -1784,155 +1910,160 @@
         return;
       }
 
-      const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
-      let timerId = null;
+      // ✅ Rendimiento: inicia el tracking en idle para no competir con la carga del catálogo
+      function startTracking(){
+        const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
+        let timerId = null;
 
-      const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
-      const USER_ID_KEY = "irenismb_user_id";
+        const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
+        const USER_ID_KEY = "irenismb_user_id";
 
-      function getUserId(){
-        try{
-          let id = localStorage.getItem(USER_ID_KEY);
-          if(id) return id;
+        function getUserId(){
+          try{
+            let id = localStorage.getItem(USER_ID_KEY);
+            if(id) return id;
 
-          id = (window.crypto && typeof window.crypto.randomUUID === "function")
-            ? window.crypto.randomUUID()
-            : (Date.now() + "-" + Math.random().toString(16).slice(2));
+            id = (window.crypto && typeof window.crypto.randomUUID === "function")
+              ? window.crypto.randomUUID()
+              : (Date.now() + "-" + Math.random().toString(16).slice(2));
 
-          localStorage.setItem(USER_ID_KEY, id);
-          return id;
-        }catch(e){
-          return (Date.now() + "-" + Math.random().toString(16).slice(2));
+            localStorage.setItem(USER_ID_KEY, id);
+            return id;
+          }catch(_){
+            return (Date.now() + "-" + Math.random().toString(16).slice(2));
+          }
         }
-      }
 
-      const USER_ID = getUserId();
-      let loggedNoGeo = false;
+        const USER_ID = getUserId();
+        let loggedNoGeo = false;
 
-      function canGeo(){
-        return ("geolocation" in navigator);
-      }
+        function canGeo(){
+          return ("geolocation" in navigator);
+        }
 
-      function guessFuenteFromAccuracy(acc){
-        const a = Number(acc);
-        if(!isFinite(a)) return "GEO";
-        if(a <= 35) return "GPS";
-        if(a <= 120) return "WI-FI";
-        if(a <= 1000) return "CELULAR";
-        return "GEO";
-      }
+        function guessFuenteFromAccuracy(acc){
+          const a = Number(acc);
+          if(!isFinite(a)) return "GEO";
+          if(a <= 35) return "GPS";
+          if(a <= 120) return "WI-FI";
+          if(a <= 1000) return "CELULAR";
+          return "GEO";
+        }
 
-      function sendLog(params){
-        try{
-          const lat = (params && params.lat != null) ? params.lat : "";
-          const lng = (params && params.lng != null) ? params.lng : "";
-          const acc = (params && params.acc != null) ? params.acc : "";
-          const fuente = (params && params.fuente) ? String(params.fuente) : "";
+        function sendLog(params){
+          try{
+            const lat = (params && params.lat != null) ? params.lat : "";
+            const lng = (params && params.lng != null) ? params.lng : "";
+            const acc = (params && params.acc != null) ? params.acc : "";
+            const fuente = (params && params.fuente) ? String(params.fuente) : "";
 
-          const payload = new URLSearchParams({
-            lat: String(lat),
-            lng: String(lng),
-            acc: acc === "" ? "" : String(acc),
+            const payload = new URLSearchParams({
+              lat: String(lat),
+              lng: String(lng),
+              acc: acc === "" ? "" : String(acc),
 
-            fuente: fuente,
-            src: fuente,
+              fuente: fuente,
+              src: fuente,
 
-            navegador: USER_ID,
-            user_id: USER_ID,
+              navegador: USER_ID,
+              user_id: USER_ID,
 
-            load_id: LOAD_ID,
-            mode: String(LOCATION_MODE || ""),
-            ts: String(Date.now()),
-            cb: Math.random().toString(36).slice(2)
-          });
+              load_id: LOAD_ID,
+              mode: String(LOCATION_MODE || ""),
+              ts: String(Date.now()),
+              cb: Math.random().toString(36).slice(2)
+            });
 
-          const url = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
+            const url = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
 
-          if (navigator.sendBeacon){
-            try{
-              const blob = new Blob([], { type: "text/plain" });
-              navigator.sendBeacon(url, blob);
+            if (navigator.sendBeacon){
+              try{
+                const blob = new Blob([], { type: "text/plain" });
+                navigator.sendBeacon(url, blob);
+                return;
+              }catch(_){}
+            }
+
+            fetch(url, {
+              method: "GET",
+              mode: "no-cors",
+              cache: "no-store",
+              keepalive: true
+            }).catch(()=>{
+              try{
+                const img = new Image();
+                img.src = url;
+              }catch(_){}
+            });
+
+          }catch(_){}
+        }
+
+        function logNoGeoOnce(){
+          if(loggedNoGeo) return;
+          loggedNoGeo = true;
+          sendLog({ lat:"", lng:"", acc:"", fuente:"SIN_UBICACION" });
+        }
+
+        function stopTimer(){
+          if(timerId){
+            clearInterval(timerId);
+            timerId = null;
+          }
+        }
+
+        function logOnce(){
+          try{
+            if(!canGeo()){
+              logNoGeoOnce();
               return;
-            }catch(_){}
-          }
+            }
 
-          fetch(url, {
-            method: "GET",
-            mode: "no-cors",
-            cache: "no-store",
-            keepalive: true
-          }).catch(()=>{
-            try{
-              const img = new Image();
-              img.src = url;
-            }catch(_){}
-          });
+            navigator.geolocation.getCurrentPosition(
+              (pos)=>{
+                const c = pos && pos.coords;
+                if(!c){ logNoGeoOnce(); return; }
 
-        }catch(_){}
-      }
+                sendLog({
+                  lat: c.latitude,
+                  lng: c.longitude,
+                  acc: c.accuracy,
+                  fuente: guessFuenteFromAccuracy(c.accuracy)
+                });
+              },
+              (err)=>{
+                if(err && err.code === 1){
+                  logNoGeoOnce();
+                  stopTimer();
+                }
+              },
+              { enableHighAccuracy:true, timeout:30000, maximumAge: 0 }
+            );
 
-      function logNoGeoOnce(){
-        if(loggedNoGeo) return;
-        loggedNoGeo = true;
-        sendLog({ lat:"", lng:"", acc:"", fuente:"SIN_UBICACION" });
-      }
-
-      function stopTimer(){
-        if(timerId){
-          clearInterval(timerId);
-          timerId = null;
+          }catch(_){}
         }
-      }
 
-      function logOnce(){
-        try{
-          if(!canGeo()){
-            logNoGeoOnce();
-            return;
+        function startAccordingMode(){
+          const m = String(LOCATION_MODE || "").toUpperCase();
+          if (m === "LOAD"){
+            logOnce();
+          }else{
+            logOnce();
+            if(!timerId) timerId = setInterval(logOnce, intervalMs);
           }
-
-          navigator.geolocation.getCurrentPosition(
-            (pos)=>{
-              const c = pos && pos.coords;
-              if(!c){ logNoGeoOnce(); return; }
-
-              sendLog({
-                lat: c.latitude,
-                lng: c.longitude,
-                acc: c.accuracy,
-                fuente: guessFuenteFromAccuracy(c.accuracy)
-              });
-            },
-            (err)=>{
-              if(err && err.code === 1){
-                logNoGeoOnce();
-                stopTimer();
-              }
-            },
-            { enableHighAccuracy:true, timeout:30000, maximumAge: 0 }
-          );
-
-        }catch(_){}
-      }
-
-      function startAccordingMode(){
-        const m = String(LOCATION_MODE || "").toUpperCase();
-        if (m === "LOAD"){
-          logOnce();
-        }else{
-          logOnce();
-          if(!timerId) timerId = setInterval(logOnce, intervalMs);
         }
-      }
 
-      function start(){
         startAccordingMode();
       }
 
+      // idle (sin bloquear el primer render)
+      const _hasIdle = ("requestIdleCallback" in window);
+      const runIdle = (fn, timeout=1500)=> _hasIdle ? requestIdleCallback(fn, {timeout}) : setTimeout(fn, Math.min(350, timeout));
+
       if (document.readyState === "loading"){
-        document.addEventListener("DOMContentLoaded", start, { once:true });
+        document.addEventListener("DOMContentLoaded", ()=> runIdle(startTracking, 1600), { once:true });
       }else{
-        start();
+        runIdle(startTracking, 1600);
       }
     })();
   </script>

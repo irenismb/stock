@@ -11,15 +11,17 @@
   <meta name="format-detection" content="telephone=no" />
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
   <link rel="alternate" hreflang="es-CO" href="https://irenismb.github.io/stock/natura/catalogo.html" />
-  <link rel="icon" type="image/webp" href="recursos/otras_imagenes/logo_empresa.webp" />
-  <link rel="icon" type="image/png" sizes="32x32" href="recursos/otras_imagenes/logo_empresa.png" />
-  <link rel="apple-touch-icon" href="recursos/otras_imagenes/logo_empresa.png" />
+
+  <!-- Favicons: preferimos PNG por compatibilidad; WebP es opcional -->
+  <link rel="icon" type="image/png" sizes="32x32" href="recursos/logos/logo_empresa.png" />
+  <link rel="icon" type="image/webp" href="recursos/logos/logo_empresa.webp" />
+  <link rel="apple-touch-icon" href="recursos/logos/logo_empresa.png" />
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html" />
   <meta property="og:title" content="Irenismb Stock Natura | Catálogo con compra por WhatsApp" />
   <meta property="og:description" content="Explora el catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png" />
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/recursos/logos/logo_empresa.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="800" />
   <meta property="og:image:height" content="800" />
@@ -29,12 +31,16 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo" />
   <meta name="twitter:description" content="Catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/otras_imagenes/logo_empresa.png" />
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/recursos/logos/logo_empresa.png" />
 
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preconnect" href="https://api.github.com" crossorigin />
-  <link rel="preload" as="image" href="recursos/otras_imagenes/logo_empresa.png" fetchpriority="high" />
+
+  <!-- Preload del logo PNG (fallback garantizado) -->
+  <link rel="preload" as="image" href="recursos/logos/logo_empresa.png" fetchpriority="high" />
+  <!-- Preload del placeholder WebP (si el navegador no soporta WebP, se ignora/cae al PNG por JS) -->
+  <link rel="preload" as="image" href="recursos/logos/suplente.webp" type="image/webp" fetchpriority="high" />
 
   <style>
     :root{
@@ -52,9 +58,8 @@
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
 
-      /* ✅ NUEVO: colores llamativos para el contador cuando hay búsqueda */
-      --count-blink:#facc15; /* amarillo fuerte */
-      --count-blink-2:#fb7185; /* rosa coral */
+      --count-blink:#facc15;
+      --count-blink-2:#fb7185;
     }
 
     *{box-sizing:border-box}
@@ -91,6 +96,7 @@
       object-fit:cover;
       background:#0b1220;
       border:1px solid rgba(255,255,255,.06);
+      display:block;
     }
     .brand h1{
       margin:0;
@@ -286,9 +292,8 @@
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
       padding:10px 0 6px;
     }
-    .topline.hidden{ display:none; } /* ✅ NUEVO: ocultar el topline cuando el contador se mueve a móvil */
+    .topline.hidden{ display:none; }
 
-    /* ✅ Mejoras para el contador (incluye modo parpadeo) */
     .count{
       font-size:12px;
       color:var(--mut);
@@ -300,9 +305,8 @@
       max-width:100%;
     }
 
-    /* ✅ NUEVO: slot para el contador justo debajo de la barra de búsqueda en móvil */
     .count-slot{
-      display:none;         /* solo móvil */
+      display:none;
       width:100%;
     }
 
@@ -328,7 +332,7 @@
       color:var(--count-blink);
       font-weight:950;
       background:linear-gradient(90deg, rgba(250,204,21,.14), rgba(251,113,133,.10));
-      animation: countBlink 1.15s ease-in-out infinite; /* < 3 parpadeos/seg */
+      animation: countBlink 1.15s ease-in-out infinite;
     }
     @media (prefers-reduced-motion: reduce){
       .count.search-active{
@@ -636,21 +640,18 @@
       justify-content:center;
     }
 
-    /* ✅ Etiquetas del botón carrito (para acortar en móvil sin cambiar accesibilidad) */
     #btn-cart .btn-cart-label-short{ display:none; }
 
-    /* ✅ En móvil: "Ordenar" + "Carrito" en la misma línea y mismo tamaño */
     @media (max-width:560px){
       .bar{ align-items:stretch; row-gap:8px; }
       .bar .search-wrap{ flex:1 1 100%; min-width:0; }
 
-      /* ✅ NUEVO: mostrar el contador justo debajo del buscador y centrado */
       .count-slot{
         display:flex;
         justify-content:center;
         align-items:center;
         flex:1 1 100%;
-        margin-top:-2px; /* lo deja pegadito bajo la barra */
+        margin-top:-2px;
       }
       .count.count-mobile{
         display:block;
@@ -727,7 +728,11 @@
   <header class="site-header">
     <div class="wrap site-header-inner">
       <div class="brand">
-        <img src="recursos/otras_imagenes/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52" />
+        <!-- WebP si se puede; PNG fallback garantizado -->
+        <picture>
+          <source srcset="recursos/logos/logo_empresa.webp" type="image/webp">
+          <img src="recursos/logos/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52" />
+        </picture>
         <div>
           <h1>IRENISMB STOCK NATURA</h1>
           <p>Catálogo Natura en Santa Marta • Compra por WhatsApp</p>
@@ -751,28 +756,28 @@
 
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
         <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-          <img src="recursos/otras_imagenes/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
+          <img src="recursos/logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
         </a>
         <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-          <img src="recursos/otras_imagenes/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
+          <img src="recursos/logos/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
         </a>
         <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-          <img src="recursos/otras_imagenes/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
+          <img src="recursos/logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
         </a>
         <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-          <img src="recursos/otras_imagenes/youtube.png" alt="YouTube" loading="lazy" decoding="async" />
+          <img src="recursos/logos/youtube.png" alt="YouTube" loading="lazy" decoding="async" />
         </a>
         <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
-          <img src="recursos/otras_imagenes/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
+          <img src="recursos/logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
         </a>
 
         <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
            target="_blank" rel="noopener noreferrer" aria-label="Google Business">
-          <img src="recursos/otras_imagenes/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
+          <img src="recursos/logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
         </a>
 
         <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-          <img src="recursos/otras_imagenes/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
+          <img src="recursos/logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
         </a>
         <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -792,7 +797,6 @@
                  aria-label="Buscar producto" />
         </div>
 
-        <!-- ✅ NUEVO: aquí va el contador en móvil (se mueve por JS) -->
         <div class="count-slot" id="countSlot"></div>
 
         <select id="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
@@ -829,7 +833,6 @@
   </header>
 
   <main class="wrap">
-    <!-- ✅ NUEVO: id para poder ocultarlo en móvil cuando movemos el contador -->
     <div class="topline" id="topline">
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
@@ -865,22 +868,23 @@
 
   <script>
     /* ==========================
-       ✅ OPTIMIZACIONES CLAVE
-       - 1 sola llamada rápida a GitHub (Contents API) en vez de tree recursivo
-       - Cache con "stale-while-revalidate": pinta rápido con cache y actualiza en segundo plano
-       - Debounce en búsqueda para evitar renders excesivos
-       - Render por bloques (chunked) para no congelar el móvil
-       - JSON-LD y ticker se calculan en idle para mejorar percepción de carga
-       - ✅ NUEVO: en móvil el contador se mueve debajo del buscador y centrado
-       - ✅ NUEVO: si hay resultados con filtros/búsqueda, muestra "Los filtré abajo ⬇️"
+       OPTIMIZACIONES + ESTRUCTURA
+       - 2 carpetas:
+         1) recursos/logos
+         2) recursos/imagenes_de_productos
+       - Placeholder fijo: recursos/logos/suplente.webp (si falla -> logo PNG)
+       - Interruptor SHOW_PRODUCT_IMAGES se mantiene
+       - Logo header: <picture> WebP + fallback PNG (en HTML)
        ========================== */
 
     const APP_FLAGS = {
       SHOW_STOCK_QUANTITY: false,
       SHOW_STOCK_STATUS_TEXT: false,
       ENABLE_GPS_LOCATION: true,
+      ENFORCE_STOCK_LIMITS: false,
 
-      ENFORCE_STOCK_LIMITS: false
+      /* Interruptor (true=mostrar fotos reales, false=usar siempre placeholder) */
+      SHOW_PRODUCT_IMAGES: true
     };
     window.APP_FLAGS = APP_FLAGS;
 
@@ -888,7 +892,10 @@
       return !!(window.APP_FLAGS && window.APP_FLAGS.ENFORCE_STOCK_LIMITS === true);
     }
 
-    // Utilidad idle
+    function shouldShowProductImages(){
+      return !!(window.APP_FLAGS && window.APP_FLAGS.SHOW_PRODUCT_IMAGES !== false);
+    }
+
     const _hasIdle = ("requestIdleCallback" in window);
     function runIdle(fn, timeout=1200){
       if(_hasIdle) return requestIdleCallback(fn, { timeout });
@@ -898,6 +905,8 @@
     const WHATSAPP_NUMBER = "573042088961";
 
     const IMG_DIR = "recursos/imagenes_de_productos";
+    const LOGOS_DIR = "recursos/logos";
+
     const IMAGE_EXTS = ["webp","jpg","jpeg","png"];
     const NON_IMAGE_EXTS = ["txt"];
     const SUPPORTED_EXTS = [...IMAGE_EXTS, ...NON_IMAGE_EXTS];
@@ -905,7 +914,12 @@
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
     const SITE_BASE = "https://irenismb.github.io/stock/natura/";
-    const FALLBACK_IMAGE = SITE_BASE + "recursos/otras_imagenes/logo_empresa.png";
+
+    /* Logo corporativo (respaldo para fallos o navegadores sin WebP) */
+    const COMPANY_LOGO = SITE_BASE + LOGOS_DIR + "/logo_empresa.png";
+
+    /* Placeholder fijo de producto (nuevo): suplente.webp en recursos/logos */
+    let PRODUCT_PLACEHOLDER_IMAGE = SITE_BASE + LOGOS_DIR + "/suplente.webp";
 
     const GITHUB_OWNER = "irenismb";
     const GITHUB_REPO = "stock";
@@ -945,8 +959,16 @@
     function isImageExt(ext){
       return IMAGE_EXTS.includes(String(ext || "").toLowerCase());
     }
+
+    function productPlaceholderAbsoluteUrl(){
+      return PRODUCT_PLACEHOLDER_IMAGE || COMPANY_LOGO;
+    }
+
     function productImageAbsoluteUrlFromFilename(filename){
-      if(!filename) return FALLBACK_IMAGE;
+      if(!shouldShowProductImages()){
+        return productPlaceholderAbsoluteUrl();
+      }
+      if(!filename) return productPlaceholderAbsoluteUrl();
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
@@ -962,6 +984,29 @@
         throw new Error("HTTP " + res.status + " " + (text || ""));
       }
       return await res.json();
+    }
+
+    /* ==========================
+       Warm-up del placeholder (1 sola vez)
+       - Si el navegador no soporta WebP o el archivo falla, se cambia a logo PNG.
+       ========================== */
+    function warmupPlaceholderOnce(){
+      return new Promise((resolve)=>{
+        try{
+          const test = new Image();
+          test.onload = ()=> resolve();
+          test.onerror = ()=>{
+            PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
+            resolve();
+          };
+          test.decoding = "async";
+          test.loading = "eager";
+          test.src = PRODUCT_PLACEHOLDER_IMAGE;
+        }catch(_){
+          PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
+          resolve();
+        }
+      });
     }
 
     function parseProductFromBaseName(baseName){
@@ -1215,23 +1260,26 @@
       img.loading = "lazy";
       img.decoding = "async";
 
-      let zoomable = Boolean(filename);
+      let zoomable = false;
 
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
       }
 
-      if(!filename){
-        img.src = FALLBACK_IMAGE;
+      const allowReal = shouldShowProductImages() && Boolean(filename);
+
+      if(!allowReal){
+        img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       }else{
+        zoomable = true;
         const srcRel = `${IMG_DIR}/${filename}`;
         img.src = encodePath(srcRel);
       }
 
       img.onerror = ()=>{
-        img.src = FALLBACK_IMAGE;
+        img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       };
 
@@ -1251,23 +1299,26 @@
       img.loading = "lazy";
       img.decoding = "async";
 
-      let zoomable = Boolean(filename);
+      let zoomable = false;
 
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
       }
 
-      if(!filename){
-        img.src = FALLBACK_IMAGE;
+      const allowReal = shouldShowProductImages() && Boolean(filename);
+
+      if(!allowReal){
+        img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       }else{
+        zoomable = true;
         const srcRel = `${IMG_DIR}/${filename}`;
         img.src = encodePath(srcRel);
       }
 
       img.onerror = ()=>{
-        img.src = FALLBACK_IMAGE;
+        img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       };
 
@@ -1521,7 +1572,6 @@
     const searchTicker = document.getElementById("searchTicker");
     const tickerInner = document.getElementById("tickerInner");
 
-    /* ✅ NUEVO: mover el contador en móvil debajo del buscador */
     const countSlot = document.getElementById("countSlot");
     const topline = document.getElementById("topline");
     const mqCountMobile = window.matchMedia("(max-width:560px)");
@@ -1878,7 +1928,6 @@
       const token = ++_renderToken;
       const filtered = buildFilteredList();
 
-      /* ✅ NUEVO: mensaje del contador centrado (y con “Los filtré abajo ⬇️” si aplica) */
       const cat = catSel.value;
       const br = brandSel.value;
       const sortMode = sortSel ? sortSel.value : "";
@@ -1896,7 +1945,7 @@
       }
 
       updateCountAttention();
-      placeCountElement(); /* por si cambia orientación o el DOM */
+      placeCountElement();
 
       grid.textContent = "";
 
@@ -1978,30 +2027,32 @@
       try{
         countEl.textContent = "Cargando productos…";
 
+        /* placeholder fijo (suplente.webp) con fallback 1 sola vez */
+        const placeholderWarm = warmupPlaceholderOnce();
+
         const cached = readProductsCache(true);
         if(cached && cached.products && cached.products.length){
           bootstrapFromProducts(cached.products);
 
-          if(!cached.isFresh){
-            runIdle(async ()=>{
-              try{
-                const fresh = await loadProductsFresh();
-                writeProductsCache(fresh);
-                bootstrapFromProducts(fresh);
-              }catch(_){}
-            }, 1200);
-          }else{
-            runIdle(async ()=>{
-              try{
-                const fresh = await loadProductsFresh();
-                writeProductsCache(fresh);
-                bootstrapFromProducts(fresh);
-              }catch(_){}
-            }, 2500);
-          }
+          placeholderWarm.then(()=> {
+            if(all && all.length) {
+              render();
+              if(cartModal.classList.contains("open")) renderCartModal();
+            }
+          });
+
+          runIdle(async ()=>{
+            try{
+              const fresh = await loadProductsFresh();
+              writeProductsCache(fresh);
+              bootstrapFromProducts(fresh);
+            }catch(_){}
+          }, cached.isFresh ? 2500 : 1200);
+
           return;
         }
 
+        await placeholderWarm;
         const fresh = await loadProductsFresh();
         writeProductsCache(fresh);
         bootstrapFromProducts(fresh);
@@ -2184,6 +2235,5 @@
       }
     })();
   </script>
-
 </body>
 </html>

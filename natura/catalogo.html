@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -51,6 +51,10 @@
 
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
+
+      /* ✅ NUEVO: colores llamativos para el contador cuando hay búsqueda */
+      --count-blink:#facc15; /* amarillo fuerte */
+      --count-blink-2:#fb7185; /* rosa coral */
     }
 
     *{box-sizing:border-box}
@@ -282,7 +286,47 @@
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
       padding:10px 0 6px;
     }
-    .count{font-size:12px;color:var(--mut)}
+
+    /* ✅ Mejoras para el contador (incluye modo parpadeo) */
+    .count{
+      font-size:12px;
+      color:var(--mut);
+      display:inline-block;              /* permite fondo/padding sin romper layout */
+      padding:6px 10px;
+      border-radius:999px;
+      border:1px solid transparent;
+      background:rgba(11,18,32,.18);
+    }
+    @keyframes countBlink{
+      0%, 100%{
+        opacity:1;
+        transform:translateY(0);
+        text-shadow:
+          0 0 10px rgba(250,204,21,.55),
+          0 0 22px rgba(251,113,133,.35);
+        border-color: rgba(250,204,21,.35);
+      }
+      50%{
+        opacity:.28;
+        transform:translateY(-.5px);
+        text-shadow:
+          0 0 2px rgba(250,204,21,.22),
+          0 0 8px rgba(251,113,133,.22);
+        border-color: rgba(251,113,133,.25);
+      }
+    }
+    .count.search-active{
+      color:var(--count-blink);
+      font-weight:950;
+      background:linear-gradient(90deg, rgba(250,204,21,.14), rgba(251,113,133,.10));
+      animation: countBlink 1.15s ease-in-out infinite; /* < 3 parpadeos/seg */
+    }
+    @media (prefers-reduced-motion: reduce){
+      .count.search-active{
+        animation:none; /* respeta accesibilidad */
+        opacity:1;
+      }
+    }
 
     .grid{
       display:grid;
@@ -1465,6 +1509,13 @@
       searchWrap.classList.toggle("show-ticker", empty && !focused);
     }
 
+    /* ✅ NUEVO: parpadeo del texto "X producto(s) encontrado(s)." mientras hay texto en la barra */
+    function updateCountAttention(){
+      if(!countEl || !qInp) return;
+      const hasQuery = !!String(qInp.value || "").trim();
+      countEl.classList.toggle("search-active", hasQuery);
+    }
+
     function rebuildSearchTicker(){
       if(!searchWrap || !searchTicker || !tickerInner || !qInp) return;
 
@@ -1782,6 +1833,10 @@
       const filtered = buildFilteredList();
 
       countEl.textContent = `${filtered.length} producto(s) encontrado(s).`;
+
+      /* ✅ NUEVO: activar/desactivar parpadeo del contador según el texto en la búsqueda */
+      updateCountAttention();
+
       grid.textContent = "";
 
       // Render por bloques para no congelar móviles
@@ -1814,6 +1869,10 @@
     let _qTimer = null;
     qInp.addEventListener("input", ()=>{
       updateTickerVisibility();
+
+      /* ✅ NUEVO: respuesta inmediata del parpadeo al escribir/borrar */
+      updateCountAttention();
+
       clearTimeout(_qTimer);
       _qTimer = setTimeout(render, 70);
     });
@@ -1850,6 +1909,10 @@
       readStateFromUrl();
       sanitizeCartWithStock();
       refreshCartCount();
+
+      /* ✅ NUEVO: por si viene una búsqueda desde URL, aplica el parpadeo desde el inicio */
+      updateCountAttention();
+
       render();
     }
 
@@ -1893,6 +1956,7 @@
         countEl.textContent = "No se pudo cargar el catálogo. Verifica tu conexión e intenta recargar.";
         grid.innerHTML = "";
         refreshCartCount();
+        updateCountAttention();
       }
     }
 
@@ -2070,4 +2134,3 @@
 
 </body>
 </html>
-|

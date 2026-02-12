@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -51,10 +51,6 @@
 
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
-
-      /* ✅ NUEVO: colores llamativos para el contador cuando hay búsqueda */
-      --count-blink:#facc15; /* amarillo fuerte */
-      --count-blink-2:#fb7185; /* rosa coral */
     }
 
     *{box-sizing:border-box}
@@ -286,56 +282,7 @@
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
       padding:10px 0 6px;
     }
-    .topline.hidden{ display:none; } /* ✅ NUEVO: ocultar el topline cuando el contador se mueve a móvil */
-
-    /* ✅ Mejoras para el contador (incluye modo parpadeo) */
-    .count{
-      font-size:12px;
-      color:var(--mut);
-      display:inline-block;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid transparent;
-      background:rgba(11,18,32,.18);
-      max-width:100%;
-    }
-
-    /* ✅ NUEVO: slot para el contador justo debajo de la barra de búsqueda en móvil */
-    .count-slot{
-      display:none;         /* solo móvil */
-      width:100%;
-    }
-
-    @keyframes countBlink{
-      0%, 100%{
-        opacity:1;
-        transform:translateY(0);
-        text-shadow:
-          0 0 10px rgba(250,204,21,.55),
-          0 0 22px rgba(251,113,133,.35);
-        border-color: rgba(250,204,21,.35);
-      }
-      50%{
-        opacity:.28;
-        transform:translateY(-.5px);
-        text-shadow:
-          0 0 2px rgba(250,204,21,.22),
-          0 0 8px rgba(251,113,133,.22);
-        border-color: rgba(251,113,133,.25);
-      }
-    }
-    .count.search-active{
-      color:var(--count-blink);
-      font-weight:950;
-      background:linear-gradient(90deg, rgba(250,204,21,.14), rgba(251,113,133,.10));
-      animation: countBlink 1.15s ease-in-out infinite; /* < 3 parpadeos/seg */
-    }
-    @media (prefers-reduced-motion: reduce){
-      .count.search-active{
-        animation:none;
-        opacity:1;
-      }
-    }
+    .count{font-size:12px;color:var(--mut)}
 
     .grid{
       display:grid;
@@ -362,6 +309,7 @@
       flex-direction:column;
       min-height:100%;
 
+      /* ✅ rendimiento: no renderizar fuera de pantalla hasta que haga falta */
       content-visibility:auto;
       contain-intrinsic-size: 420px 520px;
     }
@@ -641,23 +589,8 @@
 
     /* ✅ En móvil: "Ordenar" + "Carrito" en la misma línea y mismo tamaño */
     @media (max-width:560px){
-      .bar{ align-items:stretch; row-gap:8px; }
+      .bar{ align-items:stretch; }
       .bar .search-wrap{ flex:1 1 100%; min-width:0; }
-
-      /* ✅ NUEVO: mostrar el contador justo debajo del buscador y centrado */
-      .count-slot{
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        flex:1 1 100%;
-        margin-top:-2px; /* lo deja pegadito bajo la barra */
-      }
-      .count.count-mobile{
-        display:block;
-        width:100%;
-        text-align:center;
-        margin:0 auto;
-      }
 
       #cat, #brand, #sort, #btn-cart{
         flex:1 1 calc(50% - 5px);
@@ -792,9 +725,6 @@
                  aria-label="Buscar producto" />
         </div>
 
-        <!-- ✅ NUEVO: aquí va el contador en móvil (se mueve por JS) -->
-        <div class="count-slot" id="countSlot"></div>
-
         <select id="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
         <select id="brand" aria-label="Filtrar por marca"><option value="">Todas las marcas</option></select>
         <select id="sort" aria-label="Ordenar productos">
@@ -829,8 +759,7 @@
   </header>
 
   <main class="wrap">
-    <!-- ✅ NUEVO: id para poder ocultarlo en móvil cuando movemos el contador -->
-    <div class="topline" id="topline">
+    <div class="topline">
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
@@ -871,8 +800,6 @@
        - Debounce en búsqueda para evitar renders excesivos
        - Render por bloques (chunked) para no congelar el móvil
        - JSON-LD y ticker se calculan en idle para mejorar percepción de carga
-       - ✅ NUEVO: en móvil el contador se mueve debajo del buscador y centrado
-       - ✅ NUEVO: si hay resultados con filtros/búsqueda, muestra "Los filtré abajo ⬇️"
        ========================== */
 
     const APP_FLAGS = {
@@ -880,6 +807,8 @@
       SHOW_STOCK_STATUS_TEXT: false,
       ENABLE_GPS_LOCATION: true,
 
+      // false => permite agregar sin limitar por stock
+      // true  => aplica límite por stock
       ENFORCE_STOCK_LIMITS: false
     };
     window.APP_FLAGS = APP_FLAGS;
@@ -909,8 +838,11 @@
 
     const GITHUB_OWNER = "irenismb";
     const GITHUB_REPO = "stock";
+
+    // ruta real en repo (para Contents API)
     const GITHUB_PRODUCTS_PATH = "natura/recursos/imagenes_de_productos";
 
+    // Mantengo compatibilidad con tu cache anterior
     const PRODUCTS_CACHE_KEYS = ["irenismb_products_cache_v4", "irenismb_products_cache_v3"];
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
@@ -950,6 +882,7 @@
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
+    // ✅ importante: permitir cache del navegador (más rápido que no-store)
     async function fetchJson(url){
       const res = await fetch(url, {
         method:"GET",
@@ -1044,6 +977,7 @@
       return existing;
     }
 
+    // ✅ NUEVO: Contents API (rápido, 1 sola llamada)
     async function fetchProductsViaContentsApi(){
       const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/contents/${GITHUB_PRODUCTS_PATH}`;
       const list = await fetchJson(url);
@@ -1083,7 +1017,9 @@
       return products;
     }
 
+    // 🔁 Fallback (por si Contents API falla por tamaño/limitaciones)
     async function fetchProductsViaTreeFallback(){
+      // comportamiento parecido al original, pero manteniendo cache del navegador
       const repoInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}`);
       const branch = String(repoInfo && repoInfo.default_branch ? repoInfo.default_branch : "main");
       const branchInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/branches/${encodeURIComponent(branch)}`);
@@ -1123,6 +1059,7 @@
         const products = await fetchProductsViaContentsApi();
         return products;
       }catch(_){
+        // fallback robusto
         return await fetchProductsViaTreeFallback();
       }
     }
@@ -1521,47 +1458,11 @@
     const searchTicker = document.getElementById("searchTicker");
     const tickerInner = document.getElementById("tickerInner");
 
-    /* ✅ NUEVO: mover el contador en móvil debajo del buscador */
-    const countSlot = document.getElementById("countSlot");
-    const topline = document.getElementById("topline");
-    const mqCountMobile = window.matchMedia("(max-width:560px)");
-
-    function placeCountElement(){
-      if(!countEl || !countSlot || !topline) return;
-
-      if(mqCountMobile.matches){
-        if(countEl.parentElement !== countSlot){
-          countSlot.appendChild(countEl);
-        }
-        countEl.classList.add("count-mobile");
-        topline.classList.add("hidden");
-      }else{
-        if(countEl.parentElement !== topline){
-          topline.appendChild(countEl);
-        }
-        countEl.classList.remove("count-mobile");
-        topline.classList.remove("hidden");
-      }
-    }
-
-    if(typeof mqCountMobile.addEventListener === "function"){
-      mqCountMobile.addEventListener("change", placeCountElement);
-    }else if(typeof mqCountMobile.addListener === "function"){
-      mqCountMobile.addListener(placeCountElement);
-    }
-    placeCountElement();
-
     function updateTickerVisibility(){
       if(!searchWrap || !qInp) return;
       const empty = !String(qInp.value || "").trim();
       const focused = (document.activeElement === qInp);
       searchWrap.classList.toggle("show-ticker", empty && !focused);
-    }
-
-    function updateCountAttention(){
-      if(!countEl || !qInp) return;
-      const hasQuery = !!String(qInp.value || "").trim();
-      countEl.classList.toggle("search-active", hasQuery);
     }
 
     function rebuildSearchTicker(){
@@ -1708,6 +1609,7 @@
       }, 1400);
     }
 
+    // ✅ Template (más rápido que crear todos los nodos a mano)
     const cardTemplate = document.createElement("template");
     cardTemplate.innerHTML = `
       <article class="card">
@@ -1782,6 +1684,7 @@
       return card;
     }
 
+    // Delegación de eventos (evita handlers por tarjeta)
     grid.addEventListener("click", (e)=>{
       const btn = e.target.closest("button[data-act]");
       if(!btn) return;
@@ -1878,28 +1781,10 @@
       const token = ++_renderToken;
       const filtered = buildFilteredList();
 
-      /* ✅ NUEVO: mensaje del contador centrado (y con “Los filtré abajo ⬇️” si aplica) */
-      const cat = catSel.value;
-      const br = brandSel.value;
-      const sortMode = sortSel ? sortSel.value : "";
-      const qTxt = String(qInp.value || "").trim();
-      const hasFilters = !!qTxt || !!cat || !!br || !!sortMode;
-
-      if(filtered.length === 0){
-        countEl.textContent = hasFilters
-          ? "0 producto(s) encontrado(s). No encontré coincidencias; prueba con otra búsqueda."
-          : "0 producto(s) disponible(s).";
-      }else{
-        countEl.textContent = hasFilters
-          ? `Se encontraron ${filtered.length} producto(s). Los filtré abajo ⬇️`
-          : `Hay ${filtered.length} producto(s) disponible(s).`;
-      }
-
-      updateCountAttention();
-      placeCountElement(); /* por si cambia orientación o el DOM */
-
+      countEl.textContent = `${filtered.length} producto(s) encontrado(s).`;
       grid.textContent = "";
 
+      // Render por bloques para no congelar móviles
       const CHUNK = 60;
       let i = 0;
 
@@ -1925,11 +1810,10 @@
 
     document.getElementById("btn-cart").onclick = openCartModal;
 
+    // ✅ Debounce búsqueda (reduce renders)
     let _qTimer = null;
     qInp.addEventListener("input", ()=>{
       updateTickerVisibility();
-      updateCountAttention();
-
       clearTimeout(_qTimer);
       _qTimer = setTimeout(render, 70);
     });
@@ -1938,6 +1822,7 @@
     brandSel.addEventListener("change", render);
     if(sortSel) sortSel.addEventListener("change", render);
 
+    // Ticker en idle (para mejorar primera pintura)
     runIdle(()=>{
       updateTickerVisibility();
       rebuildSearchTicker();
@@ -1948,13 +1833,11 @@
       let raf = null;
       window.addEventListener("resize", ()=>{
         if(raf) cancelAnimationFrame(raf);
-        raf = requestAnimationFrame(()=>{
-          rebuildSearchTicker();
-          placeCountElement();
-        });
+        raf = requestAnimationFrame(()=> rebuildSearchTicker());
       });
     }, 1000);
 
+    // Carga rápida con cache + refresh en segundo plano
     function bootstrapFromProducts(products){
       all = products || [];
       productById = new Map(all.map(p => [String(p.id), p]));
@@ -1967,10 +1850,6 @@
       readStateFromUrl();
       sanitizeCartWithStock();
       refreshCartCount();
-
-      updateCountAttention();
-      placeCountElement();
-
       render();
     }
 
@@ -1980,8 +1859,10 @@
 
         const cached = readProductsCache(true);
         if(cached && cached.products && cached.products.length){
+          // ✅ pinta INMEDIATO
           bootstrapFromProducts(cached.products);
 
+          // 🔄 si estaba viejo, refresca en background sin bloquear
           if(!cached.isFresh){
             runIdle(async ()=>{
               try{
@@ -1991,6 +1872,7 @@
               }catch(_){}
             }, 1200);
           }else{
+            // incluso si es fresh, refresco suave (por si hay cambios)
             runIdle(async ()=>{
               try{
                 const fresh = await loadProductsFresh();
@@ -2002,6 +1884,7 @@
           return;
         }
 
+        // Sin cache => carga normal
         const fresh = await loadProductsFresh();
         writeProductsCache(fresh);
         bootstrapFromProducts(fresh);
@@ -2010,8 +1893,6 @@
         countEl.textContent = "No se pudo cargar el catálogo. Verifica tu conexión e intenta recargar.";
         grid.innerHTML = "";
         refreshCartCount();
-        updateCountAttention();
-        placeCountElement();
       }
     }
 
@@ -2029,6 +1910,7 @@
         return;
       }
 
+      // ✅ Rendimiento: inicia el tracking en idle para no competir con la carga del catálogo
       function startTracking(){
         const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
         let timerId = null;
@@ -2174,6 +2056,7 @@
         startAccordingMode();
       }
 
+      // idle (sin bloquear el primer render)
       const _hasIdle = ("requestIdleCallback" in window);
       const runIdle = (fn, timeout=1500)=> _hasIdle ? requestIdleCallback(fn, {timeout}) : setTimeout(fn, Math.min(350, timeout));
 
@@ -2187,3 +2070,4 @@
 
 </body>
 </html>
+|

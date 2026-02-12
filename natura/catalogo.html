@@ -53,8 +53,8 @@
       --social-gap: clamp(3px, 1.6vw, 10px);
 
       /* ✅ NUEVO: colores llamativos para el contador cuando hay búsqueda */
-      --count-blink:#facc15; /* amarillo fuerte */
-      --count-blink-2:#fb7185; /* rosa coral */
+      --count-blink:#ffea00; /* amarillo neón */
+      --count-blink-2:#ff2d95; /* fucsia vibrante */
     }
 
     *{box-sizing:border-box}
@@ -311,24 +311,24 @@
         opacity:1;
         transform:translateY(0);
         text-shadow:
-          0 0 10px rgba(250,204,21,.55),
-          0 0 22px rgba(251,113,133,.35);
-        border-color: rgba(250,204,21,.35);
+          0 0 10px rgba(255,234,0,.65),
+          0 0 22px rgba(255,45,149,.45);
+        border-color: rgba(255,234,0,.45);
       }
       50%{
         opacity:.28;
         transform:translateY(-.5px);
         text-shadow:
-          0 0 2px rgba(250,204,21,.22),
-          0 0 8px rgba(251,113,133,.22);
-        border-color: rgba(251,113,133,.25);
+          0 0 2px rgba(255,234,0,.30),
+          0 0 8px rgba(255,45,149,.30);
+        border-color: rgba(255,45,149,.35);
       }
     }
     .count.search-active{
       color:var(--count-blink);
       font-weight:950;
-      background:linear-gradient(90deg, rgba(250,204,21,.14), rgba(251,113,133,.10));
-      animation: countBlink 1.15s ease-in-out infinite; /* < 3 parpadeos/seg */
+      background:linear-gradient(90deg, rgba(255,234,0,.18), rgba(255,45,149,.14));
+      animation: countBlink .85s ease-in-out infinite; /* parpadeo más notorio */
     }
     @media (prefers-reduced-motion: reduce){
       .count.search-active{
@@ -1891,7 +1891,7 @@
           : "0 producto(s) disponible(s).";
       }else{
         countEl.textContent = hasFilters
-          ? `Se encontraron ${filtered.length} producto(s). Los filtré abajo ⬇️`
+          ? `${filtered.length} producto(s) encontrado(s). Los filtré abajo ⬇️`
           : `Hay ${filtered.length} producto(s) disponible(s).`;
       }
 

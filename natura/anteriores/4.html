@@ -378,19 +378,16 @@
       content-visibility:auto;
       contain-intrinsic-size: 420px 520px;
     }
-
-    /* ✅ MEJORA: LIENZO CUADRADO UNIFORME PARA TODAS LAS IMÁGENES */
     .img{
-      aspect-ratio:1/1;                 /* antes 4/3 */
+      aspect-ratio:4/3;
       background:#0b1220;
       display:flex;align-items:center;justify-content:center;
       border-bottom:1px solid var(--line);
-      padding:8px;                      /* opcional: da aire y se ve más ordenado */
     }
     .img img{
       width:100%;
       height:100%;
-      object-fit:contain;               /* antes cover (recortaba) */
+      object-fit:cover;
       cursor:zoom-in;
     }
 
@@ -507,13 +504,11 @@
       flex:1 1 280px;
       min-width:220px;
     }
-
-    /* ✅ MEJORA: MINIATURA DEL CARRITO SIN RECORTE (contain) */
     .cart-thumb{
       width:46px;
       height:46px;
       border-radius:12px;
-      object-fit:contain;               /* antes cover */
+      object-fit:cover;
       background:#0b1220;
       border:1px solid rgba(255,255,255,.10);
       flex:0 0 auto;
@@ -818,7 +813,7 @@
         <select id="sort" aria-label="Ordenar productos">
           <option value="">Ordenar</option>
           <option value="price_asc">Precio: menor a mayor</option>
-          <option value="price_desc">Precio: mayor a mayor</option>
+          <option value="price_desc">Precio: mayor a menor</option>
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 

@@ -882,28 +882,28 @@
          1) logos
          2) imagenes_de_productos
        - Placeholder fijo (mejorado): suplente.webp -> suplente.png -> logo PNG
-       - Interruptor SHOW_PRODUCT_IMAGES se mantiene
+       - Interruptor MOSTRAR_IMAGENES_PRODUCTO se mantiene
        - Logo header: <picture> WebP + fallback PNG (en HTML)
        - SITE_BASE automático: funciona en local y en GitHub Pages
        ========================== */
 
-    const APP_FLAGS = {
-      SHOW_STOCK_QUANTITY: false,
-      SHOW_STOCK_STATUS_TEXT: false,
-      ENABLE_GPS_LOCATION: true,
-      ENFORCE_STOCK_LIMITS: false,
+    const INTERRUPTORES = {
+      MOSTRAR_CANTIDAD_STOCK: false,
+      MOSTRAR_TEXTO_ESTADO_STOCK: false,
+      HABILITAR_UBICACION_GPS: true,
+      APLICAR_LIMITES_STOCK: false,
 
       /* Interruptor (true=mostrar fotos reales, false=usar siempre placeholder) */
-      SHOW_PRODUCT_IMAGES: true
+      MOSTRAR_IMAGENES_PRODUCTO: true
     };
-    window.APP_FLAGS = APP_FLAGS;
+    window.INTERRUPTORES = INTERRUPTORES;
 
     function shouldEnforceStockLimits(){
-      return !!(window.APP_FLAGS && window.APP_FLAGS.ENFORCE_STOCK_LIMITS === true);
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_LIMITES_STOCK === true);
     }
 
     function shouldShowProductImages(){
-      return !!(window.APP_FLAGS && window.APP_FLAGS.SHOW_PRODUCT_IMAGES !== false);
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_IMAGENES_PRODUCTO !== false);
     }
 
     const _hasIdle = ("requestIdleCallback" in window);
@@ -1831,9 +1831,9 @@
     function stockMetaText(p){
       const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
       let stockPart = "";
-      if (APP_FLAGS.SHOW_STOCK_QUANTITY){
+      if (INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         stockPart = ` · Stock: ${stockVal}`;
-      } else if (APP_FLAGS.SHOW_STOCK_STATUS_TEXT){
+      } else if (INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
         stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
       } else {
         stockPart = "";
@@ -1860,7 +1860,7 @@
         incBtn.disabled = !canAdd;
         incBtn.classList.toggle("in-cart", q > 0);
         if(enforce && maxStock <= 0){
-          incBtn.textContent = APP_FLAGS.SHOW_STOCK_STATUS_TEXT ? "Sin stock" : "Agregar";
+          incBtn.textContent = INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK ? "Sin stock" : "Agregar";
         }else{
           incBtn.textContent = "Agregar";
         }
@@ -2127,7 +2127,7 @@
     const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
 
     (function(){
-      if (window.APP_FLAGS && window.APP_FLAGS.ENABLE_GPS_LOCATION === false){
+      if (window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false){
         return;
       }
 

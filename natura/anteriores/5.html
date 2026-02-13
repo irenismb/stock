@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -44,7 +44,7 @@
 
   <!-- Preload del logo PNG (fallback garantizado) -->
   <link rel="preload" as="image" href="logos/logo_empresa.png" fetchpriority="high" />
-  <!-- Preload del placeholder por defecto -->
+  <!-- Preload del placeholder por defecto (si cambias el suplente en INTERRUPTORES, esto es opcional) -->
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
@@ -285,7 +285,6 @@
       height:calc(var(--social-size) * 0.58);
       object-fit:contain;
       border-radius:999px;
-      display:block;
     }
     .social-icons svg{
       width:calc(var(--social-size) * 0.58);
@@ -377,34 +376,18 @@
       contain-intrinsic-size: 420px 520px;
     }
 
-    /* ✅ LIENZO CUADRADO UNIFORME (ROBUSTO, SIN DEPENDER DE aspect-ratio)
-       - Mantiene SIEMPRE el cuadro 1:1
-       - La imagen SIEMPRE se escala para entrar completa (sin recorte)
-       - Da el mismo “aire” (padding) aunque la foto sea muy alta o muy ancha
-    */
+    /* ✅ LIENZO CUADRADO UNIFORME */
     .img{
-      position:relative;
-      width:100%;
+      aspect-ratio:1/1;
       background:#0b1220;
+      display:flex;align-items:center;justify-content:center;
       border-bottom:1px solid var(--line);
-      overflow:hidden;
+      padding:8px;
     }
-    .img::before{
-      content:"";
-      display:block;
-      padding-top:100%; /* cuadro 1:1 */
-    }
-    .img > img{
-      position:absolute;
-      top:50%;
-      left:50%;
-      transform:translate(-50%,-50%);
-      max-width:calc(100% - 16px);
-      max-height:calc(100% - 16px);
-      width:auto;
-      height:auto;
+    .img img{
+      width:100%;
+      height:100%;
       object-fit:contain;
-      display:block;
       cursor:zoom-in;
     }
 
@@ -532,7 +515,6 @@
       border:1px solid rgba(255,255,255,.10);
       flex:0 0 auto;
       cursor:zoom-in;
-      display:block;
     }
 
     .cart-item-main{
@@ -650,7 +632,6 @@
       border-radius:14px;
       background:#000;
       box-shadow:0 22px 60px rgba(0,0,0,.6);
-      display:block;
     }
     .img-modal-close{
       position:absolute;
@@ -1002,6 +983,7 @@
       if(!raw) return "";
       const just = raw.split(/[\/\\]/).pop(); // evita rutas
       if(!just || just.includes("..")) return "";
+      // deja letras, números, underscore, guion, punto y espacios
       return just.replace(/[^\w.\- ]+/g, "").trim();
     }
 
@@ -1031,6 +1013,8 @@
     }
 
     let PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
+
+    /* El placeholder “activo” (se decide en warmup) */
     let PRODUCT_PLACEHOLDER_IMAGE = (PRODUCT_PLACEHOLDERS[0] || COMPANY_LOGO);
 
     function productPlaceholderAbsoluteUrl(){
@@ -1066,6 +1050,7 @@
     function warmupPlaceholderOnce(){
       return new Promise((resolve)=>{
         try{
+          // recalcula por si el usuario cambió el interruptor antes de cargar
           PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
 
           let i = 0;
@@ -2133,6 +2118,7 @@
       try{
         countEl.textContent = "Cargando productos…";
 
+        /* ✅ placeholder en cascada (incluye el elegido en INTERRUPTORES) */
         const placeholderWarm = warmupPlaceholderOnce();
 
         const cached = readProductsCache(true);

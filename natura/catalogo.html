@@ -39,8 +39,10 @@
 
   <!-- Preload del logo PNG (fallback garantizado) -->
   <link rel="preload" as="image" href="recursos/logos/logo_empresa.png" fetchpriority="high" />
-  <!-- Preload del placeholder WebP (si el navegador no soporta WebP, se ignora/cae al PNG por JS) -->
+  <!-- Preload del placeholder WebP -->
   <link rel="preload" as="image" href="recursos/logos/suplente.webp" type="image/webp" fetchpriority="high" />
+  <!-- Preload del placeholder PNG (nuevo fallback recomendado) -->
+  <link rel="preload" as="image" href="recursos/logos/suplente.png" type="image/png" fetchpriority="high" />
 
   <style>
     :root{
@@ -872,9 +874,10 @@
        - 2 carpetas:
          1) recursos/logos
          2) recursos/imagenes_de_productos
-       - Placeholder fijo: recursos/logos/suplente.webp (si falla -> logo PNG)
+       - Placeholder fijo (mejorado): suplente.webp -> suplente.png -> logo PNG
        - Interruptor SHOW_PRODUCT_IMAGES se mantiene
        - Logo header: <picture> WebP + fallback PNG (en HTML)
+       - SITE_BASE automático: funciona en local y en GitHub Pages
        ========================== */
 
     const APP_FLAGS = {
@@ -913,13 +916,21 @@
 
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
-    const SITE_BASE = "https://irenismb.github.io/stock/natura/";
+    /* ✅ BASE AUTOMÁTICA (local y producción) */
+    const SITE_BASE = new URL("./", document.baseURI).href;
 
-    /* Logo corporativo (respaldo para fallos o navegadores sin WebP) */
+    /* Logo corporativo (respaldo para fallos) */
     const COMPANY_LOGO = SITE_BASE + LOGOS_DIR + "/logo_empresa.png";
 
-    /* Placeholder fijo de producto (nuevo): suplente.webp en recursos/logos */
-    let PRODUCT_PLACEHOLDER_IMAGE = SITE_BASE + LOGOS_DIR + "/suplente.webp";
+    /* ✅ Placeholders en cascada */
+    const PRODUCT_PLACEHOLDERS = [
+      SITE_BASE + LOGOS_DIR + "/suplente.webp",
+      SITE_BASE + LOGOS_DIR + "/suplente.png",
+      COMPANY_LOGO
+    ];
+
+    /* El placeholder “activo” (se decide en warmup) */
+    let PRODUCT_PLACEHOLDER_IMAGE = PRODUCT_PLACEHOLDERS[0];
 
     const GITHUB_OWNER = "irenismb";
     const GITHUB_REPO = "stock";
@@ -988,20 +999,33 @@
 
     /* ==========================
        Warm-up del placeholder (1 sola vez)
-       - Si el navegador no soporta WebP o el archivo falla, se cambia a logo PNG.
+       - Prueba suplente.webp; si falla prueba suplente.png; si falla usa logo.
        ========================== */
     function warmupPlaceholderOnce(){
       return new Promise((resolve)=>{
         try{
-          const test = new Image();
-          test.onload = ()=> resolve();
-          test.onerror = ()=>{
-            PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
-            resolve();
+          let i = 0;
+
+          const tryNext = ()=>{
+            if(i >= PRODUCT_PLACEHOLDERS.length){
+              PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
+              resolve();
+              return;
+            }
+
+            const url = PRODUCT_PLACEHOLDERS[i++];
+            const test = new Image();
+            test.onload = ()=>{
+              PRODUCT_PLACEHOLDER_IMAGE = url;
+              resolve();
+            };
+            test.onerror = tryNext;
+            test.decoding = "async";
+            test.loading = "eager";
+            test.src = url;
           };
-          test.decoding = "async";
-          test.loading = "eager";
-          test.src = PRODUCT_PLACEHOLDER_IMAGE;
+
+          tryNext();
         }catch(_){
           PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
           resolve();
@@ -1274,11 +1298,18 @@
         setNonZoom();
       }else{
         zoomable = true;
-        const srcRel = `${IMG_DIR}/${filename}`;
-        img.src = encodePath(srcRel);
+        img.src = productImageAbsoluteUrlFromFilename(filename);
       }
 
       img.onerror = ()=>{
+        // ✅ Evita bucle infinito si también falla el placeholder
+        if(img.dataset.fallbackTried === "1"){
+          img.onerror = null;
+          img.src = COMPANY_LOGO;
+          setNonZoom();
+          return;
+        }
+        img.dataset.fallbackTried = "1";
         img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       };
@@ -1313,11 +1344,18 @@
         setNonZoom();
       }else{
         zoomable = true;
-        const srcRel = `${IMG_DIR}/${filename}`;
-        img.src = encodePath(srcRel);
+        img.src = productImageAbsoluteUrlFromFilename(filename);
       }
 
       img.onerror = ()=>{
+        // ✅ Evita bucle infinito si también falla el placeholder
+        if(img.dataset.fallbackTried === "1"){
+          img.onerror = null;
+          img.src = COMPANY_LOGO;
+          setNonZoom();
+          return;
+        }
+        img.dataset.fallbackTried = "1";
         img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       };
@@ -2027,7 +2065,7 @@
       try{
         countEl.textContent = "Cargando productos…";
 
-        /* placeholder fijo (suplente.webp) con fallback 1 sola vez */
+        /* ✅ placeholder en cascada */
         const placeholderWarm = warmupPlaceholderOnce();
 
         const cached = readProductsCache(true);

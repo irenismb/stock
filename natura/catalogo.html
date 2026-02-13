@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -12,14 +12,12 @@
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
   <link rel="alternate" hreflang="es-CO" href="https://irenismb.github.io/stock/natura/catalogo.html" />
 
-  <!-- ✅ Antes: recursos/...
-       ✅ Ahora: todo lo de "recursos" está directamente dentro de "natura"
-       Estructura esperada:
+  <!-- ✅ Estructura esperada:
        - natura/logos
        - natura/imagenes_de_productos
   -->
 
-  <!-- Favicons: preferimos PNG por compatibilidad; WebP es opcional -->
+  <!-- Favicons -->
   <link rel="icon" type="image/png" sizes="32x32" href="logos/logo_empresa.png" />
   <link rel="icon" type="image/webp" href="logos/logo_empresa.webp" />
   <link rel="apple-touch-icon" href="logos/logo_empresa.png" />
@@ -46,9 +44,8 @@
 
   <!-- Preload del logo PNG (fallback garantizado) -->
   <link rel="preload" as="image" href="logos/logo_empresa.png" fetchpriority="high" />
-  <!-- Preload del placeholder WebP -->
+  <!-- Preload del placeholder por defecto (si cambias el suplente en INTERRUPTORES, esto es opcional) -->
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
-  <!-- Preload del placeholder PNG (fallback recomendado) -->
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
   <style>
@@ -379,18 +376,18 @@
       contain-intrinsic-size: 420px 520px;
     }
 
-    /* ✅ MEJORA: LIENZO CUADRADO UNIFORME PARA TODAS LAS IMÁGENES */
+    /* ✅ LIENZO CUADRADO UNIFORME */
     .img{
-      aspect-ratio:1/1;                 /* antes 4/3 */
+      aspect-ratio:1/1;
       background:#0b1220;
       display:flex;align-items:center;justify-content:center;
       border-bottom:1px solid var(--line);
-      padding:8px;                      /* opcional: da aire y se ve más ordenado */
+      padding:8px;
     }
     .img img{
       width:100%;
       height:100%;
-      object-fit:contain;               /* antes cover (recortaba) */
+      object-fit:contain;
       cursor:zoom-in;
     }
 
@@ -508,12 +505,12 @@
       min-width:220px;
     }
 
-    /* ✅ MEJORA: MINIATURA DEL CARRITO SIN RECORTE (contain) */
+    /* ✅ MINIATURA SIN RECORTE */
     .cart-thumb{
       width:46px;
       height:46px;
       border-radius:12px;
-      object-fit:contain;               /* antes cover */
+      object-fit:contain;
       background:#0b1220;
       border:1px solid rgba(255,255,255,.10);
       flex:0 0 auto;
@@ -742,7 +739,6 @@
   <header class="site-header">
     <div class="wrap site-header-inner">
       <div class="brand">
-        <!-- WebP si se puede; PNG fallback garantizado -->
         <picture>
           <source srcset="logos/logo_empresa.webp" type="image/webp">
           <img src="logos/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52" />
@@ -886,9 +882,9 @@
        - 2 carpetas dentro de /natura:
          1) logos
          2) imagenes_de_productos
-       - Placeholder fijo (mejorado): suplente.webp -> suplente.png -> logo PNG
+       - ✅ Nuevo: el suplente se elige desde INTERRUPTORES (nombre de archivo en /logos)
+       - Si falla, usa cascada: suplente.webp -> suplente.png -> logo_empresa.png
        - Interruptor MOSTRAR_IMAGENES_PRODUCTO se mantiene
-       - Logo header: <picture> WebP + fallback PNG (en HTML)
        - SITE_BASE automático: funciona en local y en GitHub Pages
        ========================== */
 
@@ -898,8 +894,18 @@
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
 
-      /* Interruptor (true=mostrar fotos reales, false=usar siempre placeholder) */
-      MOSTRAR_IMAGENES_PRODUCTO: true
+      /* true=mostrar fotos reales; false=usar siempre suplente */
+      MOSTRAR_IMAGENES_PRODUCTO: true,
+
+      /* ✅ NUEVO:
+         Nombre del archivo dentro de /logos que se usará como suplente.
+         Ejemplos válidos:
+           "suplente.webp"
+           "mi_logo.png"
+           "mi_suplente"   (sin extensión: probará .webp y .png)
+         Si lo dejas vacío, se usa la cascada por defecto.
+      */
+      IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp"
     };
     window.INTERRUPTORES = INTERRUPTORES;
 
@@ -919,9 +925,6 @@
 
     const WHATSAPP_NUMBER = "573042088961";
 
-    /* ✅ Antes: recursos/logos y recursos/imagenes_de_productos
-       ✅ Ahora: logos y imagenes_de_productos (directo en /natura)
-    */
     const IMG_DIR = "imagenes_de_productos";
     const LOGOS_DIR = "logos";
 
@@ -934,28 +937,8 @@
     /* ✅ BASE AUTOMÁTICA (local y producción) */
     const SITE_BASE = new URL("./", document.baseURI).href;
 
-    /* Logo corporativo (respaldo para fallos) */
+    /* Logo corporativo (respaldo final) */
     const COMPANY_LOGO = SITE_BASE + LOGOS_DIR + "/logo_empresa.png";
-
-    /* ✅ Placeholders en cascada */
-    const PRODUCT_PLACEHOLDERS = [
-      SITE_BASE + LOGOS_DIR + "/suplente.webp",
-      SITE_BASE + LOGOS_DIR + "/suplente.png",
-      COMPANY_LOGO
-    ];
-
-    /* El placeholder “activo” (se decide en warmup) */
-    let PRODUCT_PLACEHOLDER_IMAGE = PRODUCT_PLACEHOLDERS[0];
-
-    const GITHUB_OWNER = "irenismb";
-    const GITHUB_REPO = "stock";
-    /* ✅ Antes: natura/recursos/imagenes_de_productos
-       ✅ Ahora: natura/imagenes_de_productos
-    */
-    const GITHUB_PRODUCTS_PATH = "natura/imagenes_de_productos";
-
-    const PRODUCTS_CACHE_KEYS = ["irenismb_products_cache_v4", "irenismb_products_cache_v3"];
-    const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function normalizeText(t){
       return (t || "")
@@ -989,6 +972,51 @@
       return IMAGE_EXTS.includes(String(ext || "").toLowerCase());
     }
 
+    /* ==========================
+       ✅ NUEVO: suplente configurable en INTERRUPTORES
+       - Acepta nombre con extensión o sin extensión.
+       - Sanitiza para evitar rutas (solo nombre de archivo).
+       - Luego aplica cascada por defecto.
+       ========================== */
+    function sanitizeLogoFilename(input){
+      const raw = String(input || "").trim();
+      if(!raw) return "";
+      const just = raw.split(/[\/\\]/).pop(); // evita rutas
+      if(!just || just.includes("..")) return "";
+      // deja letras, números, underscore, guion, punto y espacios
+      return just.replace(/[^\w.\- ]+/g, "").trim();
+    }
+
+    function buildPlaceholderCandidates(){
+      const list = [];
+      const picked = sanitizeLogoFilename(window.INTERRUPTORES?.IMAGEN_SUPLENTE_PRODUCTO);
+
+      if(picked){
+        const e = extOf(picked);
+        if(e){
+          list.push(SITE_BASE + LOGOS_DIR + "/" + encodePath(picked));
+        }else{
+          list.push(SITE_BASE + LOGOS_DIR + "/" + encodePath(picked) + ".webp");
+          list.push(SITE_BASE + LOGOS_DIR + "/" + encodePath(picked) + ".png");
+        }
+      }
+
+      // cascada por defecto
+      list.push(
+        SITE_BASE + LOGOS_DIR + "/suplente.webp",
+        SITE_BASE + LOGOS_DIR + "/suplente.png",
+        COMPANY_LOGO
+      );
+
+      // de-dup
+      return [...new Set(list)];
+    }
+
+    let PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
+
+    /* El placeholder “activo” (se decide en warmup) */
+    let PRODUCT_PLACEHOLDER_IMAGE = (PRODUCT_PLACEHOLDERS[0] || COMPANY_LOGO);
+
     function productPlaceholderAbsoluteUrl(){
       return PRODUCT_PLACEHOLDER_IMAGE || COMPANY_LOGO;
     }
@@ -1017,13 +1045,15 @@
 
     /* ==========================
        Warm-up del placeholder (1 sola vez)
-       - Prueba suplente.webp; si falla prueba suplente.png; si falla usa logo.
+       - Prueba: (lo que diga INTERRUPTORES) -> suplente.webp -> suplente.png -> logo
        ========================== */
     function warmupPlaceholderOnce(){
       return new Promise((resolve)=>{
         try{
-          let i = 0;
+          // recalcula por si el usuario cambió el interruptor antes de cargar
+          PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
 
+          let i = 0;
           const tryNext = ()=>{
             if(i >= PRODUCT_PLACEHOLDERS.length){
               PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
@@ -1079,6 +1109,13 @@
       const order = { webp:0, jpg:1, jpeg:2, png:3 };
       return (ext in order) ? order[ext] : 99;
     }
+
+    const GITHUB_OWNER = "irenismb";
+    const GITHUB_REPO = "stock";
+    const GITHUB_PRODUCTS_PATH = "natura/imagenes_de_productos";
+
+    const PRODUCTS_CACHE_KEYS = ["irenismb_products_cache_v4", "irenismb_products_cache_v3"];
+    const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function readProductsCacheObj(){
       for(const key of PRODUCTS_CACHE_KEYS){
@@ -1320,7 +1357,6 @@
       }
 
       img.onerror = ()=>{
-        // ✅ Evita bucle infinito si también falla el placeholder
         if(img.dataset.fallbackTried === "1"){
           img.onerror = null;
           img.src = COMPANY_LOGO;
@@ -1366,7 +1402,6 @@
       }
 
       img.onerror = ()=>{
-        // ✅ Evita bucle infinito si también falla el placeholder
         if(img.dataset.fallbackTried === "1"){
           img.onerror = null;
           img.src = COMPANY_LOGO;
@@ -2083,7 +2118,7 @@
       try{
         countEl.textContent = "Cargando productos…";
 
-        /* ✅ placeholder en cascada */
+        /* ✅ placeholder en cascada (incluye el elegido en INTERRUPTORES) */
         const placeholderWarm = warmupPlaceholderOnce();
 
         const cached = readProductsCache(true);

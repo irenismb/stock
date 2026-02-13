@@ -353,6 +353,7 @@
       gap:12px;
       margin-top:12px;
       grid-template-columns:repeat(4, minmax(0, 1fr));
+      align-items:stretch; /* ✅ fuerza que todos los items se estiren en altura */
     }
     @media (max-width:1024px){
       .grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
@@ -364,6 +365,13 @@
       .grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
     }
 
+    /* ==========================
+       ✅ MEJORA CLAVE (TARJETAS IGUALES + BOTONES ALINEADOS)
+       - La tarjeta se estira siempre a la altura de la fila (grid)
+       - El bloque de contenido (.pad) ocupa el alto restante
+       - Los botones se empujan al fondo (margin-top:auto)
+       - Nombre y meta se “clamp” para evitar que unas tarjetas crezcan más que otras
+       ========================== */
     .card{
       background:rgba(18,24,38,.92);
       border:1px solid var(--line);
@@ -371,23 +379,23 @@
       overflow:hidden;
       display:flex;
       flex-direction:column;
-      min-height:100%;
+
+      height:100%;            /* ✅ permite que el estiramiento del grid funcione siempre */
+      align-self:stretch;     /* ✅ refuerzo */
+      min-height:0;           /* ✅ evita problemas de overflow en flex */
 
       content-visibility:auto;
       contain-intrinsic-size: 420px 520px;
     }
 
-    /* ✅ LIENZO CUADRADO UNIFORME (ROBUSTO, SIN DEPENDER DE aspect-ratio)
-       - Mantiene SIEMPRE el cuadro 1:1
-       - La imagen SIEMPRE se escala para entrar completa (sin recorte)
-       - Da el mismo “aire” (padding) aunque la foto sea muy alta o muy ancha
-    */
+    /* ✅ LIENZO CUADRADO UNIFORME (ROBUSTO, SIN DEPENDER DE aspect-ratio) */
     .img{
       position:relative;
       width:100%;
       background:#0b1220;
       border-bottom:1px solid var(--line);
       overflow:hidden;
+      flex:0 0 auto; /* ✅ evita que el cuadro se deforme */
     }
     .img::before{
       content:"";
@@ -408,9 +416,36 @@
       cursor:zoom-in;
     }
 
-    .pad{padding:12px;display:flex;flex-direction:column;gap:10px}
-    .name{font-weight:950;margin:0;font-size:15px;line-height:1.25}
-    .meta{color:var(--mut);font-size:12px;margin:0}
+    .pad{
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+
+      flex:1 1 auto;   /* ✅ ocupa el alto restante para igualar tarjetas */
+      min-height:0;    /* ✅ requerido para clamp/overflow correcto en flex */
+    }
+
+    .name{
+      font-weight:950;margin:0;font-size:15px;line-height:1.25;
+
+      /* ✅ evita que un nombre largo cambie la altura de la tarjeta */
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+    }
+
+    .meta{
+      color:var(--mut);font-size:12px;margin:0;
+
+      /* ✅ evita que meta con más info cambie la altura de la tarjeta */
+      display:-webkit-box;
+      -webkit-box-orient:vertical;
+      -webkit-line-clamp:2;
+      overflow:hidden;
+    }
+
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .price{font-weight:950}
 
@@ -433,8 +468,18 @@
       border-color: rgba(0,0,0,.25);
     }
 
-    .actions{display:flex;gap:10px;flex-wrap:wrap}
-    .actions button{flex:1 1 110px}
+    /* ✅ botones siempre alineados al fondo y con mismo alto */
+    .actions{
+      margin-top:auto;                 /* ✅ empuja los botones al fondo */
+      display:grid;
+      grid-template-columns:1fr 1fr;   /* ✅ “misma fila” consistente */
+      gap:10px;
+      align-items:stretch;
+    }
+    .actions button{
+      width:100%;
+      min-height:44px; /* ✅ consistencia visual */
+    }
 
     .cart-modal{
       position:fixed;
@@ -1930,8 +1975,16 @@
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
 
-      card.querySelector(".name").textContent = p.name;
-      card.querySelector(".meta").textContent = stockMetaText(p);
+      const nameEl = card.querySelector(".name");
+      const metaEl = card.querySelector(".meta");
+
+      nameEl.textContent = p.name;
+      metaEl.textContent = stockMetaText(p);
+
+      /* ✅ útil cuando hay clamp: tooltip con el texto completo */
+      nameEl.title = p.name;
+      metaEl.title = metaEl.textContent;
+
       card.querySelector(".price").textContent = fmtCOP.format(p.price);
 
       refreshCardUI(card, p);

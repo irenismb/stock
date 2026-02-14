@@ -17,33 +17,31 @@
        - natura/imagenes_de_productos (con subcarpetas opcionales)
   -->
 
-  <!-- Favicons (mejor compatibilidad: PNG primero) -->
-  <link rel="icon" type="image/png" href="logos/logo_empresa.png" />
+  <!-- Favicons (✅ WebP + fallback PNG para mayor compatibilidad) -->
   <link rel="icon" type="image/webp" href="logos/logo_empresa.webp" />
+  <link rel="icon" type="image/png" href="logos/logo_empresa.png" />
   <link rel="apple-touch-icon" href="logos/logo_empresa.png" />
 
   <!-- =========================
        ✅ Link Preview (WhatsApp / redes)
-       - Usar PNG/JPG como og:image principal suele ser más compatible.
-       - Dejar WebP como respaldo.
-       - Cache-buster (?v=...) ayuda a refrescar previews cacheados.
+       ✅ Regla práctica: poner PNG/JPG como primera opción en og:image
        ========================= -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html" />
   <meta property="og:title" content="Irenismb Stock Natura | Catálogo con compra por WhatsApp" />
   <meta property="og:description" content="Explora el catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
 
-  <!-- ✅ Imagen principal para previews (PNG) -->
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png?v=20260214" />
-  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png?v=20260214" />
+  <!-- ✅ OG IMAGE (PRIORIDAD 1): PNG -->
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
+  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="800" />
   <meta property="og:image:height" content="800" />
   <meta property="og:image:alt" content="Logo Irenismb Stock Natura" />
 
-  <!-- ✅ Respaldo WebP -->
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp?v=20260214" />
-  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp?v=20260214" />
+  <!-- ✅ OG IMAGE (FALLBACK): WebP -->
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp" />
+  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp" />
   <meta property="og:image:type" content="image/webp" />
   <meta property="og:image:width" content="800" />
   <meta property="og:image:height" content="800" />
@@ -55,16 +53,17 @@
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo" />
   <meta name="twitter:description" content="Catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png?v=20260214" />
+  <!-- ✅ Twitter casi siempre va mejor con PNG/JPG -->
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
   <meta name="twitter:image:alt" content="Logo Irenismb Stock Natura" />
 
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preconnect" href="https://api.github.com" crossorigin />
 
-  <!-- Preload del logo (PNG primero + WebP respaldo) -->
-  <link rel="preload" as="image" href="logos/logo_empresa.png" type="image/png" fetchpriority="high" />
+  <!-- Preload del logo (WebP + PNG fallback) -->
   <link rel="preload" as="image" href="logos/logo_empresa.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="logos/logo_empresa.png" type="image/png" fetchpriority="high" />
 
   <!-- Preload del placeholder por defecto -->
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />

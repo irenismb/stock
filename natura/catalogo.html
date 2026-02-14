@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -14,7 +14,7 @@
 
   <!-- ✅ Estructura esperada:
        - natura/logos
-       - natura/imagenes_de_productos
+       - natura/imagenes_de_productos (con subcarpetas opcionales)
   -->
 
   <!-- Favicons -->
@@ -22,28 +22,41 @@
   <link rel="icon" type="image/webp" href="logos/logo_empresa.webp" />
   <link rel="apple-touch-icon" href="logos/logo_empresa.png" />
 
+  <!-- =========================
+       ✅ Link Preview (WhatsApp / redes)
+       - Se usa og:image.
+       - Se agrega cache-buster (?v=...) para ayudar a refrescar previews cacheados.
+       ========================= -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html" />
   <meta property="og:title" content="Irenismb Stock Natura | Catálogo con compra por WhatsApp" />
   <meta property="og:description" content="Explora el catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
-  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
+
+  <!-- 👇 IMPORTANTE: asegúrate que ESTE archivo exista (no 404) -->
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png?v=20260213" />
+  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png?v=20260213" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="800" />
   <meta property="og:image:height" content="800" />
+  <meta property="og:image:alt" content="Logo Irenismb Stock Natura" />
+
   <meta property="og:site_name" content="Irenismb Stock Natura" />
   <meta property="og:locale" content="es_CO" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo" />
   <meta name="twitter:description" content="Catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
-  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png?v=20260213" />
+  <meta name="twitter:image:alt" content="Logo Irenismb Stock Natura" />
 
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preconnect" href="https://api.github.com" crossorigin />
 
-  <!-- Preload del logo PNG (fallback garantizado) -->
-  <link rel="preload" as="image" href="logos/logo_empresa.png" fetchpriority="high" />
+  <!-- Preload del logo: WebP + PNG fallback -->
+  <link rel="preload" as="image" href="logos/logo_empresa.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="logos/logo_empresa.png" type="image/png" fetchpriority="high" />
+
   <!-- Preload del placeholder por defecto -->
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
@@ -287,7 +300,6 @@
       border-radius:999px;
       display:block;
     }
-    /* ✅ para que <picture> no afecte el centrado */
     .social-icons picture{ display:block; line-height:0; }
     .social-icons svg{
       width:calc(var(--social-size) * 0.58);
@@ -355,7 +367,7 @@
       gap:12px;
       margin-top:12px;
       grid-template-columns:repeat(4, minmax(0, 1fr));
-      align-items:stretch; /* ✅ fuerza estiramiento para igual alto por fila */
+      align-items:stretch;
     }
     @media (max-width:1024px){
       .grid{ grid-template-columns:repeat(3, minmax(0, 1fr)); }
@@ -363,7 +375,6 @@
     @media (max-width:760px){
       .grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     }
-    /* ✅ antes estabas poniendo 3 columnas en pantallas pequeñas; eso comprimía y desalineaba */
     @media (max-width:420px){
       .grid{ grid-template-columns:repeat(2, minmax(0, 1fr)); }
     }
@@ -379,18 +390,13 @@
       display:flex;
       flex-direction:column;
 
-      height:100%;          /* ✅ ocupa toda la celda */
-      align-self:stretch;   /* ✅ estira dentro del grid */
+      height:100%;
+      align-self:stretch;
 
       content-visibility:auto;
       contain-intrinsic-size: 420px 520px;
     }
 
-    /* ✅ LIENZO CUADRADO UNIFORME (ROBUSTO, SIN DEPENDER DE aspect-ratio)
-       - Mantiene SIEMPRE el cuadro 1:1
-       - La imagen SIEMPRE se escala para entrar completa (sin recorte)
-       - Da el mismo “aire” (padding) aunque la foto sea muy alta o muy ancha
-    */
     .img{
       position:relative;
       width:100%;
@@ -401,7 +407,7 @@
     .img::before{
       content:"";
       display:block;
-      padding-top:100%; /* cuadro 1:1 */
+      padding-top:100%;
     }
     .img > img{
       position:absolute;
@@ -417,13 +423,12 @@
       cursor:zoom-in;
     }
 
-    /* ✅ clave: el contenido se estira y los botones quedan anclados abajo */
     .pad{
       padding:12px;
       display:flex;
       flex-direction:column;
       gap:10px;
-      flex:1 1 auto;  /* ✅ rellena el alto disponible */
+      flex:1 1 auto;
       min-height:0;
     }
 
@@ -451,10 +456,9 @@
       border-color: rgba(0,0,0,.25);
     }
 
-    /* ✅ acciones siempre en la base de la tarjeta y alineadas por fila */
     .actions{
-      margin-top:auto; /* ✅ empuja los botones hacia abajo */
-      display:grid;    /* ✅ evita que una tarjeta “salte” por wrap */
+      margin-top:auto;
+      display:grid;
       grid-template-columns:1fr 1fr;
       gap:10px;
     }
@@ -550,7 +554,6 @@
       min-width:220px;
     }
 
-    /* ✅ MINIATURA SIN RECORTE */
     .cart-thumb{
       width:46px;
       height:46px;
@@ -731,14 +734,13 @@
         justify-content:center;
         gap:8px;
         white-space:nowrap;
-        overflow:visible;      /* ✅ evita recortes */
-        text-overflow:clip;    /* ✅ evita “…” */
+        overflow:visible;
+        text-overflow:clip;
       }
 
       #btn-cart .btn-cart-label{ display:none; }
       #btn-cart .btn-cart-label-short{ display:inline; }
 
-      /* ✅ compactar botones de tarjetas en móvil sin truncar texto */
       .actions{ gap:8px; }
       .actions button{
         font-size:12.5px;
@@ -839,7 +841,6 @@
           <img src="logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
         </a>
 
-        <!-- ✅ YouTube: WebP + fallback PNG -->
         <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
           <picture>
             <source srcset="logos/youtube.webp" type="image/webp">
@@ -951,7 +952,7 @@
        OPTIMIZACIONES + ESTRUCTURA
        - 2 carpetas dentro de /natura:
          1) logos
-         2) imagenes_de_productos
+         2) imagenes_de_productos (✅ ahora incluye subcarpetas)
        - ✅ Nuevo: el suplente se elige desde INTERRUPTORES (nombre de archivo en /logos)
        - Si falla, usa cascada: suplente.webp -> suplente.png -> logo_empresa.png
        - Interruptor MOSTRAR_IMAGENES_PRODUCTO se mantiene
@@ -965,7 +966,7 @@
       APLICAR_LIMITES_STOCK: false,
 
       /* true=mostrar fotos reales; false=usar siempre suplente */
-      MOSTRAR_IMAGENES_PRODUCTO: false,
+      MOSTRAR_IMAGENES_PRODUCTO: true,
 
       /* ✅ NUEVO:
          Nombre del archivo dentro de /logos que se usará como suplente.
@@ -1041,6 +1042,11 @@
     function isImageExt(ext){
       return IMAGE_EXTS.includes(String(ext || "").toLowerCase());
     }
+    function leafName(p){
+      const s = String(p || "");
+      const parts = s.split("/");
+      return parts[parts.length - 1] || s;
+    }
 
     /* ==========================
        ✅ NUEVO: suplente configurable en INTERRUPTORES
@@ -1077,7 +1083,6 @@
         COMPANY_LOGO
       );
 
-      // de-dup
       return [...new Set(list)];
     }
 
@@ -1093,6 +1098,7 @@
         return productPlaceholderAbsoluteUrl();
       }
       if(!filename) return productPlaceholderAbsoluteUrl();
+      // ✅ filename ahora puede ser "subcarpeta/archivo.png"
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
@@ -1110,10 +1116,6 @@
       return await res.json();
     }
 
-    /* ==========================
-       Warm-up del placeholder (1 sola vez)
-       - Prueba: (lo que diga INTERRUPTORES) -> suplente.webp -> suplente.png -> logo
-       ========================== */
     function warmupPlaceholderOnce(){
       return new Promise((resolve)=>{
         try{
@@ -1234,43 +1236,72 @@
       return existing;
     }
 
-    async function fetchProductsViaContentsApi(){
-      const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/contents/${GITHUB_PRODUCTS_PATH}`;
-      const list = await fetchJson(url);
-      if(!Array.isArray(list)) throw new Error("Respuesta inesperada de GitHub Contents.");
+    /* ==========================
+       ✅ NUEVO: listar archivos recursivamente con Contents API
+       ========================== */
+    async function listContentsFilesRecursive(path, depth=0){
+      const MAX_DEPTH = 8; // por seguridad
+      if(depth > MAX_DEPTH) return [];
 
-      const files = list
-        .filter(x => x && x.type === "file" && typeof x.name === "string")
-        .map(x => x.name)
-        .filter(fn => fn && !fn.includes("/"));
+      const url = `https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/contents/${encodePath(path)}`;
+      const data = await fetchJson(url);
+
+      if(!Array.isArray(data)){
+        // si por alguna razón devuelve un objeto, no es un directorio
+        return [];
+      }
+
+      const out = [];
+      for(const it of data){
+        if(!it || typeof it.type !== "string") continue;
+        if(it.type === "file" && typeof it.path === "string"){
+          out.push(it.path);
+        }else if(it.type === "dir" && typeof it.path === "string"){
+          const inner = await listContentsFilesRecursive(it.path, depth+1);
+          for(const p of inner) out.push(p);
+        }
+      }
+      return out;
+    }
+
+    async function fetchProductsViaContentsApi(){
+      const fullPaths = await listContentsFilesRecursive(GITHUB_PRODUCTS_PATH);
+      if(!Array.isArray(fullPaths) || !fullPaths.length){
+        throw new Error("No se encontraron archivos en la carpeta de productos.");
+      }
+
+      const prefix = (GITHUB_PRODUCTS_PATH.replace(/\/+$/,"") + "/");
+      const relPaths = fullPaths
+        .filter(p => typeof p === "string" && p.startsWith(prefix))
+        .map(p => p.slice(prefix.length))
+        .filter(Boolean);
 
       const byId = new Map();
 
-      for(const filename of files){
-        const ext = extOf(filename);
+      for(const relPath of relPaths){
+        const leaf = leafName(relPath);
+        const ext = extOf(leaf);
         if(!SUPPORTED_EXTS.includes(ext)) continue;
 
-        const base = baseOf(filename);
+        const base = baseOf(leaf);
         const parsed = parseProductFromBaseName(base);
         if(!parsed) continue;
 
         const hasImage = isImageExt(ext);
         const candidate = {
           ...parsed,
-          srcFilename: filename,
+          srcFilename: relPath,  // ✅ puede incluir subcarpeta
           fileExt: ext,
           hasImage,
-          imgFilename: hasImage ? filename : null
+          imgFilename: hasImage ? relPath : null
         };
 
         const existing = byId.get(parsed.id);
         byId.set(parsed.id, pickBetterRepresentative(existing, candidate));
       }
 
-      const products = Array.from(byId.values())
+      return Array.from(byId.values())
         .sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" }) || String(a.id).localeCompare(String(b.id)));
-
-      return products;
     }
 
     async function fetchProductsViaTreeFallback(){
@@ -1287,18 +1318,26 @@
       const files = nodes
         .filter(n => n && n.type === "blob" && typeof n.path === "string" && n.path.startsWith(dirPrefix))
         .map(n => n.path.slice(dirPrefix.length))
-        .filter(fn => fn && !fn.includes("/"));
+        .filter(fn => fn); // ✅ ya NO filtramos subcarpetas
 
       const byId = new Map();
-      for(const filename of files){
-        const ext = extOf(filename);
+      for(const relPath of files){
+        const leaf = leafName(relPath);
+        const ext = extOf(leaf);
         if(!SUPPORTED_EXTS.includes(ext)) continue;
-        const base = baseOf(filename);
+
+        const base = baseOf(leaf);
         const parsed = parseProductFromBaseName(base);
         if(!parsed) continue;
 
         const hasImage = isImageExt(ext);
-        const candidate = { ...parsed, srcFilename: filename, fileExt: ext, hasImage, imgFilename: hasImage ? filename : null };
+        const candidate = {
+          ...parsed,
+          srcFilename: relPath,
+          fileExt: ext,
+          hasImage,
+          imgFilename: hasImage ? relPath : null
+        };
 
         const existing = byId.get(parsed.id);
         byId.set(parsed.id, pickBetterRepresentative(existing, candidate));

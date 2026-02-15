@@ -1,0 +1,86 @@
+diff --git a/ModuloConciliacion.bas b/ModuloConciliacion.bas
+index 1111111..2222222 100644
+--- a/ModuloConciliacion.bas
++++ b/ModuloConciliacion.bas
+@@ -1,4 +1,12 @@
+ Option Explicit
++
++'========================
++' VENCIMIENTO (EDITA AQUÍ)
++'========================
++' Funciona hasta esta fecha (incluida). Desde el día siguiente, bloquea la ejecución.
++Const EXPIRY_DATE_ISO As String = "2026-12-31"  ' AAAA-MM-DD
+ 
+ '====================================================================================
+ ' Conciliación de dos tablas con separador "tipocruce"
+@@ -67,6 +75,12 @@ Sub aaa_AlinearDosTablas_v24_FechaValorCuenta_OrdenFinal()
+ 
+ 	On Error GoTo EH
+ 
++	'========================
++	' BLOQUEO POR VENCIMIENTO
++	'========================
++	If EstaVencida() Then Exit Sub
++
+ 	'Capturar estado app desde el inicio (más seguro ante errores tempranos)
+ 	oldScreen = Application.ScreenUpdating
+ 	oldCalc = Application.Calculation
+@@ -1220,6 +1234,79 @@ Function MaxLongNonZero(ParamArray vals()) As Long
+ 	Next i
+ 	MaxLongNonZero = m
+ End Function
++
++'========================
++' LÓGICA DE VENCIMIENTO
++' - Funciona hasta la fecha indicada (incluida)
++' - A partir del día siguiente, bloquea
++'========================
++Function EstaVencida() As Boolean
++	Dim dVenc As Date
++
++	If Not TryParseISODate(EXPIRY_DATE_ISO, dVenc) Then
++		MsgBox "La constante EXPIRY_DATE_ISO tiene un formato inválido." & vbCrLf & _
++			   "Usa AAAA-MM-DD (por ejemplo 2026-02-11).", vbCritical
++		EstaVencida = True
++		Exit Function
++	End If
++
++	If Date > dVenc Then
++		MsgBox "Esta macro está vencida." & vbCrLf & _
++			   "Vencía el: " & Format$(dVenc, "yyyy-mm-dd") & vbCrLf & _
++			   "Fecha actual: " & Format$(Date, "yyyy-mm-dd"), vbCritical
++		EstaVencida = True
++	Else
++		EstaVencida = False
++	End If
++End Function
++
++'========================
++' UTILIDAD: PARSE FECHA ISO (AAAA-MM-DD)
++'========================
++Function TryParseISODate(ByVal s As String, ByRef dOut As Date) As Boolean
++	Dim parts() As String
++	Dim y As Long, m As Long, d As Long
++
++	s = Trim$(s)
++	parts = Split(s, "-")
++	If UBound(parts) <> 2 Then Exit Function
++
++	If Not IsNumeric(parts(0)) Or Not IsNumeric(parts(1)) Or Not IsNumeric(parts(2)) Then Exit Function
++
++	y = CLng(parts(0))
++	m = CLng(parts(1))
++	d = CLng(parts(2))
++
++	On Error GoTo Bad
++	dOut = DateSerial(y, m, d)
++
++	' Validación estricta (evita fechas como 2026-02-40)
++	If Year(dOut) <> y Or Month(dOut) <> m Or Day(dOut) <> d Then GoTo Bad
++
++	TryParseISODate = True
++	Exit Function
++
++Bad:
++	TryParseISODate = False
++End Function

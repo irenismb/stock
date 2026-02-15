@@ -1,0 +1,3165 @@
+Option Explicit
+
+'====================================================================================
+' Conciliación de dos tablas con separador "tipocruce"
+' - Siempre automático (DetectHeadersAuto)
+' - El bloque derecho se extiende hasta la ÚLTIMA columna del rango seleccionado
+' - Trabaja sobre COPIA de la hoja (oculta la original y mueve la copia al inicio)
+' - Preserva cruces existentes (tipocruce no vacío) y SOLO cruza pendientes
+' - Genera hoja "resumen" al lado de la hoja de cruces
+'
+' MEJORA APLICADA:
+' - Completa "fecha general" (si existe la columna) igual que "cuenta general",
+'   tomando la fecha de izq o der y dejándola como fecha real con formato yyyy-mm-dd.
+'====================================================================================
+Sub aaa_AlinearDosTablas_v24_FechaValorCuenta_OrdenFinal()
+
+	Const SEP_HEADER As String = "tipocruce"
+
+	Dim wsOrig As Worksheet, ws As Worksheet
+	Dim rngSel As Range, rngVis As Range
+	Dim colsVis As Variant
+	Dim selAddress As String
+	Dim execStamp As String
+
+	'Columnas clave
+	Dim colFixFecha As Long, colFixValor As Long, colFixCuenta As Long
+	Dim colMovFecha As Long, colMovValor As Long, colMovCuenta As Long
+
+	'Auto
+	Dim colFixBenef As Long, colMovBenef As Long
+
+	'Bloque móvil
+	Dim colMoveStart As Long, colMoveEnd As Long
+	Dim nMoveCols As Long
+
+	'Separador tipocruce
+	Dim colSep As Long
+
+	'Bloque izquierdo (tabla A)
+	Dim colFixBlockStart As Long, colFixBlockEnd As Long
+	Dim nFixCols As Long
+
+	'Columna "cuenta general" dentro del bloque izquierdo
+	Dim colFixCuentaGeneral As Long
+	'Columna "fecha general" dentro del bloque izquierdo (NUEVO)
+	Dim colFixFechaGeneral As Long
+
+	'Columna timestamp (antes de cuenta general)
+	Dim colFixRunStamp As Long
+	Dim candStamp As Long
+
+	'Relativos
+	Dim relFixFecha As Long, relFixValor As Long, relFixCuenta As Long
+	Dim relMovFecha As Long, relMovValor As Long, relMovCuenta As Long
+
+	'Encabezado
+	Dim headerRow As Long, dataFirstRow As Long
+
+	'Visibles (filas)
+	Dim visRows() As Long
+	Dim k As Long, i As Long
+	Dim minR As Long, maxR As Long, off As Long
+
+	'Arrays
+	Dim arrFixBlock As Variant
+	Dim arrMovBlock As Variant
+	Dim arrtipocruce As Variant
+
+	'Flags
+	Dim hasMovData() As Boolean, hasFixData() As Boolean
+	Dim hasAnyFixInput() As Boolean, hasAnyMovInput() As Boolean
+
+	'Conteos
+	Dim cntNoCruzadosMovil As Long, cntNoCruzadosFijo As Long
+	Dim cntFixKeyInvalid As Long, cntMovKeyInvalid As Long
+	Dim cntFixDateParseFail As Long, cntFixAmtParseFail As Long, cntFixMissingAny As Long
+	Dim cntMovDateParseFail As Long, cntMovAmtParseFail As Long, cntMovMissingAny As Long
+
+	'Dicts
+	Dim dictFix As Object, dictMov As Object
+	Dim fixInvalid As Collection, movInvalid As Collection
+
+	'Bloques (preservados + nuevos)
+	Dim blockKeys() As String, blockD() As Long, blockAcc() As String, blockAmt() As Double
+	Dim blockLines() As Collection, blockType() As Integer, blockLabel() As Variant
+	Dim nBlocks As Long
+
+	'Salida final
+	Dim outN As Long
+	Dim outFix As Variant, outMov As Variant
+	Dim outIsMatch() As Boolean
+	Dim outIsNewCruce() As Boolean
+	Dim outtipocruce() As Variant
+
+	'Escritura
+	Dim rowFixOut As Variant, rowMovOut As Variant
+	Dim rowN As Long, c As Long
+	Dim extra As Long, j As Long
+
+	'Selección min/max
+	Dim minColSel As Long, maxColSel As Long
+
+	'Auto err
+	Dim autoErr As String
+
+	'Estado app
+	Dim oldCalc As XlCalculation
+	Dim oldScreen As Boolean
+	Dim oldAlerts As Boolean
+
+	'Tolerancias
+	Dim sumEnabled As Boolean
+	Dim sumMaxItems As Long
+	Dim sumTol As Double
+	Dim exactTol As Double
+
+	'Conteos cruces (solo pendientes)
+	Dim cntCrucesExact As Long, cntCrucesExactTol As Long, cntCrucesSumGrupos As Long
+	Dim cntSumFixUsed As Long, cntSumMovUsed As Long
+
+	'Cruces sucesivos
+	Dim cntOmitidosYaCruzados As Long
+	Dim maxExistingSumId As Long
+
+	Dim wb As Workbook
+	Dim sepHdr As String
+
+	On Error GoTo EH
+
+	'Capturar estado app desde el inicio (más seguro ante errores tempranos)
+	oldScreen = Application.ScreenUpdating
+	oldCalc = Application.Calculation
+	oldAlerts = Application.DisplayAlerts
+
+	sumEnabled = True
+   
+	   'Pedir al inicio el máximo de ítems para cruces por SUMA
+	Dim sMax As Variant
+	sMax = Application.InputBox( _
+		prompt:="Máximo de ítems para cruce por SUMA (entero >= 2)." & vbCrLf & _
+				"Ejemplos: 2, 3, 5, 10" & vbCrLf & _
+				"Deja vacío o Cancelar para usar el valor por defecto (5).", _
+		Title:="Conciliación - Límite de SUMA", _
+		Default:="5", _
+		Type:=1)
+
+	If sMax = False Then
+		sumMaxItems = 5
+	ElseIf CLng(Val(sMax)) < 2 Then
+		sumMaxItems = 5
+	Else
+		sumMaxItems = CLng(Val(sMax))
+	End If
+
+   
+   
+   
+   
+   
+   
+	sumTol = GetUserTolerance(0.01, "GENERAL (exacto/tolerancia y suma)")
+	exactTol = sumTol
+
+	Set wsOrig = ActiveSheet
+	Set wb = wsOrig.Parent
+
+	If TypeName(Selection) <> "Range" Then
+		MsgBox "Selecciona primero el rango a conciliar y vuelve a ejecutar la macro.", vbExclamation
+		GoTo Salida
+	End If
+
+	selAddress = Selection.Address
+	execStamp = Format$(Now, "yyyy-mm-dd_hh-nn-ss")
+
+	'========================
+	' TRABAJAR SOBRE COPIA (original queda intacta)
+	' - Oculta hoja original
+	' - Mueve la copia al INICIO
+	'========================
+	Set ws = CreateCopyWithConsecutive(wsOrig)
+
+	On Error Resume Next
+	wsOrig.Visible = xlSheetHidden
+	On Error GoTo EH
+
+	On Error Resume Next
+	ws.Move Before:=wb.Worksheets(1)
+	On Error GoTo EH
+
+	ws.Activate
+	ws.Range(selAddress).Select
+	'========================
+
+	'1) Selección + visibles
+	Set rngSel = Selection
+	If rngSel Is Nothing Then GoTo Salida
+
+	On Error Resume Next
+	Set rngVis = rngSel.SpecialCells(xlCellTypeVisible)
+	On Error GoTo EH
+	If rngVis Is Nothing Then
+		MsgBox "No hay celdas visibles en la selección.", vbExclamation
+		GoTo Salida
+	End If
+
+	'2) Columnas del rango seleccionado (incluye ocultas)
+	colsVis = GetColumnsInRange_All(rngSel)
+	If IsEmpty(colsVis) Then
+		MsgBox "No pude detectar columnas dentro de la selección.", vbExclamation
+		GoTo Salida
+	End If
+
+	'3) Resolver encabezados (SIEMPRE AUTOMÁTICO)
+	If Not DetectHeadersAuto(ws, rngSel, colsVis, _
+							 headerRow, _
+							 colFixCuenta, colFixFecha, colFixValor, colFixBenef, _
+							 colMovCuenta, colMovFecha, colMovValor, colMovBenef, _
+							 colMoveStart, colMoveEnd, _
+							 autoErr, SEP_HEADER) Then
+		MsgBox autoErr, vbExclamation, "Modo automático"
+		GoTo Salida
+	End If
+
+	'4) Validaciones + ajustar ancho TOTAL seleccionado
+	minColSel = MinColInRange(rngSel)
+	maxColSel = MaxColInRange(rngSel)
+
+	'Puntos de referencia (última col clave izquierda / primera col clave derecha)
+	Dim leftMaxKey As Long, rightMinKey As Long
+	leftMaxKey = MaxLongNonZero(colFixCuenta, colFixFecha, colFixValor, colFixBenef)
+	rightMinKey = MinLongNonZero(colMovCuenta, colMovFecha, colMovValor, colMovBenef)
+
+	'Ubicar la columna REAL de tipocruce dentro de la selección (permite columnas extra)
+	colSep = FindHeaderColumnInRange(ws, headerRow, minColSel, maxColSel, _
+				Array(SEP_HEADER, "tipo cruce", "tipo de cruce", "tipo_cruce"))
+
+	If colSep = 0 Then
+		'Si no hay encabezado, asumir separador justo antes del primer campo clave derecho
+		colSep = rightMinKey - 1
+	End If
+
+	If colSep < minColSel Or colSep > maxColSel Then
+		MsgBox "No pude ubicar la columna separadora ('" & SEP_HEADER & "') dentro del rango seleccionado.", vbExclamation
+		GoTo Salida
+	End If
+
+	'Validar que el separador quede ENTRE las 2 tablas (para no pisar una columna de datos)
+	If colSep <= leftMaxKey Or colSep >= rightMinKey Then
+		MsgBox "La columna '" & SEP_HEADER & "' debe estar ENTRE las dos tablas." & vbCrLf & _
+			   "Izquierda (última col clave): " & leftMaxKey & vbCrLf & _
+			   "Derecha (primera col clave): " & rightMinKey & vbCrLf & _
+			   "Separador detectado: " & colSep, vbExclamation
+		GoTo Salida
+	End If
+
+	'Si la col detectada tiene encabezado “de notas”, no la usamos como tipocruce (para no sobrescribir)
+	sepHdr = Trim$(CStr(ws.Cells(headerRow, colSep).Value2))
+	If Len(sepHdr) > 0 Then
+		Dim nSep As String
+		nSep = NormHeader(sepHdr)
+		If nSep <> NormHeader(SEP_HEADER) And nSep <> NormHeader("tipo cruce") And _
+		   nSep <> NormHeader("tipo de cruce") And nSep <> NormHeader("tipo_cruce") Then
+
+			MsgBox "Encontré columnas extra entre tablas, pero NO veo identificado el separador." & vbCrLf & _
+				   "Para mover TODO el rango (incluyendo tus columnas extra) sin pisar encabezados, " & _
+				   "pon el encabezado '" & SEP_HEADER & "' en la columna separadora real." & vbCrLf & _
+				   "Encabezado actual en la columna que intenté usar: '" & sepHdr & "'.", vbExclamation
+			GoTo Salida
+		End If
+	End If
+
+	'CAMBIO: todo lo seleccionado se mueve (incluye columnas extra)
+	colFixBlockStart = minColSel
+	colFixBlockEnd = colSep - 1
+
+	colMoveStart = colSep + 1
+	colMoveEnd = maxColSel
+
+	If colFixBlockEnd < colFixBlockStart Then
+		MsgBox "No quedó espacio para la tabla izquierda antes de '" & SEP_HEADER & "'.", vbExclamation
+		GoTo Salida
+	End If
+
+	If colMoveEnd < colMoveStart Then
+		MsgBox "La selección no incluye el bloque derecho. Asegúrate de seleccionar ambas tablas.", vbExclamation
+		GoTo Salida
+	End If
+
+	'Validar columnas clave derechas dentro del bloque derecho expandido
+	If Not (colMovFecha >= colMoveStart And colMovFecha <= colMoveEnd) Then
+		MsgBox "La FECHA derecha debe estar dentro del bloque derecho.", vbExclamation
+		GoTo Salida
+	End If
+	If Not (colMovValor >= colMoveStart And colMovValor <= colMoveEnd) Then
+		MsgBox "El VALOR derecho debe estar dentro del bloque derecho.", vbExclamation
+		GoTo Salida
+	End If
+	If Not (colMovCuenta >= colMoveStart And colMovCuenta <= colMoveEnd) Then
+		MsgBox "La CUENTA derecha debe estar dentro del bloque derecho.", vbExclamation
+		GoTo Salida
+	End If
+
+	'Validar columnas clave izquierdas dentro del bloque izquierdo
+	If colFixFecha < colFixBlockStart Or colFixFecha > colFixBlockEnd Then
+		MsgBox "La FECHA izquierda debe estar a la izquierda de '" & SEP_HEADER & "'.", vbExclamation
+		GoTo Salida
+	End If
+	If colFixValor < colFixBlockStart Or colFixValor > colFixBlockEnd Then
+		MsgBox "El VALOR izquierdo debe estar a la izquierda de '" & SEP_HEADER & "'.", vbExclamation
+		GoTo Salida
+	End If
+	If colFixCuenta < colFixBlockStart Or colFixCuenta > colFixBlockEnd Then
+		MsgBox "La CUENTA izquierda debe estar a la izquierda de '" & SEP_HEADER & "'.", vbExclamation
+		GoTo Salida
+	End If
+
+
+	'Detectar "cuenta general" (si existe dentro del bloque izquierdo)
+	colFixCuentaGeneral = FindHeaderColumnInRange(ws, headerRow, colFixBlockStart, colFixBlockEnd, _
+							  Array("cuenta general", "cta general", "cuenta gral", "cta gral"))
+
+	'Detectar "fecha general" (si existe dentro del bloque izquierdo)  '<<< NUEVO
+	colFixFechaGeneral = FindHeaderColumnInRange(ws, headerRow, colFixBlockStart, colFixBlockEnd, _
+							  Array("fecha general", "fch general", "fecha gral", "fch gral", "fecha gen", "fch gen"))
+
+	'Detectar columna timestamp existente (si la hay)
+	colFixRunStamp = FindHeaderColumnInRange(ws, headerRow, colFixBlockStart, colFixBlockEnd, _
+		Array("fecha y hora", "timestamp", "marca de tiempo", "hora ejecucion", "ejecucion"))
+
+	If colFixCuentaGeneral > 0 Then
+
+		If colFixRunStamp = 0 Then
+			candStamp = colFixCuentaGeneral - 1
+
+			If candStamp >= colFixBlockStart And candStamp <= colFixBlockEnd Then
+				If candStamp <> colFixFecha And candStamp <> colFixValor And candStamp <> colFixCuenta Then
+					If Len(Trim$(CStr(ws.Cells(headerRow, candStamp).Value2))) = 0 Then
+						colFixRunStamp = candStamp
+						ws.Cells(headerRow, colFixRunStamp).Value2 = "fecha y hora"
+					End If
+				End If
+			End If
+		End If
+
+		If Len(Trim$(CStr(ws.Cells(headerRow, colFixCuentaGeneral).Value2))) = 0 Then
+			ws.Cells(headerRow, colFixCuentaGeneral).Value2 = "cuenta general"
+		End If
+	End If
+
+	'Si existe la columna fecha general pero está sin encabezado, asignarlo  '<<< NUEVO
+	If colFixFechaGeneral > 0 Then
+		If Len(Trim$(CStr(ws.Cells(headerRow, colFixFechaGeneral).Value2))) = 0 Then
+			ws.Cells(headerRow, colFixFechaGeneral).Value2 = "fecha general"
+		End If
+	End If
+
+	'6) Estado app
+	Application.ScreenUpdating = False
+	Application.Calculation = xlCalculationManual
+
+	dataFirstRow = headerRow + 1
+
+	'7) Filas visibles unión por FECHA izq/der
+	k = BuildVisibleRowsUnion(ws, rngVis, dataFirstRow, colFixFecha, colMovFecha, visRows)
+	If k = 0 Then GoTo Salida
+
+	minR = visRows(1)
+	maxR = visRows(k)
+
+	nFixCols = colFixBlockEnd - colFixBlockStart + 1
+	nMoveCols = colMoveEnd - colMoveStart + 1
+
+	relFixFecha = colFixFecha - colFixBlockStart + 1
+	relFixValor = colFixValor - colFixBlockStart + 1
+	relFixCuenta = colFixCuenta - colFixBlockStart + 1
+
+	relMovFecha = colMovFecha - colMoveStart + 1
+	relMovValor = colMovValor - colMoveStart + 1
+	relMovCuenta = colMovCuenta - colMoveStart + 1
+
+	'8) Leer a memoria
+	arrFixBlock = ws.Range(ws.Cells(minR, colFixBlockStart), ws.Cells(maxR, colFixBlockEnd)).Value2
+	arrMovBlock = ws.Range(ws.Cells(minR, colMoveStart), ws.Cells(maxR, colMoveEnd)).Value2
+	arrtipocruce = ws.Range(ws.Cells(minR, colSep), ws.Cells(maxR, colSep)).Value2
+
+	ReDim hasMovData(1 To k)
+	ReDim hasFixData(1 To k)
+	ReDim hasAnyFixInput(1 To k)
+	ReDim hasAnyMovInput(1 To k)
+
+	Set dictFix = CreateObject("Scripting.Dictionary"): dictFix.CompareMode = 1
+	Set dictMov = CreateObject("Scripting.Dictionary"): dictMov.CompareMode = 1
+	Set fixInvalid = New Collection
+	Set movInvalid = New Collection
+
+	nBlocks = 0
+	cntOmitidosYaCruzados = 0
+	maxExistingSumId = 0
+
+	Dim kFix As String, kMov As String
+	Dim rowFix1D As Variant, rowMov1D As Variant
+	Dim tipoVal As Variant, tipoStr As String
+
+	Dim inNumGroup As Boolean
+	Dim curNumId As Long
+	Dim curLines As Collection
+	Dim curD As Long, curAmt As Double, curAcc As String
+	Dim curKey As String
+
+	inNumGroup = False
+	curNumId = 0
+
+	For i = 1 To k
+
+		off = visRows(i) - minR + 1
+
+		Dim relFixRunStamp As Long, relFixCuentaGeneral2 As Long, relFixFechaGeneral2 As Long
+		relFixRunStamp = 0
+		relFixCuentaGeneral2 = 0
+		relFixFechaGeneral2 = 0
+
+		If colFixRunStamp > 0 Then relFixRunStamp = colFixRunStamp - colFixBlockStart + 1
+		If colFixCuentaGeneral > 0 Then relFixCuentaGeneral2 = colFixCuentaGeneral - colFixBlockStart + 1
+		If colFixFechaGeneral > 0 Then relFixFechaGeneral2 = colFixFechaGeneral - colFixBlockStart + 1
+
+'Decidir si la fila tiene datos REALES (incluye columnas extra/anotaciones).
+'En el bloque fijo se ignoran columnas derivadas (timestamp, cuenta general, fecha general) para esta detección.
+hasFixData(i) = RowHasAnyNonEmptyExcept(arrFixBlock, off, nFixCols, relFixRunStamp, relFixCuentaGeneral2, relFixFechaGeneral2)
+hasMovData(i) = RowHasAnyNonEmpty(arrMovBlock, off, nMoveCols)
+
+
+
+		tipoVal = arrtipocruce(off, 1)
+		tipoStr = Trim$(CStr(tipoVal))
+
+		If Len(tipoStr) > 0 Then
+			'YA cruzado => preservar (no participar en nuevos cruces)
+			cntOmitidosYaCruzados = cntOmitidosYaCruzados + 1
+
+			'Preservar cruce existente: si la izquierda solo tiene timestamp,
+			'igual debemos llevarlo a la salida para que no se borre al reescribir.
+			If hasFixData(i) Then
+				rowFix1D = GetRowAs1D(arrFixBlock, off, nFixCols)
+			ElseIf relFixRunStamp > 0 Then
+				If Len(Trim$(CStr(arrFixBlock(off, relFixRunStamp)))) > 0 Then
+					rowFix1D = GetRowAs1D(arrFixBlock, off, nFixCols)
+				Else
+					rowFix1D = Empty
+				End If
+			Else
+				rowFix1D = Empty
+			End If
+
+			If hasMovData(i) Then
+				rowMov1D = GetRowAs1D(arrMovBlock, off, nMoveCols)
+			Else
+				rowMov1D = Empty
+			End If
+
+			'Si es numérico => SUMA previa
+			If IsNumeric(tipoStr) Then
+				Dim numId As Long
+				numId = CLng(Val(tipoStr))
+				If numId > maxExistingSumId Then maxExistingSumId = numId
+
+				If (Not inNumGroup) Or (numId <> curNumId) Then
+					If inNumGroup Then
+						AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+								curKey, curD, curAcc, curAmt, curLines, 2, CLng(curNumId)
+					End If
+
+					inNumGroup = True
+					curNumId = numId
+					Set curLines = New Collection
+
+					DeriveSortKeyFromSides _
+						arrFixBlock(off, relFixFecha), arrFixBlock(off, relFixValor), arrFixBlock(off, relFixCuenta), _
+						arrMovBlock(off, relMovFecha), arrMovBlock(off, relMovValor), arrMovBlock(off, relMovCuenta), _
+						curD, curAcc, curAmt
+
+					curKey = CStr(curD) & "|" & Format$(curAmt, "0.00") & "|" & curAcc
+				End If
+
+				'NO dividir SUMA preservada en 2 filas: conservar la fila tal cual (izq+der)
+				curLines.Add Array(rowFix1D, rowMov1D, True, False)
+
+			Else
+				'flush grupo numérico si venía
+				If inNumGroup Then
+					AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+							curKey, curD, curAcc, curAmt, curLines, 2, CLng(curNumId)
+					inNumGroup = False
+					curNumId = 0
+				End If
+
+				Dim d0 As Long, a0 As Double, acc0 As String, k0 As String
+				DeriveSortKeyFromSides _
+					arrFixBlock(off, relFixFecha), arrFixBlock(off, relFixValor), arrFixBlock(off, relFixCuenta), _
+					arrMovBlock(off, relMovFecha), arrMovBlock(off, relMovValor), arrMovBlock(off, relMovCuenta), _
+					d0, acc0, a0
+
+				k0 = CStr(d0) & "|" & Format$(a0, "0.00") & "|" & acc0
+
+				Dim one As Collection: Set one = New Collection
+				one.Add Array(rowFix1D, rowMov1D, True, False)
+
+				Dim typ0 As Integer
+				If NormHeader(tipoStr) = NormHeader("exacto") Then
+					typ0 = 1
+				ElseIf NormHeader(tipoStr) = NormHeader("tolerancia") Then
+					typ0 = 4
+				Else
+					typ0 = 5
+				End If
+
+				AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+						k0, d0, acc0, a0, one, typ0, tipoVal
+			End If
+
+		Else
+			'Si veníamos en grupo numérico, se terminó
+			If inNumGroup Then
+				AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+						curKey, curD, curAcc, curAmt, curLines, 2, CLng(curNumId)
+				inNumGroup = False
+				curNumId = 0
+			End If
+
+			'NO cruzado => participar
+			kFix = BuildKey3Strict( _
+						arrFixBlock(off, relFixFecha), arrFixBlock(off, relFixValor), arrFixBlock(off, relFixCuenta), _
+						hasAnyFixInput(i), _
+						cntFixMissingAny, cntFixDateParseFail, cntFixAmtParseFail)
+
+			kMov = BuildKey3Strict( _
+						arrMovBlock(off, relMovFecha), arrMovBlock(off, relMovValor), arrMovBlock(off, relMovCuenta), _
+						hasAnyMovInput(i), _
+						cntMovMissingAny, cntMovDateParseFail, cntMovAmtParseFail)
+
+			If hasAnyFixInput(i) And kFix = "" Then cntFixKeyInvalid = cntFixKeyInvalid + 1
+			If hasAnyMovInput(i) And kMov = "" Then cntMovKeyInvalid = cntMovKeyInvalid + 1
+
+			If kFix <> "" Then
+				rowFix1D = GetRowAs1D(arrFixBlock, off, nFixCols)
+				AddRowToListDict dictFix, kFix, rowFix1D
+			ElseIf hasFixData(i) Then
+				fixInvalid.Add GetRowAs1D(arrFixBlock, off, nFixCols)
+			End If
+
+			If kMov <> "" And hasMovData(i) Then
+				rowMov1D = GetRowAs1D(arrMovBlock, off, nMoveCols)
+				AddRowToListDict dictMov, kMov, rowMov1D
+			ElseIf hasMovData(i) Then
+				movInvalid.Add GetRowAs1D(arrMovBlock, off, nMoveCols)
+			End If
+		End If
+	Next i
+
+	If inNumGroup Then
+		AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+				curKey, curD, curAcc, curAmt, curLines, 2, CLng(curNumId)
+	End If
+
+	'9) Cruces SOLO pendientes
+	Dim nBlocksNew As Long
+	Dim newKeys() As String, newD() As Long, newAcc() As String, newAmt() As Double
+	Dim newLines() As Collection, newType() As Integer, newLabel() As Variant
+
+	BuildBlocks_ExactAndSum _
+		dictFix, dictMov, _
+		sumEnabled, sumMaxItems, sumTol, exactTol, _
+		nBlocksNew, newKeys, newD, newAcc, newAmt, newLines, newType, newLabel, _
+		cntCrucesExact, cntCrucesExactTol, cntCrucesSumGrupos, cntSumFixUsed, cntSumMovUsed
+
+	Dim bb As Long
+	If nBlocksNew > 0 Then
+		For bb = 1 To nBlocksNew
+			AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+					newKeys(bb), newD(bb), newAcc(bb), newAmt(bb), newLines(bb), newType(bb), newLabel(bb)
+		Next bb
+	End If
+
+	'Conteos pendientes
+	Dim totalFixValid As Long, totalMovValid As Long
+	totalFixValid = TotalRowsInDict(dictFix)
+	totalMovValid = TotalRowsInDict(dictMov)
+
+	cntNoCruzadosFijo = totalFixValid - (cntCrucesExact + cntCrucesExactTol + cntSumFixUsed)
+	cntNoCruzadosMovil = totalMovValid - (cntCrucesExact + cntCrucesExactTol + cntSumMovUsed)
+
+	'10) Construir salida
+	outN = 0
+	Dim b As Long
+	For b = 1 To nBlocks
+		outN = outN + blockLines(b).Count
+	Next b
+	outN = outN + fixInvalid.Count + movInvalid.Count
+	If outN = 0 Then GoTo Salida
+
+	ReDim outFix(1 To outN, 1 To nFixCols)
+	ReDim outMov(1 To outN, 1 To nMoveCols)
+	ReDim outIsMatch(1 To outN)
+	ReDim outIsNewCruce(1 To outN)
+	ReDim outtipocruce(1 To outN)
+
+	Dim p As Long, ln As Variant, fx As Variant, mv As Variant
+	Dim sumGroupId As Long, etiqueta As Variant
+	p = 0
+	sumGroupId = maxExistingSumId
+
+	For b = 1 To nBlocks
+
+		If Not IsEmpty(blockLabel(b)) Then
+			If Len(Trim$(CStr(blockLabel(b)))) > 0 Then
+				etiqueta = blockLabel(b)
+			Else
+				etiqueta = Empty
+			End If
+		ElseIf blockType(b) = 2 Then
+			sumGroupId = sumGroupId + 1
+			etiqueta = CLng(sumGroupId)
+		ElseIf blockType(b) = 1 Then
+			etiqueta = "exacto"
+		ElseIf blockType(b) = 4 Then
+			etiqueta = "tolerancia : " & IIf(exactTol = Int(exactTol), Format$(exactTol, "0"), Format$(exactTol, "0.00"))
+		Else
+			etiqueta = Empty
+		End If
+
+		For Each ln In blockLines(b)
+			p = p + 1
+
+			fx = ln(0)
+			mv = ln(1)
+			outIsMatch(p) = CBool(ln(2))
+			outIsNewCruce(p) = CBool(ln(3))
+
+			If outIsMatch(p) Then
+				outtipocruce(p) = etiqueta
+			Else
+				outtipocruce(p) = Empty
+			End If
+
+			If Not IsEmpty(fx) Then
+				For c = 1 To nFixCols
+					outFix(p, c) = fx(c)
+				Next c
+			End If
+
+			If Not IsEmpty(mv) Then
+				For c = 1 To nMoveCols
+					outMov(p, c) = mv(c)
+				Next c
+			End If
+		Next ln
+	Next b
+
+	'Inválidos fijo al final
+	Dim t As Long, a As Variant
+	For t = 1 To fixInvalid.Count
+		p = p + 1
+		outIsMatch(p) = False
+		outIsNewCruce(p) = False
+		outtipocruce(p) = Empty
+		a = fixInvalid.Item(t)
+		For c = 1 To nFixCols
+			outFix(p, c) = a(c)
+		Next c
+	Next t
+
+	'Inválidos móvil al final
+	For t = 1 To movInvalid.Count
+		p = p + 1
+		outIsMatch(p) = False
+		outIsNewCruce(p) = False
+		outtipocruce(p) = Empty
+		a = movInvalid.Item(t)
+		For c = 1 To nMoveCols
+			outMov(p, c) = a(c)
+		Next c
+	Next t
+
+	'==== ORDEN FINAL POR FILA (Cuenta + Fecha + Valor) ====
+	SortOutputRows_Final outFix, outMov, outIsMatch, outIsNewCruce, outtipocruce, outN, _
+						 nFixCols, nMoveCols, _
+						 relFixCuenta, relFixFecha, relFixValor, _
+						 relMovCuenta, relMovFecha, relMovValor
+
+	'12) Asegurar filas visibles suficientes
+	If outN > k Then
+		extra = outN - k
+		ws.Rows(visRows(k) + 1).Resize(extra).Insert Shift:=xlShiftDown
+
+		ReDim Preserve visRows(1 To k + extra)
+		For j = 1 To extra
+			visRows(k + j) = visRows(k) + j
+		Next j
+		k = k + extra
+	End If
+
+	'13) Escribir
+		Dim hdrSepNow As String
+	hdrSepNow = Trim$(CStr(ws.Cells(headerRow, colSep).Value2))
+	If Len(hdrSepNow) = 0 Or NormHeader(hdrSepNow) = NormHeader(SEP_HEADER) Or _
+	   NormHeader(hdrSepNow) = NormHeader("tipo cruce") Or NormHeader(hdrSepNow) = NormHeader("tipo de cruce") Or _
+	   NormHeader(hdrSepNow) = NormHeader("tipo_cruce") Then
+		ws.Cells(headerRow, colSep).Value2 = SEP_HEADER
+	End If
+
+
+	ReDim rowFixOut(1 To 1, 1 To nFixCols)
+	ReDim rowMovOut(1 To 1, 1 To nMoveCols)
+
+	For i = 1 To outN
+
+		rowN = visRows(i)
+
+		For c = 1 To nFixCols
+			rowFixOut(1, c) = outFix(i, c)
+		Next c
+		ws.Cells(rowN, colFixBlockStart).Resize(1, nFixCols).Value2 = rowFixOut
+
+		'TIMESTAMP:
+		If colFixRunStamp > 0 Then
+			If Len(Trim$(CStr(outtipocruce(i)))) > 0 Then
+				If outIsNewCruce(i) Then
+					ws.Cells(rowN, colFixRunStamp).Value2 = execStamp
+				End If
+			Else
+				ws.Cells(rowN, colFixRunStamp).ClearContents
+			End If
+		End If
+
+		'Rellenar "cuenta general"
+		If colFixCuentaGeneral > 0 Then
+			Dim vAccG As Variant
+			vAccG = outFix(i, relFixCuenta)
+			If Len(Trim$(CStr(vAccG))) = 0 Then vAccG = outMov(i, relMovCuenta)
+
+			If Len(Trim$(CStr(vAccG))) > 0 Then
+				If IsNumeric(vAccG) Then
+					ws.Cells(rowN, colFixCuentaGeneral).Value2 = CLng(Val(vAccG))
+				Else
+					ws.Cells(rowN, colFixCuentaGeneral).Value2 = Trim$(CStr(vAccG))
+				End If
+			Else
+				ws.Cells(rowN, colFixCuentaGeneral).ClearContents
+			End If
+		End If
+
+		'Rellenar "fecha general" (NUEVO) -> fecha de izq si existe, si no der, como fecha real
+		If colFixFechaGeneral > 0 Then
+			Dim vDateG As Variant, dG As Long
+			vDateG = outFix(i, relFixFecha)
+			If Len(Trim$(CStr(vDateG))) = 0 Then vDateG = outMov(i, relMovFecha)
+
+			dG = 0
+			If TryDateSerial(vDateG, dG) And dG > 0 Then
+				ws.Cells(rowN, colFixFechaGeneral).Value2 = CDbl(dG)
+			Else
+				ws.Cells(rowN, colFixFechaGeneral).ClearContents
+			End If
+		End If
+
+		If Not IsEmpty(outtipocruce(i)) Then
+			If Len(Trim$(CStr(outtipocruce(i)))) > 0 Then
+				ws.Cells(rowN, colSep).Value2 = outtipocruce(i)
+			Else
+				ws.Cells(rowN, colSep).ClearContents
+			End If
+		Else
+			ws.Cells(rowN, colSep).ClearContents
+		End If
+
+		For c = 1 To nMoveCols
+			rowMovOut(1, c) = outMov(i, c)
+		Next c
+		ws.Cells(rowN, colMoveStart).Resize(1, nMoveCols).Value2 = rowMovOut
+	Next i
+
+	ClearOrphantipocruce ws, visRows, k, colFixBlockStart, nFixCols, colMoveStart, nMoveCols, colSep, colFixRunStamp, colFixCuentaGeneral, colFixFechaGeneral
+
+'Limpiar sobrantes visibles:
+'IMPORTANTE: NO borrar contenido (para no eliminar columnas extra/anotaciones).
+'Solo eliminar filas completamente vacías dentro de toda la banda seleccionada.
+If k > outN Then
+    For i = k To outN + 1 Step -1
+        rowN = visRows(i)
+
+        If Application.WorksheetFunction.CountA( _
+            ws.Cells(rowN, colFixBlockStart).Resize(1, colMoveEnd - colFixBlockStart + 1) _
+        ) = 0 Then
+            ws.Rows(rowN).Delete
+        End If
+    Next i
+End If
+
+	'14) Formatos
+	Dim firstFmtRow As Long, lastFmtRow As Long
+	firstFmtRow = visRows(1)
+	lastFmtRow = visRows(outN)
+
+	ws.Range(ws.Cells(firstFmtRow, colFixFecha), ws.Cells(lastFmtRow, colFixFecha)).NumberFormat = "yyyy-mm-dd"
+	ws.Range(ws.Cells(firstFmtRow, colMovFecha), ws.Cells(lastFmtRow, colMovFecha)).NumberFormat = "yyyy-mm-dd"
+
+	'Formato de "fecha general" (NUEVO)
+	If colFixFechaGeneral > 0 Then
+		ws.Range(ws.Cells(firstFmtRow, colFixFechaGeneral), ws.Cells(lastFmtRow, colFixFechaGeneral)).NumberFormat = "yyyy-mm-dd"
+	End If
+
+	ws.Range(ws.Cells(firstFmtRow, colFixValor), ws.Cells(lastFmtRow, colFixValor)).NumberFormatLocal = "#.##0,00"
+	ws.Range(ws.Cells(firstFmtRow, colMovValor), ws.Cells(lastFmtRow, colMovValor)).NumberFormatLocal = "#.##0,00"
+
+	'15) Resaltar primera línea por CUENTA (ROJO + NEGRITA)
+	ws.Range(ws.Cells(firstFmtRow, colFixBlockStart), ws.Cells(lastFmtRow, colMoveEnd)).Interior.Pattern = xlNone
+
+	With ws.Range(ws.Cells(firstFmtRow, colFixBlockStart), ws.Cells(lastFmtRow, colMoveEnd)).Font
+		.Bold = False
+		.ColorIndex = xlAutomatic
+	End With
+
+	Dim rr As Long
+	Dim prevAccKey As String, curAccKey As String
+	Dim vAcc As Variant
+	Dim okAcc As Boolean, missAcc As Boolean
+
+	prevAccKey = ""
+	For rr = firstFmtRow To lastFmtRow
+		vAcc = ws.Cells(rr, colFixCuenta).Value2
+		If Len(Trim$(CStr(vAcc))) = 0 Then vAcc = ws.Cells(rr, colMovCuenta).Value2
+
+		curAccKey = AccountKeyStrict(vAcc, okAcc, missAcc)
+		If Not okAcc Then curAccKey = UCase$(Trim$(CStr(vAcc)))
+
+		If Len(curAccKey) > 0 Then
+			If curAccKey <> prevAccKey Then
+				With ws.Range(ws.Cells(rr, colFixBlockStart), ws.Cells(rr, colMoveEnd)).Font
+					.Bold = True
+					.Color = RGB(255, 0, 0)
+				End With
+				prevAccKey = curAccKey
+			End If
+		End If
+	Next rr
+
+	'Resumen
+	BuildResumenSheet wb, ws, firstFmtRow, lastFmtRow, colFixCuenta, colFixFecha, colFixValor, colMovCuenta, colMovFecha, colMovValor
+
+	ws.Activate
+	DeleteEmptyRowsInBand ws, firstFmtRow, lastFmtRow, colFixBlockStart, colMoveEnd
+
+Salida:
+	On Error Resume Next
+	Application.CutCopyMode = False
+	Application.Calculation = oldCalc
+	Application.ScreenUpdating = oldScreen
+	Application.DisplayAlerts = oldAlerts
+	On Error GoTo 0
+
+	If headerRow > 0 Then
+		MsgBox "Listo." & vbCrLf & vbCrLf & _
+			   "Esta pasada SOLO cruzó filas con tipocruce vacío." & vbCrLf & _
+			   "Filas ya cruzadas (omitidas): " & cntOmitidosYaCruzados & vbCrLf & vbCrLf & _
+			   "Cruce por:" & vbCrLf & _
+			   "  - exacto: fecha + cuenta + valor" & vbCrLf & _
+			   "  - tolerancia: fecha + cuenta + valor (tol " & Format$(exactTol, "0.00") & ")" & vbCrLf & _
+			   "  - suma: fecha + cuenta (hasta " & sumMaxItems & " items, tol " & Format$(sumTol, "0.00") & ")" & vbCrLf & vbCrLf & _
+			   "Cruces exacto (pares) [esta pasada]: " & cntCrucesExact & vbCrLf & _
+			   "Cruces tolerancia (pares) [esta pasada]: " & cntCrucesExactTol & vbCrLf & _
+			   "Cruces por suma (grupos) [esta pasada]: " & cntCrucesSumGrupos & vbCrLf & _
+			   "Filas usadas en suma (izq) [esta pasada]: " & cntSumFixUsed & vbCrLf & _
+			   "Filas usadas en suma (der) [esta pasada]: " & cntSumMovUsed & vbCrLf & vbCrLf & _
+			   "Pendientes (izq): " & cntNoCruzadosFijo & vbCrLf & _
+			   "Pendientes (der): " & cntNoCruzadosMovil & vbCrLf & _
+			   "Claves inválidas (izq): " & cntFixKeyInvalid & vbCrLf & _
+			   "Claves inválidas (der): " & cntMovKeyInvalid & vbCrLf & vbCrLf & _
+			   "Detalle inválidos (izq) faltantes: " & cntFixMissingAny & ", fecha no parsea: " & cntFixDateParseFail & ", valor no parsea: " & cntFixAmtParseFail & vbCrLf & _
+			   "Detalle inválidos (der) faltantes: " & cntMovMissingAny & ", fecha no parsea: " & cntMovDateParseFail & ", valor no parsea: " & cntMovAmtParseFail, _
+			   vbInformation, "Resumen"
+	End If
+	Exit Sub
+
+EH:
+	Dim errNum As Long, errDesc As String
+	errNum = Err.Number
+	errDesc = Err.Description
+
+	On Error Resume Next
+	Application.CutCopyMode = False
+	Application.Calculation = oldCalc
+	Application.ScreenUpdating = oldScreen
+	Application.DisplayAlerts = oldAlerts
+	On Error GoTo 0
+
+	If errNum = 18 Then
+		MsgBox "Interrumpido por el usuario. Se restauraron los ajustes (cálculo y pantalla).", vbExclamation, "Conciliación"
+	Else
+		MsgBox "Ocurrió un error: " & errNum & " - " & errDesc, vbExclamation, "Conciliación"
+	End If
+End Sub
+
+'======================== ORDEN FINAL POR FILA (Cuenta+Fecha+Valor) ============================
+
+Sub SortOutputRows_Final(ByRef outFix As Variant, ByRef outMov As Variant, _
+						 ByRef outIsMatch() As Boolean, ByRef outIsNew() As Boolean, ByRef outtipocruce() As Variant, _
+						 ByVal outN As Long, ByVal nFixCols As Long, ByVal nMoveCols As Long, _
+						 ByVal relFixCuenta As Long, ByVal relFixFecha As Long, ByVal relFixValor As Long, _
+						 ByVal relMovCuenta As Long, ByVal relMovFecha As Long, ByVal relMovValor As Long)
+
+	Dim accTxt() As String, accIsNum() As Boolean, accNum() As Double
+	Dim dSer() As Long, amt() As Double, seq() As Long
+	Dim idx() As Long
+	Dim r As Long
+
+	ReDim accTxt(1 To outN)
+	ReDim accIsNum(1 To outN)
+	ReDim accNum(1 To outN)
+	ReDim dSer(1 To outN)
+	ReDim amt(1 To outN)
+	ReDim seq(1 To outN)
+	ReDim idx(1 To outN)
+
+	For r = 1 To outN
+		idx(r) = r
+		seq(r) = r
+
+		'Cuenta: izq si existe, si no der
+		Dim vAcc As Variant, sAcc As String
+		vAcc = outFix(r, relFixCuenta)
+		If Len(Trim$(CStr(vAcc))) = 0 Then vAcc = outMov(r, relMovCuenta)
+		sAcc = UCase$(Trim$(CStr(vAcc)))
+		accTxt(r) = sAcc
+		accIsNum(r) = IsNumeric(sAcc)
+		If accIsNum(r) Then accNum(r) = CDbl(sAcc) Else accNum(r) = 0#
+
+		'Fecha: izq si existe, si no der
+		Dim vD As Variant, ds As Long
+		vD = outFix(r, relFixFecha)
+		If Len(Trim$(CStr(vD))) = 0 Then vD = outMov(r, relMovFecha)
+		ds = 0
+		If Not TryDateSerial(vD, ds) Then ds = 0
+		dSer(r) = ds
+
+		'Valor
+		Dim vAmt As Variant
+		vAmt = outFix(r, relFixValor)
+		If Len(Trim$(CStr(vAmt))) = 0 Then vAmt = outMov(r, relMovValor)
+		amt(r) = ToDoubleOrZero(vAmt)
+	Next r
+
+	If outN > 1 Then QuickSortRowIdx idx, accTxt, accIsNum, accNum, dSer, amt, seq, 1, outN
+
+	'Reordenar
+	Dim tmpFix As Variant, tmpMov As Variant
+	Dim tmpMatch() As Boolean, tmpNew() As Boolean, tmpTipo() As Variant
+	Dim c As Long, pos As Long, src As Long
+
+	ReDim tmpFix(1 To outN, 1 To nFixCols)
+	ReDim tmpMov(1 To outN, 1 To nMoveCols)
+	ReDim tmpMatch(1 To outN)
+	ReDim tmpNew(1 To outN)
+	ReDim tmpTipo(1 To outN)
+
+	For pos = 1 To outN
+		src = idx(pos)
+		For c = 1 To nFixCols: tmpFix(pos, c) = outFix(src, c): Next c
+		For c = 1 To nMoveCols: tmpMov(pos, c) = outMov(src, c): Next c
+		tmpMatch(pos) = outIsMatch(src)
+		tmpNew(pos) = outIsNew(src)
+		tmpTipo(pos) = outtipocruce(src)
+	Next pos
+
+	outFix = tmpFix
+	outMov = tmpMov
+	outIsMatch = tmpMatch
+	outIsNew = tmpNew
+	outtipocruce = tmpTipo
+End Sub
+
+Sub QuickSortRowIdx(ByRef idx() As Long, _
+					ByRef accTxt() As String, ByRef accIsNum() As Boolean, ByRef accNum() As Double, _
+					ByRef dSer() As Long, ByRef amt() As Double, ByRef seq() As Long, _
+					ByVal first As Long, ByVal last As Long)
+	Dim i As Long, j As Long, p As Long
+	Dim pivotIdx As Long
+	i = first: j = last
+	p = (first + last) \ 2
+	pivotIdx = idx(p)
+
+	Do While i <= j
+		Do While CmpRowKey(idx(i), pivotIdx, accTxt, accIsNum, accNum, dSer, amt, seq) < 0
+			i = i + 1
+		Loop
+		Do While CmpRowKey(idx(j), pivotIdx, accTxt, accIsNum, accNum, dSer, amt, seq) > 0
+			j = j - 1
+		Loop
+		If i <= j Then
+			Dim t As Long
+			t = idx(i): idx(i) = idx(j): idx(j) = t
+			i = i + 1: j = j - 1
+		End If
+	Loop
+
+	If first < j Then QuickSortRowIdx idx, accTxt, accIsNum, accNum, dSer, amt, seq, first, j
+	If i < last Then QuickSortRowIdx idx, accTxt, accIsNum, accNum, dSer, amt, seq, i, last
+End Sub
+
+Function CmpRowKey(ByVal aIdx As Long, ByVal bIdx As Long, _
+				   ByRef accTxt() As String, ByRef accIsNum() As Boolean, ByRef accNum() As Double, _
+				   ByRef dSer() As Long, ByRef amt() As Double, ByRef seq() As Long) As Long
+
+	'1) Cuenta
+	If accIsNum(aIdx) And accIsNum(bIdx) Then
+		If accNum(aIdx) < accNum(bIdx) Then CmpRowKey = -1: Exit Function
+		If accNum(aIdx) > accNum(bIdx) Then CmpRowKey = 1: Exit Function
+	Else
+		Dim sc As Long
+		sc = StrComp(accTxt(aIdx), accTxt(bIdx), vbTextCompare)
+		If sc < 0 Then CmpRowKey = -1: Exit Function
+		If sc > 0 Then CmpRowKey = 1: Exit Function
+	End If
+
+	'2) Fecha
+	If dSer(aIdx) < dSer(bIdx) Then CmpRowKey = -1: Exit Function
+	If dSer(aIdx) > dSer(bIdx) Then CmpRowKey = 1: Exit Function
+
+	'3) Valor
+	If amt(aIdx) < amt(bIdx) Then CmpRowKey = -1: Exit Function
+	If amt(aIdx) > amt(bIdx) Then CmpRowKey = 1: Exit Function
+
+	'4) Estable
+	If seq(aIdx) < seq(bIdx) Then
+		CmpRowKey = -1
+	ElseIf seq(aIdx) > seq(bIdx) Then
+		CmpRowKey = 1
+	Else
+		CmpRowKey = 0
+	End If
+End Function
+
+'======================== MODO AUTOMÁTICO ============================
+
+Function DetectHeadersAuto(ws As Worksheet, rngSel As Range, colsVis As Variant, _
+						   ByRef headerRow As Long, _
+						   ByRef colFixCuenta As Long, ByRef colFixFecha As Long, ByRef colFixValor As Long, ByRef colFixBenef As Long, _
+						   ByRef colMovCuenta As Long, ByRef colMovFecha As Long, ByRef colMovValor As Long, ByRef colMovBenef As Long, _
+						   ByRef colMoveStart As Long, ByRef colMoveEnd As Long, _
+						   ByRef msgErr As String, _
+						   ByVal sepHeader As String) As Boolean
+
+	Dim r As Long, rStart As Long, rEnd As Long
+	Dim bestScore As Long, score As Long
+	Dim cntCuenta As Long, cntFecha As Long, cntBenef As Long
+	Dim hasInforme As Boolean, hasSoporte As Boolean
+
+	Dim arrCuenta As Variant, arrFecha As Variant, arrBenef As Variant
+	Dim arrInforme As Variant, arrSoporte As Variant
+
+	Dim blocks As Variant
+	Dim colInforme As Long, colSoporte As Long
+	Dim blockFix As Long, blockMov As Long
+
+	msgErr = ""
+	DetectHeadersAuto = False
+
+	rStart = rngSel.Row
+	rEnd = rngSel.Row + Application.Min(rngSel.Rows.Count - 1, 25)
+
+	bestScore = 0
+	headerRow = 0
+
+	For r = rStart To rEnd
+		cntCuenta = CountRowMatches(ws, r, colsVis, Array("cuenta", "cta", "account"))
+		cntFecha = CountRowMatches(ws, r, colsVis, Array("fecha", "date"))
+		cntBenef = CountRowMatches(ws, r, colsVis, Array("beneficiario", "beneficiary"))
+		hasInforme = RowHasAny(ws, r, colsVis, Array("informe"))
+		hasSoporte = RowHasAny(ws, r, colsVis, Array("soporte"))
+
+		If cntCuenta >= 1 And cntFecha >= 1 Then
+			score = 0
+			If hasInforme Then score = score + 100
+			If hasSoporte Then score = score + 100
+			score = score + (10 * cntCuenta) + (10 * cntFecha) + cntBenef
+
+			If score > bestScore Then
+				bestScore = score
+				headerRow = r
+			End If
+		End If
+	Next r
+
+	If headerRow = 0 Then
+		msgErr = "No pude detectar la fila de encabezados dentro de la selección."
+		Exit Function
+	End If
+
+	arrCuenta = GetColsMatching(ws, headerRow, colsVis, Array("cuenta", "cta", "account"))
+	arrFecha = GetColsMatching(ws, headerRow, colsVis, Array("fecha", "date"))
+	arrBenef = GetColsMatching(ws, headerRow, colsVis, Array("beneficiario", "beneficiary"))
+	arrInforme = GetColsMatching(ws, headerRow, colsVis, Array("informe"))
+	arrSoporte = GetColsMatching(ws, headerRow, colsVis, Array("soporte"))
+
+	If IsEmpty(arrCuenta) Or UBound(arrCuenta) < 2 Then
+		msgErr = "Modo automático: necesito 2 columnas con encabezado 'cuenta' (una por cada tabla) en la misma fila."
+		Exit Function
+	End If
+	If IsEmpty(arrFecha) Or UBound(arrFecha) < 2 Then
+		msgErr = "Modo automático: necesito 2 columnas con encabezado 'fecha' (una por cada tabla) en la misma fila."
+		Exit Function
+	End If
+	If IsEmpty(arrInforme) Then
+		msgErr = "Modo automático: no encontré 'informe' (valor de la tabla izquierda)."
+		Exit Function
+	End If
+	If IsEmpty(arrSoporte) Then
+		msgErr = "Modo automático: no encontré 'soporte' (valor de la tabla derecha)."
+		Exit Function
+	End If
+	If IsEmpty(arrBenef) Or UBound(arrBenef) < 2 Then
+		msgErr = "Modo automático: necesito 2 columnas 'beneficiario' (una por cada tabla) en la misma fila."
+		Exit Function
+	End If
+
+	blocks = GetContiguousBlocksByHeader(ws, headerRow, colsVis, sepHeader)
+
+	colInforme = ChooseColInBestBlock(arrInforme, blocks, arrCuenta, arrFecha)
+	colSoporte = ChooseColInBestBlock(arrSoporte, blocks, arrCuenta, arrFecha)
+
+	If colInforme = 0 Then colInforme = MinLongInArray(arrInforme)
+	If colSoporte = 0 Then colSoporte = MaxLongInArray(arrSoporte)
+
+	blockFix = FindBlockId(blocks, colInforme)
+	blockMov = FindBlockId(blocks, colSoporte)
+
+	If blockFix = 0 Or blockMov = 0 Or blockFix = blockMov Then
+		msgErr = "Modo automático: no pude separar las dos tablas. " & vbCrLf & _
+				 "Asegúrate de que haya 1 columna separadora (vacía o '" & sepHeader & "') entre ellas."
+		Exit Function
+	End If
+
+	colFixValor = colInforme
+	colMovValor = colSoporte
+
+	colFixCuenta = ChooseNearestInBlock(arrCuenta, blocks, blockFix, colInforme, True)
+	colFixFecha = ChooseNearestInBlock(arrFecha, blocks, blockFix, colInforme, True)
+	colFixBenef = ChooseNearestInBlock(arrBenef, blocks, blockFix, colInforme, True)
+
+	colMovCuenta = ChooseNearestInBlock(arrCuenta, blocks, blockMov, colSoporte, False)
+	colMovFecha = ChooseNearestInBlock(arrFecha, blocks, blockMov, colSoporte, False)
+	colMovBenef = ChooseNearestInBlock(arrBenef, blocks, blockMov, colSoporte, False)
+
+	If colFixCuenta = 0 Or colMovCuenta = 0 Or colFixCuenta = colMovCuenta Then
+		colFixCuenta = MinLongInArray(arrCuenta)
+		colMovCuenta = MaxLongInArray(arrCuenta)
+	End If
+	If colFixFecha = 0 Or colMovFecha = 0 Or colFixFecha = colMovFecha Then
+		colFixFecha = MinLongInArray(arrFecha)
+		colMovFecha = MaxLongInArray(arrFecha)
+	End If
+	If colFixBenef = 0 Or colMovBenef = 0 Or colFixBenef = colMovBenef Then
+		colFixBenef = MinLongInArray(arrBenef)
+		colMovBenef = MaxLongInArray(arrBenef)
+	End If
+
+	colMoveStart = blocks(blockMov, 1)
+	colMoveEnd = blocks(blockMov, 2) 'luego se expande a maxColSel en el Sub principal
+
+
+	DetectHeadersAuto = True
+End Function
+
+'======================== DICCIONARIO key -> Collection(row1D) ============================
+
+Sub AddRowToListDict(ByRef dict As Object, ByVal key As String, ByVal row1D As Variant)
+	Dim coll As Collection
+	If Not dict.Exists(key) Then
+		Set coll = New Collection
+		dict.Add key, coll
+	Else
+		Set coll = dict(key)
+	End If
+	coll.Add row1D
+End Sub
+
+Function TotalRowsInDict(ByVal dict As Object) As Long
+	Dim k As Variant, coll As Collection, n As Long
+	For Each k In dict.Keys
+		Set coll = dict(k)
+		n = n + coll.Count
+	Next k
+	TotalRowsInDict = n
+End Function
+
+Function GetRowAs1D(ByVal arr2D As Variant, ByVal r As Long, ByVal nCols As Long) As Variant
+	Dim v() As Variant, c As Long
+	ReDim v(1 To nCols)
+	For c = 1 To nCols
+		v(c) = arr2D(r, c)
+	Next c
+	GetRowAs1D = v
+End Function
+
+'======================== CLAVES (fecha|valor|cuenta) ============================
+
+Sub ParseKeyParts(ByVal key As String, ByRef dSerial As Long, ByRef amt As Double, ByRef acc As String)
+	Dim parts() As String
+	parts = Split(key, "|")
+	dSerial = CLng(Val(parts(0)))
+	amt = CDbl(Val(Replace(parts(1), ",", ".")))
+	acc = CStr(parts(2))
+End Sub
+
+Function BuildKey3Strict(ByVal vFecha As Variant, ByVal vValor As Variant, ByVal vCuenta As Variant, _
+						 ByRef hasAnyInput As Boolean, _
+						 ByRef cntMissingAny As Long, ByRef cntDateParseFail As Long, ByRef cntAmtParseFail As Long) As String
+	Dim kFecha As String, kValor As String, kCuenta As String
+	Dim okF As Boolean, okV As Boolean, okC As Boolean
+	Dim missF As Boolean, missV As Boolean, missC As Boolean
+	Dim failF As Boolean, failV As Boolean
+
+	hasAnyInput = (Len(Trim$(CStr(vValor))) > 0)
+
+
+	kFecha = DateKeyStrict(vFecha, okF, missF, failF)
+	kValor = AmountKeyStrict(vValor, okV, missV, failV)
+	kCuenta = AccountKeyStrict(vCuenta, okC, missC)
+
+	If hasAnyInput Then
+		If missF Or missV Or missC Then cntMissingAny = cntMissingAny + 1
+		If failF Then cntDateParseFail = cntDateParseFail + 1
+		If failV Then cntAmtParseFail = cntAmtParseFail + 1
+	End If
+
+	If okF And okV And okC Then
+		BuildKey3Strict = kFecha & "|" & kValor & "|" & kCuenta
+	Else
+		BuildKey3Strict = ""
+	End If
+End Function
+
+Function DateKeyStrict(ByVal v As Variant, ByRef ok As Boolean, ByRef isMissing As Boolean, ByRef isParseFail As Boolean) As String
+	Dim serial As Long
+	ok = False: isMissing = False: isParseFail = False
+
+	If IsEmpty(v) Or Len(Trim$(CStr(v))) = 0 Or Trim$(CStr(v)) = "*" Then
+		isMissing = True
+		DateKeyStrict = ""
+		Exit Function
+	End If
+
+	If TryDateSerial(v, serial) Then
+		DateKeyStrict = CStr(serial)
+		ok = True
+	Else
+		isParseFail = True
+		DateKeyStrict = ""
+	End If
+End Function
+
+Function TryDateSerial(ByVal v As Variant, ByRef serialOut As Long) As Boolean
+	On Error GoTo Fail
+
+	If IsNumeric(v) Then
+		serialOut = CLng(Int(CDbl(v)))
+		If serialOut > 0 Then
+			TryDateSerial = True
+			Exit Function
+		End If
+	End If
+
+	Dim s As String
+	s = Trim$(CStr(v))
+	If s = "" Then GoTo Fail
+
+	Dim p As Long
+	p = InStr(1, s, "T")
+	If p > 0 Then s = Left$(s, p - 1)
+	p = InStr(1, s, " ")
+	If p > 0 Then s = Left$(s, p - 1)
+
+	s = Replace(s, ".", "/")
+	s = Replace(s, "-", "/")
+	s = Replace(s, "\", "/")
+
+	Dim parts() As String
+	parts = Split(s, "/")
+
+	If UBound(parts) = 2 Then
+		Dim a As Long, b As Long, c As Long
+		a = Val(parts(0)): b = Val(parts(1)): c = Val(parts(2))
+
+		Dim y As Long, m As Long, d As Long
+
+		If Len(parts(0)) = 4 Or a > 31 Then
+			y = a
+			If b > 12 And c <= 12 Then
+				d = b: m = c
+			Else
+				m = b: d = c
+			End If
+		Else
+			y = c
+			If y < 100 Then
+				If y < 30 Then y = 2000 + y Else y = 1900 + y
+			End If
+
+			If a > 12 And b <= 12 Then
+				d = a: m = b
+			ElseIf b > 12 And a <= 12 Then
+				d = b: m = a
+			Else
+				d = a: m = b
+			End If
+		End If
+
+		Dim dt As Date
+		dt = DateSerial(y, m, d)
+		serialOut = CLng(dt)
+		TryDateSerial = True
+		Exit Function
+	End If
+
+	If IsDate(v) Then
+		serialOut = CLng(DateValue(CDate(v)))
+		TryDateSerial = True
+		Exit Function
+	End If
+
+Fail:
+	TryDateSerial = False
+End Function
+
+Function AmountKeyStrict(ByVal v As Variant, ByRef ok As Boolean, ByRef isMissing As Boolean, ByRef isParseFail As Boolean) As String
+	Dim d As Double
+	ok = False: isMissing = False: isParseFail = False
+
+	If IsEmpty(v) Or Len(Trim$(CStr(v))) = 0 Or Trim$(CStr(v)) = "*" Then
+		isMissing = True
+		AmountKeyStrict = ""
+		Exit Function
+	End If
+
+	On Error GoTo TryParseText
+
+	If IsNumeric(v) Then
+		d = CDbl(v)
+		d = Application.WorksheetFunction.Round(d, 2)
+		AmountKeyStrict = Format$(d, "0.00")
+		ok = True
+		Exit Function
+	End If
+
+TryParseText:
+	On Error GoTo Fail
+	d = ParseDoubleFromText(CStr(v))
+	d = Application.WorksheetFunction.Round(d, 2)
+	AmountKeyStrict = Format$(d, "0.00")
+	ok = True
+	Exit Function
+
+Fail:
+	isParseFail = True
+	AmountKeyStrict = ""
+End Function
+
+Function AccountKeyStrict(ByVal v As Variant, ByRef ok As Boolean, ByRef isMissing As Boolean) As String
+	ok = False: isMissing = False
+
+	If IsEmpty(v) Or Len(Trim$(CStr(v))) = 0 Or Trim$(CStr(v)) = "*" Then
+		isMissing = True
+		AccountKeyStrict = ""
+		Exit Function
+	End If
+
+	If IsNumeric(v) Then
+		AccountKeyStrict = Format$(CDbl(v), "0")
+	Else
+		AccountKeyStrict = UCase$(Trim$(CStr(v)))
+	End If
+
+	ok = True
+End Function
+
+Function ParseDoubleFromText(ByVal s As String) As Double
+	Dim decSep As String, thouSep As String
+	decSep = Application.International(xlDecimalSeparator)
+	thouSep = Application.International(xlThousandsSeparator)
+
+	Dim t As String
+	t = Trim$(s)
+
+	'Detectar negativo por paréntesis o signo al final
+	Dim isNeg As Boolean
+	isNeg = False
+
+	If Len(t) >= 2 Then
+		If Left$(t, 1) = "(" And Right$(t, 1) = ")" Then
+			isNeg = True
+			t = Mid$(t, 2, Len(t) - 2)
+		End If
+	End If
+
+	If Len(t) >= 1 Then
+		If Right$(t, 1) = "-" Then
+			isNeg = True
+			t = Left$(t, Len(t) - 1)
+		End If
+	End If
+
+	'Limpiar símbolos comunes
+	t = Replace(t, "$", "")
+	t = Replace(t, " ", "")
+	t = Replace(t, ChrW(160), "")
+	t = Replace(t, "*", "")
+
+	If Len(t) = 0 Then ParseDoubleFromText = 0#: Exit Function
+
+	'Separadores
+	Dim pDot As Long, pCom As Long
+	pDot = InStrRev(t, ".")
+	pCom = InStrRev(t, ",")
+
+	If pDot > 0 And pCom > 0 Then
+		'El que esté más a la derecha se asume decimal
+		If pCom > pDot Then
+			t = Replace(t, ".", "")
+			t = Replace(t, ",", decSep)
+		Else
+			t = Replace(t, ",", "")
+			t = Replace(t, ".", decSep)
+		End If
+	Else
+		t = Replace(t, thouSep, "")
+		If decSep = "," Then
+			If InStr(1, t, ".") > 0 And InStr(1, t, ",") = 0 Then t = Replace(t, ".", ",")
+		Else
+			If InStr(1, t, ",") > 0 And InStr(1, t, ".") = 0 Then t = Replace(t, ",", ".")
+		End If
+	End If
+
+	Dim d As Double
+	d = CDbl(t)
+	If isNeg Then d = -Abs(d)
+
+	'Evitar -0
+	If Abs(d) < 0.0000001 Then d = 0#
+
+	ParseDoubleFromText = d
+End Function
+
+'======================== TOLERANCIA ============================
+
+Function GetUserTolerance(ByVal defaultTol As Double, Optional ByVal scopeName As String = "SUMA") As Double
+	Dim s As Variant
+	Dim d As Double
+
+	s = Application.InputBox( _
+		prompt:="Tolerancia para " & scopeName & " (valor absoluto en dinero)." & vbCrLf & _
+				"Ejemplos: 0,01  |  1  |  500" & vbCrLf & _
+				"Deja vacío o Cancelar para usar el valor por defecto (" & Format$(defaultTol, "0.00") & ").", _
+		Title:="Conciliación - Tolerancia " & scopeName, _
+		Default:=Format$(defaultTol, "0.00"), _
+		Type:=2)
+
+	If s = False Then
+		GetUserTolerance = defaultTol
+		Exit Function
+	End If
+
+	If Len(Trim$(CStr(s))) = 0 Then
+		GetUserTolerance = defaultTol
+		Exit Function
+	End If
+
+	On Error GoTo Fail
+	d = ParseDoubleFromText(CStr(s))
+	d = Abs(d)
+	GetUserTolerance = Application.WorksheetFunction.Round(d, 2)
+	Exit Function
+
+Fail:
+	GetUserTolerance = defaultTol
+	MsgBox "Tolerancia inválida. Se usará: " & Format$(defaultTol, "0.00"), vbExclamation
+End Function
+
+Function FindClosestUnusedIndexWithinTol(ByRef amts() As Double, ByRef used() As Boolean, _
+										ByVal target As Double, ByVal tol As Double) As Long
+	Dim i As Long, bestIdx As Long
+	Dim bestDiff As Double, diff As Double
+
+	bestIdx = 0
+	bestDiff = 1E+308
+
+	For i = 1 To UBound(amts)
+		If Not used(i) Then
+
+			'EXIGIR MISMO SIGNO (solo aplica a cruce por tolerancia)
+			' target > 0  => candidato debe ser > 0
+			' target < 0  => candidato debe ser < 0
+			' target = 0  => candidato debe ser = 0
+			If target > 0 Then
+				If amts(i) <= 0 Then GoTo NextI
+			ElseIf target < 0 Then
+				If amts(i) >= 0 Then GoTo NextI
+			Else
+				If amts(i) <> 0 Then GoTo NextI
+			End If
+
+			diff = Abs(amts(i) - target)
+			If diff <= tol Then
+				If diff < bestDiff Then
+					bestDiff = diff
+					bestIdx = i
+				End If
+			End If
+		End If
+NextI:
+	Next i
+
+	FindClosestUnusedIndexWithinTol = bestIdx
+End Function
+
+
+'======================== UTIL BLOQUES ============================
+
+Function RowHasAnyNonEmpty(ByVal arr2D As Variant, ByVal r As Long, ByVal nCols As Long) As Boolean
+	Dim c As Long, v As Variant
+	For c = 1 To nCols
+		v = arr2D(r, c)
+		If Len(Trim$(CStr(v))) > 0 Then
+			RowHasAnyNonEmpty = True
+			Exit Function
+		End If
+	Next c
+	RowHasAnyNonEmpty = False
+End Function
+
+'<<< AJUSTE: ahora permite ignorar 3 columnas relativas (timestamp, cuenta general, fecha general)
+Function RowHasAnyNonEmptyExcept(ByVal arr2D As Variant, ByVal r As Long, ByVal nCols As Long, _
+								Optional ByVal ignoreRel1 As Long = 0, Optional ByVal ignoreRel2 As Long = 0, Optional ByVal ignoreRel3 As Long = 0) As Boolean
+	Dim c As Long, v As Variant
+	For c = 1 To nCols
+		If c <> ignoreRel1 And c <> ignoreRel2 And c <> ignoreRel3 Then
+			v = arr2D(r, c)
+			If IsError(v) Then
+				RowHasAnyNonEmptyExcept = True
+				Exit Function
+			End If
+			If Len(Trim$(CStr(v))) > 0 Then
+				RowHasAnyNonEmptyExcept = True
+				Exit Function
+			End If
+		End If
+	Next c
+	RowHasAnyNonEmptyExcept = False
+End Function
+
+'======================== DERIVAR CLAVE ORDEN (preservados) ============================
+
+Sub DeriveSortKeyFromSides( _
+	ByVal vFixFecha As Variant, ByVal vFixValor As Variant, ByVal vFixCuenta As Variant, _
+	ByVal vMovFecha As Variant, ByVal vMovValor As Variant, ByVal vMovCuenta As Variant, _
+	ByRef dSerial As Long, ByRef acc As String, ByRef amt As Double)
+
+	Dim okAcc As Boolean, missAcc As Boolean
+	Dim hasFixAmt As Boolean, hasMovAmt As Boolean
+	Dim fixAmt As Double, movAmt As Double
+
+	dSerial = 0: acc = "": amt = 0#
+
+	If Not TryDateSerial(vFixFecha, dSerial) Then
+		Call TryDateSerial(vMovFecha, dSerial)
+	End If
+
+	acc = AccountKeyStrict(vFixCuenta, okAcc, missAcc)
+	If Not okAcc Then acc = AccountKeyStrict(vMovCuenta, okAcc, missAcc)
+	If Not okAcc Then acc = ""
+
+	hasFixAmt = (Len(Trim$(CStr(vFixValor))) > 0)
+	hasMovAmt = (Len(Trim$(CStr(vMovValor))) > 0)
+
+	If hasFixAmt Then fixAmt = ToDoubleOrZero(vFixValor)
+	If hasMovAmt Then movAmt = ToDoubleOrZero(vMovValor)
+
+	If hasFixAmt And hasMovAmt Then
+		If Abs(movAmt) >= Abs(fixAmt) Then amt = movAmt Else amt = fixAmt
+	ElseIf hasFixAmt Then
+		amt = fixAmt
+	Else
+		amt = movAmt
+	End If
+End Sub
+
+'======================== NUEVO HELPER: columnas de la selección (incluye ocultas) =========================
+
+Function GetColumnsInRange_All(ByVal rng As Range) As Variant
+	Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
+	dict.CompareMode = 1
+
+	Dim a As Range
+	Dim c As Long
+
+	For Each a In rng.Areas
+		For c = a.Column To a.Column + a.Columns.Count - 1
+			If Not dict.Exists(CStr(c)) Then dict.Add CStr(c), c
+		Next c
+	Next a
+
+	If dict.Count = 0 Then Exit Function
+
+	Dim arr As Variant
+	arr = dict.Items
+	SortVariantNumeric arr
+	GetColumnsInRange_All = arr
+End Function
+
+'======================== SUMA + BLOQUES ============================
+
+Sub BuildBlocks_ExactAndSum( _
+	ByVal dictFix As Object, ByVal dictMov As Object, _
+	ByVal sumEnabled As Boolean, ByVal sumMaxItems As Long, ByVal sumTol As Double, ByVal exactTol As Double, _
+	ByRef nBlocks As Long, ByRef blockKeys() As String, ByRef blockD() As Long, ByRef blockAcc() As String, ByRef blockAmt() As Double, _
+	ByRef blockLines() As Collection, ByRef blockType() As Integer, ByRef blockLabel() As Variant, _
+	ByRef cntCrucesExact As Long, ByRef cntCrucesExactTol As Long, ByRef cntCrucesSumGrupos As Long, _
+	ByRef cntSumFixUsed As Long, ByRef cntSumMovUsed As Long)
+
+	Dim dictKeys As Object: Set dictKeys = CreateObject("Scripting.Dictionary")
+	dictKeys.CompareMode = 1
+
+	Dim vKey As Variant
+	For Each vKey In dictFix.Keys
+		If Not dictKeys.Exists(CStr(vKey)) Then dictKeys.Add CStr(vKey), True
+	Next vKey
+	For Each vKey In dictMov.Keys
+		If Not dictKeys.Exists(CStr(vKey)) Then dictKeys.Add CStr(vKey), True
+	Next vKey
+
+	Dim nKeys As Long: nKeys = dictKeys.Count
+	Dim keys() As String, keyDate() As Long, keyAcc() As String, keyAmt() As Double
+
+	If nKeys > 0 Then
+		ReDim keys(1 To nKeys)
+		ReDim keyDate(1 To nKeys)
+		ReDim keyAcc(1 To nKeys)
+		ReDim keyAmt(1 To nKeys)
+
+		Dim tmpKeys As Variant: tmpKeys = dictKeys.Keys
+		Dim i As Long
+		For i = 1 To nKeys
+			keys(i) = CStr(tmpKeys(i - 1))
+			ParseKeyParts keys(i), keyDate(i), keyAmt(i), keyAcc(i)
+		Next i
+	End If
+
+	'Leftovers por fecha|cuenta
+	Dim leftFix As Object, leftMov As Object
+	Set leftFix = CreateObject("Scripting.Dictionary"): leftFix.CompareMode = 1
+	Set leftMov = CreateObject("Scripting.Dictionary"): leftMov.CompareMode = 1
+
+	cntCrucesExact = 0
+	cntCrucesExactTol = 0
+	cntCrucesSumGrupos = 0
+	cntSumFixUsed = 0
+	cntSumMovUsed = 0
+	nBlocks = 0
+
+	Dim collF As Collection, collM As Collection
+	Dim cF As Long, cM As Long, t As Long, mN As Long
+	Dim lines As Collection
+
+	'1) Exacto por key3
+	If nKeys > 0 Then
+		For i = 1 To nKeys
+			If dictFix.Exists(keys(i)) Then Set collF = dictFix(keys(i)) Else Set collF = Nothing
+			If dictMov.Exists(keys(i)) Then Set collM = dictMov(keys(i)) Else Set collM = Nothing
+
+			cF = SafeCollCount(collF)
+			cM = SafeCollCount(collM)
+			mN = Application.Min(cF, cM)
+
+			If mN > 0 Then
+				Set lines = New Collection
+				For t = 1 To mN
+					lines.Add Array(collF.Item(t), collM.Item(t), True, True)
+				Next t
+
+				AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+						 keys(i), keyDate(i), keyAcc(i), keyAmt(i), lines, 1, "exacto"
+
+				cntCrucesExact = cntCrucesExact + mN
+			End If
+
+			Dim key2 As String
+			key2 = CStr(keyDate(i)) & "|" & CStr(keyAcc(i))
+
+			If cF > mN Then
+				For t = mN + 1 To cF
+					AddLeftItem leftFix, key2, collF.Item(t), keyAmt(i)
+				Next t
+			End If
+
+			If cM > mN Then
+				For t = mN + 1 To cM
+					AddLeftItem leftMov, key2, collM.Item(t), keyAmt(i)
+				Next t
+			End If
+		Next i
+	End If
+
+	If Not sumEnabled Then
+		DumpLeftAsUnmatched leftFix, True, nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel
+		DumpLeftAsUnmatched leftMov, False, nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel
+		Exit Sub
+	End If
+
+	'2) Tolerancia + SUMA por key2
+	Dim dictK2 As Object: Set dictK2 = CreateObject("Scripting.Dictionary")
+	dictK2.CompareMode = 1
+
+	For Each vKey In leftFix.Keys
+		If Not dictK2.Exists(CStr(vKey)) Then dictK2.Add CStr(vKey), True
+	Next vKey
+	For Each vKey In leftMov.Keys
+		If Not dictK2.Exists(CStr(vKey)) Then dictK2.Add CStr(vKey), True
+	Next vKey
+
+	Dim k2 As Variant
+	For Each k2 In dictK2.Keys
+
+		Dim fxColl As Collection, mvColl As Collection
+		Set fxColl = Nothing: Set mvColl = Nothing
+		If leftFix.Exists(CStr(k2)) Then Set fxColl = leftFix(CStr(k2))
+		If leftMov.Exists(CStr(k2)) Then Set mvColl = leftMov(CStr(k2))
+
+		Dim fxN As Long, mvN As Long
+		fxN = SafeCollCount(fxColl)
+		mvN = SafeCollCount(mvColl)
+
+		If fxN = 0 And mvN = 0 Then GoTo NextK2
+
+		Dim fxRow() As Variant, fxAmtArr() As Double, fxUsed() As Boolean
+		Dim mvRow() As Variant, mvAmtArr() As Double, mvUsed() As Boolean
+
+		If fxN > 0 Then CollToArrays fxColl, fxRow, fxAmtArr, fxUsed
+		If mvN > 0 Then CollToArrays mvColl, mvRow, mvAmtArr, mvUsed
+
+		Dim parts() As String
+		parts = Split(CStr(k2), "|")
+		Dim dSerial As Long: dSerial = CLng(Val(parts(0)))
+		Dim acc As String: acc = CStr(parts(1))
+
+		Dim combo As Collection, idx As Long, j As Long
+
+		'2A) Tolerancia 1 a 1
+		If exactTol > 0 And fxN > 0 And mvN > 0 Then
+			Dim bestMv As Long
+			For idx = 1 To fxN
+				If Not fxUsed(idx) Then
+					bestMv = FindClosestUnusedIndexWithinTol(mvAmtArr, mvUsed, fxAmtArr(idx), exactTol)
+					If bestMv > 0 Then
+						Set lines = New Collection
+						lines.Add Array(fxRow(idx), mvRow(bestMv), True, True)
+
+						fxUsed(idx) = True
+						mvUsed(bestMv) = True
+
+						cntCrucesExactTol = cntCrucesExactTol + 1
+
+						AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+							CStr(dSerial) & "|" & Format$(fxAmtArr(idx), "0.00") & "|" & acc, dSerial, acc, fxAmtArr(idx), lines, 4, _
+							"tolerancia : " & IIf(exactTol = Int(exactTol), Format$(exactTol, "0"), Format$(exactTol, "0.00"))
+					End If
+				End If
+			Next idx
+		End If
+
+		'2B) SUMA fijo -> combinación móvil (líneas separadas)
+		If fxN > 0 And mvN > 0 Then
+			For idx = 1 To fxN
+				If Not fxUsed(idx) Then
+					Set combo = FindSumComboIndices(mvAmtArr, mvUsed, fxAmtArr(idx), sumMaxItems, sumTol, 2)
+					If Not combo Is Nothing Then
+						Set lines = New Collection
+
+						For j = 1 To combo.Count
+							lines.Add Array(Empty, mvRow(combo(j)), True, True)
+							mvUsed(combo(j)) = True
+						Next j
+
+						lines.Add Array(fxRow(idx), Empty, True, True)
+						fxUsed(idx) = True
+
+						cntCrucesSumGrupos = cntCrucesSumGrupos + 1
+						cntSumFixUsed = cntSumFixUsed + 1
+						cntSumMovUsed = cntSumMovUsed + combo.Count
+
+						AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+								 CStr(dSerial) & "|" & Format$(fxAmtArr(idx), "0.00") & "|" & acc, dSerial, acc, fxAmtArr(idx), lines, 2, Empty
+					End If
+				End If
+			Next idx
+		End If
+
+		'2C) SUMA móvil -> combinación fijo (líneas separadas)
+		If fxN > 0 And mvN > 0 Then
+			For idx = 1 To mvN
+				If Not mvUsed(idx) Then
+					Set combo = FindSumComboIndices(fxAmtArr, fxUsed, mvAmtArr(idx), sumMaxItems, sumTol, 2)
+					If Not combo Is Nothing Then
+						Set lines = New Collection
+
+						For j = 1 To combo.Count
+							lines.Add Array(fxRow(combo(j)), Empty, True, True)
+							fxUsed(combo(j)) = True
+						Next j
+
+						lines.Add Array(Empty, mvRow(idx), True, True)
+						mvUsed(idx) = True
+
+						cntCrucesSumGrupos = cntCrucesSumGrupos + 1
+						cntSumFixUsed = cntSumFixUsed + combo.Count
+						cntSumMovUsed = cntSumMovUsed + 1
+
+						AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+								 CStr(dSerial) & "|" & Format$(mvAmtArr(idx), "0.00") & "|" & acc, dSerial, acc, mvAmtArr(idx), lines, 2, Empty
+					End If
+				End If
+			Next idx
+		End If
+
+		'2D) Restantes no cruzados
+		If fxN > 0 Then
+			For idx = 1 To fxN
+				If Not fxUsed(idx) Then
+					Set lines = New Collection
+					lines.Add Array(fxRow(idx), Empty, False, False)
+					AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+							 CStr(dSerial) & "|" & Format$(fxAmtArr(idx), "0.00") & "|" & acc, dSerial, acc, fxAmtArr(idx), lines, 3, Empty
+				End If
+			Next idx
+		End If
+
+		If mvN > 0 Then
+			For idx = 1 To mvN
+				If Not mvUsed(idx) Then
+					Set lines = New Collection
+					lines.Add Array(Empty, mvRow(idx), False, False)
+					AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+							 CStr(dSerial) & "|" & Format$(mvAmtArr(idx), "0.00") & "|" & acc, dSerial, acc, mvAmtArr(idx), lines, 3, Empty
+				End If
+			Next idx
+		End If
+
+NextK2:
+	Next k2
+End Sub
+
+Sub AddBlock( _
+	ByRef nBlocks As Long, _
+	ByRef blockKeys() As String, ByRef blockD() As Long, ByRef blockAcc() As String, ByRef blockAmt() As Double, _
+	ByRef blockLines() As Collection, ByRef blockType() As Integer, ByRef blockLabel() As Variant, _
+	ByVal k As String, ByVal d As Long, ByVal acc As String, ByVal amt As Double, _
+	ByVal lines As Collection, ByVal typ As Integer, ByVal label As Variant)
+
+	nBlocks = nBlocks + 1
+
+	If nBlocks = 1 Then
+		ReDim blockKeys(1 To 1)
+		ReDim blockD(1 To 1)
+		ReDim blockAcc(1 To 1)
+		ReDim blockAmt(1 To 1)
+		ReDim blockLines(1 To 1)
+		ReDim blockType(1 To 1)
+		ReDim blockLabel(1 To 1)
+	Else
+		ReDim Preserve blockKeys(1 To nBlocks)
+		ReDim Preserve blockD(1 To nBlocks)
+		ReDim Preserve blockAcc(1 To nBlocks)
+		ReDim Preserve blockAmt(1 To nBlocks)
+		ReDim Preserve blockLines(1 To nBlocks)
+		ReDim Preserve blockType(1 To nBlocks)
+		ReDim Preserve blockLabel(1 To nBlocks)
+	End If
+
+	blockKeys(nBlocks) = k
+	blockD(nBlocks) = d
+	blockAcc(nBlocks) = acc
+	blockAmt(nBlocks) = amt
+	Set blockLines(nBlocks) = lines
+	blockType(nBlocks) = typ
+	blockLabel(nBlocks) = label
+End Sub
+
+Sub AddLeftItem(ByVal dict As Object, ByVal key2 As String, ByVal row1D As Variant, ByVal amt As Double)
+	Dim coll As Collection
+	If Not dict.Exists(key2) Then
+		Set coll = New Collection
+		dict.Add key2, coll
+	Else
+		Set coll = dict(key2)
+	End If
+	coll.Add Array(row1D, amt)
+End Sub
+
+Sub DumpLeftAsUnmatched(ByVal leftDict As Object, ByVal isFix As Boolean, _
+	ByRef nBlocks As Long, ByRef blockKeys() As String, ByRef blockD() As Long, ByRef blockAcc() As String, ByRef blockAmt() As Double, _
+	ByRef blockLines() As Collection, ByRef blockType() As Integer, ByRef blockLabel() As Variant)
+
+	Dim k2 As Variant, coll As Collection, it As Variant
+	Dim parts() As String, dSerial As Long, acc As String
+	Dim lines As Collection
+
+	For Each k2 In leftDict.Keys
+		Set coll = leftDict(CStr(k2))
+		parts = Split(CStr(k2), "|")
+		dSerial = CLng(Val(parts(0)))
+		acc = CStr(parts(1))
+
+		For Each it In coll
+			Set lines = New Collection
+			If isFix Then
+				lines.Add Array(it(0), Empty, False, False)
+				AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+						 CStr(dSerial) & "|" & Format$(CDbl(it(1)), "0.00") & "|" & acc, dSerial, acc, CDbl(it(1)), lines, 3, Empty
+			Else
+				lines.Add Array(Empty, it(0), False, False)
+				AddBlock nBlocks, blockKeys, blockD, blockAcc, blockAmt, blockLines, blockType, blockLabel, _
+						 CStr(dSerial) & "|" & Format$(CDbl(it(1)), "0.00") & "|" & acc, dSerial, acc, CDbl(it(1)), lines, 3, Empty
+			End If
+		Next it
+	Next k2
+End Sub
+
+Sub CollToArrays(ByVal coll As Collection, ByRef rows() As Variant, ByRef amts() As Double, ByRef used() As Boolean)
+	Dim n As Long: n = coll.Count
+	ReDim rows(1 To n)
+	ReDim amts(1 To n)
+	ReDim used(1 To n)
+
+	Dim i As Long, it As Variant
+	For i = 1 To n
+		it = coll.Item(i)
+		rows(i) = it(0)
+		amts(i) = CDbl(it(1))
+		used(i) = False
+	Next i
+End Sub
+
+Function FindSumComboIndices(ByRef amts() As Double, ByRef used() As Boolean, ByVal target As Double, _
+							ByVal maxPick As Long, ByVal tol As Double, ByVal minPick As Long) As Collection
+	Dim n As Long: n = UBound(amts)
+
+	Dim cand() As Long, cN As Long, i As Long
+	For i = 1 To n
+		If Not used(i) Then
+			If target >= 0 Then
+				If amts(i) >= 0 Then
+					cN = cN + 1
+					ReDim Preserve cand(1 To cN)
+					cand(cN) = i
+				End If
+			Else
+				If amts(i) <= 0 Then
+					cN = cN + 1
+					ReDim Preserve cand(1 To cN)
+					cand(cN) = i
+				End If
+			End If
+		End If
+	Next i
+
+	If cN < minPick Then Exit Function
+
+	Dim tmpUsed() As Boolean
+	ReDim tmpUsed(1 To n)
+	For i = 1 To n
+		tmpUsed(i) = used(i)
+	Next i
+
+	Dim res As New Collection
+	If RecSumCombo(1, 0, 0#, cand, amts, tmpUsed, target, maxPick, tol, minPick, res) Then
+		Set FindSumComboIndices = res
+	Else
+		Set FindSumComboIndices = Nothing
+	End If
+End Function
+
+Function RecSumCombo(ByVal startPos As Long, ByVal pickCount As Long, ByVal sumSoFar As Double, _
+					 ByRef cand() As Long, ByRef amts() As Double, ByRef used() As Boolean, _
+					 ByVal target As Double, ByVal maxPick As Long, ByVal tol As Double, ByVal minPick As Long, _
+					 ByRef res As Collection) As Boolean
+	If pickCount >= minPick Then
+		If Abs(sumSoFar - target) <= tol Then
+			RecSumCombo = True
+			Exit Function
+		End If
+	End If
+
+	If pickCount = maxPick Then Exit Function
+
+	If target >= 0 Then
+		If sumSoFar > target + tol Then Exit Function
+	Else
+		If sumSoFar < target - tol Then Exit Function
+	End If
+
+	Dim p As Long, idx As Long
+	For p = startPos To UBound(cand)
+		idx = cand(p)
+		If Not used(idx) Then
+			used(idx) = True
+			res.Add idx
+
+			If RecSumCombo(p + 1, pickCount + 1, sumSoFar + amts(idx), cand, amts, used, target, maxPick, tol, minPick, res) Then
+				RecSumCombo = True
+				Exit Function
+			End If
+
+			res.Remove res.Count
+			used(idx) = False
+		End If
+	Next p
+End Function
+
+'======================== RESUMEN (REEMPLAZAR COMPLETO) =========================
+
+Sub BuildResumenSheet(ByVal wb As Workbook, ByVal wsData As Worksheet, _
+					  ByVal firstRow As Long, ByVal lastRow As Long, _
+					  ByVal colFixCuenta As Long, ByVal colFixFecha As Long, ByVal colFixValor As Long, _
+					  ByVal colMovCuenta As Long, ByVal colMovFecha As Long, ByVal colMovValor As Long)
+
+	Dim wsR As Worksheet
+	Set wsR = GetSheetByNameCI(wb, "resumen")
+
+	If Not wsR Is Nothing Then
+		Application.DisplayAlerts = False
+		wsR.Delete
+		Application.DisplayAlerts = True
+	End If
+
+	Set wsR = wb.Worksheets.Add(After:=wsData)
+	wsR.Name = "resumen"
+
+	'========================
+	' TABLA 1: resumen general (por cuenta + fecha)
+	'========================
+	Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
+	dict.CompareMode = 1
+
+	Dim r As Long
+	Dim vAcc As Variant, vDate As Variant
+	Dim accKey As String, key As String
+	Dim okAcc As Boolean, missAcc As Boolean
+	Dim dSerial As Long
+	Dim inf As Double, sop As Double
+	Dim hasInf As Boolean, hasSop As Boolean
+	Dim arr As Variant
+
+	For r = firstRow To lastRow
+		vAcc = wsData.Cells(r, colFixCuenta).Value2
+		If Len(Trim$(CStr(vAcc))) = 0 Then vAcc = wsData.Cells(r, colMovCuenta).Value2
+
+		vDate = wsData.Cells(r, colFixFecha).Value2
+		If Len(Trim$(CStr(vDate))) = 0 Then vDate = wsData.Cells(r, colMovFecha).Value2
+
+		accKey = AccountKeyStrict(vAcc, okAcc, missAcc)
+		If Not okAcc Then GoTo NextR1
+
+		dSerial = 0
+		Call TryDateSerial(vDate, dSerial)
+		If dSerial = 0 Then GoTo NextR1
+
+		hasInf = (Len(Trim$(CStr(wsData.Cells(r, colFixValor).Value2))) > 0)
+		hasSop = (Len(Trim$(CStr(wsData.Cells(r, colMovValor).Value2))) > 0)
+		If Not (hasInf Or hasSop) Then GoTo NextR1
+
+		inf = ToDoubleOrZero(wsData.Cells(r, colFixValor).Value2)
+		sop = ToDoubleOrZero(wsData.Cells(r, colMovValor).Value2)
+
+		key = accKey & "|" & CStr(dSerial)
+
+		If Not dict.Exists(key) Then
+			dict.Add key, Array(inf, sop, accKey, CLng(dSerial))
+		Else
+			arr = dict(key)
+			arr(0) = CDbl(arr(0)) + inf
+			arr(1) = CDbl(arr(1)) + sop
+			dict(key) = arr
+		End If
+NextR1:
+	Next r
+
+	With wsR.Range("A1:F1")
+		.Merge
+		.Value2 = "resumen por cuenta y fecha"
+		.Font.Bold = True
+	End With
+
+	With wsR.Range("A2:F2")
+		.Value2 = Array("cuenta", "fecha", "informe", "soporte", "tipocruce", "diferencia")
+		.Font.Bold = True
+	End With
+
+	If dict.Count = 0 Then
+		wsR.Range("A3").Value2 = "Sin datos para resumir."
+		wsR.Columns("B:F").AutoFit
+		Exit Sub
+	End If
+
+	Dim n As Long: n = dict.Count
+	Dim keys() As String, accTxt() As String, accIsNum() As Boolean, accNum() As Double, dArr() As Long
+	ReDim keys(1 To n)
+	ReDim accTxt(1 To n)
+	ReDim accIsNum(1 To n)
+	ReDim accNum(1 To n)
+	ReDim dArr(1 To n)
+
+	Dim i As Long: i = 0
+	Dim kk As Variant
+	For Each kk In dict.Keys
+		i = i + 1
+		keys(i) = CStr(kk)
+		arr = dict(kk)
+		accTxt(i) = CStr(arr(2))
+		accIsNum(i) = IsNumeric(accTxt(i))
+		If accIsNum(i) Then accNum(i) = CDbl(accTxt(i)) Else accNum(i) = 0#
+		dArr(i) = CLng(arr(3))
+	Next kk
+
+	If n > 1 Then QuickSortResumen keys, accTxt, accIsNum, accNum, dArr, 1, n
+
+	Dim outRow As Long: outRow = 3
+	Dim totInf As Double, totSop As Double
+
+	For i = 1 To n
+		arr = dict(keys(i))
+
+		If IsNumeric(CStr(arr(2))) Then
+			wsR.Cells(outRow, 1).Value2 = CLng(arr(2))
+		Else
+			wsR.Cells(outRow, 1).Value2 = CStr(arr(2))
+		End If
+
+		wsR.Cells(outRow, 2).Value2 = CDbl(arr(3))
+		wsR.Cells(outRow, 3).Value2 = CDbl(arr(0))
+		wsR.Cells(outRow, 4).Value2 = CDbl(arr(1))
+		wsR.Cells(outRow, 5).ClearContents
+		wsR.Cells(outRow, 6).Value2 = CDbl(arr(0)) - CDbl(arr(1))
+
+		totInf = totInf + CDbl(arr(0))
+		totSop = totSop + CDbl(arr(1))
+		outRow = outRow + 1
+	Next i
+
+	wsR.Cells(outRow, 1).Value2 = "Totales"
+	wsR.Cells(outRow, 1).Font.Bold = True
+	wsR.Cells(outRow, 3).Value2 = totInf
+	wsR.Cells(outRow, 4).Value2 = totSop
+	wsR.Cells(outRow, 6).Value2 = totInf - totSop
+	wsR.Range(wsR.Cells(outRow, 1), wsR.Cells(outRow, 6)).Font.Bold = True
+
+	Dim rr As Long, prevAccKey As String, curAccKey As String
+	prevAccKey = ""
+
+	With wsR.Range(wsR.Cells(3, 1), wsR.Cells(outRow - 1, 6)).Font
+		.Bold = False
+		.ColorIndex = xlAutomatic
+	End With
+
+	For rr = 3 To outRow - 1
+		curAccKey = UCase$(Trim$(CStr(wsR.Cells(rr, 1).Value2)))
+		If Len(curAccKey) > 0 Then
+			If curAccKey <> prevAccKey Then
+				With wsR.Range(wsR.Cells(rr, 1), wsR.Cells(rr, 6)).Font
+					.Bold = True
+					.Color = RGB(255, 0, 0)
+				End With
+				prevAccKey = curAccKey
+			End If
+		End If
+	Next rr
+
+	wsR.Columns("B:F").EntireColumn.AutoFit
+	wsR.Columns(2).NumberFormat = "yyyy-mm-dd"
+	wsR.Columns(3).NumberFormatLocal = "#.##0,00"
+	wsR.Columns(4).NumberFormatLocal = "#.##0,00"
+	wsR.Columns(6).NumberFormatLocal = "#.##0,00"
+
+	With wsR.Range("A2:F" & outRow).Borders
+		.LineStyle = xlContinuous
+		.Weight = xlThin
+		.Color = RGB(0, 0, 0)
+	End With
+
+	'========================
+	' TABLA 2: resumen de match por suma y por tolerancia
+	'========================
+	Dim headerRow As Long: headerRow = firstRow - 1
+	If headerRow < 1 Then headerRow = 1
+
+	Dim coltipocruce As Long
+	coltipocruce = FindHeaderColumnInRowCI(wsData, headerRow, Array("tipocruce", "tipo de cruce", "tipo cruce"))
+
+	Dim titleRow2 As Long, hdrRow2 As Long, firstData2 As Long
+	titleRow2 = outRow + 2
+	hdrRow2 = titleRow2 + 1
+	firstData2 = hdrRow2 + 1
+
+	With wsR.Range(wsR.Cells(titleRow2, 1), wsR.Cells(titleRow2, 6))
+		.UnMerge
+		.Borders.LineStyle = xlNone
+		.HorizontalAlignment = xlLeft
+		.Font.Bold = True
+	End With
+	wsR.Cells(titleRow2, 1).Value2 = "resumen de match por suma y por tolerancia"
+
+	wsR.Range(wsR.Cells(hdrRow2, 1), wsR.Cells(hdrRow2, 6)).Value2 = _
+		Array("cuenta", "fecha", "informe", "soporte", "tipocruce", "diferencia")
+	wsR.Range(wsR.Cells(hdrRow2, 1), wsR.Cells(hdrRow2, 6)).Font.Bold = True
+
+	If coltipocruce = 0 Then
+		wsR.Cells(firstData2, 1).Value2 = "No se encontró la columna tipocruce en la hoja de cruces."
+		wsR.Columns("B:F").AutoFit
+		GoTo FinResumen
+	End If
+
+	Dim dictSum As Object: Set dictSum = CreateObject("Scripting.Dictionary")
+	dictSum.CompareMode = 1
+	Dim tolRecs As Collection: Set tolRecs = New Collection
+
+	Dim tipoStr As String, tipoNorm As String
+	Dim sumId As Long, kSum As String
+	Dim accOut As String
+	Dim vT As Variant
+	Dim inf2 As Double, sop2 As Double
+	Dim d2 As Long
+
+	For r = firstRow To lastRow
+
+		vT = wsData.Cells(r, coltipocruce).Value2
+		tipoStr = Trim$(CStr(vT))
+		If Len(tipoStr) = 0 Then GoTo NextR2
+
+		tipoNorm = NormHeader(tipoStr)
+
+		Dim isSum As Boolean, isTol As Boolean
+		isSum = IsNumeric(tipoStr)
+		isTol = (Left$(tipoNorm, Len("tolerancia")) = "tolerancia")
+
+		If Not (isSum Or isTol) Then GoTo NextR2
+
+		vAcc = wsData.Cells(r, colFixCuenta).Value2
+		If Len(Trim$(CStr(vAcc))) = 0 Then vAcc = wsData.Cells(r, colMovCuenta).Value2
+
+		accOut = AccountKeyStrict(vAcc, okAcc, missAcc)
+		If Not okAcc Then accOut = UCase$(Trim$(CStr(vAcc)))
+
+		vDate = wsData.Cells(r, colFixFecha).Value2
+		If Len(Trim$(CStr(vDate))) = 0 Then vDate = wsData.Cells(r, colMovFecha).Value2
+		d2 = 0
+		Call TryDateSerial(vDate, d2)
+
+		inf2 = ToDoubleOrZero(wsData.Cells(r, colFixValor).Value2)
+		sop2 = ToDoubleOrZero(wsData.Cells(r, colMovValor).Value2)
+
+		If isSum Then
+			sumId = CLng(Val(tipoStr))
+			kSum = CStr(sumId)
+
+			If Not dictSum.Exists(kSum) Then
+				dictSum.Add kSum, Array(accOut, CLng(d2), CDbl(inf2), CDbl(sop2), tipoStr, CDbl(sumId))
+			Else
+				arr = dictSum(kSum)
+				arr(2) = CDbl(arr(2)) + CDbl(inf2)
+				arr(3) = CDbl(arr(3)) + CDbl(sop2)
+
+				If Len(Trim$(CStr(arr(0)))) = 0 And Len(Trim$(accOut)) > 0 Then arr(0) = accOut
+				If CLng(arr(1)) = 0 And d2 > 0 Then arr(1) = CLng(d2)
+
+				dictSum(kSum) = arr
+			End If
+
+		ElseIf isTol Then
+			tolRecs.Add Array(accOut, CLng(d2), CDbl(inf2), CDbl(sop2), tipoStr)
+		End If
+
+NextR2:
+	Next r
+
+	Dim nSum As Long, nTol As Long, nAll As Long
+	nSum = dictSum.Count
+	nTol = tolRecs.Count
+	nAll = nSum + nTol
+
+	If nAll = 0 Then
+		wsR.Cells(firstData2, 1).Value2 = "Sin cruces por suma o tolerancia."
+		wsR.Columns("B:F").AutoFit
+		GoTo FinResumen
+	End If
+
+	Dim recAccTxt() As String, recAccIsNum() As Boolean, recAccNum() As Double
+	Dim recDSer() As Long
+	Dim recTipoTxt() As String, recTipoIsNum() As Boolean, recTipoNum() As Double
+	Dim recInf() As Double, recSop() As Double
+	Dim recSeq() As Long, recIdx() As Long
+
+	ReDim recAccTxt(1 To nAll)
+	ReDim recAccIsNum(1 To nAll)
+	ReDim recAccNum(1 To nAll)
+	ReDim recDSer(1 To nAll)
+	ReDim recTipoTxt(1 To nAll)
+	ReDim recTipoIsNum(1 To nAll)
+	ReDim recTipoNum(1 To nAll)
+	ReDim recInf(1 To nAll)
+	ReDim recSop(1 To nAll)
+	ReDim recSeq(1 To nAll)
+	ReDim recIdx(1 To nAll)
+
+	Dim pos As Long: pos = 0
+
+	For Each kk In dictSum.Keys
+		pos = pos + 1
+		arr = dictSum(kk)
+
+		recAccTxt(pos) = CStr(arr(0))
+		recAccIsNum(pos) = IsNumeric(recAccTxt(pos))
+		If recAccIsNum(pos) Then recAccNum(pos) = CDbl(recAccTxt(pos)) Else recAccNum(pos) = 0#
+
+		recDSer(pos) = CLng(arr(1))
+
+		recTipoTxt(pos) = CStr(arr(4))
+		recTipoIsNum(pos) = True
+		recTipoNum(pos) = CDbl(arr(5))
+
+		recInf(pos) = CDbl(arr(2))
+		recSop(pos) = CDbl(arr(3))
+
+		recSeq(pos) = pos
+		recIdx(pos) = pos
+	Next kk
+
+	Dim tRec As Variant
+	Dim i2 As Long
+	For i2 = 1 To tolRecs.Count
+		pos = pos + 1
+		tRec = tolRecs.Item(i2)
+
+		recAccTxt(pos) = CStr(tRec(0))
+		recAccIsNum(pos) = IsNumeric(recAccTxt(pos))
+		If recAccIsNum(pos) Then recAccNum(pos) = CDbl(recAccTxt(pos)) Else recAccNum(pos) = 0#
+
+		recDSer(pos) = CLng(tRec(1))
+
+		recTipoTxt(pos) = CStr(tRec(4))
+		recTipoIsNum(pos) = False
+		recTipoNum(pos) = 0#
+
+		recInf(pos) = CDbl(tRec(2))
+		recSop(pos) = CDbl(tRec(3))
+
+		recSeq(pos) = pos
+		recIdx(pos) = pos
+	Next i2
+
+	If nAll > 1 Then
+		QuickSortMatchIdx recIdx, recAccTxt, recAccIsNum, recAccNum, recDSer, recTipoTxt, recTipoIsNum, recTipoNum, recSeq, 1, nAll
+	End If
+
+	Dim row2 As Long, src As Long
+	Dim totInf2 As Double, totSop2 As Double
+	row2 = firstData2
+
+	For i2 = 1 To nAll
+		src = recIdx(i2)
+
+		If recAccIsNum(src) Then
+			wsR.Cells(row2, 1).Value2 = CLng(Val(recAccTxt(src)))
+		Else
+			wsR.Cells(row2, 1).Value2 = recAccTxt(src)
+		End If
+
+		If recDSer(src) > 0 Then
+			wsR.Cells(row2, 2).Value2 = CDbl(recDSer(src))
+		Else
+			wsR.Cells(row2, 2).ClearContents
+		End If
+
+		wsR.Cells(row2, 3).Value2 = recInf(src)
+		wsR.Cells(row2, 4).Value2 = recSop(src)
+
+		If recTipoIsNum(src) Then
+			wsR.Cells(row2, 5).Value2 = CLng(Val(recTipoTxt(src)))
+		Else
+			wsR.Cells(row2, 5).Value2 = recTipoTxt(src)
+		End If
+
+		wsR.Cells(row2, 6).Value2 = recInf(src) - recSop(src)
+
+		totInf2 = totInf2 + recInf(src)
+		totSop2 = totSop2 + recSop(src)
+
+		row2 = row2 + 1
+	Next i2
+
+	wsR.Cells(row2, 1).Value2 = "Totales"
+	wsR.Cells(row2, 1).Font.Bold = True
+	wsR.Cells(row2, 3).Value2 = totInf2
+	wsR.Cells(row2, 4).Value2 = totSop2
+	wsR.Cells(row2, 6).Value2 = totInf2 - totSop2
+	wsR.Range(wsR.Cells(row2, 1), wsR.Cells(row2, 6)).Font.Bold = True
+
+	prevAccKey = ""
+
+	With wsR.Range(wsR.Cells(firstData2, 1), wsR.Cells(row2 - 1, 6)).Font
+		.Bold = False
+		.ColorIndex = xlAutomatic
+	End With
+
+	For rr = firstData2 To row2 - 1
+		curAccKey = UCase$(Trim$(CStr(wsR.Cells(rr, 1).Value2)))
+		If Len(curAccKey) > 0 Then
+			If curAccKey <> prevAccKey Then
+				With wsR.Range(wsR.Cells(rr, 1), wsR.Cells(rr, 6)).Font
+					.Bold = True
+					.Color = RGB(255, 0, 0)
+				End With
+				prevAccKey = curAccKey
+			End If
+		End If
+	Next rr
+
+	wsR.Range(wsR.Cells(hdrRow2, 2), wsR.Cells(row2, 2)).NumberFormat = "yyyy-mm-dd"
+	wsR.Range(wsR.Cells(hdrRow2, 3), wsR.Cells(row2, 3)).NumberFormatLocal = "#.##0,00"
+	wsR.Range(wsR.Cells(hdrRow2, 4), wsR.Cells(row2, 4)).NumberFormatLocal = "#.##0,00"
+	wsR.Range(wsR.Cells(hdrRow2, 6), wsR.Cells(row2, 6)).NumberFormatLocal = "#.##0,00"
+
+	With wsR.Range(wsR.Cells(hdrRow2, 1), wsR.Cells(row2, 6)).Borders
+		.LineStyle = xlContinuous
+		.Weight = xlThin
+		.Color = RGB(0, 0, 0)
+	End With
+
+	wsR.Columns("B:F").EntireColumn.AutoFit
+
+FinResumen:
+	wsR.Activate
+	wsR.Range("A3").Select
+	ActiveWindow.FreezePanes = True
+End Sub
+
+'======================== HELPERS (PEGAR DEBAJO) =========================
+
+Function FindHeaderColumnInRowCI(ByVal ws As Worksheet, ByVal headerRow As Long, ByVal names As Variant) As Long
+	Dim ur As Range
+	Set ur = ws.UsedRange
+
+	Dim cFirst As Long, cLast As Long, c As Long
+	cFirst = ur.Column
+	cLast = ur.Column + ur.Columns.Count - 1
+
+	Dim h As String, nm As Variant, target As String
+
+	For c = cFirst To cLast
+		h = NormHeader(ws.Cells(headerRow, c).Value2)
+		If Len(h) > 0 Then
+			For Each nm In names
+				target = NormHeader(CStr(nm))
+				If h = target Then
+					FindHeaderColumnInRowCI = c
+					Exit Function
+				End If
+			Next nm
+		End If
+	Next c
+
+	FindHeaderColumnInRowCI = 0
+End Function
+
+Sub QuickSortMatchIdx(ByRef idx() As Long, _
+					  ByRef accTxt() As String, ByRef accIsNum() As Boolean, ByRef accNum() As Double, _
+					  ByRef dSer() As Long, _
+					  ByRef tipoTxt() As String, ByRef tipoIsNum() As Boolean, ByRef tipoNum() As Double, _
+					  ByRef seq() As Long, _
+					  ByVal first As Long, ByVal last As Long)
+
+	Dim i As Long, j As Long, p As Long
+	Dim pivotIdx As Long
+	i = first: j = last
+	p = (first + last) \ 2
+	pivotIdx = idx(p)
+
+	Do While i <= j
+		Do While CmpMatchKey(idx(i), pivotIdx, accTxt, accIsNum, accNum, dSer, tipoTxt, tipoIsNum, tipoNum, seq) < 0
+			i = i + 1
+		Loop
+		Do While CmpMatchKey(idx(j), pivotIdx, accTxt, accIsNum, accNum, dSer, tipoTxt, tipoIsNum, tipoNum, seq) > 0
+			j = j - 1
+		Loop
+
+		If i <= j Then
+			Dim t As Long
+			t = idx(i): idx(i) = idx(j): idx(j) = t
+			i = i + 1: j = j - 1
+		End If
+	Loop
+
+	If first < j Then QuickSortMatchIdx idx, accTxt, accIsNum, accNum, dSer, tipoTxt, tipoIsNum, tipoNum, seq, first, j
+	If i < last Then QuickSortMatchIdx idx, accTxt, accIsNum, accNum, dSer, tipoTxt, tipoIsNum, tipoNum, seq, i, last
+End Sub
+
+Function CmpMatchKey(ByVal aIdx As Long, ByVal bIdx As Long, _
+					 ByRef accTxt() As String, ByRef accIsNum() As Boolean, ByRef accNum() As Double, _
+					 ByRef dSer() As Long, _
+					 ByRef tipoTxt() As String, ByRef tipoIsNum() As Boolean, ByRef tipoNum() As Double, _
+					 ByRef seq() As Long) As Long
+
+	'1) Cuenta
+	If accIsNum(aIdx) And accIsNum(bIdx) Then
+		If accNum(aIdx) < accNum(bIdx) Then CmpMatchKey = -1: Exit Function
+		If accNum(aIdx) > accNum(bIdx) Then CmpMatchKey = 1: Exit Function
+	Else
+		Dim sc As Long
+		sc = StrComp(accTxt(aIdx), accTxt(bIdx), vbTextCompare)
+		If sc < 0 Then CmpMatchKey = -1: Exit Function
+		If sc > 0 Then CmpMatchKey = 1: Exit Function
+	End If
+
+	'2) Fecha
+	If dSer(aIdx) < dSer(bIdx) Then CmpMatchKey = -1: Exit Function
+	If dSer(aIdx) > dSer(bIdx) Then CmpMatchKey = 1: Exit Function
+
+	'3) tipocruce (números primero, luego texto)
+	If tipoIsNum(aIdx) And Not tipoIsNum(bIdx) Then CmpMatchKey = -1: Exit Function
+	If Not tipoIsNum(aIdx) And tipoIsNum(bIdx) Then CmpMatchKey = 1: Exit Function
+
+	If tipoIsNum(aIdx) And tipoIsNum(bIdx) Then
+		If tipoNum(aIdx) < tipoNum(bIdx) Then CmpMatchKey = -1: Exit Function
+		If tipoNum(aIdx) > tipoNum(bIdx) Then CmpMatchKey = 1: Exit Function
+	Else
+		Dim st As Long
+		st = StrComp(tipoTxt(aIdx), tipoTxt(bIdx), vbTextCompare)
+		If st < 0 Then CmpMatchKey = -1: Exit Function
+		If st > 0 Then CmpMatchKey = 1: Exit Function
+	End If
+
+	'4) Estable
+	If seq(aIdx) < seq(bIdx) Then
+		CmpMatchKey = -1
+	ElseIf seq(aIdx) > seq(bIdx) Then
+		CmpMatchKey = 1
+	Else
+		CmpMatchKey = 0
+	End If
+End Function
+
+'======================== HELPERS VARIOS =========================
+
+Function GetSheetByNameCI(ByVal wb As Workbook, ByVal sheetName As String) As Worksheet
+	Dim ws As Worksheet
+	For Each ws In wb.Worksheets
+		If LCase$(ws.Name) = LCase$(sheetName) Then
+			Set GetSheetByNameCI = ws
+			Exit Function
+		End If
+	Next ws
+End Function
+
+Function ToDoubleOrZero(ByVal v As Variant) As Double
+	On Error GoTo Fail
+	If IsEmpty(v) Or Len(Trim$(CStr(v))) = 0 Then Exit Function
+	If IsNumeric(v) Then
+		ToDoubleOrZero = CDbl(v)
+	Else
+		ToDoubleOrZero = ParseDoubleFromText(CStr(v))
+	End If
+	Exit Function
+Fail:
+	ToDoubleOrZero = 0#
+End Function
+
+Sub QuickSortResumen(ByRef keys() As String, ByRef accTxt() As String, ByRef accIsNum() As Boolean, _
+					 ByRef accNum() As Double, ByRef dArr() As Long, _
+					 ByVal first As Long, ByVal last As Long)
+
+	Dim i As Long, j As Long, p As Long
+	Dim pAccTxt As String, pAccIsNum As Boolean, pAccNum As Double, pD As Long
+
+	i = first
+	j = last
+	p = (first + last) \ 2
+
+	pAccTxt = accTxt(p)
+	pAccIsNum = accIsNum(p)
+	pAccNum = accNum(p)
+	pD = dArr(p)
+
+	Do While i <= j
+		Do While CmpResumen(accTxt(i), accIsNum(i), accNum(i), dArr(i), pAccTxt, pAccIsNum, pAccNum, pD) < 0
+			i = i + 1
+		Loop
+		Do While CmpResumen(accTxt(j), accIsNum(j), accNum(j), dArr(j), pAccTxt, pAccIsNum, pAccNum, pD) > 0
+			j = j - 1
+		Loop
+
+		If i <= j Then
+			SwapResumenRow keys, accTxt, accIsNum, accNum, dArr, i, j
+			i = i + 1
+			j = j - 1
+		End If
+	Loop
+
+	If first < j Then QuickSortResumen keys, accTxt, accIsNum, accNum, dArr, first, j
+	If i < last Then QuickSortResumen keys, accTxt, accIsNum, accNum, dArr, i, last
+End Sub
+
+Function CmpResumen(ByVal aTxt As String, ByVal aIsNum As Boolean, ByVal aNum As Double, ByVal aD As Long, _
+					ByVal bTxt As String, ByVal bIsNum As Boolean, ByVal bNum As Double, ByVal bD As Long) As Long
+	If aIsNum And bIsNum Then
+		If aNum < bNum Then CmpResumen = -1: Exit Function
+		If aNum > bNum Then CmpResumen = 1: Exit Function
+	Else
+		Dim sc As Long
+		sc = StrComp(aTxt, bTxt, vbTextCompare)
+		If sc < 0 Then CmpResumen = -1: Exit Function
+		If sc > 0 Then CmpResumen = 1: Exit Function
+	End If
+
+	If aD < bD Then CmpResumen = -1: Exit Function
+	If aD > bD Then CmpResumen = 1: Exit Function
+
+	CmpResumen = 0
+End Function
+
+Sub SwapResumenRow(ByRef keys() As String, ByRef accTxt() As String, ByRef accIsNum() As Boolean, _
+				   ByRef accNum() As Double, ByRef dArr() As Long, _
+				   ByVal i As Long, ByVal j As Long)
+	Dim ts As String, tb As Boolean, td As Double, tl As Long
+
+	ts = keys(i): keys(i) = keys(j): keys(j) = ts
+	ts = accTxt(i): accTxt(i) = accTxt(j): accTxt(j) = ts
+	tb = accIsNum(i): accIsNum(i) = accIsNum(j): accIsNum(j) = tb
+	td = accNum(i): accNum(i) = accNum(j): accNum(j) = td
+	tl = dArr(i): dArr(i) = dArr(j): dArr(j) = tl
+End Sub
+
+Function GetContiguousBlocksByHeader(ws As Worksheet, ByVal headerRow As Long, colsVis As Variant, ByVal sepHeader As String) As Variant
+	Dim tmp() As Long, nTmp As Long
+	Dim i As Long, c As Long
+	Dim h As String
+
+	If IsEmpty(colsVis) Then Exit Function
+
+	For i = LBound(colsVis) To UBound(colsVis)
+		c = CLng(colsVis(i))
+		h = Trim$(CStr(ws.Cells(headerRow, c).Value2))
+
+		If Len(h) > 0 Then
+			If NormHeader(h) = NormHeader(sepHeader) Then GoTo NextI
+		End If
+
+		If Len(h) > 0 Then
+			nTmp = nTmp + 1
+			ReDim Preserve tmp(1 To nTmp)
+			tmp(nTmp) = c
+		End If
+NextI:
+	Next i
+
+	If nTmp = 0 Then Exit Function
+
+	Dim prevC As Long, startC As Long
+	Dim blocks() As Long
+	Dim b As Long
+
+	b = 1
+	ReDim blocks(1 To nTmp, 1 To 2)
+
+	startC = tmp(1)
+	prevC = startC
+
+	For i = 2 To nTmp
+		c = tmp(i)
+		If c = prevC + 1 Then
+			prevC = c
+		Else
+			blocks(b, 1) = startC
+			blocks(b, 2) = prevC
+			b = b + 1
+			startC = c
+			prevC = c
+		End If
+	Next i
+
+	blocks(b, 1) = startC
+	blocks(b, 2) = prevC
+
+	Dim out() As Long, k2 As Long
+	ReDim out(1 To b, 1 To 2)
+	For k2 = 1 To b
+		out(k2, 1) = blocks(k2, 1)
+		out(k2, 2) = blocks(k2, 2)
+	Next k2
+
+	GetContiguousBlocksByHeader = out
+End Function
+
+Function FindBlockId(blocks As Variant, ByVal colN As Long) As Long
+	Dim i As Long
+	If IsEmpty(blocks) Then Exit Function
+	For i = LBound(blocks, 1) To UBound(blocks, 1)
+		If colN >= blocks(i, 1) And colN <= blocks(i, 2) Then
+			FindBlockId = i
+			Exit Function
+		End If
+	Next i
+End Function
+
+Function ChooseColInBestBlock(arrTarget As Variant, blocks As Variant, arrCuenta As Variant, arrFecha As Variant) As Long
+	Dim i As Long, colN As Long, b As Long
+	If IsEmpty(arrTarget) Or IsEmpty(blocks) Then Exit Function
+
+	For i = LBound(arrTarget) To UBound(arrTarget)
+		colN = CLng(arrTarget(i))
+		b = FindBlockId(blocks, colN)
+		If b > 0 Then
+			If BlockHasAnyColumn(blocks, b, arrCuenta) And BlockHasAnyColumn(blocks, b, arrFecha) Then
+				ChooseColInBestBlock = colN
+				Exit Function
+			End If
+		End If
+	Next i
+End Function
+
+Function BlockHasAnyColumn(blocks As Variant, ByVal blockId As Long, arrCols As Variant) As Boolean
+	Dim i As Long, colN As Long
+	If IsEmpty(arrCols) Then Exit Function
+	For i = LBound(arrCols) To UBound(arrCols)
+		colN = CLng(arrCols(i))
+		If colN >= blocks(blockId, 1) And colN <= blocks(blockId, 2) Then
+			BlockHasAnyColumn = True
+			Exit Function
+		End If
+	Next i
+End Function
+
+Function ChooseNearestInBlock(arrCols As Variant, blocks As Variant, ByVal blockId As Long, ByVal colCenter As Long, ByVal preferLeft As Boolean) As Long
+	Dim i As Long, colN As Long, bestCol As Long
+	Dim bestDist As Long, dist As Long
+
+	If IsEmpty(arrCols) Then Exit Function
+
+	bestDist = 2147483647
+	bestCol = 0
+
+	For i = LBound(arrCols) To UBound(arrCols)
+		colN = CLng(arrCols(i))
+
+		If blockId > 0 Then
+			If colN < blocks(blockId, 1) Or colN > blocks(blockId, 2) Then GoTo NextI2
+		End If
+
+		dist = Abs(colN - colCenter)
+		If dist < bestDist Then
+			bestDist = dist
+			bestCol = colN
+		ElseIf dist = bestDist And bestCol <> 0 Then
+			If preferLeft Then
+				If colN < bestCol Then bestCol = colN
+			Else
+				If colN > bestCol Then bestCol = colN
+			End If
+		End If
+NextI2:
+	Next i
+
+	ChooseNearestInBlock = bestCol
+End Function
+
+Function SafeCollCount(ByVal coll As Object) As Long
+	If coll Is Nothing Then SafeCollCount = 0 Else SafeCollCount = coll.Count
+End Function
+
+Function CountRowMatches(ws As Worksheet, ByVal rowN As Long, colsVis As Variant, names As Variant) As Long
+	Dim i As Long, c As Long, txt As String, nm As Variant
+	Dim cnt As Long
+
+	For i = LBound(colsVis) To UBound(colsVis)
+		c = CLng(colsVis(i))
+		txt = NormHeader(ws.Cells(rowN, c).Value2)
+		If txt <> "" Then
+			For Each nm In names
+				If txt = LCase$(CStr(nm)) Then
+					cnt = cnt + 1
+					Exit For
+				End If
+			Next nm
+		End If
+	Next i
+
+	CountRowMatches = cnt
+End Function
+
+Function RowHasAny(ws As Worksheet, ByVal rowN As Long, colsVis As Variant, names As Variant) As Boolean
+	Dim i As Long, c As Long, txt As String, nm As Variant
+
+	For i = LBound(colsVis) To UBound(colsVis)
+		c = CLng(colsVis(i))
+		txt = NormHeader(ws.Cells(rowN, c).Value2)
+		If txt <> "" Then
+			For Each nm In names
+				If txt = LCase$(CStr(nm)) Then
+					RowHasAny = True
+					Exit Function
+				End If
+			Next nm
+		End If
+	Next i
+
+	RowHasAny = False
+End Function
+
+Function GetColsMatching(ws As Worksheet, ByVal headerRow As Long, colsVis As Variant, names As Variant) As Variant
+	Dim tmp() As Long, n As Long
+	Dim i As Long, c As Long, txt As String, nm As Variant
+
+	For i = LBound(colsVis) To UBound(colsVis)
+		c = CLng(colsVis(i))
+		txt = NormHeader(ws.Cells(headerRow, c).Value2)
+		If txt <> "" Then
+			For Each nm In names
+				If txt = LCase$(CStr(nm)) Then
+					n = n + 1
+					ReDim Preserve tmp(1 To n)
+					tmp(n) = c
+					Exit For
+				End If
+			Next nm
+		End If
+	Next i
+
+	If n = 0 Then Exit Function
+	GetColsMatching = tmp
+End Function
+
+Function FindHeaderColumnInRange(ByVal ws As Worksheet, ByVal headerRow As Long, _
+								 ByVal colStart As Long, ByVal colEnd As Long, _
+								 ByVal names As Variant) As Long
+	Dim c As Long, h As String, nm As Variant, target As String
+	For c = colStart To colEnd
+		h = NormHeader(ws.Cells(headerRow, c).Value2)
+		If Len(h) > 0 Then
+			For Each nm In names
+				target = NormHeader(CStr(nm))
+				If h = target Then
+					FindHeaderColumnInRange = c
+					Exit Function
+				End If
+			Next nm
+		End If
+	Next c
+	FindHeaderColumnInRange = 0
+End Function
+
+Function NormHeader(ByVal v As Variant) As String
+	Dim s As String
+	s = LCase$(Trim$(CStr(v)))
+	s = RemoveDiacritics(s)
+	NormHeader = s
+End Function
+
+Function RemoveDiacritics(ByVal s As String) As String
+	s = Replace(s, "á", "a")
+	s = Replace(s, "é", "e")
+	s = Replace(s, "í", "i")
+	s = Replace(s, "ó", "o")
+	s = Replace(s, "ú", "u")
+	s = Replace(s, "ü", "u")
+	RemoveDiacritics = s
+End Function
+
+Function MinLongInArray(arr As Variant) As Long
+	Dim i As Long, m As Long
+	m = CLng(arr(LBound(arr)))
+	For i = LBound(arr) To UBound(arr)
+		If CLng(arr(i)) < m Then m = CLng(arr(i))
+	Next i
+	MinLongInArray = m
+End Function
+
+Function MaxLongInArray(arr As Variant) As Long
+	Dim i As Long, m As Long
+	m = CLng(arr(LBound(arr)))
+	For i = LBound(arr) To UBound(arr)
+		If CLng(arr(i)) > m Then m = CLng(arr(i))
+	Next i
+	MaxLongInArray = m
+End Function
+
+Function BuildVisibleRowsUnion(ws As Worksheet, rngVis As Range, ByVal dataFirstRow As Long, _
+							  ByVal colA As Long, ByVal colB As Long, _
+							  ByRef visRows() As Long) As Long
+	Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
+	Dim rngA As Range, rngB As Range
+	Dim c As Range
+	Dim keys As Variant
+	Dim i As Long
+
+	On Error Resume Next
+	Set rngA = Intersect(ws.Columns(colA), rngVis)
+	Set rngB = Intersect(ws.Columns(colB), rngVis)
+	On Error GoTo 0
+
+	If Not rngA Is Nothing Then
+		For Each c In rngA.Cells
+			If c.Row >= dataFirstRow Then
+				If Not dict.Exists(CStr(c.Row)) Then dict.Add CStr(c.Row), c.Row
+			End If
+		Next c
+	End If
+
+	If Not rngB Is Nothing Then
+		For Each c In rngB.Cells
+			If c.Row >= dataFirstRow Then
+				If Not dict.Exists(CStr(c.Row)) Then dict.Add CStr(c.Row), c.Row
+			End If
+		Next c
+	End If
+
+	If dict.Count = 0 Then
+		BuildVisibleRowsUnion = 0
+		Exit Function
+	End If
+
+	keys = dict.Items
+	ReDim visRows(1 To UBound(keys) + 1)
+
+	For i = LBound(keys) To UBound(keys)
+		visRows(i + 1) = CLng(keys(i))
+	Next i
+
+	SortLongArray visRows
+	BuildVisibleRowsUnion = UBound(visRows)
+End Function
+
+Sub SortLongArray(ByRef arr() As Long)
+	Dim i As Long, j As Long, t As Long
+	For i = LBound(arr) To UBound(arr) - 1
+		For j = i + 1 To UBound(arr)
+			If arr(i) > arr(j) Then
+				t = arr(i): arr(i) = arr(j): arr(j) = t
+			End If
+		Next j
+	Next i
+End Sub
+
+Function MinColInRange(ByVal rng As Range) As Long
+	Dim a As Range, minC As Long
+	minC = 16384
+	For Each a In rng.Areas
+		If a.Column < minC Then minC = a.Column
+	Next a
+	MinColInRange = minC
+End Function
+
+Function MaxColInRange(ByVal rng As Range) As Long
+	Dim a As Range, maxC As Long
+	maxC = 1
+	For Each a In rng.Areas
+		If a.Column + a.Columns.Count - 1 > maxC Then
+			maxC = a.Column + a.Columns.Count - 1
+		End If
+	Next a
+	MaxColInRange = maxC
+End Function
+
+Sub SortVariantNumeric(ByRef arr As Variant)
+	Dim i As Long, j As Long, t As Variant
+	For i = LBound(arr) To UBound(arr) - 1
+		For j = i + 1 To UBound(arr)
+			If CLng(arr(i)) > CLng(arr(j)) Then
+				t = arr(i): arr(i) = arr(j): arr(j) = t
+			End If
+		Next j
+	Next i
+End Sub
+
+'<<< AJUSTE: ahora recibe también colFechaGeneral
+Sub ClearOrphantipocruce(ByVal ws As Worksheet, ByRef visRows() As Long, ByVal k As Long, _
+						 ByVal colFixStart As Long, ByVal nFixCols As Long, _
+						 ByVal colMovStart As Long, ByVal nMovCols As Long, _
+						 ByVal colSep As Long, ByVal colRunStamp As Long, ByVal colCuentaGeneral As Long, ByVal colFechaGeneral As Long)
+
+	Dim i As Long, r As Long
+	Dim hasFixReal As Boolean, hasMovReal As Boolean
+
+	For i = 1 To k
+		r = visRows(i)
+
+		hasFixReal = SheetRowHasRealData(ws, r, colFixStart, nFixCols, colRunStamp, colCuentaGeneral, colFechaGeneral)
+		hasMovReal = SheetRowHasRealData(ws, r, colMovStart, nMovCols, 0, 0, 0)
+
+		If (Not hasFixReal) And (Not hasMovReal) Then
+
+			Dim tpc As String
+			tpc = Trim$(CStr(ws.Cells(r, colSep).Value2))
+
+			ws.Cells(r, colSep).ClearContents
+
+			'No borrar timestamp si la fila tenía tipocruce (aunque quede huérfana)
+			If colRunStamp > 0 Then
+				If Len(tpc) = 0 Then ws.Cells(r, colRunStamp).ClearContents
+			End If
+
+			If colCuentaGeneral > 0 Then ws.Cells(r, colCuentaGeneral).ClearContents
+			If colFechaGeneral > 0 Then ws.Cells(r, colFechaGeneral).ClearContents
+		End If
+	Next i
+End Sub
+
+'<<< AJUSTE: ahora permite ignorar 3 columnas absolutas
+Function SheetRowHasRealData(ByVal ws As Worksheet, ByVal r As Long, _
+							ByVal colStart As Long, ByVal nCols As Long, _
+							Optional ByVal ignoreAbs1 As Long = 0, Optional ByVal ignoreAbs2 As Long = 0, Optional ByVal ignoreAbs3 As Long = 0) As Boolean
+	Dim c As Long, colN As Long, v As Variant
+	For c = 0 To nCols - 1
+		colN = colStart + c
+		If colN <> ignoreAbs1 And colN <> ignoreAbs2 And colN <> ignoreAbs3 Then
+			v = ws.Cells(r, colN).Value2
+			If IsError(v) Then
+				SheetRowHasRealData = True
+				Exit Function
+			End If
+			If Len(Trim$(CStr(v))) > 0 Then
+				SheetRowHasRealData = True
+				Exit Function
+			End If
+		End If
+	Next c
+	SheetRowHasRealData = False
+End Function
+
+Sub DeleteEmptyRowsInBand(ByVal ws As Worksheet, _
+						  ByVal firstRow As Long, ByVal lastRow As Long, _
+						  ByVal colStart As Long, ByVal colEnd As Long)
+
+	Dim r As Long
+	Dim nCols As Long
+	nCols = colEnd - colStart + 1
+	If nCols < 1 Then Exit Sub
+	If lastRow < firstRow Then Exit Sub
+
+	For r = lastRow To firstRow Step -1
+		If Application.WorksheetFunction.CountA(ws.Cells(r, colStart).Resize(1, nCols)) = 0 Then
+			ws.Rows(r).Delete
+		End If
+	Next r
+End Sub
+
+'========================
+' BACKUP: Crear copia de la hoja con consecutivo numérico
+'========================
+Function CreateCopyWithConsecutive(ByVal wsOrig As Worksheet) As Worksheet
+	Dim wb As Workbook: Set wb = wsOrig.Parent
+
+	Dim origName As String: origName = wsOrig.Name
+	Dim rootName As String, curIdx As Long
+	ParseSheetRootAndIndex origName, rootName, curIdx
+
+	Dim maxN As Long: maxN = 0
+	Dim sh As Worksheet
+	For Each sh In wb.Worksheets
+		Dim shRoot As String, shIdx As Long
+		ParseSheetRootAndIndex sh.Name, shRoot, shIdx
+
+		If LCase$(shRoot) = LCase$(rootName) Then
+			If shIdx > maxN Then maxN = shIdx
+		End If
+	Next sh
+
+	Dim nextN As Long: nextN = maxN + 1
+	Dim suffix As String: suffix = "_" & CStr(nextN)
+
+	Dim newRoot As String: newRoot = rootName
+	Dim maxRootLen As Long: maxRootLen = 31 - Len(suffix)
+	If maxRootLen < 1 Then maxRootLen = 1
+	If Len(newRoot) > maxRootLen Then newRoot = Left$(newRoot, maxRootLen)
+
+	Dim newName As String: newName = newRoot & suffix
+
+	Do While SheetExistsCI(wb, newName)
+		nextN = nextN + 1
+		suffix = "_" & CStr(nextN)
+
+		maxRootLen = 31 - Len(suffix)
+		If maxRootLen < 1 Then maxRootLen = 1
+
+		newRoot = rootName
+		If Len(newRoot) > maxRootLen Then newRoot = Left$(newRoot, maxRootLen)
+
+		newName = newRoot & suffix
+	Loop
+
+	wsOrig.Copy After:=wsOrig
+	Set CreateCopyWithConsecutive = wb.ActiveSheet
+	CreateCopyWithConsecutive.Name = newName
+End Function
+
+Sub ParseSheetRootAndIndex(ByVal sheetName As String, ByRef rootOut As String, ByRef idxOut As Long)
+	Dim p As Long
+	p = InStrRev(sheetName, "_")
+
+	If p > 0 And p < Len(sheetName) Then
+		Dim tail As String
+		tail = Mid$(sheetName, p + 1)
+
+		If Len(tail) > 0 And IsNumeric(tail) Then
+			rootOut = Left$(sheetName, p - 1)
+			If Len(rootOut) = 0 Then
+				rootOut = sheetName
+				idxOut = 0
+			Else
+				idxOut = CLng(Val(tail))
+			End If
+			Exit Sub
+		End If
+	End If
+
+	rootOut = sheetName
+	idxOut = 0
+End Sub
+
+Function SheetExistsCI(ByVal wb As Workbook, ByVal sheetName As String) As Boolean
+	Dim sh As Worksheet
+	For Each sh In wb.Worksheets
+		If LCase$(sh.Name) = LCase$(sheetName) Then
+			SheetExistsCI = True
+			Exit Function
+		End If
+	Next sh
+	SheetExistsCI = False
+End Function
+
+Function MinLongNonZero(ParamArray vals()) As Long
+	Dim i As Long, v As Long
+	Dim m As Long: m = 0
+	For i = LBound(vals) To UBound(vals)
+		v = CLng(vals(i))
+		If v > 0 Then
+			If m = 0 Or v < m Then m = v
+		End If
+	Next i
+	MinLongNonZero = m
+End Function
+
+Function MaxLongNonZero(ParamArray vals()) As Long
+	Dim i As Long, v As Long
+	Dim m As Long: m = 0
+	For i = LBound(vals) To UBound(vals)
+		v = CLng(vals(i))
+		If v > 0 Then
+			If v > m Then m = v
+		End If
+	Next i
+	MaxLongNonZero = m
+End Function

@@ -1157,29 +1157,32 @@
       });
     }
 
-    function parseProductFromBaseName(baseName){
-      const parts = String(baseName || "").split("_");
-      if(parts.length < 6) return null;
+	function parseProductFromBaseName(baseName){
+	  const parts = String(baseName || "").split("_");
+	  if(parts.length < 6) return null;
 
-      const id = String(parts[0] || "").trim();
-      const qty = safeInt(parts[parts.length - 1], 0);
-      const price = toNumberDigits(parts[parts.length - 2]);
-      const brand = String(parts[parts.length - 3] || "").trim();
-      const category = String(parts[parts.length - 4] || "").trim();
-      const name = String(parts.slice(1, parts.length - 4).join("_") || "").trim();
+	  const id = String(parts[0] || "").trim();
 
-      if(!id || !name) return null;
+	  const qty = safeInt(parts[parts.length - 1], 0);               // stock
+	  const price = toNumberDigits(parts[parts.length - 2]);         // valor
 
-      return {
-        id,
-        name,
-        category,
-        brand,
-        price,
-        stock: Math.max(0, qty),
-        searchKey: normalizeText(`${name} ${brand} ${category} ${id}`)
-      };
-    }
+	  const category = String(parts[parts.length - 3] || "").trim(); // categoria  ✅
+	  const brand = String(parts[parts.length - 4] || "").trim();    // marca      ✅
+
+	  const name = String(parts.slice(1, parts.length - 4).join("_") || "").trim();
+
+	  if(!id || !name) return null;
+
+	  return {
+		id,
+		name,
+		category,
+		brand,
+		price,
+		stock: Math.max(0, qty),
+		searchKey: normalizeText(`${name} ${brand} ${category} ${id}`)
+	  };
+	}
 
     function preferredExtScore(ext){
       const order = { webp:0, jpg:1, jpeg:2, png:3 };

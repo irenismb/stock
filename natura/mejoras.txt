@@ -1,0 +1,24 @@
+necesito que el carrito de compras pida el nombre y celular del cliente, pero que se vea que es opcional el diligencimiento por parte del cliente de esta informacion, la informacion del carrito y la digitada por el cliente (nombre y celular) se registrara de forma automatica en una hoja de calculo distinta a la que usa la pagina actualmente. 
+
+la informacion se registrara en una hoja llamada Hoja1, en la segunda fila de dicha hoja, estaran los encabezados que podran estar en cualquier orden, estos son:
+
+Nombre
+Celular
+Codigo
+Producto
+Marca
+Categoria
+Valor
+Cantidad solicitada
+
+la ventanita donde pide los datos del cliente debe ser muy, pero muy elegante y debe ser una misma ventanita para ambos datos que debera aparecer centrada en la pantalla.
+
+el enlace a la nueva hoja de calculo es:
+https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit?usp=sharing
+
+
+
+
+
+
+

@@ -1138,89 +1138,52 @@
                    placeholder="Ej: 3042088961" />
           </div>
 
-	<!-- ✅ Dirección estructurada (homogénea) -->
-	<div class="client-field">
-	  <label for="addrViaTipo">
-		<span>Vía</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <select id="addrViaTipo">
-		<option value="">Tipo…</option>
-		<option value="Calle">Calle (Cl)</option>
-		<option value="Carrera">Carrera (Cra)</option>
-		<option value="Avenida">Avenida (Av)</option>
-		<option value="Diagonal">Diagonal (Dg)</option>
-		<option value="Transversal">Transversal (Tv)</option>
-	  </select>
-	</div>
+          <!-- ✅ Dirección + Envío en la misma fila (desktop y móvil) -->
+          <div class="client-field">
+            <label for="clientAddress">
+              <span>Dirección</span>
+              <span class="client-opt">Opcional</span>
+            </label>
+            <input id="clientAddress" type="text" autocomplete="street-address"
+                   placeholder="Ej: Calle 10A #20A-06, Los Almendros" />
+          </div>
 
-	<div class="client-field">
-	  <label for="addrViaNum">
-		<span>Número</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <input id="addrViaNum" type="text" placeholder="Ej: 10A" />
-	</div>
+          <div class="client-field">
+            <label for="clientShipping">
+              <span>Envío (COP)</span>
+              <span class="client-opt">Opcional</span>
+            </label>
+            <input id="clientShipping" type="text" inputmode="numeric" autocomplete="off"
+                   placeholder="Ej: 8000" />
+          </div>
 
-	<div class="client-field">
-	  <label for="addrPlaca">
-		<span># / Placa</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <input id="addrPlaca" type="text" placeholder="Ej: 20A-06" />
-	</div>
+          <div class="client-field span-2">
+            <label for="clientObs">
+              <span>Observación</span>
+              <span class="client-opt">Opcional</span>
+            </label>
+            <textarea id="clientObs" rows="1" placeholder="Ej: Entregar en portería / horario de entrega / referencia..."></textarea>
+          </div>
+        </div>
 
-	<div class="client-field">
-	  <label for="addrBarrio">
-		<span>Barrio</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <input id="addrBarrio" type="text" placeholder="Ej: Los Almendros" />
-	</div>
+        <!-- ✅ Preview fuera del grid -->
+        <p class="client-total-preview" id="clientTotalPreview"></p>
+      </div>
 
-	<div class="client-field">
-	  <label for="addrCity">
-		<span>Ciudad</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <input id="addrCity" type="text" placeholder="Ej: Santa Marta" />
-	</div>
+      <div class="client-modal-footer">
+        <button class="btn-ghost" id="clientSkipBtn" type="button">Omitir</button>
+        <button class="btn-acc" id="clientContinueBtn" type="button">Continuar a WhatsApp</button>
+      </div>
+    </div>
+  </div>
 
-	<div class="client-field">
-	  <label for="addrRegion">
-		<span>Departamento</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <input id="addrRegion" type="text" placeholder="Ej: Magdalena" />
-	</div>
-
-	<!-- ✅ Dirección FINAL + Envío en la misma fila (como tu diseño original) -->
-	<div class="client-field">
-	  <label for="clientAddress">
-		<span>Dirección (final)</span>
-		<span class="client-opt">Se genera sola</span>
-	  </label>
-	  <input id="clientAddress" type="text" autocomplete="street-address" readonly
-			 placeholder="Se llenará automáticamente…" />
-	  <a id="clientMapsLink"
-		 class="btn-ghost"
-		 href="#"
-		 target="_blank"
-		 rel="noopener noreferrer"
-		 style="display:inline-block; margin-top:8px; padding:10px 12px; border-radius:12px; text-decoration:none;">
-		📍 Abrir en Google Maps
-	  </a>
-	</div>
-
-	<div class="client-field">
-	  <label for="clientShipping">
-		<span>Envío (COP)</span>
-		<span class="client-opt">Opcional</span>
-	  </label>
-	  <input id="clientShipping" type="text" inputmode="numeric" autocomplete="off"
-			 placeholder="Ej: 8000" />
-	</div>
-
+  <div class="img-modal" id="imgModal" aria-hidden="true" role="dialog" aria-label="Imagen ampliada">
+    <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
+    <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Cerrar">✕</button>
+    <div class="img-modal-content" role="document">
+      <img id="imgModalImg" alt="Imagen ampliada del producto" />
+    </div>
+  </div>
 
   <script>
     /* ==========================
@@ -2015,11 +1978,8 @@
       const clientLines = [];
       if(n) clientLines.push(`Nombre: ${n}`);
       if(c) clientLines.push(`Celular: ${c}`);
-      if(d){
-		clientLines.push(`Dirección: ${d}`);
-		clientLines.push(`Mapa: ${googleMapsDirUrl(d)}`);
-	  }
-	  if(o) clientLines.push(`Observación: ${o}`);
+      if(d) clientLines.push(`Dirección: ${d}`);
+      if(o) clientLines.push(`Observación: ${o}`);
 
       const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`);
 
@@ -2059,85 +2019,6 @@
     const clientObsInp = document.getElementById("clientObs");
     const clientShippingInp = document.getElementById("clientShipping");
     const clientTotalPreviewEl = document.getElementById("clientTotalPreview");
-	
-	// ==========================
-	// ✅ DIRECCIÓN HOMOGÉNEA + GOOGLE MAPS (RECOMENDADO)
-	// ==========================
-	const addrViaTipo = document.getElementById("addrViaTipo");
-	const addrViaNum  = document.getElementById("addrViaNum");
-	const addrPlaca   = document.getElementById("addrPlaca");
-	const addrBarrio  = document.getElementById("addrBarrio");
-	const addrCity    = document.getElementById("addrCity");
-	const addrRegion  = document.getElementById("addrRegion");
-	const clientMapsLink = document.getElementById("clientMapsLink");
-
-	const DEFAULT_COUNTRY = "Colombia"; // puedes cambiarlo si algún día lo necesitas
-
-	function cleanToken(s){
-	  return String(s || "").trim().replace(/\s+/g, " ");
-	}
-	function normalizePlaca(s){
-	  // "20A  -  06" -> "20A-06"
-	  return cleanToken(s).replace(/\s*-\s*/g, "-");
-	}
-	function googleMapsDirUrl(destination){
-	  // Navegación "ir a" destino (muy útil en móvil)
-	  return "https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(destination);
-	}
-
-	function buildCanonicalAddress(){
-	  const tipo   = cleanToken(addrViaTipo?.value);
-	  const num    = cleanToken(addrViaNum?.value);
-	  const placa  = normalizePlaca(addrPlaca?.value);
-	  const barrio = cleanToken(addrBarrio?.value);
-	  const city   = cleanToken(addrCity?.value);
-	  const region = cleanToken(addrRegion?.value);
-
-	  // Si no llenó nada de dirección, retorna vacío
-	  if(!tipo && !num && !placa && !barrio && !city && !region) return "";
-
-	  // Formato típico:
-	  // "Calle 10A #20A-06, Los Almendros, Santa Marta, Magdalena, Colombia"
-	  const via = [tipo, num].filter(Boolean).join(" ").trim();
-	  const p   = placa ? ("#" + placa) : "";
-
-	  const parts = [];
-	  const firstLine = [via, p].filter(Boolean).join(" ").trim();
-	  if(firstLine) parts.push(firstLine);
-	  if(barrio) parts.push(barrio);
-	  if(city) parts.push(city);
-	  if(region) parts.push(region);
-	  parts.push(DEFAULT_COUNTRY);
-
-	  return parts.filter(Boolean).join(", ");
-	}
-
-	function refreshAddressAndMapLink(){
-	  const addr = buildCanonicalAddress();
-
-	  if(clientAddressInp){
-		clientAddressInp.value = addr;
-	  }
-
-	  if(clientMapsLink){
-		if(addr){
-		  clientMapsLink.href = googleMapsDirUrl(addr);
-		  clientMapsLink.style.pointerEvents = "";
-		  clientMapsLink.style.opacity = "1";
-		}else{
-		  clientMapsLink.href = "#";
-		  clientMapsLink.style.pointerEvents = "none";
-		  clientMapsLink.style.opacity = ".55";
-		}
-	  }
-	}
-
-	[addrViaTipo, addrViaNum, addrPlaca, addrBarrio, addrCity, addrRegion].forEach(el=>{
-	  if(!el) return;
-	  el.addEventListener("input", refreshAddressAndMapLink);
-	  el.addEventListener("change", refreshAddressAndMapLink);
-	});
-
 
     function anyModalOpen(){
       const cartOpen = cartModal && cartModal.classList.contains("open");
@@ -2339,21 +2220,17 @@
       }
     }
 
-	function openClientModal(){
-	  if(!clientModal) return;
+    function openClientModal(){
+      if(!clientModal) return;
+      // No borramos lo escrito: por si el usuario vuelve atrás.
+      setShippingInputFromStored();
+      updateClientTotalPreview();
 
-	  // No borramos lo escrito: por si el usuario vuelve atrás.
-	  setShippingInputFromStored();
-	  updateClientTotalPreview();
-
-	  // ✅ genera/actualiza la dirección final + link de Maps
-	  refreshAddressAndMapLink();
-
-	  clientModal.classList.add("open");
-	  clientModal.setAttribute("aria-hidden","false");
-	  recomputeBodyOverflow();
-	  setTimeout(()=> clientNameInp && clientNameInp.focus(), 50);
-	}
+      clientModal.classList.add("open");
+      clientModal.setAttribute("aria-hidden","false");
+      recomputeBodyOverflow();
+      setTimeout(()=> clientNameInp && clientNameInp.focus(), 50);
+    }
     function closeClientModal(){
       if(!clientModal) return;
       clientModal.classList.remove("open");

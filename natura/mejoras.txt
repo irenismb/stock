@@ -26,6 +26,9 @@ el carrito de compras debe servir para estas dos cosas:
 crees que eso es posible? como seria?
 
 
+toda la informacion del carrito de compras y la digitada por el cliente, debe enviarse por whatsapp.
+
+
 
 
 

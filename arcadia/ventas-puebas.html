@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Reporte de caja ARCADIA</title>
   <meta name="description" content="Aplicación de caja: captura diaria con totales y guardado en la nube. El reporte se consulta en la hoja de cálculo." />
-
   <style>
-    /* ===================== base.css (inline) ===================== */
     :root{
       --primary:#0056b3; --success:#28a745; --danger:#dc3545;
       --warning:#ffc107; --info:#007bff; --muted:#6c757d; --purple:#6f42c1;
       --bg:#f4f7f9; --card:#fff; --radius:8px; --shadow:0 6px 18px rgba(9,30,66,0.08);
-      --whatsapp:#25D366; --border:#e6eaee;
-      --touch:44px;
+      --border:#e6eaee; --touch:44px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -30,7 +27,7 @@
     }
     header h1{margin:0 0 8px 0;color:var(--primary);font-size:1.6rem}
     header p{margin:0 0 14px 0;color:var(--muted);font-size:0.95rem}
-    .btn {
+    .btn{
       padding:10px 14px;border-radius:6px;border:0;cursor:pointer;color:#fff;font-weight:600;
       display:inline-flex;align-items:center;gap:8px;transition:transform .12s, box-shadow .12s, opacity .12s;
       justify-content:center; min-height:var(--touch); min-width:var(--touch);
@@ -42,11 +39,9 @@
     .btn-info{background:var(--info)}
     .btn-warning{background:var(--warning); color:#222}
     .btn-danger{background:var(--danger)}
-    .btn-whatsapp{background:var(--whatsapp)}
     .btn-purple{background:var(--purple)}
     .btn-ghost{background:#eef3fb;color:var(--primary)}
     .btn-small{padding: 8px 10px; font-size: 0.95rem; min-height:var(--touch)}
-    .btn-icon{padding:10px 12px}
     .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
     .card{border:1px solid var(--border);border-radius:10px;padding:16px;background:#fff}
     .card h3{margin:0 0 8px 0}
@@ -75,7 +70,6 @@
       .container{ box-shadow:none; border:1px solid #ccc }
     }
 
-    /* ===================== capture.css (inline) ===================== */
     #session-info{
       display:flex;gap:12px;align-items:center;justify-content:space-between;
       padding:8px 10px;border-radius:6px;background:#eef3fb;margin-bottom:14px;font-size:0.95rem;
@@ -99,12 +93,15 @@
     .row-style-credito-formulas { background-color: #e0f2ff; }
     .row-style-gasto { background-color: #fff8e7; }
     .row-style-interco { background-color: #f3e5f5; }
+    .row-style-autoconsumo { background-color: #fff1e6; }
     tbody tr.row-style-efectivo:nth-child(odd) { background-color: #dff2e3; }
     tbody tr.row-style-electronica:nth-child(odd) { background-color: #f0f1f2; }
     tbody tr.row-style-credito-nomina:nth-child(odd) { background-color: #dce5f0; }
     tbody tr.row-style-credito-formulas:nth-child(odd) { background-color: #d5e9f5; }
     tbody tr.row-style-gasto:nth-child(odd) { background-color: #fcf3d7; }
     tbody tr.row-style-interco:nth-child(odd) { background-color: #e1bee7; }
+    tbody tr.row-style-autoconsumo:nth-child(odd) { background-color: #ffe6d6; }
+
     tfoot td { padding: 12px; background: #fafcfe; font-weight: 700; border-top: 1px solid #eef2f5; }
     tfoot tr.grand-total td { background-color: #e7f1ff; font-weight: bold; }
     tfoot tr.sub-grand-total td { background-color: #e9ecef; font-weight: bold; }
@@ -130,9 +127,6 @@
       table{min-width:720px}
       #action-buttons-container{grid-template-columns:1fr}
     }
-    /* ✅ Estilo Autoconsumo */
-    .row-style-autoconsumo { background-color: #fff1e6; }
-    tbody tr.row-style-autoconsumo:nth-child(odd) { background-color: #ffe6d6; }
   </style>
 </head>
 
@@ -146,7 +140,6 @@
       </p>
     </header>
 
-    <!-- ========================= HOME ========================= -->
     <section id="home">
       <div class="cards">
         <article class="card">
@@ -162,9 +155,8 @@
 
     <hr/>
 
-    <!-- ======================= CAPTURA ======================== -->
     <section id="capture" class="hidden">
-      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px" class="no-print">
+      <div class="no-print" style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
         <button class="btn btn-ghost" id="back-home-1">⬅ Volver al inicio</button>
         <span class="tag" id="resume-hint" title="Se cargará/guardará automáticamente" style="display:none">
           Captura actual
@@ -181,8 +173,8 @@
             <label for="puntoVenta">Punto de venta</label>
             <select id="puntoVenta" required></select>
           </div>
-          <div style="align-self: end;">
-            <button id="start-session-btn" class="btn btn-success" style="width: 100%;">
+          <div style="align-self:end;">
+            <button id="start-session-btn" class="btn btn-success" style="width:100%">
               Iniciar / Cambiar Sesión
             </button>
           </div>
@@ -215,18 +207,16 @@
         <table id="recordsTable">
           <thead>
             <tr>
-              <th style="width: 32%;">Tipo de Operación</th>
-              <th class="col-number" style="width: 12%;">Valor</th>
-              <th class="col-number" style="width: 12%;">Devoluciones</th>
-              <th class="col-number" style="width: 13%;">Total</th>
-              <th style="width: 15%;">Tercero / Destino</th>
-              <th style="width: 11%;">Detalle</th>
-              <th class="col-action" style="width: 5%;">Acción</th>
+              <th style="width:32%;">Tipo de Operación</th>
+              <th class="col-number" style="width:12%;">Valor</th>
+              <th class="col-number" style="width:12%;">Devoluciones</th>
+              <th class="col-number" style="width:13%;">Total</th>
+              <th style="width:15%;">Tercero / Destino</th>
+              <th style="width:11%;">Detalle</th>
+              <th class="col-action" style="width:5%;">Acción</th>
             </tr>
           </thead>
-
           <tbody id="recordsListBody"></tbody>
-
           <tfoot id="recordsTableFooter">
             <tr data-summary-id="total_ventas_efectivo">
               <td>Efectivo neto</td>
@@ -263,7 +253,7 @@
       </div>
 
       <div id="action-buttons-container"
-           class="actions-grid no-print"
+           class="no-print"
            style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px">
         <button id="sendAllBtn" class="btn btn-primary">📤 Guardar Todo en la Nube</button>
         <button id="clearAllBtn" class="btn btn-danger">🗑️ Limpiar y Finalizar Reporte</button>
@@ -272,17 +262,14 @@
   </main>
 
   <script>
-    // ===================== config.js (inline) =====================
     window.Arcadia = window.Arcadia || {};
     (function (A) {
       'use strict';
+
       A.CONFIG = {
         REPORT_TITLE: 'Reporte de caja ARCADIA',
         LS_RECORDS_KEY: 'salesGridRecords_v2',
         LS_SESSION_KEY: 'sessionGrid_v2',
-
-        // WhatsApp reservado (si lo usas en el futuro)
-        WHATSAPP_PHONE: '573007248537',
 
         // Apps Script (Google Sheets)
         SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbx-_O7ZMuWAZKZppxFa0_cOd4yTI5wiqJuMVjIqRoJEucqjFbL4Jlri57OoYXNIFykouA/exec',
@@ -302,28 +289,12 @@
           'Autoconsumo'
         ],
 
-        // Para mostrar fórmulas en el pie
-        TIPOS_EFECTIVO: [
-          'Efectivo POS del comprobante diario'
-        ],
-        TIPOS_ELECTRONICOS: [
-          'Ventas con QR',
-          'Ventas con tarjeta debito',
-          'Ventas con tarjeta credito'
-        ],
-        TIPOS_GASTO: [
-          'Gasto en efectivo'
-        ]
+        TIPOS_EFECTIVO: ['Efectivo POS del comprobante diario'],
+        TIPOS_ELECTRONICOS: ['Ventas con QR','Ventas con tarjeta debito','Ventas con tarjeta credito'],
+        TIPOS_GASTO: ['Gasto en efectivo']
       };
-    })(window.Arcadia);
-  </script>
 
-  <script>
-    // ===================== utils.js (inline) =====================
-    window.Arcadia = window.Arcadia || {};
-    (function (A) {
-      'use strict';
-      const Utils = {
+      A.Utils = {
         safeNumber(val){
           if (typeof val === 'number') return isFinite(val) ? val : 0;
           let cleanStr = String(val ?? '0').trim();
@@ -339,10 +310,12 @@
             minimumFractionDigits:0, maximumFractionDigits:0
           }).format(Math.round(num));
         },
-        formatNumber(num){
-          return new Intl.NumberFormat('es-CO',{
-            minimumFractionDigits:0, maximumFractionDigits:0
-          }).format(Math.round(num));
+        escapeHtml(s){
+          return String(s == null ? '' : s)
+            .replaceAll('&','&amp;')
+            .replaceAll('<','&lt;')
+            .replaceAll('>','&gt;')
+            .replaceAll('"','&quot;');
         },
         nowDateISO(){ return new Date().toISOString().slice(0,10); },
         dateAddDays(iso, days){
@@ -350,30 +323,15 @@
           d.setDate(d.getDate()+days);
           return d.toISOString().slice(0,10);
         },
-        yesterdayISO(){ return Utils.dateAddDays(Utils.nowDateISO(), -1); },
+        yesterdayISO(){ return A.Utils.dateAddDays(A.Utils.nowDateISO(), -1); },
         uuidv4(){
           return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
             const r = Math.random()*16|0, v = c==='x' ? r : (r&0x3|0x8);
             return v.toString(16);
           });
-        },
-        escapeHtml(s){
-          return String(s == null ? '' : s)
-            .replaceAll('&','&amp;')
-            .replaceAll('<','&lt;')
-            .replaceAll('>','&gt;')
-            .replaceAll('"','&quot;');
         }
       };
-      A.Utils = Utils;
-    })(window.Arcadia);
-  </script>
 
-  <script>
-    // ===================== ui.js (inline) =====================
-    window.Arcadia = window.Arcadia || {};
-    (function (A) {
-      'use strict';
       A.UI = {
         home: document.getElementById('home'),
         capture: document.getElementById('capture'),
@@ -382,40 +340,30 @@
         resumeLastBtn: document.getElementById('resume-last'),
         resumeHint: document.getElementById('resume-hint'),
 
-        // captura
-        sessionSetup: document.getElementById('session-setup-fields'),
         sessionInfo: document.getElementById('session-info'),
         sessionDate: document.getElementById('session-date-display'),
         sessionPos: document.getElementById('session-pos-display'),
         networkStatus: document.getElementById('network-status'),
+
         recordsBody: document.getElementById('recordsListBody'),
         recordsFooter: document.getElementById('recordsTableFooter'),
+
         fechaInput: document.getElementById('fecha'),
         puntoVentaInput: document.getElementById('puntoVenta')
       };
-    })(window.Arcadia);
-  </script>
 
-  <script>
-    // ===================== app.state.js (inline) =====================
-    window.Arcadia = window.Arcadia || {};
-    (function (A) {
-      'use strict';
-      A.state = {
-        session: { date: null, pos: null }
-      };
+      A.state = { session: { date: null, pos: null } };
       A.App = A.App || {};
     })(window.Arcadia);
   </script>
 
   <script>
-    // ===================== app.helpers.js (inline) =====================
     window.Arcadia = window.Arcadia || {};
     (function (A) {
       'use strict';
       const { CONFIG, UI } = A;
       const state = A.state;
-      const App = A.App = A.App || {};
+      const App = A.App;
 
       function normalizeText(s){
         return String(s || '')
@@ -483,7 +431,6 @@
   </script>
 
   <script>
-    // ===================== app.capture.js (inline) =====================
     window.Arcadia = window.Arcadia || {};
     (function (A) {
       'use strict';
@@ -536,9 +483,6 @@
           });
         },
 
-        /* =========================================================
-           FOOTER: mostrar/ocultar conceptos de fórmula
-           ========================================================= */
         buildFooterFormulaMeta(){
           const joinPlus = (arr) => (arr || []).filter(Boolean).join(' + ');
           const joinMinus = (...parts) => parts.filter(p => String(p || '').trim()).join(' - ');
@@ -547,7 +491,6 @@
           const electronicaTxt = joinPlus(CONFIG.TIPOS_ELECTRONICOS || []);
           const gastoTxt       = joinPlus(CONFIG.TIPOS_GASTO || []);
 
-          // Orden explícito para "Total ventas a crédito" (incluye Autoconsumo al final)
           const creditoOrder = [
             'Ventas a crédito (descuentos por nómina)',
             'Ventas a crédito a empresas del grupo',
@@ -581,6 +524,7 @@
           footerMeta['total_ventas_global'] = { base: 'Total ventas', formula: totalVentasTxt };
           footerMeta['total_gastos_efectivo'] = { base: 'Total gastos en efectivo', formula: gastoTxt };
           footerMeta['total_esperado_tesoreria'] = { base: 'Total dinero a recibir por tesoreria', formula: tesoreriaTxt };
+
           footerMetaBuilt = true;
         },
 
@@ -645,66 +589,29 @@
             this.startSession(fecha, puntoVenta);
           });
 
-          document.getElementById('add-nomina-btn')
-            .addEventListener('click', () =>
-              this.addRow({
-                tipo: 'Ventas a crédito (descuentos por nómina)',
-                category: 'credito',
-                isRemovable: true,
-                styleHint: 'credito-nomina'
-              })
-            );
+          document.getElementById('add-nomina-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas a crédito (descuentos por nómina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' })
+          );
 
-          document.getElementById('add-formulas-btn')
-            .addEventListener('click', () =>
-              this.addRow({
-                tipo: 'Ventas a crédito (fórmulas)',
-                category: 'credito',
-                isRemovable: true,
-                styleHint: 'credito-formulas'
-              })
-            );
+          document.getElementById('add-formulas-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas a crédito (fórmulas)', category: 'credito', isRemovable: true, styleHint: 'credito-formulas' })
+          );
 
-          document.getElementById('add-kardex-btn')
-            .addEventListener('click', () =>
-              this.addRow({
-                tipo: 'Faltantes en kardex (descuentos por nomina)',
-                category: 'credito',
-                isRemovable: true,
-                styleHint: 'credito-nomina'
-              })
-            );
+          document.getElementById('add-kardex-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Faltantes en kardex (descuentos por nomina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' })
+          );
 
-          document.getElementById('add-interco-btn')
-            .addEventListener('click', () =>
-              this.addRow({
-                tipo: 'Ventas a crédito a empresas del grupo',
-                category: 'credito',
-                isRemovable: true,
-                styleHint: 'interco'
-              })
-            );
+          document.getElementById('add-interco-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas a crédito a empresas del grupo', category: 'credito', isRemovable: true, styleHint: 'interco' })
+          );
 
-          // ✅ Autoconsumo (crédito) con estilo propio + tercero obligatorio por TIPOS_REQUIEREN_EMPRESA
-          document.getElementById('add-autoconsumo-btn')
-            .addEventListener('click', () =>
-              this.addRow({
-                tipo: 'Autoconsumo',
-                category: 'credito',
-                isRemovable: true,
-                styleHint: 'autoconsumo'
-              })
-            );
+          document.getElementById('add-autoconsumo-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Autoconsumo', category: 'credito', isRemovable: true, styleHint: 'autoconsumo' })
+          );
 
-          document.getElementById('add-gasto-btn')
-            .addEventListener('click', () =>
-              this.addRow({
-                tipo: 'Gasto en efectivo',
-                category: 'gasto',
-                isRemovable: true,
-                styleHint: 'gasto'
-              })
-            );
+          document.getElementById('add-gasto-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Gasto en efectivo', category: 'gasto', isRemovable: true, styleHint: 'gasto' })
+          );
 
           UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
           UI.recordsBody.addEventListener('change', (e) => this.handleTableInput(e));
@@ -771,9 +678,8 @@
                 'Ya existen datos guardados localmente para esta fecha y punto.\n' +
                 '¿Deseas reanudarlos en lugar de iniciar desde cero?'
               );
-              if (reanudar) {
-                this.loadRecords();
-              } else {
+              if (reanudar) this.loadRecords();
+              else {
                 localStorage.removeItem(key);
                 this.createInitialRows();
                 this.saveRecords();
@@ -828,17 +734,9 @@
           let terceroCellHtml = '';
           if (terceroDisabled) {
             terceroCellHtml = `
-              <input
-                type="text"
-                class="table-input"
-                data-field="tercero"
-                value=""
-                placeholder="No aplica"
-                disabled
-              >
+              <input type="text" class="table-input" data-field="tercero" value="" placeholder="No aplica" disabled>
             `;
           } else {
-            // ✅ Siempre select (sin escritura libre) y con required cuando aplique
             terceroCellHtml = buildTerceroSelectHtml(record.tercero, { required: terceroRequired });
           }
 
@@ -878,51 +776,31 @@
             switch (category) {
               case 'efectivo': efectivo += currentTotal; break;
               case 'electronica': electronica += currentTotal; break;
-              case 'credito': credito += currentTotal; break; // Autoconsumo entra aquí
+              case 'credito': credito += currentTotal; break;
               case 'gasto': gasto += currentTotal; break;
             }
           });
 
           const ventasNetoEfectivo = efectivo - credito;
           const ventasElectronicas = electronica;
-          const ventasCredito      = credito;
-          const ventasGlobal       = ventasNetoEfectivo + ventasElectronicas + ventasCredito;
-          const gastosEfectivo     = gasto;
-          const esperadoTesoreria  = ventasNetoEfectivo - gastosEfectivo;
+          const ventasCredito = credito;
+          const ventasGlobal = ventasNetoEfectivo + ventasElectronicas + ventasCredito;
+          const gastosEfectivo = gasto;
+          const esperadoTesoreria = ventasNetoEfectivo - gastosEfectivo;
 
-          return {
-            summary: {
-              ventasNetoEfectivo,
-              ventasElectronicas,
-              ventasCredito,
-              gastosEfectivo,
-              ventasGlobal,
-              esperadoTesoreria
-            }
-          };
+          return { summary: { ventasNetoEfectivo, ventasElectronicas, ventasCredito, gastosEfectivo, ventasGlobal, esperadoTesoreria } };
         },
 
         updateTotalsDisplay(){
           this.applyFooterLabels();
           const s = this.getCalculatedState().summary;
 
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total')
-            .textContent = Utils.formatCurrency(s.ventasNetoEfectivo);
-
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total')
-            .textContent = Utils.formatCurrency(s.ventasElectronicas);
-
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_credito"] .col-total')
-            .textContent = Utils.formatCurrency(s.ventasCredito);
-
-          UI.recordsFooter.querySelector('[data-summary-id="total_gastos_efectivo"] .col-total')
-            .textContent = Utils.formatCurrency(s.gastosEfectivo);
-
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_global"] .col-total')
-            .textContent = Utils.formatCurrency(s.ventasGlobal);
-
-          UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total')
-            .textContent = Utils.formatCurrency(s.esperadoTesoreria);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total').textContent = Utils.formatCurrency(s.ventasNetoEfectivo);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total').textContent = Utils.formatCurrency(s.ventasElectronicas);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_credito"] .col-total').textContent = Utils.formatCurrency(s.ventasCredito);
+          UI.recordsFooter.querySelector('[data-summary-id="total_gastos_efectivo"] .col-total').textContent = Utils.formatCurrency(s.gastosEfectivo);
+          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_global"] .col-total').textContent = Utils.formatCurrency(s.ventasGlobal);
+          UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total').textContent = Utils.formatCurrency(s.esperadoTesoreria);
         },
 
         getRecordsFromTable(){
@@ -946,20 +824,15 @@
           return records;
         },
 
-        // ✅ Envía DETALLES + TOTALES al Apps Script (hoja de cálculo)
         async handleSendAll(){
           const records = this.getRecordsFromTable();
-          if (records.length === 0) {
-            alert('No hay registros con valores para guardar.');
-            return;
-          }
+          if (records.length === 0) { alert('No hay registros con valores para guardar.'); return; }
           if (!this.validateEmpresaGrupo(records)) return;
 
           const btn = document.getElementById('sendAllBtn');
           btn.disabled = true;
           btn.textContent = 'Guardando...';
 
-          // ===== DETALLES =====
           const detailData = records.map(r => ({
             fecha: state.session.date,
             puntoVenta: state.session.pos,
@@ -969,7 +842,6 @@
             valor: Number(r.total || 0)
           }));
 
-          // ===== TOTALES =====
           const s = this.getCalculatedState().summary;
           const totalData = [
             { tipo: 'Total ventas en efectivo',             valor: s.ventasNetoEfectivo },
@@ -1052,18 +924,14 @@
           const savedRecords = JSON.parse(localStorage.getItem(key)) || [];
           UI.recordsBody.innerHTML = '';
 
-          if (savedRecords.length > 0) {
-            savedRecords.forEach(rec => this.addRow(rec, true));
-          } else {
-            this.createInitialRows();
-          }
+          if (savedRecords.length > 0) savedRecords.forEach(rec => this.addRow(rec, true));
+          else this.createInitialRows();
         }
       });
     })(window.Arcadia);
   </script>
 
   <script>
-    // ===================== app.main.js (inline) =====================
     window.Arcadia = window.Arcadia || {};
     (function (A) {
       'use strict';
@@ -1082,10 +950,7 @@
           window.addEventListener('online', () => this.updateNetworkStatus());
           window.addEventListener('offline', () => this.updateNetworkStatus());
 
-          // Default de fecha: ayer
           if (UI.fechaInput && !UI.fechaInput.value) UI.fechaInput.value = Utils.yesterdayISO();
-
-          // Habilitar/inhabilitar reanudar
           UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
         },
 
@@ -1106,15 +971,12 @@
           UI.home.classList.toggle('hidden', name!=='home');
           UI.capture.classList.toggle('hidden', name!=='capture');
 
-          if(name==='capture'){
-            if (!(state.session.date && state.session.pos)) {
-              UI.fechaInput.value = Utils.yesterdayISO();
-            }
+          if(name==='capture' && !(state.session.date && state.session.pos)){
+            UI.fechaInput.value = Utils.yesterdayISO();
           }
         }
       });
 
-      // Bootstrap
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => App.init());
       } else {

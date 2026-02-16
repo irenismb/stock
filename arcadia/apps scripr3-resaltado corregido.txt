@@ -1,0 +1,547 @@
+/**
+ * Backend para la app de caja.
+ * - doPost: guarda los registros que envía el front.
+ *   ✅ NUEVO: si puntoVenta es "Aroma" -> guarda en OTRO Spreadsheet (AROMA_SPREADSHEET_ID).
+ *
+ * - doGet?action=report  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : devuelve filas SOLO de TOTALES (combinando archivos).
+ * - doGet?action=details &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : devuelve filas de DETALLE (excluye totales, combinando archivos).
+ * - doGet?action=export  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : genera y devuelve URL para descargar en Excel (.xlsx).
+ */
+
+/** ====== CONFIGURACIÓN ====== */
+const SHEET_NAME = 'Hoja 1'; // <-- usa el nombre exacto de tu pestaña (debe existir en ambos archivos)
+const REQUIRED_HEADERS = ['fecha','puntoVenta','tipo','tercero','detalle','valor'];
+
+// (Opcional) Si tu hoja ya tiene estas columnas, también las formateamos como número.
+const OPTIONAL_NUM_HEADERS = ['devoluciones', 'total'];
+
+// Textos de "tipo" que cuentan para RESÚMENES/TOTALES
+const TOTALES_VALIDOS = new Set([
+  'Total dinero a recibir por tesoreria',
+  'Total gastos en efectivo',
+  'Total ventas',
+  'Total ventas a credito',
+  'Total ventas en efectivo',
+  'Total ventas por medios electronicos'
+]);
+
+// ✅ color para el tipo específico de tesorería
+const TIPO_TESORERIA = 'Total dinero a recibir por tesoreria';
+const COLOR_TESORERIA_RGB = { r: 254, g: 242, b: 205 };
+
+// (Opcional) token simple para POST/GET (?key=...); deja vacío para desactivar
+const API_KEY = ''; // p.ej. 'secreto-super-simple'
+
+// ====== NUEVO: Ruteo por punto de venta ======
+const PUNTO_VENTA_AROMA = 'Aroma';
+const AROMA_SPREADSHEET_ID = '1kg9EAeDphGisTujDEuj8U5PZd5CvYs-tRXzxhKdF4kY'; // <- ID tomado del enlace
+// Si en el archivo Aroma la pestaña se llama diferente, cambia SHEET_NAME o crea otra constante.
+
+// ✅ Sets normalizados para comparaciones seguras
+const TOTALES_NORM = new Set(Array.from(TOTALES_VALIDOS).map(_normText));
+const TIPO_TESORERIA_NORM = _normText(TIPO_TESORERIA);
+const PV_AROMA_NORM = _normText(PUNTO_VENTA_AROMA);
+
+/** ====== CORS Y UTILIDADES HTTP ====== */
+function doOptions(e) {
+  return _withCors(ContentService.createTextOutput(''), e);
+}
+function _withCors(output, e) {
+  // ContentService no permite setear todos los headers CORS; devolvemos JSON estándar.
+  return output.setMimeType(ContentService.MimeType.JSON);
+}
+function _checkApiKey(e) {
+  if (!API_KEY) return;
+  const viaQuery = e?.parameter?.key;
+  if (viaQuery !== API_KEY) throw new Error('No autorizado (API key incorrecta o ausente).');
+}
+
+/** ====== GUARDADO (POST) ====== */
+function doPost(e) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+
+  try {
+    _checkApiKey(e);
+
+    if (!e || !e.postData || !e.postData.contents) throw new Error('POST vacío');
+
+    let payload;
+    try {
+      payload = JSON.parse(e.postData.contents);
+    } catch {
+      throw new Error('JSON inválido en el cuerpo de la solicitud');
+    }
+
+    const records = Array.isArray(payload) ? payload : [payload];
+    if (!records.length) throw new Error('No hay registros para guardar');
+
+    // ✅ Agrupa por destino (AROMA vs DEFAULT) por si en algún futuro envías mezclado
+    const grupos = _agruparRegistrosPorDestino_(records);
+
+    let totalAdded = 0;
+    const resumen = [];
+
+    for (const g of grupos) {
+      const { destino, spreadsheet, sheet, headerInfo } = _abrirDestinoYPreparar_(g.destinoKey);
+      const added = _guardarEnHoja_(sheet, headerInfo, g.records);
+      totalAdded += added;
+
+      resumen.push({
+        destino,
+        spreadsheetId: spreadsheet.getId(),
+        sheetName: sheet.getName(),
+        rowsAdded: added
+      });
+    }
+
+    return _withCors(_json({ result: 'success', rowsAdded: totalAdded, detail: resumen }), e);
+
+  } catch (error) {
+    Logger.log(error);
+    return _withCors(_json({ result: 'error', error: String(error.message || error) }), e);
+
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/** ====== REPORTE / DETALLES / EXPORT (GET) ======
+ * action=report  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> JSON de filas SOLO TOTALES (combinado).
+ * action=details &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> JSON de filas de DETALLE (excluye totales, combinado).
+ * action=export  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> {result:'ok', downloadUrl:'...xlsx'}.
+ */
+function doGet(e) {
+  try {
+    _checkApiKey(e);
+
+    const p = e?.parameter || {};
+    if (!p.action) return _withCors(_json({ result: 'error', error: 'Falta parámetro action' }), e);
+    if (!p.from || !p.to) return _withCors(_json({ result: 'error', error: 'Faltan parámetros from/to (YYYY-MM-DD)' }), e);
+
+    const tz = Session.getScriptTimeZone();
+    const dFrom = _dayStart(p.from, tz);
+    const dTo   = _dayEnd(p.to, tz);
+    if (isNaN(dFrom) || isNaN(dTo)) return _withCors(_json({ result: 'error', error: 'Formato de fecha inválido. Usa YYYY-MM-DD' }), e);
+    if (dFrom > dTo) return _withCors(_json({ result: 'error', error: '"from" no puede ser mayor que "to"' }), e);
+
+    const pvFilter = String(p.puntoVenta || '').trim(); // opcional
+    const pvFilterNorm = pvFilter ? _normText(pvFilter) : '';
+
+    if (p.action === 'report') {
+      const rows = leerTotalesPorRango(p.from, p.to, pvFilterNorm);
+      return _withCors(_json(rows), e);
+    }
+
+    if (p.action === 'details') {
+      const rows = leerDetallesPorRango(p.from, p.to, pvFilterNorm);
+      return _withCors(_json(rows), e);
+    }
+
+    if (p.action === 'export') {
+      const rows = leerTotalesPorRango(p.from, p.to, pvFilterNorm);
+      const info = _crearArchivoExcelDesdeFilas(rows, `Reporte_${p.from}_a_${p.to}`);
+      return _withCors(_json({ result: 'ok', ...info }), e);
+    }
+
+    return _withCors(_json({ result: 'error', error: 'Acción no soportada. Usa action=report, details o export' }), e);
+
+  } catch (err) {
+    return _withCors(_json({ result: 'error', error: String(err) }), e);
+  }
+}
+
+/** ====== LECTURAS ====== */
+
+/**
+ * Totales por rango (combinando DEFAULT + AROMA):
+ * devuelve SOLO filas cuyo "tipo" ∈ TOTALES_VALIDOS (comparación tolerante).
+ * pvFilterNorm: si se pasa, filtra por puntoVenta normalizado.
+ */
+function leerTotalesPorRango(fromISO, toISO, pvFilterNorm) {
+  const tz = Session.getScriptTimeZone();
+  const dFrom = _dayStart(fromISO, tz);
+  const dTo   = _dayEnd(toISO, tz);
+
+  const fuentes = _getFuentesDeDatos_();
+  const out = [];
+
+  for (const fuente of fuentes) {
+    const { data, headerRowIndex, idx } = _leerHojaYCabeceraDesdeFuente_(fuente);
+
+    for (let r = headerRowIndex + 1; r < data.length; r++) {
+      const row = data[r];
+      if (!row || row.length === 0 || row.every(v => v === '' || v === null)) continue;
+
+      const f = _coerceFecha(row[idx.fecha]);
+      if (!f) continue;
+      if (f < dFrom || f > dTo) continue;
+
+      const punto = String(row[idx.puntoVenta] || '').trim();
+      if (pvFilterNorm && _normText(punto) !== pvFilterNorm) continue;
+
+      const tipo = String(row[idx.tipo] || '').trim();
+      if (!TOTALES_NORM.has(_normText(tipo))) continue;
+
+      const valorNum = _toNumber(row[idx.valor]);
+
+      out.push({
+        fecha: Utilities.formatDate(f, tz, 'yyyy-MM-dd'),
+        puntoVenta: punto,
+        tipo: tipo,
+        valor: valorNum
+      });
+    }
+  }
+
+  out.sort((a,b) =>
+    (a.fecha||'').localeCompare(b.fecha||'') ||
+    (a.puntoVenta||'').localeCompare(b.puntoVenta||'') ||
+    (a.tipo||'').localeCompare(b.tipo||'')
+  );
+
+  return out;
+}
+
+/**
+ * Detalles por rango (combinando DEFAULT + AROMA):
+ * devuelve filas cuyo "tipo" NO esté en TOTALES_VALIDOS.
+ * pvFilterNorm: si se pasa, filtra por puntoVenta normalizado.
+ */
+function leerDetallesPorRango(fromISO, toISO, pvFilterNorm) {
+  const tz = Session.getScriptTimeZone();
+  const dFrom = _dayStart(fromISO, tz);
+  const dTo   = _dayEnd(toISO, tz);
+
+  const fuentes = _getFuentesDeDatos_();
+  const out = [];
+
+  for (const fuente of fuentes) {
+    const { data, headerRowIndex, idx } = _leerHojaYCabeceraDesdeFuente_(fuente);
+
+    for (let r = headerRowIndex + 1; r < data.length; r++) {
+      const row = data[r];
+      if (!row || row.length === 0 || row.every(v => v === '' || v === null)) continue;
+
+      const f = _coerceFecha(row[idx.fecha]);
+      if (!f) continue;
+      if (f < dFrom || f > dTo) continue;
+
+      const punto = String(row[idx.puntoVenta] || '').trim();
+      if (pvFilterNorm && _normText(punto) !== pvFilterNorm) continue;
+
+      const tipo = String(row[idx.tipo] || '').trim();
+      if (TOTALES_NORM.has(_normText(tipo))) continue;
+
+      const tercero  = String(row[idx.tercero] || '').trim();
+      const detalle  = String(row[idx.detalle] || '').trim();
+      const valorNum = _toNumber(row[idx.valor]);
+
+      out.push({
+        fecha: Utilities.formatDate(f, tz, 'yyyy-MM-dd'),
+        puntoVenta: punto,
+        tipo: tipo,
+        tercero: tercero,
+        detalle: detalle,
+        valor: valorNum
+      });
+    }
+  }
+
+  out.sort((a,b) =>
+    (a.fecha||'').localeCompare(b.fecha||'') ||
+    (a.puntoVenta||'').localeCompare(b.puntoVenta||'') ||
+    (a.tipo||'').localeCompare(b.tipo||'')
+  );
+
+  return out;
+}
+
+/** ====== EXPORTACIÓN XLSX (opcional, para totales) ====== */
+function _crearArchivoExcelDesdeFilas(rows, nombreBase) {
+  const headers = ['fecha', 'puntoVenta', 'tipo', 'valor'];
+  const ss = SpreadsheetApp.create(nombreBase || 'Reporte');
+  const sh = ss.getActiveSheet();
+  sh.setName('Reporte');
+
+  const matrix = [headers, ...rows.map(r => [r.fecha, r.puntoVenta, r.tipo, r.valor])];
+  sh.getRange(1, 1, matrix.length, headers.length).setValues(matrix);
+  sh.getRange(1, 1, 1, headers.length).setFontWeight('bold');
+  sh.autoResizeColumns(1, headers.length);
+
+  const fileId = ss.getId();
+  const downloadUrl = `https://docs.google.com/spreadsheets/d/${fileId}/export?format=xlsx`;
+  return { fileId, downloadUrl };
+}
+
+/** ====== NUEVO: fuentes y ruteo ====== */
+function _getFuentesDeDatos_() {
+  // DEFAULT: spreadsheet contenedor del script
+  const defSS = SpreadsheetApp.getActive();
+  const list = [{ key: 'DEFAULT', spreadsheet: defSS, sheetName: SHEET_NAME }];
+
+  // AROMA: spreadsheet por ID (si existe y no es el mismo)
+  if (AROMA_SPREADSHEET_ID) {
+    const aromaSS = SpreadsheetApp.openById(AROMA_SPREADSHEET_ID);
+    if (aromaSS.getId() !== defSS.getId()) {
+      list.push({ key: 'AROMA', spreadsheet: aromaSS, sheetName: SHEET_NAME });
+    }
+  }
+  return list;
+}
+
+function _agruparRegistrosPorDestino_(records) {
+  const buckets = new Map(); // destinoKey -> records[]
+  for (const rec of records) {
+    const pv = String(rec?.puntoVenta || '').trim();
+    const destinoKey = (_normText(pv) === PV_AROMA_NORM) ? 'AROMA' : 'DEFAULT';
+    if (!buckets.has(destinoKey)) buckets.set(destinoKey, []);
+    buckets.get(destinoKey).push(rec);
+  }
+
+  const out = [];
+  for (const [destinoKey, recs] of buckets.entries()) out.push({ destinoKey, records: recs });
+  return out;
+}
+
+function _abrirDestinoYPreparar_(destinoKey) {
+  let spreadsheet;
+  let destinoLabel = destinoKey;
+
+  if (destinoKey === 'AROMA') {
+    if (!AROMA_SPREADSHEET_ID) throw new Error('AROMA_SPREADSHEET_ID no está configurado.');
+    spreadsheet = SpreadsheetApp.openById(AROMA_SPREADSHEET_ID);
+    destinoLabel = 'AROMA';
+  } else {
+    spreadsheet = SpreadsheetApp.getActive();
+    destinoLabel = 'DEFAULT';
+  }
+
+  const sheet = spreadsheet.getSheetByName(SHEET_NAME);
+  if (!sheet) {
+    throw new Error(`No existe la hoja "${SHEET_NAME}" en el destino ${destinoLabel} (Spreadsheet ID: ${spreadsheet.getId()})`);
+  }
+
+  const headerInfo = _leerHeaderInfo_(sheet, REQUIRED_HEADERS);
+
+  return {
+    destino: destinoLabel,
+    spreadsheet,
+    sheet,
+    headerInfo
+  };
+}
+
+/** ====== ESCRITURA EN HOJA (genérico) ====== */
+function _guardarEnHoja_(sheet, headerInfo, records) {
+  if (!records || !records.length) return 0;
+
+  const { headerRowIndex, header, colIdx, optNumIdx } = headerInfo;
+
+  // Solo escribimos hasta la última columna que rellenamos (req + opcionales presentes).
+  const maxWriteIndex = Math.max(...Object.values(colIdx), ...Object.values(optNumIdx));
+  const lastColToWrite = maxWriteIndex + 1;
+
+  const rows = [];
+  for (let i = 0; i < records.length; i++) {
+    const rec = records[i] || {};
+
+    for (const h of REQUIRED_HEADERS) {
+      if (!(h in rec)) throw new Error(`Falta el campo requerido "${h}" en el registro ${i + 1}`);
+    }
+
+    // valor obligatorio
+    let v = rec.valor;
+    if (typeof v === 'string') {
+      v = v.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+      v = parseFloat(v);
+    }
+    if (typeof v !== 'number' || !isFinite(v)) v = 0;
+
+    const row = new Array(lastColToWrite).fill('');
+
+    row[colIdx.fecha]      = rec.fecha;
+    row[colIdx.puntoVenta] = rec.puntoVenta;
+    row[colIdx.tipo]       = rec.tipo;
+    row[colIdx.tercero]    = rec.tercero;
+    row[colIdx.detalle]    = rec.detalle;
+    row[colIdx.valor]      = Number(v) || 0;
+
+    // opcionales (si existen en hoja y vienen en el payload)
+    for (const k in optNumIdx) {
+      let n = rec[k];
+      if (typeof n === 'string') {
+        n = n.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+        n = parseFloat(n);
+      }
+      if (typeof n !== 'number' || !isFinite(n)) n = 0;
+      row[optNumIdx[k]] = Number(n) || 0;
+    }
+
+    rows.push(row);
+  }
+
+  // Inserta a partir de la primera fila libre DESPUÉS de la fila de encabezados
+  const startRow = Math.max(sheet.getLastRow() + 1, headerRowIndex + 2);
+
+  // Escribe datos
+  const writeRange = sheet.getRange(startRow, 1, rows.length, rows[0].length);
+  writeRange.setValues(rows);
+
+  // Formato numérico (sin moneda) en la columna "valor"
+  sheet.getRange(startRow, colIdx.valor + 1, rows.length, 1).setNumberFormat('#,##0');
+
+  // Formato numérico opcional
+  for (const k in optNumIdx) {
+    sheet.getRange(startRow, optNumIdx[k] + 1, rows.length, 1).setNumberFormat('#,##0');
+  }
+
+  /**
+   * ====== FORMATO (MEJORAS SOLICITADAS) ======
+   * - Todo lo insertado llega SIN negrita.
+   * - Todas las filas cuyo tipo sea TOTAL van en negrita, SOLO hasta la columna "valor" (tu G).
+   * - SOLO "Total dinero a recibir por tesoreria" va con color, SOLO hasta la columna "valor" (tu G).
+   * - No se debe resaltar ni poner negrita hasta la J.
+   */
+
+  const maxColsHoja = sheet.getMaxColumns();
+
+  // "Hasta la columna G" en tu caso coincide con la columna 'valor'.
+  // Si mañana mueves columnas, seguirá siendo correcto porque se basa en el índice real de 'valor'.
+  const endCol = Math.min(colIdx.valor + 1, maxColsHoja);
+
+  // Normalizamos (sin negrita) un ancho suficiente para evitar “arrastres” hasta J.
+  // Forzamos mínimo A:J (10) porque ese es el problema que mencionaste.
+  const normalizeWidth = Math.min(
+    Math.max(header.length || 0, lastColToWrite, 10),
+    maxColsHoja
+  );
+
+  // 1) Todo lo nuevo: sin negrita (A .. normalizeWidth)
+  sheet.getRange(startRow, 1, rows.length, normalizeWidth).setFontWeight('normal');
+
+  // 2) Totales: negrita A..endCol. Tesorería: además color A..endCol y limpiar fondo más allá.
+  for (let i = 0; i < records.length; i++) {
+    const tipoRaw = String((records[i] || {}).tipo || '').trim();
+    const tipoNorm = _normText(tipoRaw);
+    if (!TOTALES_NORM.has(tipoNorm)) continue;
+
+    const rowNumber = startRow + i;
+
+    // Negrita solo hasta "valor" (G en tu hoja)
+    const rangoHastaValor = sheet.getRange(rowNumber, 1, 1, endCol);
+    rangoHastaValor.setFontWeight('bold');
+
+    // Solo tesorería con color (hasta valor)
+    if (tipoNorm === TIPO_TESORERIA_NORM) {
+      rangoHastaValor.setBackgroundRGB(
+        COLOR_TESORERIA_RGB.r,
+        COLOR_TESORERIA_RGB.g,
+        COLOR_TESORERIA_RGB.b
+      );
+
+      // Asegura que NO quede pintado hasta J (si existen columnas H..J)
+      if (normalizeWidth > endCol) {
+        sheet
+          .getRange(rowNumber, endCol + 1, 1, normalizeWidth - endCol)
+          .setBackground(null);
+      }
+    }
+  }
+
+  return rows.length;
+}
+
+/** ====== LECTURA DE CABECERA (genérico) ====== */
+function _leerHeaderInfo_(sheet, requiredHeaders) {
+  const data = sheet.getDataRange().getValues();
+  const headerRowIndex = encontrarFilaEncabezados(data, requiredHeaders);
+  if (headerRowIndex === -1) {
+    throw new Error('No se encontraron los encabezados requeridos en la hoja "' + sheet.getName() + '": ' + requiredHeaders.join(', '));
+  }
+
+  const header = data[headerRowIndex].map(v => String(v).trim());
+
+  const colIdx = Object.fromEntries(requiredHeaders.map(h => [h, header.indexOf(h)]));
+  requiredHeaders.forEach(h => { if (colIdx[h] === -1) throw new Error('Falta columna en hoja "' + sheet.getName() + '": ' + h); });
+
+  const optNumIdx = {};
+  OPTIONAL_NUM_HEADERS.forEach(h => {
+    const ix = header.indexOf(h);
+    if (ix !== -1) optNumIdx[h] = ix;
+  });
+
+  return { data, headerRowIndex, header, colIdx, optNumIdx };
+}
+
+function _leerHojaYCabeceraDesdeFuente_(fuente) {
+  const ss = fuente.spreadsheet;
+  const sh = ss.getSheetByName(fuente.sheetName);
+  if (!sh) throw new Error(`No existe la hoja "${fuente.sheetName}" en el Spreadsheet ID: ${ss.getId()}`);
+
+  const data = sh.getDataRange().getValues();
+  const headerRowIndex = encontrarFilaEncabezados(data, REQUIRED_HEADERS);
+  if (headerRowIndex === -1) throw new Error(`No se encontraron los encabezados requeridos: ${REQUIRED_HEADERS.join(', ')} (Spreadsheet ID: ${ss.getId()})`);
+
+  const header = data[headerRowIndex].map(v => String(v).trim());
+  const idx = Object.fromEntries(REQUIRED_HEADERS.map(h => [h, header.indexOf(h)]));
+  REQUIRED_HEADERS.forEach(h => { if (idx[h] === -1) throw new Error('Falta columna: ' + h + ` (Spreadsheet ID: ${ss.getId()})`); });
+
+  return { data, headerRowIndex, idx };
+}
+
+/** ====== UTILIDADES ====== */
+function encontrarFilaEncabezados(matrix, required) {
+  for (let i = 0; i < Math.min(matrix.length, 15); i++) {
+    const set = new Set(matrix[i].map(v => String(v).trim()));
+    if (required.every(h => set.has(h))) return i;
+  }
+  return -1;
+}
+
+function _json(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function _parseYMD(val) {
+  if (!val) return null;
+  const s = String(val).trim();
+  const m = s.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+  if (!m) return null;
+  const d = new Date(`${m[1]}-${m[2]}-${m[3]}T00:00:00`);
+  return isNaN(d) ? null : d;
+}
+function _dayStart(iso, tz) {
+  const d = _parseYMD(iso);
+  if (!d) return new Date('invalid');
+  const s = Utilities.formatDate(d, tz, 'yyyy-MM-dd') + ' 00:00:00';
+  return new Date(s);
+}
+function _dayEnd(iso, tz) {
+  const d = _parseYMD(iso);
+  if (!d) return new Date('invalid');
+  const s = Utilities.formatDate(d, tz, 'yyyy-MM-dd') + ' 23:59:59';
+  return new Date(s);
+}
+function _coerceFecha(raw) {
+  return raw instanceof Date ? raw : _parseYMD(raw);
+}
+function _toNumber(v) {
+  if (typeof v === 'string') {
+    v = v.replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+    v = parseFloat(v);
+  }
+  if (typeof v !== 'number' || !isFinite(v)) v = 0;
+  return Number(v) || 0;
+}
+
+// ✅ Normaliza textos para comparaciones seguras (quita tildes, minúsculas, colapsa espacios)
+function _normText(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}

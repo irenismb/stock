@@ -18,6 +18,14 @@ https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QP
 
 
 
+el carrito de compras debe servir para estas dos cosas:
+
+- para que el cliente arme el mismo su pedido.
+- para que luego, ese pedido lo pueda tomar el vendedor y convertirlo en una factura de venta. 
+
+crees que eso es posible? como seria?
+
+
 
 
 

@@ -850,19 +850,19 @@
       font-size:12.5px;
       line-height:1.45;
     }
+
+    /* ✅ AJUSTE SOLICITADO:
+       - En móvil también quedan 2 campos por fila.
+       - SOLO "Observación" ocupa fila completa (span-2).
+       - El preview del total queda fuera del grid (no cuenta como "campo").
+    */
     .client-grid{
       display:grid;
       gap:10px;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr; /* ✅ 2 por fila en móvil y desktop */
     }
-    @media (min-width:520px){
-      .client-grid{
-        grid-template-columns: 1fr 1fr;
-      }
-      .client-field.span-2,
-      .client-total-preview.span-2{
-        grid-column: 1 / -1;
-      }
+    .client-field.span-2{
+      grid-column: 1 / -1; /* ✅ solo Observación ocupa toda la fila */
     }
 
     .client-field label{
@@ -896,18 +896,19 @@
       resize:vertical;
       line-height:1.35;
     }
-		
-	#clientObs{
-	  min-height:42px;
-	}
+
+    #clientObs{
+      min-height:42px;
+    }
 
     /* ✅ Para que el costo de envío se lea mejor */
     #clientShipping{
       text-align:right;
     }
 
+    /* ✅ Preview de total fuera del grid (no “rompe” la regla de 2 por fila) */
     .client-total-preview{
-      margin:4px 0 0;
+      margin:12px 0 0;
       color:rgba(231,237,245,.92);
       font-size:12.5px;
       line-height:1.45;
@@ -1137,7 +1138,7 @@
                    placeholder="Ej: 3042088961" />
           </div>
 
-          <!-- ✅ Dirección + Envío en la misma fila (desktop), para ahorrar espacio -->
+          <!-- ✅ Dirección + Envío en la misma fila (desktop y móvil) -->
           <div class="client-field">
             <label for="clientAddress">
               <span>Dirección</span>
@@ -1161,12 +1162,12 @@
               <span>Observación</span>
               <span class="client-opt">Opcional</span>
             </label>
-            <!-- ✅ 2 filas visibles (antes 3) -->
             <textarea id="clientObs" rows="1" placeholder="Ej: Entregar en portería / horario de entrega / referencia..."></textarea>
           </div>
-
-          <p class="client-total-preview span-2" id="clientTotalPreview"></p>
         </div>
+
+        <!-- ✅ Preview fuera del grid -->
+        <p class="client-total-preview" id="clientTotalPreview"></p>
       </div>
 
       <div class="client-modal-footer">
@@ -1196,8 +1197,9 @@
        - ✅ Carga de productos prioriza Tree API (menos llamadas) y soporta subcarpetas
        - ✅ NUEVO: botón "Vaciar carrito"
        - ✅ NUEVO: Datos cliente incluye Dirección, Observación y Costo del envío (todo opcional)
-       - ✅ AJUSTE: el envío queda a la derecha de Dirección (desktop)
-       - ✅ AJUSTE: Observación ocupa 2 filas visibles
+       - ✅ AJUSTE: el envío queda a la derecha de Dirección (desktop y móvil)
+       - ✅ AJUSTE: Observación ocupa la fila completa
+       - ✅ AJUSTE: preview total fuera del grid (no cuenta como “campo”)
        - ✅ AJUSTE: número destino WhatsApp por defecto 3042088961, editable
          * Tip: SHIFT + clic en el ícono de WhatsApp (arriba) para cambiar el número destino y se guarda en este dispositivo.
        ========================== */

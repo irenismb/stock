@@ -697,7 +697,7 @@
       display:none;
       align-items:center;
       justify-content:center;
-      z-index:9999;
+      z-index:9999; /* mismo z-index que carrito; el orden en el DOM la pone encima */
     }
     .form-modal.open{display:flex}
     .form-modal-backdrop{
@@ -821,7 +821,7 @@
     }
     .field textarea{
       resize:vertical;
-      min-height:44px;
+      min-height:44px; /* antes muy alto; ahora ocupa una fila por defecto */
     }
     .span-2{ grid-column: 1 / -1; }
 
@@ -1623,7 +1623,7 @@
     }
 
     /* ==========================
-       WhatsApp (la compra se envía al WhatsApp de la tienda)
+       WhatsApp (se envía al celular del cliente)
        ========================== */
     const LS_CLIENT_KEY = "irenismb_client_v2";
     const LS_ADDRESS_KEY = "irenismb_address_v3";
@@ -1880,9 +1880,7 @@
       cartCountEl.classList.toggle("has-items", qty > 0);
     }
     function saveCart(){
-      try{
-        localStorage.setItem("cart", JSON.stringify(cart));
-      }catch(_){}
+      localStorage.setItem("cart", JSON.stringify(cart));
       refreshCartCount();
     }
 
@@ -1935,17 +1933,17 @@
       const raw = (shippingCopInp ? shippingCopInp.value : readStringLS(LS_SHIPPING_KEY, "")) || "";
       return toNumberDigits(raw);
     }
-    function loadShippingFromLS(){
-      if(!shippingCopInp) return;
+	function loadShippingFromLS(){
+	  if(!shippingCopInp) return;
 
-      const MIN_SHIPPING = 6000;
+	  const MIN_SHIPPING = 6000;
 
-      const raw = readStringLS(LS_SHIPPING_KEY, "");
-      const v = toNumberDigits(raw);
+	  const raw = readStringLS(LS_SHIPPING_KEY, "");
+	  const v = toNumberDigits(raw);
 
-      // Si no hay valor guardado, usar 6.000 por defecto (editable).
-      shippingCopInp.value = (v ? String(v) : String(MIN_SHIPPING));
-    }
+	  // Si no hay valor guardado, usar 6.000 por defecto (editable).
+	  shippingCopInp.value = (v ? String(v) : String(MIN_SHIPPING));
+	}
     function saveShippingToLS(){
       if(!shippingCopInp) return;
       const v = toNumberDigits(shippingCopInp.value);
@@ -1956,7 +1954,7 @@
       name: "IRENISMB STOCK NATURA",
       whatsappDisplay: "+57 304 208 8961",
       whatsappDigits: "573042088961",
-      celularDisplay: "3114040809", /* (Dato suelto actualmente: no se usa en mensajes) */
+      celularDisplay: "3114040809",
       direccion: "Calle 10A #20A-06, Santa Marta, Magdalena",
       barrio: "Los Almendros",
       mapa: "https://maps.google.com/?q=11.244833370782679,-74.19066001689564",
@@ -2077,46 +2075,7 @@
 
       return lines.join("\n");
     }
-
-    // Wrapper de compatibilidad (actualmente no se usa)
-    function getAddressDataFromLS(){
-      const addr = getAddressDataCurrent();
-      const mapDir = addr.addressLine
-        ? ("https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(addr.addressLine))
-        : "";
-      return { addressLine: addr.addressLine, barrio: addr.barrio, mapDir };
-    }
-
-    // Compatibilidad (no se usa actualmente)
-    function buildSellerMessage(){
-      const items = cartItemsArray();
-      if(!items.length) return `Hola, soy ${STORE_INFO.name}.`;
-
-      const subtotal = cartTotalValue();
-      const envio = getShippingCop();
-      const total = subtotal + envio;
-
-      const storeMap = STORE_INFO.mapa
-        ? STORE_INFO.mapa
-        : ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(`${STORE_INFO.direccion}, Colombia`));
-
-      const lines = [];
-      lines.push(`Hola, soy ${STORE_INFO.name}.`);
-      lines.push(`Celular: ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`Dirección: ${STORE_INFO.direccion}`);
-      lines.push(`Barrio: ${STORE_INFO.barrio}`);
-      lines.push(`Mapa: ${storeMap}`);
-      lines.push("");
-      lines.push(...buildLineItems());
-      lines.push("");
-      lines.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
-      lines.push(`Envío: ${fmtCOP.format(envio)}`);
-      lines.push(`Total: ${fmtCOP.format(total)}`);
-      lines.push("");
-      lines.push(`Catálogo: ${STORE_INFO.catalogo}`);
-
-      return lines.join("\n");
-    }
+    /* ======= FIN PARTE 1/2: continúa en la PARTE 2/2 ======= */
     // Wrapper de compatibilidad (mantiene nombre previo sin barrio en el mapa)
     function getAddressDataFromLS(){
       const addr = getAddressDataCurrent();

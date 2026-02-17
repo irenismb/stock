@@ -46,7 +46,7 @@
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <!-- ✅ NUEVO: Corrige 100vh en móviles (barra del navegador / notch) -->
+  <!-- ✅ Corrige 100vh en móviles (barra del navegador / notch) -->
   <script>
     (function () {
       function applyAppHeight() {
@@ -74,7 +74,6 @@
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
 
-      /* ✅ NUEVO: altura real de la pantalla en móvil */
       --app-height: 100vh;
     }
 
@@ -168,7 +167,7 @@
     .btn-ghost{ background:transparent; border:1px solid #2a3b5c; color:var(--txt); font-weight:800; }
     .btn-danger{ background:transparent; border:1px solid rgba(239,68,68,.55); color:#fecaca; font-weight:900; }
 
-    /* ✅ NUEVO: botones siempre centrados internamente (texto/íconos) */
+    /* ✅ botones centrados internamente */
     .btn-acc, .btn-ghost, .btn-danger,
     .cart-remove, .cart-qty-btn,
     button{
@@ -364,6 +363,8 @@
       color:var(--mut);
       background:rgba(11,18,32,.25);
       line-height:1.45;
+      text-align:center;
+      font-weight:900;
     }
     .cart-item{
       border:1px solid var(--line);
@@ -433,7 +434,7 @@
       white-space:nowrap;
     }
 
-    /* ✅ MEJORA: centrar botones del carrito (PC y móvil) */
+    /* ✅ footer centrado */
     .cart-modal-footer{
       padding:12px 14px;
       border-top:1px solid var(--line);
@@ -452,13 +453,28 @@
       width:100%;
       text-align:center;
     }
+
+    /* ✅ NUEVO: botones del carrito 2 por fila y centrados (todas las pantallas) */
     .cart-footer-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      justify-content:center;
-      align-items:center;
       width:100%;
+      max-width:560px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0, 1fr));
+      gap:10px;
+      align-items:stretch;
+      justify-items:stretch;
+    }
+    .cart-footer-actions button{
+      width:100%;
+      min-width:0;
+      white-space:normal;
+      line-height:1.15;
+    }
+    .cart-footer-actions > :last-child:nth-child(odd){
+      grid-column: 1 / -1;
+      justify-self:center;
+      width:min(100%, 280px);
     }
 
     /* Image modal */
@@ -534,11 +550,6 @@
       backdrop-filter: blur(10px);
     }
 
-    /* ✅ MEJORA: modal en móvil SIEMPRE encaja completo (sin partes ocultas)
-       - quitamos overflow:auto del contenedor
-       - hacemos layout tipo "header fijo + body scroll + footer fijo"
-       - usamos --app-height (window.innerHeight) para evitar problemas de 100vh en móviles
-    */
     .client-modal-content{
       position:relative;
       z-index:1;
@@ -590,26 +601,26 @@
       flex:1 1 auto;
       min-height:0;
     }
-    .client-hint{
-      margin:0 0 12px;
-      color:rgba(169,180,194,.95);
-      font-size:12.5px;
-      line-height:1.45;
-    }
+
+    /* ✅ siempre 2 columnas (también en móvil) */
     .client-grid{
       display:grid;
       gap:10px;
       grid-template-columns: 1fr 1fr;
     }
     .client-field.span-2{ grid-column: 1 / -1; }
+
+    /* ✅ evitar recortes en labels en pantallas pequeñas */
     .client-field label{
       display:flex;
       align-items:center;
-      justify-content:space-between;
       gap:10px;
       font-size:12.5px;
       color:rgba(231,237,245,.92);
       margin:0 0 6px;
+      flex-wrap:wrap;
+      justify-content:flex-start;
+      row-gap:6px;
     }
     .client-opt{
       font-size:11px;
@@ -619,6 +630,7 @@
       padding:3px 8px;
       border-radius:999px;
       white-space:nowrap;
+      margin-left:auto;
     }
     .client-field input,
     .client-field textarea,
@@ -628,6 +640,7 @@
       border:1px solid rgba(42,59,92,.9);
     }
     .client-field textarea{ min-height:68px; resize:vertical; line-height:1.35; }
+
     .client-total-preview{
       margin:12px 0 0;
       color:rgba(231,237,245,.92);
@@ -639,7 +652,7 @@
       background:rgba(11,18,32,.18);
     }
 
-    /* ✅ MEJORA: botones del footer centrados */
+    /* ✅ botones del footer centrados */
     .client-modal-footer{
       padding:12px 16px 14px;
       border-top:1px solid rgba(34,48,74,.9);
@@ -654,48 +667,56 @@
       text-align:center;
     }
 
-    /* ✅ En móviles: grid a una columna para que no se recorte */
-    @media (max-width:520px){
-      .client-grid{ grid-template-columns:1fr; }
-      .client-field.span-2{ grid-column:auto; }
-    }
-
-    /* ✅ Acciones superiores para Dirección (móvil) */
+    /* ✅ Acciones superiores para Dirección (siempre visibles): 3 en la misma fila */
     .address-top-actions{
-      display:none;
+      display:block;
       background:rgba(11,18,32,.55);
       border-bottom:1px solid rgba(34,48,74,.9);
       padding:10px 12px;
       flex:0 0 auto;
     }
     .address-top-actions-inner{
-      display:flex;
-      justify-content:center;
+      width:100%;
+      max-width:560px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap:10px;
-      flex-wrap:wrap;
+      align-items:stretch;
+      justify-items:stretch;
     }
-    .address-top-actions-inner button{
-      min-width:140px;
+    .address-top-actions-inner button,
+    .address-top-actions-inner a{
+      width:100%;
+      min-width:0;
+      white-space:normal;
+      line-height:1.15;
+      text-decoration:none;
+      padding:10px 10px;
+      border-radius:12px;
     }
+
+    /* ✅ Dirección: ya no muestra acciones abajo (evita duplicar) */
+    #addressModal .client-modal-footer{ display:none; }
+
     @media (max-width:560px){
-      #addressModal .address-top-actions{ display:block; }
-      #addressModal .client-modal-footer{ display:none; }
-      #addressModal .client-modal-close{ display:none; } /* en móvil queda Cancelar arriba */
+      #addressModal .client-modal-close{ display:none; }
       #addressModal .client-modal-header{ justify-content:center; }
+      .actions{ gap:8px; }
+      .actions button{ font-size:12.5px; padding:9px 8px; border-radius:10px; }
+    }
+    @media (max-width:360px){
+      .client-field label{ font-size:11.5px; }
+      .client-opt{ font-size:10.5px; }
+      .address-top-actions-inner button,
+      .address-top-actions-inner a{ font-size:12.5px; padding:9px 8px; }
+      .cart-footer-actions button{ font-size:12.5px; padding:9px 8px; }
     }
 
     /* Responsive polish */
     @media (max-width:720px){
       .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
-    }
-    @media (max-width:560px){
-      .actions{ gap:8px; }
-      .actions button{ font-size:12.5px; padding:9px 8px; border-radius:10px; }
-
-      .cart-footer-actions button{ width:100%; }
-      .cart-footer-actions{ width:100%; }
-      .cart-total{ width:100%; }
     }
     @media (prefers-reduced-motion: reduce){
       *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
@@ -828,9 +849,8 @@
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
-
-          <button class="btn-acc" id="cartBuyBtn" type="button">Enviar como comprador</button>
-          <button class="btn-ghost" id="cartSellBtn" type="button">Enviar como vendedor</button>
+          <button class="btn-acc" id="cartBuyBtn" type="button">Enviar comprador</button>
+          <button class="btn-ghost" id="cartSellBtn" type="button">Enviar vendedor</button>
         </div>
       </div>
     </div>
@@ -847,11 +867,6 @@
       </div>
 
       <div class="client-modal-body">
-        <p class="client-hint">
-          Estos datos son <b>opcionales</b>. Puedes guardarlos y luego usar “Enviar como comprador” o “Enviar como vendedor”.
-          El <b>envío</b> se maneja <b>solo manual</b>.
-        </p>
-
         <div class="client-grid">
           <div class="client-field">
             <label for="clientName">
@@ -871,7 +886,7 @@
 
           <div class="client-field">
             <label for="clientShipping">
-              <span>Envío manual (COP)</span>
+              <span>Envío (COP)</span>
               <span class="client-opt">Opcional</span>
             </label>
             <input id="clientShipping" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej: 8000" />
@@ -906,19 +921,22 @@
         <button class="client-modal-close" id="addressModalClose" type="button" aria-label="Cerrar">✕</button>
       </div>
 
-      <!-- ✅ (móvil): Cancelar + Guardar centrados y arriba -->
+      <!-- ✅ 3 arriba, misma fila, centrados -->
       <div class="address-top-actions" aria-label="Acciones de dirección">
         <div class="address-top-actions-inner">
-          <button class="btn-ghost" id="addressCancelTopBtn" type="button">Cancelar</button>
+          <a id="addrMapsLink"
+             class="btn-ghost"
+             href="#"
+             target="_blank"
+             rel="noopener noreferrer">
+            Ver en mapa
+          </a>
           <button class="btn-acc" id="addressSaveTopBtn" type="button">Guardar</button>
+          <button class="btn-ghost" id="addressCancelTopBtn" type="button">Cancelar</button>
         </div>
       </div>
 
       <div class="client-modal-body">
-        <p class="client-hint">
-          Ciudad y departamento vienen predefinidos, pero puedes cambiarlos. El enlace de Google Maps <b>muestra el punto en el mapa</b> (no una ruta) y <b>NO</b> usa el barrio.
-        </p>
-
         <div class="client-grid">
           <div class="client-field">
             <label for="addrCity">
@@ -939,7 +957,7 @@
           <div class="client-field">
             <label for="addrViaTipo">
               <span>Tipo</span>
-              <span class="client-opt">Predeterminado</span>
+              <span class="client-opt">Pred.</span>
             </label>
             <select id="addrViaTipo">
               <option value="Calle">Calle (Cl)</option>
@@ -977,23 +995,13 @@
           <div class="client-field span-2">
             <label for="addrFinal">
               <span>Dirección final</span>
-              <span class="client-opt">Se genera sola</span>
+              <span class="client-opt">Auto</span>
             </label>
             <input id="addrFinal" type="text" readonly placeholder="Se llenará automáticamente…" />
-
-            <a id="addrMapsLink"
-               class="btn-ghost"
-               href="#"
-               target="_blank"
-               rel="noopener noreferrer"
-               style="display:flex; justify-content:center; align-items:center; margin-top:8px; padding:10px 12px; border-radius:12px; text-decoration:none; width:100%;">
-              📌 Ver punto en Google Maps
-            </a>
           </div>
         </div>
       </div>
-
-      <!-- (Escritorio): acciones abajo, pero en móvil se ocultan por CSS -->
+      <!-- footer dirección eliminado por CSS -->
       <div class="client-modal-footer">
         <button class="btn-ghost" id="addressCloseBtn" type="button">Cancelar</button>
         <button class="btn-acc" id="addressSaveBtn" type="button">Guardar</button>
@@ -1536,13 +1544,12 @@
         if(mode === "seller"){
           const lines = [];
           lines.push(`Hola${c.nombre ? " " + c.nombre : ""}, soy ${STORE_NAME}.`);
-          lines.push(`Te comparto el catálogo y mis datos de contacto:`);
           lines.push(`WhatsApp tienda: +${STORE_PHONE_E164}`);
-          if(a.full) lines.push(`Dirección cliente: ${a.full}`);
+          if(a.full) lines.push(`Dirección: ${a.full}`);
           if(a.barrio) lines.push(`Barrio: ${a.barrio}`);
-          if(a.line1) lines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
+          if(a.line1) lines.push(`Mapa: ${googleMapsPointUrl(a.mapsQuery)}`);
           if(c.observacion) lines.push(`Observación: ${c.observacion}`);
-          lines.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
+          lines.push(`Envío: ${fmtCOP.format(shippingManual)}`);
           lines.push("");
           lines.push(catalogLine);
           return lines.join("\n");
@@ -1553,9 +1560,9 @@
           if(c.celular) lines.push(`Celular: ${c.celular}`);
           if(a.full) lines.push(`Dirección: ${a.full}`);
           if(a.barrio) lines.push(`Barrio: ${a.barrio}`);
-          if(a.line1) lines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
+          if(a.line1) lines.push(`Mapa: ${googleMapsPointUrl(a.mapsQuery)}`);
           if(c.observacion) lines.push(`Observación: ${c.observacion}`);
-          lines.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
+          lines.push(`Envío: ${fmtCOP.format(shippingManual)}`);
           lines.push("");
           lines.push(catalogLine);
           return lines.join("\n");
@@ -1568,7 +1575,6 @@
       const clientLines = [];
       if(mode === "seller"){
         clientLines.push(`Hola${c.nombre ? " " + c.nombre : ""}, soy ${STORE_NAME}.`);
-        clientLines.push(`Este es el resumen del pedido:`);
         clientLines.push(`WhatsApp tienda: +${STORE_PHONE_E164}`);
       }else{
         clientLines.push(`Hola, quiero comprar:`);
@@ -1579,14 +1585,14 @@
 
       if(a.full) clientLines.push(`Dirección: ${a.full}`);
       if(a.barrio) clientLines.push(`Barrio: ${a.barrio}`);
-      if(a.line1) clientLines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
+      if(a.line1) clientLines.push(`Mapa: ${googleMapsPointUrl(a.mapsQuery)}`);
       if(c.observacion) clientLines.push(`Observación: ${c.observacion}`);
 
       const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`);
 
       const totals = [];
       totals.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
-      totals.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
+      totals.push(`Envío: ${fmtCOP.format(shippingManual)}`);
       totals.push(`Total: ${fmtCOP.format(total)}`);
 
       return `${clientLines.join("\n")}\n\n${lines.join("\n")}\n\n${totals.join("\n")}\n\n${catalogLine}`;
@@ -1752,9 +1758,9 @@
       const total = subtotal + shipping;
 
       if(cartTotalQty() > 0){
-        clientTotalPreviewEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío manual: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
+        clientTotalPreviewEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
       }else{
-        clientTotalPreviewEl.textContent = `Carrito vacío · Envío manual: ${fmtCOP.format(shipping)}`;
+        clientTotalPreviewEl.textContent = `Envío: ${fmtCOP.format(shipping)}`;
       }
     }
 
@@ -1897,7 +1903,7 @@
       const shipping = readStoredShippingCost();
       const total = subtotal + shipping;
 
-      cartTotalEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío manual: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
+      cartTotalEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
 
       if(cartBuyBtn) cartBuyBtn.disabled = false;
       if(cartSellBtn) cartSellBtn.disabled = false;
@@ -1905,7 +1911,7 @@
       if(cartClearBtn) cartClearBtn.disabled = !items.length;
 
       if(!items.length){
-        cartItemsEl.innerHTML = `<div class="cart-empty">El carrito está vacío. Puedes usar “Enviar como comprador” para pedir información (incluye enlace al catálogo) o “Enviar como vendedor” para compartir el catálogo con un cliente.</div>`;
+        cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío</div>`;
         return;
       }
 

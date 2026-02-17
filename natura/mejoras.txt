@@ -29,10 +29,14 @@ crees que eso es posible? como seria?
 toda la informacion del carrito de compras y la digitada por el cliente, debe enviarse por whatsapp.
 
 
-el carrito tendra un boton adicional para que se pueda enviar la informacion como vendedor o como comprador.
-
-
+el carrito tendra un boton adicional para que se pueda enviar la informacion como vendedor o como comprador y todo el contenido del mensaje debera estar adecuado a este cambio, sin omitir ninguno de los datos que hasta el momento se incluyen en el mensaje de whatsapp.
 la ventanita de la direccion en la version web, debe encajar mejor en la panatalla del movil, pues no se ve toda la informacion de la izquierda de la ventana. 
+
+
+
+
+
+en la vista movil. los botones del carrito deben haber dos por fila y centrados en la ventana. el boton ver punto en google maps debe estar estar arriba en la misma fila de guardar y cancelar y debe llamarse Ver en mapa, los tres centrados en la ventana y las opciones de esa ventana deben estar dos en cada fila. ninguna de las modificaciones solicitadas deberan hacer que los datos se vean recordados o no completos en las ventanas respectivas. en otros datos , tambien quiero dos opciones por fila. aplica todas las mejoras solicitadas y me das el código completo del programa con todas ellas incorporadas. al final me das un prompt que me permita incorporar todas las mejoras incorporadas respecto al carrito de compras que tiene esta pagina, a la version anterior de esta pagina, como botones centrados, direccion, y demas. en ninguna de las ventanas del carrito de compras debe haber texto explicativo, pues eso me hace el codigo mas largo, prefiero que los botones sean lo suficientemente descriptivos.
 
 
 

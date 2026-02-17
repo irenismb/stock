@@ -1,4 +1,4 @@
-<!doctype html>
+<!doctype html> 
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -12,32 +12,48 @@
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
   <link rel="alternate" hreflang="es-CO" href="https://irenismb.github.io/stock/natura/catalogo.html" />
 
+  <!-- ✅ Estructura esperada:
+       - natura/logos
+       - natura/imagenes_de_productos (con subcarpetas opcionales)
+  -->
+
+  <!-- Favicons (✅ WebP + fallback PNG para mayor compatibilidad) -->
   <link rel="icon" type="image/webp" href="logos/logo_empresa.webp" />
   <link rel="icon" type="image/png" href="logos/logo_empresa.png" />
   <link rel="apple-touch-icon" href="logos/logo_empresa.png" />
 
+  <!-- =========================
+       ✅ Link Preview (WhatsApp / redes)
+       ✅ Regla práctica: poner PNG/JPG como primera opción en og:image
+       ========================= -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html" />
   <meta property="og:title" content="Irenismb Stock Natura | Catálogo con compra por WhatsApp" />
   <meta property="og:description" content="Explora el catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
+
+  <!-- ✅ OG IMAGE (PRIORIDAD 1): PNG -->
   <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
   <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image:width" content="800" />
   <meta property="og:image:height" content="800" />
   <meta property="og:image:alt" content="Logo Irenismb Stock Natura" />
+
+  <!-- ✅ OG IMAGE (FALLBACK): WebP -->
   <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp" />
   <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp" />
   <meta property="og:image:type" content="image/webp" />
   <meta property="og:image:width" content="800" />
   <meta property="og:image:height" content="800" />
   <meta property="og:image:alt" content="Logo Irenismb Stock Natura" />
+
   <meta property="og:site_name" content="Irenismb Stock Natura" />
   <meta property="og:locale" content="es_CO" />
 
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo" />
   <meta name="twitter:description" content="Catálogo Natura en Santa Marta. Compra fácil por WhatsApp." />
+  <!-- ✅ Twitter casi siempre va mejor con PNG/JPG -->
   <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
   <meta name="twitter:image:alt" content="Logo Irenismb Stock Natura" />
 
@@ -45,8 +61,11 @@
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
   <link rel="preconnect" href="https://api.github.com" crossorigin />
 
+  <!-- Preload del logo (WebP + PNG fallback) -->
   <link rel="preload" as="image" href="logos/logo_empresa.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/logo_empresa.png" type="image/png" fetchpriority="high" />
+
+  <!-- Preload del placeholder por defecto -->
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
@@ -167,13 +186,13 @@
     }
 
     .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
-    input,select,button,textarea{
+    input,select,button{
       border-radius:12px;border:1px solid #263246;background:var(--pill);
       color:var(--txt);padding:10px 12px;font-size:14px
     }
-    input,textarea{flex:1;min-width:220px}
+    input{flex:1;min-width:220px}
     button{cursor:pointer}
-    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible{
+    button:focus-visible, input:focus-visible, select:focus-visible{
       outline:2px solid var(--focus);
       outline-offset:2px;
     }
@@ -247,7 +266,7 @@
       color:#fecaca;
       font-weight:900;
     }
-    button:disabled, a.btn-disabled{
+    button:disabled{
       opacity:.55;
       cursor:not-allowed;
     }
@@ -345,7 +364,10 @@
       animation: countBlink 1.15s ease-in-out infinite;
     }
     @media (prefers-reduced-motion: reduce){
-      .count.search-active{ animation:none; opacity:1; }
+      .count.search-active{
+        animation:none;
+        opacity:1;
+      }
     }
 
     .grid{
@@ -375,8 +397,10 @@
       overflow:hidden;
       display:flex;
       flex-direction:column;
+
       height:100%;
       align-self:stretch;
+
       content-visibility:auto;
       contain-intrinsic-size: 420px 520px;
     }
@@ -478,7 +502,6 @@
       overflow:hidden;
       display:flex;
       flex-direction:column;
-      min-width:0;
     }
     .cart-modal-header{
       padding:12px 14px;
@@ -488,14 +511,12 @@
       justify-content:space-between;
       gap:10px;
       background:rgba(11,18,32,.35);
-      min-width:0;
     }
     .cart-modal-title{
       margin:0;
       font-size:16px;
       font-weight:950;
       letter-spacing:.02em;
-      min-width:0;
     }
     .cart-modal-close{
       width:34px;height:34px;
@@ -509,12 +530,10 @@
       align-items:center;
       justify-content:center;
       padding:0;
-      flex:0 0 auto;
     }
     .cart-modal-body{
       padding:12px 14px;
       overflow:auto;
-      min-width:0;
     }
     .cart-empty{
       padding:10px 12px;
@@ -534,7 +553,6 @@
       align-items:center;
       gap:10px;
       margin-bottom:10px;
-      min-width:0;
     }
     .cart-item-left{
       display:flex;
@@ -542,7 +560,6 @@
       gap:10px;
       flex:1 1 280px;
       min-width:220px;
-      min-width:0;
     }
 
     .cart-thumb{
@@ -566,14 +583,12 @@
       margin:0 0 4px;
       font-size:13.5px;
       line-height:1.25;
-      word-break:break-word;
     }
     .cart-item-sub{
       margin:0;
       color:var(--mut);
       font-size:12px;
       line-height:1.3;
-      word-break:break-word;
     }
     .cart-controls{
       display:flex;
@@ -583,7 +598,6 @@
       border:1px solid #2a3b5c;
       border-radius:999px;
       padding:6px 8px;
-      min-width:0;
     }
     .cart-qty-btn{
       width:32px;height:32px;
@@ -598,7 +612,6 @@
       align-items:center;
       justify-content:center;
       padding:0;
-      flex:0 0 auto;
     }
     .cart-qty-btn:disabled{
       opacity:.45;
@@ -615,7 +628,6 @@
       font-weight:950;
       white-space:nowrap;
       color:var(--txt);
-      flex:0 0 auto;
     }
     .cart-remove{
       border-radius:999px;
@@ -626,204 +638,21 @@
       font-weight:950;
       cursor:pointer;
       white-space:nowrap;
-      flex:0 0 auto;
     }
-
     .cart-modal-footer{
       padding:12px 14px;
       border-top:1px solid var(--line);
       display:flex;
-      flex-direction:column;
-      align-items:stretch;
-      justify-content:flex-start;
-      gap:10px;
-      background:rgba(11,18,32,.35);
-      min-width:0;
-    }
-    .cart-total{
-      font-weight:950;
-      color:var(--txt);
-      width:100%;
-    }
-    .cart-shipping{
-      display:flex;
-      align-items:center;
-      gap:10px;
-      width:100%;
-      min-width:0;
-    }
-    .cart-shipping label{
-      color:var(--mut);
-      font-size:12px;
-      font-weight:900;
-      white-space:nowrap;
-      flex:0 0 auto;
-    }
-    .cart-shipping input{
-      width:100%;
-      min-width:0;
-      flex:1 1 auto;
-      text-align:right;
-      padding:10px 12px;
-      font-weight:900;
-    }
-
-    .cart-footer-actions{
-      width:100%;
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-      justify-items:stretch;
-      align-items:stretch;
-      min-width:0;
-      justify-content:center;
-    }
-    .cart-footer-actions > *{
-      width:100%;
-      min-width:0;
-      white-space:normal;
-      line-height:1.2;
-      word-break:break-word;
-    }
-    .cart-footer-actions > *:last-child:nth-child(odd){
-      grid-column:1 / -1;
-      max-width:320px;
-      justify-self:center;
-    }
-
-    .form-modal{
-      position:fixed;
-      inset:0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:9999; /* mismo z-index que carrito; el orden en el DOM la pone encima */
-    }
-    .form-modal.open{display:flex}
-    .form-modal-backdrop{
-      position:absolute;
-      inset:0;
-      background:rgba(0,0,0,.78);
-    }
-    .form-modal-content{
-      position:relative;
-      z-index:1;
-      width:min(720px, 94vw);
-      max-height:86vh;
-      background:rgba(18,24,38,.98);
-      border:1px solid var(--line);
-      border-radius:18px;
-      box-shadow:0 28px 70px rgba(0,0,0,.55);
-      overflow:hidden;
-      display:flex;
-      flex-direction:column;
-      min-width:0;
-    }
-    .form-modal-header{
-      padding:12px 14px;
-      border-bottom:1px solid var(--line);
-      display:flex;
+      flex-wrap:wrap;
       align-items:center;
       justify-content:space-between;
       gap:10px;
       background:rgba(11,18,32,.35);
-      min-width:0;
     }
-    .form-modal-title{
-      margin:0;
-      font-size:16px;
+    .cart-total{
       font-weight:950;
-      letter-spacing:.02em;
-      min-width:0;
-    }
-    .form-modal-close{
-      width:34px;height:34px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.14);
-      background:rgba(11,18,32,.35);
       color:var(--txt);
-      font-size:18px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:0;
-      flex:0 0 auto;
     }
-    .form-modal-body{
-      padding:12px 14px;
-      overflow:auto;
-      min-width:0;
-    }
-    .form-modal-footer{
-      padding:12px 14px;
-      border-top:1px solid var(--line);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      background:rgba(11,18,32,.35);
-      min-width:0;
-      flex-wrap:wrap;
-    }
-
-    .addr-actions-top{
-      padding:12px 14px 0;
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0, 1fr));
-      gap:10px;
-      justify-items:stretch;
-      align-items:stretch;
-      min-width:0;
-      background:rgba(18,24,38,.98);
-    }
-    .addr-actions-top > *{
-      width:100%;
-      min-width:0;
-      white-space:normal;
-      line-height:1.2;
-      text-align:center;
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:10px 12px;
-      border-radius:12px;
-    }
-    #addrMapsLink[aria-disabled="true"]{
-      pointer-events:none;
-      opacity:.55;
-    }
-
-    .client-grid{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-      min-width:0;
-    }
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      min-width:0;
-    }
-    .field label{
-      font-size:12px;
-      font-weight:900;
-      color:var(--mut);
-      line-height:1.2;
-      white-space:normal;
-      word-break:break-word;
-    }
-    .field input, .field select, .field textarea{
-      width:100%;
-      min-width:0;
-    }
-    .field textarea{
-      resize:vertical;
-      min-height:44px; /* antes muy alto; ahora ocupa una fila por defecto */
-    }
-    .span-2{ grid-column: 1 / -1; }
 
     .img-modal{
       position:fixed;
@@ -944,10 +773,6 @@
     @media (prefers-reduced-motion: reduce){
       *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
     }
-
-    input::placeholder, textarea::placeholder{
-      color: rgba(169,180,194,.78);
-    }
   </style>
 
   <script type="application/ld+json">
@@ -1057,7 +882,7 @@
           </div>
 
           <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Busca aqui, por nombre, marca, categoría..."
+                 placeholder="🔍 Buscar aqui, por nombre, marca, categoría..."
                  aria-label="Buscar producto" />
         </div>
 
@@ -1114,111 +939,10 @@
         <div id="cartItems"></div>
       </div>
       <div class="cart-modal-footer">
-        <div class="cart-shipping">
-          <label for="shippingCop">Envío</label>
-          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Mínimo 6.000" aria-label="Envío en COP" />
-        </div>
-
         <div class="cart-total" id="cartTotal">Total: $0</div>
-
         <div class="cart-footer-actions">
-          <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
-          <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
-          <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
           <button class="btn-acc" id="cartBuyBtn" type="button">Comprar por WhatsApp</button>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-modal" id="addressModal" aria-hidden="true" role="dialog" aria-label="Dirección">
-    <div class="form-modal-backdrop" id="addressModalBackdrop"></div>
-    <div class="form-modal-content" role="document" aria-label="Contenido de dirección">
-      <div class="form-modal-header">
-        <h3 class="form-modal-title">📍 Dirección</h3>
-        <button class="form-modal-close" id="addressModalClose" type="button" aria-label="Cerrar">✕</button>
-      </div>
-
-      <div class="addr-actions-top" aria-label="Acciones dirección">
-        <button class="btn-ghost" id="addrCancelBtn" type="button">Cancelar</button>
-        <button class="btn-acc" id="addrSaveBtn" type="button">Guardar</button>
-        <a class="btn-ghost" id="addrMapsLink" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true" tabindex="-1">Ver en mapa</a>
-      </div>
-
-      <div class="form-modal-body">
-        <div class="client-grid">
-          <div class="field">
-            <label for="addrCity">Ciudad</label>
-            <input id="addrCity" type="text" autocomplete="address-level2" placeholder="Ej: Santa Marta" />
-          </div>
-          <div class="field">
-            <label for="addrRegion">Departamento</label>
-            <input id="addrRegion" type="text" autocomplete="address-level1" placeholder="Ej: Magdalena" />
-          </div>
-
-          <div class="field">
-            <label for="addrViaTipo">Tipo de vía</label>
-            <select id="addrViaTipo">
-              <option value="">Ej: Calle / Carrera / Av</option>
-              <option value="Cl">Calle (Cl)</option>
-              <option value="Cra">Carrera (Cra)</option>
-              <option value="Av">Avenida (Av)</option>
-              <option value="Dg">Diagonal (Dg)</option>
-              <option value="Tv">Transversal (Tv)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="addrViaNum">Número</label>
-            <input id="addrViaNum" type="text" inputmode="text" placeholder="Ej: 10A" />
-          </div>
-
-          <div class="field">
-            <label for="addrPlaca">#/Placa</label>
-            <input id="addrPlaca" type="text" inputmode="text" placeholder="Ej: 20A-06" />
-          </div>
-          <div class="field">
-            <label for="addrBarrio">Barrio</label>
-            <input id="addrBarrio" type="text" autocomplete="address-line2" placeholder="Ej: Los Almendros" />
-          </div>
-
-          <div class="field span-2">
-            <label for="addrFinal">Dirección final</label>
-            <input id="addrFinal" type="text" readonly />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-modal" id="clientModal" aria-hidden="true" role="dialog" aria-label="Otros datos">
-    <div class="form-modal-backdrop" id="clientModalBackdrop"></div>
-    <div class="form-modal-content" role="document" aria-label="Contenido de otros datos">
-      <div class="form-modal-header">
-        <h3 class="form-modal-title">🧾 Otros datos</h3>
-        <button class="form-modal-close" id="clientModalClose" type="button" aria-label="Cerrar">✕</button>
-      </div>
-
-      <div class="form-modal-body">
-        <div class="client-grid">
-          <div class="field">
-            <label for="clientName">Nombre</label>
-            <input id="clientName" type="text" autocomplete="name" placeholder="Ej: Juan Pérez" />
-          </div>
-          <div class="field">
-            <label for="clientPhone">Teléfono (WhatsApp)</label>
-            <input id="clientPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 3111234567" />
-          </div>
-
-          <div class="field span-2">
-            <label for="clientObs">Observación</label>
-            <textarea id="clientObs" rows="1" placeholder="Ej: Dejar en portería, horario de entrega, pago por Nequi..."></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-modal-footer">
-        <button class="btn-ghost" id="clientCancelBtn" type="button">Cancelar</button>
-        <button class="btn-acc" id="clientSaveBtn" type="button">Guardar</button>
       </div>
     </div>
   </div>
@@ -1232,12 +956,27 @@
   </div>
 
   <script>
+    /* ==========================
+       OPTIMIZACIONES + ESTRUCTURA
+       - 2 carpetas dentro de /natura:
+         1) logos
+         2) imagenes_de_productos (✅ incluye subcarpetas)
+       - ✅ Suplente configurable por INTERRUPTORES
+       - ✅ Cache migrada a v5 para evitar "cache viejo" sin subcarpetas
+       - ✅ URL encode robusto por segmentos (evita fallos por #, ?, etc.)
+       - ✅ Carga de productos prioriza Tree API (menos llamadas) y soporta subcarpetas
+       ========================== */
+
     const INTERRUPTORES = {
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
+
+      /* ✅ true=mostrar fotos reales; false=usar siempre suplente */
       MOSTRAR_IMAGENES_PRODUCTO: true,
+
+      /* ✅ Nombre del archivo dentro de /logos que se usará como suplente. */
       IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp"
     };
     window.INTERRUPTORES = INTERRUPTORES;
@@ -1245,6 +984,7 @@
     function shouldEnforceStockLimits(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_LIMITES_STOCK === true);
     }
+
     function shouldShowProductImages(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_IMAGENES_PRODUCTO !== false);
     }
@@ -1266,8 +1006,10 @@
 
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
+    /* ✅ BASE AUTOMÁTICA (local y producción) */
     const SITE_BASE = new URL("./", document.baseURI).href;
 
+    /* ✅ Logo corporativo (principal WebP, con fallback PNG si existe) */
     const COMPANY_LOGOS = [
       SITE_BASE + LOGOS_DIR + "/logo_empresa.webp",
       SITE_BASE + LOGOS_DIR + "/logo_empresa.png"
@@ -1299,12 +1041,15 @@
       const i = s.lastIndexOf(".");
       return (i < 0) ? s : s.slice(0, i);
     }
+
+    /* ✅ Encode por segmentos: conserva "/" y evita romper URLs con caracteres especiales */
     function encodePath(p){
       return String(p || "")
         .split("/")
         .map(seg => encodeURIComponent(seg))
         .join("/");
     }
+
     function isImageExt(ext){
       return IMAGE_EXTS.includes(String(ext || "").toLowerCase());
     }
@@ -1314,6 +1059,9 @@
       return parts[parts.length - 1] || s;
     }
 
+    /* ==========================
+       ✅ Suplente configurable
+       ========================== */
     function sanitizeLogoFilename(input){
       const raw = String(input || "").trim();
       if(!raw) return "";
@@ -1336,6 +1084,7 @@
         }
       }
 
+      // cascada por defecto + logo corporativo
       list.push(
         SITE_BASE + LOGOS_DIR + "/suplente.webp",
         SITE_BASE + LOGOS_DIR + "/suplente.png",
@@ -1357,6 +1106,7 @@
         return productPlaceholderAbsoluteUrl();
       }
       if(!filename) return productPlaceholderAbsoluteUrl();
+      // ✅ filename puede ser "subcarpeta/archivo.png"
       return SITE_BASE + IMG_DIR + "/" + encodePath(filename);
     }
 
@@ -1407,29 +1157,32 @@
       });
     }
 
-    function parseProductFromBaseName(baseName){
-      const parts = String(baseName || "").split("_");
-      if(parts.length < 6) return null;
+	function parseProductFromBaseName(baseName){
+	  const parts = String(baseName || "").split("_");
+	  if(parts.length < 6) return null;
 
-      const id = String(parts[0] || "").trim();
-      const qty = safeInt(parts[parts.length - 1], 0);
-      const price = toNumberDigits(parts[parts.length - 2]);
-      const category = String(parts[parts.length - 3] || "").trim();
-      const brand = String(parts[parts.length - 4] || "").trim();
-      const name = String(parts.slice(1, parts.length - 4).join("_") || "").trim();
+	  const id = String(parts[0] || "").trim();
 
-      if(!id || !name) return null;
+	  const qty = safeInt(parts[parts.length - 1], 0);               // stock
+	  const price = toNumberDigits(parts[parts.length - 2]);         // valor
 
-      return {
-        id,
-        name,
-        category,
-        brand,
-        price,
-        stock: Math.max(0, qty),
-        searchKey: normalizeText(`${name} ${brand} ${category} ${id}`)
-      };
-    }
+	  const category = String(parts[parts.length - 3] || "").trim(); // categoria  ✅
+	  const brand = String(parts[parts.length - 4] || "").trim();    // marca      ✅
+
+	  const name = String(parts.slice(1, parts.length - 4).join("_") || "").trim();
+
+	  if(!id || !name) return null;
+
+	  return {
+		id,
+		name,
+		category,
+		brand,
+		price,
+		stock: Math.max(0, qty),
+		searchKey: normalizeText(`${name} ${brand} ${category} ${id}`)
+	  };
+	}
 
     function preferredExtScore(ext){
       const order = { webp:0, jpg:1, jpeg:2, png:3 };
@@ -1440,6 +1193,9 @@
     const GITHUB_REPO = "stock";
     const GITHUB_PRODUCTS_PATH = "natura/imagenes_de_productos";
 
+    /* ✅ Cache migrada:
+       - v5 evita quedar "pegado" con un cache antiguo que no indexaba subcarpetas
+    */
     const PRODUCTS_CACHE_KEY_V5 = "irenismb_products_cache_v5";
     const PRODUCTS_OLD_CACHE_KEYS = ["irenismb_products_cache_v4", "irenismb_products_cache_v3"];
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
@@ -1497,6 +1253,9 @@
       return existing;
     }
 
+    /* ==========================
+       ✅ Tree API (prioritaria): 3 llamadas y listo (soporta subcarpetas)
+       ========================== */
     async function fetchProductsViaTree(){
       const repoInfo = await fetchJson(`https://api.github.com/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}`);
       const branch = String(repoInfo && repoInfo.default_branch ? repoInfo.default_branch : "main");
@@ -1512,7 +1271,7 @@
       const files = nodes
         .filter(n => n && n.type === "blob" && typeof n.path === "string" && n.path.startsWith(dirPrefix))
         .map(n => n.path.slice(dirPrefix.length))
-        .filter(Boolean);
+        .filter(Boolean); // ✅ incluye subcarpetas
 
       const byId = new Map();
       for(const relPath of files){
@@ -1527,7 +1286,7 @@
         const hasImage = isImageExt(ext);
         const candidate = {
           ...parsed,
-          srcFilename: relPath,
+          srcFilename: relPath,  // ✅ puede incluir subcarpeta
           fileExt: ext,
           hasImage,
           imgFilename: hasImage ? relPath : null
@@ -1541,6 +1300,9 @@
         .sort((a,b)=> String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" }) || String(a.id).localeCompare(String(b.id)));
     }
 
+    /* ==========================
+       ✅ Contents API recursiva (fallback)
+       ========================== */
     async function listContentsFilesRecursive(path, depth=0){
       const MAX_DEPTH = 8;
       if(depth > MAX_DEPTH) return [];
@@ -1621,67 +1383,12 @@
         return false;
       }
     }
-
-    /* ==========================
-       WhatsApp (se envía al celular del cliente)
-       ========================== */
-    const LS_CLIENT_KEY = "irenismb_client_v2";
-    const LS_ADDRESS_KEY = "irenismb_address_v3";
-    const LS_SHIPPING_KEY = "irenismb_shipping_cop";
-    const LS_WA_TO_KEY = "irenismb_whatsapp_to";
-
-    function readJsonLS(key, fallbackObj){
-      try{
-        const raw = localStorage.getItem(key);
-        if(!raw) return fallbackObj;
-        const obj = JSON.parse(raw);
-        if(obj && typeof obj === "object") return obj;
-        return fallbackObj;
-      }catch(_){
-        return fallbackObj;
-      }
-    }
-    function writeJsonLS(key, obj){
-      try{ localStorage.setItem(key, JSON.stringify(obj || {})); }catch(_){}
-    }
-    function readStringLS(key, fallback=""){
-      try{
-        const raw = localStorage.getItem(key);
-        if(raw == null) return fallback;
-        return String(raw);
-      }catch(_){
-        return fallback;
-      }
-    }
-    function writeStringLS(key, val){
-      try{ localStorage.setItem(key, String(val ?? "")); }catch(_){}
-    }
-
-    function normalizeWhatsAppToE164Digits(input){
-      let d = String(input ?? "").replace(/[^\d]/g,"");
-      if(!d) return "";
-      if(d.startsWith("00")) d = d.slice(2);
-      if(d.length === 10) d = "57" + d; // Colombia por defecto
-      if(d.length < 11 || d.length > 15) return "";
-      return d;
-    }
-
-    function getWhatsAppTo(){
-      const saved = readStringLS(LS_WA_TO_KEY, "");
-      const norm = normalizeWhatsAppToE164Digits(saved);
-      return norm || WHATSAPP_NUMBER;
-    }
-
-    function waLinkTo(toDigits, text){
-      const msg = String(text || "");
-      const to = String(toDigits || "");
-      if (isMobileDevice()){
-        return `https://wa.me/${encodeURIComponent(to)}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
-      }
-      return `https://web.whatsapp.com/send?phone=${encodeURIComponent(to)}${msg ? `&text=${encodeURIComponent(msg)}` : ""}`;
-    }
     function waLink(text){
-      return waLinkTo(getWhatsAppTo(), text);
+      const msg = String(text || "");
+      if (isMobileDevice()){
+        return `https://wa.me/${encodeURIComponent(WHATSAPP_NUMBER)}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
+      }
+      return `https://web.whatsapp.com/send?phone=${encodeURIComponent(WHATSAPP_NUMBER)}${msg ? `&text=${encodeURIComponent(msg)}` : ""}`;
     }
 
     (function syncTopWhatsApp(){
@@ -1730,32 +1437,20 @@
     const imgModalClose = document.getElementById("imgModalClose");
     const imgModalBackdrop = document.getElementById("imgModalBackdrop");
 
-    let _modalLockCount = 0;
-    function lockBodyScroll(){
-      _modalLockCount++;
-      document.body.style.overflow = "hidden";
-    }
-    function unlockBodyScroll(){
-      _modalLockCount = Math.max(0, _modalLockCount - 1);
-      if(_modalLockCount === 0) document.body.style.overflow = "";
-    }
-
     function openImgModal(src, alt){
       if(!imgModal || !imgModalImg || !src) return;
-      if(imgModal.classList.contains("open")) return;
       imgModalImg.src = src;
       imgModalImg.alt = alt || "Imagen ampliada del producto";
       imgModal.classList.add("open");
       imgModal.setAttribute("aria-hidden","false");
-      lockBodyScroll();
+      document.body.style.overflow = "hidden";
     }
     function closeImgModal(){
       if(!imgModal || !imgModalImg) return;
-      if(!imgModal.classList.contains("open")) return;
       imgModal.classList.remove("open");
       imgModal.setAttribute("aria-hidden","true");
       imgModalImg.src = "";
-      unlockBodyScroll();
+      document.body.style.overflow = "";
     }
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
@@ -1767,6 +1462,7 @@
       img.decoding = "async";
 
       let zoomable = false;
+
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
@@ -1811,6 +1507,7 @@
       img.decoding = "async";
 
       let zoomable = false;
+
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
@@ -1928,192 +1625,12 @@
       if(changed) saveCart(); else refreshCartCount();
     }
 
-    const shippingCopInp = document.getElementById("shippingCop");
-    function getShippingCop(){
-      const raw = (shippingCopInp ? shippingCopInp.value : readStringLS(LS_SHIPPING_KEY, "")) || "";
-      return toNumberDigits(raw);
-    }
-	function loadShippingFromLS(){
-	  if(!shippingCopInp) return;
-
-	  const MIN_SHIPPING = 6000;
-
-	  const raw = readStringLS(LS_SHIPPING_KEY, "");
-	  const v = toNumberDigits(raw);
-
-	  // Si no hay valor guardado, usar 6.000 por defecto (editable).
-	  shippingCopInp.value = (v ? String(v) : String(MIN_SHIPPING));
-	}
-    function saveShippingToLS(){
-      if(!shippingCopInp) return;
-      const v = toNumberDigits(shippingCopInp.value);
-      writeStringLS(LS_SHIPPING_KEY, v ? String(v) : "");
-    }
-
-    const STORE_INFO = {
-      name: "IRENISMB STOCK NATURA",
-      whatsappDisplay: "+57 304 208 8961",
-      whatsappDigits: "573042088961",
-      celularDisplay: "3114040809",
-      direccion: "Calle 10A #20A-06, Santa Marta, Magdalena",
-      barrio: "Los Almendros",
-      mapa: "https://maps.google.com/?q=11.244833370782679,-74.19066001689564",
-      catalogo: "https://irenismb.github.io/stock/natura/catalogo.html",
-      referencias: "Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan."
-    };
-
-    function buildLineItems(){
+    function cartMessage(){
       const items = cartItemsArray();
-      return items.map(it =>
-        `* ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`
-      );
-    }
-
-    function oneLineText(s){
-      return String(s ?? "")
-        .replace(/\r\n/g, "\n")
-        .replace(/\n+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function viaTypeLabel(tipo){
-      const t = String(tipo || "").trim();
-      const map = { Cl:"Calle", Cra:"Carrera", Av:"Avenida", Dg:"Diagonal", Tv:"Transversal" };
-      return map[t] || t;
-    }
-
-    function buildViaString(tipo, num, placa){
-      const t = viaTypeLabel(tipo);
-      const n = String(num || "").trim();
-      const p = String(placa || "").trim();
-      if(t && n && p) return `${t} ${n} #${p}`;
-      return joinParts([t, n, p ? `#${p}` : ""], " ");
-    }
-
-    function getClientDataCurrent(){
-      const nameInp = document.getElementById("clientName");
-      const phoneInp = document.getElementById("clientPhone");
-      const obsInp = document.getElementById("clientObs");
-
-      const obj = readJsonLS(LS_CLIENT_KEY, {});
-      const name = String((nameInp && nameInp.value) ?? (obj.clientName ?? "")).trim();
-      const phone = String((phoneInp && phoneInp.value) ?? (obj.clientPhone ?? "")).trim();
-      const obs = String((obsInp && obsInp.value) ?? (obj.clientObs ?? ""));
-
-      return { name, phone, obs };
-    }
-
-    function getAddressDataCurrent(){
-      const obj = readJsonLS(LS_ADDRESS_KEY, {});
-
-      const cityInp = document.getElementById("addrCity");
-      const regionInp = document.getElementById("addrRegion");
-      const tipoInp = document.getElementById("addrViaTipo");
-      const numInp = document.getElementById("addrViaNum");
-      const placaInp = document.getElementById("addrPlaca");
-      const barrioInp = document.getElementById("addrBarrio");
-
-      const city = String((cityInp && cityInp.value) ?? (obj.addrCity ?? "")).trim();
-      const region = String((regionInp && regionInp.value) ?? (obj.addrRegion ?? "")).trim();
-      const tipo = String((tipoInp && tipoInp.value) ?? (obj.addrViaTipo ?? "")).trim();
-      const num = String((numInp && numInp.value) ?? (obj.addrViaNum ?? "")).trim();
-      const placa = String((placaInp && placaInp.value) ?? (obj.addrPlaca ?? "")).trim();
-      const barrio = String((barrioInp && barrioInp.value) ?? (obj.addrBarrio ?? "")).trim();
-
-      const via = buildViaString(tipo, num, placa);
-      const addressLine = joinParts([via, city, region], ", ");
-
-      // IMPORTANTE: barrio NO se incluye en el enlace de Google Maps
-      const mapLink = addressLine
-        ? ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addressLine))
-        : "";
-
-      return { addressLine, barrio, mapLink };
-    }
-
-    function buildBuyerMessage(){
-      const items = cartItemsArray();
-      const client = getClientDataCurrent();
-      const addr = getAddressDataCurrent();
-
-      const subtotal = cartTotalValue();
-      const envio = getShippingCop();
-      const total = subtotal + envio;
-
-      const lines = [];
-
-      lines.push("*INFORMACION DEL CLIENTE*");
-      lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
-      lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
-      lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
-      lines.push(`*Barrio:* ${addr.barrio || ""}`.trimEnd());
-      lines.push(`*Ubicación:* ${addr.mapLink || ""}`.trimEnd());
-      lines.push(`*Observación:* ${oneLineText(client.obs || "")}`.trimEnd());
-
-      lines.push("");
-      lines.push("*PRODUCTOS SOLICITADOS*");
-
-      if(items.length){
-        lines.push(...buildLineItems());
-      }
-
-      lines.push("");
-      lines.push(`*Subtotal:* ${fmtCOP.format(subtotal)}`);
-      lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
-      lines.push(`*Total:* ${fmtCOP.format(total)}`);
-
-      lines.push("");
-      lines.push("*INFORMACION DE LA TIENDA*");
-      lines.push(STORE_INFO.name);
-      lines.push(`*Celular:* ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
-      lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
-      lines.push(`*Ubicación:* ${STORE_INFO.mapa}`);
-      lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
-      lines.push(`*Puntos de referencia:* ${STORE_INFO.referencias}`);
-
-      return lines.join("\n");
-    }
-    /* ======= FIN PARTE 1/2: continúa en la PARTE 2/2 ======= */
-    // Wrapper de compatibilidad (mantiene nombre previo sin barrio en el mapa)
-    function getAddressDataFromLS(){
-      const addr = getAddressDataCurrent();
-      const mapDir = addr.addressLine
-        ? ("https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(addr.addressLine))
-        : "";
-      return { addressLine: addr.addressLine, barrio: addr.barrio, mapDir };
-    }
-
-    // (Se deja por compatibilidad, aunque ya no se usa el botón "Vendedor")
-    function buildSellerMessage(){
-      const items = cartItemsArray();
-      if(!items.length) return `Hola, soy ${STORE_INFO.name}.`;
-
-      const subtotal = cartTotalValue();
-      const envio = getShippingCop();
-      const total = subtotal + envio;
-
-      const storeMap = STORE_INFO.mapa
-        ? STORE_INFO.mapa
-        : ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(`${STORE_INFO.direccion}, Colombia`));
-
-      const lines = [];
-      lines.push(`Hola, soy ${STORE_INFO.name}.`);
-      lines.push(`Celular: ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`Dirección: ${STORE_INFO.direccion}`);
-      lines.push(`Barrio: ${STORE_INFO.barrio}`);
-      lines.push(`Mapa: ${storeMap}`);
-      lines.push("");
-      lines.push(...buildLineItems());
-      lines.push("");
-      lines.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
-      lines.push(`Envío: ${fmtCOP.format(envio)}`);
-      lines.push(`Total: ${fmtCOP.format(total)}`);
-      lines.push("");
-      lines.push(`Catálogo: ${STORE_INFO.catalogo}`);
-
-      return lines.join("\n");
+      if(!items.length) return "Hola, quiero información del catálogo.";
+      const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`);
+      const total = cartTotalValue();
+      return `Hola, quiero comprar:\n${lines.join("\n")}\n\nTotal: ${fmtCOP.format(total)}`;
     }
 
     const cartModal = document.getElementById("cartModal");
@@ -2122,32 +1639,27 @@
     const cartItemsEl = document.getElementById("cartItems");
     const cartTotalEl = document.getElementById("cartTotal");
     const cartBuyBtn = document.getElementById("cartBuyBtn");
-    const cartClearBtn = document.getElementById("cartClearBtn");
-    const cartAddressBtn = document.getElementById("cartAddressBtn");
-    const cartClientBtn = document.getElementById("cartClientBtn");
 
     function openCartModal(){
-      if(cartModal.classList.contains("open")) return;
       renderCartModal();
       cartModal.classList.add("open");
       cartModal.setAttribute("aria-hidden", "false");
-      lockBodyScroll();
+      document.body.style.overflow = "hidden";
     }
     function closeCartModal(){
-      if(!cartModal.classList.contains("open")) return;
       cartModal.classList.remove("open");
       cartModal.setAttribute("aria-hidden", "true");
-      unlockBodyScroll();
+      document.body.style.overflow = "";
     }
 
     function renderCartModal(){
       const enforce = shouldEnforceStockLimits();
       const items = cartItemsArray();
-      const total = cartTotalValue() + getShippingCop();
+      const total = cartTotalValue();
       cartTotalEl.textContent = "Total: " + fmtCOP.format(total);
 
       if(!items.length){
-        cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío.</div>`;
+        cartItemsEl.innerHTML = `<div class="cart-empty">El carrito está vacío. Agrega productos desde el catálogo.</div>`;
         return;
       }
 
@@ -2247,333 +1759,20 @@
       renderCartModal();
     });
 
-    function openWhatsAppTo(toDigits, text){
-      const msg = String(text || "").trim() || "Hola, quiero información del catálogo.";
-      window.open(waLinkTo(toDigits, msg), "_blank", "noopener");
-    }
-
-    // ÚNICO BOTÓN: Comprar por WhatsApp (se envía al celular escrito por el comprador)
-	if(cartBuyBtn){
-	  cartBuyBtn.addEventListener("click", ()=>{
-		// El mensaje SIEMPRE se envía al celular de la tienda
-		openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
-	  });
-	}
-    if(cartClearBtn){
-      cartClearBtn.addEventListener("click", ()=>{
-        for(const k of Object.keys(cart)) delete cart[k];
-        saveCart();
-        renderCartModal();
-        render();
-      });
-    }
-
-    if(cartModalClose) cartModalClose.addEventListener("click", closeCartModal);
-    if(cartModalBackdrop) cartModalBackdrop.addEventListener("click", closeCartModal);
-
-    if(shippingCopInp){
-      shippingCopInp.addEventListener("input", ()=>{
-        saveShippingToLS();
-        if(cartModal.classList.contains("open")) renderCartModal();
-      });
-    }
-
-    /* ==========================
-       Modales Dirección / Otros datos
-       ========================== */
-    const addressModal = document.getElementById("addressModal");
-    const addressModalClose = document.getElementById("addressModalClose");
-    const addressModalBackdrop = document.getElementById("addressModalBackdrop");
-    const addrCancelBtn = document.getElementById("addrCancelBtn");
-    const addrSaveBtn = document.getElementById("addrSaveBtn");
-    const addrMapsLink = document.getElementById("addrMapsLink");
-
-    const addrCity = document.getElementById("addrCity");
-    const addrRegion = document.getElementById("addrRegion");
-    const addrViaTipo = document.getElementById("addrViaTipo");
-    const addrViaNum = document.getElementById("addrViaNum");
-    const addrPlaca = document.getElementById("addrPlaca");
-    const addrBarrio = document.getElementById("addrBarrio");
-    const addrFinal = document.getElementById("addrFinal");
-
-    const DEFAULT_CITY = "Santa Marta";
-    const DEFAULT_REGION = "Magdalena";
-
-    function openAddressModal(){
-      if(addressModal.classList.contains("open")) return;
-      loadAddressFromLS();
-      addressModal.classList.add("open");
-      addressModal.setAttribute("aria-hidden","false");
-      lockBodyScroll();
-    }
-    function closeAddressModal(){
-      if(!addressModal.classList.contains("open")) return;
-      addressModal.classList.remove("open");
-      addressModal.setAttribute("aria-hidden","true");
-      unlockBodyScroll();
-    }
-
-    function joinParts(parts, sep=" "){
-      return parts.filter(Boolean).join(sep).replace(/\s+/g," ").trim();
-    }
-
-    function refreshAddressModalPreview(){
-      const city = String(addrCity?.value || "").trim();
-      const region = String(addrRegion?.value || "").trim();
-      const tipo = String(addrViaTipo?.value || "").trim();
-      const num = String(addrViaNum?.value || "").trim();
-      const placa = String(addrPlaca?.value || "").trim();
-
-      // Dirección final SOLO con vía + ciudad + departamento (sin barrio)
-      const via = buildViaString(tipo, num, placa);
-      const final = joinParts([via || "", city || "", region || ""], ", ");
-
-      if(addrFinal) addrFinal.value = final;
-
-      // El barrio NO se usa para el enlace de Google Maps
-      const hasVia = !!(tipo && num && placa);
-      if(addrMapsLink){
-        if(!hasVia || !final){
-          addrMapsLink.setAttribute("aria-disabled","true");
-          addrMapsLink.setAttribute("tabindex","-1");
-          addrMapsLink.href = "#";
-        }else{
-          addrMapsLink.removeAttribute("aria-disabled");
-          addrMapsLink.setAttribute("tabindex","0");
-          addrMapsLink.href = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(final);
-        }
-      }
-    }
-
-    function loadAddressFromLS(){
-      const obj = readJsonLS(LS_ADDRESS_KEY, {});
-
-      const hasCity = Object.prototype.hasOwnProperty.call(obj, "addrCity");
-      const hasRegion = Object.prototype.hasOwnProperty.call(obj, "addrRegion");
-
-      const cityVal = hasCity ? String(obj.addrCity ?? "") : DEFAULT_CITY;
-      const regionVal = hasRegion ? String(obj.addrRegion ?? "") : DEFAULT_REGION;
-
-      if(addrCity) addrCity.value = cityVal;
-      if(addrRegion) addrRegion.value = regionVal;
-      if(addrViaTipo) addrViaTipo.value = String(obj.addrViaTipo ?? "");
-      if(addrViaNum) addrViaNum.value = String(obj.addrViaNum ?? "");
-      if(addrPlaca) addrPlaca.value = String(obj.addrPlaca ?? "");
-      if(addrBarrio) addrBarrio.value = String(obj.addrBarrio ?? "");
-      refreshAddressModalPreview();
-    }
-
-    function saveAddressToLS(){
-      const obj = readJsonLS(LS_ADDRESS_KEY, {});
-      obj.addrCity = String(addrCity?.value ?? "");
-      obj.addrRegion = String(addrRegion?.value ?? "");
-      obj.addrViaTipo = String(addrViaTipo?.value ?? "");
-      obj.addrViaNum = String(addrViaNum?.value ?? "");
-      obj.addrPlaca = String(addrPlaca?.value ?? "");
-      obj.addrBarrio = String(addrBarrio?.value ?? "");
-      obj.addrFinal = String(addrFinal?.value ?? "");
-      writeJsonLS(LS_ADDRESS_KEY, obj);
-    }
-
-    [addrCity, addrRegion, addrViaTipo, addrViaNum, addrPlaca, addrBarrio].forEach(el=>{
-      if(!el) return;
-      el.addEventListener("input", refreshAddressModalPreview);
-      el.addEventListener("change", refreshAddressModalPreview);
+    cartBuyBtn.addEventListener("click", ()=>{
+      const items = cartItemsArray();
+      window.open(waLink(items.length ? cartMessage() : "Hola, quiero información del catálogo."), "_blank", "noopener");
     });
 
-    if(addressModalClose) addressModalClose.addEventListener("click", closeAddressModal);
-    if(addressModalBackdrop) addressModalBackdrop.addEventListener("click", closeAddressModal);
-    if(addrCancelBtn) addrCancelBtn.addEventListener("click", closeAddressModal);
-    if(addrSaveBtn) addrSaveBtn.addEventListener("click", ()=>{
-      refreshAddressModalPreview();
-      saveAddressToLS();
-      closeAddressModal();
-    });
-
-    const clientModal = document.getElementById("clientModal");
-    const clientModalClose = document.getElementById("clientModalClose");
-    const clientModalBackdrop = document.getElementById("clientModalBackdrop");
-    const clientCancelBtn = document.getElementById("clientCancelBtn");
-    const clientSaveBtn = document.getElementById("clientSaveBtn");
-
-    const clientName = document.getElementById("clientName");
-    const clientPhone = document.getElementById("clientPhone");
-    const clientObs = document.getElementById("clientObs");
-
-    function openClientModal(){
-      if(clientModal.classList.contains("open")) return;
-      loadClientFromLS();
-      clientModal.classList.add("open");
-      clientModal.setAttribute("aria-hidden","false");
-      lockBodyScroll();
-    }
-    function closeClientModal(){
-      if(!clientModal.classList.contains("open")) return;
-      clientModal.classList.remove("open");
-      clientModal.setAttribute("aria-hidden","true");
-      unlockBodyScroll();
-    }
-
-    function loadClientFromLS(){
-      const obj = readJsonLS(LS_CLIENT_KEY, {});
-      if(clientName) clientName.value = String(obj.clientName ?? "");
-      if(clientPhone) clientPhone.value = String(obj.clientPhone ?? "");
-      if(clientObs) clientObs.value = String(obj.clientObs ?? "");
-    }
-
-    function saveClientToLS(){
-      const obj = readJsonLS(LS_CLIENT_KEY, {});
-      obj.clientName = String(clientName?.value ?? "");
-      obj.clientPhone = String(clientPhone?.value ?? "");
-      obj.clientObs = String(clientObs?.value ?? "");
-      writeJsonLS(LS_CLIENT_KEY, obj);
-    }
-
-    if(clientModalClose) clientModalClose.addEventListener("click", closeClientModal);
-    if(clientModalBackdrop) clientModalBackdrop.addEventListener("click", closeClientModal);
-    if(clientCancelBtn) clientCancelBtn.addEventListener("click", closeClientModal);
-    if(clientSaveBtn) clientSaveBtn.addEventListener("click", ()=>{
-      saveClientToLS();
-      closeClientModal();
-    });
-
-    if(cartAddressBtn) cartAddressBtn.addEventListener("click", openAddressModal);
-    if(cartClientBtn) cartClientBtn.addEventListener("click", openClientModal);
+    cartModalClose.addEventListener("click", closeCartModal);
+    cartModalBackdrop.addEventListener("click", closeCartModal);
 
     document.addEventListener("keydown", (e)=>{
       if(e.key === "Escape"){
-        if(imgModal && imgModal.classList.contains("open")){ closeImgModal(); return; }
-        if(addressModal && addressModal.classList.contains("open")){ closeAddressModal(); return; }
-        if(clientModal && clientModal.classList.contains("open")){ closeClientModal(); return; }
-        if(cartModal && cartModal.classList.contains("open")){ closeCartModal(); return; }
+        if(imgModal && imgModal.classList.contains("open")) closeImgModal();
+        if(cartModal && cartModal.classList.contains("open")) closeCartModal();
       }
     });
-
-    let _ldJob = 0;
-    function updateProductsJsonLd(list){
-      try{
-        const baseUrl = "https://irenismb.github.io/stock/natura/catalogo.html";
-        const itemList = {
-          "@context":"https://schema.org",
-          "@type":"ItemList",
-          "name":"Catálogo de productos",
-          "itemListElement": list.slice(0, 500).map((p, i) => {
-            const productUrl = baseUrl + "#p-" + encodeURIComponent(p.id);
-            const imgUrl = productImageAbsoluteUrlFromFilename(p.imgFilename);
-            const desc = `Producto: ${p.name}. Categoría: ${p.category || "Natura"}. Compra por WhatsApp.`;
-            const availability = (Number.isFinite(p.stock) && p.stock > 0)
-              ? "https://schema.org/InStock"
-              : "https://schema.org/OutOfStock";
-            return {
-              "@type":"ListItem",
-              "position": i + 1,
-              "url": productUrl,
-              "item": {
-                "@type":"Product",
-                "name": p.name,
-                "description": desc,
-                "image": [imgUrl],
-                "category": p.category || undefined,
-                "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
-                "sku": String(p.id),
-                "url": productUrl,
-                "offers": {
-                  "@type":"Offer",
-                  "url": productUrl,
-                  "priceCurrency":"COP",
-                  "price": p.price || 0,
-                  "availability": availability
-                }
-              }
-            };
-          })
-        };
-        const el = document.getElementById("ld-products");
-        if(el) el.textContent = JSON.stringify(itemList);
-      }catch(_){}
-    }
-
-    function scheduleJsonLdUpdate(filtered){
-      const job = ++_ldJob;
-      runIdle(()=>{
-        if(job !== _ldJob) return;
-        updateProductsJsonLd(filtered);
-      }, 1400);
-    }
-
-    const cardTemplate = document.createElement("template");
-    cardTemplate.innerHTML = `
-      <article class="card">
-        <div class="img"></div>
-        <div class="pad">
-          <h3 class="name"></h3>
-          <p class="meta"></p>
-          <div class="row">
-            <span class="price"></span>
-            <span class="pill" data-role="qty"></span>
-          </div>
-          <div class="actions">
-            <button type="button" class="btn-danger" data-act="dec">Quitar</button>
-            <button type="button" class="btn-acc" data-act="inc">Agregar</button>
-          </div>
-        </div>
-      </article>
-    `;
-
-    function stockMetaText(p){
-      const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
-      let stockPart = "";
-      if (INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
-        stockPart = ` · Stock: ${stockVal}`;
-      } else if (INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
-        stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
-      } else {
-        stockPart = "";
-      }
-      return `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}`;
-    }
-
-    function refreshCardUI(card, p){
-      const enforce = shouldEnforceStockLimits();
-      const id = String(p.id);
-      const q = (cart[id]?.qty || 0);
-
-      const qtyPill = card.querySelector('[data-role="qty"]');
-      const decBtn = card.querySelector('button[data-act="dec"]');
-      const incBtn = card.querySelector('button[data-act="inc"]');
-
-      if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
-      if(decBtn) decBtn.disabled = q <= 0;
-
-      const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
-      const canAdd = !enforce ? true : ((maxStock > 0) && (q < maxStock));
-
-      if(incBtn){
-        incBtn.disabled = !canAdd;
-        incBtn.classList.toggle("in-cart", q > 0);
-        if(enforce && maxStock <= 0){
-          incBtn.textContent = INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK ? "Sin stock" : "Agregar";
-        }else{
-          incBtn.textContent = "Agregar";
-        }
-      }
-    }
-
-    function makeCard(p){
-      const card = cardTemplate.content.firstElementChild.cloneNode(true);
-      card.id = "p-" + p.id;
-      card.dataset.id = String(p.id);
-
-      const imgBox = card.querySelector(".img");
-      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
-
-      card.querySelector(".name").textContent = p.name;
-      card.querySelector(".meta").textContent = stockMetaText(p);
-      card.querySelector(".price").textContent = fmtCOP.format(p.price);
-
-      refreshCardUI(card, p);
-      return card;
-    }
 
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
@@ -2720,6 +1919,194 @@
       _urlTimer = setTimeout(writeStateToUrl, 180);
     }
 
+    let _ldJob = 0;
+    function updateProductsJsonLd(list){
+      try{
+        const baseUrl = "https://irenismb.github.io/stock/natura/catalogo.html";
+        const itemList = {
+          "@context":"https://schema.org",
+          "@type":"ItemList",
+          "name":"Catálogo de productos",
+          "itemListElement": list.slice(0, 500).map((p, i) => {
+            const productUrl = baseUrl + "#p-" + encodeURIComponent(p.id);
+            const imgUrl = productImageAbsoluteUrlFromFilename(p.imgFilename);
+            const desc = `Producto: ${p.name}. Categoría: ${p.category || "Natura"}. Compra por WhatsApp.`;
+            const availability = (Number.isFinite(p.stock) && p.stock > 0)
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock";
+            return {
+              "@type":"ListItem",
+              "position": i + 1,
+              "url": productUrl,
+              "item": {
+                "@type":"Product",
+                "name": p.name,
+                "description": desc,
+                "image": [imgUrl],
+                "category": p.category || undefined,
+                "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
+                "sku": String(p.id),
+                "url": productUrl,
+                "offers": {
+                  "@type":"Offer",
+                  "url": productUrl,
+                  "priceCurrency":"COP",
+                  "price": p.price || 0,
+                  "availability": availability
+                }
+              }
+            };
+          })
+        };
+        const el = document.getElementById("ld-products");
+        if(el) el.textContent = JSON.stringify(itemList);
+      }catch(_){}
+    }
+
+    function scheduleJsonLdUpdate(filtered){
+      const job = ++_ldJob;
+      runIdle(()=>{
+        if(job !== _ldJob) return;
+        updateProductsJsonLd(filtered);
+      }, 1400);
+    }
+
+    const cardTemplate = document.createElement("template");
+    cardTemplate.innerHTML = `
+      <article class="card">
+        <div class="img"></div>
+        <div class="pad">
+          <h3 class="name"></h3>
+          <p class="meta"></p>
+          <div class="row">
+            <span class="price"></span>
+            <span class="pill" data-role="qty"></span>
+          </div>
+          <div class="actions">
+            <button type="button" class="btn-danger" data-act="dec">Quitar</button>
+            <button type="button" class="btn-acc" data-act="inc">Agregar</button>
+          </div>
+        </div>
+      </article>
+    `;
+
+    function stockMetaText(p){
+      const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
+      let stockPart = "";
+      if (INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
+        stockPart = ` · Stock: ${stockVal}`;
+      } else if (INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
+        stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
+      } else {
+        stockPart = "";
+      }
+      return `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}`;
+    }
+
+    function refreshCardUI(card, p){
+      const enforce = shouldEnforceStockLimits();
+      const id = String(p.id);
+      const q = (cart[id]?.qty || 0);
+
+      const qtyPill = card.querySelector('[data-role="qty"]');
+      const decBtn = card.querySelector('button[data-act="dec"]');
+      const incBtn = card.querySelector('button[data-act="inc"]');
+
+      if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
+      if(decBtn) decBtn.disabled = q <= 0;
+
+      const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+      const canAdd = !enforce ? true : ((maxStock > 0) && (q < maxStock));
+
+      if(incBtn){
+        incBtn.disabled = !canAdd;
+        incBtn.classList.toggle("in-cart", q > 0);
+        if(enforce && maxStock <= 0){
+          incBtn.textContent = INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK ? "Sin stock" : "Agregar";
+        }else{
+          incBtn.textContent = "Agregar";
+        }
+      }
+    }
+
+    function makeCard(p){
+      const card = cardTemplate.content.firstElementChild.cloneNode(true);
+      card.id = "p-" + p.id;
+      card.dataset.id = String(p.id);
+
+      const imgBox = card.querySelector(".img");
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
+
+      card.querySelector(".name").textContent = p.name;
+      card.querySelector(".meta").textContent = stockMetaText(p);
+      card.querySelector(".price").textContent = fmtCOP.format(p.price);
+
+      refreshCardUI(card, p);
+      return card;
+    }
+
+    grid.addEventListener("click", (e)=>{
+      const btn = e.target.closest("button[data-act]");
+      if(!btn) return;
+      const card = e.target.closest(".card");
+      if(!card) return;
+      const id = card.dataset.id;
+      if(!id) return;
+
+      const p = productById.get(String(id));
+      if(!p) return;
+
+      const act = btn.getAttribute("data-act");
+      const enforce = shouldEnforceStockLimits();
+
+      if(act === "inc"){
+        const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+        const currentQty = safeInt(cart[id]?.qty, 0);
+
+        if(enforce){
+          if(!(maxStock > 0) || currentQty >= maxStock){
+            refreshCardUI(card, p);
+            return;
+          }
+        }
+
+        const cur = cart[id] || { id:p.id, name:p.name, price:p.price, qty:0, stock:p.stock, imgFilename:p.imgFilename || null };
+        cur.qty = safeInt(cur.qty, 0) + 1;
+        cur.stock = p.stock;
+        cur.name = p.name;
+        cur.price = p.price;
+        cur.imgFilename = p.imgFilename || null;
+        cart[id] = cur;
+
+        saveCart();
+        refreshCardUI(card, p);
+
+        btn.textContent = "Agregado ✓";
+        setTimeout(()=> refreshCardUI(card, p), 900);
+
+        if(cartModal.classList.contains("open")) renderCartModal();
+        return;
+      }
+
+      if(act === "dec"){
+        const cur = cart[id];
+        if(!cur) return;
+
+        cur.qty = Math.max(0, safeInt(cur.qty, 0) - 1);
+        if(!cur.qty) delete cart[id];
+        else cart[id] = cur;
+
+        saveCart();
+        refreshCardUI(card, p);
+
+        btn.textContent = "Quitado ✓";
+        setTimeout(()=> refreshCardUI(card, p), 900);
+
+        if(cartModal.classList.contains("open")) renderCartModal();
+        return;
+      }
+    });
+
     function buildFilteredList(){
       const cat = catSel.value;
       const br = brandSel.value;
@@ -2752,248 +2139,316 @@
     let _renderToken = 0;
     function render(){
       const token = ++_renderToken;
-
-      updateTickerVisibility();
-      updateCountAttention();
-      scheduleWriteStateToUrl();
-
       const filtered = buildFilteredList();
 
-      const qHas = !!String(qInp.value || "").trim();
-      if(countEl){
-        countEl.textContent = `${filtered.length} producto(s)`;
-        countEl.classList.toggle("search-active", qHas);
+      const cat = catSel.value;
+      const br = brandSel.value;
+      const sortMode = sortSel ? sortSel.value : "";
+      const qTxt = String(qInp.value || "").trim();
+      const hasFilters = !!qTxt || !!cat || !!br || !!sortMode;
+
+      if(filtered.length === 0){
+        countEl.textContent = hasFilters
+          ? "0 producto(s) encontrado(s). No encontré coincidencias; prueba con otra búsqueda."
+          : "0 producto(s) disponible(s).";
+      }else{
+        countEl.textContent = hasFilters
+          ? `Se encontraron ${filtered.length} producto(s). Los filtré abajo ⬇️`
+          : `Hay ${filtered.length} producto(s) disponible(s).`;
       }
 
+      updateCountAttention();
+      placeCountElement();
+
+      grid.textContent = "";
+
+      const CHUNK = 60;
+      let i = 0;
+
+      function drawChunk(){
+        if(token !== _renderToken) return;
+
+        const frag = document.createDocumentFragment();
+        const end = Math.min(i + CHUNK, filtered.length);
+        for(; i < end; i++){
+          frag.appendChild(makeCard(filtered[i]));
+        }
+        grid.appendChild(frag);
+
+        if(i < filtered.length){
+          requestAnimationFrame(drawChunk);
+        }
+      }
+      drawChunk();
+
+      scheduleWriteStateToUrl();
       scheduleJsonLdUpdate(filtered);
-
-      if(token !== _renderToken) return;
-
-      const frag = document.createDocumentFragment();
-      for(const p of filtered){
-        frag.appendChild(makeCard(p));
-      }
-
-      grid.innerHTML = "";
-      grid.appendChild(frag);
-
-      for(const el of grid.querySelectorAll(".card")){
-        const id = el.dataset.id;
-        const p = productById.get(String(id));
-        if(p) refreshCardUI(el, p);
-      }
     }
 
-    function updateCountTextLoading(){
-      if(countEl) countEl.textContent = "Cargando productos…";
-    }
+    document.getElementById("btn-cart").onclick = openCartModal;
 
-    function updateCountTextError(msg){
-      if(countEl) countEl.textContent = msg || "Error al cargar productos.";
-    }
+    let _qTimer = null;
+    qInp.addEventListener("input", ()=>{
+      updateTickerVisibility();
+      updateCountAttention();
 
-    function bindGridActions(){
-      grid.addEventListener("click", (e)=>{
-        const btn = e.target.closest("button[data-act]");
-        if(!btn) return;
-        const card = e.target.closest(".card");
-        if(!card) return;
-        const id = card.dataset.id;
-        if(!id) return;
+      clearTimeout(_qTimer);
+      _qTimer = setTimeout(render, 70);
+    });
 
-        const p = productById.get(String(id));
-        if(!p) return;
+    catSel.addEventListener("change", render);
+    brandSel.addEventListener("change", render);
+    if(sortSel) sortSel.addEventListener("change", render);
 
-        const act = btn.getAttribute("data-act");
-        const enforce = shouldEnforceStockLimits();
-        const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+    runIdle(()=>{
+      updateTickerVisibility();
+      rebuildSearchTicker();
 
-        const currentQty = safeInt(cart[id]?.qty, 0);
+      qInp.addEventListener("focus", updateTickerVisibility);
+      qInp.addEventListener("blur", updateTickerVisibility);
 
-        let newQty = currentQty;
-
-        if(act === "inc"){
-          if(!enforce){
-            newQty = currentQty + 1;
-          }else{
-            if(maxStock > 0 && currentQty < maxStock){
-              newQty = currentQty + 1;
-            }else{
-              newQty = currentQty;
-            }
-          }
-        }else if(act === "dec"){
-          newQty = Math.max(0, currentQty - 1);
-        }
-
-        if(newQty <= 0){
-          delete cart[id];
-        }else{
-          cart[id] = {
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            qty: newQty,
-            stock: p.stock,
-            imgFilename: p.imgFilename || null
-          };
-        }
-
-        saveCart();
-        refreshCardUI(card, p);
-
-        if(cartModal && cartModal.classList.contains("open")){
-          renderCartModal();
-        }
-      });
-    }
-
-    function bindFilters(){
-      [catSel, brandSel, sortSel].forEach(sel=>{
-        if(!sel) return;
-        sel.addEventListener("change", ()=>{
-          render();
+      let raf = null;
+      window.addEventListener("resize", ()=>{
+        if(raf) cancelAnimationFrame(raf);
+        raf = requestAnimationFrame(()=>{
+          rebuildSearchTicker();
+          placeCountElement();
         });
       });
+    }, 1000);
 
-      qInp.addEventListener("input", ()=>{
-        render();
-      });
+    function bootstrapFromProducts(products){
+      all = products || [];
+      productById = new Map(all.map(p => [String(p.id), p]));
 
-      qInp.addEventListener("focus", ()=>{
-        updateTickerVisibility();
-      });
-      qInp.addEventListener("blur", ()=>{
-        updateTickerVisibility();
-      });
+      const cats = [...new Set(all.map(p=>p.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+      const brands = [...new Set(all.map(p=>p.brand).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+      fillSelect(catSel, cats);
+      fillSelect(brandSel, brands);
 
-      window.addEventListener("resize", ()=>{
-        rebuildSearchTicker();
-        updateTickerVisibility();
-      }, { passive:true });
+      readStateFromUrl();
+      sanitizeCartWithStock();
+      refreshCartCount();
+
+      updateCountAttention();
+      placeCountElement();
+
+      render();
     }
 
-    function buildCategoriesAndBrands(list){
-      const cats = new Set();
-      const brands = new Set();
-      for(const p of list){
-        if(p.category) cats.add(p.category);
-        if(p.brand) brands.add(p.brand);
-      }
-      return {
-        cats: Array.from(cats).sort((a,b)=> a.localeCompare(b,"es",{sensitivity:"base"})),
-        brands: Array.from(brands).sort((a,b)=> a.localeCompare(b,"es",{sensitivity:"base"}))
-      };
-    }
+    async function init(){
+      try{
+        countEl.textContent = "Cargando productos…";
+        const placeholderWarm = warmupPlaceholderOnce();
 
-    async function loadProducts(){
-      updateCountTextLoading();
+        const cached = readProductsCache(true);
+        if(cached && cached.products && cached.products.length){
+          bootstrapFromProducts(cached.products);
 
-      await warmupPlaceholderOnce();
-
-      const cached = readProductsCache(true);
-      if(cached && Array.isArray(cached.products) && cached.products.length){
-        all = cached.products;
-        productById = new Map(all.map(p => [String(p.id), p]));
-        const { cats, brands } = buildCategoriesAndBrands(all);
-        fillSelect(catSel, cats);
-        fillSelect(brandSel, brands);
-
-        readStateFromUrl();
-
-        sanitizeCartWithStock();
-
-        render();
-
-        if(!cached.isFresh){
-          try{
-            const fresh = await loadProductsFresh();
-            if(Array.isArray(fresh) && fresh.length){
-              all = fresh;
-              productById = new Map(all.map(p => [String(p.id), p]));
-              writeProductsCache(all);
-
-              const { cats: c2, brands: b2 } = buildCategoriesAndBrands(all);
-              const prevCat = catSel.value;
-              const prevBrand = brandSel.value;
-
-              fillSelect(catSel, c2);
-              fillSelect(brandSel, b2);
-
-              if(prevCat && c2.includes(prevCat)) catSel.value = prevCat;
-              if(prevBrand && b2.includes(prevBrand)) brandSel.value = prevBrand;
-
-              sanitizeCartWithStock();
+          placeholderWarm.then(()=>{
+            if(all && all.length) {
               render();
+              if(cartModal.classList.contains("open")) renderCartModal();
             }
-          }catch(_){}
+          });
+
+          // ✅ Si viene de cache viejo (v4/v3), refrescar casi inmediato (para que aparezcan subcarpetas)
+          const fastRefresh = (cached.fromKey !== PRODUCTS_CACHE_KEY_V5);
+          const delay = fastRefresh ? 250 : (cached.isFresh ? 2500 : 1200);
+
+          runIdle(async ()=>{
+            try{
+              const fresh = await loadProductsFresh();
+              writeProductsCache(fresh);
+              bootstrapFromProducts(fresh);
+            }catch(_){}
+          }, delay);
+
+          return;
         }
+
+        await placeholderWarm;
+        const fresh = await loadProductsFresh();
+        writeProductsCache(fresh);
+        bootstrapFromProducts(fresh);
+
+      }catch(_){
+        countEl.textContent = "No se pudo cargar el catálogo. Verifica tu conexión e intenta recargar.";
+        grid.innerHTML = "";
+        refreshCartCount();
+        updateCountAttention();
+        placeCountElement();
+      }
+    }
+
+    init();
+  </script>
+
+  <script>
+    const LOCATION_MODE = "LOAD";
+    const LOCATION_LOG_INTERVAL_MINUTES = 1;
+
+    const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
+
+    (function(){
+      if (window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false){
         return;
       }
 
-      try{
-        const products = await loadProductsFresh();
-        all = products || [];
-        productById = new Map(all.map(p => [String(p.id), p]));
-        writeProductsCache(all);
+      function startTracking(){
+        const intervalMs = Math.max(1, Number(LOCATION_LOG_INTERVAL_MINUTES) || 5) * 60 * 1000;
+        let timerId = null;
 
-        const { cats, brands } = buildCategoriesAndBrands(all);
-        fillSelect(catSel, cats);
-        fillSelect(brandSel, brands);
+        const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
+        const USER_ID_KEY = "irenismb_user_id";
 
-        readStateFromUrl();
-        sanitizeCartWithStock();
+        function getUserId(){
+          try{
+            let id = localStorage.getItem(USER_ID_KEY);
+            if(id) return id;
 
-        render();
-      }catch(err){
-        console.error(err);
-        updateCountTextError("No se pudieron cargar los productos. Reintenta más tarde.");
+            id = (window.crypto && typeof window.crypto.randomUUID === "function")
+              ? window.crypto.randomUUID()
+              : (Date.now() + "-" + Math.random().toString(16).slice(2));
+
+            localStorage.setItem(USER_ID_KEY, id);
+            return id;
+          }catch(_){
+            return (Date.now() + "-" + Math.random().toString(16).slice(2));
+          }
+        }
+
+        const USER_ID = getUserId();
+        let loggedNoGeo = false;
+
+        function canGeo(){
+          return ("geolocation" in navigator);
+        }
+
+        function guessFuenteFromAccuracy(acc){
+          const a = Number(acc);
+          if(!isFinite(a)) return "GEO";
+          if(a <= 35) return "GPS";
+          if(a <= 120) return "WI-FI";
+          if(a <= 1000) return "CELULAR";
+          return "GEO";
+        }
+
+        function sendLog(params){
+          try{
+            const lat = (params && params.lat != null) ? params.lat : "";
+            const lng = (params && params.lng != null) ? params.lng : "";
+            const acc = (params && params.acc != null) ? params.acc : "";
+            const fuente = (params && params.fuente) ? String(params.fuente) : "";
+
+            const payload = new URLSearchParams({
+              lat: String(lat),
+              lng: String(lng),
+              acc: acc === "" ? "" : String(acc),
+
+              fuente: fuente,
+              src: fuente,
+
+              navegador: USER_ID,
+              user_id: USER_ID,
+
+              load_id: LOAD_ID,
+              mode: String(LOCATION_MODE || ""),
+              ts: String(Date.now()),
+              cb: Math.random().toString(36).slice(2)
+            });
+
+            const url = LOCATION_LOG_ENDPOINT + "?" + payload.toString();
+
+            if (navigator.sendBeacon){
+              try{
+                const blob = new Blob([], { type: "text/plain" });
+                navigator.sendBeacon(url, blob);
+                return;
+              }catch(_){}
+            }
+
+            fetch(url, {
+              method: "GET",
+              mode: "no-cors",
+              cache: "no-store",
+              keepalive: true
+            }).catch(()=>{
+              try{
+                const img = new Image();
+                img.src = url;
+              }catch(_){}
+            });
+
+          }catch(_){}
+        }
+
+        function logNoGeoOnce(){
+          if(loggedNoGeo) return;
+          loggedNoGeo = true;
+          sendLog({ lat:"", lng:"", acc:"", fuente:"SIN_UBICACION" });
+        }
+
+        function stopTimer(){
+          if(timerId){
+            clearInterval(timerId);
+            timerId = null;
+          }
+        }
+
+        function logOnce(){
+          try{
+            if(!canGeo()){
+              logNoGeoOnce();
+              return;
+            }
+
+            navigator.geolocation.getCurrentPosition(
+              (pos)=>{
+                const c = pos && pos.coords;
+                if(!c){ logNoGeoOnce(); return; }
+
+                sendLog({
+                  lat: c.latitude,
+                  lng: c.longitude,
+                  acc: c.accuracy,
+                  fuente: guessFuenteFromAccuracy(c.accuracy)
+                });
+              },
+              (err)=>{
+                if(err && err.code === 1){
+                  logNoGeoOnce();
+                  stopTimer();
+                }
+              },
+              { enableHighAccuracy:true, timeout:30000, maximumAge: 0 }
+            );
+
+          }catch(_){}
+        }
+
+        function startAccordingMode(){
+          const m = String(LOCATION_MODE || "").toUpperCase();
+          if (m === "LOAD"){
+            logOnce();
+          }else{
+            logOnce();
+            if(!timerId) timerId = setInterval(logOnce, intervalMs);
+          }
+        }
+
+        startAccordingMode();
       }
-    }
 
-    function initCartButton(){
-      const btnCart = document.getElementById("btn-cart");
-      if(!btnCart) return;
-      btnCart.addEventListener("click", ()=>{
-        openCartModal();
-      });
-    }
+      const _hasIdle = ("requestIdleCallback" in window);
+      const runIdle = (fn, timeout=1500)=> _hasIdle ? requestIdleCallback(fn, {timeout}) : setTimeout(fn, Math.min(350, timeout));
 
-    function initShipping(){
-      loadShippingFromLS();
-    }
-
-    function initWhatsAppDestinationFromClient(){
-      // Se mantiene por compatibilidad con el sitio (destinos anteriores),
-      // pero la compra se envía al celular del cliente según lo solicitado.
-    }
-
-    function initKeyboardAccessibility(){
-      // Cierre de modales ya está en Escape
-    }
-
-    function init(){
-      refreshCartCount();
-      initCartButton();
-      initShipping();
-      initWhatsAppDestinationFromClient();
-
-      bindFilters();
-      bindGridActions();
-      initKeyboardAccessibility();
-
-      rebuildSearchTicker();
-      updateTickerVisibility();
-      updateCountAttention();
-
-      loadClientFromLS();     // precarga datos
-      loadAddressFromLS();    // precarga datos (Santa Marta / Magdalena por defecto)
-
-      loadProducts();
-    }
-
-    // Arranque
-    init();
+      if (document.readyState === "loading"){
+        document.addEventListener("DOMContentLoaded", ()=> runIdle(startTracking, 1600), { once:true });
+      }else{
+        runIdle(startTracking, 1600);
+      }
+    })();
   </script>
 </body>
 </html>

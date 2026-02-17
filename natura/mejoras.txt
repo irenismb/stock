@@ -40,6 +40,152 @@ en la vista movil. los botones del carrito deben haber dos por fila y centrados 
 
 
 
+al enviar como vendedor, la informacion se debera enviar al telefono del comprador especificado en "otros datos". el boton enviar vendedor debe llamarse Vendedor. El boton Enviar comprador debe llamarse Comprador.
+
+
+Actúa como desarrollador frontend. Toma el siguiente archivo catalogo.html (pegado abajo) y aplícale estas mejoras SIN cambiar la lógica del carrito ni perder datos en pantalla:
+
+En móvil (y si es posible en todas las pantallas), los botones del footer del carrito deben quedar en un layout de 2 por fila, centrados, con texto sin recortes (permitir salto de línea si hace falta). Si queda un botón suelto, debe quedar centrado.
+
+En el modal Dirección, mueve el botón de Google Maps a la parte superior y renómbralo a “Ver en mapa”, quedando en la misma fila que Guardar y Cancelar (los 3 centrados).
+
+En Dirección y en Otros datos, los campos deben mostrarse en 2 columnas también en móvil (sin pasar a 1 columna), evitando que labels o inputs se vean recortados.
+
+Quita cualquier texto explicativo dentro de las ventanas del carrito (párrafos de ayuda); deja solo controles/botones descriptivos y los totales.
+
+Entrega el código completo final (HTML/CSS/JS) en un solo bloque.
+Ahora aquí está el catalogo.html base:
+[PEGAR AQUÍ EL HTML ANTERIOR COMPLETO]
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ debes aplicar los cambios indicados **sin cambiar la lógica del carrito**, **sin romper funcionalidades**, **sin perder información visible**, y **sin alterar el estado actual** (los datos guardados deben seguir cargando y guardándose igual).
+
+REGLAS GENERALES (OBLIGATORIAS)
+- No uses librerías externas ni frameworks.
+- No cambies nombres de claves en localStorage ni el formato de guardado:
+  - cart
+  - irenismb_client_v2
+  - irenismb_address_v3
+  - irenismb_shipping_cop
+  - irenismb_whatsapp_to
+- No elimines ni escondas información: lista de productos, nombres, ids, precios, subtotales, totales, cantidad, envío manual y botones deben verse completos.
+- Mantén el comportamiento actual: abrir/cerrar modales, cierre por ESC y backdrop, y bloqueo de scroll del body.
+- IMPORTANTE: **No quitar ni modificar el color naranja que actualmente se usa en botones cuando hay productos en el carrito**. Si hay estilos/clases/estados que pintan esos botones en naranja (por ejemplo estados del botón “Ver carrito” o similares), se conservan. Solo modifica layout/posición/medidas, nunca el color ni la lógica de cuándo se ve naranja.
+
+OBJETIVO: CARRITO PERFECTO EN MÓVIL
+Debes ajustar SOLO maquetación (HTML/CSS mínimo) y textos de botones, manteniendo la lógica.
+
+A) BOTONES Y ENVÍO POR WHATSAPP (COMPRADOR / VENDEDOR)
+1) Renombrar botones del footer del carrito:
+   - El botón con id="cartBuyBtn" debe decir exactamente: "Comprador"
+   - El botón con id="cartSellBtn" debe decir exactamente: "Vendedor"
+
+2) Destino WhatsApp:
+   - "Comprador" abre WhatsApp hacia la tienda (usa el destino actual getWhatsAppTo() como está).
+   - "Vendedor" debe abrir WhatsApp hacia el comprador:
+     - El número se toma del input id="clientPhone" del modal "Otros datos".
+     - Se valida usando la misma normalización de dígitos que ya existe (normalizeWhatsAppToE164Digits).
+     - Si está vacío o inválido: mostrar un aviso corto (alert() está permitido) y NO abrir WhatsApp.
+     - No usar prompt para pedir el número. Debe depender SOLO del campo del modal "Otros datos".
+   - Mantener el contenido del mensaje exactamente como ahora (buildWhatsAppMessage), solo cambia el DESTINO en modo vendedor.
+
+B) FOOTER DEL CARRITO: 2 BOTONES POR FILA, CENTRADOS, SIN RECORTES (MÓVIL Y IDEALMENTE TODO)
+Afecta al contenedor actual ".cart-footer-actions" dentro del modal del carrito.
+1) En móvil (y si no daña escritorio, también en todas las pantallas):
+   - Mostrar los botones del footer en un layout de **2 por fila**.
+   - Todo el bloque debe estar centrado horizontalmente.
+   - Los botones deben permitir salto de línea: no usar "white-space:nowrap" en esos botones del footer.
+   - Deben tener ancho consistente: cada botón ocupa la mitad disponible de la fila (grid 2 columnas).
+   - Si queda un botón solo en la última fila, debe quedar centrado:
+     - Regla: el último botón cuando sea impar ocupa 2 columnas (grid-column: 1 / -1) y tiene max-width razonable (por ejemplo 320px) centrado.
+2) Los botones que deben entrar en este layout son EXACTAMENTE estos IDs (en este orden visual o equivalente):
+   - cartClearBtn (Vaciar carrito)
+   - cartAddressBtn (📍 Dirección)
+   - cartClientBtn (🧾 Otros datos)
+   - cartBuyBtn (Comprador)
+   - cartSellBtn (Vendedor)
+3) No debe existir overflow horizontal en el modal del carrito.
+
+C) MODAL "DIRECCIÓN": ACCIONES ARRIBA, 3 BOTONES EN UNA MISMA FILA
+Afecta al modal id="addressModal".
+1) El enlace/botón de mapas actualmente es:
+   - id="addrMapsLink" y hoy dice “📌 Ver punto en Google Maps”
+   Debes:
+   - Cambiar el texto a EXACTAMENTE: "Ver en mapa"
+   - Moverlo a la parte superior del modal, junto con Guardar y Cancelar.
+2) En la parte superior del modal "Dirección" debe existir UNA sola fila de 3 botones centrados, en este orden:
+   - Cancelar
+   - Guardar
+   - Ver en mapa
+   Todos centrados, sin recortes y con buen espacio.
+3) Evitar duplicidad de acciones:
+   - En móvil NO debe haber footer con botones abajo para Dirección.
+   - Idealmente, unificar para que también en escritorio se use esa misma fila superior (si no afecta).
+4) Comportamiento de "Ver en mapa":
+   - Si no hay datos suficientes para generar el link (si falta vía), debe estar deshabilitado (sin navegación).
+   - Si hay vía, abre Google Maps como punto (misma URL que ya se genera).
+   - Mantener el mismo href dinámico que ya se calcula en refreshAddressModalPreview().
+
+D) PARTES EXACTAS DE LA DIRECCIÓN (NO CAMBIAR LÓGICA, SOLO PRESENTACIÓN)
+El formulario de dirección debe seguir usando EXACTAMENTE estos campos existentes:
+- Ciudad: input id="addrCity"
+- Departamento: input id="addrRegion"
+- Tipo de vía: select id="addrViaTipo" con estas opciones (no cambiarlas):
+  - Calle (Cl)
+  - Carrera (Cra)
+  - Avenida (Av)
+  - Diagonal (Dg)
+  - Transversal (Tv)
+- Número: input id="addrViaNum"
+- #/Placa: input id="addrPlaca"
+- Barrio: input id="addrBarrio"
+- Dirección final (solo lectura): input id="addrFinal"
+La dirección final se debe seguir generando automáticamente como hoy.
+
+E) FORMULARIOS EN 2 COLUMNAS INCLUSO EN MÓVIL (DIRECCIÓN Y OTROS DATOS)
+Afecta al grid ".client-grid" dentro de #addressModal y #clientModal.
+1) En móvil también deben ser 2 columnas (NO colapsar a 1 columna).
+   - Quitar o ajustar la media query que hoy cambia a 1 columna.
+2) Reglas anti-recorte:
+   - En los contenedores grid/flex usar min-width:0 donde corresponda.
+   - Labels deben permitir wrap (flex-wrap) para que “Opcional/Editable” no corte.
+   - Inputs/selects/textarea con width:100%.
+   - Reducir ligeramente font-size/padding SOLO si es necesario para que entren.
+3) En "Otros datos" el campo Observación (textarea) puede ocupar 2 columnas (span-2) para evitar que quede muy angosto.
+4) En Dirección, el bloque de "Dirección final" puede ocupar 2 columnas (span-2) como hoy.
+
+F) LIMPIEZA TOTAL DE TEXTOS DE AYUDA EN VENTANAS DEL CARRITO
+1) Eliminar por completo cualquier párrafo de ayuda en:
+   - Modal "Otros datos" (por ejemplo el <p class="client-hint">...)
+   - Modal "Dirección" (por ejemplo el <p class="client-hint">...)
+   - Carrito: cuando esté vacío, dejar SOLO “Carrito vacío.” (sin explicación adicional).
+2) No agregar textos explicativos nuevos dentro de los modales.
+3) Los botones deben ser suficientemente descriptivos.
+
+G) ENTREGA
+- Devuelve el archivo completo final (HTML + CSS + JS) en un solo bloque, sin omitir secciones.
+- No incluyas explicación larga: solo el código final.
+
+
+
 
 
 

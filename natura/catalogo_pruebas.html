@@ -2254,18 +2254,12 @@
     }
 
     // ÚNICO BOTÓN: Comprar por WhatsApp (se envía al celular escrito por el comprador)
-    if(cartBuyBtn){
-      cartBuyBtn.addEventListener("click", ()=>{
-        const client = getClientDataCurrent();
-        const to = normalizeWhatsAppToE164Digits(client.phone);
-        if(!to){
-          alert("Celular del cliente inválido.");
-          return;
-        }
-        openWhatsAppTo(to, buildBuyerMessage());
-      });
-    }
-
+	if(cartBuyBtn){
+	  cartBuyBtn.addEventListener("click", ()=>{
+		// El mensaje SIEMPRE se envía al celular de la tienda
+		openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
+	  });
+	}
     if(cartClearBtn){
       cartClearBtn.addEventListener("click", ()=>{
         for(const k of Object.keys(cart)) delete cart[k];

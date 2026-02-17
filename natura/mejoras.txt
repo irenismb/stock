@@ -185,6 +185,49 @@ G) ENTREGA
 - No incluyas explicación larga: solo el código final.
 
 
+__________________________________________________________
+
+
+Quiero que apliques todas las siguientes mejoras solicitadas y me entregues el código completo del proyecto con todas ellas incorporadas. No omitas ni modifiques nada sin mi autorización. Si lo consideras necesario, puedes enviarlo en dos partes de tamaño similar: me entregas la primera, y cuando yo te indique “continúa”, me envías la segunda.
+
+ten en cuenta lo siguiente:
+Santa Marta y Magdalena deben estar predeterminados pero editables.
+El barrio no se debe incluir en la determinacion del enlace para Google maps.
+Ya no habra dos botones (comprador y vendedor), sino uno llamado Comprar por WhatsApp
+Los titulos y los subtitulos deberan estar en negrita, por ejemplo "Celular", es un subtitulo, "INFORMACION DEL CLIENTE", es un titulo.
+
+el mensaje de whatsapp debera tener la siguiente estructura:
+
+INFORMACION DEL CLIENTE
+Nombre: Carlos Martinez
+Celular: lo que escriba el comprador (a este celular se enviara el mensaje de whatsapp)
+Dirección: Segun lo diligenciado por el cliente, debera mostrar algo como: Calle 10B #30A-06, Santa Marta, Magdalena
+Barrio: Segun lo diligenciado por el cliente
+Mapa: aqui colocas el enlace para ver la ubicacion del cliente con Google Maps
+Observacion: Lo que halla escrito el comprador aqui (actualmente esto esta muy alto, solo debe ocupar una fila).
+
+PRODUCTOS SOLICITADOS
+* Combo Lumina Anticaida Repuesto Shampoo 300 ml Acondicionador 300 ml Mascara 250 ml (Id: 6) x1 = $70.000
+* Aguas Frambuesa 150 ml (Id: 379) x2 = $80.000
+
+Subtotal: $150.000
+Envío: $6.000
+Total: $156.000
+
+INFORMACION DE LA TIENDA
+IRENISMB STOCK NATURA
+Celular: el celular de la tienda
+Dirección: Calle 10A #20A-06, Santa Marta, Magdalena
+Barrio: el barrio de la tienda
+Mapa: aquí colocas el enlace de la ubicación la tienda
+Catálogo: https://irenismb.github.io/stock/natura/catalogo.html
+Puntos de referencia: Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan.
+
+
+
+
+
+
 
 
 

@@ -1117,7 +1117,7 @@
       <div class="cart-modal-footer">
         <div class="cart-shipping">
           <label for="shippingCop">Envío</label>
-          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Ej: 6000" aria-label="Envío en COP" />
+          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Mínimo 6.000" aria-label="Envío en COP" />
         </div>
 
         <div class="cart-total" id="cartTotal">Total: $0</div>
@@ -1934,12 +1934,17 @@
       const raw = (shippingCopInp ? shippingCopInp.value : readStringLS(LS_SHIPPING_KEY, "")) || "";
       return toNumberDigits(raw);
     }
-    function loadShippingFromLS(){
-      if(!shippingCopInp) return;
-      const raw = readStringLS(LS_SHIPPING_KEY, "");
-      const v = toNumberDigits(raw);
-      shippingCopInp.value = v ? String(v) : "";
-    }
+	function loadShippingFromLS(){
+	  if(!shippingCopInp) return;
+
+	  const MIN_SHIPPING = 6000;
+
+	  const raw = readStringLS(LS_SHIPPING_KEY, "");
+	  const v = toNumberDigits(raw);
+
+	  // Si no hay valor guardado, usar 6.000 por defecto (editable).
+	  shippingCopInp.value = (v ? String(v) : String(MIN_SHIPPING));
+	}
     function saveShippingToLS(){
       if(!shippingCopInp) return;
       const v = toNumberDigits(shippingCopInp.value);

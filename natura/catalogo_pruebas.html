@@ -286,6 +286,7 @@
       align-items:center;
       justify-content:center;
       z-index:9999;
+      padding:12px;
     }
     .cart-modal.open{display:flex}
     .cart-modal-backdrop{
@@ -296,7 +297,7 @@
     .cart-modal-content{
       position:relative;
       z-index:1;
-      width:min(720px, 94vw);
+      width:min(720px, 100%);
       max-height:86vh;
       background:rgba(18,24,38,.98);
       border:1px solid var(--line);
@@ -484,6 +485,11 @@
       align-items:center;
       justify-content:center;
       z-index:10002;
+
+      /* ✅ Mejora móvil: evita que se recorte a la izquierda / safe areas */
+      padding:12px;
+      padding-top:calc(12px + env(safe-area-inset-top));
+      padding-bottom:calc(12px + env(safe-area-inset-bottom));
     }
     .client-modal.open{ display:flex; }
     .client-modal-backdrop{
@@ -495,12 +501,15 @@
     .client-modal-content{
       position:relative;
       z-index:1;
-      width:min(560px, 92vw);
+      width:100%;
+      max-width:560px;
+      max-height:calc(100vh - 24px);
       background:linear-gradient(180deg, rgba(18,24,38,.98), rgba(10,16,28,.96));
       border:1px solid rgba(96,165,250,.18);
       border-radius:18px;
       box-shadow: 0 30px 90px rgba(0,0,0,.65);
-      overflow:hidden;
+      overflow:auto; /* ✅ en móvil, que no se “corte” el contenido */
+      -webkit-overflow-scrolling: touch;
     }
     .client-modal-header{
       padding:14px 16px;
@@ -510,6 +519,9 @@
       justify-content:space-between;
       gap:10px;
       background:rgba(11,18,32,.40);
+      position:sticky;
+      top:0;
+      z-index:2;
     }
     .client-modal-title{ margin:0; font-size:15.5px; font-weight:950; letter-spacing:.02em; }
     .client-modal-close{
@@ -524,6 +536,7 @@
       align-items:center;
       justify-content:center;
       padding:0;
+      flex:0 0 auto;
     }
     .client-modal-body{ padding:14px 16px 4px; }
     .client-hint{
@@ -582,6 +595,15 @@
       justify-content:flex-end;
       flex-wrap:wrap;
       background:rgba(11,18,32,.35);
+      position:sticky;
+      bottom:0;
+      z-index:2;
+    }
+
+    /* ✅ En móviles: grid a una columna para que no se recorte */
+    @media (max-width:520px){
+      .client-grid{ grid-template-columns:1fr; }
+      .client-field.span-2{ grid-column:auto; }
     }
 
     /* Responsive polish */
@@ -592,6 +614,10 @@
     @media (max-width:560px){
       .actions{ gap:8px; }
       .actions button{ font-size:12.5px; padding:9px 8px; border-radius:10px; }
+
+      .cart-footer-actions button{ width:100%; }
+      .cart-footer-actions{ width:100%; }
+      .cart-total{ width:100%; }
     }
     @media (prefers-reduced-motion: reduce){
       *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
@@ -672,7 +698,7 @@
         <select id="sort" aria-label="Ordenar productos">
           <option value="">Ordenar</option>
           <option value="price_asc">Precio: menor a mayor</option>
-          <option value="price_desc">Precio: mayor a mayor</option>
+          <option value="price_desc">Precio: mayor a menor</option>
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
@@ -724,7 +750,12 @@
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
-          <button class="btn-acc" id="cartBuyBtn" type="button">Comprar por WhatsApp</button>
+
+          <!-- ✅ Enviar como comprador (al número de la tienda) -->
+          <button class="btn-acc" id="cartBuyBtn" type="button">Enviar como comprador</button>
+
+          <!-- ✅ Botón adicional: enviar como vendedor (al celular del cliente) -->
+          <button class="btn-ghost" id="cartSellBtn" type="button">Enviar como vendedor</button>
         </div>
       </div>
     </div>
@@ -742,7 +773,7 @@
 
       <div class="client-modal-body">
         <p class="client-hint">
-          Estos datos son <b>opcionales</b>. Puedes guardarlos y luego usar “Comprar por WhatsApp”.
+          Estos datos son <b>opcionales</b>. Puedes guardarlos y luego usar “Enviar como comprador” o “Enviar como vendedor”.
         </p>
 
         <div class="client-grid">
@@ -764,10 +795,27 @@
 
           <div class="client-field">
             <label for="clientShipping">
-              <span>Envío (COP)</span>
+              <span>Envío manual (COP)</span>
               <span class="client-opt">Opcional</span>
             </label>
             <input id="clientShipping" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej: 8000" />
+          </div>
+
+          <!-- ✅ NUEVO: Valor por km y mínimo -->
+          <div class="client-field">
+            <label for="clientKmRate">
+              <span>Valor por km (COP)</span>
+              <span class="client-opt">Editable</span>
+            </label>
+            <input id="clientKmRate" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej: 1200" />
+          </div>
+
+          <div class="client-field">
+            <label for="clientMinShipping">
+              <span>Mínimo envío (COP)</span>
+              <span class="client-opt">Opcional</span>
+            </label>
+            <input id="clientMinShipping" type="text" inputmode="numeric" autocomplete="off" placeholder="Ej: 6000" />
           </div>
 
           <div class="client-field span-2">
@@ -780,6 +828,13 @@
         </div>
 
         <p class="client-total-preview" id="clientTotalPreview"></p>
+
+        <!-- ✅ NUEVO: vista de envío estimado -->
+        <p class="client-total-preview" id="clientShipEstPreview"></p>
+
+        <button class="btn-ghost" id="clientUseEstBtn" type="button" style="width:100%; margin-top:10px;">
+          Usar envío estimado
+        </button>
       </div>
 
       <div class="client-modal-footer">
@@ -805,7 +860,6 @@
         </p>
 
         <div class="client-grid">
-          <!-- ✅ NUEVO: Ciudad y Departamento EDITABLES -->
           <div class="client-field">
             <label for="addrCity">
               <span>Ciudad</span>
@@ -875,6 +929,9 @@
                style="display:inline-block; margin-top:8px; padding:10px 12px; border-radius:12px; text-decoration:none;">
               📌 Ver punto en Google Maps
             </a>
+
+            <!-- ✅ NUEVO: envío estimado visible también aquí -->
+            <p class="client-total-preview" id="addrShipEstPreview" style="margin-top:10px;"></p>
           </div>
         </div>
       </div>
@@ -901,12 +958,15 @@
        - NO se guarda el pedido en Google Sheets (eliminado).
        - SOLO se mantiene el guardado de coordenadas (script al final).
        - Dirección y Otros datos van en modales separados desde el carrito.
-       - “Comprar por WhatsApp” SOLO envía el mensaje.
+       - WhatsApp: dos modos de envío (comprador -> tienda / vendedor -> cliente)
        ========================================================== */
 
-    // ====== WhatsApp destino (editable con SHIFT+clic en ícono) ======
+    // ====== WhatsApp destino (tienda) (editable con SHIFT+clic en ícono) ======
     const WHATSAPP_TO_STORAGE_KEY = "irenismb_whatsapp_to";
     const WHATSAPP_TO_DEFAULT = "3042088961";
+
+    const STORE_NAME = "IRENISMB STOCK NATURA";
+    const STORE_PHONE_E164 = "573042088961"; // solo dígitos
 
     function normalizeWhatsAppToE164Digits(input){
       const digits = String(input || "").replace(/[^\d]/g, "");
@@ -945,14 +1005,23 @@
         return Boolean(byUA || byPointer);
       }catch(_){ return false; }
     }
-    function waLink(text){
+
+    // ✅ Link WhatsApp para cualquier destino
+    function waLinkTo(toE164Digits, text){
+      const to = normalizeWhatsAppToE164Digits(toE164Digits);
       const msg = String(text || "");
-      const to = getWhatsAppTo();
+      if(!to) return "";
       if (isMobileDevice()){
         return `https://wa.me/${encodeURIComponent(to)}${msg ? `?text=${encodeURIComponent(msg)}` : ""}`;
       }
       return `https://web.whatsapp.com/send?phone=${encodeURIComponent(to)}${msg ? `&text=${encodeURIComponent(msg)}` : ""}`;
     }
+
+    // Link WhatsApp para tienda (default)
+    function waLink(text){
+      return waLinkTo(getWhatsAppTo(), text);
+    }
+
     function updateWhatsAppLinks(){
       const wa = document.getElementById("waTopLink");
       const call = document.getElementById("callTopLink");
@@ -982,7 +1051,6 @@
     const LOGOS_DIR = "logos";
     const COMPANY_LOGO = SITE_BASE + LOGOS_DIR + "/logo_empresa.webp";
 
-    // ✅ URL del catálogo (si hay canonical, se usa; si no, se usa la URL actual sin hash)
     const CATALOG_URL = (document.querySelector('link[rel="canonical"]')?.href) || (window.location.href.split("#")[0]);
 
     const IMAGE_EXTS = ["webp","jpg","jpeg","png"];
@@ -1300,7 +1368,7 @@
       el.textContent = String(qty);
     }
 
-    // ====== Envío (local, NO sheets) ======
+    // ====== Envío (manual, local) ======
     const SHIPPING_COST_KEY = "irenismb_shipping_cop";
     function readStoredShippingCost(){
       try{ return Math.max(0, safeInt(localStorage.getItem(SHIPPING_COST_KEY), 0)); }catch(_){ return 0; }
@@ -1309,14 +1377,108 @@
       try{ localStorage.setItem(SHIPPING_COST_KEY, String(Math.max(0, safeInt(v, 0)))); }catch(_){}
     }
 
-    // ====== Datos cliente + Dirección (local, NO sheets) ======
-    // ✅ Ciudad y departamento predefinidos pero EDITABLES
+    // ====== Envío estimado por KM (local) ======
+    const SHIPPING_RATE_PER_KM_KEY = "irenismb_shipping_rate_per_km_cop";
+    const SHIPPING_MIN_KEY = "irenismb_shipping_min_cop";
+    const LAST_GEO_KEY = "irenismb_last_geo_v1"; // se llena en el script de GPS
+    const ESTIMATE_ROUND_STEP = 100; // redondeo a 100 COP
+
+    function roundToStep(n, step){
+      const s = Math.max(1, Number(step) || 1);
+      return Math.round((Number(n) || 0) / s) * s;
+    }
+    function readRatePerKm(){
+      try{ return Math.max(0, safeInt(localStorage.getItem(SHIPPING_RATE_PER_KM_KEY), 0)); }catch(_){ return 0; }
+    }
+    function writeRatePerKm(v){
+      try{ localStorage.setItem(SHIPPING_RATE_PER_KM_KEY, String(Math.max(0, safeInt(v, 0)))); }catch(_){}
+    }
+    function readMinShipping(){
+      try{ return Math.max(0, safeInt(localStorage.getItem(SHIPPING_MIN_KEY), 0)); }catch(_){ return 0; }
+    }
+    function writeMinShipping(v){
+      try{ localStorage.setItem(SHIPPING_MIN_KEY, String(Math.max(0, safeInt(v, 0)))); }catch(_){}
+    }
+    function readLastGeo(){
+      try{
+        const obj = JSON.parse(localStorage.getItem(LAST_GEO_KEY) || "{}");
+        const lat = Number(obj.lat), lng = Number(obj.lng);
+        if(Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng, ts: Number(obj.ts)||0 };
+      }catch(_){}
+      return null;
+    }
+    function readStoreGeoFromLdJson(){
+      try{
+        const el = document.querySelector('script[type="application/ld+json"]');
+        if(!el) throw new Error("no ld+json");
+        const obj = JSON.parse(el.textContent || "{}");
+        const geo = obj && obj.geo ? obj.geo : {};
+        const lat = Number(geo.latitude), lng = Number(geo.longitude);
+        if(Number.isFinite(lat) && Number.isFinite(lng)) return { lat, lng };
+      }catch(_){}
+      return { lat: 11.244833370782679, lng: -74.19066001689564 };
+    }
+    const STORE_GEO = readStoreGeoFromLdJson();
+
+    function haversineKm(lat1, lon1, lat2, lon2){
+      const R = 6371;
+      const toRad = (d)=> (d * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLon = toRad(lon2 - lon1);
+      const a =
+        Math.sin(dLat/2)**2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon/2)**2;
+      return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+    }
+
+    const _geoCache = new Map();
+
+    async function geocodeAddressToLatLng(query){
+      const q = String(query || "").trim();
+      if(!q) return null;
+      if(_geoCache.has(q)) return _geoCache.get(q);
+
+      // Nominatim (OpenStreetMap) - sin API key
+      const url = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=" + encodeURIComponent(q);
+      const res = await fetch(url, { method:"GET", cache:"no-store" });
+      if(!res.ok) return null;
+      const data = await res.json().catch(()=> null);
+      if(!Array.isArray(data) || !data.length) return null;
+
+      const lat = Number(data[0].lat);
+      const lon = Number(data[0].lon);
+      if(!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+
+      const out = { lat, lng: lon };
+      _geoCache.set(q, out);
+      return out;
+    }
+
+    async function routeDistanceKmOSRM(origin, dest){
+      // OSRM público - ruta en carro
+      const oLat = Number(origin?.lat), oLng = Number(origin?.lng);
+      const dLat = Number(dest?.lat), dLng = Number(dest?.lng);
+      if(!Number.isFinite(oLat) || !Number.isFinite(oLng) || !Number.isFinite(dLat) || !Number.isFinite(dLng)) return null;
+
+      const url = `https://router.project-osrm.org/route/v1/driving/${oLng},${oLat};${dLng},${dLat}?overview=false`;
+      const res = await fetch(url, { method:"GET", cache:"no-store" });
+      if(!res.ok) return null;
+
+      const data = await res.json().catch(()=> null);
+      if(!data || data.code !== "Ok" || !Array.isArray(data.routes) || !data.routes[0]) return null;
+
+      const meters = Number(data.routes[0].distance);
+      if(!Number.isFinite(meters) || meters <= 0) return null;
+      return meters / 1000;
+    }
+
+    // ====== Datos cliente + Dirección (local) ======
     const DEFAULT_CITY = "Santa Marta";
     const DEFAULT_REGION = "Magdalena";
     const DEFAULT_COUNTRY = "Colombia";
 
     const LS_CLIENT_KEY  = "irenismb_client_v2";
-    const LS_ADDRESS_KEY = "irenismb_address_v3"; // ✅ subimos versión por nuevos campos
+    const LS_ADDRESS_KEY = "irenismb_address_v3";
 
     function safeParseJson(raw, fallback){
       try{
@@ -1327,7 +1489,6 @@
     function cleanToken(s){ return String(s || "").trim().replace(/\s+/g, " "); }
     function normalizePlaca(s){ return cleanToken(s).replace(/\s*-\s*/g, "-"); }
 
-    // ✅ Mapa como PUNTO (no ruta)
     function googleMapsPointUrl(query){
       return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(query);
     }
@@ -1391,44 +1552,202 @@
       return { line1, barrio: a.barrio, full: main, mapsQuery };
     }
 
-    // ====== Mensaje WhatsApp ======
-    function buildWhatsAppMessage(){
-      const items = cartItemsArray();
+    function buildGeocodeQueryFromStoredAddress(){
+      const a = readAddressStored();
+      const line1 = buildAddressLine1(a.tipo, a.viaNum, a.placa);
+      const city = a.city || DEFAULT_CITY;
+      const region = a.region || DEFAULT_REGION;
+      const q = [line1, a.barrio, city, region, DEFAULT_COUNTRY].filter(Boolean).join(", ").trim(); // barrio ayuda al geocode
+      return { line1, query: q };
+    }
 
-      // ✅ Siempre incluye el enlace al catálogo al final
-      const catalogLine = `Catálogo: ${CATALOG_URL}`;
+    let lastShippingEstimate = null;
 
-      if(!items.length){
-        return `Hola, quiero información del catálogo.\n\n${catalogLine}`;
+    async function computeShippingEstimate(){
+      const rate = readRatePerKm();
+      if(rate <= 0) return { ok:false, reason:"Define un valor por km." };
+
+      const minShip = readMinShipping();
+      const { line1, query } = buildGeocodeQueryFromStoredAddress();
+      if(!line1) return { ok:false, reason:"Completa al menos Tipo + Número + Placa." };
+
+      const origin = readLastGeo() || STORE_GEO; // si no hay GPS, usa ubicación tienda
+      const dest = await geocodeAddressToLatLng(query);
+      if(!dest) return { ok:false, reason:"No pude ubicar esa dirección en el mapa." };
+
+      let km = await routeDistanceKmOSRM(origin, dest);
+      let mode = "ruta";
+      if(!Number.isFinite(km) || km <= 0){
+        km = haversineKm(origin.lat, origin.lng, dest.lat, dest.lng);
+        mode = "recta";
       }
 
+      if(!Number.isFinite(km) || km <= 0) return { ok:false, reason:"No pude calcular distancia." };
+
+      const raw = km * rate;
+      const est = Math.max(minShip, roundToStep(raw, ESTIMATE_ROUND_STEP));
+
+      return {
+        ok:true,
+        km,
+        rate,
+        minShip,
+        est,
+        mode,
+        originUsed: (readLastGeo() ? "gps" : "tienda")
+      };
+    }
+
+    async function computeShippingEstimateSafe(){
+      try{
+        const r = await computeShippingEstimate();
+        lastShippingEstimate = r;
+        return r;
+      }catch(_){
+        lastShippingEstimate = { ok:false, reason:"No disponible." };
+        return lastShippingEstimate;
+      }
+    }
+
+    let _estTimer = null;
+    function scheduleEstimateUpdate(){
+      clearTimeout(_estTimer);
+      _estTimer = setTimeout(async ()=>{
+        const r = await computeShippingEstimateSafe();
+
+        const addrEl = document.getElementById("addrShipEstPreview");
+        const cliEl  = document.getElementById("clientShipEstPreview");
+        const useBtn = document.getElementById("clientUseEstBtn");
+
+        const setText = (el, txt)=>{ if(el) el.textContent = txt; };
+
+        if(!r.ok){
+          const msg = `Envío estimado: ${r.reason}`;
+          setText(addrEl, msg);
+          setText(cliEl, msg);
+          if(useBtn) useBtn.disabled = true;
+          return;
+        }
+
+        const kmTxt = (r.km < 1) ? r.km.toFixed(2) : r.km.toFixed(1);
+        const base = `Envío estimado: ${fmtCOP.format(r.est)} · Distancia: ~${kmTxt} km (${r.mode}) · ${fmtCOP.format(r.rate)}/km`;
+        const extra = (r.originUsed === "gps") ? " · Origen: tu ubicación" : " · Origen: ubicación tienda";
+        setText(addrEl, base + extra);
+        setText(cliEl, base + extra);
+
+        if(useBtn) useBtn.disabled = false;
+      }, 650);
+    }
+
+    // ====== WhatsApp: obtener destinatario cliente (para modo vendedor) ======
+    function getClientWhatsAppTo(){
+      const c = readClientStored();
+      const normalized = normalizeWhatsAppToE164Digits(c.celular);
+      return normalized || "";
+    }
+
+    // ====== Mensaje WhatsApp (comprador / vendedor) ======
+    function buildWhatsAppMessage(mode, estObj){
+      const items = cartItemsArray();
       const c = readClientStored();
       const a = addressForWhatsApp();
-      const shipping = readStoredShippingCost();
 
+      const catalogLine = `Catálogo: ${CATALOG_URL}`;
+
+      // Si no hay items, igual enviamos info + catálogo y datos (si existen)
+      if(!items.length){
+        if(mode === "seller"){
+          const lines = [];
+          lines.push(`Hola${c.nombre ? " " + c.nombre : ""}, soy ${STORE_NAME}.`);
+          lines.push(`Te comparto el catálogo y mis datos de contacto:`);
+          lines.push(`WhatsApp tienda: +${STORE_PHONE_E164}`);
+          if(a.full) lines.push(`Dirección cliente: ${a.full}`);
+          if(a.barrio) lines.push(`Barrio: ${a.barrio}`);
+          if(a.line1) lines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
+          if(c.observacion) lines.push(`Observación: ${c.observacion}`);
+
+          // Envío manual (aunque sea 0) para no omitir
+          const shippingManual = readStoredShippingCost();
+          lines.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
+
+          // Estimado
+          if(estObj && estObj.ok){
+            const kmTxt = (estObj.km < 1) ? estObj.km.toFixed(2) : estObj.km.toFixed(1);
+            lines.push(`Envío estimado: ${fmtCOP.format(estObj.est)} (≈${kmTxt} km · ${fmtCOP.format(estObj.rate)}/km)`);
+          }else{
+            lines.push(`Envío estimado: ${estObj?.reason ? estObj.reason : "No disponible."}`);
+          }
+
+          lines.push("");
+          lines.push(catalogLine);
+          return lines.join("\n");
+        }else{
+          const lines = [];
+          lines.push(`Hola, quiero información del catálogo.`);
+          if(c.nombre) lines.push(`Nombre: ${c.nombre}`);
+          if(c.celular) lines.push(`Celular: ${c.celular}`);
+          if(a.full) lines.push(`Dirección: ${a.full}`);
+          if(a.barrio) lines.push(`Barrio: ${a.barrio}`);
+          if(a.line1) lines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
+          if(c.observacion) lines.push(`Observación: ${c.observacion}`);
+
+          const shippingManual = readStoredShippingCost();
+          lines.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
+
+          if(estObj && estObj.ok){
+            const kmTxt = (estObj.km < 1) ? estObj.km.toFixed(2) : estObj.km.toFixed(1);
+            lines.push(`Envío estimado: ${fmtCOP.format(estObj.est)} (≈${kmTxt} km · ${fmtCOP.format(estObj.rate)}/km)`);
+          }else{
+            lines.push(`Envío estimado: ${estObj?.reason ? estObj.reason : "No disponible."}`);
+          }
+
+          lines.push("");
+          lines.push(catalogLine);
+          return lines.join("\n");
+        }
+      }
+
+      // Con items
+      const shippingManual = readStoredShippingCost();
       const subtotal = cartTotalValue();
-      const total = subtotal + Math.max(0, shipping);
+      const total = subtotal + Math.max(0, shippingManual);
 
       const clientLines = [];
+      if(mode === "seller"){
+        clientLines.push(`Hola${c.nombre ? " " + c.nombre : ""}, soy ${STORE_NAME}.`);
+        clientLines.push(`Este es el resumen del pedido:`);
+        clientLines.push(`WhatsApp tienda: +${STORE_PHONE_E164}`);
+      }else{
+        clientLines.push(`Hola, quiero comprar:`);
+      }
+
+      // Datos (no omitir)
       if(c.nombre) clientLines.push(`Nombre: ${c.nombre}`);
       if(c.celular) clientLines.push(`Celular: ${c.celular}`);
 
       if(a.full) clientLines.push(`Dirección: ${a.full}`);
       if(a.barrio) clientLines.push(`Barrio: ${a.barrio}`);
-
-      // ✅ Link Maps como PUNTO (sin barrio)
-      if(a.line1){
-        clientLines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
-      }
-
+      if(a.line1) clientLines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
       if(c.observacion) clientLines.push(`Observación: ${c.observacion}`);
 
+      // Items
       const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`);
 
-      if(shipping > 0){
-        return `Hola, quiero comprar:\n${clientLines.join("\n")}\n\n${lines.join("\n")}\n\nSubtotal: ${fmtCOP.format(subtotal)}\nEnvío: ${fmtCOP.format(shipping)}\nTotal: ${fmtCOP.format(total)}\n\n${catalogLine}`;
+      // Totales (siempre)
+      const totals = [];
+      totals.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
+      totals.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
+      totals.push(`Total: ${fmtCOP.format(total)}`);
+
+      // Estimado (siempre aparece, aunque sea "no disponible")
+      if(estObj && estObj.ok){
+        const kmTxt = (estObj.km < 1) ? estObj.km.toFixed(2) : estObj.km.toFixed(1);
+        totals.push(`Envío estimado: ${fmtCOP.format(estObj.est)} (≈${kmTxt} km · ${fmtCOP.format(estObj.rate)}/km)`);
+      }else{
+        totals.push(`Envío estimado: ${estObj?.reason ? estObj.reason : "No disponible."}`);
       }
-      return `Hola, quiero comprar:\n${clientLines.join("\n")}\n\n${lines.join("\n")}\n\nTotal: ${fmtCOP.format(subtotal)}\n\n${catalogLine}`;
+
+      return `${clientLines.join("\n")}\n\n${lines.join("\n")}\n\n${totals.join("\n")}\n\n${catalogLine}`;
     }
 
     // ====== Modales: control general ======
@@ -1451,6 +1770,7 @@
     const cartItemsEl = document.getElementById("cartItems");
     const cartTotalEl = document.getElementById("cartTotal");
     const cartBuyBtn = document.getElementById("cartBuyBtn");
+    const cartSellBtn = document.getElementById("cartSellBtn");
     const cartClearBtn = document.getElementById("cartClearBtn");
     const cartAddressBtn = document.getElementById("cartAddressBtn");
     const cartClientBtn = document.getElementById("cartClientBtn");
@@ -1461,10 +1781,13 @@
     const clientShippingInp = document.getElementById("clientShipping");
     const clientTotalPreviewEl = document.getElementById("clientTotalPreview");
 
-    // ✅ NUEVO: inputs ciudad y departamento
+    const clientKmRateInp = document.getElementById("clientKmRate");
+    const clientMinShippingInp = document.getElementById("clientMinShipping");
+    const clientUseEstBtn = document.getElementById("clientUseEstBtn");
+
+    // inputs dirección
     const addrCity = document.getElementById("addrCity");
     const addrRegion = document.getElementById("addrRegion");
-
     const addrViaTipo = document.getElementById("addrViaTipo");
     const addrViaNum = document.getElementById("addrViaNum");
     const addrPlaca = document.getElementById("addrPlaca");
@@ -1503,7 +1826,19 @@
 
       const ship = readStoredShippingCost();
       if(clientShippingInp) clientShippingInp.value = ship > 0 ? String(ship) : "";
+
+      // cargar config por km
+      if(clientKmRateInp){
+        const r = readRatePerKm();
+        clientKmRateInp.value = r > 0 ? String(r) : "";
+      }
+      if(clientMinShippingInp){
+        const m = readMinShipping();
+        clientMinShippingInp.value = m > 0 ? String(m) : "";
+      }
+
       updateClientTotalPreview();
+      scheduleEstimateUpdate();
 
       clientModal.classList.add("open");
       clientModal.setAttribute("aria-hidden","false");
@@ -1529,7 +1864,7 @@
 
       if(addrFinal) addrFinal.value = full;
 
-      // ✅ Link Maps como PUNTO (sin barrio)
+      // Link Maps como PUNTO (sin barrio)
       if(addrMapsLink){
         if(line1){
           const query = [line1, city, region, DEFAULT_COUNTRY].join(", ");
@@ -1542,6 +1877,9 @@
           addrMapsLink.style.opacity = ".55";
         }
       }
+
+      // ✅ actualizar estimado al modificar dirección
+      scheduleEstimateUpdate();
     }
 
     function openAddressModal(){
@@ -1573,10 +1911,12 @@
       const shipping = Math.max(0, toNumberDigits(clientShippingInp?.value || "") || readStoredShippingCost());
       const subtotal = cartTotalValue();
       const total = subtotal + shipping;
-      if(shipping > 0){
-        clientTotalPreviewEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
+
+      // ✅ siempre muestra subtotal/envío/total cuando hay items
+      if(cartTotalQty() > 0){
+        clientTotalPreviewEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío manual: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
       }else{
-        clientTotalPreviewEl.textContent = `Total: ${fmtCOP.format(subtotal)}`;
+        clientTotalPreviewEl.textContent = `Carrito vacío · Envío manual: ${fmtCOP.format(shipping)}`;
       }
     }
 
@@ -1592,7 +1932,6 @@
     if(addressModalClose) addressModalClose.addEventListener("click", closeAddressModal);
     if(addressCloseBtn) addressCloseBtn.addEventListener("click", closeAddressModal);
 
-    // ✅ incluir ciudad y departamento en preview
     [addrCity, addrRegion, addrViaTipo, addrViaNum, addrPlaca, addrBarrio].forEach(el=>{
       if(!el) return;
       el.addEventListener("input", refreshAddressModalPreview);
@@ -1610,6 +1949,7 @@
           barrio: addrBarrio?.value || ""
         });
         closeAddressModal();
+        scheduleEstimateUpdate();
       });
     }
 
@@ -1624,6 +1964,38 @@
       });
     }
 
+    if(clientKmRateInp){
+      clientKmRateInp.addEventListener("input", scheduleEstimateUpdate);
+      clientKmRateInp.addEventListener("blur", ()=>{
+        const v = Math.max(0, toNumberDigits(clientKmRateInp.value));
+        writeRatePerKm(v);
+        clientKmRateInp.value = v > 0 ? String(v) : "";
+        scheduleEstimateUpdate();
+      });
+    }
+
+    if(clientMinShippingInp){
+      clientMinShippingInp.addEventListener("input", scheduleEstimateUpdate);
+      clientMinShippingInp.addEventListener("blur", ()=>{
+        const v = Math.max(0, toNumberDigits(clientMinShippingInp.value));
+        writeMinShipping(v);
+        clientMinShippingInp.value = v > 0 ? String(v) : "";
+        scheduleEstimateUpdate();
+      });
+    }
+
+    if(clientUseEstBtn){
+      clientUseEstBtn.addEventListener("click", ()=>{
+        if(!lastShippingEstimate || !lastShippingEstimate.ok) return;
+        const v = Math.max(0, Number(lastShippingEstimate.est) || 0);
+        writeStoredShippingCost(v);
+        if(clientShippingInp) clientShippingInp.value = v > 0 ? String(v) : "";
+        updateClientTotalPreview();
+        if(cartModal && cartModal.classList.contains("open")) renderCartModal();
+        alert("Listo: se aplicó el envío estimado al envío manual.");
+      });
+    }
+
     if(clientSaveBtn){
       clientSaveBtn.addEventListener("click", ()=>{
         writeClientStored({
@@ -1631,9 +2003,22 @@
           celular: clientPhoneInp?.value || "",
           observacion: clientObsInp?.value || ""
         });
+
         const envio = Math.max(0, toNumberDigits(clientShippingInp?.value || ""));
-        if(envio > 0) writeStoredShippingCost(envio);
+        writeStoredShippingCost(envio);
+
+        // guardar también config km
+        const rate = Math.max(0, toNumberDigits(clientKmRateInp?.value || ""));
+        writeRatePerKm(rate);
+
+        const minS = Math.max(0, toNumberDigits(clientMinShippingInp?.value || ""));
+        writeMinShipping(minS);
+
         closeClientModal();
+
+        // refrescar vistas
+        scheduleEstimateUpdate();
+        if(cartModal && cartModal.classList.contains("open")) renderCartModal();
       });
     }
 
@@ -1654,11 +2039,37 @@
       });
     }
 
+    // ✅ Enviar como comprador (a tienda)
     if(cartBuyBtn){
-      cartBuyBtn.addEventListener("click", ()=>{
-        // ✅ Siempre arma el mensaje (incluye catálogo al final, incluso si no hay items)
-        const msg = buildWhatsAppMessage();
+      cartBuyBtn.addEventListener("click", async ()=>{
+        const est = await computeShippingEstimateSafe(); // para incluir estimado en el texto
+        const msg = buildWhatsAppMessage("buyer", est);
         window.open(waLink(msg), "_blank", "noopener");
+      });
+    }
+
+    // ✅ Enviar como vendedor (a cliente)
+    if(cartSellBtn){
+      cartSellBtn.addEventListener("click", async ()=>{
+        const est = await computeShippingEstimateSafe();
+        const msg = buildWhatsAppMessage("seller", est);
+
+        let to = getClientWhatsAppTo();
+        if(!to){
+          const entered = prompt("Para enviar como vendedor, escribe el celular del cliente (solo dígitos). Ej: 3042088961", "");
+          if(entered == null) return;
+          const normalized = normalizeWhatsAppToE164Digits(entered);
+          if(!normalized){
+            alert("Celular inválido.");
+            return;
+          }
+          // guarda como celular del cliente
+          const cur = readClientStored();
+          writeClientStored({ ...cur, celular: entered });
+          to = normalized;
+        }
+
+        window.open(waLinkTo(to, msg), "_blank", "noopener");
       });
     }
 
@@ -1703,15 +2114,16 @@
       const shipping = readStoredShippingCost();
       const total = subtotal + shipping;
 
-      cartTotalEl.textContent = shipping > 0
-        ? `Subtotal: ${fmtCOP.format(subtotal)} · Envío: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`
-        : `Total: ${fmtCOP.format(subtotal)}`;
+      // ✅ siempre muestra subtotal/envío/total
+      cartTotalEl.textContent = `Subtotal: ${fmtCOP.format(subtotal)} · Envío manual: ${fmtCOP.format(shipping)} · Total: ${fmtCOP.format(total)}`;
 
-      if(cartBuyBtn) cartBuyBtn.disabled = false; // ✅ ahora siempre deja enviar (aunque sea info + catálogo)
+      if(cartBuyBtn) cartBuyBtn.disabled = false;
+      if(cartSellBtn) cartSellBtn.disabled = false;
+
       if(cartClearBtn) cartClearBtn.disabled = !items.length;
 
       if(!items.length){
-        cartItemsEl.innerHTML = `<div class="cart-empty">El carrito está vacío. Si deseas, puedes tocar “Comprar por WhatsApp” para pedir información (incluye el enlace al catálogo).</div>`;
+        cartItemsEl.innerHTML = `<div class="cart-empty">El carrito está vacío. Puedes usar “Enviar como comprador” para pedir información (incluye enlace al catálogo) o “Enviar como vendedor” para compartir el catálogo con un cliente.</div>`;
         return;
       }
 
@@ -1786,6 +2198,7 @@
       saveCart();
       renderCartModal();
       refreshVisibleCardsFromCart();
+      updateClientTotalPreview();
     });
 
     function refreshVisibleCardsFromCart(){
@@ -1943,6 +2356,7 @@
         saveCart();
         refreshCardUI(card, p);
         if(cartModal.classList.contains("open")) renderCartModal();
+        updateClientTotalPreview();
         return;
       }
       if(act === "dec"){
@@ -1954,6 +2368,7 @@
         saveCart();
         refreshCardUI(card, p);
         if(cartModal.classList.contains("open")) renderCartModal();
+        updateClientTotalPreview();
       }
     });
 
@@ -2013,14 +2428,13 @@
     /* ==========================================================
        ✅ GUARDADO DE COORDENADAS (ÚNICO LOG QUE QUEDA)
        - No guarda pedidos, no guarda carrito, solo coordenadas.
+       - Además guarda última ubicación en localStorage para envío estimado
        ========================================================== */
 
     const HABILITAR_UBICACION_GPS = true;
 
-    // ✅ Endpoint de coordenadas (el mismo que ya usabas)
     const LOCATION_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
 
-    // ✅ Frecuencia (minutos) si quieres repetir; por defecto solo una vez (LOAD)
     const LOCATION_MODE = "LOAD"; // "LOAD" o "INTERVAL"
     const LOCATION_LOG_INTERVAL_MINUTES = 1;
 
@@ -2062,10 +2476,20 @@
             (pos)=>{
               const c = pos && pos.coords;
               if(!c){ sendCoord("", "", ""); return; }
+
+              // ✅ guarda última ubicación para cálculo de envío estimado
+              try{
+                localStorage.setItem("irenismb_last_geo_v1", JSON.stringify({
+                  lat: c.latitude,
+                  lng: c.longitude,
+                  acc: c.accuracy,
+                  ts: Date.now()
+                }));
+              }catch(_){}
+
               sendCoord(c.latitude, c.longitude, c.accuracy);
             },
             (_err)=>{
-              // Si bloquea permisos, manda vacío una sola vez
               sendCoord("", "", "");
             },
             { enableHighAccuracy:true, timeout:30000, maximumAge: 0 }

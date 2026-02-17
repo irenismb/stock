@@ -29,6 +29,12 @@ crees que eso es posible? como seria?
 toda la informacion del carrito de compras y la digitada por el cliente, debe enviarse por whatsapp.
 
 
+el carrito tendra un boton adicional para que se pueda enviar la informacion como vendedor o como comprador.
+
+
+la ventanita de la direccion en la version web, debe encajar mejor en la panatalla del movil, pues no se ve toda la informacion de la izquierda de la ventana. 
+
+
 
 
 

@@ -2033,51 +2033,56 @@
 
       return { addressLine, barrio, mapLink };
     }
+	function buildBuyerMessage(){
+	  const items = cartItemsArray();
+	  const client = getClientDataCurrent();
+	  const addr = getAddressDataCurrent();
 
-    function buildBuyerMessage(){
-      const items = cartItemsArray();
-      const client = getClientDataCurrent();
-      const addr = getAddressDataCurrent();
+	  const subtotal = cartTotalValue();
+	  const envio = getShippingCop();
+	  const total = subtotal + envio;
 
-      const subtotal = cartTotalValue();
-      const envio = getShippingCop();
-      const total = subtotal + envio;
+	  const lines = [];
 
-      const lines = [];
+	  lines.push("*INFORMACION DEL CLIENTE*");
+	  lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
+	  lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
+	  lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
+	  lines.push(`*Barrio:* ${addr.barrio || ""}`.trimEnd());
+	  lines.push(`*Ubicación:* ${addr.mapLink || ""}`.trimEnd());
+	  lines.push(`*Observación:* ${oneLineText(client.obs || "")}`.trimEnd());
 
-      lines.push("*INFORMACION DEL CLIENTE*");
-      lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
-      lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
-      lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
-      lines.push(`*Barrio:* ${addr.barrio || ""}`.trimEnd());
-      lines.push(`*Ubicación:* ${addr.mapLink || ""}`.trimEnd());
-      lines.push(`*Observación:* ${oneLineText(client.obs || "")}`.trimEnd());
+	  lines.push("");
+	  lines.push("*PRODUCTOS SOLICITADOS*");
 
-      lines.push("");
-      lines.push("*PRODUCTOS SOLICITADOS*");
+	  if(items.length){
+		lines.push(...buildLineItems());
+	  }
 
-      if(items.length){
-        lines.push(...buildLineItems());
-      }
+	  lines.push("");
+	  lines.push(`*Subtotal:* ${fmtCOP.format(subtotal)}`);
+	  lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
+	  lines.push(`*Total:* ${fmtCOP.format(total)}`);
 
-      lines.push("");
-      lines.push(`*Subtotal:* ${fmtCOP.format(subtotal)}`);
-      lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
-      lines.push(`*Total:* ${fmtCOP.format(total)}`);
+	  // ✅ Celular tienda sin +57 (solo para el mensaje)
+	  const storePhoneNo57 = String(STORE_INFO.whatsappDisplay || "")
+		.replace(/^\s*\+?\s*57\s*/i, "")
+		.trim();
 
-      lines.push("");
-      lines.push("*INFORMACION DE LA TIENDA*");
-      lines.push(STORE_INFO.name);
-      lines.push(`*Celular:* ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
-      lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
+	  lines.push("");
+	  lines.push("*INFORMACION DE LA TIENDA*");
+	  lines.push(STORE_INFO.name);
+	  lines.push(`*Celular:* ${storePhoneNo57}`);
+	  lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
+	  lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
+
+	  // Orden solicitado: primero punto de referencia y luego enlaces
 	  lines.push(`*Puntos de referencia:* ${STORE_INFO.referencias}`);
-      lines.push(`*Ubicación:* ${STORE_INFO.mapa}`);
-      lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
+	  lines.push(`*Ubicación:* ${STORE_INFO.mapa}`);
+	  lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
 
-      return lines.join("\n");
-    }
-
+	  return lines.join("\n");
+	}
     // Wrapper de compatibilidad (actualmente no se usa)
     function getAddressDataFromLS(){
       const addr = getAddressDataCurrent();

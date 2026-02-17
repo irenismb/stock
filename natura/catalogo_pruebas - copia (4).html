@@ -822,7 +822,7 @@
     }
     .field textarea{
       resize:vertical;
-      min-height:44px; /* antes muy alto; ahora ocupa una fila por defecto */
+      min-height:86px;
     }
     .span-2{ grid-column: 1 / -1; }
 
@@ -1126,7 +1126,8 @@
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
-          <button class="btn-acc" id="cartBuyBtn" type="button">Comprar por WhatsApp</button>
+          <button class="btn-acc" id="cartBuyBtn" type="button">Comprador</button>
+          <button class="btn-acc" id="cartSellBtn" type="button">Vendedor</button>
         </div>
       </div>
     </div>
@@ -1212,7 +1213,7 @@
 
           <div class="field span-2">
             <label for="clientObs">Observación</label>
-            <textarea id="clientObs" rows="1" placeholder="Ej: Dejar en portería, horario de entrega, pago por Nequi..."></textarea>
+            <textarea id="clientObs" placeholder="Ej: Dejar en portería, horario de entrega, pago por Nequi..."></textarea>
           </div>
         </div>
       </div>
@@ -1624,7 +1625,7 @@
     }
 
     /* ==========================
-       WhatsApp (se envía al celular del cliente)
+       WhatsApp: destinos (comprador/vendedor)
        ========================== */
     const LS_CLIENT_KEY = "irenismb_client_v2";
     const LS_ADDRESS_KEY = "irenismb_address_v3";
@@ -1953,135 +1954,62 @@
       celularDisplay: "3114040809",
       direccion: "Calle 10A #20A-06, Santa Marta, Magdalena",
       barrio: "Los Almendros",
-      mapa: "https://maps.google.com/?q=11.244833370782679,-74.19066001689564",
-      catalogo: "https://irenismb.github.io/stock/natura/catalogo.html",
-      referencias: "Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan."
+      catalogo: "https://irenismb.github.io/stock/natura/catalogo.html"
     };
 
     function buildLineItems(){
       const items = cartItemsArray();
       return items.map(it =>
-        `* ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`
+        `• ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`
       );
     }
 
-    function oneLineText(s){
-      return String(s ?? "")
-        .replace(/\r\n/g, "\n")
-        .replace(/\n+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-    }
-
-    function viaTypeLabel(tipo){
-      const t = String(tipo || "").trim();
-      const map = { Cl:"Calle", Cra:"Carrera", Av:"Avenida", Dg:"Diagonal", Tv:"Transversal" };
-      return map[t] || t;
-    }
-
-    function buildViaString(tipo, num, placa){
-      const t = viaTypeLabel(tipo);
-      const n = String(num || "").trim();
-      const p = String(placa || "").trim();
-      if(t && n && p) return `${t} ${n} #${p}`;
-      return joinParts([t, n, p ? `#${p}` : ""], " ");
-    }
-
-    function getClientDataCurrent(){
-      const nameInp = document.getElementById("clientName");
-      const phoneInp = document.getElementById("clientPhone");
-      const obsInp = document.getElementById("clientObs");
-
-      const obj = readJsonLS(LS_CLIENT_KEY, {});
-      const name = String((nameInp && nameInp.value) ?? (obj.clientName ?? "")).trim();
-      const phone = String((phoneInp && phoneInp.value) ?? (obj.clientPhone ?? "")).trim();
-      const obs = String((obsInp && obsInp.value) ?? (obj.clientObs ?? ""));
-
-      return { name, phone, obs };
-    }
-
-    function getAddressDataCurrent(){
+    function getAddressDataFromLS(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
 
-      const cityInp = document.getElementById("addrCity");
-      const regionInp = document.getElementById("addrRegion");
-      const tipoInp = document.getElementById("addrViaTipo");
-      const numInp = document.getElementById("addrViaNum");
-      const placaInp = document.getElementById("addrPlaca");
-      const barrioInp = document.getElementById("addrBarrio");
+      const city = String(obj.addrCity ?? "").trim();
+      const region = String(obj.addrRegion ?? "").trim();
+      const tipo = String(obj.addrViaTipo ?? "").trim();
+      const num = String(obj.addrViaNum ?? "").trim();
+      const placa = String(obj.addrPlaca ?? "").trim();
+      const barrio = String(obj.addrBarrio ?? "").trim();
 
-      const city = String((cityInp && cityInp.value) ?? (obj.addrCity ?? "")).trim();
-      const region = String((regionInp && regionInp.value) ?? (obj.addrRegion ?? "")).trim();
-      const tipo = String((tipoInp && tipoInp.value) ?? (obj.addrViaTipo ?? "")).trim();
-      const num = String((numInp && numInp.value) ?? (obj.addrViaNum ?? "")).trim();
-      const placa = String((placaInp && placaInp.value) ?? (obj.addrPlaca ?? "")).trim();
-      const barrio = String((barrioInp && barrioInp.value) ?? (obj.addrBarrio ?? "")).trim();
-
-      const via = buildViaString(tipo, num, placa);
+      const via = (tipo && num && placa) ? `${tipo} ${num} #${placa}` : "";
       const addressLine = joinParts([via, city, region], ", ");
 
-      // IMPORTANTE: barrio NO se incluye en el enlace de Google Maps
-      const mapLink = addressLine
-        ? ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addressLine))
+      const mapDir = addressLine
+        ? ("https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(addressLine))
         : "";
 
-      return { addressLine, barrio, mapLink };
+      return { addressLine, barrio, mapDir };
     }
 
     function buildBuyerMessage(){
       const items = cartItemsArray();
-      const client = getClientDataCurrent();
-      const addr = getAddressDataCurrent();
+      if(!items.length) return "Hola, quiero información del catálogo.";
 
+      const addr = getAddressDataFromLS();
       const subtotal = cartTotalValue();
       const envio = getShippingCop();
       const total = subtotal + envio;
 
       const lines = [];
+      lines.push("Hola, quiero comprar:");
 
-      lines.push("*INFORMACION DEL CLIENTE*");
-      lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
-      lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
-      lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
-      lines.push(`*Barrio:* ${addr.barrio || ""}`.trimEnd());
-      lines.push(`*Mapa:* ${addr.mapLink || ""}`.trimEnd());
-      lines.push(`*Observacion:* ${oneLineText(client.obs || "")}`.trimEnd());
+      if(addr.addressLine) lines.push(`Dirección: ${addr.addressLine}`);
+      if(addr.barrio) lines.push(`Barrio: ${addr.barrio}`);
+      if(addr.mapDir) lines.push(`Mapa: ${addr.mapDir}`);
 
       lines.push("");
-      lines.push("*PRODUCTOS SOLICITADOS*");
-
-      if(items.length){
-        lines.push(...buildLineItems());
-      }
-
+      lines.push(...buildLineItems());
       lines.push("");
-      lines.push(`*Subtotal:* ${fmtCOP.format(subtotal)}`);
-      lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
-      lines.push(`*Total:* ${fmtCOP.format(total)}`);
-
-      lines.push("");
-      lines.push("*INFORMACION DE LA TIENDA*");
-      lines.push(STORE_INFO.name);
-      lines.push(`*Celular:* ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
-      lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
-      lines.push(`*Mapa:* ${STORE_INFO.mapa}`);
-      lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
-      lines.push(`*Puntos de referencia:* ${STORE_INFO.referencias}`);
+      lines.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
+      lines.push(`Envío: ${fmtCOP.format(envio)}`);
+      lines.push(`Total: ${fmtCOP.format(total)}`);
 
       return lines.join("\n");
     }
-    /* ======= FIN PARTE 1/2: continúa en la PARTE 2/2 ======= */
-    // Wrapper de compatibilidad (mantiene nombre previo sin barrio en el mapa)
-    function getAddressDataFromLS(){
-      const addr = getAddressDataCurrent();
-      const mapDir = addr.addressLine
-        ? ("https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(addr.addressLine))
-        : "";
-      return { addressLine: addr.addressLine, barrio: addr.barrio, mapDir };
-    }
 
-    // (Se deja por compatibilidad, aunque ya no se usa el botón "Vendedor")
     function buildSellerMessage(){
       const items = cartItemsArray();
       if(!items.length) return `Hola, soy ${STORE_INFO.name}.`;
@@ -2090,13 +2018,14 @@
       const envio = getShippingCop();
       const total = subtotal + envio;
 
-      const storeMap = STORE_INFO.mapa
-        ? STORE_INFO.mapa
-        : ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(`${STORE_INFO.direccion}, Colombia`));
+      const storeMap = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(
+        `${STORE_INFO.direccion}, Colombia`
+      );
 
       const lines = [];
       lines.push(`Hola, soy ${STORE_INFO.name}.`);
-      lines.push(`Celular: ${STORE_INFO.whatsappDisplay}`);
+      lines.push(`WhatsApp tienda: ${STORE_INFO.whatsappDisplay}`);
+      lines.push(`Celular: ${STORE_INFO.celularDisplay}`);
       lines.push(`Dirección: ${STORE_INFO.direccion}`);
       lines.push(`Barrio: ${STORE_INFO.barrio}`);
       lines.push(`Mapa: ${storeMap}`);
@@ -2118,6 +2047,8 @@
     const cartItemsEl = document.getElementById("cartItems");
     const cartTotalEl = document.getElementById("cartTotal");
     const cartBuyBtn = document.getElementById("cartBuyBtn");
+
+    const cartSellBtn = document.getElementById("cartSellBtn");
     const cartClearBtn = document.getElementById("cartClearBtn");
     const cartAddressBtn = document.getElementById("cartAddressBtn");
     const cartClientBtn = document.getElementById("cartClientBtn");
@@ -2248,30 +2179,30 @@
       window.open(waLinkTo(toDigits, msg), "_blank", "noopener");
     }
 
-    // ÚNICO BOTÓN: Comprar por WhatsApp (se envía al celular escrito por el comprador)
-    if(cartBuyBtn){
-      cartBuyBtn.addEventListener("click", ()=>{
-        const client = getClientDataCurrent();
-        const to = normalizeWhatsAppToE164Digits(client.phone);
-        if(!to){
-          alert("Celular del cliente inválido.");
-          return;
-        }
-        openWhatsAppTo(to, buildBuyerMessage());
-      });
-    }
+    cartBuyBtn.addEventListener("click", ()=>{
+      openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
+    });
 
-    if(cartClearBtn){
-      cartClearBtn.addEventListener("click", ()=>{
-        for(const k of Object.keys(cart)) delete cart[k];
-        saveCart();
-        renderCartModal();
-        render();
-      });
-    }
+    cartSellBtn.addEventListener("click", ()=>{
+      const phoneInp = document.getElementById("clientPhone");
+      const raw = phoneInp ? String(phoneInp.value || "").trim() : "";
+      const to = normalizeWhatsAppToE164Digits(raw);
+      if(!to){
+        alert("Teléfono de comprador inválido.");
+        return;
+      }
+      openWhatsAppTo(to, buildSellerMessage());
+    });
 
-    if(cartModalClose) cartModalClose.addEventListener("click", closeCartModal);
-    if(cartModalBackdrop) cartModalBackdrop.addEventListener("click", closeCartModal);
+    cartClearBtn.addEventListener("click", ()=>{
+      for(const k of Object.keys(cart)) delete cart[k];
+      saveCart();
+      renderCartModal();
+      render();
+    });
+
+    cartModalClose.addEventListener("click", closeCartModal);
+    cartModalBackdrop.addEventListener("click", closeCartModal);
 
     if(shippingCopInp){
       shippingCopInp.addEventListener("input", ()=>{
@@ -2298,9 +2229,6 @@
     const addrBarrio = document.getElementById("addrBarrio");
     const addrFinal = document.getElementById("addrFinal");
 
-    const DEFAULT_CITY = "Santa Marta";
-    const DEFAULT_REGION = "Magdalena";
-
     function openAddressModal(){
       if(addressModal.classList.contains("open")) return;
       loadAddressFromLS();
@@ -2325,17 +2253,21 @@
       const tipo = String(addrViaTipo?.value || "").trim();
       const num = String(addrViaNum?.value || "").trim();
       const placa = String(addrPlaca?.value || "").trim();
+      const barrio = String(addrBarrio?.value || "").trim();
 
-      // Dirección final SOLO con vía + ciudad + departamento (sin barrio)
-      const via = buildViaString(tipo, num, placa);
-      const final = joinParts([via || "", city || "", region || ""], ", ");
+      const via = tipo && num && placa ? `${tipo} ${num} #${placa}` : joinParts([tipo, num, placa ? `#${placa}` : ""], " ");
+      const final = joinParts([
+        via || "",
+        barrio ? `Barrio ${barrio}` : "",
+        city || "",
+        region || ""
+      ], ", ");
 
       if(addrFinal) addrFinal.value = final;
 
-      // El barrio NO se usa para el enlace de Google Maps
       const hasVia = !!(tipo && num && placa);
       if(addrMapsLink){
-        if(!hasVia || !final){
+        if(!hasVia){
           addrMapsLink.setAttribute("aria-disabled","true");
           addrMapsLink.setAttribute("tabindex","-1");
           addrMapsLink.href = "#";
@@ -2349,15 +2281,8 @@
 
     function loadAddressFromLS(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
-
-      const hasCity = Object.prototype.hasOwnProperty.call(obj, "addrCity");
-      const hasRegion = Object.prototype.hasOwnProperty.call(obj, "addrRegion");
-
-      const cityVal = hasCity ? String(obj.addrCity ?? "") : DEFAULT_CITY;
-      const regionVal = hasRegion ? String(obj.addrRegion ?? "") : DEFAULT_REGION;
-
-      if(addrCity) addrCity.value = cityVal;
-      if(addrRegion) addrRegion.value = regionVal;
+      if(addrCity) addrCity.value = String(obj.addrCity ?? "");
+      if(addrRegion) addrRegion.value = String(obj.addrRegion ?? "");
       if(addrViaTipo) addrViaTipo.value = String(obj.addrViaTipo ?? "");
       if(addrViaNum) addrViaNum.value = String(obj.addrViaNum ?? "");
       if(addrPlaca) addrPlaca.value = String(obj.addrPlaca ?? "");
@@ -2767,8 +2692,10 @@
         countEl.classList.toggle("search-active", qHas);
       }
 
+      // JSON-LD (en idle)
       scheduleJsonLdUpdate(filtered);
 
+      // Render cards
       if(token !== _renderToken) return;
 
       const frag = document.createDocumentFragment();
@@ -2779,6 +2706,10 @@
       grid.innerHTML = "";
       grid.appendChild(frag);
 
+      // Hacer scroll suave al inicio cuando hay filtros y estamos en desktop (opcional)
+      // (No se cambia comportamiento funcional; se deja sin scroll automático.)
+
+      // Actualizar estado botones (agregar/quitar) basado en carrito
       for(const el of grid.querySelectorAll(".card")){
         const id = el.dataset.id;
         const p = productById.get(String(id));
@@ -2844,6 +2775,7 @@
         saveCart();
         refreshCardUI(card, p);
 
+        // Si el carrito está abierto, re-render para reflejar cambios
         if(cartModal && cartModal.classList.contains("open")){
           renderCartModal();
         }
@@ -2870,6 +2802,7 @@
       });
 
       window.addEventListener("resize", ()=>{
+        // Recalcular ticker con el ancho disponible
         rebuildSearchTicker();
         updateTickerVisibility();
       }, { passive:true });
@@ -2891,8 +2824,10 @@
     async function loadProducts(){
       updateCountTextLoading();
 
+      // Warmup placeholder (no afecta lógica)
       await warmupPlaceholderOnce();
 
+      // Cache: usar si está fresco, sino permitir stale mientras se actualiza
       const cached = readProductsCache(true);
       if(cached && Array.isArray(cached.products) && cached.products.length){
         all = cached.products;
@@ -2901,12 +2836,16 @@
         fillSelect(catSel, cats);
         fillSelect(brandSel, brands);
 
+        // Restablecer filtros de URL si vienen
         readStateFromUrl();
 
+        // Sanea carrito con productos cargados
         sanitizeCartWithStock();
 
+        // Render con cache
         render();
 
+        // Si cache está stale, actualizar en background (pero en esta misma ejecución)
         if(!cached.isFresh){
           try{
             const fresh = await loadProductsFresh();
@@ -2922,6 +2861,7 @@
               fillSelect(catSel, c2);
               fillSelect(brandSel, b2);
 
+              // Intentar mantener selección si aún existe
               if(prevCat && c2.includes(prevCat)) catSel.value = prevCat;
               if(prevBrand && b2.includes(prevBrand)) brandSel.value = prevBrand;
 
@@ -2933,6 +2873,7 @@
         return;
       }
 
+      // Sin cache útil, cargar fresco
       try{
         const products = await loadProductsFresh();
         all = products || [];
@@ -2966,12 +2907,13 @@
     }
 
     function initWhatsAppDestinationFromClient(){
-      // Se mantiene por compatibilidad con el sitio (destinos anteriores),
-      // pero la compra se envía al celular del cliente según lo solicitado.
+      // Este sitio usa el teléfono del cliente para el botón "Vendedor" (ya implementado).
+      // Se mantiene la clave de destino (LS_WA_TO_KEY) por compatibilidad, pero no se fuerza.
     }
 
     function initKeyboardAccessibility(){
       // Cierre de modales ya está en Escape
+      // Tab focus: sin alterar lógica (mínimo)
     }
 
     function init(){
@@ -2988,8 +2930,8 @@
       updateTickerVisibility();
       updateCountAttention();
 
-      loadClientFromLS();     // precarga datos
-      loadAddressFromLS();    // precarga datos (Santa Marta / Magdalena por defecto)
+      loadClientFromLS();     // precarga datos para botón vendedor
+      loadAddressFromLS();    // precarga datos para mensaje comprador
 
       loadProducts();
     }

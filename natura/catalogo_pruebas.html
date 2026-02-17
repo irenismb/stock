@@ -46,6 +46,18 @@
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
+  <!-- ✅ NUEVO: Corrige 100vh en móviles (barra del navegador / notch) -->
+  <script>
+    (function () {
+      function applyAppHeight() {
+        document.documentElement.style.setProperty("--app-height", window.innerHeight + "px");
+      }
+      applyAppHeight();
+      window.addEventListener("resize", applyAppHeight, { passive: true });
+      window.addEventListener("orientationchange", applyAppHeight, { passive: true });
+    })();
+  </script>
+
   <style>
     :root{
       --bg:#0b0f14;
@@ -61,6 +73,9 @@
 
       --social-size: clamp(26px, 8.5vw, 38px);
       --social-gap: clamp(3px, 1.6vw, 10px);
+
+      /* ✅ NUEVO: altura real de la pantalla en móvil */
+      --app-height: 100vh;
     }
 
     *{box-sizing:border-box}
@@ -152,6 +167,17 @@
     .btn-acc{ background:linear-gradient(90deg,#20c997,#2dd4bf); border:none;color:#04120d;font-weight:900; }
     .btn-ghost{ background:transparent; border:1px solid #2a3b5c; color:var(--txt); font-weight:800; }
     .btn-danger{ background:transparent; border:1px solid rgba(239,68,68,.55); color:#fecaca; font-weight:900; }
+
+    /* ✅ NUEVO: botones siempre centrados internamente (texto/íconos) */
+    .btn-acc, .btn-ghost, .btn-danger,
+    .cart-remove, .cart-qty-btn,
+    button{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      gap:8px;
+    }
 
     .social-icons{
       display:flex;
@@ -406,23 +432,33 @@
       cursor:pointer;
       white-space:nowrap;
     }
+
+    /* ✅ MEJORA: centrar botones del carrito (PC y móvil) */
     .cart-modal-footer{
       padding:12px 14px;
       border-top:1px solid var(--line);
       display:flex;
+      flex-direction:column;
       flex-wrap:wrap;
       align-items:center;
-      justify-content:space-between;
+      justify-content:center;
       gap:10px;
       background:rgba(11,18,32,.35);
+      text-align:center;
     }
-    .cart-total{ font-weight:950; color:var(--txt); }
+    .cart-total{
+      font-weight:950;
+      color:var(--txt);
+      width:100%;
+      text-align:center;
+    }
     .cart-footer-actions{
       display:flex;
       gap:10px;
       flex-wrap:wrap;
-      justify-content:flex-end;
+      justify-content:center;
       align-items:center;
+      width:100%;
     }
 
     /* Image modal */
@@ -497,17 +533,27 @@
       background:rgba(0,0,0,.72);
       backdrop-filter: blur(10px);
     }
+
+    /* ✅ MEJORA: modal en móvil SIEMPRE encaja completo (sin partes ocultas)
+       - quitamos overflow:auto del contenedor
+       - hacemos layout tipo "header fijo + body scroll + footer fijo"
+       - usamos --app-height (window.innerHeight) para evitar problemas de 100vh en móviles
+    */
     .client-modal-content{
       position:relative;
       z-index:1;
       width:100%;
       max-width:560px;
-      max-height:calc(100vh - 24px);
+
+      max-height: calc(var(--app-height) - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
       background:linear-gradient(180deg, rgba(18,24,38,.98), rgba(10,16,28,.96));
       border:1px solid rgba(96,165,250,.18);
       border-radius:18px;
       box-shadow: 0 30px 90px rgba(0,0,0,.65);
-      overflow:auto;
+
+      overflow:hidden;
+      display:flex;
+      flex-direction:column;
       -webkit-overflow-scrolling: touch;
     }
     .client-modal-header{
@@ -518,9 +564,9 @@
       justify-content:space-between;
       gap:10px;
       background:rgba(11,18,32,.40);
-      position:sticky;
-      top:0;
+      position:relative;
       z-index:3;
+      flex:0 0 auto;
     }
     .client-modal-title{ margin:0; font-size:15.5px; font-weight:950; letter-spacing:.02em; }
     .client-modal-close{
@@ -537,7 +583,13 @@
       padding:0;
       flex:0 0 auto;
     }
-    .client-modal-body{ padding:14px 16px 4px; }
+
+    .client-modal-body{
+      padding:14px 16px 12px;
+      overflow:auto;
+      flex:1 1 auto;
+      min-height:0;
+    }
     .client-hint{
       margin:0 0 12px;
       color:rgba(169,180,194,.95);
@@ -586,17 +638,20 @@
       border-radius:14px;
       background:rgba(11,18,32,.18);
     }
+
+    /* ✅ MEJORA: botones del footer centrados */
     .client-modal-footer{
       padding:12px 16px 14px;
       border-top:1px solid rgba(34,48,74,.9);
       display:flex;
       gap:10px;
-      justify-content:flex-end;
+      justify-content:center;
       flex-wrap:wrap;
       background:rgba(11,18,32,.35);
-      position:sticky;
-      bottom:0;
+      position:relative;
       z-index:2;
+      flex:0 0 auto;
+      text-align:center;
     }
 
     /* ✅ En móviles: grid a una columna para que no se recorte */
@@ -605,15 +660,13 @@
       .client-field.span-2{ grid-column:auto; }
     }
 
-    /* ✅ NUEVO: acciones superiores para Dirección (móvil) */
+    /* ✅ Acciones superiores para Dirección (móvil) */
     .address-top-actions{
       display:none;
-      position:sticky;
-      top:0;
-      z-index:4;
       background:rgba(11,18,32,.55);
       border-bottom:1px solid rgba(34,48,74,.9);
       padding:10px 12px;
+      flex:0 0 auto;
     }
     .address-top-actions-inner{
       display:flex;
@@ -776,10 +829,7 @@
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
 
-          <!-- ✅ Enviar como comprador (al número de la tienda) -->
           <button class="btn-acc" id="cartBuyBtn" type="button">Enviar como comprador</button>
-
-          <!-- ✅ Botón adicional: enviar como vendedor (al celular del cliente) -->
           <button class="btn-ghost" id="cartSellBtn" type="button">Enviar como vendedor</button>
         </div>
       </div>
@@ -856,7 +906,7 @@
         <button class="client-modal-close" id="addressModalClose" type="button" aria-label="Cerrar">✕</button>
       </div>
 
-      <!-- ✅ NUEVO (móvil): Cancelar + Guardar centrados y arriba -->
+      <!-- ✅ (móvil): Cancelar + Guardar centrados y arriba -->
       <div class="address-top-actions" aria-label="Acciones de dirección">
         <div class="address-top-actions-inner">
           <button class="btn-ghost" id="addressCancelTopBtn" type="button">Cancelar</button>
@@ -936,7 +986,7 @@
                href="#"
                target="_blank"
                rel="noopener noreferrer"
-               style="display:inline-block; margin-top:8px; padding:10px 12px; border-radius:12px; text-decoration:none;">
+               style="display:flex; justify-content:center; align-items:center; margin-top:8px; padding:10px 12px; border-radius:12px; text-decoration:none; width:100%;">
               📌 Ver punto en Google Maps
             </a>
           </div>
@@ -1482,7 +1532,6 @@
       const catalogLine = `Catálogo: ${CATALOG_URL}`;
       const shippingManual = readStoredShippingCost();
 
-      // Si no hay items, igual enviamos info + catálogo y datos (si existen)
       if(!items.length){
         if(mode === "seller"){
           const lines = [];
@@ -1513,7 +1562,6 @@
         }
       }
 
-      // Con items
       const subtotal = cartTotalValue();
       const total = subtotal + Math.max(0, shippingManual);
 
@@ -1534,10 +1582,8 @@
       if(a.line1) clientLines.push(`Mapa (punto): ${googleMapsPointUrl(a.mapsQuery)}`);
       if(c.observacion) clientLines.push(`Observación: ${c.observacion}`);
 
-      // Items
       const lines = items.map(it => `- ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`);
 
-      // Totales (siempre)
       const totals = [];
       totals.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
       totals.push(`Envío manual: ${fmtCOP.format(shippingManual)}`);
@@ -1649,7 +1695,6 @@
 
       if(addrFinal) addrFinal.value = full;
 
-      // Link Maps como PUNTO (sin barrio)
       if(addrMapsLink){
         if(line1){
           const query = [line1, city, region, DEFAULT_COUNTRY].join(", ");

@@ -1,15 +1,15 @@
 /**
  * Backend para la app de caja.
- * - doPost: guarda los registros que envía el front.
- *   ✅ NUEVO: si puntoVenta es "Aroma" -> guarda en OTRO Spreadsheet (AROMA_SPREADSHEET_ID).
+ * - doPost: guarda los registros que envía el front en el Spreadsheet que contiene este script (container-bound).
  *
- * - doGet?action=report  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : devuelve filas SOLO de TOTALES (combinando archivos).
- * - doGet?action=details &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : devuelve filas de DETALLE (excluye totales, combinando archivos).
+ * - doGet?action=report  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : devuelve filas SOLO de TOTALES.
+ * - doGet?action=details &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : devuelve filas de DETALLE (excluye totales).
  * - doGet?action=export  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] : genera y devuelve URL para descargar en Excel (.xlsx).
  */
 
 /** ====== CONFIGURACIÓN ====== */
-const SHEET_NAME = 'Hoja 1'; // <-- usa el nombre exacto de tu pestaña (debe existir en ambos archivos)
+
+// IMPORTANTE: la hoja destino debe ser la PRIMERA pestaña del spreadsheet.
 const REQUIRED_HEADERS = ['fecha','puntoVenta','tipo','tercero','detalle','valor'];
 
 // (Opcional) Si tu hoja ya tiene estas columnas, también las formateamos como número.
@@ -25,22 +25,20 @@ const TOTALES_VALIDOS = new Set([
   'Total ventas por medios electronicos'
 ]);
 
-// ✅ color para el tipo específico de tesorería
+// ✅ tipo específico de tesorería + color
 const TIPO_TESORERIA = 'Total dinero a recibir por tesoreria';
 const COLOR_TESORERIA_RGB = { r: 254, g: 242, b: 205 };
 
 // (Opcional) token simple para POST/GET (?key=...); deja vacío para desactivar
 const API_KEY = ''; // p.ej. 'secreto-super-simple'
 
-// ====== NUEVO: Ruteo por punto de venta ======
-const PUNTO_VENTA_AROMA = 'Aroma';
-const AROMA_SPREADSHEET_ID = '1kg9EAeDphGisTujDEuj8U5PZd5CvYs-tRXzxhKdF4kY'; // <- ID tomado del enlace
-// Si en el archivo Aroma la pestaña se llama diferente, cambia SHEET_NAME o crea otra constante.
-
 // ✅ Sets normalizados para comparaciones seguras
 const TOTALES_NORM = new Set(Array.from(TOTALES_VALIDOS).map(_normText));
 const TIPO_TESORERIA_NORM = _normText(TIPO_TESORERIA);
-const PV_AROMA_NORM = _normText(PUNTO_VENTA_AROMA);
+
+// ✅ FORMATO: resaltado/negrita SOLO de B a G
+const FORMAT_COL_START = 2; // B
+const FORMAT_COL_END   = 7; // G
 
 /** ====== CORS Y UTILIDADES HTTP ====== */
 function doOptions(e) {
@@ -76,7 +74,7 @@ function doPost(e) {
     const records = Array.isArray(payload) ? payload : [payload];
     if (!records.length) throw new Error('No hay registros para guardar');
 
-    // ✅ Agrupa por destino (AROMA vs DEFAULT) por si en algún futuro envías mezclado
+    // Todo se guarda en el Spreadsheet contenedor del script, en la primera pestaña
     const grupos = _agruparRegistrosPorDestino_(records);
 
     let totalAdded = 0;
@@ -107,8 +105,8 @@ function doPost(e) {
 }
 
 /** ====== REPORTE / DETALLES / EXPORT (GET) ======
- * action=report  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> JSON de filas SOLO TOTALES (combinado).
- * action=details &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> JSON de filas de DETALLE (excluye totales, combinado).
+ * action=report  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> JSON de filas SOLO TOTALES.
+ * action=details &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> JSON de filas de DETALLE (excluye totales).
  * action=export  &from=YYYY-MM-DD&to=YYYY-MM-DD[&puntoVenta=...] -> {result:'ok', downloadUrl:'...xlsx'}.
  */
 function doGet(e) {
@@ -154,7 +152,7 @@ function doGet(e) {
 /** ====== LECTURAS ====== */
 
 /**
- * Totales por rango (combinando DEFAULT + AROMA):
+ * Totales por rango:
  * devuelve SOLO filas cuyo "tipo" ∈ TOTALES_VALIDOS (comparación tolerante).
  * pvFilterNorm: si se pasa, filtra por puntoVenta normalizado.
  */
@@ -204,7 +202,7 @@ function leerTotalesPorRango(fromISO, toISO, pvFilterNorm) {
 }
 
 /**
- * Detalles por rango (combinando DEFAULT + AROMA):
+ * Detalles por rango:
  * devuelve filas cuyo "tipo" NO esté en TOTALES_VALIDOS.
  * pvFilterNorm: si se pasa, filtra por puntoVenta normalizado.
  */
@@ -274,52 +272,24 @@ function _crearArchivoExcelDesdeFilas(rows, nombreBase) {
   return { fileId, downloadUrl };
 }
 
-/** ====== NUEVO: fuentes y ruteo ====== */
+/** ====== FUENTES DE DATOS (solo Spreadsheet contenedor del script) ====== */
 function _getFuentesDeDatos_() {
-  // DEFAULT: spreadsheet contenedor del script
-  const defSS = SpreadsheetApp.getActive();
-  const list = [{ key: 'DEFAULT', spreadsheet: defSS, sheetName: SHEET_NAME }];
-
-  // AROMA: spreadsheet por ID (si existe y no es el mismo)
-  if (AROMA_SPREADSHEET_ID) {
-    const aromaSS = SpreadsheetApp.openById(AROMA_SPREADSHEET_ID);
-    if (aromaSS.getId() !== defSS.getId()) {
-      list.push({ key: 'AROMA', spreadsheet: aromaSS, sheetName: SHEET_NAME });
-    }
-  }
-  return list;
+  const defSS = _getBoundSpreadsheet_();
+  return [{ key: 'DEFAULT', spreadsheet: defSS }];
 }
 
+/** ====== Agrupación (estructura mantenida; todo va a DEFAULT) ====== */
 function _agruparRegistrosPorDestino_(records) {
-  const buckets = new Map(); // destinoKey -> records[]
-  for (const rec of records) {
-    const pv = String(rec?.puntoVenta || '').trim();
-    const destinoKey = (_normText(pv) === PV_AROMA_NORM) ? 'AROMA' : 'DEFAULT';
-    if (!buckets.has(destinoKey)) buckets.set(destinoKey, []);
-    buckets.get(destinoKey).push(rec);
-  }
-
-  const out = [];
-  for (const [destinoKey, recs] of buckets.entries()) out.push({ destinoKey, records: recs });
-  return out;
+  return [{ destinoKey: 'DEFAULT', records: records }];
 }
 
 function _abrirDestinoYPreparar_(destinoKey) {
-  let spreadsheet;
-  let destinoLabel = destinoKey;
+  const spreadsheet = _getBoundSpreadsheet_();
+  const destinoLabel = 'DEFAULT';
 
-  if (destinoKey === 'AROMA') {
-    if (!AROMA_SPREADSHEET_ID) throw new Error('AROMA_SPREADSHEET_ID no está configurado.');
-    spreadsheet = SpreadsheetApp.openById(AROMA_SPREADSHEET_ID);
-    destinoLabel = 'AROMA';
-  } else {
-    spreadsheet = SpreadsheetApp.getActive();
-    destinoLabel = 'DEFAULT';
-  }
-
-  const sheet = spreadsheet.getSheetByName(SHEET_NAME);
+  const sheet = _getFirstSheet_(spreadsheet);
   if (!sheet) {
-    throw new Error(`No existe la hoja "${SHEET_NAME}" en el destino ${destinoLabel} (Spreadsheet ID: ${spreadsheet.getId()})`);
+    throw new Error(`No se encontró la primera hoja (pestaña 1) en el Spreadsheet ID: ${spreadsheet.getId()}`);
   }
 
   const headerInfo = _leerHeaderInfo_(sheet, REQUIRED_HEADERS);
@@ -397,30 +367,30 @@ function _guardarEnHoja_(sheet, headerInfo, records) {
   }
 
   /**
-   * ====== FORMATO (MEJORAS SOLICITADAS) ======
-   * - Todo lo insertado llega SIN negrita.
-   * - Todas las filas cuyo tipo sea TOTAL van en negrita, SOLO hasta la columna "valor" (tu G).
-   * - SOLO "Total dinero a recibir por tesoreria" va con color, SOLO hasta la columna "valor" (tu G).
-   * - No se debe resaltar ni poner negrita hasta la J.
+   * ====== FORMATO (MEJORAS) ======
+   * - Lo insertado queda sin negrita para evitar herencias.
+   * - Las filas de TOTALES van en negrita SOLO de B a G.
+   * - SOLO "Total dinero a recibir por tesoreria" va con color SOLO de B a G.
+   * - Aseguramos que NO se pinte fuera de B..G.
    */
 
   const maxColsHoja = sheet.getMaxColumns();
 
-  // "Hasta la columna G" en tu caso coincide con la columna 'valor'.
-  // Si mañana mueves columnas, seguirá siendo correcto porque se basa en el índice real de 'valor'.
-  const endCol = Math.min(colIdx.valor + 1, maxColsHoja);
-
-  // Normalizamos (sin negrita) un ancho suficiente para evitar “arrastres” hasta J.
-  // Forzamos mínimo A:J (10) porque ese es el problema que mencionaste.
+  // Ancho para normalizar: cubre al menos hasta A:J (10) para evitar herencias de formato.
   const normalizeWidth = Math.min(
     Math.max(header.length || 0, lastColToWrite, 10),
     maxColsHoja
   );
 
-  // 1) Todo lo nuevo: sin negrita (A .. normalizeWidth)
+  // 1) Todo lo nuevo: sin negrita en A..normalizeWidth (evita arrastres)
   sheet.getRange(startRow, 1, rows.length, normalizeWidth).setFontWeight('normal');
 
-  // 2) Totales: negrita A..endCol. Tesorería: además color A..endCol y limpiar fondo más allá.
+  // Límites reales de formato B..G (por si la hoja tiene menos columnas)
+  const fmtStartCol = Math.min(Math.max(FORMAT_COL_START, 1), maxColsHoja);
+  const fmtEndCol   = Math.min(Math.max(FORMAT_COL_END, fmtStartCol), maxColsHoja);
+  const fmtWidth    = fmtEndCol - fmtStartCol + 1;
+
+  // 2) Totales: negrita SOLO B..G. Tesorería: color SOLO B..G.
   for (let i = 0; i < records.length; i++) {
     const tipoRaw = String((records[i] || {}).tipo || '').trim();
     const tipoNorm = _normText(tipoRaw);
@@ -428,23 +398,21 @@ function _guardarEnHoja_(sheet, headerInfo, records) {
 
     const rowNumber = startRow + i;
 
-    // Negrita solo hasta "valor" (G en tu hoja)
-    const rangoHastaValor = sheet.getRange(rowNumber, 1, 1, endCol);
-    rangoHastaValor.setFontWeight('bold');
+    // Negrita solo de B a G
+    sheet.getRange(rowNumber, fmtStartCol, 1, fmtWidth).setFontWeight('bold');
 
-    // Solo tesorería con color (hasta valor)
+    // Solo tesorería con color de B a G
     if (tipoNorm === TIPO_TESORERIA_NORM) {
-      rangoHastaValor.setBackgroundRGB(
-        COLOR_TESORERIA_RGB.r,
-        COLOR_TESORERIA_RGB.g,
-        COLOR_TESORERIA_RGB.b
-      );
+      sheet.getRange(rowNumber, fmtStartCol, 1, fmtWidth)
+        .setBackgroundRGB(COLOR_TESORERIA_RGB.r, COLOR_TESORERIA_RGB.g, COLOR_TESORERIA_RGB.b);
 
-      // Asegura que NO quede pintado hasta J (si existen columnas H..J)
-      if (normalizeWidth > endCol) {
-        sheet
-          .getRange(rowNumber, endCol + 1, 1, normalizeWidth - endCol)
-          .setBackground(null);
+      // Asegura que fuera de B..G NO quede pintado (limpia A y H..normalizeWidth si aplica)
+      if (fmtStartCol > 1) {
+        sheet.getRange(rowNumber, 1, 1, fmtStartCol - 1).setBackground(null);
+      }
+      const afterEnd = fmtEndCol + 1;
+      if (normalizeWidth >= afterEnd) {
+        sheet.getRange(rowNumber, afterEnd, 1, normalizeWidth - fmtEndCol).setBackground(null);
       }
     }
   }
@@ -457,13 +425,13 @@ function _leerHeaderInfo_(sheet, requiredHeaders) {
   const data = sheet.getDataRange().getValues();
   const headerRowIndex = encontrarFilaEncabezados(data, requiredHeaders);
   if (headerRowIndex === -1) {
-    throw new Error('No se encontraron los encabezados requeridos en la hoja "' + sheet.getName() + '": ' + requiredHeaders.join(', '));
+    throw new Error('No se encontraron los encabezados requeridos en la primera hoja "' + sheet.getName() + '": ' + requiredHeaders.join(', '));
   }
 
   const header = data[headerRowIndex].map(v => String(v).trim());
 
   const colIdx = Object.fromEntries(requiredHeaders.map(h => [h, header.indexOf(h)]));
-  requiredHeaders.forEach(h => { if (colIdx[h] === -1) throw new Error('Falta columna en hoja "' + sheet.getName() + '": ' + h); });
+  requiredHeaders.forEach(h => { if (colIdx[h] === -1) throw new Error('Falta columna en la hoja "' + sheet.getName() + '": ' + h); });
 
   const optNumIdx = {};
   OPTIONAL_NUM_HEADERS.forEach(h => {
@@ -476,8 +444,8 @@ function _leerHeaderInfo_(sheet, requiredHeaders) {
 
 function _leerHojaYCabeceraDesdeFuente_(fuente) {
   const ss = fuente.spreadsheet;
-  const sh = ss.getSheetByName(fuente.sheetName);
-  if (!sh) throw new Error(`No existe la hoja "${fuente.sheetName}" en el Spreadsheet ID: ${ss.getId()}`);
+  const sh = _getFirstSheet_(ss);
+  if (!sh) throw new Error(`No se encontró la primera hoja (pestaña 1) en el Spreadsheet ID: ${ss.getId()}`);
 
   const data = sh.getDataRange().getValues();
   const headerRowIndex = encontrarFilaEncabezados(data, REQUIRED_HEADERS);
@@ -544,4 +512,20 @@ function _normText(s) {
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+/** ====== Helpers para Spreadsheet contenedor + primera hoja ====== */
+function _getBoundSpreadsheet_() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  if (!ss) {
+    throw new Error(
+      'No se pudo obtener el Spreadsheet contenedor del script. ' +
+      'Asegúrate de que este script esté vinculado (container-bound) a la hoja de cálculo.'
+    );
+  }
+  return ss;
+}
+function _getFirstSheet_(spreadsheet) {
+  const sheets = spreadsheet.getSheets();
+  return sheets && sheets.length ? sheets[0] : null;
 }

@@ -219,7 +219,7 @@
           <tbody id="recordsListBody"></tbody>
           <tfoot id="recordsTableFooter">
             <tr data-summary-id="total_ventas_efectivo">
-              <td>Total ventas de contado en efectivo</td>
+              <td>Ventas de contado en efectivo</td>
               <td colspan="2"></td><td class="col-total"></td>
               <td colspan="3"></td>
             </tr>
@@ -534,9 +534,9 @@
             gastoTxt ? `(${gastoTxt})` : ''
           );
 
-          const totalVentasTxt = 'Total ventas de contado en efectivo + Total ventas por medios electronicos + Total ventas a credito';
+          const totalVentasTxt = 'Ventas de contado en efectivo + Total ventas por medios electronicos + Total ventas a credito';
 
-          footerMeta['total_ventas_efectivo'] = { base: 'Total ventas de contado en efectivo', formula: ventasContadoEfectivoTxt };
+          footerMeta['total_ventas_efectivo'] = { base: 'Ventas de contado en efectivo', formula: ventasContadoEfectivoTxt };
           footerMeta['total_ventas_electronicas'] = { base: 'Total ventas por medios electronicos', formula: electronicaTxt };
           footerMeta['total_ventas_credito'] = { base: 'Total ventas a credito', formula: creditoConceptsTxt };
           footerMeta['total_ventas_global'] = { base: 'Total ventas', formula: totalVentasTxt };
@@ -800,7 +800,7 @@
           });
 
           // Refleja tu cuadro:
-          // - Total ventas de contado en efectivo = total de la categoría "efectivo"
+          // - Ventas de contado en efectivo = total de la categoría "efectivo"
           // - Total ventas = efectivo + electrónicas + crédito
           // - Total dinero a recibir por tesorería = efectivo - gastos en efectivo
           const ventasContadoEfectivo = efectivo;
@@ -866,7 +866,7 @@
 
           const s = this.getCalculatedState().summary;
           const totalData = [
-            { tipo: 'Total ventas de contado en efectivo',    valor: s.ventasContadoEfectivo },
+            { tipo: 'Ventas de contado en efectivo',          valor: s.ventasContadoEfectivo },
             { tipo: 'Total ventas por medios electronicos',   valor: s.ventasElectronicas },
             { tipo: 'Total ventas a credito',                 valor: s.ventasCredito },
             { tipo: 'Total ventas',                           valor: s.ventasGlobal },
@@ -952,8 +952,7 @@
       });
     })(window.Arcadia);
   </script>
-
-  <script>
+    <script>
     window.Arcadia = window.Arcadia || {};
     (function (A) {
       'use strict';
@@ -1010,3 +1009,5 @@
   </script>
 </body>
 </html>
+
+  

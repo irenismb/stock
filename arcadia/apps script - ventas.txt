@@ -369,7 +369,7 @@ function _guardarEnHoja_(sheet, headerInfo, records) {
   /**
    * ====== FORMATO (MEJORAS) ======
    * - Lo insertado queda sin negrita para evitar herencias.
-   * - Las filas de TOTALES van en negrita SOLO de B a G.
+   * - TODAS las filas cuyo tipo sea TOTAL se ponen en negrita SOLO de B a G.
    * - SOLO "Total dinero a recibir por tesoreria" va con color SOLO de B a G.
    * - Aseguramos que NO se pinte fuera de B..G.
    */
@@ -382,38 +382,42 @@ function _guardarEnHoja_(sheet, headerInfo, records) {
     maxColsHoja
   );
 
-  // 1) Todo lo nuevo: sin negrita en A..normalizeWidth (evita arrastres)
+  // 1) Todo lo nuevo: sin negrita y sin fondo en A..normalizeWidth (evita herencias)
   sheet.getRange(startRow, 1, rows.length, normalizeWidth).setFontWeight('normal');
+  sheet.getRange(startRow, 1, rows.length, normalizeWidth).setBackground(null);
 
   // Límites reales de formato B..G (por si la hoja tiene menos columnas)
   const fmtStartCol = Math.min(Math.max(FORMAT_COL_START, 1), maxColsHoja);
   const fmtEndCol   = Math.min(Math.max(FORMAT_COL_END, fmtStartCol), maxColsHoja);
   const fmtWidth    = fmtEndCol - fmtStartCol + 1;
 
-  // 2) Totales: negrita SOLO B..G. Tesorería: color SOLO B..G.
+  // 2) Filas de TOTALES: negrita SOLO B..G; y tesorería además con color SOLO B..G
   for (let i = 0; i < records.length; i++) {
     const tipoRaw = String((records[i] || {}).tipo || '').trim();
     const tipoNorm = _normText(tipoRaw);
-    if (!TOTALES_NORM.has(tipoNorm)) continue;
+
+    const esTotal = TOTALES_NORM.has(tipoNorm);
+    if (!esTotal) continue;
 
     const rowNumber = startRow + i;
 
-    // Negrita solo de B a G
-    sheet.getRange(rowNumber, fmtStartCol, 1, fmtWidth).setFontWeight('bold');
+    const rng = sheet.getRange(rowNumber, fmtStartCol, 1, fmtWidth);
+    rng.setFontWeight('bold');
 
-    // Solo tesorería con color de B a G
     if (tipoNorm === TIPO_TESORERIA_NORM) {
-      sheet.getRange(rowNumber, fmtStartCol, 1, fmtWidth)
-        .setBackgroundRGB(COLOR_TESORERIA_RGB.r, COLOR_TESORERIA_RGB.g, COLOR_TESORERIA_RGB.b);
+      rng.setBackgroundRGB(COLOR_TESORERIA_RGB.r, COLOR_TESORERIA_RGB.g, COLOR_TESORERIA_RGB.b);
+    } else {
+      // Asegura que otros totales queden sin color (por si acaso)
+      rng.setBackground(null);
+    }
 
-      // Asegura que fuera de B..G NO quede pintado (limpia A y H..normalizeWidth si aplica)
-      if (fmtStartCol > 1) {
-        sheet.getRange(rowNumber, 1, 1, fmtStartCol - 1).setBackground(null);
-      }
-      const afterEnd = fmtEndCol + 1;
-      if (normalizeWidth >= afterEnd) {
-        sheet.getRange(rowNumber, afterEnd, 1, normalizeWidth - fmtEndCol).setBackground(null);
-      }
+    // Asegura que fuera de B..G NO quede pintado (por si la hoja tiene formatos fuera de normalizeWidth)
+    if (fmtStartCol > 1) {
+      sheet.getRange(rowNumber, 1, 1, fmtStartCol - 1).setBackground(null);
+    }
+    const afterEnd = fmtEndCol + 1;
+    if (normalizeWidth >= afterEnd) {
+      sheet.getRange(rowNumber, afterEnd, 1, normalizeWidth - fmtEndCol).setBackground(null);
     }
   }
 

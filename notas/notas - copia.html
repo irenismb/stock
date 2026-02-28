@@ -1,7 +1,6 @@
 <!doctype html>
 <html lang="es">
 <head>
-  <base target="_top">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="color-scheme" content="dark light" />
@@ -1000,29 +999,13 @@
       "use strict";
 
       /* =========================
-         Google Apps Script bridge
+         Storage + Model
       ========================== */
-      function gsRun(fn, ...args) {
-        return new Promise((resolve, reject) => {
-          if (!window.google || !google.script || !google.script.run) {
-            reject(new Error("Esta página debe abrirse desde la Web App de Apps Script."));
-            return;
-          }
-          google.script.run
-            .withSuccessHandler(resolve)
-            .withFailureHandler(reject)[fn](...args);
-        });
-      }
-
-      /* =========================
-         Storage (solo UI)
-      ========================== */
+      const STORAGE_KEY_V3 = "notas_web_state_v3";
+      const STORAGE_KEY_V2 = "notas_web_state_v2";
+      const LEGACY_KEY = "notas_web_v1";
       const THEME_KEY = "notas_web_theme_v1";
-      const SETTINGS_KEY = "notas_web_settings_v1";
 
-      /* =========================
-         Model
-      ========================== */
       const GENERAL_CATEGORY_ID = "general";
       const DEFAULT_GENERAL_CATEGORY = {
         id: GENERAL_CATEGORY_ID,
@@ -1134,47 +1117,29 @@
       const isCoarsePointer = !!(window.matchMedia && window.matchMedia("(pointer: coarse)").matches);
       const supportsPointer = "PointerEvent" in window;
 
-      /* Auto-sync snapshot (para detectar cambios reales en Sheets) */
-      let lastSnapshot = "";
+      document.addEventListener("DOMContentLoaded", () => {
+        const loaded = loadState();
 
-      document.addEventListener("DOMContentLoaded", () => { init(); });
+        notes = loaded.notes;
+        categories = loaded.categories;
+        settings = { ...DEFAULT_SETTINGS, ...loaded.settings };
 
-      async function init() {
-        try {
-          const remote = await gsRun("getState");
-          notes = Array.isArray(remote?.notes) ? remote.notes : [];
-          categories = Array.isArray(remote?.categories) ? remote.categories : [];
+        const savedTheme = localStorage.getItem(THEME_KEY);
+        if (savedTheme && ["auto","dark","light"].includes(savedTheme)) settings.theme = savedTheme;
 
-          const localSettings = safeParse(localStorage.getItem(SETTINGS_KEY), {}) || {};
-          settings = { ...DEFAULT_SETTINGS, ...(remote?.settings || {}), ...localSettings };
+        ensureGeneralCategory();
+        sanitizeNotesCategoryIds();
 
-          const savedTheme = localStorage.getItem(THEME_KEY);
-          if (savedTheme && ["auto","dark","light"].includes(savedTheme)) settings.theme = savedTheme;
+        applyTheme(settings.theme);
 
-          ensureGeneralCategory();
-          sanitizeNotesCategoryIds();
+        sortEl.value = settings.sortMode;
 
-          applyTheme(settings.theme);
-          sortEl.value = settings.sortMode;
+        computeFixedButtonWidth();
+        bindEvents();
 
-          computeFixedButtonWidth();
-          bindEvents();
-
-          renderCategoryFilter();
-          renderAll();
-
-          // “Siembra” Sheets si venía vacío: crea "General" en la pestaña Categories
-          if ((categories?.length || 0) === 0 && (notes?.length || 0) === 0) {
-            saveDebounced();
-          }
-
-          lastSnapshot = makeSnapshot_(categories, notes);
-          startAutoSync();
-        } catch (err) {
-          toast("Error cargando datos (revisa despliegue)");
-          console.error(err);
-        }
-      }
+        renderCategoryFilter();
+        renderAll();
+      });
 
       function bindEvents() {
         const onSearch = debounce(() => applySearchAndHighlights(), 60);
@@ -1188,14 +1153,14 @@
 
         sortEl.addEventListener("change", () => {
           settings.sortMode = sortEl.value;
-          saveUISettings_();
+          saveDebounced();
           renderAll();
           toast("Orden actualizado");
         });
 
         catFilterEl.addEventListener("change", () => {
           settings.categoryFilter = catFilterEl.value;
-          saveUISettings_();
+          saveDebounced();
           renderAll();
           toast("Filtro actualizado");
         });
@@ -1274,16 +1239,6 @@
         document.addEventListener("keydown", (e) => {
           if (e.key === "Escape" && catDialogEl.open) closeCatDialog();
         });
-      }
-
-      function saveUISettings_() {
-        try {
-          localStorage.setItem(SETTINGS_KEY, JSON.stringify({
-            sortMode: settings.sortMode,
-            categoryFilter: settings.categoryFilter,
-            theme: settings.theme
-          }));
-        } catch {}
       }
 
       function safeParse(json, fallback) { try { return JSON.parse(json); } catch { return fallback; } }
@@ -1398,7 +1353,7 @@
         const hasGeneral = categories.some(c => String(c.id) === GENERAL_CATEGORY_ID);
         if (!hasGeneral) categories.unshift({ ...DEFAULT_GENERAL_CATEGORY });
 
-        // Normaliza
+        // Normaliza order si falta
         categories.forEach((c, i) => {
           if (!c || typeof c !== "object") return;
           c.id = String(c.id ?? makeId());
@@ -1408,6 +1363,7 @@
           c.collapsed = Boolean(c.collapsed ?? false);
         });
 
+        // Asegura que General vaya primero por orden si no existe colisión
         const general = categories.find(c => c.id === GENERAL_CATEGORY_ID);
         if (general) general.order = Math.min(general.order, -100000);
         categories = sortCategories(categories);
@@ -1449,6 +1405,7 @@
           catFilterEl.appendChild(opt);
         }
 
+        // Si la categoría filtrada ya no existe, vuelve a "all"
         if (current !== "all" && !getCategoryById(current)) settings.categoryFilter = "all";
         catFilterEl.value = settings.categoryFilter || "all";
       }
@@ -1557,6 +1514,7 @@
         if (!s) return "";
         if (/^#[0-9a-fA-F]{6}$/.test(s)) return s;
         if (/^#[0-9a-fA-F]{3}$/.test(s)) {
+          // expand #abc -> #aabbcc
           return "#" + s.slice(1).split("").map(x => x + x).join("");
         }
         return s;
@@ -1570,7 +1528,9 @@
         a.order = b.order;
         b.order = tmp;
 
+        // si quedaron iguales, reajusta
         renormalizeCategoryOrders();
+
         categories = sortCategories(categories);
         saveDebounced();
         renderCategoryFilter();
@@ -1583,6 +1543,7 @@
         for (let i = 0; i < categories.length; i++) {
           categories[i].order = i * 1000;
         }
+        // General siempre primero
         const general = categories.find(c => c.id === GENERAL_CATEGORY_ID);
         if (general) general.order = -100000;
       }
@@ -1590,10 +1551,12 @@
       function deleteCategory(catId) {
         if (catId === GENERAL_CATEGORY_ID) return;
 
+        // mueve notas a General
         for (const n of notes) {
           if (n.categoryId === catId) {
             n.categoryId = GENERAL_CATEGORY_ID;
             if (settings.sortMode === "manual") {
+              // re-ubica al final dentro de General (según pinned)
               n.order = lastOrder(n.pinned, GENERAL_CATEGORY_ID) + 1000;
             }
             n.updatedAt = Date.now();
@@ -1623,6 +1586,7 @@
 
         if (!name) { toast("Escribe un nombre"); catNewNameEl.focus(); return; }
 
+        // si existe por nombre (ignorando tildes), no duplicar: enfoca esa
         const exists = categories.find(c => norm(c.name) === norm(name));
         if (exists) {
           toast("Ya existe una categoría con ese nombre");
@@ -1646,8 +1610,114 @@
       }
 
       /* =========================
-         Serialize + Save (Sheets)
+         Notes migration + load/save
       ========================== */
+      function migrateCategoriesArray(arr) {
+        const out = [];
+        if (Array.isArray(arr)) {
+          for (let i = 0; i < arr.length; i++) {
+            const x = arr[i];
+            if (typeof x === "string") {
+              out.push({ id: makeId(), name: x, color: "#64748B", order: i * 1000, collapsed: false });
+              continue;
+            }
+            if (x && typeof x === "object") {
+              out.push({
+                id: String(x.id ?? makeId()),
+                name: String(x.name ?? "Categoría"),
+                color: String(x.color ?? "#64748B"),
+                order: Number.isFinite(Number(x.order)) ? Number(x.order) : i * 1000,
+                collapsed: Boolean(x.collapsed ?? false)
+              });
+            }
+          }
+        }
+        return out;
+      }
+
+      function migrateNotesArray(arr, knownCategoryIds) {
+        const now = Date.now();
+        const out = [];
+
+        for (let i = 0; i < (Array.isArray(arr) ? arr.length : 0); i++) {
+          const x = arr[i];
+
+          if (typeof x === "string") {
+            out.push({
+              id: makeId(),
+              text: x,
+              createdAt: now,
+              updatedAt: now,
+              pinned: false,
+              order: i * 1000,
+              categoryId: GENERAL_CATEGORY_ID
+            });
+            continue;
+          }
+
+          if (x && typeof x === "object") {
+            const createdAt = Number(x.createdAt ?? now);
+            const updatedAt = Number(x.updatedAt ?? createdAt);
+            const cat = String(x.categoryId ?? x.catId ?? GENERAL_CATEGORY_ID);
+            out.push({
+              id: String(x.id ?? makeId()),
+              text: String(x.text ?? ""),
+              createdAt: isFinite(createdAt) ? createdAt : now,
+              updatedAt: isFinite(updatedAt) ? updatedAt : now,
+              pinned: Boolean(x.pinned ?? false),
+              order: isFinite(Number(x.order)) ? Number(x.order) : i * 1000,
+              categoryId: knownCategoryIds && knownCategoryIds.has(cat) ? cat : GENERAL_CATEGORY_ID
+            });
+          }
+        }
+
+        return out;
+      }
+
+      function loadState() {
+        // 1) intenta V3
+        const raw3 = localStorage.getItem(STORAGE_KEY_V3);
+        if (raw3) {
+          const data = safeParse(raw3, null);
+          if (data && typeof data === "object") {
+            const cats = migrateCategoriesArray(data.categories);
+            const catIds = new Set(cats.map(c => c.id));
+            const loadedNotes = migrateNotesArray(data.notes, catIds);
+            const loadedSettings = (data.settings && typeof data.settings === "object") ? data.settings : {};
+            return { notes: loadedNotes, categories: cats.length ? cats : [{ ...DEFAULT_GENERAL_CATEGORY }], settings: loadedSettings };
+          }
+        }
+
+        // 2) migra V2 (tu versión actual)
+        const raw2 = localStorage.getItem(STORAGE_KEY_V2);
+        if (raw2) {
+          const data = safeParse(raw2, null);
+          if (data && typeof data === "object") {
+            const cats = migrateCategoriesArray(data.categories);
+            const catIds = new Set(cats.map(c => c.id));
+            const loadedNotes = migrateNotesArray(Array.isArray(data.notes) ? data.notes : [], catIds);
+            const loadedSettings = (data.settings && typeof data.settings === "object") ? data.settings : {};
+            // guarda ya en V3
+            const migrated = { notes: loadedNotes, categories: cats.length ? cats : [{ ...DEFAULT_GENERAL_CATEGORY }], settings: loadedSettings };
+            localStorage.setItem(STORAGE_KEY_V3, JSON.stringify({ v: 3, savedAt: Date.now(), ...migrated }));
+            return migrated;
+          }
+        }
+
+        // 3) legacy V1
+        const legacy = localStorage.getItem(LEGACY_KEY);
+        if (legacy) {
+          const data = safeParse(legacy, []);
+          const cats = [{ ...DEFAULT_GENERAL_CATEGORY }];
+          const loadedNotes = migrateNotesArray(Array.isArray(data) ? data : [], new Set(cats.map(c => c.id)));
+          const migrated = { notes: loadedNotes, categories: cats, settings: { ...DEFAULT_SETTINGS } };
+          localStorage.setItem(STORAGE_KEY_V3, JSON.stringify({ v: 3, savedAt: Date.now(), ...migrated }));
+          return migrated;
+        }
+
+        return { notes: [], categories: [{ ...DEFAULT_GENERAL_CATEGORY }], settings: { ...DEFAULT_SETTINGS } };
+      }
+
       function serializeState() {
         return {
           v: 3,
@@ -1663,53 +1733,11 @@
       }
 
       const saveDebounced = debounce(() => {
-        // actualiza snapshot local para evitar “rebotes” en auto-sync
-        lastSnapshot = makeSnapshot_(categories, notes);
-
-        gsRun("saveAll", serializeState())
-          .catch(() => toast("No pude guardar (revisa permisos)"));
-      }, 600);
+        localStorage.setItem(STORAGE_KEY_V3, JSON.stringify(serializeState()));
+      }, 250);
 
       function saveNow() {
-        try {
-          lastSnapshot = makeSnapshot_(categories, notes);
-          google.script.run.saveAll(serializeState());
-        } catch {}
-      }
-
-      function makeSnapshot_(cats, nts) {
-        try {
-          return JSON.stringify({
-            categories: Array.isArray(cats) ? cats : [],
-            notes: Array.isArray(nts) ? nts : []
-          });
-        } catch {
-          return String(Date.now());
-        }
-      }
-
-      function startAutoSync() {
-        setInterval(async () => {
-          // si estás editando, no “pisar” el editor
-          if (document.querySelector(".note.editing")) return;
-
-          try {
-            const remote = await gsRun("getState");
-            const snap = makeSnapshot_(remote?.categories, remote?.notes);
-            if (snap !== lastSnapshot) {
-              notes = Array.isArray(remote?.notes) ? remote.notes : [];
-              categories = Array.isArray(remote?.categories) ? remote.categories : [];
-
-              ensureGeneralCategory();
-              sanitizeNotesCategoryIds();
-
-              renderCategoryFilter();
-              renderAll();
-
-              lastSnapshot = snap;
-            }
-          } catch {}
-        }, 15000);
+        localStorage.setItem(STORAGE_KEY_V3, JSON.stringify(serializeState()));
       }
 
       /* =========================
@@ -1732,7 +1760,7 @@
 
       function lastOrder(pinned, categoryId) {
         const group = notes
-          .filter(n => !!n.pinned === !!pinned && (n.categoryId || GENERAL_CATEGORY_ID) === categoryId)
+          .filter(n => n.pinned === pinned && n.categoryId === categoryId)
           .slice()
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         return group.length ? (group[group.length - 1].order ?? 0) : -1000;
@@ -1742,35 +1770,27 @@
         const now = Date.now();
 
         const group = notes
-          .filter(n => !!n.pinned === !!pinned && (n.categoryId || GENERAL_CATEGORY_ID) === categoryId)
+          .filter(n => n.pinned === pinned && n.categoryId === categoryId)
           .slice()
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-        let order = group.length ? (group[group.length - 1].order ?? 0) + 1000 : 0;
+        let order = group.length ? group[group.length - 1].order + 1000 : 0;
 
         if (afterId) {
           const idx = group.findIndex(n => n.id === afterId);
           if (idx !== -1) {
             const after = group[idx];
             const next = group[idx + 1];
-            order = next ? (Number(after.order ?? 0) + Number(next.order ?? 0)) / 2 : Number(after.order ?? 0) + 1000;
+            order = next ? (after.order + next.order) / 2 : after.order + 1000;
           }
         }
 
-        return {
-          id: makeId(),
-          text: "",
-          createdAt: now,
-          updatedAt: now,
-          pinned: !!pinned,
-          order,
-          categoryId
-        };
+        return { id: makeId(), text: "", createdAt: now, updatedAt: now, pinned, order, categoryId };
       }
 
       function renormalizeOrders(pinned, categoryId) {
         const group = notes
-          .filter(n => !!n.pinned === !!pinned && (n.categoryId || GENERAL_CATEGORY_ID) === categoryId)
+          .filter(n => n.pinned === pinned && n.categoryId === categoryId)
           .slice()
           .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
@@ -1802,7 +1822,7 @@
 
       function getSortedNotesByCategory() {
         const sorter = getSorter();
-        const pinned = notes.filter(n => !!n.pinned);
+        const pinned = notes.filter(n => n.pinned);
         const normal = notes.filter(n => !n.pinned);
 
         const pinnedByCat = groupNotesByCategory(pinned);
@@ -1869,7 +1889,7 @@
         drag.title = "Arrastrar para reordenar (modo manual). En móvil: mantén presionado y arrastra.";
         drag.setAttribute("aria-label", "Arrastrar para reordenar");
         drag.textContent = "≡";
-        drag.draggable = true;
+        drag.draggable = true; // se ajusta luego según dispositivo
 
         const content = document.createElement("div");
         content.className = "content";
@@ -1889,21 +1909,20 @@
         edit.placeholder = "Escribe aquí…";
         edit.setAttribute("aria-label", "Editor de nota");
 
-        const meta = document.createElement("div");
-        meta.className = "meta";
+		const meta = document.createElement("div");
+		meta.className = "meta";
 
-        const catSel = buildCategorySelect(note);
+		const catSel = buildCategorySelect(note);
 
-        const wrapBadges = document.createElement("div");
-        wrapBadges.style.display = "flex";
-        wrapBadges.style.gap = "8px";
-        wrapBadges.style.flexWrap = "wrap";
-        wrapBadges.style.alignItems = "center";
-        wrapBadges.innerHTML = `${categoryBadgeHTML(note.categoryId)}${pinnedBadgeHTML(note.pinned)}`;
+		const wrapBadges = document.createElement("div");
+		wrapBadges.style.display = "flex";
+		wrapBadges.style.gap = "8px";
+		wrapBadges.style.flexWrap = "wrap";
+		wrapBadges.style.alignItems = "center";
+		wrapBadges.innerHTML = `${categoryBadgeHTML(note.categoryId)}${pinnedBadgeHTML(note.pinned)}`;
 
-        meta.appendChild(wrapBadges);
-        meta.appendChild(catSel);
-
+		meta.appendChild(wrapBadges);
+		meta.appendChild(catSel);
         content.appendChild(view);
         content.appendChild(edit);
         content.appendChild(meta);
@@ -2041,6 +2060,7 @@
         pinnedListEl.innerHTML = "";
         notesListEl.innerHTML = "";
 
+        // Pinned: solo categorías con fijadas (y respetar filtro)
         let pinnedHasAnything = false;
         for (const cat of sortedCats) {
           if (filter !== "all" && cat.id !== filter) continue;
@@ -2055,13 +2075,15 @@
             showEmpty: false
           }));
         }
+
         pinnedSectionEl.hidden = !pinnedHasAnything;
 
+        // Normal: muestra categorías (si no buscas, puede mostrar vacías)
         for (const cat of sortedCats) {
           if (filter !== "all" && cat.id !== filter) continue;
 
           const list = normalByCat.get(cat.id) || [];
-          const showEmpty = (!isSearching);
+          const showEmpty = (!isSearching) && (filter !== "all" || true); // si filtras, muestra aunque esté vacía; si no, también (para que se vea la estructura)
 
           notesListEl.appendChild(buildCatGroupEl({
             cat,
@@ -2079,12 +2101,14 @@
         const filter = settings.categoryFilter || "all";
         const isSearching = terms.length > 0;
 
+        // total para contador
         const total = (filter === "all")
           ? notes.length
           : notes.filter(n => (n.categoryId || GENERAL_CATEGORY_ID) === filter).length;
 
         let visible = 0;
 
+        // 1) aplica a cada nota (en ambas listas)
         const roots = [pinnedListEl, notesListEl];
         for (const root of roots) {
           const items = root.querySelectorAll(".note");
@@ -2093,9 +2117,11 @@
             const note = getNoteById(id);
             if (!note) return;
 
+            // match texto
             const t = el.dataset.norm || "";
             const matchText = terms.every(term => t.includes(term));
 
+            // match categoría
             const catId = note.categoryId || GENERAL_CATEGORY_ID;
             const matchCat = (filter === "all") ? true : (catId === filter);
 
@@ -2103,12 +2129,15 @@
             el.hidden = !match;
             if (match) visible++;
 
+            // highlights
             const view = el.querySelector(".note-view");
             if (view) view.innerHTML = makeHighlightedHTML(note.text, terms, true);
 
+            // copy/paste btn
             const cpBtn = el.querySelector('[data-action="copyPaste"]');
             if (cpBtn) setCopyPasteUI(cpBtn, note.text);
 
+            // pin btn
             const pinBtn = el.querySelector('[data-action="pin"]');
             if (pinBtn) {
               pinBtn.innerHTML = pinHTML(note.pinned);
@@ -2116,6 +2145,7 @@
               pinBtn.setAttribute("aria-label", note.pinned ? "Soltar" : "Fijar");
             }
 
+            // meta badges + select
             const meta = el.querySelector(".meta");
             if (meta) {
               const badgeWrap = meta.firstElementChild;
@@ -2132,6 +2162,7 @@
           });
         }
 
+        // 2) actualiza grupos de categoría: contador y visibilidad
         for (const root of roots) {
           const groups = root.querySelectorAll(".cat-group");
           groups.forEach(group => {
@@ -2141,8 +2172,10 @@
             const visibleNotes = list ? list.querySelectorAll(".note:not([hidden])").length : 0;
             if (countEl) countEl.textContent = String(visibleNotes);
 
+            // Mientras buscas, auto-expande visualmente (sin tocar el estado guardado)
             if (isSearching) group.classList.remove("collapsed");
 
+            // oculta grupos vacíos solo si estás buscando
             if (isSearching) {
               group.hidden = (visibleNotes === 0);
             } else {
@@ -2151,6 +2184,7 @@
           });
         }
 
+        // 3) secciones + empty state
         const anyPinnedVisible = pinnedListEl.querySelector(".note:not([hidden])");
         pinnedSectionEl.hidden = !anyPinnedVisible;
 
@@ -2159,6 +2193,7 @@
 
         updateCount(visible, total);
 
+        // 4) drag habilitado
         const dragEnabled = (settings.sortMode === "manual");
         document.querySelectorAll(".drag-handle").forEach(b => {
           b.style.opacity = dragEnabled ? "1" : ".35";
@@ -2166,10 +2201,12 @@
             ? "Arrastrar para reordenar (modo manual). En móvil: mantén presionado y arrastra."
             : "Reordenar solo disponible en modo Manual";
 
+          /* ✅ evita conflicto: HTML5 drag solo en no-táctil */
           b.draggable = dragEnabled && !isCoarsePointer;
         });
       }
 
+      /* ✅ "2 de 2" */
       function updateCount(visible, total) {
         countEl.textContent = `${visible} de ${total}`;
       }
@@ -2180,6 +2217,7 @@
       function findNoteEl(target) { return target.closest(".note"); }
 
       function onListClick(e) {
+        // Acciones de categoría
         const catBtn = e.target.closest("[data-action]");
         if (catBtn && catBtn.dataset.action === "toggleCat") {
           const catId = catBtn.dataset.catId;
@@ -2210,6 +2248,7 @@
           return;
         }
 
+        // Acciones de nota
         const noteEl = findNoteEl(e.target);
         if (!noteEl) return;
 
@@ -2228,13 +2267,17 @@
         const action = actionBtn.dataset.action;
 
         if (action === "pin") {
-          const prevPinned = !!note.pinned;
+          const prevPinned = note.pinned;
           note.pinned = !note.pinned;
           note.updatedAt = Date.now();
 
           if (settings.sortMode === "manual") {
             const catId = note.categoryId || GENERAL_CATEGORY_ID;
+
+            // coloca al final del nuevo grupo (pinned cambia)
             note.order = lastOrder(note.pinned, catId) + 1000;
+
+            // renormaliza ambos grupos para mantener limpio
             renormalizeOrders(prevPinned, catId);
             renormalizeOrders(note.pinned, catId);
           }
@@ -2323,6 +2366,7 @@
         note.updatedAt = Date.now();
         noteEl.dataset.norm = norm(note.text);
 
+        // Atajo opcional: @Categoria al inicio (solo 1 palabra)
         maybeAssignCategoryFromPrefix(note);
 
         autoResize(e.target);
@@ -2381,6 +2425,7 @@
           }
         }
 
+        // quita el prefijo @Categoria del texto
         note.text = txt.replace(/^\s*@([^\s\r\n\t]+)\s+/, "");
       }
 
@@ -2532,7 +2577,7 @@
 
           blocks.push(`=== CATEGORIA: ${cat.name} ===`);
           blocks.push(arr.map(n => n.text || "").join("\n\n---\n\n"));
-          blocks.push("");
+          blocks.push(""); // separación
         }
 
         blocks.push("=== NOTAS ===");
@@ -2557,58 +2602,63 @@
           const data = safeParse(text, null);
           if (!data) { toast("JSON inválido ❌"); return; }
 
-          const incomingCats = Array.isArray(data.categories) ? data.categories : [];
-          const incomingNotes = Array.isArray(data.notes) ? data.notes : [];
-
-          // Merge simple por nombre normalizado
+          const incomingCats = migrateCategoriesArray(data.categories);
+          // merge categorías por nombre (normalizado)
           ensureGeneralCategory();
+
           const byNormName = new Map(categories.map(c => [norm(c.name), c]));
-          const idMap = new Map();
+          const idMap = new Map(); // oldId -> newId
 
           for (const ic of incomingCats) {
             if (!ic || !ic.name) continue;
             const k = norm(ic.name);
             if (byNormName.has(k)) {
-              idMap.set(String(ic.id), byNormName.get(k).id);
+              idMap.set(ic.id, byNormName.get(k).id);
               continue;
             }
             const newId = makeId();
             categories.push({
               id: newId,
-              name: String(ic.name),
+              name: ic.name,
               color: normalizeColor(ic.color) || "#64748B",
               order: categories.reduce((m, c) => Math.max(m, Number(c.order ?? 0)), 0) + 1000,
               collapsed: !!ic.collapsed
             });
             byNormName.set(k, categories[categories.length - 1]);
-            idMap.set(String(ic.id), newId);
+            idMap.set(ic.id, newId);
           }
 
           ensureGeneralCategory();
           categories = sortCategories(categories);
 
+          const incomingNotesRaw =
+            Array.isArray(data.notes) ? data.notes :
+            Array.isArray(data) ? data :
+            [];
+
           const catIds = new Set(categories.map(c => c.id));
-          const existing = new Set(notes.map(n => n.id));
+          const incomingNotes = migrateNotesArray(incomingNotesRaw, catIds);
 
+          if (!incomingNotes.length) { toast("No encontré notas en el JSON"); return; }
+
+          // ajusta categoryId por idMap si venían de otro JSON
           for (const n of incomingNotes) {
-            const nn = { ...n };
-            if (!nn.id || existing.has(nn.id)) nn.id = makeId();
-            existing.add(nn.id);
+            if (idMap.has(n.categoryId)) n.categoryId = idMap.get(n.categoryId);
+            if (!catIds.has(n.categoryId)) n.categoryId = GENERAL_CATEGORY_ID;
+          }
 
-            if (idMap.has(String(nn.categoryId))) nn.categoryId = idMap.get(String(nn.categoryId));
-            if (!catIds.has(nn.categoryId)) nn.categoryId = GENERAL_CATEGORY_ID;
-
-            const now = Date.now();
-            nn.createdAt = Number(nn.createdAt || now);
-            nn.updatedAt = Number(nn.updatedAt || nn.createdAt);
-            nn.pinned = !!nn.pinned;
-            nn.order = Number.isFinite(Number(nn.order)) ? Number(nn.order) : (notes.length * 1000);
-
-            notes.push(nn);
+          // evita colisión de IDs
+          const existing = new Set(notes.map(n => n.id));
+          for (const n of incomingNotes) {
+            if (existing.has(n.id)) n.id = makeId();
+            existing.add(n.id);
+            notes.push(n);
           }
 
           if (settings.sortMode === "manual") {
-            for (const catId of catIds) {
+            // renormaliza por categoría/pinned para mantener orden consistente
+            const ids = new Set(categories.map(c => c.id));
+            for (const catId of ids) {
               renormalizeOrders(true, catId);
               renormalizeOrders(false, catId);
             }
@@ -2621,7 +2671,7 @@
           return;
         }
 
-        // TXT -> General
+        // TXT: importa a General (sin categorías en el texto)
         const cleaned = text
           .replace(/\r/g, "")
           .replace(/^===\s*FIJADAS\s*===\s*\n?/im, "")
@@ -2709,9 +2759,10 @@
         return target.closest('.cat-list[data-role="catList"]');
       }
 
+      /* Desktop: HTML5 Drag */
       function onDragStart(e) {
         if (!canDrag()) { e.preventDefault(); return; }
-        if (isCoarsePointer) { e.preventDefault(); return; }
+        if (isCoarsePointer) { e.preventDefault(); return; } // móvil usa pointer drag
 
         const handle = e.target.closest(".drag-handle");
         if (!handle) { e.preventDefault(); return; }
@@ -2746,6 +2797,7 @@
         const pinned = container.dataset.pinned === "true";
         const catId = container.dataset.categoryId;
 
+        // solo dentro de la misma categoría y mismo pinned
         if (pinned !== dragCtx.pinned) return;
         if (catId !== dragCtx.categoryId) return;
 
@@ -2804,7 +2856,7 @@
         const categoryId = container.dataset.categoryId || GENERAL_CATEGORY_ID;
 
         const ids = [...container.querySelectorAll(".note:not(.placeholder)")].map(el => el.dataset.id);
-        const groupNotes = notes.filter(n => !!n.pinned === pinned && (n.categoryId || GENERAL_CATEGORY_ID) === categoryId);
+        const groupNotes = notes.filter(n => n.pinned === pinned && (n.categoryId || GENERAL_CATEGORY_ID) === categoryId);
 
         const byId = new Map(groupNotes.map(n => [n.id, n]));
         for (let i = 0; i < ids.length; i++) {
@@ -2815,7 +2867,7 @@
         saveDebounced();
       }
 
-      /* ✅ Móvil: drag táctil */
+      /* ✅ Móvil: drag táctil (long press en ≡) */
       function onHandlePointerDown(e) {
         if (!isCoarsePointer) return;
         if (!canDrag()) return;
@@ -2966,7 +3018,6 @@
         if (clientY < margin) window.scrollBy({ top: -speed, left: 0, behavior: "auto" });
         else if (clientY > window.innerHeight - margin) window.scrollBy({ top: speed, left: 0, behavior: "auto" });
       }
-
     })();
   </script>
 </body>

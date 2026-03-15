@@ -1541,13 +1541,13 @@
     const INTERRUPTORES = {
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
-      MOSTRAR_PRECIOS_PRODUCTO: false,
+      MOSTRAR_PRECIOS_PRODUCTO: true,
       MOSTRAR_CODIGOS_PRODUCTO: true,
       ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
       MOSTRAR_IMAGENES_PRODUCTO: true,
-      TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 10,
+      TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 5,
       IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp"
     };
     window.INTERRUPTORES = INTERRUPTORES;
@@ -3536,42 +3536,26 @@
       }
     }
 
-    function getSuggestionMatchedProducts(){
-      const scopeProducts = getSuggestionScopeProducts();
-      const activeTerms = getCombinedWordTerms();
-      if(!activeTerms.length) return scopeProducts;
-
-      return scopeProducts.filter(p => activeTerms.every(term => p.searchKey.includes(term)));
-    }
-
     function buildSuggestionEntries(){
       if(shouldShowAlbumGrid()){
         return [];
       }
 
       const scopeProducts = getSuggestionScopeProducts();
-      const matchedProducts = getSuggestionMatchedProducts();
-      const typedTerms = parseSearchTerms(qInp ? qInp.value : "");
-      const selectedSet = new Set(uniqueTerms(selectedSuggestionTerms || []));
-      const hasActiveTerms = typedTerms.length > 0 || selectedSet.size > 0;
-      const sourceProducts = hasActiveTerms ? matchedProducts : scopeProducts;
-      const blockedTerms = getSuggestionBlockedTerms(sourceProducts);
+      const blockedTerms = getSuggestionBlockedTerms(scopeProducts);
 
-      for(const term of typedTerms){
-        blockedTerms.add(term);
-      }
-      for(const term of selectedSet){
-        blockedTerms.add(term);
-      }
-
-      selectedSuggestionTerms = uniqueTerms((selectedSuggestionTerms || []).filter(term => {
-        return !getSuggestionBlockedTerms(sourceProducts).has(term);
-      }));
+      selectedSuggestionTerms = uniqueTerms((selectedSuggestionTerms || []).filter(term => !blockedTerms.has(term)));
 
       const counts = new Map();
-      for(const p of sourceProducts){
+      for(const p of scopeProducts){
         const rawText = `${p.name || ""} ${p.brand || ""}`;
         addSuggestionCountsFromText(counts, rawText, blockedTerms);
+      }
+
+      const selectedSet = new Set(selectedSuggestionTerms || []);
+      for(const term of selectedSet){
+        if(blockedTerms.has(term)) continue;
+        if(!counts.has(term)) counts.set(term, 0);
       }
 
       return Array.from(counts.entries())

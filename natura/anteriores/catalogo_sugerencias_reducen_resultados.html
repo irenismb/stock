@@ -3530,7 +3530,7 @@
       "x","und","unds","unidad","unidades","ref","tipo"
     ]);
     const SUGGESTION_MIN_LEN = 3;
-    // Sin límite de cantidad: las sugerencias no se recortan por número.
+    const SUGGESTION_LIMIT = 24;
     let selectedSuggestionTerms = [];
 
     function parseSearchTerms(text){
@@ -3662,7 +3662,8 @@
           if(a.remaining !== b.remaining) return a.remaining - b.remaining;
           if(b.count !== a.count) return b.count - a.count;
           return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
-        });
+        })
+        .slice(0, SUGGESTION_LIMIT);
     }
 
     function toggleSuggestionTerm(term){

@@ -1540,7 +1540,7 @@
     const INTERRUPTORES = {
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
-      MOSTRAR_PRECIOS_PRODUCTO: true,
+      MOSTRAR_PRECIOS_PRODUCTO: false,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
       MOSTRAR_IMAGENES_PRODUCTO: true,
@@ -3184,6 +3184,8 @@
       card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
 
       const imgBox = card.querySelector(".img");
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
+
       const visibleName = (p && p.isUnstructured)
         ? String(p.name || baseOf(p.originalFilename || "") || "")
         : String(p.name || "");
@@ -3194,19 +3196,8 @@
 
       nameEl.textContent = visibleName;
       nameEl.title = visibleName;
-
-      if(p && p.isUnstructured){
-        if(imgBox) imgBox.remove();
-        if(metaEl) metaEl.remove();
-        const rowEl = card.querySelector(".row");
-        if(rowEl) rowEl.remove();
-        const actionsEl = card.querySelector(".actions");
-        if(actionsEl) actionsEl.remove();
-      }else{
-        if(imgBox) imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
-        if(metaEl) metaEl.textContent = stockMetaText(p);
-        if(priceEl) priceEl.textContent = shouldShowProductPrices() ? fmtCOP.format(p.price) : "";
-      }
+      metaEl.textContent = stockMetaText(p);
+      priceEl.textContent = (p && p.isUnstructured) ? "" : (shouldShowProductPrices() ? fmtCOP.format(p.price) : "");
 
       refreshCardUI(card, p);
       return card;
@@ -3402,22 +3393,9 @@
 
       const counts = new Map();
       for(const p of getSuggestionScopeProducts()){
-        const rawText = `${p.name || ""} ${p.brand || ""}`;
-        const blocked = new Set();
-
-        for(const token of parseSuggestionTokens(p && p.category ? p.category : "")){
-          blocked.add(token);
-        }
-
-        const albumKey = getProductAlbumKey(p);
-        const albumLabel = albumKey === ROOT_ALBUM_KEY ? "" : albumLabelFromKey(albumKey);
-        for(const token of parseSuggestionTokens(albumLabel)){
-          blocked.add(token);
-        }
-
+        const rawText = `${p.name || ""} ${p.brand || ""} ${p.category || ""}`;
         const unique = new Set(parseSuggestionTokens(rawText));
         for(const token of unique){
-          if(blocked.has(token)) continue;
           counts.set(token, (counts.get(token) || 0) + 1);
         }
       }

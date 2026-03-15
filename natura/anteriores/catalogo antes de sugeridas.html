@@ -1073,139 +1073,6 @@
       *{scroll-behavior:auto!important;transition:none!important;animation:none!important}
     }
 
-
-    .word-panel{
-      margin-top:12px;
-      padding:12px;
-      border:1px solid var(--line);
-      border-radius:16px;
-      background:rgba(18,24,38,.45);
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-    }
-    .word-panel[hidden]{ display:none !important; }
-    .word-panel-head{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .word-panel-title{
-      font-size:13px;
-      font-weight:950;
-      letter-spacing:.02em;
-      color:var(--txt);
-    }
-    .word-panel-subtitle{
-      font-size:11px;
-      color:var(--mut);
-      line-height:1.35;
-    }
-    .word-clear{
-      padding:8px 12px;
-      font-size:12px;
-      font-weight:900;
-    }
-    .word-active{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    .word-active[hidden]{ display:none !important; }
-    .word-label{
-      font-size:11px;
-      font-weight:950;
-      color:var(--label-strong);
-      letter-spacing:.02em;
-      text-transform:uppercase;
-    }
-    .word-active-list,
-    .word-chips{
-      display:flex;
-      flex-wrap:wrap;
-      gap:8px;
-    }
-    .word-empty{
-      font-size:12px;
-      color:var(--mut);
-      line-height:1.35;
-      padding:2px 0;
-    }
-    .term-chip{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      border-radius:999px;
-      border:1px solid #2a3b5c;
-      background:rgba(11,18,32,.42);
-      color:var(--txt);
-      padding:8px 12px;
-      font-size:12px;
-      font-weight:850;
-      line-height:1;
-      white-space:nowrap;
-    }
-    button.term-chip{
-      cursor:pointer;
-    }
-    .term-chip:hover{
-      border-color:#3b82f6;
-    }
-    .term-chip.is-active{
-      border-color:rgba(32,201,151,.72);
-      background:linear-gradient(90deg, rgba(32,201,151,.16), rgba(45,212,191,.12));
-      color:#d1fae5;
-      box-shadow:0 0 0 1px rgba(32,201,151,.08) inset;
-    }
-    .term-chip.is-active .term-chip-count{
-      background:rgba(255,255,255,.18);
-      color:#d1fae5;
-    }
-    .term-chip-remove{
-      border:none;
-      background:transparent;
-      color:inherit;
-      font-size:14px;
-      line-height:1;
-      padding:0;
-      margin:0;
-      cursor:pointer;
-    }
-    .term-chip-count{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      min-width:20px;
-      padding:3px 6px;
-      border-radius:999px;
-      background:rgba(255,255,255,.10);
-      color:var(--mut);
-      font-size:11px;
-      font-weight:950;
-    }
-    @media (max-width:560px){
-      .word-panel{
-        padding:10px;
-      }
-      .word-panel-head{
-        align-items:flex-start;
-      }
-      .word-clear{
-        width:100%;
-        justify-content:center;
-      }
-      .word-active-list,
-      .word-chips{
-        gap:7px;
-      }
-      .term-chip{
-        padding:8px 11px;
-        font-size:11.5px;
-      }
-    }
-
     input::placeholder, textarea::placeholder{
       color: rgba(169,180,194,.78);
     }
@@ -1339,24 +1206,6 @@
           <span id="cartCount" class="pill">0</span>
         </button>
       </div>
-
-      <section class="word-panel" id="wordPanel" aria-label="Palabras sugeridas del catálogo" hidden>
-        <div class="word-panel-head">
-          <div>
-            <div class="word-panel-title">Palabras sugeridas</div>
-            <div class="word-panel-subtitle">Toca una o varias para filtrar más rápido.</div>
-          </div>
-          <button class="btn-ghost word-clear" id="clearTermsBtn" type="button" hidden>Limpiar palabras</button>
-        </div>
-
-        <div class="word-active" id="activeTermsWrap" hidden>
-          <div class="word-label">Palabras activas</div>
-          <div class="word-active-list" id="activeTerms"></div>
-        </div>
-
-        <div class="word-chips" id="wordChips"></div>
-      </section>
-
 
       <noscript>
         <div style="margin-top:12px;border:1px solid #22304a;border-radius:14px;padding:12px;background:rgba(18,24,38,.55);">
@@ -3176,13 +3025,6 @@
     const topline = document.getElementById("topline");
     const mqCountMobile = window.matchMedia("(max-width:560px)");
 
-    const wordPanel = document.getElementById("wordPanel");
-    const wordChips = document.getElementById("wordChips");
-    const activeTermsWrap = document.getElementById("activeTermsWrap");
-    const activeTerms = document.getElementById("activeTerms");
-    const clearTermsBtn = document.getElementById("clearTermsBtn");
-
-
     function placeCountElement(){
       if(!countEl || !countSlot || !topline) return;
 
@@ -3217,183 +3059,8 @@
 
     function updateCountAttention(){
       if(!countEl || !qInp) return;
-      const hasQuery = getCombinedWordTerms().length > 0;
+      const hasQuery = !!String(qInp.value || "").trim();
       countEl.classList.toggle("search-active", hasQuery);
-    }
-
-    const SUGGESTION_STOPWORDS = new Set([
-      "a","al","algo","alguna","algunas","alguno","algunos","ante","bajo","cabe","con","contra",
-      "cual","cuales","como","cuando","de","del","desde","donde","dos","el","ella","ellas","ellos",
-      "en","entre","era","eres","es","esa","esas","ese","eso","esos","esta","estas","este","esto","estos",
-      "ha","hacia","hasta","la","las","le","les","lo","los","mas","mi","mis","muy","ni","no","nos","o",
-      "otra","otro","otros","para","pero","por","que","se","segun","ser","si","sin","sobre","su","sus",
-      "te","tu","tus","u","un","una","uno","unos","unas","y","ya","kit","ml","gr","kg","oz","cm","mm",
-      "x","und","unds","unidad","unidades","ref","tipo"
-    ]);
-    const SUGGESTION_MIN_LEN = 3;
-    const SUGGESTION_LIMIT = 24;
-    let selectedSuggestionTerms = [];
-
-    function parseSearchTerms(text){
-      return normalizeText(text)
-        .split(/\s+/)
-        .map(t => t.trim())
-        .filter(Boolean);
-    }
-
-    function parseSuggestionTokens(text){
-      return normalizeText(text)
-        .split(/[^a-z0-9]+/g)
-        .map(t => t.trim())
-        .filter(token => {
-          if(!token) return false;
-          if(token.length < SUGGESTION_MIN_LEN) return false;
-          if(/^\d+$/.test(token)) return false;
-          if(SUGGESTION_STOPWORDS.has(token)) return false;
-          return true;
-        });
-    }
-
-    function uniqueTerms(list){
-      const out = [];
-      const seen = new Set();
-      for(const term of (Array.isArray(list) ? list : [])){
-        const clean = normalizeText(term);
-        if(!clean || seen.has(clean)) continue;
-        seen.add(clean);
-        out.push(clean);
-      }
-      return out;
-    }
-
-    function getCombinedWordTerms(){
-      const typed = parseSearchTerms(qInp ? qInp.value : "");
-      return uniqueTerms([...(selectedSuggestionTerms || []), ...typed]);
-    }
-
-    function getSuggestionScopeProducts(){
-      const source = currentProductSourceList();
-      const cat = catSel ? catSel.value : "";
-      const br = brandSel ? brandSel.value : "";
-
-      return source.filter(p => {
-        if(cat && p.category !== cat) return false;
-        if(br && p.brand !== br) return false;
-        return true;
-      });
-    }
-
-    function buildSuggestionEntries(){
-      if(albumModeEnabled() && !selectedAlbumKey){
-        const counts = new Map();
-
-        for(const album of albums){
-          const unique = new Set(parseSuggestionTokens(album.label));
-          for(const token of unique){
-            counts.set(token, (counts.get(token) || 0) + 1);
-          }
-        }
-
-        return Array.from(counts.entries())
-          .map(([term, count]) => ({ term, count }))
-          .sort((a,b)=> (b.count - a.count) || a.term.localeCompare(b.term, "es", { sensitivity:"base" }))
-          .slice(0, SUGGESTION_LIMIT);
-      }
-
-      const counts = new Map();
-      for(const p of getSuggestionScopeProducts()){
-        const rawText = `${p.name || ""} ${p.brand || ""} ${p.category || ""}`;
-        const unique = new Set(parseSuggestionTokens(rawText));
-        for(const token of unique){
-          counts.set(token, (counts.get(token) || 0) + 1);
-        }
-      }
-
-      const selectedSet = new Set(selectedSuggestionTerms || []);
-      for(const term of selectedSet){
-        if(!counts.has(term)) counts.set(term, 0);
-      }
-
-      return Array.from(counts.entries())
-        .map(([term, count]) => ({ term, count }))
-        .sort((a,b)=> {
-          const aSelected = selectedSet.has(a.term) ? 1 : 0;
-          const bSelected = selectedSet.has(b.term) ? 1 : 0;
-          if(aSelected !== bSelected) return bSelected - aSelected;
-          if(b.count !== a.count) return b.count - a.count;
-          return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
-        })
-        .slice(0, SUGGESTION_LIMIT);
-    }
-
-    function toggleSuggestionTerm(term){
-      const clean = normalizeText(term);
-      if(!clean) return;
-
-      if(selectedSuggestionTerms.includes(clean)){
-        selectedSuggestionTerms = selectedSuggestionTerms.filter(t => t !== clean);
-      }else{
-        selectedSuggestionTerms = uniqueTerms([...(selectedSuggestionTerms || []), clean]);
-      }
-      render();
-    }
-
-    function removeSuggestionTerm(term){
-      const clean = normalizeText(term);
-      if(!clean) return;
-      selectedSuggestionTerms = selectedSuggestionTerms.filter(t => t !== clean);
-      render();
-    }
-
-    function renderWordSuggestions(){
-      if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
-
-      const entries = buildSuggestionEntries();
-      const activeTermsList = uniqueTerms(selectedSuggestionTerms || []);
-      const typedTerms = parseSearchTerms(qInp ? qInp.value : "");
-      const hasWordFilter = activeTermsList.length > 0 || typedTerms.length > 0;
-
-      wordPanel.hidden = !(entries.length || activeTermsList.length || typedTerms.length);
-      clearTermsBtn.hidden = !hasWordFilter;
-      activeTermsWrap.hidden = !activeTermsList.length;
-
-      wordChips.innerHTML = "";
-      activeTerms.innerHTML = "";
-
-      if(activeTermsList.length){
-        const activeFrag = document.createDocumentFragment();
-        for(const term of activeTermsList){
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "term-chip is-active";
-          btn.dataset.term = term;
-          btn.dataset.role = "remove-active-term";
-          btn.setAttribute("aria-label", `Quitar palabra ${term}`);
-          btn.innerHTML = `<span>${term}</span><span class="term-chip-remove" aria-hidden="true">×</span>`;
-          activeFrag.appendChild(btn);
-        }
-        activeTerms.appendChild(activeFrag);
-      }
-
-      if(!entries.length){
-        const empty = document.createElement("div");
-        empty.className = "word-empty";
-        empty.textContent = "No hay palabras sugeridas para esta vista.";
-        wordChips.appendChild(empty);
-      }else{
-        const frag = document.createDocumentFragment();
-        for(const entry of entries){
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "term-chip" + (activeTermsList.includes(entry.term) ? " is-active" : "");
-          btn.dataset.term = entry.term;
-          btn.dataset.role = "toggle-term";
-          btn.setAttribute("aria-pressed", activeTermsList.includes(entry.term) ? "true" : "false");
-          btn.innerHTML = `<span>${entry.term}</span><span class="term-chip-count">${entry.count}</span>`;
-          frag.appendChild(btn);
-        }
-        wordChips.appendChild(frag);
-      }
     }
 
     function rebuildSearchTicker(){
@@ -3501,10 +3168,8 @@
       const br = (u.searchParams.get("brand") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
       const album = (u.searchParams.get("album") || "").trim();
-      const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
-      selectedSuggestionTerms = uniqueTerms(tags ? tags.split(",") : []);
       if(album) selectedAlbumKey = album;
       if(cat) catSel.value = cat;
       if(br) brandSel.value = br;
@@ -3519,14 +3184,12 @@
       const br = brandSel.value;
       const sort = sortSel ? sortSel.value : "";
       const album = albumModeEnabled() ? String(selectedAlbumKey || "") : "";
-      const tags = uniqueTerms(selectedSuggestionTerms || []).join(",");
 
       if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
       if (cat) u.searchParams.set("cat", cat); else u.searchParams.delete("cat");
       if (br) u.searchParams.set("brand", br); else u.searchParams.delete("brand");
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
       if (album) u.searchParams.set("album", album); else u.searchParams.delete("album");
-      if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
       history.replaceState(null, "", u.toString());
     }
@@ -3540,7 +3203,6 @@
       if(catSel) catSel.value = "";
       if(brandSel) brandSel.value = "";
       if(sortSel) sortSel.value = "";
-      selectedSuggestionTerms = [];
     }
 
     function openAlbum(key, opts={}){
@@ -3564,7 +3226,7 @@
       const cat = catSel.value;
       const br = brandSel.value;
       const sortMode = sortSel ? sortSel.value : "";
-      const terms = getCombinedWordTerms();
+      const terms = normalizeText(qInp.value).split(/\s+/).filter(Boolean);
 
       let filtered = source.filter(p=>{
         if(cat && p.category !== cat) return false;
@@ -3590,7 +3252,7 @@
     }
 
     function buildFilteredAlbums(){
-      const terms = getCombinedWordTerms();
+      const terms = normalizeText(qInp.value).split(/\s+/).filter(Boolean);
       let filtered = albums.slice();
 
       if(terms.length){
@@ -3611,11 +3273,10 @@
 
       syncFilterVisibility();
       updateTickerVisibility();
-      renderWordSuggestions();
       updateCountAttention();
       scheduleWriteStateToUrl();
 
-      const qHas = getCombinedWordTerms().length > 0;
+      const qHas = !!String(qInp.value || "").trim();
 
       if(albumModeEnabled() && !selectedAlbumKey){
         const filteredAlbums = buildFilteredAlbums();
@@ -3755,30 +3416,6 @@
       qInp.addEventListener("input", ()=>{
         render();
       });
-
-      if(wordChips){
-        wordChips.addEventListener("click", (e)=>{
-          const btn = e.target.closest("[data-role='toggle-term']");
-          if(!btn) return;
-          toggleSuggestionTerm(btn.getAttribute("data-term") || "");
-        });
-      }
-
-      if(activeTerms){
-        activeTerms.addEventListener("click", (e)=>{
-          const btn = e.target.closest("[data-role='remove-active-term']");
-          if(!btn) return;
-          removeSuggestionTerm(btn.getAttribute("data-term") || "");
-        });
-      }
-
-      if(clearTermsBtn){
-        clearTermsBtn.addEventListener("click", ()=>{
-          selectedSuggestionTerms = [];
-          if(qInp) qInp.value = "";
-          render();
-        });
-      }
 
       qInp.addEventListener("focus", ()=>{
         updateTickerVisibility();

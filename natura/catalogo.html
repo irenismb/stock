@@ -1341,8 +1341,8 @@
           </div>
 
           <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Busca aquí por nombre del producto o categoría..."
-                 aria-label="Buscar producto o categoría" />
+                 placeholder="🔍 Busca aquí por nombre del producto..."
+                 aria-label="Buscar producto por nombre" />
         </div>
 
         <div class="count-slot" id="countSlot"></div>
@@ -1542,6 +1542,8 @@
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
       MOSTRAR_PRECIOS_PRODUCTO: false,
+      MOSTRAR_CODIGOS_PRODUCTO: false,
+      ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: false,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
       MOSTRAR_IMAGENES_PRODUCTO: true,
@@ -1566,6 +1568,12 @@
     }
     function shouldShowProductPrices(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_PRECIOS_PRODUCTO !== false);
+    }
+    function shouldShowProductCodes(){
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_CODIGOS_PRODUCTO !== false);
+    }
+    function shouldSendProductCodesByWhatsApp(){
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.ENVIAR_CODIGOS_PRODUCTO_WHATSAPP !== false);
     }
 
     const _hasIdle = ("requestIdleCallback" in window);
@@ -1754,7 +1762,7 @@
         stock: Math.max(0, qty),
         isUnstructured: false,
         originalFilename: "",
-        searchKey: normalizeText(`${name} ${brand} ${category} ${id}`)
+        searchKey: normalizeText(`${name}`)
       };
     }
 
@@ -1775,7 +1783,7 @@
         stock: 0,
         isUnstructured: true,
         originalFilename: fullFilename,
-        searchKey: normalizeText(`${displayName} ${fullFilename} ${safePath}`)
+        searchKey: normalizeText(`${displayName}`)
       };
     }
 
@@ -2324,6 +2332,10 @@
       return hasAlbumFolders();
     }
 
+    function shouldShowAlbumGrid(){
+      return albumModeEnabled() && !selectedAlbumKey && getCombinedWordTerms().length === 0;
+    }
+
     function getSelectedAlbum(){
       return albumByKey.get(String(selectedAlbumKey || "")) || null;
     }
@@ -2470,9 +2482,11 @@
 
     function buildLineItems(){
       const items = cartItemsArray();
-      return items.map(it =>
-        `* ${it.name} (Id: ${it.id}) x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`
-      );
+      const includeCode = shouldSendProductCodesByWhatsApp();
+      return items.map(it => {
+        const codePart = includeCode ? ` (Id: ${it.id})` : "";
+        return `* ${it.name}${codePart} x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`;
+      });
     }
 
     function oneLineText(s){
@@ -2620,7 +2634,7 @@
             totalPedido,
             marca: p.brand || "",
             categoria: p.category || "",
-            codigo: String(it.id || "")
+            codigo: shouldSendProductCodesByWhatsApp() ? String(it.id || "") : ""
           };
         })
       };
@@ -2722,7 +2736,10 @@
           <p class="cart-item-sub"></p>
         `;
         main.querySelector(".cart-item-name").textContent = it.name;
-        main.querySelector(".cart-item-sub").textContent = `Id: ${it.id} · Precio: ${fmtCOP.format(Number(it.price)||0)}`;
+        const cartMetaParts = [];
+        if(shouldShowProductCodes()) cartMetaParts.push(`Id: ${it.id}`);
+        cartMetaParts.push(`Precio: ${fmtCOP.format(Number(it.price)||0)}`);
+        main.querySelector(".cart-item-sub").textContent = cartMetaParts.join(" · ");
         left.appendChild(main);
 
         const controls = document.createElement("div");
@@ -3134,7 +3151,10 @@
       } else {
         stockPart = "";
       }
-      return `${p.category} · ${p.brand} · Id: ${p.id}${stockPart}`;
+      const parts = [p.category, p.brand];
+      if(shouldShowProductCodes()) parts.push(`Id: ${p.id}`);
+      const base = parts.filter(Boolean).join(" · ");
+      return `${base}${stockPart}`;
     }
 
     function refreshCardUI(card, p){
@@ -3409,20 +3429,8 @@
     }
 
     function buildSuggestionEntries(){
-      if(albumModeEnabled() && !selectedAlbumKey){
-        const counts = new Map();
-
-        for(const album of albums){
-          const unique = new Set(parseSuggestionTokens(album.label));
-          for(const token of unique){
-            counts.set(token, (counts.get(token) || 0) + 1);
-          }
-        }
-
-        return Array.from(counts.entries())
-          .map(([term, count]) => ({ term, count }))
-          .sort((a,b)=> (b.count - a.count) || a.term.localeCompare(b.term, "es", { sensitivity:"base" }))
-          .slice(0, SUGGESTION_LIMIT);
+      if(shouldShowAlbumGrid()){
+        return [];
       }
 
       const scopeProducts = getSuggestionScopeProducts();
@@ -3476,7 +3484,7 @@
     function renderWordSuggestions(){
       if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
 
-      const showAlbumGrid = albumModeEnabled() && !selectedAlbumKey;
+      const showAlbumGrid = shouldShowAlbumGrid();
       if(showAlbumGrid){
         wordPanel.hidden = true;
         clearTermsBtn.hidden = true;
@@ -3597,7 +3605,7 @@
     }
 
     function syncFilterVisibility(){
-      const showAlbumGrid = albumModeEnabled() && !selectedAlbumKey;
+      const showAlbumGrid = shouldShowAlbumGrid();
 
       if(catSel){
         catSel.hidden = true;
@@ -3621,9 +3629,8 @@
         albumPath.textContent = current ? current.label : "";
       }
       if(qInp){
-        qInp.placeholder = showAlbumGrid
-          ? "🔍 Busca aquí por nombre de la categoría..."
-          : "🔍 Busca aquí por nombre del producto o archivo...";
+        qInp.placeholder = "🔍 Busca aquí por nombre del producto...";
+        qInp.setAttribute("aria-label", "Buscar producto por nombre");
       }
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
@@ -3760,7 +3767,7 @@
 
       const qHas = getCombinedWordTerms().length > 0;
 
-      if(albumModeEnabled() && !selectedAlbumKey){
+      if(shouldShowAlbumGrid()){
         const filteredAlbums = buildFilteredAlbums();
 
         if(countEl){
@@ -3800,7 +3807,7 @@
 
       const frag = document.createDocumentFragment();
       if(!filtered.length){
-        frag.appendChild(makeEmptyState("No se encontraron archivos o productos con esa búsqueda."));
+        frag.appendChild(makeEmptyState("No se encontraron productos con ese nombre."));
       }else{
         for(const p of filtered){
           frag.appendChild(makeCard(p));

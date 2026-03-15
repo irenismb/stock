@@ -68,6 +68,8 @@
 
       --count-blink:#facc15;
       --count-blink-2:#fb7185;
+      --label-strong:#fde047;
+      --label-strong-2:#fb7185;
     }
 
     *{box-sizing:border-box}
@@ -653,9 +655,11 @@
       min-width:0;
     }
     .cart-shipping label{
-      color:var(--mut);
+      color:var(--label-strong);
       font-size:12px;
-      font-weight:900;
+      font-weight:950;
+      letter-spacing:.02em;
+      text-shadow:0 0 8px rgba(253,224,71,.18);
       white-space:nowrap;
       flex:0 0 auto;
     }
@@ -809,8 +813,10 @@
     }
     .field label{
       font-size:12px;
-      font-weight:900;
-      color:var(--mut);
+      font-weight:950;
+      color:var(--label-strong);
+      letter-spacing:.02em;
+      text-shadow:0 0 8px rgba(253,224,71,.18);
       line-height:1.2;
       white-space:normal;
       word-break:break-word;
@@ -1005,7 +1011,7 @@
         <p class="small about-text" id="aboutText">
           Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura, AVON y Esika.
           Te asesoramos por WhatsApp, vía telefónica o de manera presencial en el barrio los Almendros. Dirección: Calle 10A #20A-06. Teléfono: +57 304 208 8961.
-          Realizamos envíos nacionales e Internacionales.
+          Realizamos envíos nacionales e internacionales.
         </p>
         <button class="btn-ghost about-toggle" id="aboutToggle" type="button"
                 aria-expanded="false" aria-controls="aboutText">
@@ -1057,7 +1063,7 @@
           </div>
 
           <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Busca aqui, por nombre, marca, categoría..."
+                 placeholder="🔍 Busca aquí, por nombre, marca, categoría..."
                  aria-label="Buscar producto" />
         </div>
 
@@ -1068,7 +1074,7 @@
         <select id="sort" aria-label="Ordenar productos">
           <option value="">Ordenar</option>
           <option value="price_asc">Precio: menor a mayor</option>
-          <option value="price_desc">Precio: mayor a mayor</option>
+          <option value="price_desc">Precio: mayor a menor</option>
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
@@ -1103,7 +1109,7 @@
     <section id="grid" class="grid" aria-label="Productos"></section>
   </main>
 
-  <div class="cart-modal" id="cartModal" aria-hidden="true" role="dialog" aria-label="Carrito">
+  <div class="cart-modal" id="cartModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Carrito">
     <div class="cart-modal-backdrop" id="cartModalBackdrop"></div>
     <div class="cart-modal-content" role="document" aria-label="Contenido del carrito">
       <div class="cart-modal-header">
@@ -1131,7 +1137,7 @@
     </div>
   </div>
 
-  <div class="form-modal" id="addressModal" aria-hidden="true" role="dialog" aria-label="Dirección">
+  <div class="form-modal" id="addressModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Dirección">
     <div class="form-modal-backdrop" id="addressModalBackdrop"></div>
     <div class="form-modal-content" role="document" aria-label="Contenido de dirección">
       <div class="form-modal-header">
@@ -1190,7 +1196,7 @@
     </div>
   </div>
 
-  <div class="form-modal" id="clientModal" aria-hidden="true" role="dialog" aria-label="Otros datos">
+  <div class="form-modal" id="clientModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Otros datos">
     <div class="form-modal-backdrop" id="clientModalBackdrop"></div>
     <div class="form-modal-content" role="document" aria-label="Contenido de otros datos">
       <div class="form-modal-header">
@@ -1223,7 +1229,7 @@
     </div>
   </div>
 
-  <div class="img-modal" id="imgModal" aria-hidden="true" role="dialog" aria-label="Imagen ampliada">
+  <div class="img-modal" id="imgModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Imagen ampliada">
     <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
     <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Cerrar">✕</button>
     <div class="img-modal-content" role="document">
@@ -1628,7 +1634,6 @@
     const LS_CLIENT_KEY = "irenismb_client_v2";
     const LS_ADDRESS_KEY = "irenismb_address_v3";
     const LS_SHIPPING_KEY = "irenismb_shipping_cop";
-    const LS_WA_TO_KEY = "irenismb_whatsapp_to";
 
     function readJsonLS(key, fallbackObj){
       try{
@@ -1657,19 +1662,9 @@
       try{ localStorage.setItem(key, String(val ?? "")); }catch(_){}
     }
 
-    function normalizeWhatsAppToE164Digits(input){
-      let d = String(input ?? "").replace(/[^\d]/g,"");
-      if(!d) return "";
-      if(d.startsWith("00")) d = d.slice(2);
-      if(d.length === 10) d = "57" + d; // Colombia por defecto
-      if(d.length < 11 || d.length > 15) return "";
-      return d;
-    }
 
     function getWhatsAppTo(){
-      const saved = readStringLS(LS_WA_TO_KEY, "");
-      const norm = normalizeWhatsAppToE164Digits(saved);
-      return norm || WHATSAPP_NUMBER;
+      return WHATSAPP_NUMBER;
     }
 
     function waLinkTo(toDigits, text){
@@ -1740,14 +1735,64 @@
       if(_modalLockCount === 0) document.body.style.overflow = "";
     }
 
+    function rememberModalTrigger(modal){
+      if(modal) modal.__lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    }
+    function restoreModalTrigger(modal){
+      const prev = modal && modal.__lastFocused;
+      if(prev && typeof prev.focus === "function"){
+        try{ prev.focus({ preventScroll:true }); }catch(_){ try{ prev.focus(); }catch(__){} }
+      }
+      if(modal) modal.__lastFocused = null;
+    }
+    function focusElement(el){
+      if(el && typeof el.focus === "function"){
+        try{ el.focus({ preventScroll:true }); }catch(_){ try{ el.focus(); }catch(__){} }
+      }
+    }
+    function focusFirstInModal(modal, preferred){
+      if(preferred){
+        focusElement(preferred);
+        return;
+      }
+      if(!modal) return;
+      const first = modal.querySelector('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+      focusElement(first);
+    }
+    function getOpenModal(){
+      return [imgModal, addressModal, clientModal, cartModal].find(m => m && m.classList && m.classList.contains("open")) || null;
+    }
+    function trapFocusInModal(modal, e){
+      if(!modal || e.key !== "Tab") return;
+      const nodes = Array.from(modal.querySelectorAll('button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'))
+        .filter(el => !el.hasAttribute("hidden") && el.getAttribute("aria-hidden") !== "true");
+      if(!nodes.length) return;
+      const first = nodes[0];
+      const last = nodes[nodes.length - 1];
+      const active = document.activeElement;
+      if(e.shiftKey){
+        if(active === first || !modal.contains(active)){
+          e.preventDefault();
+          focusElement(last);
+        }
+      }else{
+        if(active === last || !modal.contains(active)){
+          e.preventDefault();
+          focusElement(first);
+        }
+      }
+    }
+
     function openImgModal(src, alt){
       if(!imgModal || !imgModalImg || !src) return;
       if(imgModal.classList.contains("open")) return;
+      rememberModalTrigger(imgModal);
       imgModalImg.src = src;
       imgModalImg.alt = alt || "Imagen ampliada del producto";
       imgModal.classList.add("open");
       imgModal.setAttribute("aria-hidden","false");
       lockBodyScroll();
+      focusFirstInModal(imgModal, imgModalClose);
     }
     function closeImgModal(){
       if(!imgModal || !imgModalImg) return;
@@ -1756,6 +1801,7 @@
       imgModal.setAttribute("aria-hidden","true");
       imgModalImg.src = "";
       unlockBodyScroll();
+      restoreModalTrigger(imgModal);
     }
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
@@ -1956,13 +2002,16 @@
       name: "IRENISMB STOCK NATURA",
       whatsappDisplay: "+57 304 208 8961",
       whatsappDigits: "573042088961",
-      celularDisplay: "3114040809", /* (Dato suelto actualmente: no se usa en mensajes) */
       direccion: "Calle 10A #20A-06, Santa Marta, Magdalena",
       barrio: "Los Almendros",
       mapa: "https://maps.google.com/?q=11.244833370782679,-74.19066001689564",
       catalogo: "https://irenismb.github.io/stock/natura/catalogo.html",
       referencias: "Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan."
     };
+
+    const ORDER_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP/exec";
+	
+    const ORDER_LOG_TIMEOUT_MS = 6500;
 
     function buildLineItems(){
       const items = cartItemsArray();
@@ -2044,7 +2093,7 @@
 
 	  const lines = [];
 
-	  lines.push("*INFORMACION DEL CLIENTE*");
+	  lines.push("*INFORMACIÓN DEL CLIENTE*");
 	  lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
 	  lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
 	  lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
@@ -2070,7 +2119,7 @@
 		.trim();
 
 	  lines.push("");
-	  lines.push("*INFORMACION DE LA TIENDA*");
+	  lines.push("*INFORMACIÓN DE LA TIENDA*");
 	  lines.push(STORE_INFO.name);
 	  lines.push(`*Celular:* ${storePhoneNo57}`);
 	  lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
@@ -2083,84 +2132,81 @@
 
 	  return lines.join("\n");
 	}
-    // Wrapper de compatibilidad (actualmente no se usa)
-    function getAddressDataFromLS(){
-      const addr = getAddressDataCurrent();
-      const mapDir = addr.addressLine
-        ? ("https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(addr.addressLine))
-        : "";
-      return { addressLine: addr.addressLine, barrio: addr.barrio, mapDir };
-    }
 
-    // Compatibilidad (no se usa actualmente)
-    function buildSellerMessage(){
+    function buildOrderPayload(){
       const items = cartItemsArray();
-      if(!items.length) return `Hola, soy ${STORE_INFO.name}.`;
-
+      const client = getClientDataCurrent();
+      const addr = getAddressDataCurrent();
       const subtotal = cartTotalValue();
       const envio = getShippingCop();
-      const total = subtotal + envio;
+      const totalPedido = subtotal + envio;
+      const direccionClienteVisible = joinParts([addr.addressLine || "", addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
 
-      const storeMap = STORE_INFO.mapa
-        ? STORE_INFO.mapa
-        : ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(`${STORE_INFO.direccion}, Colombia`));
-
-      const lines = [];
-      lines.push(`Hola, soy ${STORE_INFO.name}.`);
-      lines.push(`Celular: ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`Dirección: ${STORE_INFO.direccion}`);
-      lines.push(`Barrio: ${STORE_INFO.barrio}`);
-      lines.push(`Mapa: ${storeMap}`);
-      lines.push("");
-      lines.push(...buildLineItems());
-      lines.push("");
-      lines.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
-      lines.push(`Envío: ${fmtCOP.format(envio)}`);
-      lines.push(`Total: ${fmtCOP.format(total)}`);
-      lines.push("");
-      lines.push(`Catálogo: ${STORE_INFO.catalogo}`);
-
-      return lines.join("\n");
+      return {
+        source: "catalogo-whatsapp",
+        client_request_id: `${Date.now()}-${Math.random().toString(36).slice(2,10)}`,
+        totalPedido,
+        cliente: {
+          nombre: client.name || "",
+          celular: client.phone || "",
+          direccion: direccionClienteVisible || "",
+          direccionBase: addr.addressLine || "",
+          direccionMapa: addr.mapLink || "",
+          barrio: addr.barrio || ""
+        },
+        items: items.map(it => {
+          const p = productById.get(String(it.id)) || {};
+          const valorUnitario = Number(it.price) || 0;
+          const cantidadSolicitada = Number(it.qty) || 0;
+          return {
+            nombreProducto: it.name || "",
+            valorUnitario,
+            cantidadSolicitada,
+            totalPedido,
+            marca: p.brand || "",
+            categoria: p.category || "",
+            codigo: String(it.id || "")
+          };
+        })
+      };
     }
-    // Wrapper de compatibilidad (mantiene nombre previo sin barrio en el mapa)
-    function getAddressDataFromLS(){
-      const addr = getAddressDataCurrent();
-      const mapDir = addr.addressLine
-        ? ("https://www.google.com/maps/dir/?api=1&destination=" + encodeURIComponent(addr.addressLine))
-        : "";
-      return { addressLine: addr.addressLine, barrio: addr.barrio, mapDir };
+
+    function fetchWithTimeout(url, options = {}, timeoutMs = 6500){
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error("Tiempo de espera agotado al registrar el pedido.")), timeoutMs);
+        fetch(url, options)
+          .then((res) => {
+            clearTimeout(timer);
+            resolve(res);
+          })
+          .catch((err) => {
+            clearTimeout(timer);
+            reject(err);
+          });
+      });
     }
 
-    // (Se deja por compatibilidad, aunque ya no se usa el botón "Vendedor")
-    function buildSellerMessage(){
-      const items = cartItemsArray();
-      if(!items.length) return `Hola, soy ${STORE_INFO.name}.`;
+    async function registerOrderInSheet(){
+      const payload = buildOrderPayload();
+      if(!Array.isArray(payload.items) || !payload.items.length) return { ok:false, skipped:true };
 
-      const subtotal = cartTotalValue();
-      const envio = getShippingCop();
-      const total = subtotal + envio;
+      const body = JSON.stringify(payload);
 
-      const storeMap = STORE_INFO.mapa
-        ? STORE_INFO.mapa
-        : ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(`${STORE_INFO.direccion}, Colombia`));
+      await fetchWithTimeout(ORDER_LOG_ENDPOINT, {
+        method: "POST",
+        mode: "no-cors",
+        cache: "no-store",
+        keepalive: true,
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body
+      }, ORDER_LOG_TIMEOUT_MS);
 
-      const lines = [];
-      lines.push(`Hola, soy ${STORE_INFO.name}.`);
-      lines.push(`Celular: ${STORE_INFO.whatsappDisplay}`);
-      lines.push(`Dirección: ${STORE_INFO.direccion}`);
-      lines.push(`Barrio: ${STORE_INFO.barrio}`);
-      lines.push(`Mapa: ${storeMap}`);
-      lines.push("");
-      lines.push(...buildLineItems());
-      lines.push("");
-      lines.push(`Subtotal: ${fmtCOP.format(subtotal)}`);
-      lines.push(`Envío: ${fmtCOP.format(envio)}`);
-      lines.push(`Total: ${fmtCOP.format(total)}`);
-      lines.push("");
-      lines.push(`Catálogo: ${STORE_INFO.catalogo}`);
-
-      return lines.join("\n");
+      return { ok:true, skipped:false };
     }
+
+    let orderSending = false;
 
     const cartModal = document.getElementById("cartModal");
     const cartModalClose = document.getElementById("cartModalClose");
@@ -2174,16 +2220,19 @@
 
     function openCartModal(){
       if(cartModal.classList.contains("open")) return;
+      rememberModalTrigger(cartModal);
       renderCartModal();
       cartModal.classList.add("open");
       cartModal.setAttribute("aria-hidden", "false");
       lockBodyScroll();
+      focusFirstInModal(cartModal, cartModalClose);
     }
     function closeCartModal(){
       if(!cartModal.classList.contains("open")) return;
       cartModal.classList.remove("open");
       cartModal.setAttribute("aria-hidden", "true");
       unlockBodyScroll();
+      restoreModalTrigger(cartModal);
     }
 
     function renderCartModal(){
@@ -2298,13 +2347,38 @@
       window.open(waLinkTo(toDigits, msg), "_blank", "noopener");
     }
 
-    // ÚNICO BOTÓN: Comprar por WhatsApp (se envía al celular escrito por el comprador)
-	if(cartBuyBtn){
-	  cartBuyBtn.addEventListener("click", ()=>{
-		// El mensaje SIEMPRE se envía al celular de la tienda
-		openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
-	  });
-	}
+    // ÚNICO BOTÓN: Registrar pedido y luego abrir WhatsApp (se envía al número de la tienda)
+    if(cartBuyBtn){
+      cartBuyBtn.addEventListener("click", async ()=>{
+        if(orderSending) return;
+
+        orderSending = true;
+        const previousText = cartBuyBtn.textContent;
+        cartBuyBtn.disabled = true;
+        cartBuyBtn.textContent = "Registrando pedido...";
+
+        try{
+          saveClientToLS();
+          saveAddressToLS();
+          saveShippingToLS();
+
+          try{
+            await registerOrderInSheet();
+          }catch(err){
+            console.error("No se pudo registrar el pedido en Google Sheets:", err);
+          }
+
+          // El mensaje SIEMPRE se envía al número de la tienda
+          openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
+        }finally{
+          setTimeout(()=>{
+            orderSending = false;
+            cartBuyBtn.disabled = false;
+            cartBuyBtn.textContent = previousText;
+          }, 1200);
+        }
+      });
+    }
     if(cartClearBtn){
       cartClearBtn.addEventListener("click", ()=>{
         for(const k of Object.keys(cart)) delete cart[k];
@@ -2347,16 +2421,19 @@
 
     function openAddressModal(){
       if(addressModal.classList.contains("open")) return;
+      rememberModalTrigger(addressModal);
       loadAddressFromLS();
       addressModal.classList.add("open");
       addressModal.setAttribute("aria-hidden","false");
       lockBodyScroll();
+      focusFirstInModal(addressModal, addrCity || addressModalClose);
     }
     function closeAddressModal(){
       if(!addressModal.classList.contains("open")) return;
       addressModal.classList.remove("open");
       addressModal.setAttribute("aria-hidden","true");
       unlockBodyScroll();
+      restoreModalTrigger(addressModal);
     }
 
     function joinParts(parts, sep=" "){
@@ -2448,16 +2525,19 @@
 
     function openClientModal(){
       if(clientModal.classList.contains("open")) return;
+      rememberModalTrigger(clientModal);
       loadClientFromLS();
       clientModal.classList.add("open");
       clientModal.setAttribute("aria-hidden","false");
       lockBodyScroll();
+      focusFirstInModal(clientModal, clientName || clientModalClose);
     }
     function closeClientModal(){
       if(!clientModal.classList.contains("open")) return;
       clientModal.classList.remove("open");
       clientModal.setAttribute("aria-hidden","true");
       unlockBodyScroll();
+      restoreModalTrigger(clientModal);
     }
 
     function loadClientFromLS(){
@@ -2487,6 +2567,11 @@
     if(cartClientBtn) cartClientBtn.addEventListener("click", openClientModal);
 
     document.addEventListener("keydown", (e)=>{
+      const activeModal = getOpenModal();
+      if(activeModal && e.key === "Tab"){
+        trapFocusInModal(activeModal, e);
+        return;
+      }
       if(e.key === "Escape"){
         if(imgModal && imgModal.classList.contains("open")){ closeImgModal(); return; }
         if(addressModal && addressModal.classList.contains("open")){ closeAddressModal(); return; }
@@ -3009,11 +3094,6 @@
       loadShippingFromLS();
     }
 
-    function initWhatsAppDestinationFromClient(){
-      // Se mantiene por compatibilidad con el sitio (destinos anteriores),
-      // pero la compra se envía al celular del cliente según lo solicitado.
-    }
-
     function initKeyboardAccessibility(){
       // Cierre de modales ya está en Escape
     }
@@ -3022,7 +3102,6 @@
       refreshCartCount();
       initCartButton();
       initShipping();
-      initWhatsAppDestinationFromClient();
 
       bindFilters();
       bindGridActions();

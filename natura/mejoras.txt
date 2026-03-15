@@ -224,6 +224,10 @@ Catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 Puntos de referencia: Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan.
 
 
+2026-03-11
+debo poder hacer que no se muestren los precios, esto lo debo poder hacer desde el codigo, desde la cesion que esta diseñada para ello (en interruptores).
+
+
 
 
 

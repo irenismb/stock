@@ -466,13 +466,6 @@
     .album-back{
       padding-inline:14px;
       font-weight:900;
-      animation: albumBackBlink 1s steps(2, start) infinite;
-    }
-    @keyframes albumBackBlink{
-      50%{ opacity:.25; }
-    }
-    @media (prefers-reduced-motion: reduce){
-      .album-back{ animation:none; }
     }
     .album-path{
       color:var(--mut);
@@ -1387,7 +1380,7 @@
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
     <div class="album-nav" id="albumNav" hidden>
-      <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a categorías</button>
+      <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a álbumes</button>
       <div class="album-path" id="albumPath" aria-live="polite"></div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
@@ -1732,36 +1725,8 @@
         brand,
         price,
         stock: Math.max(0, qty),
-        isUnstructured: false,
-        originalFilename: "",
         searchKey: normalizeText(`${name} ${brand} ${category} ${id}`)
       };
-    }
-
-    function makeUnstructuredProduct(relPath){
-      const safePath = String(relPath || "").trim();
-      const fullFilename = leafName(safePath) || safePath || "archivo_sin_nombre";
-      const cleanId = normalizeText(safePath)
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "") || ("archivo-" + Date.now());
-
-      return {
-        id: `raw-${cleanId}`,
-        name: fullFilename,
-        category: "",
-        brand: "",
-        price: 0,
-        stock: 0,
-        isUnstructured: true,
-        originalFilename: fullFilename,
-        searchKey: normalizeText(`${fullFilename} ${safePath}`)
-      };
-    }
-
-    function parseProductFromRelativePath(relPath){
-      const leaf = leafName(relPath);
-      const parsed = parseProductFromBaseName(baseOf(leaf));
-      return parsed || makeUnstructuredProduct(relPath);
     }
 
     function preferredExtScore(ext){
@@ -1853,7 +1818,9 @@
 		const ext = extOf(leaf);
 		if(!SUPPORTED_EXTS.includes(ext)) continue;
 
-		const parsed = parseProductFromRelativePath(relPath);
+		const base = baseOf(leaf);
+		const parsed = parseProductFromBaseName(base);
+		if(!parsed) continue;
 
 		const hasImage = isImageExt(ext);
 		const candidate = {
@@ -1913,7 +1880,9 @@
         const ext = extOf(leaf);
         if(!SUPPORTED_EXTS.includes(ext)) continue;
 
-        const parsed = parseProductFromRelativePath(relPath);
+        const base = baseOf(leaf);
+        const parsed = parseProductFromBaseName(base);
+        if(!parsed) continue;
 
         const hasImage = isImageExt(ext);
         const candidate = {
@@ -2370,7 +2339,7 @@
         }
         const id = String(it.id);
         const p = productById.get(id);
-        if(!p || p.isUnstructured){
+        if(!p){
           delete cart[key];
           changed = true;
           continue;
@@ -3009,12 +2978,11 @@
     function updateProductsJsonLd(list){
       try{
         const baseUrl = "https://irenismb.github.io/stock/natura/catalogo.html";
-        const validList = (Array.isArray(list) ? list : []).filter(p => !(p && p.isUnstructured));
         const itemList = {
           "@context":"https://schema.org",
           "@type":"ItemList",
           "name":"Catálogo de productos",
-          "itemListElement": validList.slice(0, 500).map((p, i) => {
+          "itemListElement": list.slice(0, 500).map((p, i) => {
             const productUrl = baseUrl + "#p-" + encodeURIComponent(p.id);
             const imgUrl = productImageAbsoluteUrlFromFilename(p.imgFilename);
             const desc = `Producto: ${p.name}. Categoría: ${p.category || "Natura"}. Compra por WhatsApp.`;
@@ -3091,10 +3059,6 @@
     `;
 
     function stockMetaText(p){
-      if(p && p.isUnstructured){
-        return "";
-      }
-
       const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
       let stockPart = "";
       if (INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
@@ -3108,21 +3072,6 @@
     }
 
     function refreshCardUI(card, p){
-      const row = card.querySelector(".row");
-      const actions = card.querySelector(".actions");
-      const meta = card.querySelector(".meta");
-
-      if(p && p.isUnstructured){
-        if(meta) meta.hidden = true;
-        if(row) row.hidden = true;
-        if(actions) actions.hidden = true;
-        return;
-      }
-
-      if(meta) meta.hidden = false;
-      if(row) row.hidden = false;
-      if(actions) actions.hidden = false;
-
       const enforce = shouldEnforceStockLimits();
       const id = String(p.id);
       const q = (cart[id]?.qty || 0);
@@ -3150,24 +3099,15 @@
 
     function makeCard(p){
       const card = cardTemplate.content.firstElementChild.cloneNode(true);
-      card.id = "p-" + encodeURIComponent(String(p.id));
+      card.id = "p-" + p.id;
       card.dataset.id = String(p.id);
 
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
 
-      const visibleName = (p && p.isUnstructured)
-        ? String(p.originalFilename || p.name || "")
-        : String(p.name || "");
-
-      const nameEl = card.querySelector(".name");
-      const metaEl = card.querySelector(".meta");
-      const priceEl = card.querySelector(".price");
-
-      nameEl.textContent = visibleName;
-      nameEl.title = visibleName;
-      metaEl.textContent = stockMetaText(p);
-      priceEl.textContent = fmtCOP.format(p.price);
+      card.querySelector(".name").textContent = p.name;
+      card.querySelector(".meta").textContent = stockMetaText(p);
+      card.querySelector(".price").textContent = fmtCOP.format(p.price);
 
       refreshCardUI(card, p);
       return card;
@@ -3636,15 +3576,9 @@
       });
 
       if(sortMode === "price_asc"){
-        filtered.sort((a,b)=>{
-          if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
-          return (a.price||0) - (b.price||0) || String(a.id).localeCompare(String(b.id));
-        });
+        filtered.sort((a,b)=> (a.price||0) - (b.price||0) || String(a.id).localeCompare(String(b.id)));
       }else if(sortMode === "price_desc"){
-        filtered.sort((a,b)=>{
-          if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
-          return (b.price||0) - (a.price||0) || String(a.id).localeCompare(String(b.id));
-        });
+        filtered.sort((a,b)=> (b.price||0) - (a.price||0) || String(a.id).localeCompare(String(b.id)));
       }else if(sortMode === "name_asc"){
         filtered.sort((a,b)=>{
           const cmp = String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" });
@@ -3764,7 +3698,7 @@
         if(!id) return;
 
         const p = productById.get(String(id));
-        if(!p || p.isUnstructured) return;
+        if(!p) return;
 
         const act = btn.getAttribute("data-act");
         const enforce = shouldEnforceStockLimits();

@@ -1340,8 +1340,8 @@
           </div>
 
           <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Busca aquí por nombre del producto o categoría..."
-                 aria-label="Buscar producto o categoría" />
+                 placeholder="🔍 Busca aquí por nombre del producto o carpeta..."
+                 aria-label="Buscar producto" />
         </div>
 
         <div class="count-slot" id="countSlot"></div>
@@ -1540,7 +1540,6 @@
     const INTERRUPTORES = {
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
-      MOSTRAR_PRECIOS_PRODUCTO: true,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
       MOSTRAR_IMAGENES_PRODUCTO: true,
@@ -1562,9 +1561,6 @@
     }
     function shouldShowProductImages(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_IMAGENES_PRODUCTO !== false);
-    }
-    function shouldShowProductPrices(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_PRECIOS_PRODUCTO !== false);
     }
 
     const _hasIdle = ("requestIdleCallback" in window);
@@ -1760,21 +1756,20 @@
     function makeUnstructuredProduct(relPath){
       const safePath = String(relPath || "").trim();
       const fullFilename = leafName(safePath) || safePath || "archivo_sin_nombre";
-      const displayName = baseOf(fullFilename) || fullFilename;
       const cleanId = normalizeText(safePath)
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || ("archivo-" + Date.now());
 
       return {
         id: `raw-${cleanId}`,
-        name: displayName,
+        name: fullFilename,
         category: "",
         brand: "",
         price: 0,
         stock: 0,
         isUnstructured: true,
         originalFilename: fullFilename,
-        searchKey: normalizeText(`${displayName} ${fullFilename} ${safePath}`)
+        searchKey: normalizeText(`${fullFilename} ${safePath}`)
       };
     }
 
@@ -1793,12 +1788,12 @@
     const GITHUB_REPO = "stock";
     const GITHUB_PRODUCTS_PATH = "natura/imagenes_de_productos";
 
-    const PRODUCTS_CACHE_KEY_V7 = "irenismb_products_cache_v7";
-    const PRODUCTS_OLD_CACHE_KEYS = ["irenismb_products_cache_v6", "irenismb_products_cache_v5", "irenismb_products_cache_v4", "irenismb_products_cache_v3"];
+    const PRODUCTS_CACHE_KEY_V6 = "irenismb_products_cache_v6";
+    const PRODUCTS_OLD_CACHE_KEYS = ["irenismb_products_cache_v5", "irenismb_products_cache_v4", "irenismb_products_cache_v3"];
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function readProductsCacheObj(){
-      const keys = [PRODUCTS_CACHE_KEY_V7, ...PRODUCTS_OLD_CACHE_KEYS];
+      const keys = [PRODUCTS_CACHE_KEY_V6, ...PRODUCTS_OLD_CACHE_KEYS];
       for(const key of keys){
         try{
           const raw = localStorage.getItem(key);
@@ -1824,7 +1819,7 @@
 
     function writeProductsCache(products){
       try{
-        localStorage.setItem(PRODUCTS_CACHE_KEY_V7, JSON.stringify({
+        localStorage.setItem(PRODUCTS_CACHE_KEY_V6, JSON.stringify({
           v: 6,
           ts: Date.now(),
           products: products || []
@@ -3187,7 +3182,7 @@
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
 
       const visibleName = (p && p.isUnstructured)
-        ? String(p.name || baseOf(p.originalFilename || "") || "")
+        ? String(p.originalFilename || p.name || "")
         : String(p.name || "");
 
       const nameEl = card.querySelector(".name");
@@ -3197,7 +3192,7 @@
       nameEl.textContent = visibleName;
       nameEl.title = visibleName;
       metaEl.textContent = stockMetaText(p);
-      priceEl.textContent = (p && p.isUnstructured) ? "" : (shouldShowProductPrices() ? fmtCOP.format(p.price) : "");
+      priceEl.textContent = (p && p.isUnstructured) ? "" : fmtCOP.format(p.price);
 
       refreshCardUI(card, p);
       return card;
@@ -3205,7 +3200,7 @@
 
     function makeAlbumPreview(filename, label){
       const img = document.createElement("img");
-      img.alt = label ? ("Vista previa " + label) : "Vista previa de la categoría";
+      img.alt = label ? ("Vista previa " + label) : "Vista previa del álbum";
       img.loading = "lazy";
       img.decoding = "async";
       img.src = productImageAbsoluteUrlFromFilename(filename);
@@ -3229,7 +3224,7 @@
       const preview = card.querySelector(".album-preview");
       const label = card.querySelector(".album-label");
       const meta = card.querySelector(".album-meta");
-      const unitLabel = album && album.onlyUnstructured ? (album.count === 1 ? "archivo" : "archivos") : (album.count === 1 ? "producto" : "productos");
+      const unitLabel = album && album.onlyUnstructured ? "archivo(s)" : "producto(s)";
 
       btn.dataset.albumOpen = album.key;
       btn.setAttribute("aria-label", `Abrir categoría ${album.label}`);
@@ -3438,16 +3433,6 @@
 
     function renderWordSuggestions(){
       if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
-
-      const showAlbumGrid = albumModeEnabled() && !selectedAlbumKey;
-      if(showAlbumGrid){
-        wordPanel.hidden = true;
-        clearTermsBtn.hidden = true;
-        activeTermsWrap.hidden = true;
-        wordChips.innerHTML = "";
-        activeTerms.innerHTML = "";
-        return;
-      }
 
       const entries = buildSuggestionEntries();
       const activeTermsList = uniqueTerms(selectedSuggestionTerms || []);
@@ -3727,7 +3712,7 @@
         const filteredAlbums = buildFilteredAlbums();
 
         if(countEl){
-          countEl.textContent = `${filteredAlbums.length} categor${filteredAlbums.length === 1 ? "ía" : "ías"}`;
+          countEl.textContent = `${filteredAlbums.length} categoría(s)`;
           countEl.classList.toggle("search-active", qHas);
         }
 
@@ -3753,7 +3738,7 @@
 
       if(countEl){
         const onlyUnstructured = filtered.length > 0 && filtered.every(p => p && p.isUnstructured);
-        countEl.textContent = `${filtered.length} ${onlyUnstructured ? (filtered.length === 1 ? "archivo" : "archivos") : (filtered.length === 1 ? "producto" : "productos")}`;
+        countEl.textContent = `${filtered.length} ${onlyUnstructured ? "archivo(s)" : "producto(s)"}`;
         countEl.classList.toggle("search-active", qHas);
       }
 

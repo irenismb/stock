@@ -454,27 +454,6 @@
       white-space:nowrap;
     }
 
-    .card.is-unstructured .pad{
-      align-items:center;
-      text-align:center;
-      gap:8px;
-    }
-    .card.is-unstructured .name{
-      width:100%;
-      font-size:14px;
-      line-height:1.35;
-      word-break:break-word;
-      overflow-wrap:anywhere;
-    }
-    .card.is-unstructured .meta,
-    .card.is-unstructured .row,
-    .card.is-unstructured .actions{
-      display:none !important;
-    }
-    .card.is-unstructured .img > img{
-      cursor:default !important;
-    }
-
     .album-nav{
       display:flex;
       align-items:center;
@@ -487,23 +466,13 @@
     .album-back{
       padding-inline:14px;
       font-weight:900;
-      background:rgba(255,255,255,.03);
-      border-color:rgba(255,43,214,.55);
-      box-shadow:0 0 0 1px rgba(255,43,214,.12) inset;
-    }
-    .album-back .album-back-label{
-      display:inline-block;
-      font-weight:950;
-      color:#ff2bd6 !important;
-      text-shadow:0 0 10px rgba(255,43,214,.7), 0 0 18px rgba(255,214,10,.35);
-      animation: albumBackBlink .8s step-start infinite;
+      animation: albumBackBlink 1s steps(2, start) infinite;
     }
     @keyframes albumBackBlink{
-      0%, 100%{ color:#ff2bd6; text-shadow:0 0 10px rgba(255,43,214,.75), 0 0 22px rgba(255,43,214,.38); }
-      50%{ color:#ffd60a; text-shadow:0 0 12px rgba(255,214,10,.8), 0 0 24px rgba(255,214,10,.45); }
+      50%{ opacity:.25; }
     }
     @media (prefers-reduced-motion: reduce){
-      .album-back .album-back-label{ animation:none; }
+      .album-back{ animation:none; }
     }
     .album-path{
       color:var(--mut);
@@ -1418,7 +1387,7 @@
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
     <div class="album-nav" id="albumNav" hidden>
-      <button class="btn-ghost album-back" id="albumBackBtn" type="button"><span class="album-back-label">← Volver a categorías</span></button>
+      <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a categorías</button>
       <div class="album-path" id="albumPath" aria-live="polite"></div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
@@ -1743,17 +1712,6 @@
       });
     }
 
-    function folderKeyFromRelPath(relPath){
-      const safePath = String(relPath || "").trim();
-      const parts = safePath.split("/").filter(Boolean);
-      return parts.length > 1 ? String(parts[0] || "").trim() : ROOT_ALBUM_KEY;
-    }
-
-    function folderLabelFromRelPath(relPath){
-      const key = folderKeyFromRelPath(relPath);
-      return key === ROOT_ALBUM_KEY ? "" : key;
-    }
-
     function parseProductFromBaseName(baseName){
       const parts = String(baseName || "").split("_");
       if(parts.length < 6) return null;
@@ -1783,7 +1741,6 @@
     function makeUnstructuredProduct(relPath){
       const safePath = String(relPath || "").trim();
       const fullFilename = leafName(safePath) || safePath || "archivo_sin_nombre";
-      const folderLabel = folderLabelFromRelPath(safePath);
       const cleanId = normalizeText(safePath)
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || ("archivo-" + Date.now());
@@ -1791,25 +1748,20 @@
       return {
         id: `raw-${cleanId}`,
         name: fullFilename,
-        category: folderLabel || "",
+        category: "",
         brand: "",
         price: 0,
         stock: 0,
         isUnstructured: true,
         originalFilename: fullFilename,
-        searchKey: normalizeText(`${fullFilename} ${folderLabel} ${safePath}`)
+        searchKey: normalizeText(`${fullFilename} ${safePath}`)
       };
     }
 
     function parseProductFromRelativePath(relPath){
       const leaf = leafName(relPath);
       const parsed = parseProductFromBaseName(baseOf(leaf));
-      if(parsed){
-        if(!String(parsed.category || "").trim()) parsed.category = folderLabelFromRelPath(relPath) || "";
-        parsed.searchKey = normalizeText(`${parsed.name || ""} ${parsed.brand || ""} ${parsed.category || ""} ${parsed.id || ""} ${relPath || ""}`);
-        return parsed;
-      }
-      return makeUnstructuredProduct(relPath);
+      return parsed || makeUnstructuredProduct(relPath);
     }
 
     function preferredExtScore(ext){
@@ -1904,15 +1856,12 @@
 		const parsed = parseProductFromRelativePath(relPath);
 
 		const hasImage = isImageExt(ext);
-		const folderKey = folderKeyFromRelPath(relPath);
 		const candidate = {
 		  ...parsed,
 		  srcFilename: relPath,
 		  fileExt: ext,
 		  hasImage,
-		  imgFilename: hasImage ? relPath : null,
-          folderKey,
-          albumKey: folderKey
+		  imgFilename: hasImage ? relPath : null
 		};
 
 		const existing = byId.get(parsed.id);
@@ -1967,15 +1916,12 @@
         const parsed = parseProductFromRelativePath(relPath);
 
         const hasImage = isImageExt(ext);
-        const folderKey = folderKeyFromRelPath(relPath);
         const candidate = {
           ...parsed,
           srcFilename: relPath,
           fileExt: ext,
           hasImage,
-          imgFilename: hasImage ? relPath : null,
-          folderKey,
-          albumKey: folderKey
+          imgFilename: hasImage ? relPath : null
         };
 
         const existing = byId.get(parsed.id);
@@ -2183,7 +2129,7 @@
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
-    function makeImgFromFilename(filename, name, allowZoom=true){
+    function makeImgFromFilename(filename, name){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
@@ -2201,9 +2147,8 @@
         img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       }else{
-        zoomable = !!allowZoom;
+        zoomable = true;
         img.src = productImageAbsoluteUrlFromFilename(filename);
-        if(!allowZoom) setNonZoom();
       }
 
       img.onerror = ()=>{
@@ -2291,10 +2236,9 @@
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
 
     function getProductAlbumKey(p){
-      const directKey = String((p && (p.albumKey || p.folderKey)) || "").trim();
-      if(directKey) return directKey;
       const rel = String((p && (p.imgFilename || p.srcFilename)) || "").trim();
-      return folderKeyFromRelPath(rel);
+      const parts = rel.split("/").filter(Boolean);
+      return parts.length > 1 ? parts[0] : ROOT_ALBUM_KEY;
     }
 
     function albumLabelFromKey(key){
@@ -3208,10 +3152,9 @@
       const card = cardTemplate.content.firstElementChild.cloneNode(true);
       card.id = "p-" + encodeURIComponent(String(p.id));
       card.dataset.id = String(p.id);
-      card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
 
       const imgBox = card.querySelector(".img");
-      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, !(p && p.isUnstructured)));
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
 
       const visibleName = (p && p.isUnstructured)
         ? String(p.originalFilename || p.name || "")
@@ -3232,7 +3175,7 @@
 
     function makeAlbumPreview(filename, label){
       const img = document.createElement("img");
-      img.alt = label ? ("Vista previa " + label) : "Vista previa de la categoría";
+      img.alt = label ? ("Vista previa " + label) : "Vista previa del álbum";
       img.loading = "lazy";
       img.decoding = "async";
       img.src = productImageAbsoluteUrlFromFilename(filename);
@@ -3258,7 +3201,7 @@
       const meta = card.querySelector(".album-meta");
 
       btn.dataset.albumOpen = album.key;
-      btn.setAttribute("aria-label", `Abrir categoría ${album.label}`);
+      btn.setAttribute("aria-label", `Abrir álbum ${album.label}`);
       btn.title = `${album.label} · ${album.count} producto(s)`;
 
       preview.appendChild(makeAlbumPreview(album.cover && album.cover.imgFilename, album.label));
@@ -3599,12 +3542,12 @@
       }
       if(qInp){
         qInp.placeholder = showAlbumGrid
-          ? "🔍 Busca aquí por nombre de la categoría..."
+          ? "🔍 Busca aquí por nombre del álbum..."
           : "🔍 Busca aquí, por nombre, marca, categoría...";
       }
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
-        grid.setAttribute("aria-label", showAlbumGrid ? "Categorías" : "Productos");
+        grid.setAttribute("aria-label", showAlbumGrid ? "Álbumes" : "Productos");
       }
 
       rebuildSearchTicker();
@@ -3744,7 +3687,7 @@
         const filteredAlbums = buildFilteredAlbums();
 
         if(countEl){
-          countEl.textContent = `${filteredAlbums.length} categoría(s)`;
+          countEl.textContent = `${filteredAlbums.length} álbum(es)`;
           countEl.classList.toggle("search-active", qHas);
         }
 
@@ -3754,7 +3697,7 @@
 
         const frag = document.createDocumentFragment();
         if(!filteredAlbums.length){
-          frag.appendChild(makeEmptyState("No se encontraron categorías con ese nombre."));
+          frag.appendChild(makeEmptyState("No se encontraron álbumes con ese nombre."));
         }else{
           for(const album of filteredAlbums){
             frag.appendChild(makeAlbumCard(album));

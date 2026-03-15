@@ -1569,13 +1569,13 @@
     const INTERRUPTORES = {
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
-      MOSTRAR_PRECIOS_PRODUCTO: false,
+      MOSTRAR_PRECIOS_PRODUCTO: true,
       MOSTRAR_CODIGOS_PRODUCTO: true,
       ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
       MOSTRAR_IMAGENES_PRODUCTO: true,
-      TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 10,
+      TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 5,
       IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
       // Activa o desactiva la ocultación total de categorías/carpetas.
@@ -1597,6 +1597,7 @@
     window.ALBUMES_OCULTOS = ALBUMES_OCULTOS;
 
     const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = [
+			"Hola"
       // Escribe aquí los nombres EXACTOS de las carpetas/categorías
       // cuyos productos NO quieres que salgan al usar el buscador.
       // Sí se podrán seguir viendo al entrar manualmente a su categoría,

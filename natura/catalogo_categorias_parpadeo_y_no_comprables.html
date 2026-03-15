@@ -454,6 +454,27 @@
       white-space:nowrap;
     }
 
+    .card.is-unstructured .pad{
+      align-items:center;
+      text-align:center;
+      gap:8px;
+    }
+    .card.is-unstructured .name{
+      width:100%;
+      font-size:14px;
+      line-height:1.35;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+    .card.is-unstructured .meta,
+    .card.is-unstructured .row,
+    .card.is-unstructured .actions{
+      display:none !important;
+    }
+    .card.is-unstructured .img > img{
+      cursor:default !important;
+    }
+
     .album-nav{
       display:flex;
       align-items:center;
@@ -466,18 +487,23 @@
     .album-back{
       padding-inline:14px;
       font-weight:900;
-      color:#ff2bd6;
+      background:rgba(255,255,255,.03);
       border-color:rgba(255,43,214,.55);
-      text-shadow:0 0 10px rgba(255,43,214,.55), 0 0 18px rgba(255,214,10,.3);
       box-shadow:0 0 0 1px rgba(255,43,214,.12) inset;
-      animation: albumBackBlink 1s steps(2, start) infinite;
+    }
+    .album-back .album-back-label{
+      display:inline-block;
+      font-weight:950;
+      color:#ff2bd6 !important;
+      text-shadow:0 0 10px rgba(255,43,214,.7), 0 0 18px rgba(255,214,10,.35);
+      animation: albumBackBlink .8s step-start infinite;
     }
     @keyframes albumBackBlink{
-      0%, 100%{ opacity:1; color:#ff2bd6; text-shadow:0 0 10px rgba(255,43,214,.55), 0 0 18px rgba(255,214,10,.3); }
-      50%{ opacity:.18; color:#ffd60a; text-shadow:0 0 12px rgba(255,214,10,.65), 0 0 22px rgba(255,43,214,.25); }
+      0%, 100%{ color:#ff2bd6; text-shadow:0 0 10px rgba(255,43,214,.75), 0 0 22px rgba(255,43,214,.38); }
+      50%{ color:#ffd60a; text-shadow:0 0 12px rgba(255,214,10,.8), 0 0 24px rgba(255,214,10,.45); }
     }
     @media (prefers-reduced-motion: reduce){
-      .album-back{ animation:none; }
+      .album-back .album-back-label{ animation:none; }
     }
     .album-path{
       color:var(--mut);
@@ -1392,7 +1418,7 @@
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
     <div class="album-nav" id="albumNav" hidden>
-      <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a categorías</button>
+      <button class="btn-ghost album-back" id="albumBackBtn" type="button"><span class="album-back-label">← Volver a categorías</span></button>
       <div class="album-path" id="albumPath" aria-live="polite"></div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
@@ -2157,7 +2183,7 @@
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
-    function makeImgFromFilename(filename, name){
+    function makeImgFromFilename(filename, name, allowZoom=true){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
@@ -2175,8 +2201,9 @@
         img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       }else{
-        zoomable = true;
+        zoomable = !!allowZoom;
         img.src = productImageAbsoluteUrlFromFilename(filename);
+        if(!allowZoom) setNonZoom();
       }
 
       img.onerror = ()=>{
@@ -3181,9 +3208,10 @@
       const card = cardTemplate.content.firstElementChild.cloneNode(true);
       card.id = "p-" + encodeURIComponent(String(p.id));
       card.dataset.id = String(p.id);
+      card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
 
       const imgBox = card.querySelector(".img");
-      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, !(p && p.isUnstructured)));
 
       const visibleName = (p && p.isUnstructured)
         ? String(p.originalFilename || p.name || "")

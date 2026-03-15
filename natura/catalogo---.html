@@ -243,12 +243,6 @@
       color:var(--txt);
       font-weight:800;
     }
-    .btn-ghost.is-active{
-      border-color:rgba(32,201,151,.72);
-      background:linear-gradient(90deg, rgba(32,201,151,.16), rgba(45,212,191,.12));
-      color:#d1fae5;
-      box-shadow:0 0 0 1px rgba(32,201,151,.08) inset;
-    }
     .btn-danger{
       background:transparent;
       border:1px solid rgba(239,68,68,.55);
@@ -1056,7 +1050,7 @@
         margin:0 auto;
       }
 
-      #cat, #brand, #sort, #toggleWordPanelBtn, #btn-cart{
+      #cat, #brand, #sort, #btn-cart{
         flex:1 1 calc(50% - 5px);
         min-width:0;
       }
@@ -1382,10 +1376,6 @@
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
-        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar u ocultar palabras sugeridas" aria-controls="wordPanel" aria-pressed="false">
-          Mostrar palabras
-        </button>
-
         <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
           <span class="btn-cart-label">Ver carrito WhatsApp</span>
           <span class="btn-cart-label-short" aria-hidden="true">Carrito</span>
@@ -1588,16 +1578,6 @@
       TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 5,
       IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
-      // Muestra u oculta los archivos cuyo nombre NO cumple el formato esperado
-      // id_nombre_marca_categoria_precio_stock.
-      MOSTRAR_ARCHIVOS_SIN_PARAMETROS: false,
-
-      // Permite que el usuario muestre u oculte las palabras sugeridas desde la web.
-      PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
-
-      // Debe iniciar en false para que las palabras sugeridas no aparezcan al cargar.
-      PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
-
       // Activa o desactiva la ocultación total de categorías/carpetas.
       APLICAR_ALBUMES_OCULTOS: true,
 
@@ -1642,15 +1622,6 @@
     }
     function shouldSendProductCodesByWhatsApp(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.ENVIAR_CODIGOS_PRODUCTO_WHATSAPP !== false);
-    }
-    function shouldShowFilesWithoutParameters(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_ARCHIVOS_SIN_PARAMETROS === true);
-    }
-    function shouldAllowSuggestionToggle(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PERMITIR_TOGGLE_PALABRAS_SUGERIDAS !== false);
-    }
-    function shouldShowSuggestionsInitially(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PALABRAS_SUGERIDAS_INICIAN_VISIBLES === true);
     }
     function getCategoryPreviewRotateMs(){
       const seconds = Number(window.INTERRUPTORES?.TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS);
@@ -2402,11 +2373,7 @@
     }
 
     function filterVisibleProducts(list){
-      const baseList = Array.isArray(list) ? list : [];
-      const manualFiltered = shouldShowFilesWithoutParameters()
-        ? baseList.slice()
-        : baseList.filter(p => !(p && p.isUnstructured));
-      return manualFiltered.filter(p => !isAlbumHiddenByKey(getProductAlbumKey(p)));
+      return (Array.isArray(list) ? list : []).filter(p => !isAlbumHiddenByKey(getProductAlbumKey(p)));
     }
 
     function filterSearchExcludedProducts(list){
@@ -3514,38 +3481,7 @@
     const activeTermsWrap = document.getElementById("activeTermsWrap");
     const activeTerms = document.getElementById("activeTerms");
     const clearTermsBtn = document.getElementById("clearTermsBtn");
-    const toggleWordPanelBtn = document.getElementById("toggleWordPanelBtn");
 
-    let wordSuggestionsVisible = shouldAllowSuggestionToggle() && shouldShowSuggestionsInitially();
-
-    function syncWordToggleButton(){
-      if(!toggleWordPanelBtn) return;
-
-      const canToggle = shouldAllowSuggestionToggle();
-      const isVisible = canToggle && wordSuggestionsVisible;
-
-      toggleWordPanelBtn.hidden = !canToggle;
-      toggleWordPanelBtn.disabled = !canToggle;
-      toggleWordPanelBtn.textContent = isVisible ? "Ocultar palabras" : "Mostrar palabras";
-      toggleWordPanelBtn.setAttribute("aria-pressed", isVisible ? "true" : "false");
-      toggleWordPanelBtn.classList.toggle("is-active", isVisible);
-    }
-
-    function setWordSuggestionsVisible(nextValue){
-      const canToggle = shouldAllowSuggestionToggle();
-      wordSuggestionsVisible = canToggle && !!nextValue;
-
-      if(!wordSuggestionsVisible){
-        selectedSuggestionTerms = [];
-      }
-
-      syncWordToggleButton();
-    }
-
-    function toggleWordSuggestionsVisible(){
-      setWordSuggestionsVisible(!wordSuggestionsVisible);
-      render();
-    }
 
     function placeCountElement(){
       if(!countEl || !countSlot || !topline) return;
@@ -3752,10 +3688,8 @@
     function renderWordSuggestions(){
       if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
 
-      syncWordToggleButton();
-
       const showAlbumGrid = shouldShowAlbumGrid();
-      if(showAlbumGrid || !wordSuggestionsVisible){
+      if(showAlbumGrid){
         wordPanel.hidden = true;
         clearTermsBtn.hidden = true;
         activeTermsWrap.hidden = true;
@@ -3922,7 +3856,7 @@
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
-      selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
+      selectedSuggestionTerms = uniqueTerms(tags ? tags.split(",") : []);
       if(album) selectedAlbumKey = album;
       if(sort && sortSel) sortSel.value = sort;
     }
@@ -4037,7 +3971,6 @@
       }
 
       syncFilterVisibility();
-      syncWordToggleButton();
       updateTickerVisibility();
       renderWordSuggestions();
       updateCountAttention();
@@ -4212,12 +4145,6 @@
         });
       }
 
-      if(toggleWordPanelBtn){
-        toggleWordPanelBtn.addEventListener("click", ()=>{
-          toggleWordSuggestionsVisible();
-        });
-      }
-
       qInp.addEventListener("focus", ()=>{
         updateTickerVisibility();
       });
@@ -4325,7 +4252,6 @@
         });
       }
 
-      syncWordToggleButton();
       rebuildSearchTicker();
       updateTickerVisibility();
       updateCountAttention();

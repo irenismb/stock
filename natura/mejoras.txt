@@ -227,6 +227,9 @@ Puntos de referencia: Entre la tienda Surtifruver y la tienda 5Y6, por la panade
 2026-03-11
 debo poder hacer que no se muestren los precios, esto lo debo poder hacer desde el codigo, desde la cesion que esta diseñada para ello (en interruptores).
 
+debo poder hacer que no se muestre el nombre de los archivos que no cumplen los parametros, desde la cesion de interruptores en el codigo.
+tambien quiero poder de alguna forma, pero desde la misma pagina web, no desde el codigo, hacer que se muestren o no las palabras sugeridas, dicha opcion debera iniciar deshabilitada, para que no se muestren al iniciar la pagina y el usuario pueda hacer que aparezcan y desaparezcan cuando el quiera.
+
 
 
 

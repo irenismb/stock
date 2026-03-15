@@ -418,20 +418,8 @@
       min-height:0;
     }
 
-    .name{font-weight:950;margin:0;font-size:15px;line-height:1.25;word-break:break-word}
+    .name{font-weight:950;margin:0;font-size:15px;line-height:1.25}
     .meta{color:var(--mut);font-size:12px;margin:0;line-height:1.35}
-    .card.is-unstructured .pad{
-      gap:0;
-      align-items:flex-start;
-    }
-    .card.is-unstructured .name{
-      font-size:14px;
-      font-weight:900;
-    }
-    #cat,
-    #brand{
-      display:none !important;
-    }
     .row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .price{font-weight:950}
 
@@ -466,6 +454,27 @@
       white-space:nowrap;
     }
 
+    .card.is-unstructured .pad{
+      align-items:center;
+      text-align:center;
+      gap:8px;
+    }
+    .card.is-unstructured .name{
+      width:100%;
+      font-size:14px;
+      line-height:1.35;
+      word-break:break-word;
+      overflow-wrap:anywhere;
+    }
+    .card.is-unstructured .meta,
+    .card.is-unstructured .row,
+    .card.is-unstructured .actions{
+      display:none !important;
+    }
+    .card.is-unstructured .img > img{
+      cursor:default !important;
+    }
+
     .album-nav{
       display:flex;
       align-items:center;
@@ -477,17 +486,19 @@
     .album-nav[hidden]{display:none !important}
     .album-back{
       padding-inline:14px;
-      font-weight:950;
-      color:var(--count-blink);
-      border-color: rgba(250,204,21,.35);
+      font-weight:900;
       background:linear-gradient(90deg, rgba(250,204,21,.14), rgba(251,113,133,.10));
-      text-shadow:
-        0 0 10px rgba(250,204,21,.55),
-        0 0 22px rgba(251,113,133,.35);
-      animation: countBlink 1.15s ease-in-out infinite;
+      border-color:rgba(250,204,21,.38);
+      box-shadow:0 0 0 1px rgba(250,204,21,.12) inset;
+    }
+    .album-back .album-back-label{
+      display:inline-block;
+      font-weight:950;
+      color:var(--count-blink) !important;
+      animation:countBlink 1.15s ease-in-out infinite;
     }
     @media (prefers-reduced-motion: reduce){
-      .album-back{ animation:none; opacity:1; }
+      .album-back .album-back-label{ animation:none; opacity:1; }
     }
     .album-path{
       color:var(--mut);
@@ -1340,14 +1351,14 @@
           </div>
 
           <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Busca aquí por nombre del producto o carpeta..."
+                 placeholder="🔍 Busca aquí, por nombre, marca, categoría..."
                  aria-label="Buscar producto" />
         </div>
 
         <div class="count-slot" id="countSlot"></div>
 
-        <select id="cat" aria-label="Filtrar por categoría" hidden disabled><option value="">Todas las categorías</option></select>
-        <select id="brand" aria-label="Filtrar por marca" hidden disabled><option value="">Todas las marcas</option></select>
+        <select id="cat" aria-label="Filtrar por categoría"><option value="">Todas las categorías</option></select>
+        <select id="brand" aria-label="Filtrar por marca"><option value="">Todas las marcas</option></select>
         <select id="sort" aria-label="Ordenar productos">
           <option value="">Ordenar</option>
           <option value="price_asc">Precio: menor a mayor</option>
@@ -1402,7 +1413,7 @@
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
     <div class="album-nav" id="albumNav" hidden>
-      <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a categorías</button>
+      <button class="btn-ghost album-back" id="albumBackBtn" type="button"><span class="album-back-label">← Volver a categorías</span></button>
       <div class="album-path" id="albumPath" aria-live="polite"></div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
@@ -1540,6 +1551,7 @@
     const INTERRUPTORES = {
       MOSTRAR_CANTIDAD_STOCK: false,
       MOSTRAR_TEXTO_ESTADO_STOCK: false,
+      MOSTRAR_PRECIO_PRODUCTO: true,
       HABILITAR_UBICACION_GPS: true,
       APLICAR_LIMITES_STOCK: false,
       MOSTRAR_IMAGENES_PRODUCTO: true,
@@ -1562,6 +1574,9 @@
     function shouldShowProductImages(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_IMAGENES_PRODUCTO !== false);
     }
+    function shouldShowProductPrices(){
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_PRECIO_PRODUCTO !== false);
+    }
 
     const _hasIdle = ("requestIdleCallback" in window);
     function runIdle(fn, timeout=1200){
@@ -1574,7 +1589,7 @@
     const IMG_DIR = "imagenes_de_productos";
     const LOGOS_DIR = "logos";
 
-    const IMAGE_EXTS = ["webp","jpg","jpeg","png","gif","bmp","avif","jfif"];
+    const IMAGE_EXTS = ["webp","jpg","jpeg","png"];
     const NON_IMAGE_EXTS = ["txt"];
     const SUPPORTED_EXTS = [...IMAGE_EXTS, ...NON_IMAGE_EXTS];
 
@@ -1727,6 +1742,17 @@
       });
     }
 
+    function folderKeyFromRelPath(relPath){
+      const safePath = String(relPath || "").trim();
+      const parts = safePath.split("/").filter(Boolean);
+      return parts.length > 1 ? String(parts[0] || "").trim() : ROOT_ALBUM_KEY;
+    }
+
+    function folderLabelFromRelPath(relPath){
+      const key = folderKeyFromRelPath(relPath);
+      return key === ROOT_ALBUM_KEY ? "" : key;
+    }
+
     function parseProductFromBaseName(baseName){
       const parts = String(baseName || "").split("_");
       if(parts.length < 6) return null;
@@ -1756,27 +1782,34 @@
     function makeUnstructuredProduct(relPath){
       const safePath = String(relPath || "").trim();
       const fullFilename = leafName(safePath) || safePath || "archivo_sin_nombre";
+      const displayFilename = baseOf(fullFilename) || fullFilename;
+      const folderLabel = folderLabelFromRelPath(safePath);
       const cleanId = normalizeText(safePath)
         .replace(/[^a-z0-9]+/g, "-")
         .replace(/^-+|-+$/g, "") || ("archivo-" + Date.now());
 
       return {
         id: `raw-${cleanId}`,
-        name: fullFilename,
-        category: "",
+        name: displayFilename,
+        category: folderLabel || "",
         brand: "",
         price: 0,
         stock: 0,
         isUnstructured: true,
-        originalFilename: fullFilename,
-        searchKey: normalizeText(`${fullFilename} ${safePath}`)
+        originalFilename: displayFilename,
+        searchKey: normalizeText(`${displayFilename} ${folderLabel} ${safePath}`)
       };
     }
 
     function parseProductFromRelativePath(relPath){
       const leaf = leafName(relPath);
       const parsed = parseProductFromBaseName(baseOf(leaf));
-      return parsed || makeUnstructuredProduct(relPath);
+      if(parsed){
+        if(!String(parsed.category || "").trim()) parsed.category = folderLabelFromRelPath(relPath) || "";
+        parsed.searchKey = normalizeText(`${parsed.name || ""} ${parsed.brand || ""} ${parsed.category || ""} ${parsed.id || ""} ${relPath || ""}`);
+        return parsed;
+      }
+      return makeUnstructuredProduct(relPath);
     }
 
     function preferredExtScore(ext){
@@ -1788,12 +1821,12 @@
     const GITHUB_REPO = "stock";
     const GITHUB_PRODUCTS_PATH = "natura/imagenes_de_productos";
 
-    const PRODUCTS_CACHE_KEY_V6 = "irenismb_products_cache_v6";
-    const PRODUCTS_OLD_CACHE_KEYS = ["irenismb_products_cache_v5", "irenismb_products_cache_v4", "irenismb_products_cache_v3"];
+    const PRODUCTS_CACHE_KEY_V5 = "irenismb_products_cache_v5";
+    const PRODUCTS_OLD_CACHE_KEYS = ["irenismb_products_cache_v4", "irenismb_products_cache_v3"];
     const PRODUCTS_CACHE_TTL_MS = 30 * 60 * 1000;
 
     function readProductsCacheObj(){
-      const keys = [PRODUCTS_CACHE_KEY_V6, ...PRODUCTS_OLD_CACHE_KEYS];
+      const keys = [PRODUCTS_CACHE_KEY_V5, ...PRODUCTS_OLD_CACHE_KEYS];
       for(const key of keys){
         try{
           const raw = localStorage.getItem(key);
@@ -1819,8 +1852,8 @@
 
     function writeProductsCache(products){
       try{
-        localStorage.setItem(PRODUCTS_CACHE_KEY_V6, JSON.stringify({
-          v: 6,
+        localStorage.setItem(PRODUCTS_CACHE_KEY_V5, JSON.stringify({
+          v: 5,
           ts: Date.now(),
           products: products || []
         }));
@@ -1871,12 +1904,15 @@
 		const parsed = parseProductFromRelativePath(relPath);
 
 		const hasImage = isImageExt(ext);
+		const folderKey = folderKeyFromRelPath(relPath);
 		const candidate = {
 		  ...parsed,
 		  srcFilename: relPath,
 		  fileExt: ext,
 		  hasImage,
-		  imgFilename: hasImage ? relPath : null
+		  imgFilename: hasImage ? relPath : null,
+          folderKey,
+          albumKey: folderKey
 		};
 
 		const existing = byId.get(parsed.id);
@@ -1931,12 +1967,15 @@
         const parsed = parseProductFromRelativePath(relPath);
 
         const hasImage = isImageExt(ext);
+        const folderKey = folderKeyFromRelPath(relPath);
         const candidate = {
           ...parsed,
           srcFilename: relPath,
           fileExt: ext,
           hasImage,
-          imgFilename: hasImage ? relPath : null
+          imgFilename: hasImage ? relPath : null,
+          folderKey,
+          albumKey: folderKey
         };
 
         const existing = byId.get(parsed.id);
@@ -2144,7 +2183,7 @@
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
-    function makeImgFromFilename(filename, name){
+    function makeImgFromFilename(filename, name, allowZoom=true){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
@@ -2162,8 +2201,9 @@
         img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       }else{
-        zoomable = true;
+        zoomable = !!allowZoom;
         img.src = productImageAbsoluteUrlFromFilename(filename);
+        if(!allowZoom) setNonZoom();
       }
 
       img.onerror = ()=>{
@@ -2251,9 +2291,10 @@
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
 
     function getProductAlbumKey(p){
+      const directKey = String((p && (p.albumKey || p.folderKey)) || "").trim();
+      if(directKey) return directKey;
       const rel = String((p && (p.imgFilename || p.srcFilename)) || "").trim();
-      const parts = rel.split("/").filter(Boolean);
-      return parts.length > 1 ? parts[0] : ROOT_ALBUM_KEY;
+      return folderKeyFromRelPath(rel);
     }
 
     function albumLabelFromKey(key){
@@ -2281,30 +2322,20 @@
           label: albumLabelFromKey(key),
           products: [],
           cover: null,
-          searchKey: "",
-          hasStructuredProducts: false,
-          hasUnstructuredProducts: false
+          searchKey: ""
         };
 
         found.products.push(p);
         found.cover = pickBetterRepresentative(found.cover, p);
-        found.hasStructuredProducts = found.hasStructuredProducts || !Boolean(p && p.isUnstructured);
-        found.hasUnstructuredProducts = found.hasUnstructuredProducts || Boolean(p && p.isUnstructured);
         byKey.set(key, found);
       }
 
       const out = Array.from(byKey.values())
-        .sort((a,b)=>{
-          const aOnlyUnstructured = a.hasUnstructuredProducts && !a.hasStructuredProducts;
-          const bOnlyUnstructured = b.hasUnstructuredProducts && !b.hasStructuredProducts;
-          if(aOnlyUnstructured !== bOnlyUnstructured) return aOnlyUnstructured ? 1 : -1;
-          return a.label.localeCompare(b.label, "es", { sensitivity:"base" });
-        });
+        .sort((a,b)=> a.label.localeCompare(b.label, "es", { sensitivity:"base" }));
 
       return out.map((album, index)=> ({
         ...album,
         count: album.products.length,
-        onlyUnstructured: album.hasUnstructuredProducts && !album.hasStructuredProducts,
         colorIndex: index % ALBUM_COLORS.length,
         searchKey: normalizeText(album.label)
       }));
@@ -2331,18 +2362,19 @@
     }
 
     function refreshFilterOptionsForScope(){
-      if(catSel){
-        catSel.value = "";
-        clearSelectButKeepFirst(catSel);
-        catSel.hidden = true;
-        catSel.disabled = true;
-      }
-      if(brandSel){
-        brandSel.value = "";
-        clearSelectButKeepFirst(brandSel);
-        brandSel.hidden = true;
-        brandSel.disabled = true;
-      }
+      const prevCat = catSel ? catSel.value : "";
+      const prevBrand = brandSel ? brandSel.value : "";
+      const source = currentProductSourceList();
+      const { cats, brands } = buildCategoriesAndBrands(source);
+
+      fillSelect(catSel, cats);
+      fillSelect(brandSel, brands);
+
+      if(prevCat && cats.includes(prevCat)) catSel.value = prevCat;
+      else if(catSel) catSel.value = "";
+
+      if(prevBrand && brands.includes(prevBrand)) brandSel.value = prevBrand;
+      else if(brandSel) brandSel.value = "";
     }
 
     const cart = (() => {
@@ -3058,13 +3090,13 @@
                 "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
                 "sku": String(p.id),
                 "url": productUrl,
-                "offers": {
+                "offers": shouldShowProductPrices() ? {
                   "@type":"Offer",
                   "url": productUrl,
                   "priceCurrency":"COP",
                   "price": p.price || 0,
                   "availability": availability
-                }
+                } : undefined
               }
             };
           })
@@ -3147,6 +3179,12 @@
       if(row) row.hidden = false;
       if(actions) actions.hidden = false;
 
+      const priceEl = card.querySelector(".price");
+      if(priceEl){
+        priceEl.textContent = shouldShowProductPrices() ? fmtCOP.format(p.price) : "";
+        priceEl.hidden = !shouldShowProductPrices();
+      }
+
       const enforce = shouldEnforceStockLimits();
       const id = String(p.id);
       const q = (cart[id]?.qty || 0);
@@ -3179,7 +3217,7 @@
       card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
 
       const imgBox = card.querySelector(".img");
-      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, !(p && p.isUnstructured)));
 
       const visibleName = (p && p.isUnstructured)
         ? String(p.originalFilename || p.name || "")
@@ -3192,7 +3230,8 @@
       nameEl.textContent = visibleName;
       nameEl.title = visibleName;
       metaEl.textContent = stockMetaText(p);
-      priceEl.textContent = (p && p.isUnstructured) ? "" : fmtCOP.format(p.price);
+      priceEl.textContent = shouldShowProductPrices() ? fmtCOP.format(p.price) : "";
+      priceEl.hidden = !shouldShowProductPrices();
 
       refreshCardUI(card, p);
       return card;
@@ -3200,7 +3239,7 @@
 
     function makeAlbumPreview(filename, label){
       const img = document.createElement("img");
-      img.alt = label ? ("Vista previa " + label) : "Vista previa del álbum";
+      img.alt = label ? ("Vista previa " + label) : "Vista previa de la categoría";
       img.loading = "lazy";
       img.decoding = "async";
       img.src = productImageAbsoluteUrlFromFilename(filename);
@@ -3224,15 +3263,14 @@
       const preview = card.querySelector(".album-preview");
       const label = card.querySelector(".album-label");
       const meta = card.querySelector(".album-meta");
-      const unitLabel = album && album.onlyUnstructured ? "archivo(s)" : "producto(s)";
 
       btn.dataset.albumOpen = album.key;
       btn.setAttribute("aria-label", `Abrir categoría ${album.label}`);
-      btn.title = `${album.label} · ${album.count} ${unitLabel}`;
+      btn.title = `${album.label} · ${album.count} producto(s)`;
 
       preview.appendChild(makeAlbumPreview(album.cover && album.cover.imgFilename, album.label));
       label.textContent = album.label;
-      meta.textContent = `${album.count} ${unitLabel}`;
+      meta.textContent = `${album.count} producto(s)`;
 
       return card;
     }
@@ -3548,14 +3586,12 @@
       const showAlbumGrid = albumModeEnabled() && !selectedAlbumKey;
 
       if(catSel){
-        catSel.hidden = true;
-        catSel.disabled = true;
-        catSel.value = "";
+        catSel.hidden = showAlbumGrid;
+        catSel.disabled = showAlbumGrid;
       }
       if(brandSel){
-        brandSel.hidden = true;
-        brandSel.disabled = true;
-        brandSel.value = "";
+        brandSel.hidden = showAlbumGrid;
+        brandSel.disabled = showAlbumGrid;
       }
       if(sortSel){
         sortSel.hidden = showAlbumGrid;
@@ -3571,7 +3607,7 @@
       if(qInp){
         qInp.placeholder = showAlbumGrid
           ? "🔍 Busca aquí por nombre de la categoría..."
-          : "🔍 Busca aquí por nombre del producto o archivo...";
+          : "🔍 Busca aquí, por nombre, marca, categoría...";
       }
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
@@ -3585,6 +3621,8 @@
     function readStateFromUrl(){
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
+      const cat = (u.searchParams.get("cat") || "").trim();
+      const br = (u.searchParams.get("brand") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
       const album = (u.searchParams.get("album") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
@@ -3592,6 +3630,8 @@
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = uniqueTerms(tags ? tags.split(",") : []);
       if(album) selectedAlbumKey = album;
+      if(cat) catSel.value = cat;
+      if(br) brandSel.value = br;
       if(sort && sortSel) sortSel.value = sort;
     }
 
@@ -3645,35 +3685,37 @@
 
     function buildFilteredList(){
       const source = currentProductSourceList();
+      const cat = catSel.value;
+      const br = brandSel.value;
       const sortMode = sortSel ? sortSel.value : "";
       const terms = getCombinedWordTerms();
 
       let filtered = source.filter(p=>{
+        if(cat && p.category !== cat) return false;
+        if(br && p.brand !== br) return false;
         if(terms.length){
           return terms.every(t => p.searchKey.includes(t));
         }
         return true;
       });
 
-      filtered.sort((a,b)=>{
-        if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
-
-        if(sortMode === "price_asc"){
-          return (a.price||0) - (b.price||0)
-            || String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
-            || String(a.id).localeCompare(String(b.id));
-        }
-
-        if(sortMode === "price_desc"){
-          return (b.price||0) - (a.price||0)
-            || String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
-            || String(a.id).localeCompare(String(b.id));
-        }
-
-        return String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
-          || String(a.id).localeCompare(String(b.id));
-      });
-
+      if(sortMode === "price_asc"){
+        filtered.sort((a,b)=>{
+          if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
+          return (a.price||0) - (b.price||0) || String(a.id).localeCompare(String(b.id));
+        });
+      }else if(sortMode === "price_desc"){
+        filtered.sort((a,b)=>{
+          if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
+          return (b.price||0) - (a.price||0) || String(a.id).localeCompare(String(b.id));
+        });
+      }else if(sortMode === "name_asc"){
+        filtered.sort((a,b)=>{
+          const cmp = String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" });
+          if(cmp !== 0) return cmp;
+          return String(a.id).localeCompare(String(b.id));
+        });
+      }
       return filtered;
     }
 
@@ -3685,10 +3727,7 @@
         filtered = filtered.filter(album => terms.every(t => album.searchKey.includes(t)));
       }
 
-      filtered.sort((a,b)=>{
-        if(!!a.onlyUnstructured !== !!b.onlyUnstructured) return a.onlyUnstructured ? 1 : -1;
-        return a.label.localeCompare(b.label, "es", { sensitivity:"base" });
-      });
+      filtered.sort((a,b)=> a.label.localeCompare(b.label, "es", { sensitivity:"base" }));
       return filtered;
     }
 
@@ -3737,8 +3776,7 @@
       const filtered = buildFilteredList();
 
       if(countEl){
-        const onlyUnstructured = filtered.length > 0 && filtered.every(p => p && p.isUnstructured);
-        countEl.textContent = `${filtered.length} ${onlyUnstructured ? "archivo(s)" : "producto(s)"}`;
+        countEl.textContent = `${filtered.length} producto(s)`;
         countEl.classList.toggle("search-active", qHas);
       }
 
@@ -3748,7 +3786,7 @@
 
       const frag = document.createDocumentFragment();
       if(!filtered.length){
-        frag.appendChild(makeEmptyState("No se encontraron archivos o productos con esa búsqueda."));
+        frag.appendChild(makeEmptyState("No se encontraron productos con esos filtros."));
       }else{
         for(const p of filtered){
           frag.appendChild(makeCard(p));
@@ -3837,7 +3875,7 @@
     }
 
     function bindFilters(){
-      [sortSel].forEach(sel=>{
+      [catSel, brandSel, sortSel].forEach(sel=>{
         if(!sel) return;
         sel.addEventListener("change", ()=>{
           render();

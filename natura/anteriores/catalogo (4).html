@@ -76,9 +76,6 @@
     html,body{max-width:100%;overflow-x:hidden}
     body{
       margin:0;
-      min-height:100vh;
-      display:flex;
-      flex-direction:column;
       font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial;
       background:linear-gradient(180deg,#0b0f14,#0c1220);
       color:var(--txt);
@@ -123,39 +120,52 @@
       color:var(--mut);
       line-height:1.35;
     }
-    header .intro{ padding:14px 16px 8px; }
-
-    .site-footer{
-      width:100%;
-      padding:0 16px 20px;
+    .badge{
+      border-radius:999px;
+      background:linear-gradient(90deg,#22c55e,#a3e635);
+      padding:6px 14px;
+      font-size:12px;
+      color:#052e16;
+      font-weight:800;
+      white-space:nowrap;
     }
-    .footer-card{
+
+    header .intro{ padding:14px 16px 8px; }
+    .about-card{
       border:1px solid var(--line);
       border-radius:16px;
       background:rgba(18,24,38,.55);
-      padding:14px 16px;
-      font-size:13px;
-      line-height:1.55;
-      color:var(--txt);
+      padding:12px 14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
     }
-    .footer-card p{
+    .about-text{
       margin:0;
+      font-size:12px;
+      line-height:1.35;
     }
-    .footer-card strong{
-      color:#ffffff;
-    }
-    .footer-card a{
-      text-decoration:none;
-      border-bottom:1px dashed rgba(255,255,255,.22);
+    .about-toggle{
+      align-self:flex-start;
+      border-radius:999px;
+      padding:8px 12px;
+      font-size:13px;
     }
 
     @media (max-width:768px){
-      .site-footer{ padding:0 16px 16px; }
-      .footer-card{
-        padding:12px 14px;
-        font-size:12px;
-        line-height:1.5;
+      .about-text{ font-size:11px; }
+      .about-card.about-collapsed .about-text{
+        display:-webkit-box;
+        -webkit-box-orient:vertical;
+        -webkit-line-clamp:2;
+        overflow:hidden;
       }
+      #aboutText{ text-align:center; }
+      .about-toggle{ align-self:center; }
+    }
+    @media (min-width:769px){
+      .about-toggle{ display:none; }
     }
 
     .bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
@@ -295,7 +305,7 @@
       display:block;
     }
 
-    main{max-width:1100px;margin:0 auto;padding:0 16px 20px;flex:1 0 auto}
+    main{max-width:1100px;margin:0 auto;padding:0 16px 20px}
     .topline{
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
       padding:10px 0 6px;
@@ -1075,6 +1085,7 @@
     }
 
     @media (max-width:720px){
+      .badge{width:100%;text-align:center}
       .site-header-inner{padding:12px}
     }
     @media (max-width:420px){
@@ -1297,6 +1308,13 @@
       </div>
     </div>
     <div class="wrap intro">
+      <section class="about-card" id="aboutCard" aria-label="Sobre nosotros y contacto">
+        <p class="small about-text" id="aboutText">
+          Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
+          Te asesoramos por WhatsApp, vía telefónica o de manera presencial en el barrio los Almendros. Dirección: Calle 10A #20A-06. Teléfono: +57 304 208 8961.
+          Realizamos envíos nacionales e internacionales.
+        </p>
+      </section>
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
         <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
           <img src="logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
@@ -1412,20 +1430,6 @@
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
   </main>
-
-  <footer class="site-footer">
-    <div class="wrap">
-      <section class="footer-card" aria-label="Información de la tienda">
-        <p>
-          Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
-          Te asesoramos por <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">WhatsApp</a>, vía telefónica o de manera presencial en el barrio los Almendros.
-          <strong>Dirección:</strong> Calle 10A #20A-06.
-          <strong>Teléfono:</strong> <a href="tel:+573042088961" rel="nofollow">+57 304 208 8961</a>.
-          Realizamos envíos nacionales e internacionales.
-        </p>
-      </section>
-    </div>
-  </footer>
 
   <div class="cart-modal" id="cartModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Carrito">
     <div class="cart-modal-backdrop" id="cartModalBackdrop"></div>
@@ -1605,6 +1609,7 @@
     window.ALBUMES_OCULTOS = ALBUMES_OCULTOS;
 
     const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = [
+			"Hola"
       // Escribe aquí los nombres EXACTOS de las carpetas/categorías
       // cuyos productos NO quieres que salgan al usar el buscador.
       // Sí se podrán seguir viendo al entrar manualmente a su categoría,
@@ -2136,6 +2141,40 @@
       if (!a) return;
       a.href = waLink("");
       a.setAttribute("aria-label", isMobileDevice() ? "WhatsApp" : "WhatsApp Web");
+    })();
+
+    (function initAboutCollapse(){
+      const card = document.getElementById("aboutCard");
+      const btn = document.getElementById("aboutToggle");
+      if(!card || !btn) return;
+      const mq = window.matchMedia("(max-width:768px)");
+      function setExpanded(expanded){
+        card.classList.toggle("about-collapsed", !expanded);
+        btn.setAttribute("aria-expanded", expanded ? "true" : "false");
+        btn.textContent = expanded ? "Ver menos" : "Ver más";
+        card.dataset.expanded = expanded ? "1" : "0";
+      }
+      function apply(){
+        if(mq.matches){
+          btn.hidden = false;
+          const expanded = (card.dataset.expanded === "1");
+          setExpanded(expanded);
+        }else{
+          btn.hidden = true;
+          card.classList.remove("about-collapsed");
+        }
+      }
+      btn.addEventListener("click", ()=>{
+        const expandedNow = (card.dataset.expanded === "1");
+        setExpanded(!expandedNow);
+      });
+      if(typeof mq.addEventListener === "function"){
+        mq.addEventListener("change", apply);
+      }else if(typeof mq.addListener === "function"){
+        mq.addListener(apply);
+      }
+      if(!card.dataset.expanded) card.dataset.expanded = "0";
+      apply();
     })();
 
     const imgModal = document.getElementById("imgModal");

@@ -63,10 +63,9 @@
       --pill:#0e1524;
       --danger:#ef4444;
 
-      --social-size: 58px;
-      --social-gap: 10px;
-      --social-icon-scale: .64;
-      --control-height: 38px;
+      --social-size: clamp(24px, 6vw, 30px);
+      --social-gap: clamp(4px, 1vw, 8px);
+      --control-height: 44px;
       --stack-gap: 8px;
 
       --count-blink:#facc15;
@@ -195,7 +194,7 @@
       width:100%;
       height:100%;
       min-width:0;
-      padding:0 12px;
+      padding:4px 12px;
     }
     .search-ticker{
       position:absolute;
@@ -203,7 +202,7 @@
       border-radius:12px;
       display:flex;
       align-items:center;
-      padding:0 12px;
+      padding:4px 12px;
       overflow:hidden;
       pointer-events:none;
       z-index:2;
@@ -297,8 +296,8 @@
       gap:var(--social-gap);
       flex-wrap:nowrap;
       margin-top:0;
-      min-height:auto;
-      padding:8px 14px;
+      min-height:var(--control-height);
+      padding:4px 12px;
       border:1px solid var(--line);
       border-radius:16px;
       background:rgba(18,24,38,.45);
@@ -322,16 +321,16 @@
     }
     .social-icons a:hover{border-color:#3b82f6}
     .social-icons img{
-      width:calc(var(--social-size) * var(--social-icon-scale));
-      height:calc(var(--social-size) * var(--social-icon-scale));
+      width:calc(var(--social-size) * 0.58);
+      height:calc(var(--social-size) * 0.58);
       object-fit:contain;
       border-radius:999px;
       display:block;
     }
     .social-icons picture{ display:block; line-height:0; }
     .social-icons svg{
-      width:calc(var(--social-size) * var(--social-icon-scale));
-      height:calc(var(--social-size) * var(--social-icon-scale));
+      width:calc(var(--social-size) * 0.58);
+      height:calc(var(--social-size) * 0.58);
       fill:var(--txt);
       display:block;
     }
@@ -357,9 +356,6 @@
     .count-slot{
       display:none;
       width:100%;
-    }
-    .count-slot.has-album-nav{
-      align-items:center;
     }
 
     @keyframes countBlink{
@@ -513,13 +509,10 @@
       flex-wrap:wrap;
       margin-top:8px;
       padding:0;
-      min-width:0;
     }
     .album-nav[hidden]{display:none !important}
     .album-back{
-      padding-inline:12px;
-      min-height:var(--control-height);
-      height:auto;
+      padding-inline:14px;
       font-weight:950;
       color:var(--count-blink);
       border-color: rgba(250,204,21,.35);
@@ -1093,72 +1086,33 @@
     #toggleWordPanelBtn, #btn-cart{ border-radius:12px; }
 
     @media (max-width:760px){
-      :root{
-        --social-size: 50px;
-        --social-gap: 8px;
-        --social-icon-scale: .66;
-        --control-height: 40px;
-      }
-
       .bar{
-        grid-template-columns:repeat(3, minmax(0, 1fr));
+        grid-template-columns:1fr;
         gap:6px;
       }
       .bar .search-wrap,
-      .count-slot{
-        grid-column:1 / -1;
-      }
+      .count-slot,
       #sort,
       #toggleWordPanelBtn,
       #btn-cart{
-        grid-column:auto;
-        min-width:0;
+        grid-column:1 / -1;
       }
 
       .count-slot{
         display:flex;
-        justify-content:space-between;
+        justify-content:center;
         align-items:center;
-        gap:8px;
-        flex-wrap:nowrap;
         margin-top:-1px;
-      }
-      .count-slot .album-nav{
-        margin-top:0;
-        flex:0 0 auto;
-        gap:8px;
-        flex-wrap:nowrap;
-      }
-      .count-slot .album-path{
-        display:none;
       }
       .count.count-mobile{
         display:block;
-        flex:1 1 auto;
-        width:auto;
-        min-width:0;
-        text-align:left;
-        margin:0;
-      }
-
-      #sort,
-      #toggleWordPanelBtn,
-      #btn-cart{
-        padding:6px 8px;
-        font-size:11.5px;
-        line-height:1.15;
-        white-space:normal;
-        word-break:break-word;
+        width:100%;
+        text-align:center;
+        margin:0 auto;
       }
 
       #btn-cart .btn-cart-label{ display:none; }
       #btn-cart .btn-cart-label-short{ display:inline; }
-
-      .album-back{
-        padding-inline:10px;
-        font-size:11.5px;
-        white-space:nowrap;
-      }
 
       .actions{ gap:8px; }
       .actions button{
@@ -1170,12 +1124,6 @@
 
     @media (max-width:720px){
       .site-header-inner{padding:8px 10px}
-    }
-    @media (max-width:420px){
-      :root{
-        --social-size: 46px;
-        --social-gap: 6px;
-      }
     }
     @media (max-width:420px){
       .name{ font-size:14px; }
@@ -1506,11 +1454,9 @@
     <div class="topline" id="topline">
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
-    <div id="albumNavHost">
-      <div class="album-nav" id="albumNav" hidden>
-        <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a la categoría</button>
-        <div class="album-path" id="albumPath" aria-live="polite"></div>
-      </div>
+    <div class="album-nav" id="albumNav" hidden>
+      <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a categorías</button>
+      <div class="album-path" id="albumPath" aria-live="polite"></div>
     </div>
     <section id="grid" class="grid" aria-label="Productos"></section>
   </main>
@@ -3553,7 +3499,6 @@
     const grid = document.getElementById("grid");
     const countEl = document.getElementById("count");
     const albumNav = document.getElementById("albumNav");
-    const albumNavHost = document.getElementById("albumNavHost");
     const albumBackBtn = document.getElementById("albumBackBtn");
     const albumPath = document.getElementById("albumPath");
 
@@ -3563,7 +3508,7 @@
 
     const countSlot = document.getElementById("countSlot");
     const topline = document.getElementById("topline");
-    const mqCountMobile = window.matchMedia("(max-width:760px)");
+    const mqCountMobile = window.matchMedia("(max-width:560px)");
 
     const wordPanel = document.getElementById("wordPanel");
     const wordChips = document.getElementById("wordChips");
@@ -3603,15 +3548,12 @@
       render();
     }
 
-    function placeResponsiveHeaderMeta(){
-      if(!countEl || !countSlot || !topline || !albumNav || !albumNavHost) return;
+    function placeCountElement(){
+      if(!countEl || !countSlot || !topline) return;
 
       if(mqCountMobile.matches){
         if(countEl.parentElement !== countSlot){
           countSlot.appendChild(countEl);
-        }
-        if(albumNav.parentElement !== countSlot){
-          countSlot.appendChild(albumNav);
         }
         countEl.classList.add("count-mobile");
         topline.classList.add("hidden");
@@ -3619,22 +3561,17 @@
         if(countEl.parentElement !== topline){
           topline.appendChild(countEl);
         }
-        if(albumNav.parentElement !== albumNavHost){
-          albumNavHost.appendChild(albumNav);
-        }
         countEl.classList.remove("count-mobile");
         topline.classList.remove("hidden");
       }
-
-      countSlot.classList.toggle("has-album-nav", !albumNav.hidden);
     }
 
     if(typeof mqCountMobile.addEventListener === "function"){
-      mqCountMobile.addEventListener("change", placeResponsiveHeaderMeta);
+      mqCountMobile.addEventListener("change", placeCountElement);
     }else if(typeof mqCountMobile.addListener === "function"){
-      mqCountMobile.addListener(placeResponsiveHeaderMeta);
+      mqCountMobile.addListener(placeCountElement);
     }
-    placeResponsiveHeaderMeta();
+    placeCountElement();
 
     function updateTickerVisibility(){
       if(!searchWrap || !qInp) return;
@@ -3961,7 +3898,6 @@
       if(albumNav){
         albumNav.hidden = !(albumModeEnabled() && !!selectedAlbumKey);
       }
-      placeResponsiveHeaderMeta();
       if(albumPath){
         const current = getSelectedAlbum();
         albumPath.textContent = current ? current.label : "";

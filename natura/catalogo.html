@@ -1688,34 +1688,31 @@
     // 2) CATEGORÍAS OCULTAS EN TODO EL CATÁLOGO
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
-    const INTERRUPTORES = {
-      MOSTRAR_CANTIDAD_STOCK: false,
-      MOSTRAR_TEXTO_ESTADO_STOCK: false,
-      MOSTRAR_PRECIOS_PRODUCTO: true,
-      MOSTRAR_CODIGOS_PRODUCTO: true,
-      ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
-      HABILITAR_UBICACION_GPS: true,
-      APLICAR_LIMITES_STOCK: false,
-      MOSTRAR_IMAGENES_PRODUCTO: true,
-      TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 5,
-      IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
+	const INTERRUPTORES = {
+	  MOSTRAR_CANTIDAD_STOCK: false,
+	  MOSTRAR_TEXTO_ESTADO_STOCK: false,
+	  MOSTRAR_PRECIOS_PRODUCTO: true,
+	  MOSTRAR_CODIGOS_PRODUCTO: true,
+	  ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
+	  HABILITAR_UBICACION_GPS: true,
+	  APLICAR_LIMITES_STOCK: false,
+	  MOSTRAR_IMAGENES_PRODUCTO: true,
+	  TIEMPO_CAMBIO_MINIATURA_CATEGORIA_SEGUNDOS: 5,
+	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
-      // Muestra u oculta los archivos cuyo nombre NO cumple el formato esperado
-      // id_nombre_marca_categoria_precio_stock.
-      MOSTRAR_ARCHIVOS_SIN_PARAMETROS: false,
+	  // Muestra u oculta los archivos cuyo nombre NO cumple el formato esperado
+	  // id_nombre_marca_categoria_precio_stock.
+	  MOSTRAR_ARCHIVOS_SIN_PARAMETROS: false,
 
-      // Permite que el usuario muestre u oculte las palabras sugeridas desde la web.
-      PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
+	  // Si los archivos sin parámetros están visibles,
+	  // decide si se muestra su nombre real.
+	  MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS: false,
 
-      // Debe iniciar en false para que las palabras sugeridas no aparezcan al cargar.
-      PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
-
-      // Activa o desactiva la ocultación total de categorías/carpetas.
-      APLICAR_ALBUMES_OCULTOS: true,
-
-      // Activa o desactiva la exclusión de categorías/carpetas SOLO en resultados de búsqueda.
-      APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
-    };
+	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
+	  PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
+	  APLICAR_ALBUMES_OCULTOS: false,
+	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
+	};
     window.INTERRUPTORES = INTERRUPTORES;
 
     const ALBUMES_OCULTOS = [
@@ -1774,6 +1771,13 @@
       if(_hasIdle) return requestIdleCallback(fn, { timeout });
       return setTimeout(fn, Math.min(250, timeout));
     }
+	
+	function shouldShowUnstructuredFileNames(){
+	  return !!(
+		window.INTERRUPTORES &&
+		window.INTERRUPTORES.MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS !== false
+	  );
+	}	
 
     const WHATSAPP_NUMBER = "573042088961";
 
@@ -3417,10 +3421,12 @@
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name));
 
-      const visibleName = (p && p.isUnstructured)
-        ? String(p.name || baseOf(p.originalFilename || "") || "")
-        : String(p.name || "");
+	  const rawFileName = String(p.name || baseOf(p.originalFilename || "") || "");
 
+	 const visibleName = (p && p.isUnstructured)
+	   ? (shouldShowUnstructuredFileNames() ? rawFileName : "")
+	   : String(p.name || "");
+	   
       const nameEl = card.querySelector(".name");
       const metaEl = card.querySelector(".meta");
       const priceEl = card.querySelector(".price");
@@ -3798,22 +3804,24 @@
         addSuggestionCountsFromText(counts, rawText, blockedTerms);
       }
 
-      return Array.from(counts.entries())
-        .map(([term, count]) => ({
-          term,
-          count,
-          remaining: count,
-          reduction: Math.max(0, totalVisibleProducts - count)
-        }))
-        .sort((a,b)=> {
-          const aSelected = selectedSet.has(a.term) ? 1 : 0;
-          const bSelected = selectedSet.has(b.term) ? 1 : 0;
-          if(aSelected !== bSelected) return bSelected - aSelected;
-          if(a.reduction !== b.reduction) return b.reduction - a.reduction;
-          if(a.remaining !== b.remaining) return a.remaining - b.remaining;
-          if(b.count !== a.count) return b.count - a.count;
-          return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
-        });
+	return Array.from(counts.entries())
+	  .map(([term, count]) => ({
+		term,
+		count,
+		remaining: count,
+		reduction: Math.max(0, totalVisibleProducts - count)
+	  }))
+	  .sort((a,b)=> {
+		const aSelected = selectedSet.has(a.term) ? 1 : 0;
+		const bSelected = selectedSet.has(b.term) ? 1 : 0;
+
+		if(aSelected !== bSelected) return bSelected - aSelected;
+
+		// Primero las de más coincidencias
+		if(b.count !== a.count) return b.count - a.count;
+
+		return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
+	});		
     }
 
     function toggleSuggestionTerm(term){

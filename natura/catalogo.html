@@ -308,6 +308,7 @@
       scrollbar-width: none;
     }
     .social-icons::-webkit-scrollbar{ display:none; }
+    .social-row{ display:contents; }
     .social-icons a{
       display:inline-flex;
       align-items:center;
@@ -1160,6 +1161,23 @@
         white-space:nowrap;
       }
 
+      .social-icons{
+        flex-direction:column;
+        align-items:center;
+        justify-content:center;
+        gap:10px;
+        overflow:visible;
+        padding:10px 12px;
+      }
+      .social-row{
+        display:flex;
+        width:100%;
+        justify-content:center;
+        align-items:center;
+        gap:var(--social-gap);
+        flex-wrap:nowrap;
+      }
+
       .actions{ gap:8px; }
       .actions button{
         font-size:12.5px;
@@ -1398,40 +1416,44 @@
     </div>
     <div class="wrap intro">
       <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
-        <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-          <img src="logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
-        </a>
-        <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-          <img src="logos/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
-        </a>
-        <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-          <img src="logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
-        </a>
+        <div class="social-row social-row-top">
+          <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <img src="logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
+          </a>
+          <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <img src="logos/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
+          </a>
+          <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+            <img src="logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
+          </a>
 
-        <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-          <picture>
-            <source srcset="logos/youtube.webp" type="image/webp">
-            <img src="logos/youtube.png" alt="YouTube" loading="lazy" decoding="async" />
-          </picture>
-        </a>
+          <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <picture>
+              <source srcset="logos/youtube.webp" type="image/webp">
+              <img src="logos/youtube.png" alt="YouTube" loading="lazy" decoding="async" />
+            </picture>
+          </a>
 
-        <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
-          <img src="logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
-        </a>
+          <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
+            <img src="logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
+          </a>
+        </div>
 
-        <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
-           target="_blank" rel="noopener noreferrer" aria-label="Google Business">
-          <img src="logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
-        </a>
+        <div class="social-row social-row-bottom">
+          <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
+             target="_blank" rel="noopener noreferrer" aria-label="Google Business">
+            <img src="logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
+          </a>
 
-        <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-          <img src="logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
-        </a>
-        <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.02l-2.2 2.2z"/>
-          </svg>
-        </a>
+          <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <img src="logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
+          </a>
+          <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.02l-2.2 2.2z"/>
+            </svg>
+          </a>
+        </div>
       </div>
 
       <div class="bar" role="search" aria-label="Buscar y filtrar productos">

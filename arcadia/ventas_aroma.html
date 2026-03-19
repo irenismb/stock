@@ -5,264 +5,805 @@
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <title>Reporte de caja ARCADIA</title>
   <meta name="description" content="Aplicación de caja: captura diaria con totales y guardado en la nube. El reporte se consulta en la hoja de cálculo." />
+  
   <style>
     :root{
-      --primary:#0056b3; --success:#28a745; --danger:#dc3545;
-      --warning:#ffc107; --info:#007bff; --muted:#6c757d; --purple:#6f42c1;
-      --bg:#f4f7f9; --card:#fff; --radius:8px; --shadow:0 6px 18px rgba(9,30,66,0.08);
-      --border:#e6eaee; --touch:44px;
+      --navy:#122033;
+      --navy-2:#173a68;
+      --navy-3:#22344f;
+      --bg:#f2f4f8;
+      --card:#ffffff;
+      --text:#17202a;
+      --muted:#6b7280;
+      --line:#dde5ef;
+      --blue-soft:#eef4ff;
+      --green:#1f7a4d;
+      --blue:#245fca;
+      --purple:#6c49b8;
+      --gold:#cc8a11;
+      --red:#c0392b;
+      --shadow:0 10px 24px rgba(0,0,0,.06);
+      --radius:16px;
+      --touch:44px;
     }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0;
-      font-family:Inter,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial;
-      background:var(--bg);color:#222;line-height:1.45;
-      padding:8px;
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
     }
-    .container{
-      width:100vw; max-width:100vw; min-height:96vh;
-      margin:0 auto;background:var(--card);
-      border-radius:var(--radius);box-shadow:var(--shadow);padding:16px; position: relative;
+    a{text-decoration:none}
+    .hidden{display:none !important}
+    .muted{color:var(--muted)}
+    .no-print{}
+    .app-layout{
+      display:grid;
+      grid-template-columns:240px 1fr;
+      min-height:100vh;
     }
-    header h1{margin:0 0 8px 0;color:var(--primary);font-size:1.6rem}
-    header p{margin:0 0 14px 0;color:var(--muted);font-size:0.95rem}
+    .side{
+      background:var(--navy);
+      color:#fff;
+      padding:22px 18px;
+      display:flex;
+      flex-direction:column;
+      gap:22px;
+    }
+    .brand-title{
+      font-size:24px;
+      font-weight:700;
+      letter-spacing:.6px;
+      margin-bottom:4px;
+    }
+    .brand-subtitle{
+      color:#bfd0e4;
+      font-size:13px;
+    }
+    .menu{
+      display:grid;
+      gap:8px;
+    }
+    .menu a{
+      display:block;
+      color:#d9e4f2;
+      padding:11px 12px;
+      border-radius:10px;
+      background:transparent;
+    }
+    .menu a.active,
+    .menu a:hover{
+      background:var(--navy-3);
+    }
+    .side-card{
+      margin-top:auto;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:14px;
+      color:#d9e4f2;
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .main-shell{
+      padding:24px;
+    }
+    .header-bar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:18px;
+    }
+    .header-bar h1{
+      margin:0 0 6px 0;
+      font-size:30px;
+      color:#111827;
+    }
+    .header-bar p{
+      margin:0;
+      color:var(--muted);
+    }
+    .header-status{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:flex-end;
+    }
+    .tag{
+      display:inline-block;
+      background:var(--blue-soft);
+      color:#224dc7;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:700;
+      border:1px solid #d9e4ff;
+    }
+    .tag-dark{
+      background:#ffffff;
+      color:var(--navy-2);
+      border-color:#d6deea;
+      min-width:160px;
+      text-align:center;
+    }
+
+    .workspace{
+      display:grid;
+      gap:16px;
+    }
+    .card{
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:18px;
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+    }
+    .hero h2{
+      margin:8px 0;
+      font-size:28px;
+    }
+    .hero p{
+      margin:0;
+    }
+    .section-badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#e9eef6;
+      color:var(--navy-2);
+      font-size:12px;
+      font-weight:700;
+    }
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+    .kpi{
+      border:1px solid #e6ebf2;
+      padding:14px;
+      border-radius:14px;
+      background:#fff;
+    }
+    .kpi small{
+      display:block;
+      color:var(--muted);
+      margin-bottom:8px;
+      font-size:13px;
+    }
+    .kpi b{
+      display:block;
+      font-size:24px;
+      color:#111827;
+    }
+
+    .section-card{
+      display:grid;
+      gap:14px;
+    }
+    .section-title-row{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:12px;
+    }
+    label{
+      font-weight:700;
+      font-size:13px;
+      display:block;
+      margin-bottom:6px;
+      color:#374151;
+    }
+    input,select{
+      width:100%;
+      padding:11px 12px;
+      border-radius:10px;
+      border:1px solid #d6deea;
+      background:#fff;
+      color:var(--text);
+      min-height:var(--touch);
+      font-size:15px;
+    }
+    input:focus,select:focus{
+      outline:none;
+      border-color:#8ca7cf;
+      box-shadow:0 0 0 3px rgba(36,95,202,.12);
+    }
+
     .btn{
-      padding:10px 14px;border-radius:6px;border:0;cursor:pointer;color:#fff;font-weight:600;
-      display:inline-flex;align-items:center;gap:8px;transition:transform .12s, box-shadow .12s, opacity .12s;
-      justify-content:center; min-height:var(--touch); min-width:var(--touch);
+      width:auto;
+      padding:11px 14px;
+      border-radius:10px;
+      border:0;
+      font-weight:700;
+      cursor:pointer;
+      min-height:var(--touch);
+      transition:transform .12s ease, opacity .12s ease;
     }
     .btn:active{transform:translateY(1px)}
     .btn:disabled{opacity:.6;cursor:not-allowed}
-    .btn-primary{background:var(--primary)}
-    .btn-success{background:var(--success)}
-    .btn-info{background:var(--info)}
-    .btn-warning{background:var(--warning); color:#222}
-    .btn-danger{background:var(--danger)}
-    .btn-purple{background:var(--purple)}
-    .btn-ghost{background:#eef3fb;color:var(--primary)}
-    .btn-small{padding: 8px 10px; font-size: 0.95rem; min-height:var(--touch)}
-    .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;}
-    .card{border:1px solid var(--border);border-radius:10px;padding:16px;background:#fff}
-    .card h3{margin:0 0 8px 0}
-    .muted{color:var(--muted)}
-    .hidden{display:none !important}
-    hr{border:0;border-top:1px solid #eef2f5;margin:16px 0}
-    label{font-weight:600;font-size:0.88rem;margin-bottom:4px;display:block}
-    input, select{
-      width:100%;padding:12px;border:1px solid var(--border);border-radius:6px;
-      font-size:1rem;background:#fff; min-height:var(--touch);
+    .btn-primary{background:var(--navy-2);color:#fff}
+    .btn-success{background:var(--green);color:#fff}
+    .btn-info{background:var(--blue);color:#fff}
+    .btn-warning{background:var(--gold);color:#fff}
+    .btn-danger{background:var(--red);color:#fff}
+    .btn-purple{background:var(--purple);color:#fff}
+    .btn-ghost,.btn-secondary{
+      background:#e9eef6;
+      color:var(--navy-2);
+      border:1px solid #d6deea;
     }
-    .tag{
-      display:inline-block;padding:6px 10px;border-radius:999px;background:#eef3fb;color:#1353d8;
-      font-weight:600;font-size:.9rem
-    }
-    @media (max-width: 600px){
-      body{padding:0}
-      .container{border-radius:0; padding:12px}
-      header h1{font-size:1.35rem}
-      .cards{grid-template-columns:1fr}
-      .btn{width:100%}
-    }
-    @media print{
-      .no-print{display:none !important}
-      body{ background:#fff; color:#000 }
-      .container{ box-shadow:none; border:1px solid #ccc }
+    .btn-small{
+      padding:9px 12px;
+      min-height:40px;
     }
 
     #session-info{
-      display:flex;gap:12px;align-items:center;justify-content:space-between;
-      padding:8px 10px;border-radius:6px;background:#eef3fb;margin-bottom:14px;font-size:0.95rem;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      flex-wrap:wrap;
+      padding:12px 14px;
+      border:1px solid #dce6f3;
+      border-radius:12px;
+      background:#f8fbff;
+      font-size:14px;
     }
-    .actions-bar {display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;}
-    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:12px;}
-    .records-container{overflow:auto;border-radius:6px;border:1px solid var(--border)}
-    table{width:100%;border-collapse:collapse;min-width:900px}
-    th, td{
-      padding:10px;border-top:1px solid #f4f7fb;font-size:1rem;
-      text-align: left; vertical-align: middle;
-    }
-    thead th{
-      background:#f1f6fb;font-weight:700;position:sticky;top:0;z-index:2;border-bottom:1px solid var(--border)
-    }
-    tbody tr:nth-child(odd){background:#fbfdff}
-    tbody tr:hover { background-color: #e7f1ff !important; }
-    .row-style-efectivo { background-color: #e9f7ec; }
-    .row-style-electronica { background-color: #f8f9fa; }
-    .row-style-credito-nomina { background-color: #e6eef9; }
-    .row-style-credito-formulas { background-color: #e0f2ff; }
-    .row-style-gasto { background-color: #fff8e7; }
-    .row-style-interco { background-color: #f3e5f5; }
-    .row-style-autoconsumo { background-color: #fff1e6; }
-    tbody tr.row-style-efectivo:nth-child(odd) { background-color: #dff2e3; }
-    tbody tr.row-style-electronica:nth-child(odd) { background-color: #f0f1f2; }
-    tbody tr.row-style-credito-nomina:nth-child(odd) { background-color: #dce5f0; }
-    tbody tr.row-style-credito-formulas:nth-child(odd) { background-color: #d5e9f5; }
-    tbody tr.row-style-gasto:nth-child(odd) { background-color: #fcf3d7; }
-    tbody tr.row-style-interco:nth-child(odd) { background-color: #e1bee7; }
-    tbody tr.row-style-autoconsumo:nth-child(odd) { background-color: #ffe6d6; }
-
-    tfoot td { padding: 12px; background: #fafcfe; font-weight: 700; border-top: 1px solid #eef2f5; }
-    tfoot tr.grand-total td { background-color: #e7f1ff; font-weight: bold; }
-    tfoot tr.sub-grand-total td { background-color: #e9ecef; font-weight: bold; }
-    .col-number, .col-total {text-align:right}
-    .col-action{text-align:center;white-space:nowrap}
-    .table-input {
-      border:1px solid #dde2e7;background:#fdfdfd;width:100%;padding:10px;border-radius:6px;
-      font-size:1rem;box-shadow:inset 0 1px 2px rgba(0,0,0,0.05); min-height:var(--touch);
-    }
-    .table-input:focus {
-      background:#fff;border-color:var(--primary);outline:none;
-      box-shadow:0 0 0 2px rgba(0, 123, 255, 0.25);
-    }
-    .truncate{white-space: normal; word-break: break-word;}
     .status-pill{
-      padding:6px 10px;border-radius:999px;font-weight:700;font-size:.85rem;
-      border:1px solid var(--border);
+      padding:7px 10px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:12px;
+      border:1px solid var(--line);
     }
     .status-online{ background:#e6f8ee; color:#117a3a; border-color:#bfe8cf; }
     .status-offline{ background:#fff3f3; color:#b02a37; border-color:#f1c2c6; }
-    @media (max-width: 600px){
-      .actions-bar{flex-direction:column}
-      table{min-width:720px}
-      #action-buttons-container{grid-template-columns:1fr}
+
+    .actions-bar{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:10px;
     }
+
+    .records-container{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+    }
+    table{
+      width:100%;
+      border-collapse:collapse;
+      min-width:980px;
+    }
+    th,td{
+      padding:12px;
+      border-top:1px solid #eef2f7;
+      text-align:left;
+      vertical-align:middle;
+      font-size:14px;
+    }
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#f6f9fc;
+      border-bottom:1px solid var(--line);
+      font-size:13px;
+      color:#374151;
+    }
+    tbody tr:nth-child(odd){background:#fbfcfe}
+    tbody tr:hover{background:#eef4ff !important}
+    .col-number,.col-total{text-align:right}
+    .col-action{text-align:center;white-space:nowrap}
+    .table-input{
+      width:100%;
+      padding:10px 11px;
+      border-radius:10px;
+      border:1px solid #d6deea;
+      background:#fff;
+      min-height:42px;
+      font-size:14px;
+    }
+    .table-input:focus{
+      outline:none;
+      border-color:#8ca7cf;
+      box-shadow:0 0 0 3px rgba(36,95,202,.12);
+    }
+    .truncate{
+      white-space:normal;
+      word-break:break-word;
+    }
+
+    .row-style-efectivo{background:#eef9f1}
+    .row-style-electronica{background:#f7f9fc}
+    .row-style-credito-nomina{background:#edf3fb}
+    .row-style-credito-formulas{background:#eef7ff}
+    .row-style-gasto{background:#fff8eb}
+    .row-style-interco{background:#f5efff}
+    .row-style-autoconsumo{background:#fff4ed}
+    .row-style-rappi{background:#f2f0ff}
+    tbody tr.row-style-efectivo:nth-child(odd){background:#e6f4ea}
+    tbody tr.row-style-electronica:nth-child(odd){background:#f1f4f8}
+    tbody tr.row-style-credito-nomina:nth-child(odd){background:#e5edf8}
+    tbody tr.row-style-credito-formulas:nth-child(odd){background:#e5f0fb}
+    tbody tr.row-style-gasto:nth-child(odd){background:#fcf2d8}
+    tbody tr.row-style-interco:nth-child(odd){background:#ece5ff}
+    tbody tr.row-style-autoconsumo:nth-child(odd){background:#ffe9dc}
+    tbody tr.row-style-rappi:nth-child(odd){background:#e9e4ff}
+
+    tfoot td{
+      padding:13px 12px;
+      background:#fafcff;
+      font-weight:700;
+      border-top:1px solid #e6edf5;
+    }
+    tfoot tr.sub-grand-total td{
+      background:#eef3f8;
+    }
+    tfoot tr.grand-total td{
+      background:#e4eef9;
+    }
+
+    #action-buttons-container{
+      display:grid !important;
+      grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+      gap:10px !important;
+      margin-top:0 !important;
+    }
+
+    hr{display:none}
+
+    /* Ajuste compacto para que la captura quepa mejor en una sola ventana */
+    body{overflow:hidden;}
+    .app-layout{grid-template-columns:290px 1fr;height:100vh;min-height:100vh;}
+    .side{padding:12px 10px;gap:10px;overflow:hidden;}
+    .brand-title{font-size:22px;margin-bottom:2px;}
+    .brand-subtitle{font-size:12px;}
+        .side-panel-group{display:grid;gap:6px;}
+    .side-panel-title{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9fb4cc;}
+    .side-buttons{display:grid;gap:6px;}
+    #side-nav-buttons,#side-add-buttons,#side-final-buttons{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #side-session-buttons{grid-template-columns:1fr;}
+    .side .btn{width:100%;padding:6px 7px;min-height:28px;font-size:11.5px;line-height:1.1;text-align:left;}
+    .side .btn-small{min-height:28px;padding:6px 7px;}
+    .side-card{margin-top:0;padding:7px 9px;font-size:10.5px;line-height:1.25;}
+    .main-shell{padding:12px 14px;display:grid;grid-template-rows:auto 1fr;height:100vh;overflow:hidden;}
+    .header-bar{margin-bottom:10px;}
+    .header-bar h1{font-size:24px;margin:0 0 2px 0;}
+    .header-bar p{font-size:13px;}
+    .header-status{gap:6px;}
+    .tag{padding:5px 9px;font-size:11px;}
+    .workspace{min-height:0;overflow:hidden;}
+    #home{display:grid;align-content:start;}
+    #capture{display:grid;grid-template-rows:auto auto 1fr;gap:10px;min-height:0;}
+    .card{padding:12px 14px;border-radius:12px;}
+    .hero{padding:14px 16px;}
+    .hero h2{font-size:22px;margin:4px 0;}
+    .hero p{font-size:13px;}
+    .summary-grid{gap:8px;}
+    .kpi{padding:10px 12px;}
+    .kpi small{margin-bottom:4px;font-size:12px;}
+    .kpi b{font-size:20px;}
+    .section-card{gap:10px;}
+    .section-title-row{gap:6px;}
+    .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;}
+    #session-setup-fields .session-action-slot{display:none !important;}
+    #session-info{padding:10px 12px;font-size:13px;}
+    .report-table-card{display:grid;grid-template-rows:auto 1fr auto;min-height:0;}
+    .records-container{height:100%;min-height:0;}
+    table{min-width:900px;}
+    th,td{padding:8px 10px;font-size:13px;}
+    .table-input{padding:7px 9px;min-height:34px;font-size:13px;}
+    tfoot td{padding:9px 10px;}
+    .toolbar,.actions-bar,#action-buttons-container{display:none !important;}
+    .toolbar:empty,.actions-bar:empty,#action-buttons-container:empty,.hero-actions:empty,.session-action-slot:empty{display:none !important;}
+    .side-buttons:empty{display:none !important;}
+    #side-session-buttons{display:none !important;}
+    #summary-grid.hidden{display:none !important;}
+    .empty-state-box{border:1px dashed #d6deea;border-radius:12px;padding:18px 16px;text-align:center;color:var(--muted);background:#fbfcfe;}
+    .empty-state-box strong{display:block;color:#334155;margin-bottom:6px;}
+
+
+    @media (max-width:1100px){
+      .summary-grid{grid-template-columns:repeat(4,minmax(0,1fr));}
+      .actions-bar{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width:980px){
+      .app-layout{grid-template-columns:250px 1fr;}
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width:760px){
+      body{overflow:auto;}
+      .app-layout{grid-template-columns:1fr;height:auto;}
+      .side{display:flex;overflow:visible;}
+      .main-shell{height:auto;overflow:visible;}
+      .workspace,#capture{overflow:visible;}
+    }
+
+    @media (max-width:1100px){
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .actions-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:900px){
+      .app-layout{grid-template-columns:250px 1fr}
+      .side{display:flex}
+      .main-shell{padding:12px}
+      .header-bar,.hero,.toolbar,.section-title-row{flex-direction:column;align-items:flex-start}
+      .summary-grid,.form-grid,.actions-bar,#action-buttons-container{grid-template-columns:1fr !important}
+    }
+    @media (max-width:640px){
+      .header-bar h1{font-size:24px}
+      .hero h2{font-size:24px}
+      .btn{width:100%}
+      .hero-actions{width:100%}
+      .hero-actions .btn{width:100%}
+      table{min-width:760px}
+    }
+    @media print{
+      .no-print,.side,.header-status{display:none !important}
+      body{background:#fff}
+      .main-shell{padding:0}
+      .card{box-shadow:none;border:1px solid #d9e1ea}
+    }
+  
+    .header-bar{margin-bottom:10px;display:block;}
+    .header-point-only{display:flex;align-items:center;min-height:50px;}
+    .header-point-only h1{margin:0;font-size:22px;color:#11243c;}
+    .header-status,.header-bar p{display:none !important;}
+    .summary-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;}
+    .kpi{padding:10px 12px;min-height:82px;display:flex;flex-direction:column;justify-content:center;}
+    .kpi small{font-size:12px;line-height:1.25;min-height:30px;}
+    .kpi b{font-size:22px;line-height:1.1;}
+    #recordsTableFooter{display:none !important;}
+    .side-panel-title{margin-bottom:2px;}
+    #side-nav-buttons,#side-session-buttons,#side-contado-buttons,#side-credito-buttons,#side-gastos-buttons,#side-tools-buttons,#side-final-buttons{grid-template-columns:repeat(2,minmax(0,1fr));}
+    #side-session-buttons{grid-template-columns:1fr;}
+    .modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:3000;}
+    .modal-card{width:min(1180px,calc(100vw - 36px));background:#fff;border-radius:18px;box-shadow:0 24px 60px rgba(15,23,42,.25);padding:18px 20px;max-height:calc(100vh - 36px);overflow:hidden;}
+    .modal-header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
+    .modal-header h2{margin:0;font-size:22px;color:#0f172a;}
+    .formula-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:stretch;}
+    .formula-card{border:1px solid #dbe5f0;border-radius:14px;padding:12px 14px;background:#f8fbff;display:grid;gap:8px;min-height:128px;}
+    .formula-card-title{font-weight:700;color:#16365f;font-size:14px;line-height:1.25;}
+    .formula-card-body{font-size:13px;line-height:1.35;color:#334155;word-break:break-word;}
+    .hidden{display:none !important;}
+    @media (max-width:1200px){
+      .formula-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width:980px){
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
+    @media (max-width:760px){
+      .formula-grid,.summary-grid{grid-template-columns:1fr;}
+      .modal-card{max-height:none;overflow:auto;}
+    }
+
+    /* Ajustes solicitados */
+    #session-info-container{display:none !important;}
+    .header-point-only h1{margin:0;font-size:24px;color:#0f2340;}
+    .summary-grid{grid-template-columns:repeat(6,minmax(0,1fr)) !important;gap:6px !important;}
+    .kpi{padding:6px 8px !important;min-height:42px !important;border-radius:10px !important;}
+    .kpi small{font-size:10px !important;line-height:1.1 !important;min-height:auto !important;margin-bottom:3px !important;}
+    .kpi b{font-size:15px !important;line-height:1.05 !important;}
+    .group-nav .side-panel-title{color:#8fdcff;}
+    .group-session .side-panel-title{color:#ffd56a;}
+    .group-contado .side-panel-title{color:#63e6be;}
+    .group-credito .side-panel-title{color:#c4b5fd;}
+    .group-gastos .side-panel-title{color:#ffb86b;}
+    .group-tools .side-panel-title{color:#f9a8d4;}
+    .group-final .side-panel-title{color:#fca5a5;}
+    .group-final.hidden{display:none !important;}
+    #side-contado-buttons .btn,
+    #side-credito-buttons .btn{
+      background:#245fca !important;
+      color:#fff !important;
+      border:0 !important;
+    }
+    #side-gastos-buttons .btn{
+      background:#245fca !important;
+      color:#fff !important;
+      border:0 !important;
+    }
+    .side-card{display:none !important;}
+    #side-session-status{display:none !important;}
+    #quick-actions-card{display:none !important;}
+    #side-session-fields,
+    #side-session-status{display:grid;gap:8px;}
+    .side #session-setup-fields{
+      grid-template-columns:1fr !important;
+      gap:8px !important;
+      margin-top:2px;
+    }
+    .side #session-setup-fields label{
+      color:#dce7f6 !important;
+      font-size:12px !important;
+      margin-bottom:4px !important;
+    }
+    .side #session-setup-fields input,
+    .side #session-setup-fields select{
+      background:#0f1e31;
+      border:1px solid #314760;
+      color:#ffffff;
+      min-height:34px;
+      padding:8px 10px;
+      font-size:13px;
+    }
+    .side #session-setup-fields input::-webkit-calendar-picker-indicator{
+      filter:invert(1);
+      opacity:.85;
+      cursor:pointer;
+    }
+    .side #session-info{
+      display:grid;
+      gap:6px;
+      padding:8px 10px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      background:rgba(255,255,255,.06);
+      font-size:12px;
+    }
+    .side #session-info > div:last-child{
+      justify-content:flex-start !important;
+    }
+    .side #session-info strong{color:#ffffff;}
+    .side #session-info span{color:#d6e2f0;}
+    .side #session-info .status-pill{font-size:11px;padding:6px 8px;}
+    .modal-card{
+      width:min(1260px,calc(100vw - 32px)) !important;
+      max-height:none !important;
+      overflow:visible !important;
+      padding:16px 18px !important;
+    }
+    .formula-card{
+      min-height:96px !important;
+      padding:10px 12px !important;
+    }
+    @media (max-width:1280px){
+      .summary-grid{grid-template-columns:repeat(3,minmax(0,1fr)) !important;}
+    }
+    @media (max-width:860px){
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;}
+    }
+    @media (max-width:760px){
+      .summary-grid{grid-template-columns:1fr !important;}
+    }
+
+    #add-all-btn{
+      grid-column:1 / -1;
+      text-align:center !important;
+      background:linear-gradient(135deg,#0f766e,#14b8a6) !important;
+      color:#ffffff !important;
+      border:0 !important;
+      box-shadow:0 8px 18px rgba(20,184,166,.28) !important;
+    }
+    #add-all-btn:hover{filter:brightness(1.04);}
+
+    .main-shell{padding:8px 14px 12px !important;}
+    .header-bar{margin-bottom:6px !important;display:block !important;}
+    .header-point-only{min-height:26px !important;align-items:flex-start !important;}
+    .header-point-only h1{margin:0 !important;font-size:22px !important;line-height:1.05 !important;}
+    #capture{gap:6px !important;}
+
   </style>
+
 </head>
 
 <body>
-  <main class="container" id="app">
-    <header>
-      <h1>Reporte de caja ARCADIA</h1>
-      <p class="muted">
-        Captura diaria con totales y guardado en la nube.
-        El reporte lo consultas directamente en la hoja de cálculo.
-      </p>
-    </header>
-
-    <section id="home">
-      <div class="cards">
-        <article class="card">
-          <h3>Captura diaria</h3>
-          <p class="muted">Registra el cierre del día, calcula totales y guarda en la nube.</p>
-          <div style="display:flex;gap:8px;flex-wrap:wrap">
-            <button id="go-capture" class="btn btn-success">Abrir captura</button>
-            <button id="resume-last" class="btn btn-ghost">Reanudar última sesión</button>
-          </div>
-        </article>
-      </div>
-    </section>
-
-    <hr/>
-
-    <section id="capture" class="hidden">
-      <div class="no-print" style="display:flex;gap:8px;align-items:center;justify-content:space-between;margin-bottom:8px">
-        <button class="btn btn-ghost" id="back-home-1">⬅ Volver al inicio</button>
-        <span class="tag" id="resume-hint" title="Se cargará/guardará automáticamente" style="display:none">
-          Captura actual
-        </span>
+  <div class="app-layout">
+    <aside class="side no-print">
+      <div>
+        <div class="brand-title">ARCADIA</div>
+        <div class="brand-subtitle">Reporte de caja del día</div>
       </div>
 
-      <section id="session-info-container">
-        <div id="session-setup-fields" class="form-grid">
-          <div>
-            <label for="fecha">Fecha del reporte</label>
-            <input id="fecha" type="date" required />
-          </div>
-          <div>
-            <label for="puntoVenta">Punto de venta</label>
-            <select id="puntoVenta" required></select>
-          </div>
-          <div style="align-self:end;">
-            <button id="start-session-btn" class="btn btn-success" style="width:100%">
-              Iniciar / Cambiar Sesión
-            </button>
-          </div>
+      <div class="side-panel-group group-nav">
+        <div class="side-panel-title">Navegación</div>
+        <div id="side-nav-buttons" class="side-buttons"></div>
+      </div>
+
+      <div class="side-panel-group group-session">
+        <div class="side-panel-title">Sesión</div>
+        <div id="side-session-fields"></div>
+        <div id="side-session-buttons" class="side-buttons"></div>
+        <div id="side-session-status"></div>
+      </div>
+
+      <div class="side-panel-group group-contado">
+        <div class="side-panel-title">Contado</div>
+        <div id="side-contado-buttons" class="side-buttons"></div>
+      </div>
+
+      <div class="side-panel-group group-credito">
+        <div class="side-panel-title">Crédito</div>
+        <div id="side-credito-buttons" class="side-buttons"></div>
+      </div>
+
+      <div class="side-panel-group group-gastos">
+        <div class="side-panel-title">Gastos</div>
+        <div id="side-gastos-buttons" class="side-buttons"></div>
+      </div>
+
+      <div class="side-panel-group group-tools">
+        <div class="side-panel-title">Utilidades</div>
+        <div id="side-tools-buttons" class="side-buttons"></div>
+      </div>
+
+      <div class="side-panel-group group-final">
+        <div class="side-panel-title">Cierre</div>
+        <div id="side-final-buttons" class="side-buttons"></div>
+      </div>
+
+      <div class="side-card">
+        <div><strong>Sesión actual:</strong></div>
+        <div><strong>Fecha:</strong> <span id="header-session-date">Sin seleccionar</span></div>
+        <div><strong>Punto:</strong> <span id="header-session-pos">Sin seleccionar</span></div>
+      </div>
+    </aside>
+
+    <div class="main-shell">
+      <div class="header-bar">
+        <div class="header-point-only">
+          <h1 id="header-title-pos">Captura diaria</h1>
         </div>
+      </div>
 
-        <div id="session-info" class="hidden">
-          <div>
-            <strong>Fecha:</strong> <span id="session-date-display"></span> —
-            <strong>Punto:</strong> <span id="session-pos-display"></span>
+      <main class="workspace" id="app">
+        <section id="home">
+          <article class="card hero">
+            <div>
+              <span class="section-badge">Caja del día</span>
+              <h2>Captura diaria</h2>
+              <p class="muted">Registra el cierre del día, calcula totales y guarda en la nube sin perder la lógica del archivo original.</p>
+            </div>
+            <div class="hero-actions">
+              <button id="go-capture" class="btn btn-primary">Abrir captura</button>
+            </div>
+          </article>
+        </section>
+
+        <section id="capture" class="hidden">
+          <div class="toolbar no-print">
+            <span class="tag" id="resume-hint" title="Se cargará/guardará automáticamente" style="display:none">Captura actual</span>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <div id="network-status" class="status-pill status-offline">Offline</div>
-            <button id="toggle-formulas-btn" class="btn btn-ghost btn-small" type="button">
-              👁️ Mostrar fórmulas
-            </button>
+
+          <div class="summary-grid hidden" id="summary-grid">
+            <div class="card kpi hidden" data-summary-card="efectivo"><small>Total ventas de contado en efectivo</small><b id="kpi-efectivo">$ 0</b></div>
+            <div class="card kpi hidden" data-summary-card="electronica"><small>Total ventas por medios electrónicos</small><b id="kpi-electronica">$ 0</b></div>
+            <div class="card kpi hidden" data-summary-card="credito"><small>Total ventas a crédito</small><b id="kpi-credito">$ 0</b></div>
+            <div class="card kpi hidden" data-summary-card="ventas"><small>Total ventas</small><b id="kpi-total-ventas">$ 0</b></div>
+            <div class="card kpi hidden" data-summary-card="gasto"><small>Total gastos en efectivo</small><b id="kpi-gastos">$ 0</b></div>
+            <div class="card kpi hidden" data-summary-card="tesoreria"><small>Total dinero a recibir por tesorería</small><b id="kpi-tesoreria">$ 0</b></div>
           </div>
-        </div>
-      </section>
 
-      <div class="actions-bar no-print">
-        <button id="add-nomina-btn" class="btn btn-primary">Añadir Venta a Crédito (Descuentos por nómina)</button>
-        <button id="add-formulas-btn" class="btn btn-info">Añadir Venta a Crédito (Fórmulas)</button>
-        <button id="add-kardex-btn" class="btn btn-info">Añadir Venta a Crédito (Faltantes en kardex por nómina)</button>
-        <button id="add-interco-btn" class="btn btn-purple">Añadir Venta a Crédito (A empresas del grupo)</button>
-        <button id="add-autoconsumo-btn" class="btn btn-info">Añadir Venta a Crédito (Autoconsumo)</button>
-        <button id="add-gasto-btn" class="btn btn-warning">Añadir Gasto en Efectivo</button>
+          <section class="card section-card" id="session-info-container">
+            <div class="section-title-row">
+              <strong>Sesión:</strong>
+              <span class="muted">Selecciona fecha y punto de venta antes de empezar.</span>
+            </div>
+
+            <div id="session-setup-fields" class="form-grid">
+              <div>
+                <label for="fecha">Fecha del reporte</label>
+                <input id="fecha" type="date" required />
+              </div>
+              <div>
+                <label for="puntoVenta">Punto de venta</label>
+                <select id="puntoVenta" required></select>
+              </div>
+              <div class="session-action-slot hidden" style="align-self:end;"></div>
+            </div>
+
+            <div id="session-info" class="hidden">
+              <div>
+                <strong>Fecha:</strong> <span id="session-date-display"></span> —
+                <strong>Punto:</strong> <span id="session-pos-display"></span>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                <div id="network-status" class="status-pill status-offline">Offline</div>
+                <button id="toggle-formulas-btn" class="btn btn-ghost btn-small" type="button">Ver fórmulas</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card section-card" id="quick-actions-card">
+            <div class="section-title-row">
+              <strong>Acciones rápidas:</strong>
+              <span class="muted">Añade créditos especiales y gastos en efectivo.</span>
+            </div>
+
+            <div class="actions-bar no-print">
+              <button id="add-efectivo-btn" class="btn btn-success">Añadir Venta de contado en efectivo</button>
+              <button id="add-qr-btn" class="btn btn-info">Añadir Venta de contado con QR</button>
+              <button id="add-debito-btn" class="btn btn-info">Añadir Venta de contado con tarjeta débito</button>
+              <button id="add-tcredito-btn" class="btn btn-info">Añadir Venta de contado con tarjeta crédito</button>
+              <button id="add-nomina-btn" class="btn btn-primary">Añadir Venta a Crédito (Descuentos por nómina)</button>
+              <button id="add-formulas-btn" class="btn btn-info">Añadir Venta a Crédito (Fórmulas)</button>
+              <button id="add-kardex-btn" class="btn btn-info">Añadir Venta a Crédito (Faltantes en kardex por nómina)</button>
+              <button id="add-interco-btn" class="btn btn-purple">Añadir Venta a Crédito (A empresas del grupo)</button>
+              <button id="add-autoconsumo-btn" class="btn btn-info">Añadir Venta a Crédito (Autoconsumo)</button>
+              <button id="add-rappi-btn" class="btn btn-info">Añadir Venta a Crédito (Rappi)</button>
+              <button id="add-gasto-btn" class="btn btn-warning">Añadir Gasto en Efectivo</button>
+              <button id="add-all-btn" class="btn btn-warning">Agregar todos</button>
+            </div>
+          </section>
+
+          <section class="card section-card report-table-card">
+            <div class="empty-state-box" id="empty-report-box">
+              Usa los botones del panel izquierdo para añadir cada concepto.
+            </div>
+
+            <div class="records-container">
+              <table id="recordsTable">
+                <thead>
+                  <tr>
+                    <th style="width:32%;">Tipo de Operación</th>
+                    <th class="col-number" style="width:12%;">Valor</th>
+                    <th class="col-number" style="width:12%;">Devoluciones</th>
+                    <th class="col-number" style="width:13%;">Total</th>
+                    <th style="width:15%;">Tercero / Destino</th>
+                    <th style="width:11%;">Detalle</th>
+                    <th class="col-action" style="width:5%;">Acción</th>
+                  </tr>
+                </thead>
+                <tbody id="recordsListBody"></tbody>
+                <tfoot id="recordsTableFooter"></tfoot>
+              </table>
+            </div>
+
+            <div id="action-buttons-container" class="no-print">
+              <button id="sendAllBtn" class="btn btn-primary">Guardar nube</button>
+              <button id="clearAllBtn" class="btn btn-danger">Limpiar reporte</button>
+            </div>
+          </section>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="formulas-modal" class="modal-overlay hidden no-print" aria-hidden="true">
+    <div class="modal-card formulas-modal-card" role="dialog" aria-modal="true" aria-labelledby="formulas-modal-title">
+      <div class="modal-header">
+        <h2 id="formulas-modal-title">Fórmulas del reporte</h2>
+        <button type="button" class="btn btn-secondary btn-small" id="close-formulas-btn">Cerrar</button>
       </div>
+      <div class="formula-grid" id="formula-grid"></div>
+    </div>
+  </div>
 
-      <div class="records-container">
-        <table id="recordsTable">
-          <thead>
-            <tr>
-              <th style="width:32%;">Tipo de Operación</th>
-              <th class="col-number" style="width:12%;">Valor</th>
-              <th class="col-number" style="width:12%;">Devoluciones</th>
-              <th class="col-number" style="width:13%;">Total</th>
-              <th style="width:15%;">Tercero / Destino</th>
-              <th style="width:11%;">Detalle</th>
-              <th class="col-action" style="width:5%;">Acción</th>
-            </tr>
-          </thead>
-          <tbody id="recordsListBody"></tbody>
-          <tfoot id="recordsTableFooter">
-            <tr data-summary-id="total_ventas_efectivo">
-              <td>Total ventas de contado en efectivo</td>
-              <td colspan="2"></td><td class="col-total"></td>
-              <td colspan="3"></td>
-            </tr>
-            <tr data-summary-id="total_ventas_electronicas">
-              <td>Total ventas por medios electronicos</td>
-              <td colspan="2"></td><td class="col-total"></td>
-              <td colspan="3"></td>
-            </tr>
-            <tr data-summary-id="total_ventas_credito">
-              <td>Total ventas a credito</td>
-              <td colspan="2"></td><td class="col-total"></td>
-              <td colspan="3"></td>
-            </tr>
-            <tr class="sub-grand-total" data-summary-id="total_ventas_global">
-              <td>Total ventas</td>
-              <td colspan="2"></td><td class="col-total"></td>
-              <td colspan="3"></td>
-            </tr>
-            <tr data-summary-id="total_gastos_efectivo">
-              <td>Total gastos en efectivo</td>
-              <td colspan="2"></td><td class="col-total"></td>
-              <td colspan="3"></td>
-            </tr>
-            <tr class="grand-total" data-summary-id="total_esperado_tesoreria">
-              <td>Total dinero a recibir por tesoreria</td>
-              <td colspan="2"></td><td class="col-total"></td>
-              <td colspan="3"></td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
-
-      <div id="action-buttons-container"
-           class="no-print"
-           style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px">
-        <button id="sendAllBtn" class="btn btn-primary">📤 Guardar Todo en la Nube</button>
-        <button id="clearAllBtn" class="btn btn-danger">🗑️ Limpiar y Finalizar Reporte</button>
-      </div>
-    </section>
-  </main>
-
-  <script>
+<script>
     window.Arcadia = window.Arcadia || {};
+
     (function (A) {
       'use strict';
 
@@ -275,7 +816,7 @@
         SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxeYCVLDzsiM97EOdWgov5pT8Mt8Spf1KXUye5eN70g16irwY6k3bTRPfCfPf9Ta3ZR/exec',
         API_KEY: '',
 
-        // ✅ ÚNICO punto de venta requerido: Aroma
+        // Puntos de venta configurables
         PUNTOS_VENTA: ['Aroma'],
 
         EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones ARCADIA','Doctor Ahorro','Heritage','Distribuidora'],
@@ -288,7 +829,8 @@
           'Ventas a crédito (Fórmulas)',
           'Ventas a crédito (Faltantes en kardex que se descuentan por nómina)',
           'Ventas a crédito (A empresas del grupo)',
-          'Ventas a crédito (Autoconsumo)'
+          'Ventas a crédito (Autoconsumo)',
+          'Ventas a crédito (Rappi)'
         ],
 
         TIPOS_EFECTIVO: ['Ventas de contado en efectivo'],
@@ -349,6 +891,8 @@
 
         recordsBody: document.getElementById('recordsListBody'),
         recordsFooter: document.getElementById('recordsTableFooter'),
+        summaryGrid: document.getElementById('summary-grid'),
+        emptyReportBox: document.getElementById('empty-report-box'),
 
         fechaInput: document.getElementById('fecha'),
         puntoVentaInput: document.getElementById('puntoVenta')
@@ -454,6 +998,7 @@
 
       const TERCERO_OTROS  = 'Otros';
       const TERCERO_VARIAS = 'Varias';
+      const TERCERO_RAPPI  = 'Rappi';
 
       function escapeAttr(s){ return Utils.escapeHtml(String(s ?? '')); }
 
@@ -470,6 +1015,7 @@
           return `<option value="${escapeAttr(e)}" ${isSel}>${escapeAttr(e)}</option>`;
         }).join('');
 
+        const rappiSel  = selected === TERCERO_RAPPI  ? 'selected' : '';
         const otrosSel  = selected === TERCERO_OTROS  ? 'selected' : '';
         const variasSel = selected === TERCERO_VARIAS ? 'selected' : '';
 
@@ -477,6 +1023,7 @@
           <select class="table-input" data-field="tercero" ${required ? 'required' : ''}>
             ${placeholder}
             ${empresasOptions}
+            <option value="${TERCERO_RAPPI}" ${rappiSel}>${TERCERO_RAPPI}</option>
             <option value="${TERCERO_OTROS}" ${otrosSel}>${TERCERO_OTROS}</option>
             <option value="${TERCERO_VARIAS}" ${variasSel}>${TERCERO_VARIAS}</option>
           </select>
@@ -486,20 +1033,36 @@
       Object.assign(App, {
         populatePuntoVentaSelect(){
           const select = UI.puntoVentaInput;
+          const selected = select.value || state.session.pos || '';
 
           select.innerHTML = '<option value="">Seleccione...</option>';
           (CONFIG.PUNTOS_VENTA || []).forEach(pv => {
             select.innerHTML += `<option value="${Utils.escapeHtml(pv)}">${Utils.escapeHtml(pv)}</option>`;
           });
 
-          // ✅ Si solo hay un punto de venta, se selecciona y se bloquea el selector
-          const puntos = (CONFIG.PUNTOS_VENTA || []);
-          if (puntos.length === 1) {
-            select.value = puntos[0];
-            select.disabled = true;
-          } else {
-            select.disabled = false;
+          select.disabled = false;
+          if (selected && (CONFIG.PUNTOS_VENTA || []).includes(selected)) {
+            select.value = selected;
           }
+        },
+
+        setResumeHint(message = '', visible = false){
+          if (!UI.resumeHint) return;
+          UI.resumeHint.textContent = message || 'Captura actual';
+          UI.resumeHint.style.display = visible ? '' : 'none';
+        },
+
+        handleSessionFieldChange(){
+          const fecha = UI.fechaInput?.value || '';
+          const puntoVenta = UI.puntoVentaInput?.value || '';
+
+          if (!fecha || !puntoVenta) {
+            this.setResumeHint('', false);
+            return;
+          }
+
+          const sameSession = state.session.date === fecha && state.session.pos === puntoVenta;
+          this.startSession(fecha, puntoVenta, sameSession);
         },
 
         buildFooterFormulaMeta(){
@@ -515,7 +1078,8 @@
             'Ventas a crédito (Descuentos por nómina)',
             'Ventas a crédito (Fórmulas)',
             'Ventas a crédito (Faltantes en kardex que se descuentan por nómina)',
-            'Ventas a crédito (Autoconsumo)'
+            'Ventas a crédito (Autoconsumo)',
+            'Ventas a crédito (Rappi)'
           ];
           const creditoSet = new Set(CONFIG.TIPOS_REQUIEREN_EMPRESA || []);
           const creditoOrdered = creditoOrder.filter(t => creditoSet.has(t));
@@ -547,65 +1111,162 @@
         },
 
         applyFooterLabels(){
-          if (!UI.recordsFooter) return;
-          if (!footerMetaBuilt) this.buildFooterFormulaMeta();
-
-          Object.keys(footerMeta).forEach(summaryId => {
-            const tr = UI.recordsFooter.querySelector(`[data-summary-id="${summaryId}"]`);
-            if (!tr) return;
-            const firstTd = tr.querySelector('td');
-            if (!firstTd) return;
-
-            const meta = footerMeta[summaryId] || {};
-            const base = String(meta.base || '').trim();
-            const formula = String(meta.formula || '').trim();
-            if (!base) return;
-
-            firstTd.textContent = (showFooterFormulas && formula) ? `${base} (${formula})` : base;
-          });
+          const summary = this.getCalculatedState().summary;
+          this.renderTotalsFooter(summary);
         },
 
         initFooterFormulaToggle(){
-          showFooterFormulas = (localStorage.getItem(LS_SHOW_FORMULAS) === '1');
-          this.applyFooterLabels();
+          if (!footerMetaBuilt) this.buildFooterFormulaMeta();
 
           const btn = document.getElementById('toggle-formulas-btn');
-          if (!btn) return;
+          const modal = document.getElementById('formulas-modal');
+          const closeBtn = document.getElementById('close-formulas-btn');
+          const grid = document.getElementById('formula-grid');
+          if (!btn || !modal || !closeBtn || !grid) return;
 
-          const paintBtn = () => {
-            btn.textContent = showFooterFormulas ? '🙈 Ocultar fórmulas' : '👁️ Mostrar fórmulas';
+          const renderFormulaGrid = () => {
+            const order = [
+              'total_ventas_efectivo',
+              'total_ventas_electronicas',
+              'total_ventas_credito',
+              'total_ventas_global',
+              'total_gastos_efectivo',
+              'total_esperado_tesoreria'
+            ];
+            grid.innerHTML = order.map(key => {
+              const meta = footerMeta[key] || {};
+              return `
+                <div class="formula-card">
+                  <div class="formula-card-title">${Utils.escapeHtml(meta.base || '')}</div>
+                  <div class="formula-card-body">${Utils.escapeHtml(meta.formula || '')}</div>
+                </div>
+              `;
+            }).join('');
           };
-          paintBtn();
 
-          btn.addEventListener('click', () => {
-            showFooterFormulas = !showFooterFormulas;
-            localStorage.setItem(LS_SHOW_FORMULAS, showFooterFormulas ? '1' : '0');
-            this.applyFooterLabels();
-            paintBtn();
+          const openModal = () => {
+            renderFormulaGrid();
+            modal.classList.remove('hidden');
+            modal.setAttribute('aria-hidden', 'false');
+          };
+          const closeModal = () => {
+            modal.classList.add('hidden');
+            modal.setAttribute('aria-hidden', 'true');
+          };
+
+          btn.textContent = 'Ver fórmulas';
+          btn.addEventListener('click', openModal);
+          closeBtn.addEventListener('click', closeModal);
+          modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+          document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
           });
         },
 
-        bindCaptureEvents(){
-          document.getElementById('start-session-btn').addEventListener('click', () => {
-            const fecha = UI.fechaInput.value;
-            const puntoVenta = UI.puntoVentaInput.value;
-            if (!fecha || !puntoVenta) {
-              alert('Por favor, seleccione fecha y punto de venta.');
-              return;
-            }
-            const ayer = Utils.yesterdayISO();
-            if (fecha !== ayer && !confirm(`Vas a abrir la sesión para ${fecha} (no es el día anterior: ${ayer}). ¿Continuar?`)) {
-              return;
-            }
+        hasRows(){
+          return !!UI.recordsBody.querySelector('tr[data-id]');
+        },
 
-            const prevKey = this.getStorageKey();
-            if (prevKey && localStorage.getItem(prevKey)) {
-              if (!confirm('Hay datos locales de la sesión anterior. Si cambias de sesión podrían perderse. ¿Continuar?')) {
-                return;
-              }
-            }
-            this.startSession(fecha, puntoVenta);
+        getCurrentRecordCategories(){
+          const counts = { efectivo: 0, electronica: 0, credito: 0, gasto: 0 };
+          UI.recordsBody.querySelectorAll('tr[data-id]').forEach(tr => {
+            const cat = tr.dataset.category;
+            if (Object.prototype.hasOwnProperty.call(counts, cat)) counts[cat] += 1;
           });
+          return counts;
+        },
+
+        refreshEmptyState(){
+          const hasRows = this.hasRows();
+          if (UI.emptyReportBox) UI.emptyReportBox.classList.toggle('hidden', hasRows);
+          if (UI.summaryGrid) UI.summaryGrid.classList.toggle('hidden', !hasRows);
+        },
+
+        renderTotalsFooter(summary){
+          if (!UI.recordsFooter) return;
+          UI.recordsFooter.innerHTML = '';
+        },
+
+        renderSummaryCards(summary){
+          const cats = this.getCurrentRecordCategories();
+          const cards = {
+            efectivo: cats.efectivo > 0,
+            electronica: cats.electronica > 0,
+            credito: cats.credito > 0,
+            ventas: (cats.efectivo + cats.electronica + cats.credito) > 0,
+            gasto: cats.gasto > 0,
+            tesoreria: (cats.efectivo > 0 || cats.gasto > 0)
+          };
+
+          document.querySelectorAll('[data-summary-card]').forEach(card => {
+            const key = card.getAttribute('data-summary-card');
+            card.classList.toggle('hidden', !cards[key]);
+          });
+
+          const paintKpi = (id, value) => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = Utils.formatCurrency(value);
+          };
+          paintKpi('kpi-efectivo', summary.ventasContadoEfectivo);
+          paintKpi('kpi-electronica', summary.ventasElectronicas);
+          paintKpi('kpi-credito', summary.ventasCredito);
+          paintKpi('kpi-total-ventas', summary.ventasGlobal);
+          paintKpi('kpi-gastos', summary.gastosEfectivo);
+          paintKpi('kpi-tesoreria', summary.esperadoTesoreria);
+        },
+
+        addAllOperationTypes(){
+          const tiposBase = [
+            { tipo: 'Ventas de contado en efectivo', category: 'efectivo', isRemovable: true, styleHint: 'efectivo' },
+            { tipo: 'Ventas de contado con QR', category: 'electronica', isRemovable: true, styleHint: 'electronica' },
+            { tipo: 'Ventas de contado con tarjeta debito', category: 'electronica', isRemovable: true, styleHint: 'electronica' },
+            { tipo: 'Ventas de contado con tarjeta de credito', category: 'electronica', isRemovable: true, styleHint: 'electronica' },
+            { tipo: 'Ventas a crédito (Descuentos por nómina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' },
+            { tipo: 'Ventas a crédito (Fórmulas)', category: 'credito', isRemovable: true, styleHint: 'credito-formulas' },
+            { tipo: 'Ventas a crédito (Faltantes en kardex que se descuentan por nómina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' },
+            { tipo: 'Ventas a crédito (A empresas del grupo)', category: 'credito', isRemovable: true, styleHint: 'interco' },
+            { tipo: 'Ventas a crédito (Autoconsumo)', category: 'credito', isRemovable: true, styleHint: 'autoconsumo' },
+            { tipo: 'Ventas a crédito (Rappi)', category: 'credito', isRemovable: true, styleHint: 'rappi' },
+            { tipo: 'Gasto en efectivo', category: 'gasto', isRemovable: true, styleHint: 'gasto' }
+          ];
+
+          const existentes = new Set(
+            Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).map(tr => String(tr.cells?.[0]?.textContent || '').trim())
+          );
+
+          let agregados = 0;
+          tiposBase.forEach(item => {
+            if (!existentes.has(item.tipo)) {
+              this.addRow(item, true);
+              agregados += 1;
+            }
+          });
+
+          if (agregados > 0) {
+            this.updateTotalsDisplay();
+            this.saveRecords();
+          }
+        },
+
+        bindCaptureEvents(){
+          UI.fechaInput?.addEventListener('change', () => this.handleSessionFieldChange());
+          UI.puntoVentaInput?.addEventListener('change', () => this.handleSessionFieldChange());
+
+          document.getElementById('add-efectivo-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas de contado en efectivo', category: 'efectivo', isRemovable: true, styleHint: 'efectivo' })
+          );
+
+          document.getElementById('add-qr-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas de contado con QR', category: 'electronica', isRemovable: true, styleHint: 'electronica' })
+          );
+
+          document.getElementById('add-debito-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas de contado con tarjeta debito', category: 'electronica', isRemovable: true, styleHint: 'electronica' })
+          );
+
+          document.getElementById('add-tcredito-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas de contado con tarjeta de credito', category: 'electronica', isRemovable: true, styleHint: 'electronica' })
+          );
 
           document.getElementById('add-nomina-btn').addEventListener('click', () =>
             this.addRow({ tipo: 'Ventas a crédito (Descuentos por nómina)', category: 'credito', isRemovable: true, styleHint: 'credito-nomina' })
@@ -627,9 +1288,15 @@
             this.addRow({ tipo: 'Ventas a crédito (Autoconsumo)', category: 'credito', isRemovable: true, styleHint: 'autoconsumo' })
           );
 
+          document.getElementById('add-rappi-btn').addEventListener('click', () =>
+            this.addRow({ tipo: 'Ventas a crédito (Rappi)', category: 'credito', isRemovable: true, styleHint: 'rappi' })
+          );
+
           document.getElementById('add-gasto-btn').addEventListener('click', () =>
             this.addRow({ tipo: 'Gasto en efectivo', category: 'gasto', isRemovable: true, styleHint: 'gasto' })
           );
+
+          document.getElementById('add-all-btn').addEventListener('click', () => this.addAllOperationTypes());
 
           UI.recordsBody.addEventListener('input', (e) => this.handleTableInput(e));
           UI.recordsBody.addEventListener('change', (e) => this.handleTableInput(e));
@@ -670,6 +1337,7 @@
             const tr = btn.closest('tr');
             if (tr && confirm('¿Eliminar fila?')) {
               tr.remove();
+              this.refreshEmptyState();
               this.updateTotalsDisplay();
               this.saveRecords();
             }
@@ -677,35 +1345,37 @@
         },
 
         startSession(date, pos, fromStorage = false){
+          const sameSession = state.session.date === date && state.session.pos === pos;
           state.session.date = date;
           state.session.pos = pos;
           this.saveSession();
 
+          if (UI.fechaInput && UI.fechaInput.value !== date) UI.fechaInput.value = date;
+          if (UI.puntoVentaInput && UI.puntoVentaInput.value !== pos) UI.puntoVentaInput.value = pos;
+
           UI.sessionDate.textContent = date;
           UI.sessionPos.textContent = pos;
+          const headerDate = document.getElementById('header-session-date');
+          const headerPos = document.getElementById('header-session-pos');
+          const headerTitlePos = document.getElementById('header-title-pos');
+          if (headerDate) headerDate.textContent = date;
+          if (headerPos) headerPos.textContent = pos;
+          if (headerTitlePos) headerTitlePos.textContent = pos;
 
-          document.getElementById('session-setup-fields').classList.add('hidden');
+          document.getElementById('session-setup-fields')?.classList.remove('hidden');
           UI.sessionInfo.classList.remove('hidden');
 
           const key = this.getStorageKey();
-          if (fromStorage) {
+          const hasStoredRecords = !!(key && localStorage.getItem(key));
+
+          if (fromStorage || hasStoredRecords) {
             this.loadRecords();
-          } else {
-            if (key && localStorage.getItem(key)) {
-              const reanudar = confirm(
-                'Ya existen datos guardados localmente para esta fecha y punto.\n' +
-                '¿Deseas reanudarlos en lugar de iniciar desde cero?'
-              );
-              if (reanudar) this.loadRecords();
-              else {
-                localStorage.removeItem(key);
-                this.createInitialRows();
-                this.saveRecords();
-              }
-            } else {
-              this.createInitialRows();
-              this.saveRecords();
-            }
+            this.setResumeHint('Sesión reanudada', true);
+          } else if (!sameSession) {
+            UI.recordsBody.innerHTML = '';
+            this.refreshEmptyState();
+            this.saveRecords();
+            this.setResumeHint('Sesión nueva', true);
           }
 
           this.applyFooterLabels();
@@ -714,13 +1384,7 @@
 
         createInitialRows(){
           UI.recordsBody.innerHTML = '';
-          const initialData = [
-            { tipo: 'Ventas de contado en efectivo', category: 'efectivo', styleHint: 'efectivo' },
-            { tipo: 'Ventas de contado con QR', category: 'electronica', styleHint: 'electronica' },
-            { tipo: 'Ventas de contado con tarjeta debito', category: 'electronica', styleHint: 'electronica' },
-            { tipo: 'Ventas de contado con tarjeta de credito', category: 'electronica', styleHint: 'electronica' },
-          ];
-          initialData.forEach(data => this.addRow(data, true));
+          this.refreshEmptyState();
           this.saveRecords();
         },
 
@@ -728,8 +1392,8 @@
           const defaults = {
             id: Utils.uuidv4(),
             tipo: '',
-            valor: 0,
-            devoluciones: 0,
+            valor: '',
+            devoluciones: '',
             tercero: '',
             detalle: '',
             isRemovable: false,
@@ -737,6 +1401,15 @@
             styleHint: 'electronica'
           };
           const record = { ...defaults, ...data };
+          const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
+          const esVentaContadoEfectivo = String(record.tipo || '').trim() === 'Ventas de contado en efectivo';
+
+          if (!hasOwn(data, 'valor')) {
+            record.valor = esVentaContadoEfectivo ? 4 : 1;
+          }
+          if (!hasOwn(data, 'devoluciones')) {
+            record.devoluciones = '';
+          }
 
           const tr = document.createElement('tr');
           tr.dataset.id = record.id;
@@ -760,8 +1433,8 @@
 
           tr.innerHTML = `
             <td class="truncate" title="${Utils.escapeHtml(record.tipo)}">${Utils.escapeHtml(record.tipo)}</td>
-            <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="valor" value="${record.valor || ''}" placeholder="0"></td>
-            <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="devoluciones" value="${record.devoluciones || ''}" placeholder="0"></td>
+            <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="valor" value="${record.valor ?? ''}" placeholder="0"></td>
+            <td class="col-number"><input type="text" inputmode="decimal" class="table-input" data-field="devoluciones" value="${record.devoluciones ?? ''}" placeholder=""></td>
             <td class="col-total" data-field="total">${Utils.formatCurrency(total)}</td>
             <td>${terceroCellHtml}</td>
             <td><input type="text" class="table-input" data-field="detalle" value="${Utils.escapeHtml(record.detalle || '')}"></td>
@@ -769,9 +1442,13 @@
           `;
 
           UI.recordsBody.appendChild(tr);
+          this.refreshEmptyState();
 
           const firstInput = tr.querySelector('[data-field="valor"]');
-          if (firstInput) firstInput.focus();
+          if (firstInput) {
+            firstInput.focus();
+            firstInput.select();
+          }
 
           if (!skipSave) {
             this.saveRecords();
@@ -814,15 +1491,10 @@
         },
 
         updateTotalsDisplay(){
-          this.applyFooterLabels();
           const s = this.getCalculatedState().summary;
-
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_efectivo"] .col-total').textContent = Utils.formatCurrency(s.ventasContadoEfectivo);
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_electronicas"] .col-total').textContent = Utils.formatCurrency(s.ventasElectronicas);
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_credito"] .col-total').textContent = Utils.formatCurrency(s.ventasCredito);
-          UI.recordsFooter.querySelector('[data-summary-id="total_gastos_efectivo"] .col-total').textContent = Utils.formatCurrency(s.gastosEfectivo);
-          UI.recordsFooter.querySelector('[data-summary-id="total_ventas_global"] .col-total').textContent = Utils.formatCurrency(s.ventasGlobal);
-          UI.recordsFooter.querySelector('[data-summary-id="total_esperado_tesoreria"] .col-total').textContent = Utils.formatCurrency(s.esperadoTesoreria);
+          this.renderTotalsFooter(s);
+          this.refreshEmptyState();
+          this.renderSummaryCards(s);
         },
 
         getRecordsFromTable(){
@@ -901,12 +1573,12 @@
             }
 
             alert('¡Registros (detalles + totales) guardados con éxito!');
-            btn.textContent = '✔️ Guardado';
+            btn.textContent = 'Guardado';
           }catch(error){
             console.error("Error al enviar datos:", error);
             alert('Error: No se pudieron guardar los registros.');
             btn.disabled = false;
-            btn.textContent = '📤 Guardar Todo en la Nube';
+            btn.textContent = 'Guardar nube';
           }
         },
 
@@ -947,7 +1619,9 @@
           UI.recordsBody.innerHTML = '';
 
           if (savedRecords.length > 0) savedRecords.forEach(rec => this.addRow(rec, true));
-          else this.createInitialRows();
+          else UI.recordsBody.innerHTML = '';
+          this.refreshEmptyState();
+          this.updateTotalsDisplay();
         }
       });
     })(window.Arcadia);
@@ -962,9 +1636,68 @@
       const App = A.App;
 
       Object.assign(App, {
+        organizeSidebarButtons(){
+          const moveButton = (id, targetId, text) => {
+            const btn = document.getElementById(id);
+            const target = document.getElementById(targetId);
+            if (!btn || !target) return;
+            if (text) btn.textContent = text;
+            btn.classList.add('btn-small');
+            btn.style.width = '100%';
+            target.appendChild(btn);
+          };
+
+          const moveBlock = (id, targetId) => {
+            const block = document.getElementById(id);
+            const target = document.getElementById(targetId);
+            if (!block || !target) return;
+            target.appendChild(block);
+          };
+
+          moveButton('go-capture', 'side-nav-buttons', 'Captura diaria');
+          moveButton('sendAllBtn', 'side-nav-buttons', 'Guardar nube');
+          moveButton('clearAllBtn', 'side-nav-buttons', 'Limpiar reporte');
+          moveButton('toggle-formulas-btn', 'side-nav-buttons', 'Ver fórmulas');
+
+          const resumeBtn = document.getElementById('resume-last');
+          if (resumeBtn) resumeBtn.classList.add('hidden');
+
+          moveBlock('session-setup-fields', 'side-session-fields');
+          moveBlock('session-info', 'side-session-status');
+
+          const sessionContainer = document.getElementById('session-info-container');
+          if (sessionContainer) sessionContainer.classList.add('hidden');
+
+          const sessionButtons = document.getElementById('side-session-buttons');
+          if (sessionButtons) sessionButtons.classList.add('hidden');
+
+          const finalGroup = document.querySelector('.group-final');
+          if (finalGroup) finalGroup.classList.add('hidden');
+          const toolsGroup = document.querySelector('.group-tools');
+          if (toolsGroup) toolsGroup.classList.add('hidden');
+
+          moveButton('add-efectivo-btn', 'side-contado-buttons', 'Efectivo');
+          moveButton('add-qr-btn', 'side-contado-buttons', 'QR');
+          moveButton('add-debito-btn', 'side-contado-buttons', 'T. débito');
+          moveButton('add-tcredito-btn', 'side-contado-buttons', 'T. crédito');
+
+          moveButton('add-nomina-btn', 'side-credito-buttons', 'Crédito nómina');
+          moveButton('add-formulas-btn', 'side-credito-buttons', 'Crédito fórmulas');
+          moveButton('add-kardex-btn', 'side-credito-buttons', 'Crédito kardex');
+          moveButton('add-interco-btn', 'side-credito-buttons', 'Crédito grupo');
+          moveButton('add-autoconsumo-btn', 'side-credito-buttons', 'Autoconsumo');
+          moveButton('add-rappi-btn', 'side-credito-buttons', 'Crédito Rappi');
+
+          moveButton('add-gasto-btn', 'side-gastos-buttons', 'Gasto efectivo');
+          moveButton('add-all-btn', 'side-gastos-buttons', 'Agregar todos');
+
+
+        },
+
         init(){
-          this.populatePuntoVentaSelect();
           this.loadSession();
+          this.populatePuntoVentaSelect();
+          this.organizeSidebarButtons();
           this.bindNav();
           this.bindCaptureEvents();
           this.updateNetworkStatus();
@@ -972,31 +1705,32 @@
           window.addEventListener('online', () => this.updateNetworkStatus());
           window.addEventListener('offline', () => this.updateNetworkStatus());
 
-          if (UI.fechaInput && !UI.fechaInput.value) UI.fechaInput.value = Utils.yesterdayISO();
+          if (UI.fechaInput && !UI.fechaInput.value) UI.fechaInput.value = state.session.date || Utils.yesterdayISO();
+          if (UI.puntoVentaInput && state.session.pos) UI.puntoVentaInput.value = state.session.pos;
 
-          // Con un solo punto de venta, el botón sigue funcionando (reanuda la última sesión si existe)
-          UI.resumeLastBtn.disabled = !(state.session.date && state.session.pos);
+          this.showSection('capture');
+
+          if (state.session.date && state.session.pos) {
+            this.startSession(state.session.date, state.session.pos, true);
+          } else {
+            this.setResumeHint('', false);
+          }
+
+          if (UI.resumeLastBtn) UI.resumeLastBtn.disabled = true;
         },
 
         bindNav(){
-          UI.goCaptureBtn.addEventListener('click', () => this.showSection('capture'));
-          UI.backHome1.addEventListener('click', () => this.showSection('home'));
-
-          UI.resumeLastBtn.addEventListener('click', () => {
-            if(state.session.date && state.session.pos){
-              this.showSection('capture');
-              this.startSession(state.session.date, state.session.pos, true);
-              UI.resumeHint.style.display = '';
-            }
-          });
+          UI.goCaptureBtn?.addEventListener('click', () => this.showSection('capture'));
+          UI.backHome1?.addEventListener('click', () => this.showSection('home'));
         },
 
         showSection(name){
-          UI.home.classList.toggle('hidden', name!=='home');
-          UI.capture.classList.toggle('hidden', name!=='capture');
+          const sectionName = name === 'home' ? 'capture' : name;
+          UI.home.classList.toggle('hidden', sectionName!=='home');
+          UI.capture.classList.toggle('hidden', sectionName!=='capture');
 
-          if(name==='capture' && !(state.session.date && state.session.pos)){
-            UI.fechaInput.value = Utils.yesterdayISO();
+          if(sectionName==='capture' && !UI.fechaInput.value){
+            UI.fechaInput.value = state.session.date || Utils.yesterdayISO();
           }
         }
       });

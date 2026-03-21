@@ -1,3 +1,4 @@
+
 /**
  * Backend para la app de caja.
  * - doPost: guarda los registros que envía el front en el Spreadsheet que contiene este script (container-bound).

@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Caja ARCADIA</title>
+  <meta name="description" content="Aplicación de caja con conservación de lógica, fórmulas y destino de guardado por punto de venta.">
+  <style>
+    :root{
+      --navy:#122033;
+      --navy-2:#173a68;
+      --navy-3:#22344f;
+      --bg:#f2f4f8;
+      --card:#ffffff;
+      --text:#17202a;
+      --muted:#6b7280;
+      --line:#dde5ef;
+      --blue-soft:#eef4ff;
+      --green:#1f7a4d;
+      --blue:#245fca;
+      --purple:#6c49b8;
+      --gold:#cc8a11;
+      --red:#c0392b;
+      --shadow:0 10px 24px rgba(0,0,0,.06);
+      --radius:16px;
+      --touch:44px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow:hidden;
+      min-height:0;
+    }
+    a{text-decoration:none}
+    input,select,textarea,button{font:inherit}
+    .hidden{display:none !important}
+    .muted{color:var(--muted)}
+    .no-print{}
+    .app-layout{
+      display:grid;
+      grid-template-columns:290px 1fr;
+      min-height:100vh;
+      height:100vh;
+    }
+    .side{
+      background:var(--navy);
+      color:#fff;
+      padding:12px 10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:hidden;
+    }
+    .brand-title{
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.6px;
+      margin-bottom:2px;
+    }
+    .brand-subtitle{
+      color:#bfd0e4;
+      font-size:12px;
+    }
+    .side-panel-group{display:grid;gap:6px}
+    .side-panel-title{
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#9fb4cc;
+      margin-bottom:2px;
+    }
+    .group-nav .side-panel-title{color:#8fdcff}
+    .group-nav .side-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .group-nav .btn-nav-wide{grid-column:1 / -1;text-align:center !important}
+    .group-session .side-panel-title{color:#ffd56a}
+    .group-contado .side-panel-title{color:#63e6be}
+    .group-credito .side-panel-title{color:#c4b5fd}
+    .group-gastos .side-panel-title{color:#ffb86b}
+    .group-tools .side-panel-title{color:#f9a8d4}
+    .group-final .side-panel-title{color:#fca5a5}
+    .side-buttons{
+      display:grid;
+      gap:6px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .side .btn{
+      width:100%;
+      padding:6px 7px;
+      min-height:28px;
+      font-size:11.5px;
+      line-height:1.1;
+      text-align:left;
+    }
+    .side .btn-small{
+      min-height:28px;
+      padding:6px 7px;
+    }
+    .side .btn-info,
+    .side .btn-primary,
+    .side .btn-success,
+    .side .btn-warning,
+    .side .btn-purple,
+    .side .btn-danger{
+      color:#fff;
+      border:0;
+    }
+    .side .btn-soft{
+      background:#e9eef6;
+      color:var(--navy-2);
+      border:1px solid #d6deea;
+    }
+    .side .btn-primary{background:var(--navy-2)}
+    .side .btn-success{background:var(--green)}
+    .side .btn-info{background:var(--blue)}
+    .side .btn-warning{background:var(--gold)}
+    .side .btn-danger{background:var(--red)}
+    .side .btn-purple{background:var(--purple)}
+    .side .btn-teal{
+      background:linear-gradient(135deg,#0f766e,#14b8a6);
+      color:#fff;
+      border:0;
+      box-shadow:0 8px 18px rgba(20,184,166,.28);
+      grid-column:1 / -1;
+      text-align:center !important;
+    }
+    .side-card{
+      margin-top:auto;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:8px 10px;
+      color:#d9e4f2;
+      font-size:12px;
+      line-height:1.35;
+      display:grid;
+      gap:5px;
+    }
+    .side-card strong{color:#ffffff}
+    .session-fields{
+      display:grid;
+      gap:8px;
+    }
+    .session-fields label{
+      color:#dce7f6;
+      font-size:12px;
+      font-weight:700;
+      display:block;
+      margin-bottom:4px;
+    }
+    .session-fields input,
+    .session-fields select{
+      width:100%;
+      background:#0f1e31;
+      border:1px solid #314760;
+      color:#fff;
+      min-height:34px;
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:13px;
+    }
+    .session-fields input[disabled]{
+      opacity:.8;
+      color:#d4e1f4;
+    }
+    .session-fields input::-webkit-calendar-picker-indicator{
+      filter:invert(1);
+      opacity:.85;
+      cursor:pointer;
+    }
+    .main-shell{
+      padding:8px 14px 12px;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      height:100vh;
+      overflow:hidden;
+    }
+    .header-bar{
+      margin-bottom:6px;
+      display:block;
+    }
+    .header-point-only{
+      display:block;
+      min-height:26px;
+    }
+    .month-sales-card{
+      background:var(--card);
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .month-sales-scroll{
+      overflow-x:auto;
+    }
+    .month-sales-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      min-width:980px;
+    }
+    .month-sales-table th,
+    .month-sales-table td{
+      padding:6px 4px;
+      line-height:1.12;
+      border:1px solid var(--line);
+      text-align:center;
+      font-size:12px;
+      vertical-align:middle;
+    }
+    .month-sales-table thead th{
+      position:static;
+      background:#f6f8fb;
+      color:#0f2340;
+      font-weight:800;
+    }
+.month-sales-range{
+      background:linear-gradient(180deg,#f8fbff 0%,#edf4ff 100%) !important;
+      color:#16345c !important;
+      font-weight:800;
+      font-size:11px;
+      letter-spacing:.01em;
+      text-align:center !important;
+      padding:5px 10px !important;
+      line-height:1.15;
+    }
+    .month-sales-label{
+      width:88px;
+      min-width:88px;
+      text-align:left !important;
+      color:var(--navy-2) !important;
+      font-weight:800;
+      padding-left:10px !important;
+    }
+    .month-sales-month{
+      color:#0f2340;
+      font-weight:800;
+      font-size:11px;
+      white-space:normal;
+    }
+    .month-sales-table tbody th{
+      background:#f6f8fb;
+    }
+    .month-sales-value{
+      font-weight:800;
+      color:#0f2340;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:clip;
+      font-size:11px;
+      letter-spacing:-0.01em;
+      font-variant-numeric:tabular-nums;
+    }
+    .month-sales-value.is-loading{
+      color:#6a7f95;
+    }
+    .workspace{
+      min-height:0;
+      overflow:hidden;
+      display:grid;
+      gap:6px;
+      align-content:start;
+    }
+    .card{
+      background:var(--card);
+      border-radius:12px;
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+      padding:14px 16px;
+    }
+    .hero h2{
+      margin:4px 0;
+      font-size:22px;
+    }
+    .hero p{margin:0;font-size:13px}
+    .section-badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#e9eef6;
+      color:var(--navy-2);
+      font-size:12px;
+      font-weight:700;
+    }
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .hero-actions .btn{
+      width:auto;
+      min-height:36px;
+      padding:8px 12px;
+    }
+    .btn{
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .12s ease, opacity .12s ease;
+      border:0;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:var(--navy-2);color:#fff}
+    .btn-success{background:var(--green);color:#fff}
+    .btn-info{background:var(--blue);color:#fff}
+    .btn-warning{background:var(--gold);color:#fff}
+    .btn-danger{background:var(--red);color:#fff}
+    .btn-purple{background:var(--purple);color:#fff}
+    .btn-soft{
+      background:#e9eef6;
+      color:var(--navy-2);
+      border:1px solid #d6deea;
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:6px;
+    }
+    .kpi{
+      padding:6px 8px;
+      min-height:42px;
+      border-radius:10px;
+      border:1px solid #e6ebf2;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .kpi small{
+      display:block;
+      font-size:10px;
+      line-height:1.1;
+      color:var(--muted);
+      margin-bottom:3px;
+      min-height:auto;
+    }
+    .kpi b{
+      display:block;
+      font-size:15px;
+      line-height:1.05;
+      color:#111827;
+    }
+    .table-card{
+      display:grid;
+      grid-template-rows:1fr auto;
+      min-height:0;
+      gap:8px;
+    }
+    .records-container{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      height:100%;
+      min-height:0;
+    }
+	table{
+	  width:100%;
+	  border-collapse:collapse;
+	}
+
+	.month-sales-table{
+	  width:100%;
+	  border-collapse:collapse;
+	  table-layout:fixed;
+	  min-width:980px;
+	}
+
+	.records-container table{
+	  min-width:980px;
+	}
+    th,td{
+      padding:8px 10px;
+      border-top:1px solid #eef2f7;
+      text-align:left;
+      vertical-align:middle;
+      font-size:13px;
+    }
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#f6f9fc;
+      border-bottom:1px solid var(--line);
+      font-size:13px;
+      color:#374151;
+    }
+    tbody tr:nth-child(odd){background:#fbfcfe}
+    tbody tr:hover{background:#eef4ff !important}
+    .num{text-align:right}
+    .center{text-align:center}
+    .table-input{
+      width:100%;
+      padding:7px 9px;
+      border-radius:10px;
+      border:1px solid #d6deea;
+      background:#fff;
+      min-height:34px;
+      font-size:13px;
+    }
+    .table-input:focus{
+      outline:none;
+      border-color:#8ca7cf;
+      box-shadow:0 0 0 3px rgba(36,95,202,.12);
+    }
+    .row-efectivo{background:#eef9f1}
+    .row-electronica{background:#f7f9fc}
+    .row-credito{background:#eef7ff}
+    .row-gasto{background:#fff8eb}
+    .row-rappi{background:#f2f0ff}
+    tbody tr.row-efectivo:nth-child(odd){background:#e6f4ea}
+    tbody tr.row-electronica:nth-child(odd){background:#f1f4f8}
+    tbody tr.row-credito:nth-child(odd){background:#e5f0fb}
+    tbody tr.row-gasto:nth-child(odd){background:#fcf2d8}
+    tbody tr.row-rappi:nth-child(odd){background:#e9e4ff}
+    .table-actions{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .table-actions .btn{
+      min-height:40px;
+      padding:9px 12px;
+    }
+    .empty{
+      border:1px dashed #d6deea;
+      border-radius:12px;
+      padding:18px 16px;
+      text-align:center;
+      color:var(--muted);
+      background:#fbfcfe;
+    }
+    .empty strong{
+      display:block;
+      color:#334155;
+      margin-bottom:6px;
+    }
+    .records-message-row td{
+      padding:18px 14px;
+      text-align:center;
+      color:var(--muted);
+      font-weight:700;
+      background:#fbfcfe;
+    }
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:3000;
+    }
+    .modal-card{
+      width:min(1260px,calc(100vw - 32px));
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 24px 60px rgba(15,23,42,.25);
+      padding:16px 18px;
+      max-height:calc(100vh - 36px);
+      overflow:auto;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .modal-header h2{
+      margin:0;
+      font-size:22px;
+      color:#0f172a;
+    }
+    .formula-grid{
+      display:block;
+    }
+    .formula-compare-wrapper{
+      border:1px solid #dbe5f0;
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .formula-compare-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+    .formula-compare-table th,
+    .formula-compare-table td{
+      border:1px solid #dbe5f0;
+      padding:10px 12px;
+      vertical-align:top;
+      text-align:left;
+      word-break:break-word;
+    }
+    .formula-compare-table thead th{
+      background:#eff6ff;
+      color:#16365f;
+      font-size:13px;
+      font-weight:700;
+    }
+    .formula-compare-table thead th:first-child{
+      width:26%;
+      min-width:220px;
+    }
+    .formula-row-title{
+      font-weight:700;
+      color:#16365f;
+      background:#f8fbff;
+    }
+    .formula-cell{
+      font-size:13px;
+      line-height:1.4;
+      color:#334155;
+      background:#fff;
+    }
+    .formula-cell-current,
+    .formula-head-current{
+      background:#f8fbff !important;
+    }
+    .formula-cell-alert,
+    .formula-row-alert{
+      background:#fff1f2 !important;
+      color:#b91c1c !important;
+      border-color:#fecdd3 !important;
+    }
+    .formula-cell-empty{
+      font-style:italic;
+    }
+    .formula-head-note{
+      display:block;
+      margin-top:4px;
+      font-size:11px;
+      font-weight:600;
+      color:#64748b;
+    }
+    @media (max-height:900px){
+      .app-layout{grid-template-columns:270px 1fr}
+      .side{padding:10px 8px;gap:8px;overflow:auto}
+      .brand-title{font-size:20px}
+      .brand-subtitle{font-size:11px}
+      .side-panel-group{gap:5px}
+      .side-panel-title{font-size:10px}
+      .session-fields{gap:6px}
+      .session-fields label{font-size:11px;margin-bottom:3px}
+      .session-fields input,
+      .session-fields select{min-height:32px;padding:7px 9px;font-size:12px}
+      .side .btn,
+      .side .btn-small{min-height:26px;padding:5px 6px;font-size:11px}
+      .side-card{padding:7px 9px;font-size:11px;gap:4px}
+    }
+    @media (max-height:760px){
+      .app-layout{grid-template-columns:252px 1fr}
+      .side{padding:8px 7px;gap:7px}
+      .side-buttons{gap:5px}
+      .side-panel-group{gap:4px}
+      .brand-title{font-size:18px}
+      .brand-subtitle{font-size:10px}
+      .session-fields{gap:5px}
+      .session-fields label{font-size:10.5px}
+      .session-fields input,
+      .session-fields select{min-height:30px;padding:6px 8px;font-size:11.5px;border-radius:8px}
+      .side .btn,
+      .side .btn-small{min-height:24px;padding:4px 6px;font-size:10.5px;border-radius:8px}
+      .side-card{padding:6px 8px;font-size:10.5px;border-radius:10px}
+    }
+    @media (max-width:1280px){
+      .summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+    @media (max-width:1200px){
+      .formula-compare-table{min-width:860px}
+      .formula-compare-wrapper{overflow:auto}
+    }
+    @media (max-width:980px){
+      body{overflow:auto}
+      .app-layout{grid-template-columns:1fr;height:auto;min-height:100vh}
+      .side{overflow:visible}
+      .main-shell{height:auto;overflow:visible;padding:12px}
+      .workspace{overflow:visible}
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:760px){
+      .summary-grid{grid-template-columns:1fr}
+      .formula-compare-table{min-width:760px}
+      .hero{flex-direction:column;align-items:flex-start}
+      .hero-actions{width:100%}
+      .hero-actions .btn{width:100%}
+      table{min-width:760px}
+    }
+    @media print{
+      .no-print,.side{display:none !important}
+      body{background:#fff;overflow:visible}
+      .main-shell{padding:0;height:auto}
+      .card{box-shadow:none;border:1px solid #d9e1ea}
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side no-print">
+      <div>
+        <div class="brand-title">Caja ARCADIA</div>   
+      </div>
+
+      <div class="side-panel-group group-nav">
+        <div class="side-panel-title">Navegación</div>
+        <div class="side-buttons">
+          <button id="open-formulas-btn" type="button" class="btn btn-soft btn-nav-wide">Fórmulas</button>
+          <button id="btn-guardar-side" type="button" class="btn btn-primary">Guardar nube</button>
+          <button id="btn-limpiar-side" type="button" class="btn btn-danger">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-session">
+        <div class="side-panel-title">Sesión</div>
+        <div class="session-fields">
+          <div>
+            <label for="fecha">Fecha de las ventas</label>
+            <input id="fecha" type="date">
+          </div>
+          <div>
+            <label for="puntoVenta">Punto de venta</label>
+            <select id="puntoVenta"></select>
+          </div>
+          <div>
+            <label for="perfilVista">Perfil de cálculo</label>
+            <input id="perfilVista" type="text" disabled>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-contado">
+        <div class="side-panel-title">Efectivo</div>
+        <div class="side-buttons">
+          <button id="btn-efectivo" type="button" class="btn btn-info">Efectivo</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-electronica">
+        <div class="side-panel-title">Medios electrónicos</div>
+        <div class="side-buttons">
+          <button id="btn-qr" type="button" class="btn btn-info">QR</button>
+          <button id="btn-debito" type="button" class="btn btn-info">Tarjeta débito</button>
+          <button id="btn-credito-tarjeta" type="button" class="btn btn-info">Tarjeta crédito</button>
+          <button id="btn-rappi" type="button" class="btn btn-info">Rappi</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-credito">
+        <div class="side-panel-title">Créditos</div>
+        <div class="side-buttons">
+          <button id="btn-nomina" type="button" class="btn btn-info">Descuentos por nómina</button>
+          <button id="btn-formulas" type="button" class="btn btn-info">Fórmulas</button>
+          <button id="btn-kardex" type="button" class="btn btn-info">Faltantes en kardex</button>
+          <button id="btn-interco" type="button" class="btn btn-info">A empresas del grupo</button>
+          <button id="btn-autoconsumo" type="button" class="btn btn-info">Autoconsumo</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-gastos">
+        <div class="side-panel-title">Gastos</div>
+        <div class="side-buttons">
+          <button id="btn-gasto" type="button" class="btn btn-info">Gastos en efectivo</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-tools">
+        <div class="side-panel-title">Utilidades</div>
+        <div class="side-buttons">
+          <button id="btn-todos" type="button" class="btn btn-info">Todos</button>
+        </div>
+      </div>
+
+    </aside>
+
+    <div class="main-shell">
+      <div class="header-bar">
+        <div class="header-point-only">
+          <div class="month-sales-card">
+            <div class="month-sales-scroll">
+              <div id="summary-concepts-container"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main class="workspace">
+
+        <section id="summary-grid" class="summary-grid">
+          <div class="card kpi"><small id="label-kpi-efectivo">Total ventas en efectivo</small><b id="kpi-efectivo">$ 0</b></div>
+          <div class="card kpi"><small>Total ventas por medios electrónicos</small><b id="kpi-electronica">$ 0</b></div>
+          <div class="card kpi"><small>Total ventas a crédito</small><b id="kpi-credito">$ 0</b></div>
+          <div class="card kpi"><small>Total ventas</small><b id="kpi-total-ventas">$ 0</b></div>
+          <div class="card kpi"><small>Total gastos</small><b id="kpi-gastos">$ 0</b></div>
+          <div class="card kpi"><small>Total dinero a recibir por tesorería</small><b id="kpi-tesoreria">$ 0</b></div>
+        </section>
+
+        <section class="card table-card">
+
+          <div class="records-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th class="num">Valor</th>
+                  <th class="num">Devoluciones</th>
+                  <th class="num">Total</th>
+                  <th>Tercero / Destino</th>
+                  <th>Detalle</th>
+                  <th class="center">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="recordsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-actions no-print hidden">
+            <button id="btn-guardar-bottom" type="button" class="btn btn-primary">Guardar nube</button>
+            <button id="btn-limpiar-bottom" type="button" class="btn btn-danger">Limpiar</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="formulas-modal" class="modal-overlay hidden no-print" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="formulas-modal-title">
+      <div class="modal-header">
+        <h2 id="formulas-modal-title">Comparativo de fórmulas</h2>
+        <button type="button" class="btn btn-soft" id="close-formulas-btn">Cerrar</button>
+      </div>
+      <div id="formula-profile-caption" class="muted" style="margin:0 0 12px; font-size:13px;">Comparativo general de fórmulas</div>
+      <div id="formula-grid" class="formula-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzhNDI_6f8msYK571ukMrvADvCMB-QaZqRy1zDvq3psw9UTjhK_dNFeEisa2TVqK0Hl/exec',
+      API_KEY: '',
+      DEFAULT_PUNTO_VENTA: '',
+      EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones ARCADIA','Doctor Ahorro','Heritage','Distribuidora'],
+      PUNTOS_VENTA: [
+        { value: 'Aroma', label: 'Aroma', profile: 'AROMA' },
+        { value: 'Almendros', label: 'Almendros', profile: 'DRHE' },
+        { value: 'Ferrocarril', label: 'Ferrocarril', profile: 'DRHE' },
+        { value: 'Flora', label: 'Flora', profile: 'DRHE' },
+        { value: 'Irotama', label: 'Irotama', profile: 'DRHE' },
+        { value: 'Libertador', label: 'Libertador', profile: 'DRHE' },
+        { value: 'Neguanje', label: 'Neguanje', profile: 'DRHE' },
+        { value: 'Playa', label: 'Playa', profile: 'DRHE' },
+        { value: 'Reserva', label: 'Reserva', profile: 'DRHE' }
+      ],
+      PROFILE_DEFINITIONS: {
+        AROMA: {
+          label: 'IA',
+          totals: {
+            efectivo: 'Total ventas en efectivo',
+            electronica: 'Total ventas por medios electrónicos',
+            credito: 'Total ventas a crédito',
+            ventas: 'Total ventas',
+            gasto: 'Total gastos',
+            tesoreria: 'Total dinero a recibir por tesorería'
+          },
+          formulas: [
+            { titulo: 'Total ventas en efectivo', texto: 'Suma de: Efectivo' },
+            { titulo: 'Total ventas por medios electrónicos', texto: 'Suma de: QR + Rappi + Tarjeta débito + Tarjeta crédito' },
+            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo' },
+            { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
+            { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
+            { titulo: 'Total dinero a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
+          ],
+          operations: {
+            efectivo: { tipo: 'Efectivo', displayTipo: 'Efectivo', category: 'efectivo', styleClass: 'row-efectivo' },
+            qr: { tipo: 'QR', displayTipo: 'QR', category: 'electronica', styleClass: 'row-electronica' },
+            debito: { tipo: 'Tarjeta débito', displayTipo: 'Tarjeta débito', category: 'electronica', styleClass: 'row-electronica' },
+            creditoTarjeta: { tipo: 'Tarjeta crédito', displayTipo: 'Tarjeta crédito', category: 'electronica', styleClass: 'row-electronica' },
+            nomina: { tipo: 'Descuentos por nómina', displayTipo: 'Descuentos por nómina', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            formulas: { tipo: 'Fórmulas', displayTipo: 'Fórmulas', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            kardex: { tipo: 'Faltantes en kardex', displayTipo: 'Faltantes en kardex', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            interco: { tipo: 'A empresas del grupo', displayTipo: 'A empresas del grupo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            autoconsumo: { tipo: 'Autoconsumo', displayTipo: 'Autoconsumo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            rappi: { tipo: 'Rappi', displayTipo: 'Rappi', category: 'electronica', styleClass: 'row-rappi', terceroRequired: true, defaultTercero: 'Rappi' },
+            gasto: { tipo: 'Gastos en efectivo', displayTipo: 'Gastos en efectivo', category: 'gasto', styleClass: 'row-gasto' }
+          }
+        },
+        DRHE: {
+          label: 'Dr-He',
+          totals: {
+            efectivo: 'Total ventas en efectivo',
+            electronica: 'Total ventas por medios electrónicos',
+            credito: 'Total ventas a crédito',
+            ventas: 'Total ventas',
+            gasto: 'Total gastos',
+            tesoreria: 'Total dinero a recibir por tesorería'
+          },
+          formulas: [
+            { titulo: 'Total ventas en efectivo', texto: 'Efectivo y créditos - Total ventas a crédito' },
+            { titulo: 'Total ventas por medios electrónicos', texto: 'Suma de: QR + Rappi + Tarjeta débito + Tarjeta crédito' },
+            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo' },
+            { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
+            { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
+            { titulo: 'Total dinero a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
+          ],
+          operations: {
+            efectivo: { tipo: 'Efectivo y créditos', displayTipo: 'Efectivo y créditos', category: 'efectivo', styleClass: 'row-efectivo' },
+            qr: { tipo: 'QR', displayTipo: 'QR', category: 'electronica', styleClass: 'row-electronica' },
+            debito: { tipo: 'Tarjeta débito', displayTipo: 'Tarjeta débito', category: 'electronica', styleClass: 'row-electronica' },
+            creditoTarjeta: { tipo: 'Tarjeta crédito', displayTipo: 'Tarjeta crédito', category: 'electronica', styleClass: 'row-electronica' },
+            nomina: { tipo: 'Descuentos por nómina', displayTipo: 'Descuentos por nómina', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            formulas: { tipo: 'Fórmulas', displayTipo: 'Fórmulas', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            kardex: { tipo: 'Faltantes en kardex', displayTipo: 'Faltantes en kardex', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            interco: { tipo: 'A empresas del grupo', displayTipo: 'A empresas del grupo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            autoconsumo: { tipo: 'Autoconsumo', displayTipo: 'Autoconsumo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            rappi: { tipo: 'Rappi', displayTipo: 'Rappi', category: 'electronica', styleClass: 'row-rappi', terceroRequired: true, defaultTercero: 'Rappi' },
+            gasto: { tipo: 'Gastos en efectivo', displayTipo: 'Gastos en efectivo', category: 'gasto', styleClass: 'row-gasto' }
+          }
+        }
+      }
+    };
+
+    const UI = {
+      fecha: document.getElementById('fecha'),
+      puntoVenta: document.getElementById('puntoVenta'),
+      perfilVista: document.getElementById('perfilVista'),
+      recordsBody: document.getElementById('recordsBody'),
+      emptyBox: document.getElementById('empty-box'),
+      guardarBtnSide: document.getElementById('btn-guardar-side'),
+      limpiarBtnSide: document.getElementById('btn-limpiar-side'),
+      guardarBtnBottom: document.getElementById('btn-guardar-bottom'),
+      limpiarBtnBottom: document.getElementById('btn-limpiar-bottom'),
+      formulaGrid: document.getElementById('formula-grid'),
+      formulaCaption: document.getElementById('formula-profile-caption'),
+      formulasModal: document.getElementById('formulas-modal'),
+      openFormulasBtn: document.getElementById('open-formulas-btn'),
+      closeFormulasBtn: document.getElementById('close-formulas-btn'),
+      kpiEfectivo: document.getElementById('kpi-efectivo'),
+      kpiElectronica: document.getElementById('kpi-electronica'),
+      kpiCredito: document.getElementById('kpi-credito'),
+      kpiVentas: document.getElementById('kpi-total-ventas'),
+      kpiGastos: document.getElementById('kpi-gastos'),
+      kpiTesoreria: document.getElementById('kpi-tesoreria'),
+      labelKpiEfectivo: document.getElementById('label-kpi-efectivo'),
+      btnEfectivo: document.getElementById('btn-efectivo'),
+      pointRequiredButtons: [
+        document.getElementById('open-formulas-btn'),
+        document.getElementById('btn-limpiar-side'),
+        document.getElementById('btn-limpiar-bottom'),
+        document.getElementById('btn-efectivo'),
+        document.getElementById('btn-qr'),
+        document.getElementById('btn-debito'),
+        document.getElementById('btn-credito-tarjeta'),
+        document.getElementById('btn-nomina'),
+        document.getElementById('btn-formulas'),
+        document.getElementById('btn-kardex'),
+        document.getElementById('btn-interco'),
+        document.getElementById('btn-autoconsumo'),
+        document.getElementById('btn-rappi'),
+        document.getElementById('btn-gasto'),
+        document.getElementById('btn-todos')
+      ],
+      summaryConceptsContainer: document.getElementById('summary-concepts-container')
+    };
+
+    const state = {
+      session: { date: '', pos: '' },
+      conceptSummaryRequestId: 0
+    };
+
+    const LAST_SESSION_KEY = 'caja-unificada-v1::last-session';
+
+    function getLocalDateISO(){
+      const now = new Date();
+      const offsetMs = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offsetMs).toISOString().slice(0,10);
+    }
+
+    function bindClick(element, handler){
+      if (element) element.addEventListener('click', handler);
+    }
+
+    function setBusyState(buttons, disabled, text){
+      buttons.filter(Boolean).forEach(btn => {
+        btn.disabled = disabled;
+        btn.textContent = text;
+        btn.dataset.busy = disabled ? '1' : '0';
+      });
+    }
+
+    function formatCurrency(value){
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(Math.round(Number(value || 0)));
+    }
+
+    function safeNumber(value){
+      if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+      let text = String(value ?? '').trim();
+      if (!text) return 0;
+      text = text.replace(/[^0-9,.-]/g, '');
+      text = text.replace(/\./g, '').replace(/,/g, '.');
+      const num = parseFloat(text);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function escapeHtml(value){
+      return String(value == null ? '' : value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function newId(){
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function getSelectedPointConfig(){
+      const pv = String(UI.puntoVenta.value || '').trim();
+      return CONFIG.PUNTOS_VENTA.find(item => item.value === pv) || null;
+    }
+
+    function getCurrentProfile(){
+      const point = getSelectedPointConfig();
+      const profileKey = point ? point.profile : 'AROMA';
+      return CONFIG.PROFILE_DEFINITIONS[profileKey];
+    }
+
+    function refreshOperationButtons(){
+      const profile = getCurrentProfile();
+      if (UI.btnEfectivo) {
+        UI.btnEfectivo.textContent = profile?.operations?.efectivo?.displayTipo || 'Efectivo';
+        UI.btnEfectivo.title = profile?.operations?.efectivo?.displayTipo || 'Efectivo';
+      }
+    }
+
+    function getDraftStorageKey(dateValue = UI.fecha.value, posValue = UI.puntoVenta.value){
+      const fecha = String(dateValue || '').trim();
+      const pv = String(posValue || '').trim();
+      if (!fecha || !pv) return '';
+      return `caja-unificada-v1::${fecha}::${pv}`;
+    }
+
+    function getStorageKey(){
+      return getDraftStorageKey();
+    }
+
+    function saveLastSession(){
+      localStorage.setItem(LAST_SESSION_KEY, JSON.stringify({
+        date: String(UI.fecha.value || '').trim(),
+        pos: String(UI.puntoVenta.value || '').trim()
+      }));
+    }
+
+    function restoreLastSession(){
+      try {
+        const last = JSON.parse(localStorage.getItem(LAST_SESSION_KEY) || '{}');
+        if (last.date) UI.fecha.value = String(last.date).trim();
+      } catch (error) {
+        console.error(error);
+      }
+      UI.puntoVenta.value = '';
+    }
+
+    function normalizeRowValue(value, fallback = ''){
+      if (value === 0 || value === '0') return '0';
+      if (value == null || value === '') return fallback === '' ? '' : String(fallback);
+      return String(value);
+    }
+
+    function focusAndSelect(input){
+      if (!input) return;
+      requestAnimationFrame(() => {
+        try {
+          input.focus();
+          input.select();
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    }
+
+    function hasMissingRequiredTercero(){
+      return Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).some(tr => {
+        if (tr.dataset.terceroRequired !== '1') return false;
+        const terceroField = tr.querySelector('[data-field="tercero"]');
+        return !String(terceroField?.value || '').trim();
+      });
+    }
+
+    function hasSelectedPoint(){
+      return !!String(UI.puntoVenta?.value || '').trim();
+    }
+
+    function renderRecordsPlaceholder(){
+      const rows = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]'));
+      const existingPlaceholder = UI.recordsBody.querySelector('tr[data-placeholder="1"]');
+
+      if (rows.length) {
+        if (existingPlaceholder) existingPlaceholder.remove();
+        return;
+      }
+
+      const message = hasSelectedPoint()
+        ? 'Aún no hay movimientos cargados.'
+        : 'Selecciona primero el punto de venta para habilitar la captura.';
+      const html = `<td colspan="7">${escapeHtml(message)}</td>`;
+
+      if (existingPlaceholder) {
+        existingPlaceholder.innerHTML = html;
+        return;
+      }
+
+      const tr = document.createElement('tr');
+      tr.dataset.placeholder = '1';
+      tr.className = 'records-message-row';
+      tr.innerHTML = html;
+      UI.recordsBody.appendChild(tr);
+    }
+
+    function updatePointDependentUI(){
+      const hasPoint = hasSelectedPoint();
+      const lockTitle = hasPoint ? '' : 'Selecciona primero el punto de venta.';
+
+      (UI.pointRequiredButtons || []).filter(Boolean).forEach(btn => {
+        btn.disabled = !hasPoint;
+        btn.title = lockTitle;
+      });
+
+      Array.from(UI.recordsBody.querySelectorAll('tr[data-id] input, tr[data-id] select, tr[data-id] button')).forEach(control => {
+        control.disabled = !hasPoint;
+        control.title = lockTitle;
+      });
+
+      renderRecordsPlaceholder();
+    }
+
+    function requireSelectedPoint(){
+      if (hasSelectedPoint()) return true;
+      alert('Debes seleccionar el punto de venta para continuar.');
+      UI.puntoVenta.focus();
+      updatePointDependentUI();
+      return false;
+    }
+
+    function updateCloudSaveAvailability(){
+      const hasPoint = hasSelectedPoint();
+      const missingRequiredTercero = hasMissingRequiredTercero();
+
+      let title = '';
+      if (!hasPoint) {
+        title = 'Selecciona el punto de venta para guardar en la nube.';
+      } else if (missingRequiredTercero) {
+        title = 'Debes escoger el tercero en los movimientos donde es obligatorio.';
+      }
+
+      [UI.guardarBtnSide, UI.guardarBtnBottom].filter(Boolean).forEach(btn => {
+        if (btn.dataset.busy === '1') return;
+        btn.disabled = !hasPoint || missingRequiredTercero;
+        btn.title = title;
+      });
+    }
+
+    function renderPoints(){
+      UI.puntoVenta.innerHTML = '<option value="">Seleccione...</option>';
+      CONFIG.PUNTOS_VENTA.forEach(item => {
+        UI.puntoVenta.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`);
+      });
+    }
+
+    function formatPlainNumber(value){
+      return new Intl.NumberFormat('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(Math.round(Number(value || 0)));
+    }
+
+    function buildConceptSummaryRangeText(meta = {}, loading = false){
+      if (loading) return 'Consultando rango de fechas...';
+
+      const rangoTexto = String(meta?.rangoTexto || '').trim();
+      if (rangoTexto) return rangoTexto;
+
+      const fechaMin = String(meta?.fechaMin || '').trim();
+      const fechaMax = String(meta?.fechaMax || '').trim();
+      if (fechaMin && fechaMax) return `Totales desde ${fechaMin} hasta ${fechaMax}`;
+      return 'Totales acumulados';
+    }
+
+    function renderConceptSummaryTable(items = [], options = {}){
+      if (!UI.summaryConceptsContainer) return;
+
+      const loading = !!options.loading;
+      const emptyText = String(options.emptyText || 'Sin datos').trim();
+      const rangeText = buildConceptSummaryRangeText(options, loading);
+
+      const columns = loading
+        ? [{ tipo: 'Consultando...', valorTexto: '...' }]
+        : (Array.isArray(items) && items.length
+          ? items.map(item => ({
+              tipo: String(item?.tipo || '').trim() || 'Sin concepto',
+              valorTexto: formatPlainNumber(item?.valor || 0)
+            }))
+          : [{ tipo: emptyText, valorTexto: '' }]);
+
+      const headerCells = columns.map(item => `
+        <th class="month-sales-month" title="${escapeHtml(item.tipo)}">${escapeHtml(item.tipo)}</th>
+      `).join('');
+
+      const valueCells = columns.map(item => `
+        <td class="month-sales-value${loading ? ' is-loading' : ''}" title="${escapeHtml(item.valorTexto)}">${escapeHtml(item.valorTexto)}</td>
+      `).join('');
+
+      const totalColumns = columns.length + 1;
+
+      UI.summaryConceptsContainer.innerHTML = `
+        <table class="month-sales-table" aria-label="Resumen por conceptos de toda la hoja (sin conceptos que inicien por Total)">
+          <thead>
+            <tr>
+              <th class="month-sales-range" colspan="${totalColumns}" title="${escapeHtml(rangeText)}">${escapeHtml(rangeText)}</th>
+            </tr>
+            <tr>
+              <th class="month-sales-label">Concepto</th>
+              ${headerCells}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="month-sales-label">Valores</th>
+              ${valueCells}
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function clearConceptSummaryTable(){
+      renderConceptSummaryTable([], { emptyText: 'Sin datos', rangeText: 'Totales acumulados' });
+    }
+
+    async function fetchConceptSummary(puntoVenta){
+      const params = new URLSearchParams({
+        action: 'conceptSummary',
+        puntoVenta
+      });
+      if (CONFIG.API_KEY) params.set('key', CONFIG.API_KEY);
+
+      const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`);
+      const text = await response.text();
+
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error('La respuesta del Apps Script no fue JSON válido.');
+      }
+
+      if (!response.ok || result.result !== 'ok') {
+        throw new Error(result.error || `Error HTTP ${response.status}`);
+      }
+
+      return {
+        conceptos: Array.isArray(result.conceptos) ? result.conceptos : [],
+        fechaMin: String(result.fechaMin || '').trim(),
+        fechaMax: String(result.fechaMax || '').trim(),
+        rangoTexto: String(result.rangoTexto || '').trim()
+      };
+    }
+
+    async function refreshConceptSummary(){
+      const puntoVenta = String(UI.puntoVenta.value || '').trim();
+
+      if (!puntoVenta) {
+        clearConceptSummaryTable();
+        updateCloudSaveAvailability();
+        return;
+      }
+
+      renderConceptSummaryTable([], { loading: true });
+      const requestId = Date.now();
+      state.conceptSummaryRequestId = requestId;
+
+      try {
+        const summary = await fetchConceptSummary(puntoVenta);
+        if (state.conceptSummaryRequestId !== requestId) return;
+        renderConceptSummaryTable(summary.conceptos, {
+          fechaMin: summary.fechaMin,
+          fechaMax: summary.fechaMax,
+          rangoTexto: summary.rangoTexto
+        });
+      } catch (error) {
+        console.error(error);
+        if (state.conceptSummaryRequestId !== requestId) return;
+        renderConceptSummaryTable([], { emptyText: 'No disponible', rangeText: 'Rango no disponible' });
+      }
+
+      updateCloudSaveAvailability();
+    }
+
+    function renderFormulaComparison(){
+      const point = getSelectedPointConfig();
+      const currentProfileKey = point ? point.profile : null;
+      const profileEntries = Object.entries(CONFIG.PROFILE_DEFINITIONS);
+      const profileUsageMap = profileEntries.reduce((acc, [profileKey, profile]) => {
+        acc[profileKey] = CONFIG.PUNTOS_VENTA
+          .filter(item => item.profile === profileKey)
+          .map(item => item.label);
+        return acc;
+      }, {});
+
+      const formulaTitles = [...new Set(profileEntries.flatMap(([, profile]) => (profile.formulas || []).map(item => item.titulo)))];
+
+      if (UI.formulaCaption) {
+        const captionBase = point
+          ? `Punto actual: ${point.label} · Perfil actual: ${CONFIG.PROFILE_DEFINITIONS[currentProfileKey]?.label || ''}`
+          : 'Comparativo general de fórmulas';
+        UI.formulaCaption.textContent = `${captionBase}. Las diferencias o fórmulas ausentes aparecen en rojo.`;
+      }
+
+      const bodyRows = formulaTitles.map(title => {
+        const values = profileEntries.map(([profileKey, profile]) => {
+          const match = (profile.formulas || []).find(item => item.titulo === title);
+          return {
+            profileKey,
+            label: profile.label,
+            text: match?.texto || ''
+          };
+        });
+
+        const normalizedCounts = new Map();
+        values.forEach(item => {
+          const normalized = item.text.trim().toLowerCase();
+          normalizedCounts.set(normalized, (normalizedCounts.get(normalized) || 0) + 1);
+        });
+        const maxCount = Math.max(...normalizedCounts.values());
+        const hasDifference = normalizedCounts.size > 1;
+
+        const cells = values.map(item => {
+          const normalized = item.text.trim().toLowerCase();
+          const isUniqueDifference = hasDifference && normalizedCounts.get(normalized) < maxCount;
+          const isTieDifference = hasDifference && normalizedCounts.get(normalized) === maxCount && normalizedCounts.size > 1 && maxCount === 1;
+          const isMissing = !item.text.trim();
+          const cellClasses = ['formula-cell'];
+
+          if (item.profileKey === currentProfileKey) cellClasses.push('formula-cell-current');
+          if (isMissing) cellClasses.push('formula-cell-empty');
+          if (hasDifference && (isUniqueDifference || isTieDifference || isMissing)) cellClasses.push('formula-cell-alert');
+
+          return `<td class="${cellClasses.join(' ')}">${escapeHtml(item.text || 'No aplica en este perfil')}</td>`;
+        }).join('');
+
+        return `
+          <tr>
+            <th class="formula-row-title${hasDifference ? ' formula-row-alert' : ''}">${escapeHtml(title)}</th>
+            ${cells}
+          </tr>
+        `;
+      }).join('');
+
+      const headerCells = profileEntries.map(([profileKey, profile]) => {
+        const pointLabels = profileUsageMap[profileKey] || [];
+        const note = pointLabels.length ? `<span class="formula-head-note">Aplica en: ${escapeHtml(pointLabels.join(', '))}</span>` : '';
+        const headerClass = profileKey === currentProfileKey ? 'formula-head-current' : '';
+        return `<th class="${headerClass}">${escapeHtml(profile.label)}${note}</th>`;
+      }).join('');
+
+      UI.formulaGrid.innerHTML = `
+        <div class="formula-compare-wrapper">
+          <table class="formula-compare-table">
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                ${headerCells}
+              </tr>
+            </thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderProfileInfo(){
+      const point = getSelectedPointConfig();
+      const profile = getCurrentProfile();
+      UI.perfilVista.value = point ? profile.label : '';
+      UI.labelKpiEfectivo.textContent = profile.totals.efectivo;
+      refreshOperationButtons();
+      renderFormulaComparison();
+      refreshConceptSummary();
+    }
+
+    function createTerceroOptions(selected, required){
+      const placeholder = required ? 'Seleccione...' : '(Opcional) Seleccione...';
+      const options = [`<option value="">${placeholder}</option>`];
+      CONFIG.EMPRESAS_GRUPO.forEach(name => {
+        const isSelected = selected === name ? 'selected' : '';
+        options.push(`<option value="${escapeHtml(name)}" ${isSelected}>${escapeHtml(name)}</option>`);
+      });
+      ['Rappi','Otros','Varias'].forEach(name => {
+        const isSelected = selected === name ? 'selected' : '';
+        options.push(`<option value="${escapeHtml(name)}" ${isSelected}>${escapeHtml(name)}</option>`);
+      });
+      return `<select class="table-input" data-field="tercero">${options.join('')}</select>`;
+    }
+
+    function addRow(operationKey, rowData = null, skipSave = false){
+      if (!rowData && !requireSelectedPoint()) return;
+
+      const profile = getCurrentProfile();
+      const operation = profile.operations[operationKey];
+      if (!operation) return;
+
+      const placeholder = UI.recordsBody.querySelector('tr[data-placeholder="1"]');
+      if (placeholder) placeholder.remove();
+
+      const data = {
+        id: rowData?.id || newId(),
+        operationKey,
+        tipo: operation.tipo,
+        displayTipo: operation.displayTipo,
+        valor: normalizeRowValue(rowData?.valor, 1),
+        devoluciones: normalizeRowValue(rowData?.devoluciones, ''),
+        tercero: rowData?.tercero ?? operation.defaultTercero ?? '',
+        detalle: rowData?.detalle ?? '',
+        category: operation.category,
+        styleClass: operation.styleClass,
+        terceroRequired: !!operation.terceroRequired
+      };
+
+      const tr = document.createElement('tr');
+      tr.dataset.id = data.id;
+      tr.dataset.operationKey = data.operationKey;
+      tr.dataset.tipo = data.tipo;
+      tr.dataset.category = data.category;
+      tr.dataset.styleClass = data.styleClass;
+      tr.dataset.terceroRequired = data.terceroRequired ? '1' : '0';
+      tr.className = data.styleClass || '';
+
+      const total = safeNumber(data.valor) - safeNumber(data.devoluciones);
+
+      tr.innerHTML = `
+        <td>${escapeHtml(data.displayTipo)}</td>
+        <td class="num"><input class="table-input" type="text" data-field="valor" value="${escapeHtml(data.valor)}" placeholder="0"></td>
+        <td class="num"><input class="table-input" type="text" data-field="devoluciones" value="${escapeHtml(data.devoluciones)}" placeholder="0"></td>
+        <td class="num" data-field="total">${formatCurrency(total)}</td>
+        <td>${createTerceroOptions(data.tercero || '', !!data.terceroRequired)}</td>
+        <td><input class="table-input" type="text" data-field="detalle" value="${escapeHtml(data.detalle || '')}"></td>
+        <td class="center"><button type="button" class="btn btn-danger" data-action="delete">Borrar</button></td>
+      `;
+
+      UI.recordsBody.appendChild(tr);
+      updateTotals();
+      updateCloudSaveAvailability();
+      if (!skipSave) saveDraft();
+      focusAndSelect(tr.querySelector('[data-field="valor"]'));
+    }
+
+    function addAllRows(){
+      if (!requireSelectedPoint()) return;
+
+      const profile = getCurrentProfile();
+      const existingKeys = new Set(Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).map(tr => tr.dataset.operationKey));
+      Object.keys(profile.operations).forEach(key => {
+        if (!existingKeys.has(key)) addRow(key, null, true);
+      });
+      updateTotals();
+      saveDraft();
+    }
+
+    function deleteRow(button){
+      const tr = button.closest('tr');
+      if (!tr) return;
+      tr.remove();
+      updateTotals();
+      updateCloudSaveAvailability();
+      updatePointDependentUI();
+      saveDraft();
+    }
+
+    function collectRows(){
+      return Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).map(tr => {
+        const valor = safeNumber(tr.querySelector('[data-field="valor"]').value);
+        const devoluciones = safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
+        const tercero = tr.querySelector('[data-field="tercero"]').value || '';
+        const detalle = tr.querySelector('[data-field="detalle"]').value || '';
+        return {
+          id: tr.dataset.id,
+          operationKey: tr.dataset.operationKey,
+          tipo: tr.dataset.tipo,
+          displayTipo: tr.cells[0].textContent,
+          valor,
+          devoluciones,
+          total: valor - devoluciones,
+          tercero,
+          detalle,
+          category: tr.dataset.category,
+          styleClass: tr.dataset.styleClass,
+          terceroRequired: tr.dataset.terceroRequired === '1'
+        };
+      });
+    }
+
+    function validateRows(rows){
+      for (const row of rows) {
+        if (row.terceroRequired && !String(row.tercero || '').trim()) {
+          alert(`Debes escoger el tercero para: ${row.displayTipo}`);
+          return false;
+        }
+      }
+      return true;
+    }
+
+    function calculateSummary(rows){
+      let efectivo = 0;
+      let electronica = 0;
+      let credito = 0;
+      let gasto = 0;
+
+      rows.forEach(row => {
+        const total = Number(row.total || 0);
+        if (row.category === 'efectivo') efectivo += total;
+        if (row.category === 'electronica') electronica += total;
+        if (row.category === 'credito') credito += total;
+        if (row.category === 'gasto') gasto += total;
+      });
+
+      const profileKey = getSelectedPointConfig()?.profile || 'AROMA';
+      if (profileKey === 'AROMA') {
+        const ventasEfectivo = efectivo;
+        return {
+          ventasEfectivo,
+          ventasElectronicas: electronica,
+          ventasCredito: credito,
+          ventasGlobal: ventasEfectivo + electronica + credito,
+          gastosEfectivo: gasto,
+          tesoreria: ventasEfectivo - gasto
+        };
+      }
+
+      const ventasEfectivo = efectivo - credito;
+      return {
+        ventasEfectivo,
+        ventasElectronicas: electronica,
+        ventasCredito: credito,
+        ventasGlobal: ventasEfectivo + electronica + credito,
+        gastosEfectivo: gasto,
+        tesoreria: ventasEfectivo - gasto
+      };
+    }
+
+    function updateTotals(){
+      const rows = collectRows();
+      const trs = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]'));
+      rows.forEach((row, index) => {
+        const tr = trs[index];
+        if (tr) {
+          tr.querySelector('[data-field="total"]').textContent = formatCurrency(row.total);
+        }
+      });
+
+      const summary = calculateSummary(rows);
+      UI.kpiEfectivo.textContent = formatCurrency(summary.ventasEfectivo);
+      UI.kpiElectronica.textContent = formatCurrency(summary.ventasElectronicas);
+      UI.kpiCredito.textContent = formatCurrency(summary.ventasCredito);
+      UI.kpiVentas.textContent = formatCurrency(summary.ventasGlobal);
+      UI.kpiGastos.textContent = formatCurrency(summary.gastosEfectivo);
+      UI.kpiTesoreria.textContent = formatCurrency(summary.tesoreria);
+      if (UI.emptyBox) UI.emptyBox.classList.toggle('hidden', rows.length > 0);
+      updateCloudSaveAvailability();
+    }
+
+    function saveDraft(){
+      const key = getStorageKey();
+      if (!key) return;
+      const payload = {
+        session: { date: UI.fecha.value || '', pos: UI.puntoVenta.value || '' },
+        rows: collectRows()
+      };
+      localStorage.setItem(key, JSON.stringify(payload));
+    }
+
+    function resolveOperationKey(row){
+      const operations = getCurrentProfile().operations;
+      return row?.operationKey || Object.keys(operations).find(key => operations[key].tipo === row?.tipo) || '';
+    }
+
+    function populateRows(rows){
+      UI.recordsBody.innerHTML = '';
+      (rows || []).forEach(row => {
+        const operationKey = resolveOperationKey(row);
+        if (!operationKey) return;
+        addRow(operationKey, {
+          ...row,
+          operationKey,
+          tercero: row.tercero || '',
+          detalle: row.detalle || '',
+          valor: row.valor ?? '',
+          devoluciones: row.devoluciones ?? ''
+        }, true);
+      });
+      updateTotals();
+      updatePointDependentUI();
+    }
+
+    function hasRowsToPreserve(rows){
+      return (rows || []).some(row => (
+        Number(row?.valor || 0) !== 0 ||
+        Number(row?.devoluciones || 0) !== 0 ||
+        String(row?.tercero || '').trim() ||
+        String(row?.detalle || '').trim()
+      ));
+    }
+
+    function loadDraft(){
+      UI.recordsBody.innerHTML = '';
+      const key = getStorageKey();
+      if (!key) {
+        updateTotals();
+        return;
+      }
+
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        updateTotals();
+        return;
+      }
+      try {
+        const payload = JSON.parse(raw);
+        populateRows(payload.rows || []);
+      } catch (error) {
+        console.error(error);
+        updateTotals();
+      }
+    }
+
+    function clearDraft(){
+      const key = getStorageKey();
+      if (key) localStorage.removeItem(key);
+    }
+
+    async function saveToCloud(){
+      if (!requireSelectedPoint()) return;
+
+      const fecha = String(UI.fecha.value || '').trim();
+      const puntoVenta = String(UI.puntoVenta.value || '').trim();
+      if (!fecha) {
+        alert('Debes seleccionar la fecha del reporte.');
+        UI.fecha.focus();
+        return;
+      }
+      if (!puntoVenta) {
+        alert('Debes seleccionar el punto de venta.');
+        UI.puntoVenta.focus();
+        return;
+      }
+
+      const rows = collectRows().filter(row => row.valor !== 0 || row.devoluciones !== 0);
+      if (!rows.length) {
+        alert('No hay registros con valores para guardar.');
+        return;
+      }
+      if (!validateRows(rows)) return;
+
+      const profile = getCurrentProfile();
+      const summary = calculateSummary(rows);
+
+      const detailData = rows.map(row => ({
+        fecha,
+        puntoVenta,
+        tipo: row.tipo,
+        tercero: row.tercero || '',
+        detalle: row.detalle || '',
+        valor: Number(row.total || 0)
+      }));
+
+      const totalsData = [
+        { tipo: profile.totals.efectivo, valor: summary.ventasEfectivo },
+        { tipo: profile.totals.electronica, valor: summary.ventasElectronicas },
+        { tipo: profile.totals.credito, valor: summary.ventasCredito },
+        { tipo: profile.totals.ventas, valor: summary.ventasGlobal },
+        { tipo: profile.totals.gasto, valor: summary.gastosEfectivo },
+        { tipo: profile.totals.tesoreria, valor: summary.tesoreria }
+      ].map(item => ({
+        fecha,
+        puntoVenta,
+        tipo: item.tipo,
+        tercero: '',
+        detalle: '',
+        valor: Number(item.valor || 0)
+      }));
+
+      const url = CONFIG.SCRIPT_URL + (CONFIG.API_KEY ? `?key=${encodeURIComponent(CONFIG.API_KEY)}` : '');
+      const saveButtons = [UI.guardarBtnSide, UI.guardarBtnBottom];
+      setBusyState(saveButtons, true, 'Guardando...');
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify([...detailData, ...totalsData])
+        });
+
+        const text = await response.text();
+        let result;
+        try {
+          result = JSON.parse(text);
+        } catch {
+          throw new Error('La respuesta del Apps Script no fue JSON válido.');
+        }
+
+        if (!response.ok || result.result !== 'success') {
+          throw new Error(result.error || `Error HTTP ${response.status}`);
+        }
+
+        alert('Registros guardados correctamente.');
+        saveDraft();
+        refreshConceptSummary();
+      } catch (error) {
+        console.error(error);
+        alert(`No se pudo guardar: ${error.message || error}`);
+      } finally {
+        setBusyState(saveButtons, false, 'Guardar nube');
+        updateCloudSaveAvailability();
+      }
+    }
+
+    function clearCurrentCapture(){
+      if (!requireSelectedPoint()) return;
+
+      UI.recordsBody.innerHTML = '';
+      clearDraft();
+      updateTotals();
+      updateCloudSaveAvailability();
+      updatePointDependentUI();
+    }
+
+    function refreshNetworkStatus(){
+      const online = navigator.onLine;
+      if (UI.networkStatus) UI.networkStatus.textContent = online ? 'Online' : 'Offline';
+    }
+
+    function handleSessionChange(){
+      const previousSession = { ...state.session };
+      const nextSession = {
+        date: String(UI.fecha.value || '').trim(),
+        pos: String(UI.puntoVenta.value || '').trim()
+      };
+      const currentRows = collectRows();
+      const pointChanged = previousSession.pos !== nextSession.pos;
+      const preserveCapture = pointChanged && hasRowsToPreserve(currentRows);
+
+      renderProfileInfo();
+
+      if (preserveCapture) {
+        populateRows(currentRows.map(row => ({ ...row })));
+        saveDraft();
+      } else {
+        loadDraft();
+      }
+
+      state.session = nextSession;
+      saveLastSession();
+      updatePointDependentUI();
+    }
+
+    function openFormulasModal(){
+      if (!requireSelectedPoint() || !UI.formulasModal) return;
+      renderFormulaComparison();
+      UI.formulasModal.classList.remove('hidden');
+      UI.formulasModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeFormulasModal(){
+      if (!UI.formulasModal) return;
+      UI.formulasModal.classList.add('hidden');
+      UI.formulasModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function bindEvents(){
+      document.getElementById('btn-efectivo').addEventListener('click', () => addRow('efectivo'));
+      document.getElementById('btn-qr').addEventListener('click', () => addRow('qr'));
+      document.getElementById('btn-debito').addEventListener('click', () => addRow('debito'));
+      document.getElementById('btn-credito-tarjeta').addEventListener('click', () => addRow('creditoTarjeta'));
+      document.getElementById('btn-nomina').addEventListener('click', () => addRow('nomina'));
+      document.getElementById('btn-formulas').addEventListener('click', () => addRow('formulas'));
+      document.getElementById('btn-kardex').addEventListener('click', () => addRow('kardex'));
+      document.getElementById('btn-interco').addEventListener('click', () => addRow('interco'));
+      document.getElementById('btn-autoconsumo').addEventListener('click', () => addRow('autoconsumo'));
+      document.getElementById('btn-rappi').addEventListener('click', () => addRow('rappi'));
+      document.getElementById('btn-gasto').addEventListener('click', () => addRow('gasto'));
+      document.getElementById('btn-todos').addEventListener('click', addAllRows);
+
+      bindClick(UI.guardarBtnSide, saveToCloud);
+      bindClick(UI.guardarBtnBottom, saveToCloud);
+
+      bindClick(UI.limpiarBtnSide, clearCurrentCapture);
+      bindClick(UI.limpiarBtnBottom, clearCurrentCapture);
+
+      bindClick(UI.openFormulasBtn, openFormulasModal);
+      bindClick(UI.closeFormulasBtn, closeFormulasModal);
+      if (UI.formulasModal) {
+        UI.formulasModal.addEventListener('click', event => {
+          if (event.target === UI.formulasModal) closeFormulasModal();
+        });
+      }
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !UI.formulasModal.classList.contains('hidden')) {
+          closeFormulasModal();
+        }
+      });
+
+      UI.fecha.addEventListener('change', handleSessionChange);
+      UI.puntoVenta.addEventListener('change', handleSessionChange);
+
+      UI.recordsBody.addEventListener('input', event => {
+        if (event.target.matches('input, select')) {
+          updateTotals();
+          saveDraft();
+        }
+      });
+
+      UI.recordsBody.addEventListener('focusin', event => {
+        if (event.target.matches('input[data-field="valor"]')) {
+          event.target.select();
+        }
+      });
+
+      UI.recordsBody.addEventListener('click', event => {
+        const button = event.target.closest('button[data-action="delete"]');
+        if (button) deleteRow(button);
+      });
+
+      window.addEventListener('online', refreshNetworkStatus);
+      window.addEventListener('offline', refreshNetworkStatus);
+    }
+
+    function init(){
+      renderPoints();
+      refreshNetworkStatus();
+
+      UI.fecha.value = getLocalDateISO();
+      restoreLastSession();
+
+      if (!String(UI.fecha.value || '').trim()) {
+        UI.fecha.value = getLocalDateISO();
+      }
+
+      UI.puntoVenta.value = '';
+
+      renderProfileInfo();
+      clearConceptSummaryTable();
+      updateCloudSaveAvailability();
+      bindEvents();
+      loadDraft();
+      updateTotals();
+      updatePointDependentUI();
+      state.session = {
+        date: String(UI.fecha.value || '').trim(),
+        pos: String(UI.puntoVenta.value || '').trim()
+      };
+      saveLastSession();
+    }
+
+    init();
+  </script>
+</body>
+</html>

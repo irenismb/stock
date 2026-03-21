@@ -15,7 +15,7 @@ const API_KEY = ''; // Déjalo vacío si no quieres usar clave.
 
 const TOTALES_VALIDOS = new Set([
   'Total dinero a recibir por tesoreria',
-  'Total gastos en efectivo',
+  'Total gastos',
   'Total ventas',
   'Total ventas a credito',
   'Total ventas en efectivo',

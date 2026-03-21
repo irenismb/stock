@@ -596,7 +596,7 @@ function _guardarEnHoja_(sheet, headerInfo, records) {
     row[colIdx.puntoVenta] = rec.puntoVenta;
     row[colIdx.tipo] = rec.tipo;
     row[colIdx.tercero] = rec.tercero;
-    row[colIdx.detalle] = rec.detalle;
+    row[colIdx.detalle] = _capitalizarPalabras_(rec.detalle);
     row[colIdx.valor] = Number(valor) || 0;
 
     Object.keys(optNumIdx).forEach(k => {
@@ -735,6 +735,16 @@ function _normText(value) {
     .replace(/[^a-z0-9]+/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function _capitalizarPalabras_(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .replace(/(^|[\s\-\/\(])([a-záéíóúñü])/g, function(_, separador, letra) {
+      return separador + letra.toUpperCase();
+    });
 }
 
 function _toNumber(value) {

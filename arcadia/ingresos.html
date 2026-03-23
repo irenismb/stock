@@ -702,7 +702,7 @@
           <div class="card kpi"><small>Total ventas a crédito</small><b id="kpi-credito">$ 0</b></div>
           <div class="card kpi"><small>Total ventas</small><b id="kpi-total-ventas">$ 0</b></div>
           <div class="card kpi"><small>Total gastos</small><b id="kpi-gastos">$ 0</b></div>
-          <div class="card kpi"><small>Total dinero a recibir por tesorería</small><b id="kpi-tesoreria">$ 0</b></div>
+          <div class="card kpi"><small>Total efectivo a recibir por tesorería</small><b id="kpi-tesoreria">$ 0</b></div>
         </section>
 
         <section class="card table-card">
@@ -746,7 +746,7 @@
 
   <script>
     const CONFIG = {
-      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyNOUtfk8HCfJIcDPioLXWpFGbr305exN5Niu3cfstrb_nr8RhLMLNcUWBKGhwnwDz9/exec',
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxZKEAGFbayjtkxKnyQccQml_GS-WpZyQGpdiSL-o901gq2nSQd57cucR2yoTT0cQ-V/exec',
       API_KEY: '',
       DEFAULT_PUNTO_VENTA: '',
       EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones Arcadia','Doctor Ahorro','Heritage','Distribuidora'],
@@ -770,7 +770,7 @@
             credito: 'Total ventas a crédito',
             ventas: 'Total ventas',
             gasto: 'Total gastos',
-            tesoreria: 'Total dinero a recibir por tesorería'
+            tesoreria: 'Total efectivo a recibir por tesorería'
           },
           formulas: [
             { titulo: 'Total ventas en efectivo', texto: 'Suma de: Efectivo' },
@@ -778,7 +778,7 @@
             { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo' },
             { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
             { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
-            { titulo: 'Total dinero a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
+            { titulo: 'Total efectivo a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
           ],
           operations: {
             efectivo: { tipo: 'Efectivo', displayTipo: 'Efectivo', category: 'efectivo', styleClass: 'row-efectivo' },
@@ -802,7 +802,7 @@
             credito: 'Total ventas a crédito',
             ventas: 'Total ventas',
             gasto: 'Total gastos',
-            tesoreria: 'Total dinero a recibir por tesorería'
+            tesoreria: 'Total efectivo a recibir por tesorería'
           },
           formulas: [
             { titulo: 'Total ventas en efectivo', texto: 'Efectivo y créditos - Total ventas a crédito' },
@@ -810,7 +810,7 @@
             { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo' },
             { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
             { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
-            { titulo: 'Total dinero a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
+            { titulo: 'Total efectivo a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
           ],
           operations: {
             efectivo: { tipo: 'Efectivo y créditos', displayTipo: 'Efectivo y créditos', category: 'efectivo', styleClass: 'row-efectivo' },
@@ -1092,15 +1092,15 @@
     }
 
     function buildConceptSummaryRangeText(meta = {}, loading = false){
-      if (loading) return 'Consultando rango de fechas...';
+      if (loading) return 'Consultando...';
 
       const rangoTexto = String(meta?.rangoTexto || '').trim();
       if (rangoTexto) return rangoTexto;
 
-      const fechaMin = String(meta?.fechaMin || '').trim();
-      const fechaMax = String(meta?.fechaMax || '').trim();
-      if (fechaMin && fechaMax) return `Totales desde ${fechaMin} hasta ${fechaMax}`;
-      return 'Totales acumulados';
+      const fecha = String(meta?.fecha || '').trim();
+      if (fecha) return fecha;
+
+      return '';
     }
 
     function renderConceptSummaryTable(items = [], options = {}){
@@ -1110,40 +1110,77 @@
       const emptyText = String(options.emptyText || 'Sin datos').trim();
       const rangeText = buildConceptSummaryRangeText(options, loading);
 
-      const columns = loading
-        ? [{ tipo: 'Consultando...', valorTexto: '...' }]
-        : (Array.isArray(items) && items.length
-          ? items.map(item => ({
-              tipo: String(item?.tipo || '').trim() || 'Sin concepto',
-              valorTexto: formatPlainNumber(item?.valor || 0)
+      const orderedItems = Array.isArray(items)
+        ? [...items].sort((a, b) => {
+            const diff = Number(b?.valor || 0) - Number(a?.valor || 0);
+            if (diff !== 0) return diff;
+            return String(a?.punto || '').localeCompare(String(b?.punto || ''), 'es', { sensitivity: 'base' });
+          })
+        : [];
+
+      const baseColumns = loading
+        ? [{ punto: 'Consultando...', valor: 0, tesoreria: 0, valorTexto: '...', tesoreriaTexto: '...' }]
+        : (orderedItems.length
+          ? orderedItems.map(item => ({
+              punto: String(item?.punto || '').trim() || 'Sin punto',
+              valor: Number(item?.valor || 0),
+              tesoreria: Number(item?.tesoreria || 0),
+              valorTexto: formatPlainNumber(item?.valor || 0),
+              tesoreriaTexto: formatPlainNumber(item?.tesoreria || 0)
             }))
-          : [{ tipo: emptyText, valorTexto: '' }]);
+          : [{ punto: emptyText, valor: 0, tesoreria: 0, valorTexto: '', tesoreriaTexto: '' }]);
+
+      const totalValor = loading
+        ? null
+        : baseColumns.reduce((sum, item) => sum + Number(item?.valor || 0), 0);
+
+      const totalTesoreria = loading
+        ? null
+        : baseColumns.reduce((sum, item) => sum + Number(item?.tesoreria || 0), 0);
+
+      const columns = loading
+        ? baseColumns
+        : [...baseColumns, {
+            punto: 'Total',
+            valor: totalValor,
+            tesoreria: totalTesoreria,
+            valorTexto: formatPlainNumber(totalValor || 0),
+            tesoreriaTexto: formatPlainNumber(totalTesoreria || 0)
+          }];
 
       const headerCells = columns.map(item => `
-        <th class="month-sales-month" title="${escapeHtml(item.tipo)}">${escapeHtml(item.tipo)}</th>
+        <th class="month-sales-month" title="${escapeHtml(item.punto)}">${escapeHtml(item.punto)}</th>
       `).join('');
 
       const valueCells = columns.map(item => `
         <td class="month-sales-value${loading ? ' is-loading' : ''}" title="${escapeHtml(item.valorTexto)}">${escapeHtml(item.valorTexto)}</td>
       `).join('');
 
+      const tesoreriaCells = columns.map(item => `
+        <td class="month-sales-value${loading ? ' is-loading' : ''}" title="${escapeHtml(item.tesoreriaTexto)}">${escapeHtml(item.tesoreriaTexto)}</td>
+      `).join('');
+
       const totalColumns = columns.length + 1;
 
       UI.summaryConceptsContainer.innerHTML = `
-        <table class="month-sales-table" aria-label="Resumen por conceptos de toda la hoja (sin conceptos que inicien por Total)">
+        <table class="month-sales-table" aria-label="Ventas del día seleccionado">
           <thead>
             <tr>
               <th class="month-sales-range" colspan="${totalColumns}" title="${escapeHtml(rangeText)}">${escapeHtml(rangeText)}</th>
             </tr>
             <tr>
-              <th class="month-sales-label">Concepto</th>
+              <th class="month-sales-label">Punto</th>
               ${headerCells}
             </tr>
           </thead>
           <tbody>
             <tr>
-              <th class="month-sales-label">Valores</th>
+              <th class="month-sales-label">Ventas</th>
               ${valueCells}
+            </tr>
+            <tr>
+              <th class="month-sales-label">Efectivo rec.</th>
+              ${tesoreriaCells}
             </tr>
           </tbody>
         </table>
@@ -1151,13 +1188,13 @@
     }
 
     function clearConceptSummaryTable(){
-      renderConceptSummaryTable([], { emptyText: 'Sin datos', rangeText: 'Totales acumulados' });
+      renderConceptSummaryTable([], { emptyText: 'Sin datos', rangoTexto: '' });
     }
 
-    async function fetchConceptSummary(puntoVenta){
+    async function fetchConceptSummary(date){
       const params = new URLSearchParams({
-        action: 'conceptSummary',
-        puntoVenta
+        action: 'pointSalesOnDate',
+        date
       });
       if (CONFIG.API_KEY) params.set('key', CONFIG.API_KEY);
 
@@ -1176,17 +1213,16 @@
       }
 
       return {
-        conceptos: Array.isArray(result.conceptos) ? result.conceptos : [],
-        fechaMin: String(result.fechaMin || '').trim(),
-        fechaMax: String(result.fechaMax || '').trim(),
+        puntos: Array.isArray(result.puntos) ? result.puntos : [],
+        fecha: String(result.fecha || '').trim(),
         rangoTexto: String(result.rangoTexto || '').trim()
       };
     }
 
     async function refreshConceptSummary(){
-      const puntoVenta = String(UI.puntoVenta.value || '').trim();
+      const fecha = String(UI.fecha.value || '').trim();
 
-      if (!puntoVenta) {
+      if (!fecha) {
         clearConceptSummaryTable();
         updateCloudSaveAvailability();
         return;
@@ -1197,17 +1233,16 @@
       state.conceptSummaryRequestId = requestId;
 
       try {
-        const summary = await fetchConceptSummary(puntoVenta);
+        const summary = await fetchConceptSummary(fecha);
         if (state.conceptSummaryRequestId !== requestId) return;
-        renderConceptSummaryTable(summary.conceptos, {
-          fechaMin: summary.fechaMin,
-          fechaMax: summary.fechaMax,
+        renderConceptSummaryTable(summary.puntos, {
+          fecha: summary.fecha,
           rangoTexto: summary.rangoTexto
         });
       } catch (error) {
         console.error(error);
         if (state.conceptSummaryRequestId !== requestId) return;
-        renderConceptSummaryTable([], { emptyText: 'No disponible', rangeText: 'Rango no disponible' });
+        renderConceptSummaryTable([], { emptyText: 'No disponible', rangoTexto: fecha || '' });
       }
 
       updateCloudSaveAvailability();

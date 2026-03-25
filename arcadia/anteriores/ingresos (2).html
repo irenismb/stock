@@ -82,7 +82,6 @@
     .group-credito .side-panel-title{color:#c4b5fd}
     .group-gastos .side-panel-title{color:#ffb86b}
     .group-tools .side-panel-title{color:#f9a8d4}
-    .group-switches .side-panel-title{color:#93c5fd}
     .group-final .side-panel-title{color:#fca5a5}
     .side-buttons{
       display:grid;
@@ -128,83 +127,6 @@
       box-shadow:0 8px 18px rgba(20,184,166,.28);
       grid-column:1 / -1;
       text-align:center !important;
-    }
-    .switch-list{
-      display:grid;
-      gap:8px;
-    }
-    .switch-item{
-      display:grid;
-      grid-template-columns:minmax(0,1fr) auto;
-      align-items:center;
-      gap:10px;
-      padding:8px 10px;
-      border-radius:12px;
-      background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.08);
-      cursor:pointer;
-    }
-    .switch-text{
-      display:grid;
-      gap:3px;
-      min-width:0;
-    }
-    .switch-text strong{
-      color:#fff;
-      font-size:12px;
-      line-height:1.2;
-    }
-    .switch-text small{
-      color:#bfd0e4;
-      font-size:11px;
-      line-height:1.25;
-    }
-    .switch-control{
-      position:relative;
-      width:46px;
-      height:26px;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      flex:0 0 auto;
-    }
-    .switch-control input{
-      position:absolute;
-      inset:0;
-      opacity:0;
-      margin:0;
-      cursor:pointer;
-    }
-    .switch-slider{
-      position:relative;
-      width:46px;
-      height:26px;
-      border-radius:999px;
-      background:#5b6b80;
-      transition:background .2s ease;
-      box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
-    }
-    .switch-slider::after{
-      content:'';
-      position:absolute;
-      top:3px;
-      left:3px;
-      width:20px;
-      height:20px;
-      border-radius:50%;
-      background:#fff;
-      transition:transform .2s ease;
-      box-shadow:0 2px 6px rgba(0,0,0,.25);
-    }
-    .switch-control input:checked + .switch-slider{
-      background:#14b8a6;
-    }
-    .switch-control input:checked + .switch-slider::after{
-      transform:translateX(20px);
-    }
-    .switch-control input:focus-visible + .switch-slider{
-      outline:2px solid #93c5fd;
-      outline-offset:2px;
     }
     .side-card{
       margin-top:auto;
@@ -637,12 +559,6 @@
       .session-fields select{min-height:32px;padding:7px 9px;font-size:12px}
       .side .btn,
       .side .btn-small{min-height:26px;padding:5px 6px;font-size:11px}
-      .switch-item{padding:7px 9px;gap:8px}
-      .switch-text strong{font-size:11px}
-      .switch-text small{font-size:10px}
-      .switch-control,.switch-slider{width:42px;height:24px}
-      .switch-slider::after{width:18px;height:18px}
-      .switch-control input:checked + .switch-slider::after{transform:translateX(18px)}
       .side-card{padding:7px 9px;font-size:11px;gap:4px}
     }
     @media (max-height:760px){
@@ -658,12 +574,6 @@
       .session-fields select{min-height:30px;padding:6px 8px;font-size:11.5px;border-radius:8px}
       .side .btn,
       .side .btn-small{min-height:24px;padding:4px 6px;font-size:10.5px;border-radius:8px}
-      .switch-item{padding:6px 8px;border-radius:10px}
-      .switch-text strong{font-size:10.5px}
-      .switch-text small{font-size:9.5px}
-      .switch-control,.switch-slider{width:40px;height:22px}
-      .switch-slider::after{width:16px;height:16px}
-      .switch-control input:checked + .switch-slider::after{transform:translateX(18px)}
       .side-card{padding:6px 8px;font-size:10.5px;border-radius:10px}
     }
     @media (max-width:1280px){
@@ -768,22 +678,6 @@
         <div class="side-panel-title">Utilidades</div>
         <div class="side-buttons">
           <button id="btn-todos" type="button" class="btn btn-info">Todos</button>
-        </div>
-      </div>
-
-      <div class="side-panel-group group-switches">
-        <div class="side-panel-title">Interruptores</div>
-        <div class="switch-list">
-          <label class="switch-item" for="toggle-summary-values">
-            <span class="switch-text">
-              <strong>Mostrar valores superiores</strong>
-              <small>Permanece desactivado al abrir y solicita clave al activarlo.</small>
-            </span>
-            <span class="switch-control">
-              <input id="toggle-summary-values" type="checkbox">
-              <span class="switch-slider" aria-hidden="true"></span>
-            </span>
-          </label>
         </div>
       </div>
 
@@ -958,7 +852,6 @@
       kpiTesoreria: document.getElementById('kpi-tesoreria'),
       labelKpiEfectivo: document.getElementById('label-kpi-efectivo'),
       btnEfectivo: document.getElementById('btn-efectivo'),
-      toggleSummaryValues: document.getElementById('toggle-summary-values'),
       pointRequiredButtons: [
         document.getElementById('open-formulas-btn'),
         document.getElementById('btn-limpiar-side'),
@@ -985,8 +878,6 @@
     };
 
     const LAST_SESSION_KEY = 'caja-unificada-v1::last-session';
-    const SUMMARY_VALUES_PASSWORD = '2020';
-    let showSummaryValues = false;
 
     function getLocalDateISO(){
       const now = new Date();
@@ -1296,34 +1187,7 @@
       `;
     }
 
-    function renderConceptSummaryDisabled(){
-      if (!UI.summaryConceptsContainer) return;
-      UI.summaryConceptsContainer.innerHTML = `
-        <table class="month-sales-table" aria-label="Ventas del día seleccionado">
-          <thead>
-            <tr>
-              <th class="month-sales-range" colspan="2">Visualización desactivada</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <th class="month-sales-label">Ventas</th>
-              <td class="month-sales-value">Oculto</td>
-            </tr>
-            <tr>
-              <th class="month-sales-label">Efectivo rec.</th>
-              <td class="month-sales-value">Oculto</td>
-            </tr>
-          </tbody>
-        </table>
-      `;
-    }
-
     function clearConceptSummaryTable(){
-      if (!showSummaryValues) {
-        renderConceptSummaryDisabled();
-        return;
-      }
       renderConceptSummaryTable([], { emptyText: 'Sin datos', rangoTexto: '' });
     }
 
@@ -1357,13 +1221,6 @@
 
     async function refreshConceptSummary(){
       const fecha = String(UI.fecha.value || '').trim();
-
-      if (!showSummaryValues) {
-        state.conceptSummaryRequestId = Date.now();
-        renderConceptSummaryDisabled();
-        updateCloudSaveAvailability();
-        return;
-      }
 
       if (!fecha) {
         clearConceptSummaryTable();
@@ -1857,36 +1714,6 @@
       updatePointDependentUI();
     }
 
-    function handleSummaryToggleChange(){
-      const wantsEnabled = !!UI.toggleSummaryValues?.checked;
-
-      if (wantsEnabled) {
-        const password = window.prompt('Digite la contraseña para activar la visualización de valores:', '');
-
-        if (password === null) {
-          UI.toggleSummaryValues.checked = false;
-          showSummaryValues = false;
-          refreshConceptSummary();
-          return;
-        }
-
-        if (String(password).trim() !== SUMMARY_VALUES_PASSWORD) {
-          alert('Contraseña incorrecta. La visualización seguirá desactivada.');
-          UI.toggleSummaryValues.checked = false;
-          showSummaryValues = false;
-          refreshConceptSummary();
-          return;
-        }
-
-        showSummaryValues = true;
-        refreshConceptSummary();
-        return;
-      }
-
-      showSummaryValues = false;
-      refreshConceptSummary();
-    }
-
     function openFormulasModal(){
       if (!requireSelectedPoint() || !UI.formulasModal) return;
       renderFormulaComparison();
@@ -1935,7 +1762,6 @@
 
       UI.fecha.addEventListener('change', handleSessionChange);
       UI.puntoVenta.addEventListener('change', handleSessionChange);
-      if (UI.toggleSummaryValues) UI.toggleSummaryValues.addEventListener('change', handleSummaryToggleChange);
 
       UI.recordsBody.addEventListener('input', event => {
         if (event.target.matches('input, select')) {
@@ -1963,11 +1789,6 @@
       renderPoints();
       refreshNetworkStatus();
 
-      if (UI.toggleSummaryValues) {
-        UI.toggleSummaryValues.checked = false;
-      }
-      showSummaryValues = false;
-
       UI.fecha.value = getLocalDateISO();
       restoreLastSession();
 
@@ -1978,7 +1799,7 @@
       UI.puntoVenta.value = '';
 
       renderProfileInfo();
-      renderConceptSummaryDisabled();
+      clearConceptSummaryTable();
       updateCloudSaveAvailability();
       bindEvents();
       loadDraft();

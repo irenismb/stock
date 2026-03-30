@@ -89,18 +89,6 @@
       flex: 1 1 420px;
     }
 
-    .input-monetario-panel {
-      min-width: 140px !important;
-      max-width: 140px;
-      flex: 0 0 140px !important;
-      text-align: right;
-    }
-
-    .input-monetario-panel[readonly] {
-      background: #fff;
-      cursor: default;
-    }
-
     button {
       padding: 8px 12px;
       border: 1px solid var(--borde);
@@ -231,30 +219,6 @@
       background: #fff;
     }
 
-    .col-prog,
-    .celda-prog {
-      text-align: center !important;
-    }
-
-    .checkbox-prog {
-      width: 16px;
-      height: 16px;
-      cursor: pointer;
-      accent-color: #2563eb;
-    }
-
-    .check-todos-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-    }
-
-    .saldo-sobrante.negativo {
-      color: var(--error) !important;
-      font-weight: 700;
-    }
-
     tbody td {
       padding: 6px 8px;
       font-size: 14px;
@@ -293,11 +257,6 @@
       color: inherit;
     }
 
-    .aprobado-input:focus {
-      outline: 2px solid #bfdbfe;
-      outline-offset: 0;
-    }
-
     .small {
       font-size: 12px;
       color: var(--muted);
@@ -313,99 +272,6 @@
       margin: 0;
       border: 0;
     }
-
-    .panel {
-      position: relative;
-    }
-
-    .panel-columnas-visibles {
-      position: absolute;
-      top: calc(100% - 2px);
-      right: 12px;
-      width: min(340px, calc(100vw - 40px));
-      max-height: 420px;
-      overflow: hidden;
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-      padding: 12px;
-      border: 1px solid var(--borde-fuerte);
-      border-radius: 10px;
-      background: #fff;
-      box-shadow: 0 12px 28px rgba(31, 35, 40, 0.18);
-      z-index: 20;
-    }
-
-    .panel-columnas-visibles.abierto {
-      display: flex;
-    }
-
-    .panel-columnas-encabezado {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-    }
-
-    .panel-columnas-titulo {
-      margin: 0;
-      font-size: 16px;
-      font-weight: 700;
-    }
-
-    .panel-columnas-acciones {
-      display: flex;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-start;
-      flex-wrap: wrap;
-    }
-
-    .btn-cerrar-panel {
-      min-width: 36px;
-      padding: 6px 10px;
-      line-height: 1;
-      font-size: 16px;
-    }
-
-    .lista-columnas-visibles {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: 6px;
-      overflow: auto;
-      padding-right: 4px;
-    }
-
-    .item-columna-visible {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 7px 8px;
-      border: 1px solid var(--borde);
-      border-radius: 8px;
-      background: #fff;
-      cursor: pointer;
-      user-select: none;
-    }
-
-    .item-columna-visible:hover {
-      background: #f8fafc;
-    }
-
-    .item-columna-visible input[type="checkbox"] {
-      width: 16px;
-      height: 16px;
-      margin: 0;
-      flex: 0 0 auto;
-      cursor: pointer;
-    }
-
-    .item-columna-visible-texto {
-      min-width: 0;
-      line-height: 1.2;
-      word-break: break-word;
-      overflow-wrap: anywhere;
-    }
   </style>
 </head>
 <body>
@@ -417,22 +283,9 @@
     <div class="panel">
       <div class="row">
         <input type="text" id="txtBuscar" placeholder="Buscar en todas las columnas..." />
-        <input type="text" id="txtSobrante" class="input-monetario-panel saldo-sobrante" placeholder="Sobrante" readonly />
-        <input type="text" id="txtDisponible" class="input-monetario-panel" placeholder="Disponible" inputmode="decimal" />
         <button id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
-        <button id="btnExportar" type="button">Exportar visibles Excel</button>
-        <button id="btnColumnasVisibles" type="button">Columnas visibles</button>
+        <button id="btnExportar" type="button">Exportar visibles CSV</button>
         <button id="btnRecargar" type="button">Recargar</button>
-      </div>
-      <div id="panelColumnasVisibles" class="panel-columnas-visibles" aria-hidden="true">
-        <div class="panel-columnas-encabezado">
-          <div class="panel-columnas-titulo">Columnas visibles</div>
-          <button id="btnCerrarColumnasVisibles" type="button" class="btn-cerrar-panel" aria-label="Cerrar">×</button>
-        </div>
-        <div class="panel-columnas-acciones">
-          <button id="btnMostrarTodasColumnas" type="button">Mostrar todas</button>
-        </div>
-        <div id="listaColumnasVisibles" class="lista-columnas-visibles"></div>
       </div>
     </div>
 
@@ -468,23 +321,14 @@
       { key: 'saldo', titulo: 'Saldo', clase: 'num', tipo: 'moneda', esCalculada: true },
       { key: 'programacion', titulo: 'Sugerido', clase: 'num', tipo: 'moneda' },
       { key: 'saldoDespuesProgramacion', titulo: 'Saldo después de sugerido', clase: 'num', tipo: 'moneda', esCalculada: true },
-      { key: 'origen', titulo: 'Libro de origen', clase: '' },
-      { key: 'aprobado', titulo: 'Aprobado', clase: 'num', tipo: 'input' }
+      { key: 'origen', titulo: 'Libro de origen', clase: '' }
     ];
-
-    const columnasTabla = [...columnas];
 
     const columnasMonetarias = columnas.filter((col) => col.tipo === 'moneda' || col.tipo === 'input').map((col) => col.key);
 
     const STORAGE_KEYS = {
       globalSearch: 'cxp_filtro_global',
-      columnFilters: 'cxp_filtros_columna',
-      sortKey: 'cxp_sort_key',
-      sortDirection: 'cxp_sort_direction',
-      disponible: 'cxp_disponible',
-      approvedValues: 'cxp_aprobados',
-      visibleColumns: 'cxp_columnas_visibles',
-      columnWidths: 'cxp_anchos_columnas'
+      columnFilters: 'cxp_filtros_columna'
     };
 
     const state = {
@@ -492,29 +336,17 @@
       filteredRows: [],
       columnFilters: {},
       sortKey: '',
-      sortDirection: 'asc',
-      approvedValues: {},
-      visibleColumnKeys: columnasTabla.map((col) => col.key),
-      columnWidths: {},
-      isColumnPanelOpen: false
+      sortDirection: 'asc'
     };
 
     const estado = document.getElementById('estado');
     const tbody = document.getElementById('tbody');
     const thead = document.getElementById('thead');
     const txtBuscar = document.getElementById('txtBuscar');
-    const txtDisponible = document.getElementById('txtDisponible');
-    const txtSobrante = document.getElementById('txtSobrante');
     const btnRecargar = document.getElementById('btnRecargar');
     const btnExportar = document.getElementById('btnExportar');
-    const btnColumnasVisibles = document.getElementById('btnColumnasVisibles');
-    const btnMostrarTodasColumnas = document.getElementById('btnMostrarTodasColumnas');
-    const btnCerrarColumnasVisibles = document.getElementById('btnCerrarColumnasVisibles');
     const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
-    const panelColumnasVisibles = document.getElementById('panelColumnasVisibles');
-    const listaColumnasVisibles = document.getElementById('listaColumnasVisibles');
     const tabla = document.getElementById('tabla');
-    const tablaWrap = document.querySelector('.tabla-wrap');
     const colgroup = document.getElementById('colgroup');
 
     function setEstado(texto, tipo = 'aviso') {
@@ -530,205 +362,8 @@
       });
     }
 
-    function moneyInputValue(n) {
-      return money(n);
-    }
-
-    function normalizarAprobadoContraSaldo(valor, saldo) {
-      if (valor === '' || valor === null || valor === undefined) return '';
-
-      const numero = Number(valor);
-      if (Number.isNaN(numero)) return '';
-
-      const saldoNumero = Math.max(Number(saldo || 0), 0);
-      if (numero < 0) return 0;
-      if (numero > saldoNumero) return saldoNumero;
-      return numero;
-    }
-
-    function obtenerValorAprobado(row) {
-      return Number(row && row.aprobado ? row.aprobado : 0);
-    }
-
-    function normalizarColumnasVisibles(keys) {
-      const ordenOriginal = columnasTabla.map((col) => col.key);
-      const visibles = new Set(Array.isArray(keys) ? keys : []);
-      const resultado = ordenOriginal.filter((key) => visibles.has(key));
-      return resultado.length ? resultado : ordenOriginal.slice();
-    }
-
-    function obtenerColumnasVisibles() {
-      return columnasTabla.filter((col) => state.visibleColumnKeys.includes(col.key));
-    }
-
-    function esColumnaVisible(key) {
-      return state.visibleColumnKeys.includes(key);
-    }
-
-    function guardarColumnasVisibles() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.visibleColumns, JSON.stringify(state.visibleColumnKeys));
-      } catch (error) {}
-    }
-
-    function guardarAnchosColumnas() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.columnWidths, JSON.stringify(state.columnWidths || {}));
-      } catch (error) {}
-    }
-
-    function obtenerPosicionScrollTabla() {
-      return {
-        left: tablaWrap ? tablaWrap.scrollLeft : 0,
-        top: tablaWrap ? tablaWrap.scrollTop : 0
-      };
-    }
-
-    function restaurarPosicionScrollTabla(posicion) {
-      if (!tablaWrap || !posicion) return;
-
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          tablaWrap.scrollLeft = posicion.left || 0;
-          tablaWrap.scrollTop = posicion.top || 0;
-        });
-      });
-    }
-
-    function renderPanelColumnasVisibles() {
-      if (!listaColumnasVisibles) return;
-
-      listaColumnasVisibles.innerHTML = columnasTabla.map((col) => {
-        const checked = esColumnaVisible(col.key) ? ' checked' : '';
-        return `
-          <label class="item-columna-visible">
-            <input type="checkbox" class="checkbox-columna-visible" data-column-key="${escapeHtml(col.key)}"${checked} />
-            <span class="item-columna-visible-texto">${escapeHtml(col.titulo)}</span>
-          </label>
-        `;
-      }).join('');
-    }
-
-    function abrirPanelColumnasVisibles() {
-      if (!panelColumnasVisibles || state.isColumnPanelOpen) return;
-      state.isColumnPanelOpen = true;
-      renderPanelColumnasVisibles();
-      panelColumnasVisibles.classList.add('abierto');
-      panelColumnasVisibles.setAttribute('aria-hidden', 'false');
-    }
-
-    function cerrarPanelColumnasVisibles() {
-      if (!panelColumnasVisibles || !state.isColumnPanelOpen) return;
-      state.isColumnPanelOpen = false;
-      panelColumnasVisibles.classList.remove('abierto');
-      panelColumnasVisibles.setAttribute('aria-hidden', 'true');
-    }
-
-    function alternarPanelColumnasVisibles() {
-      if (state.isColumnPanelOpen) {
-        cerrarPanelColumnasVisibles();
-        return;
-      }
-      abrirPanelColumnasVisibles();
-    }
-
-    function reconstruirVistaPorColumnasVisibles() {
-      const posicionScroll = obtenerPosicionScrollTabla();
-      construirColgroup();
-      construirEncabezados();
-      aplicarFiltrosPersistidosAInputs();
-      renderTabla();
-      renderPanelColumnasVisibles();
-      guardarColumnasVisibles();
-      guardarAnchosColumnas();
-      restaurarPosicionScrollTabla(posicionScroll);
-    }
-
-    function cambiarVisibilidadColumna(key, visible) {
-      const columnasActuales = new Set(state.visibleColumnKeys);
-
-      if (!visible && columnasActuales.size <= 1 && columnasActuales.has(key)) {
-        setEstado('Debes dejar al menos una columna visible.', 'aviso');
-        renderPanelColumnasVisibles();
-        return;
-      }
-
-      if (visible) {
-        columnasActuales.add(key);
-      } else {
-        columnasActuales.delete(key);
-      }
-
-      state.visibleColumnKeys = normalizarColumnasVisibles(Array.from(columnasActuales));
-      reconstruirVistaPorColumnasVisibles();
-    }
-
-    function mostrarTodasLasColumnas() {
-      state.visibleColumnKeys = columnasTabla.map((col) => col.key);
-      reconstruirVistaPorColumnasVisibles();
-    }
-
-    function construirMapaAprobados() {
-      return state.rows.reduce((acum, row) => {
-        if (!row || !row.__rowId) return acum;
-        if (row.aprobado === '' || row.aprobado === null || row.aprobado === undefined) return acum;
-        acum[row.__rowId] = Number(row.aprobado || 0);
-        return acum;
-      }, {});
-    }
-
-    function guardarAprobados() {
-      try {
-        state.approvedValues = construirMapaAprobados();
-        localStorage.setItem(STORAGE_KEYS.approvedValues, JSON.stringify(state.approvedValues));
-      } catch (error) {}
-    }
-
-    function obtenerTotalAprobado() {
-      return state.rows.reduce((suma, row) => {
-        return suma + obtenerValorAprobado(row);
-      }, 0);
-    }
-
-    function actualizarSobrante() {
-      const disponibleTexto = safe(txtDisponible.value).trim();
-
-      if (!disponibleTexto) {
-        txtSobrante.value = '';
-        txtSobrante.classList.remove('negativo');
-        return;
-      }
-
-      const disponible = parseNumeroFlexible(disponibleTexto);
-      const disponibleNumero = Number.isNaN(disponible) ? 0 : disponible;
-      const sobrante = disponibleNumero - obtenerTotalAprobado();
-
-      txtSobrante.value = moneyInputValue(sobrante);
-      txtSobrante.classList.toggle('negativo', sobrante < 0);
-    }
-
-    function normalizarInputMonetario(input) {
-      const texto = safe(input.value).trim();
-
-      if (!texto) {
-        input.value = '';
-        actualizarSobrante();
-        return;
-      }
-
-      const valor = parseNumeroFlexible(texto);
-      if (Number.isNaN(valor)) {
-        actualizarSobrante();
-        return;
-      }
-
-      input.value = moneyInputValue(valor);
-      actualizarSobrante();
-    }
-
     function obtenerNumeroColumna(row, colKey) {
       if (colKey === 'programacion') return Number(row.programacion || 0);
-      if (colKey === 'aprobado') return obtenerValorAprobado(row);
       return Number(row[colKey] || 0);
     }
 
@@ -791,18 +426,6 @@
       );
     }
 
-    function obtenerIdFila(row, index) {
-      return [
-        safe(row.centroCosto),
-        safe(row.nombreTercero),
-        valorDescripcion(row),
-        safe(row.facturaMesPeriodo),
-        safe(row.fechaObligacion),
-        safe(row.fechaVencimiento),
-        String(index)
-      ].join('||');
-    }
-
     function nextCallbackName(base) {
       return base + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
     }
@@ -861,10 +484,6 @@
       if (col.key === 'origen') {
         return getColumnValue(row, col);
       }
-      if (col.tipo === 'input') {
-        const valor = getColumnValue(row, col);
-        return valor === '' ? '' : money(valor);
-      }
       if (col.tipo === 'moneda') {
         return money(getColumnValue(row, col));
       }
@@ -873,7 +492,7 @@
 
     function construirColgroup() {
       colgroup.innerHTML = '';
-      obtenerColumnasVisibles().forEach(() => {
+      columnas.forEach(() => {
         const col = document.createElement('col');
         colgroup.appendChild(col);
       });
@@ -911,9 +530,7 @@
       const trFiltros = document.createElement('tr');
       trFiltros.className = 'filter-row';
 
-      const columnasVisibles = obtenerColumnasVisibles();
-
-      columnasVisibles.forEach((col, index) => {
+      columnas.forEach((col, index) => {
         const thTotal = document.createElement('th');
         thTotal.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
 
@@ -930,7 +547,6 @@
 
         const th = document.createElement('th');
         th.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
-
         th.dataset.sortKey = col.key;
         th.innerHTML = `
           <div class="th-contenido">
@@ -939,12 +555,10 @@
           </div>
         `;
         th.addEventListener('click', () => cambiarOrden(col.key));
-
         trHeader.appendChild(th);
 
         const thFiltro = document.createElement('th');
         thFiltro.className = col.clase;
-
         thFiltro.innerHTML = `
           <input
             type="text"
@@ -954,7 +568,6 @@
             title="Filtrar ${escapeHtml(col.titulo)}"
           />
         `;
-
         trFiltros.appendChild(thFiltro);
       });
 
@@ -973,10 +586,6 @@
 
         input.addEventListener('click', (e) => e.stopPropagation());
       });
-    }
-
-    function actualizarCheckboxSeleccionarTodos() {
-      return;
     }
 
     function refrescarEncabezadosOrden() {
@@ -1021,14 +630,11 @@
     function ajustarColumnasYEncabezados() {
       if (!colgroup.children.length) construirColgroup();
 
-      const columnasVisibles = obtenerColumnasVisibles();
-      if (!columnasVisibles.length) return;
-
       const anchoDisponible = tabla.parentElement.clientWidth - 2;
       const muestra = state.filteredRows.slice(0, 35);
       const totalesFiltrados = calcularTotalesFiltrados();
 
-      let anchos = columnasVisibles.map((col) => {
+      let anchos = columnas.map((col) => {
         const palabras = col.titulo.split(/\s+/).filter(Boolean);
         const palabraMasLarga = palabras.reduce((a, b) => a.length >= b.length ? a : b, '');
 
@@ -1083,11 +689,6 @@
           ideal = Math.max(ideal, 120);
         }
 
-        const anchoPersistido = Number(state.columnWidths[col.key] || 0);
-        if (anchoPersistido > 0) {
-          ideal = Math.max(ideal, Math.min(anchoPersistido, 320));
-        }
-
         return {
           minimo,
           ideal,
@@ -1127,11 +728,7 @@
       }
 
       Array.from(colgroup.children).forEach((col, i) => {
-        const anchoActual = anchos[i].actual;
-        col.style.width = anchoActual + 'px';
-        if (columnasVisibles[i]) {
-          state.columnWidths[columnasVisibles[i].key] = anchoActual;
-        }
+        col.style.width = anchos[i].actual + 'px';
       });
 
       requestAnimationFrame(() => {
@@ -1218,8 +815,7 @@
         row.saldo,
         row.programacion,
         row.saldoDespuesProgramacion,
-        row.__meta && row.__meta.spreadsheetName,
-        row.aprobado
+        row.__meta && row.__meta.spreadsheetName
       ].join(' | ');
     }
 
@@ -1325,35 +921,6 @@
       } catch (error) {}
     }
 
-    function guardarOrden() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.sortKey, state.sortKey || '');
-        localStorage.setItem(STORAGE_KEYS.sortDirection, state.sortDirection || 'asc');
-      } catch (error) {}
-    }
-
-    function guardarDisponible() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.disponible, txtDisponible.value || '');
-      } catch (error) {}
-    }
-
-    function aplicarValorAprobado(rowId, valor, opciones = {}) {
-      const row = state.rows.find((item) => item.__rowId === rowId);
-      if (!row) return { ok: false, valorFinal: '' };
-
-      const valorNormalizado = valor === '' ? '' : normalizarAprobadoContraSaldo(valor, row.saldo);
-      row.aprobado = valorNormalizado;
-      state.approvedValues = construirMapaAprobados();
-      guardarAprobados();
-
-      if (!opciones.silencioso && valor !== '' && Number(valorNormalizado) < Number(valor)) {
-        setEstado('El valor aprobado no puede ser superior al saldo. Se ajustó automáticamente.', 'aviso');
-      }
-
-      return { ok: true, valorFinal: valorNormalizado };
-    }
-
     function cargarFiltrosPersistidos() {
       try {
         const busquedaGlobalGuardada = localStorage.getItem(STORAGE_KEYS.globalSearch);
@@ -1366,41 +933,8 @@
           const filtros = JSON.parse(filtrosGuardados);
           state.columnFilters = filtros && typeof filtros === 'object' ? filtros : {};
         }
-
-        const sortKeyGuardado = localStorage.getItem(STORAGE_KEYS.sortKey);
-        const sortDirectionGuardada = localStorage.getItem(STORAGE_KEYS.sortDirection);
-        state.sortKey = sortKeyGuardado || '';
-        state.sortDirection = sortDirectionGuardada === 'desc' ? 'desc' : 'asc';
-
-        const disponibleGuardado = localStorage.getItem(STORAGE_KEYS.disponible);
-        if (disponibleGuardado !== null) {
-          txtDisponible.value = disponibleGuardado;
-        }
-
-        const aprobadosGuardados = localStorage.getItem(STORAGE_KEYS.approvedValues);
-        if (aprobadosGuardados) {
-          const aprobados = JSON.parse(aprobadosGuardados);
-          state.approvedValues = aprobados && typeof aprobados === 'object' ? aprobados : {};
-        }
-
-        const columnasVisiblesGuardadas = localStorage.getItem(STORAGE_KEYS.visibleColumns);
-        if (columnasVisiblesGuardadas) {
-          const visibles = JSON.parse(columnasVisiblesGuardadas);
-          state.visibleColumnKeys = normalizarColumnasVisibles(visibles);
-        }
-
-        const anchosGuardados = localStorage.getItem(STORAGE_KEYS.columnWidths);
-        if (anchosGuardados) {
-          const anchos = JSON.parse(anchosGuardados);
-          state.columnWidths = anchos && typeof anchos === 'object' ? anchos : {};
-        }
       } catch (error) {
         state.columnFilters = {};
-        state.sortKey = '';
-        state.sortDirection = 'asc';
-        state.approvedValues = {};
-        state.visibleColumnKeys = columnasTabla.map((col) => col.key);
-        state.columnWidths = {};
       }
     }
 
@@ -1417,55 +951,7 @@
         state.sortKey = key;
         state.sortDirection = 'asc';
       }
-      guardarOrden();
       aplicarFiltrosYOrden();
-    }
-
-
-    function obtenerRoleCelda(colKey) {
-      if (colKey === 'saldo') return 'saldo';
-      if (colKey === 'programacion') return 'sugerido';
-      if (colKey === 'saldoDespuesProgramacion') return 'saldoDespues';
-      return '';
-    }
-
-    function construirCeldaFila(row, col) {
-      if (col.key === 'aprobado') {
-        return `
-          <td class="num">
-            <input
-              type="text"
-              class="programacion-input aprobado-input"
-              inputmode="decimal"
-              data-row-id="${escapeHtml(row.__rowId)}"
-              data-saldo="${escapeHtml(row.saldo)}"
-              value="${row.aprobado === '' ? '' : escapeHtml(moneyInputValue(row.aprobado))}"
-              placeholder="0,00"
-              title="Valor aprobado"
-            />
-          </td>
-        `;
-      }
-
-      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
-        return `<td>${escapeHtml(row[col.key])}</td>`;
-      }
-
-      if (col.key === 'diasVencida') {
-        const className = ['num', claseNegativo(row.diasVencida).trim()].filter(Boolean).join(' ');
-        return `<td class="${className}">${escapeHtml(row.diasVencida)}</td>`;
-      }
-
-      if (col.tipo === 'moneda') {
-        const className = [col.clase, claseNegativo(row[col.key]).trim()].filter(Boolean).join(' ');
-        const role = obtenerRoleCelda(col.key);
-        const roleAttr = role ? ` data-role="${role}"` : '';
-        return `<td class="${className}"${roleAttr}>${money(row[col.key])}</td>`;
-      }
-
-      const className = [col.clase].filter(Boolean).join(' ');
-      const classAttr = className ? ` class="${className}"` : '';
-      return `<td${classAttr}>${escapeHtml(getColumnValue(row, col))}</td>`;
     }
 
     function aplicarFiltrosYOrden() {
@@ -1504,11 +990,8 @@
       tbody.innerHTML = '';
       renderFilaTotales();
 
-      const columnasVisibles = obtenerColumnasVisibles();
-      const totalColumnasVisibles = columnasVisibles.length || 1;
-
       if (!state.filteredRows.length) {
-        tbody.innerHTML = '<tr><td colspan="' + totalColumnasVisibles + '">No hay registros para mostrar.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="14">No hay registros para mostrar.</td></tr>';
         ajustarColumnasYEncabezados();
         setEstado('No hay registros que cumplan los filtros activos.', 'aviso');
         return;
@@ -1516,16 +999,32 @@
 
       const frag = document.createDocumentFragment();
 
-      state.filteredRows.forEach((r) => {
+      state.filteredRows.forEach((r, index) => {
         const tr = document.createElement('tr');
-        tr.innerHTML = columnasVisibles.map((col) => construirCeldaFila(r, col)).join('');
+
+        tr.innerHTML = `
+          <td>${escapeHtml(getColumnValue(r, { key: 'centroCosto' }))}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'nombreTercero' }))}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'descripcion' }))}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'facturaMesPeriodo' }))}</td>
+          <td>${escapeHtml(r.fechaObligacion)}</td>
+          <td>${escapeHtml(r.fechaVencimiento)}</td>
+          <td class="num${claseNegativo(r.diasVencida)}">${escapeHtml(r.diasVencida)}</td>
+          <td class="num${claseNegativo(r.valorInicial)}">${money(r.valorInicial)}</td>
+          <td class="num${claseNegativo(r.retenciones)}">${money(r.retenciones)}</td>
+          <td class="num${claseNegativo(r.pagosAnteriores)}">${money(r.pagosAnteriores)}</td>
+          <td class="num${claseNegativo(r.saldo)}" data-role="saldo">${money(r.saldo)}</td>
+          <td class="num${claseNegativo(r.programacion)}" data-role="sugerido">${money(r.programacion)}</td>
+          <td class="num${claseNegativo(r.saldoDespuesProgramacion)}" data-role="saldoDespues">${money(r.saldoDespuesProgramacion)}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'origen' }))}</td>
+        `;
+
         frag.appendChild(tr);
       });
 
       tbody.appendChild(frag);
 
       ajustarColumnasYEncabezados();
-      actualizarSobrante();
       setEstado('Mostrando ' + state.filteredRows.length + ' fila(s) de ' + state.rows.length + '.', 'ok');
     }
 
@@ -1545,33 +1044,14 @@
           throw new Error(payload && payload.message ? payload.message : 'No fue posible leer los datos.');
         }
 
-        state.rows = (payload.rows || []).map((row, index) => {
-          const rowId = obtenerIdFila(row, index);
-          const saldo = Number(row.saldo || 0);
-          const aprobadoPersistido = Object.prototype.hasOwnProperty.call(state.approvedValues, rowId)
-            ? state.approvedValues[rowId]
-            : row.aprobado;
-
-          return {
-            ...row,
-            __rowId: rowId,
-            diasVencida: calcularDiasVencimiento(row.fechaVencimiento, row.diasVencida),
-            programacion: row.programacion === '' ? '' : Number(row.programacion || 0),
-            saldoDespuesProgramacion: Number(row.saldoDespuesProgramacion ?? (saldo - Number(row.programacion || 0))),
-            aprobado: aprobadoPersistido === '' || aprobadoPersistido === null || aprobadoPersistido === undefined
-              ? ''
-              : normalizarAprobadoContraSaldo(aprobadoPersistido, saldo)
-          };
-        });
-
-        const idsValidos = new Set(state.rows.map((row) => row.__rowId));
-        state.approvedValues = Object.fromEntries(
-          Object.entries(state.approvedValues || {}).filter(([id]) => idsValidos.has(id))
-        );
-        guardarAprobados();
+        state.rows = (payload.rows || []).map((row) => ({
+          ...row,
+          diasVencida: calcularDiasVencimiento(row.fechaVencimiento, row.diasVencida),
+          programacion: row.programacion === '' ? '' : Number(row.programacion || 0),
+          saldoDespuesProgramacion: Number(row.saldoDespuesProgramacion ?? (Number(row.saldo || 0) - Number(row.programacion || 0)))
+        }));
 
         aplicarFiltrosYOrden();
-        actualizarSobrante();
       } catch (error) {
         setEstado('Error al cargar: ' + error.message, 'error');
       }
@@ -1589,72 +1069,36 @@
 
       guardarBusquedaGlobal();
       guardarFiltrosColumna();
-      guardarOrden();
       aplicarFiltrosYOrden();
     }
 
-    function obtenerValorExportableExcel(row, col) {
-      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
-        return safe(row[col.key]);
-      }
-
-      if (col.tipo === 'moneda' || col.tipo === 'input') {
-        const valor = col.key === 'aprobado' ? obtenerValorAprobado(row) : obtenerNumeroColumna(row, col.key);
-        return money(valor);
-      }
-
-      if (col.key === 'diasVencida') {
-        return safe(row.diasVencida);
-      }
-
-      return obtenerTextoCelda(row, col);
+    function convertirFilaCsv(row) {
+      return columnas.map((col) => {
+        const texto = obtenerTextoCelda(row, col).replace(/"/g, '""');
+        return '"' + texto + '"';
+      }).join(';');
     }
 
-    function convertirFilaExcelHtml(row) {
-      return '<tr>' + columnas.map((col) => {
-        const valor = escapeHtml(obtenerValorExportableExcel(row, col));
-        const clase = col.clase && col.clase.includes('num') ? ' class="num"' : '';
-        return '<td' + clase + '>' + valor + '</td>';
-      }).join('') + '</tr>';
-    }
+    function exportarVisiblesCsv() {
+      if (!state.filteredRows.length) {
+        setEstado('No hay información visible para exportar.', 'aviso');
+        return;
+      }
 
-    function descargarExcel(rows, prefijoNombre, mensajeExito) {
-      const encabezados = columnas.map((col) => '<th>' + escapeHtml(col.titulo) + '</th>').join('');
-      const filas = rows.map(convertirFilaExcelHtml).join('');
-      const contenido = `<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Content-Type" content="application/vnd.ms-excel; charset=UTF-8" />
-  <style>
-    table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }
-    th, td { border: 1px solid #bfc7d1; padding: 6px 8px; vertical-align: middle; }
-    th { background: #eef3f8; font-weight: 700; text-align: center; }
-    td.num { text-align: right; }
-  </style>
-</head>
-<body>
-  <table>
-    <thead>
-      <tr>${encabezados}</tr>
-    </thead>
-    <tbody>
-      ${filas}
-    </tbody>
-  </table>
-</body>
-</html>`;
-      const blob = new Blob(['\uFEFF' + contenido], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const encabezados = columnas.map((col) => '"' + col.titulo.replace(/"/g, '""') + '"').join(';');
+      const filas = state.filteredRows.map(convertirFilaCsv);
+      const contenido = '\uFEFF' + [encabezados, ...filas].join('\r\n');
+      const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       const fecha = new Date();
-      const nombre = prefijoNombre + '_' +
+      const nombre = 'programacion_cxp_visibles_' +
         fecha.getFullYear() +
         String(fecha.getMonth() + 1).padStart(2, '0') +
         String(fecha.getDate()).padStart(2, '0') + '_' +
         String(fecha.getHours()).padStart(2, '0') +
         String(fecha.getMinutes()).padStart(2, '0') +
-        String(fecha.getSeconds()).padStart(2, '0') + '.xls';
+        String(fecha.getSeconds()).padStart(2, '0') + '.csv';
 
       a.href = url;
       a.download = nombre;
@@ -1663,122 +1107,26 @@
       a.remove();
       URL.revokeObjectURL(url);
 
-      setEstado(mensajeExito, 'ok');
+      setEstado('Exportación completada con ' + state.filteredRows.length + ' fila(s) visibles.', 'ok');
     }
-
-    function exportarVisiblesExcel() {
-      if (!state.filteredRows.length) {
-        setEstado('No hay información visible para exportar.', 'aviso');
-        return;
-      }
-
-      descargarExcel(
-        state.filteredRows,
-        'programacion_cxp_visibles',
-        'Exportación Excel completada con ' + state.filteredRows.length + ' fila(s) visibles.'
-      );
-    }
-
 
     txtBuscar.addEventListener('input', () => {
       guardarBusquedaGlobal();
       aplicarFiltrosYOrden();
     });
-
-    txtDisponible.addEventListener('input', () => {
-      guardarDisponible();
-      actualizarSobrante();
-    });
-    txtDisponible.addEventListener('blur', () => {
-      normalizarInputMonetario(txtDisponible);
-      guardarDisponible();
-    });
-
-    tbody.addEventListener('change', (e) => {
-      if (!e.target.classList.contains('aprobado-input')) return;
-
-      const rowId = e.target.dataset.rowId || '';
-      if (!rowId) return;
-
-      const texto = safe(e.target.value).trim();
-      const valor = texto ? parseNumeroFlexible(texto) : '';
-      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
-
-      e.target.value = resultado.valorFinal === '' ? '' : moneyInputValue(resultado.valorFinal);
-      renderFilaTotales();
-      actualizarSobrante();
-    });
-
-    tbody.addEventListener('blur', (e) => {
-      if (!e.target.classList.contains('aprobado-input')) return;
-
-      const rowId = e.target.dataset.rowId || '';
-      if (!rowId) return;
-
-      const texto = safe(e.target.value).trim();
-      const valor = texto ? parseNumeroFlexible(texto) : '';
-      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
-
-      e.target.value = resultado.valorFinal === '' ? '' : moneyInputValue(resultado.valorFinal);
-      renderFilaTotales();
-      actualizarSobrante();
-    }, true);
-
     window.addEventListener('pagehide', () => {
       guardarBusquedaGlobal();
       guardarFiltrosColumna();
-      guardarOrden();
-      guardarDisponible();
-      guardarAprobados();
-      guardarColumnasVisibles();
-      guardarAnchosColumnas();
     });
-
     btnRecargar.addEventListener('click', cargarDatos);
-    btnExportar.addEventListener('click', exportarVisiblesExcel);
+    btnExportar.addEventListener('click', exportarVisiblesCsv);
     btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
-    btnColumnasVisibles.addEventListener('click', (e) => {
-      e.stopPropagation();
-      alternarPanelColumnasVisibles();
-    });
-    btnMostrarTodasColumnas.addEventListener('click', () => {
-      mostrarTodasLasColumnas();
-    });
-    btnCerrarColumnasVisibles.addEventListener('click', () => {
-      cerrarPanelColumnasVisibles();
-    });
-
-    panelColumnasVisibles.addEventListener('click', (e) => {
-      e.stopPropagation();
-    });
-
-    listaColumnasVisibles.addEventListener('change', (e) => {
-      if (!e.target.classList.contains('checkbox-columna-visible')) return;
-      const key = e.target.dataset.columnKey || '';
-      if (!key) return;
-      cambiarVisibilidadColumna(key, e.target.checked);
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!state.isColumnPanelOpen) return;
-      if (panelColumnasVisibles.contains(e.target) || btnColumnasVisibles.contains(e.target)) return;
-      cerrarPanelColumnasVisibles();
-    });
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        cerrarPanelColumnasVisibles();
-      }
-    });
-
     window.addEventListener('resize', ajustarColumnasYEncabezados);
 
-    cargarFiltrosPersistidos();
     construirColgroup();
     construirEncabezados();
+    cargarFiltrosPersistidos();
     aplicarFiltrosPersistidosAInputs();
-    renderPanelColumnasVisibles();
-    actualizarSobrante();
     cargarDatos();
   </script>
 </body>

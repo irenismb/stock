@@ -326,11 +326,6 @@
 
     const columnasMonetarias = columnas.filter((col) => col.tipo === 'moneda' || col.tipo === 'input').map((col) => col.key);
 
-    const STORAGE_KEYS = {
-      globalSearch: 'cxp_filtro_global',
-      columnFilters: 'cxp_filtros_columna'
-    };
-
     const state = {
       rows: [],
       filteredRows: [],
@@ -580,7 +575,6 @@
       thead.querySelectorAll('.filtro-columna').forEach((input) => {
         input.addEventListener('input', (e) => {
           state.columnFilters[e.target.dataset.filterKey] = e.target.value || '';
-          guardarFiltrosColumna();
           aplicarFiltrosYOrden();
         });
 
@@ -757,47 +751,23 @@
         .toLowerCase()
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
-        .replace(/\s+/g, ' ')
         .trim();
     }
 
-    function analizarConsultaBusqueda(texto) {
-      const consulta = safe(texto);
-      const tokens = [];
-      const regex = /(-?)"([^"]+)"|(-?)(\S+)/g;
-      let match;
 
-      while ((match = regex.exec(consulta)) !== null) {
-        const esFrase = match[2] !== undefined;
-        const valorOriginal = esFrase ? match[2] : match[4];
-        const excluir = (esFrase ? match[1] : match[3]) === '-';
-        const valor = normalizarParaComparacion(valorOriginal);
-
-        if (!valor) continue;
-
-        tokens.push({
-          valor,
-          excluir,
-          esFrase
-        });
-      }
-
-      return {
-        incluir: tokens.filter((token) => !token.excluir),
-        excluir: tokens.filter((token) => token.excluir)
-      };
+    function dividirEnTerminosBusqueda(texto) {
+      return normalizarParaComparacion(texto)
+        .split(/\s+/)
+        .map((termino) => termino.trim())
+        .filter(Boolean);
     }
 
-    function cumpleConsultaBusqueda(textoBase, consulta) {
-      const grupos = analizarConsultaBusqueda(consulta);
-      if (!grupos.incluir.length && !grupos.excluir.length) return true;
+    function cumpleBusquedaIncremental(textoBase, consulta) {
+      const terminos = dividirEnTerminosBusqueda(consulta);
+      if (!terminos.length) return true;
 
       const baseNormalizada = normalizarParaComparacion(textoBase);
-
-      const cumpleInclusiones = grupos.incluir.every((token) => baseNormalizada.includes(token.valor));
-      if (!cumpleInclusiones) return false;
-
-      return grupos.excluir.every((token) => !baseNormalizada.includes(token.valor));
+      return terminos.every((termino) => baseNormalizada.includes(termino));
     }
 
     function construirTextoBusquedaFila(row) {
@@ -842,21 +812,6 @@
       return Number.isNaN(ms) ? NaN : ms;
     }
 
-    function calcularDiasVencimiento(fechaVencimiento, diasOriginales) {
-      const msFecha = parseFechaFlexible(fechaVencimiento);
-      if (!Number.isNaN(msFecha)) {
-        const hoy = new Date();
-        hoy.setHours(0, 0, 0, 0);
-
-        const fecha = new Date(msFecha);
-        fecha.setHours(0, 0, 0, 0);
-
-        return Math.round((fecha.getTime() - hoy.getTime()) / 86400000);
-      }
-
-      return Number(diasOriginales || 0) * -1;
-    }
-
     function compararValores(a, b, col) {
       const valA = getColumnValue(a, col);
       const valB = getColumnValue(b, col);
@@ -883,6 +838,8 @@
       if (!filtro) return true;
 
       const textoCelda = safe(valorCelda);
+      const filtroNormalizado = normalizarParaComparacion(filtro);
+      const celdaNormalizada = normalizarParaComparacion(textoCelda);
 
       const matchOperador = filtro.match(/^(>=|<=|>|<|=)\s*(.+)$/);
       if (matchOperador) {
@@ -906,42 +863,7 @@
         }
       }
 
-      return cumpleConsultaBusqueda(textoCelda, filtro);
-    }
-
-    function guardarBusquedaGlobal() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.globalSearch, txtBuscar.value || '');
-      } catch (error) {}
-    }
-
-    function guardarFiltrosColumna() {
-      try {
-        localStorage.setItem(STORAGE_KEYS.columnFilters, JSON.stringify(state.columnFilters || {}));
-      } catch (error) {}
-    }
-
-    function cargarFiltrosPersistidos() {
-      try {
-        const busquedaGlobalGuardada = localStorage.getItem(STORAGE_KEYS.globalSearch);
-        if (busquedaGlobalGuardada !== null) {
-          txtBuscar.value = busquedaGlobalGuardada;
-        }
-
-        const filtrosGuardados = localStorage.getItem(STORAGE_KEYS.columnFilters);
-        if (filtrosGuardados) {
-          const filtros = JSON.parse(filtrosGuardados);
-          state.columnFilters = filtros && typeof filtros === 'object' ? filtros : {};
-        }
-      } catch (error) {
-        state.columnFilters = {};
-      }
-    }
-
-    function aplicarFiltrosPersistidosAInputs() {
-      thead.querySelectorAll('.filtro-columna').forEach((input) => {
-        input.value = state.columnFilters[input.dataset.filterKey] || '';
-      });
+      return celdaNormalizada.includes(filtroNormalizado);
     }
 
     function cambiarOrden(key) {
@@ -958,7 +880,7 @@
       const q = txtBuscar.value || '';
 
       let resultado = state.rows.filter((r) => {
-        const pasaBusquedaGlobal = cumpleConsultaBusqueda(construirTextoBusquedaFila(r), q);
+        const pasaBusquedaGlobal = cumpleBusquedaIncremental(construirTextoBusquedaFila(r), q);
 
         if (!pasaBusquedaGlobal) return false;
 
@@ -1046,7 +968,6 @@
 
         state.rows = (payload.rows || []).map((row) => ({
           ...row,
-          diasVencida: calcularDiasVencimiento(row.fechaVencimiento, row.diasVencida),
           programacion: row.programacion === '' ? '' : Number(row.programacion || 0),
           saldoDespuesProgramacion: Number(row.saldoDespuesProgramacion ?? (Number(row.saldo || 0) - Number(row.programacion || 0)))
         }));
@@ -1067,8 +988,6 @@
         input.value = '';
       });
 
-      guardarBusquedaGlobal();
-      guardarFiltrosColumna();
       aplicarFiltrosYOrden();
     }
 
@@ -1110,14 +1029,7 @@
       setEstado('Exportación completada con ' + state.filteredRows.length + ' fila(s) visibles.', 'ok');
     }
 
-    txtBuscar.addEventListener('input', () => {
-      guardarBusquedaGlobal();
-      aplicarFiltrosYOrden();
-    });
-    window.addEventListener('pagehide', () => {
-      guardarBusquedaGlobal();
-      guardarFiltrosColumna();
-    });
+    txtBuscar.addEventListener('input', aplicarFiltrosYOrden);
     btnRecargar.addEventListener('click', cargarDatos);
     btnExportar.addEventListener('click', exportarVisiblesCsv);
     btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
@@ -1125,8 +1037,6 @@
 
     construirColgroup();
     construirEncabezados();
-    cargarFiltrosPersistidos();
-    aplicarFiltrosPersistidosAInputs();
     cargarDatos();
   </script>
 </body>

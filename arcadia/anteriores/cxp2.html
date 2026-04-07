@@ -60,6 +60,11 @@
       flex: 0 0 auto;
     }
 
+    .sub {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
     .panel {
       background: var(--fondo);
       border: 1px solid var(--borde);
@@ -67,7 +72,6 @@
       padding: 12px;
       margin-bottom: 14px;
       flex: 0 0 auto;
-      position: relative;
     }
 
     .row {
@@ -227,6 +231,25 @@
       background: #fff;
     }
 
+    .col-prog,
+    .celda-prog {
+      text-align: center !important;
+    }
+
+    .checkbox-prog {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #2563eb;
+    }
+
+    .check-todos-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
     .saldo-sobrante.negativo {
       color: var(--error) !important;
       font-weight: 700;
@@ -255,6 +278,10 @@
       text-align: center;
     }
 
+    .encabezado-calculado {
+      background: var(--verde-calculado) !important;
+    }
+
     .programacion-input {
       width: 100%;
       min-width: 90px;
@@ -264,59 +291,16 @@
       text-align: right;
       font-size: 14px;
       color: inherit;
-      background: #fff;
     }
 
-    .celda-aprobado {
-      padding: 4px 6px;
-      cursor: default;
+    .aprobado-input:focus {
+      outline: 2px solid #bfdbfe;
+      outline-offset: 0;
     }
 
-    .aprobado-label {
-      display: inline-flex;
-      align-items: center;
-      justify-content: flex-end;
-      width: 100%;
-      min-height: 32px;
-      padding: 6px 10px;
-      border: 1px solid transparent;
-      border-radius: 999px;
-      background: #eef3f8;
-      color: var(--texto);
-      text-align: right;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      user-select: none;
-    }
-
-    .aprobado-label.vacio {
+    .small {
+      font-size: 12px;
       color: var(--muted);
-      font-style: italic;
-    }
-
-    .aprobado-label.editando {
-      background: #fff;
-      border-color: #93c5fd;
-      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
-    }
-
-    tbody tr.fila-aprobada td {
-      color: #1d4ed8;
-    }
-
-    thead tr.header-row th.encabezado-saldo {
-      color: var(--error);
-    }
-
-    tbody tr.fila-aprobada .aprobado-label {
-      color: #1d4ed8;
-      border-color: rgba(29, 78, 216, 0.15);
-      background: rgba(29, 78, 216, 0.08);
-    }
-
-    tbody tr.fila-aprobada .programacion-input {
-      color: #1d4ed8;
     }
 
     .medidor {
@@ -328,6 +312,10 @@
       padding: 0;
       margin: 0;
       border: 0;
+    }
+
+    .panel {
+      position: relative;
     }
 
     .panel-columnas-visibles {
@@ -434,7 +422,6 @@
         <button id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
         <button id="btnExportar" type="button">Exportar visibles Excel</button>
         <button id="btnColumnasVisibles" type="button">Columnas visibles</button>
-        <button id="btnAutofit" type="button">Autofit columnas</button>
         <button id="btnRecargar" type="button">Recargar</button>
       </div>
       <div id="panelColumnasVisibles" class="panel-columnas-visibles" aria-hidden="true">
@@ -467,39 +454,27 @@
       }
     };
 
-    let columnasTabla = [];
-    let columnasMonetarias = [];
-    let claveSaldo = '';
+    const columnas = [
+      { key: 'centroCosto', titulo: 'Centro de costo', clase: '' },
+      { key: 'nombreTercero', titulo: 'Nombre tercero', clase: '' },
+      { key: 'descripcion', titulo: 'Descripción del bien, servicio o impuesto', clase: '' },
+      { key: 'facturaMesPeriodo', titulo: 'Factura, mes o período', clase: '' },
+      { key: 'fechaObligacion', titulo: 'Fecha de la obligación', clase: '' },
+      { key: 'fechaVencimiento', titulo: 'Fecha vencimiento', clase: '' },
+      { key: 'diasVencida', titulo: 'Días vencida', clase: 'num', tipo: 'textoCorto', esCalculada: true },
+      { key: 'valorInicial', titulo: 'Valor inicial de la obligación', clase: 'num', tipo: 'moneda' },
+      { key: 'retenciones', titulo: 'Retenciones y descuentos', clase: 'num', tipo: 'moneda' },
+      { key: 'pagosAnteriores', titulo: 'Pagos anteriores', clase: 'num', tipo: 'moneda' },
+      { key: 'saldo', titulo: 'Saldo', clase: 'num', tipo: 'moneda', esCalculada: true },
+      { key: 'programacion', titulo: 'Sugerido', clase: 'num', tipo: 'moneda' },
+      { key: 'saldoDespuesProgramacion', titulo: 'Saldo después de sugerido', clase: 'num', tipo: 'moneda', esCalculada: true },
+      { key: 'origen', titulo: 'Libro de origen', clase: '' },
+      { key: 'aprobado', titulo: 'Aprobado', clase: 'num', tipo: 'input' }
+    ];
 
-    function establecerColumnas(columnasBackend) {
-      const columnasBase = Array.isArray(columnasBackend)
-        ? columnasBackend
-            .map((col) => ({
-              key: safe(col.key),
-              titulo: safe(col.titulo || col.title || col.key),
-              clase: safe(col.clase || ''),
-              tipo: safe(col.tipo || 'texto')
-            }))
-            .filter((col) => col.key && col.key !== '__meta')
-        : [];
+    const columnasTabla = [...columnas];
 
-      if (!columnasBase.some((col) => col.key === '__aprobadoManual')) {
-        columnasBase.push({
-          key: '__aprobadoManual',
-          titulo: 'Aprobado',
-          clase: 'num',
-          tipo: 'input'
-        });
-      }
-
-      columnasTabla = columnasBase;
-      columnasMonetarias = columnasTabla
-        .filter((col) => col.tipo === 'moneda' || col.tipo === 'numero' || col.tipo === 'input')
-        .map((col) => col.key);
-
-      claveSaldo = obtenerClaveSaldoPrincipal();
-      state.visibleColumnKeys = normalizarColumnasVisibles(state.visibleColumnKeys);
-    }
+    const columnasMonetarias = columnas.filter((col) => col.tipo === 'moneda' || col.tipo === 'input').map((col) => col.key);
 
     const STORAGE_KEYS = {
       globalSearch: 'cxp_filtro_global',
@@ -508,7 +483,7 @@
       sortDirection: 'cxp_sort_direction',
       disponible: 'cxp_disponible',
       approvedValues: 'cxp_aprobados',
-      visibleColumns: 'cxp_columnas_visibles_v3',
+      visibleColumns: 'cxp_columnas_visibles',
       columnWidths: 'cxp_anchos_columnas'
     };
 
@@ -519,7 +494,7 @@
       sortKey: '',
       sortDirection: 'asc',
       approvedValues: {},
-      visibleColumnKeys: [],
+      visibleColumnKeys: columnasTabla.map((col) => col.key),
       columnWidths: {},
       isColumnPanelOpen: false
     };
@@ -533,7 +508,6 @@
     const btnRecargar = document.getElementById('btnRecargar');
     const btnExportar = document.getElementById('btnExportar');
     const btnColumnasVisibles = document.getElementById('btnColumnasVisibles');
-    const btnAutofit = document.getElementById('btnAutofit');
     const btnMostrarTodasColumnas = document.getElementById('btnMostrarTodasColumnas');
     const btnCerrarColumnasVisibles = document.getElementById('btnCerrarColumnasVisibles');
     const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
@@ -548,39 +522,6 @@
       estado.className = 'estado ' + tipo;
     }
 
-    function safe(v) {
-      return v === null || v === undefined ? '' : String(v);
-    }
-
-    function normalizarClaveTexto(valor) {
-      return safe(valor)
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '_')
-        .replace(/^_+|_+$/g, '')
-        .trim();
-    }
-
-    function obtenerClaveSaldoPrincipal() {
-      const columnaSaldo = columnasTabla.find((col) => {
-        const keyNormalizada = normalizarClaveTexto(col.key);
-        const tituloNormalizado = normalizarClaveTexto(col.titulo);
-        return keyNormalizada === 'saldo' || tituloNormalizado === 'saldo';
-      });
-
-      return columnaSaldo ? columnaSaldo.key : '';
-    }
-
-    function obtenerSaldoMaximoFila(row) {
-      if (!row) return NaN;
-
-      const key = claveSaldo || obtenerClaveSaldoPrincipal();
-      if (!key) return NaN;
-
-      return obtenerNumeroColumna(row, key);
-    }
-
     function money(n) {
       const num = Number(n || 0);
       return num.toLocaleString('es-CO', {
@@ -593,64 +534,31 @@
       return money(n);
     }
 
-    function debounce(fn, wait = 180) {
-      let timeoutId = null;
-
-      return function (...args) {
-        const context = this;
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => {
-          fn.apply(context, args);
-        }, wait);
-      };
-    }
-
-    function normalizarAprobadoContraSaldo(valor, saldoMaximo) {
+    function normalizarAprobadoContraSaldo(valor, saldo) {
       if (valor === '' || valor === null || valor === undefined) return '';
 
       const numero = Number(valor);
       if (Number.isNaN(numero)) return '';
 
+      const saldoNumero = Math.max(Number(saldo || 0), 0);
       if (numero < 0) return 0;
-
-      const maximo = Number(saldoMaximo);
-      if (!Number.isNaN(maximo) && maximo >= 0 && numero > maximo) {
-        return maximo;
-      }
-
+      if (numero > saldoNumero) return saldoNumero;
       return numero;
     }
 
     function obtenerValorAprobado(row) {
-      return Number(row && row.__aprobadoManual ? row.__aprobadoManual : 0);
-    }
-
-    function columnaTieneDatos(key) {
-      if (key === '__aprobadoManual') return true;
-
-      return state.rows.some((row) => {
-        const valor = row ? row[key] : '';
-        return safe(valor).trim() !== '';
-      });
-    }
-
-    function obtenerClavesColumnasDisponibles() {
-      return columnasTabla
-        .filter((col) => columnaTieneDatos(col.key))
-        .map((col) => col.key);
+      return Number(row && row.aprobado ? row.aprobado : 0);
     }
 
     function normalizarColumnasVisibles(keys) {
-      const ordenDisponible = obtenerClavesColumnasDisponibles();
-      if (!ordenDisponible.length) return [];
-
-      const visibles = new Set(Array.isArray(keys) && keys.length ? keys : ordenDisponible);
-      const resultado = ordenDisponible.filter((key) => visibles.has(key));
-      return resultado.length ? resultado : ordenDisponible.slice();
+      const ordenOriginal = columnasTabla.map((col) => col.key);
+      const visibles = new Set(Array.isArray(keys) ? keys : []);
+      const resultado = ordenOriginal.filter((key) => visibles.has(key));
+      return resultado.length ? resultado : ordenOriginal.slice();
     }
 
     function obtenerColumnasVisibles() {
-      return columnasTabla.filter((col) => state.visibleColumnKeys.includes(col.key) && columnaTieneDatos(col.key));
+      return columnasTabla.filter((col) => state.visibleColumnKeys.includes(col.key));
     }
 
     function esColumnaVisible(key) {
@@ -690,9 +598,7 @@
     function renderPanelColumnasVisibles() {
       if (!listaColumnasVisibles) return;
 
-      const columnasDisponibles = columnasTabla.filter((col) => columnaTieneDatos(col.key));
-
-      listaColumnasVisibles.innerHTML = columnasDisponibles.map((col) => {
+      listaColumnasVisibles.innerHTML = columnasTabla.map((col) => {
         const checked = esColumnaVisible(col.key) ? ' checked' : '';
         return `
           <label class="item-columna-visible">
@@ -758,177 +664,17 @@
     }
 
     function mostrarTodasLasColumnas() {
-      state.visibleColumnKeys = obtenerClavesColumnasDisponibles();
+      state.visibleColumnKeys = columnasTabla.map((col) => col.key);
       reconstruirVistaPorColumnasVisibles();
-    }
-
-    function aplicarAutofitTodasLasColumnas() {
-      state.columnWidths = {};
-      guardarAnchosColumnas();
-      ajustarColumnasYEncabezados(true);
-      setEstado('Autoajuste aplicado a todas las columnas visibles.', 'ok');
     }
 
     function construirMapaAprobados() {
       return state.rows.reduce((acum, row) => {
         if (!row || !row.__rowId) return acum;
-        if (row.__aprobadoManual === '' || row.__aprobadoManual === null || row.__aprobadoManual === undefined) return acum;
-
-        acum[row.__rowId] = Number(row.__aprobadoManual || 0);
+        if (row.aprobado === '' || row.aprobado === null || row.aprobado === undefined) return acum;
+        acum[row.__rowId] = Number(row.aprobado || 0);
         return acum;
       }, {});
-    }
-
-    function textoEtiquetaAprobado(valor) {
-      if (valor === '' || valor === null || valor === undefined) return 'Clic para editar';
-      return money(Number(valor || 0));
-    }
-
-    function crearEtiquetaAprobado(rowId, valor) {
-      const texto = textoEtiquetaAprobado(valor);
-      const esVacio = valor === '' || valor === null || valor === undefined;
-      return `
-        <span
-          class="aprobado-label${esVacio ? ' vacio' : ''}"
-          data-row-id="${escapeHtml(rowId)}"
-          data-value="${esVacio ? '' : escapeHtml(String(valor))}"
-          title="Clic para editar"
-          tabindex="0"
-        >${escapeHtml(texto)}</span>
-      `;
-    }
-
-    function actualizarCeldaAprobadoVisual(celda, valor) {
-      if (!celda) return;
-      const rowId = celda.dataset.rowId || '';
-      celda.innerHTML = crearEtiquetaAprobado(rowId, valor);
-    }
-
-    function activarEdicionAprobado(celda) {
-      if (!celda) return;
-      if (celda.querySelector('.aprobado-input')) return;
-
-      const etiqueta = celda.querySelector('.aprobado-label');
-      if (!etiqueta) return;
-
-      const rowId = celda.dataset.rowId || etiqueta.dataset.rowId || '';
-      const valorActual = etiqueta.dataset.value || '';
-      const valorTexto = valorActual === '' ? '' : moneyInputValue(valorActual);
-
-      celda.innerHTML = `
-        <input
-          type="text"
-          class="programacion-input aprobado-input"
-          inputmode="decimal"
-          data-row-id="${escapeHtml(rowId)}"
-          value="${valorTexto === '' ? '' : escapeHtml(valorTexto)}"
-          placeholder="0,00"
-          title="Valor aprobado"
-        />
-      `;
-
-      const input = celda.querySelector('.aprobado-input');
-      if (!input) return;
-
-      input.focus();
-      input.select();
-    }
-
-    function finalizarEdicionAprobado(input, cancelar = false) {
-      if (!input) return;
-
-      const celda = input.closest('.celda-aprobado');
-      if (!celda) return;
-
-      const rowId = input.dataset.rowId || celda.dataset.rowId || '';
-      if (!rowId) {
-        actualizarCeldaAprobadoVisual(celda, '');
-        return;
-      }
-
-      if (cancelar) {
-        const rowActual = state.rows.find((item) => item.__rowId === rowId);
-        actualizarCeldaAprobadoVisual(celda, rowActual ? rowActual.__aprobadoManual : '');
-        return;
-      }
-
-      const texto = safe(input.value).trim();
-      const valor = texto ? parseNumeroFlexible(texto) : '';
-      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
-
-      actualizarCeldaAprobadoVisual(celda, resultado.valorFinal);
-      actualizarClaseFilaAprobada(rowId);
-      renderFilaTotales();
-      actualizarSobrante();
-    }
-
-    function copiarSaldoAAprobado(rowId) {
-      if (!rowId) return;
-
-      const row = state.rows.find((item) => item.__rowId === rowId);
-      if (!row) return;
-
-      const saldo = obtenerSaldoMaximoFila(row);
-      const valorSaldo = Number.isNaN(saldo) ? '' : saldo;
-      const resultado = aplicarValorAprobado(rowId, valorSaldo, { silencioso: true });
-
-      const celdaAprobado = tbody.querySelector(`.celda-aprobado[data-row-id="${CSS.escape(rowId)}"]`);
-      if (celdaAprobado) {
-        actualizarCeldaAprobadoVisual(celdaAprobado, resultado.valorFinal);
-      }
-
-      actualizarClaseFilaAprobada(rowId);
-      renderFilaTotales();
-      actualizarSobrante();
-    }
-
-    function limpiarAprobado(rowId) {
-      if (!rowId) return;
-
-      const resultado = aplicarValorAprobado(rowId, '', { silencioso: true });
-      if (!resultado.ok) return;
-
-      const celdaAprobado = tbody.querySelector(`.celda-aprobado[data-row-id="${CSS.escape(rowId)}"]`);
-      if (celdaAprobado) {
-        actualizarCeldaAprobadoVisual(celdaAprobado, resultado.valorFinal);
-      }
-
-      actualizarClaseFilaAprobada(rowId);
-      renderFilaTotales();
-      actualizarSobrante();
-    }
-
-    function alternarSaldoEnAprobado(rowId) {
-      if (!rowId) return;
-
-      const row = state.rows.find((item) => item.__rowId === rowId);
-      if (!row) return;
-
-      const valorActual = row.__aprobadoManual;
-      if (valorActual === '' || valorActual === null || valorActual === undefined) {
-        copiarSaldoAAprobado(rowId);
-        return;
-      }
-
-      limpiarAprobado(rowId);
-    }
-
-    function filaTieneValorAprobado(row) {
-      if (!row) return false;
-      const valor = row.__aprobadoManual;
-      if (valor === '' || valor === null || valor === undefined) return false;
-      const numero = Number(valor);
-      return !Number.isNaN(numero) && numero > 0;
-    }
-
-    function actualizarClaseFilaAprobada(rowId) {
-      if (!rowId) return;
-
-      const fila = tbody.querySelector(`tr[data-row-id="${CSS.escape(rowId)}"]`);
-      if (!fila) return;
-
-      const row = state.rows.find((item) => item.__rowId === rowId);
-      fila.classList.toggle('fila-aprobada', filaTieneValorAprobado(row));
     }
 
     function guardarAprobados() {
@@ -981,14 +727,9 @@
     }
 
     function obtenerNumeroColumna(row, colKey) {
-      if (colKey === '__aprobadoManual') return obtenerValorAprobado(row);
-
-      const valor = row ? row[colKey] : '';
-
-      if (typeof valor === 'number') return Number(valor || 0);
-
-      const numero = parseNumeroFlexible(valor);
-      return Number.isNaN(numero) ? 0 : numero;
+      if (colKey === 'programacion') return Number(row.programacion || 0);
+      if (colKey === 'aprobado') return obtenerValorAprobado(row);
+      return Number(row[colKey] || 0);
     }
 
     function esValorNegativo(valor) {
@@ -999,8 +740,32 @@
       return esValorNegativo(valor) ? ' negativo' : '';
     }
 
+    function safe(v) {
+      return v === null || v === undefined ? '' : String(v);
+    }
+
+    function capitalizarPalabras(texto) {
+      return safe(texto)
+        .toLowerCase()
+        .replace(/(^|[\s\-\/\(\)\[\]\{\},.;:]+)([a-záéíóúüñ])/g, (m, separador, letra) => separador + letra.toUpperCase());
+    }
+
     function formatearTextoPorColumna(colKey, valor) {
-      return safe(valor);
+      const texto = safe(valor);
+
+      if (colKey === 'centroCosto' || colKey === 'nombreTercero' || colKey === 'descripcion') {
+        return capitalizarPalabras(texto);
+      }
+
+      if (colKey === 'facturaMesPeriodo') {
+        return texto.toUpperCase();
+      }
+
+      if (colKey === 'origen') {
+        return texto.toLowerCase();
+      }
+
+      return texto;
     }
 
     function escapeHtml(text) {
@@ -1012,58 +777,52 @@
         .replace(/'/g, '&#039;');
     }
 
+    function valorDescripcion(row) {
+      return safe(
+        row.descripcion ??
+        row.descripcionBienServicioImpuesto ??
+        row['Descripción del bien, servicio o impuesto'] ??
+        row['Descripcion del bien, servicio o impuesto'] ??
+        row['Descripción del bien servicio o impuesto'] ??
+        row['Descripcion del bien servicio o impuesto'] ??
+        row['Descripción'] ??
+        row['Descripcion'] ??
+        ''
+      );
+    }
+
     function obtenerIdFila(row, index) {
-      const meta = row && row.__meta ? row.__meta : {};
-      const tieneMetaEstable = meta && (meta.spreadsheetId || meta.sheetName || meta.sourceRow);
-
-      if (tieneMetaEstable) {
-        return [
-          safe(meta.spreadsheetId),
-          safe(meta.sheetName),
-          safe(meta.sourceRow)
-        ].join('||');
-      }
-
-      return columnasTabla
-        .filter((col) => col.key !== '__aprobadoManual')
-        .map((col) => safe(getColumnValue(row, col)))
-        .concat(String(index))
-        .join('||');
+      return [
+        safe(row.centroCosto),
+        safe(row.nombreTercero),
+        valorDescripcion(row),
+        safe(row.facturaMesPeriodo),
+        safe(row.fechaObligacion),
+        safe(row.fechaVencimiento),
+        String(index)
+      ].join('||');
     }
 
     function nextCallbackName(base) {
       return base + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
     }
 
-    function jsonp(url, callbackName, timeoutMs = 15000) {
+    function jsonp(url, callbackName) {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
         const finalUrl = url + (url.includes('?') ? '&' : '?') + 'prefix=' + encodeURIComponent(callbackName) + '&_ts=' + Date.now();
-        let finalizado = false;
-
-        const timer = setTimeout(() => {
-          if (finalizado) return;
-          finalizado = true;
-          cleanup();
-          reject(new Error('Tiempo de espera agotado al consultar el servicio.'));
-        }, timeoutMs);
 
         const cleanup = () => {
-          clearTimeout(timer);
           if (window[callbackName]) delete window[callbackName];
           script.remove();
         };
 
         window[callbackName] = (payload) => {
-          if (finalizado) return;
-          finalizado = true;
           cleanup();
           resolve(payload);
         };
 
         script.onerror = () => {
-          if (finalizado) return;
-          finalizado = true;
           cleanup();
           reject(new Error('No se pudo cargar el servicio.'));
         };
@@ -1085,19 +844,30 @@
     }
 
     function getColumnValue(row, col) {
-      return formatearTextoPorColumna(col.key, row ? row[col.key] : '');
+      let valor;
+
+      if (col.key === 'origen') {
+        valor = row.__meta?.spreadsheetName || '';
+      } else if (col.key === 'descripcion') {
+        valor = valorDescripcion(row);
+      } else {
+        valor = row[col.key];
+      }
+
+      return formatearTextoPorColumna(col.key, valor);
     }
 
     function obtenerTextoCelda(row, col) {
-      if (col.key === '__aprobadoManual') {
-        const valor = row.__aprobadoManual;
-        return valor === '' || valor === null || valor === undefined ? '' : money(obtenerValorAprobado(row));
+      if (col.key === 'origen') {
+        return getColumnValue(row, col);
       }
-
-      if (col.tipo === 'moneda' || col.tipo === 'numero' || col.tipo === 'input') {
-        return money(obtenerNumeroColumna(row, col.key));
+      if (col.tipo === 'input') {
+        const valor = getColumnValue(row, col);
+        return valor === '' ? '' : money(valor);
       }
-
+      if (col.tipo === 'moneda') {
+        return money(getColumnValue(row, col));
+      }
       return safe(getColumnValue(row, col));
     }
 
@@ -1145,7 +915,7 @@
 
       columnasVisibles.forEach((col, index) => {
         const thTotal = document.createElement('th');
-        thTotal.className = col.clase || '';
+        thTotal.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
 
         if (index === 0) {
           thTotal.textContent = 'Totales';
@@ -1159,7 +929,8 @@
         trTotales.appendChild(thTotal);
 
         const th = document.createElement('th');
-        th.className = [col.clase, col.key === claveSaldo ? 'encabezado-saldo' : ''].filter(Boolean).join(' ');
+        th.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
+
         th.dataset.sortKey = col.key;
         th.innerHTML = `
           <div class="th-contenido">
@@ -1168,10 +939,12 @@
           </div>
         `;
         th.addEventListener('click', () => cambiarOrden(col.key));
+
         trHeader.appendChild(th);
 
         const thFiltro = document.createElement('th');
-        thFiltro.className = col.clase || '';
+        thFiltro.className = col.clase;
+
         thFiltro.innerHTML = `
           <input
             type="text"
@@ -1181,29 +954,29 @@
             title="Filtrar ${escapeHtml(col.titulo)}"
           />
         `;
+
         trFiltros.appendChild(thFiltro);
       });
 
       thead.appendChild(trTotales);
       thead.appendChild(trHeader);
       thead.appendChild(trFiltros);
-
       refrescarEncabezadosOrden();
       renderFilaTotales();
 
       thead.querySelectorAll('.filtro-columna').forEach((input) => {
-        const aplicarFiltroDebounced = debounce((inputActual) => {
-          state.columnFilters[inputActual.dataset.filterKey] = inputActual.value || '';
+        input.addEventListener('input', (e) => {
+          state.columnFilters[e.target.dataset.filterKey] = e.target.value || '';
           guardarFiltrosColumna();
           aplicarFiltrosYOrden();
         });
 
-        input.addEventListener('input', (e) => {
-          aplicarFiltroDebounced(e.target);
-        });
-
         input.addEventListener('click', (e) => e.stopPropagation());
       });
+    }
+
+    function actualizarCheckboxSeleccionarTodos() {
+      return;
     }
 
     function refrescarEncabezadosOrden() {
@@ -1245,7 +1018,7 @@
       });
     }
 
-    function ajustarColumnasYEncabezados(forzarAutofit = false) {
+    function ajustarColumnasYEncabezados() {
       if (!colgroup.children.length) construirColgroup();
 
       const columnasVisibles = obtenerColumnasVisibles();
@@ -1294,19 +1067,25 @@
         let minimo = Math.max(anchoPalabra + 22, 72);
         let ideal = Math.max(Math.min(anchoTituloNatural * 0.62, 220), Math.min(anchoDatos + 24, 220), minimo);
 
-        if (col.tipo === 'fecha') {
-          ideal = Math.max(minimo, Math.min(Math.max(anchoDatos + 18, 110), 150));
+        if (col.tipo === 'textoCorto') {
+          ideal = Math.max(minimo, Math.min(ideal, 100));
         }
-        if (col.tipo === 'moneda' || col.tipo === 'numero' || col.tipo === 'input') {
-          ideal = Math.max(minimo, Math.min(Math.max(anchoDatos + 22, 110), 170));
+        if (col.tipo === 'moneda') {
+          ideal = Math.max(minimo, Math.min(Math.max(anchoDatos + 22, 110), 150));
         }
-        if (col.key === '__origenLibro') {
+        if (col.tipo === 'input') {
+          ideal = Math.max(minimo, 120);
+        }
+        if (col.key === 'descripcion') {
+          ideal = Math.max(ideal, 145);
+        }
+        if (col.key === 'origen') {
           ideal = Math.max(ideal, 120);
         }
 
         const anchoPersistido = Number(state.columnWidths[col.key] || 0);
-        if (!forzarAutofit && anchoPersistido > 0) {
-          ideal = Math.max(ideal, Math.min(anchoPersistido, 340));
+        if (anchoPersistido > 0) {
+          ideal = Math.max(ideal, Math.min(anchoPersistido, 320));
         }
 
         return {
@@ -1425,7 +1204,23 @@
     }
 
     function construirTextoBusquedaFila(row) {
-      return columnasTabla.map((col) => safe(getColumnValue(row, col))).join(' | ');
+      return [
+        row.centroCosto,
+        row.nombreTercero,
+        valorDescripcion(row),
+        row.facturaMesPeriodo,
+        row.fechaObligacion,
+        row.fechaVencimiento,
+        row.diasVencida,
+        row.valorInicial,
+        row.retenciones,
+        row.pagosAnteriores,
+        row.saldo,
+        row.programacion,
+        row.saldoDespuesProgramacion,
+        row.__meta && row.__meta.spreadsheetName,
+        row.aprobado
+      ].join(' | ');
     }
 
     function parseNumeroFlexible(texto) {
@@ -1451,25 +1246,40 @@
       return Number.isNaN(ms) ? NaN : ms;
     }
 
+    function calcularDiasVencimiento(fechaVencimiento, diasOriginales) {
+      const msFecha = parseFechaFlexible(fechaVencimiento);
+      if (!Number.isNaN(msFecha)) {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const fecha = new Date(msFecha);
+        fecha.setHours(0, 0, 0, 0);
+
+        return Math.round((fecha.getTime() - hoy.getTime()) / 86400000);
+      }
+
+      return Number(diasOriginales || 0) * -1;
+    }
+
     function compararValores(a, b, col) {
-      if (col.tipo === 'moneda' || col.tipo === 'numero' || col.tipo === 'input') {
-        const numA = obtenerNumeroColumna(a, col.key);
-        const numB = obtenerNumeroColumna(b, col.key);
+      const valA = getColumnValue(a, col);
+      const valB = getColumnValue(b, col);
+
+      if (col.tipo === 'moneda' || col.tipo === 'input' || col.key === 'diasVencida') {
+        const numA = Number(valA || 0);
+        const numB = Number(valB || 0);
         return numA - numB;
       }
 
-      if (col.tipo === 'fecha') {
-        const fechaA = parseFechaFlexible(getColumnValue(a, col));
-        const fechaB = parseFechaFlexible(getColumnValue(b, col));
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        const fechaA = parseFechaFlexible(valA);
+        const fechaB = parseFechaFlexible(valB);
         if (!Number.isNaN(fechaA) && !Number.isNaN(fechaB)) {
           return fechaA - fechaB;
         }
       }
 
-      return normalizarParaComparacion(getColumnValue(a, col)).localeCompare(
-        normalizarParaComparacion(getColumnValue(b, col)),
-        'es'
-      );
+      return normalizarParaComparacion(valA).localeCompare(normalizarParaComparacion(valB), 'es');
     }
 
     function evaluarFiltro(valorCelda, textoFiltro, col) {
@@ -1477,18 +1287,16 @@
       if (!filtro) return true;
 
       const textoCelda = safe(valorCelda);
-      const matchOperador = filtro.match(/^(>=|<=|>|<|=)\s*(.+)$/);
 
+      const matchOperador = filtro.match(/^(>=|<=|>|<|=)\s*(.+)$/);
       if (matchOperador) {
         const operador = matchOperador[1];
         const valorFiltro = matchOperador[2];
-        let valorA = NaN;
-        let valorB = NaN;
 
-        if (col.tipo === 'moneda' || col.tipo === 'numero' || col.tipo === 'input') {
-          valorA = parseNumeroFlexible(textoCelda);
-          valorB = parseNumeroFlexible(valorFiltro);
-        } else if (col.tipo === 'fecha') {
+        let valorA = parseNumeroFlexible(textoCelda);
+        let valorB = parseNumeroFlexible(valorFiltro);
+
+        if ((Number.isNaN(valorA) || Number.isNaN(valorB)) && (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento')) {
           valorA = parseFechaFlexible(textoCelda);
           valorB = parseFechaFlexible(valorFiltro);
         }
@@ -1534,20 +1342,13 @@
       const row = state.rows.find((item) => item.__rowId === rowId);
       if (!row) return { ok: false, valorFinal: '' };
 
-      const saldoMaximo = obtenerSaldoMaximoFila(row);
-      const valorNumerico = valor === '' ? '' : Number(valor);
-      const valorNormalizado = valor === '' ? '' : normalizarAprobadoContraSaldo(valorNumerico, saldoMaximo);
-
-      row.__aprobadoManual = valorNormalizado;
+      const valorNormalizado = valor === '' ? '' : normalizarAprobadoContraSaldo(valor, row.saldo);
+      row.aprobado = valorNormalizado;
       state.approvedValues = construirMapaAprobados();
       guardarAprobados();
 
-      if (!opciones.silencioso && valorNumerico !== '' && !Number.isNaN(valorNumerico) && valorNormalizado !== '' && Number(valorNormalizado) !== valorNumerico) {
-        if (valorNumerico < 0) {
-          setEstado('El valor aprobado no puede ser negativo. Se ajustó automáticamente.', 'aviso');
-        } else if (!Number.isNaN(saldoMaximo) && valorNumerico > saldoMaximo) {
-          setEstado('El valor aprobado no puede superar el saldo de la fila. Se ajustó automáticamente.', 'aviso');
-        }
+      if (!opciones.silencioso && valor !== '' && Number(valorNormalizado) < Number(valor)) {
+        setEstado('El valor aprobado no puede ser superior al saldo. Se ajustó automáticamente.', 'aviso');
       }
 
       return { ok: true, valorFinal: valorNormalizado };
@@ -1585,7 +1386,7 @@
         const columnasVisiblesGuardadas = localStorage.getItem(STORAGE_KEYS.visibleColumns);
         if (columnasVisiblesGuardadas) {
           const visibles = JSON.parse(columnasVisiblesGuardadas);
-          state.visibleColumnKeys = Array.isArray(visibles) ? visibles : [];
+          state.visibleColumnKeys = normalizarColumnasVisibles(visibles);
         }
 
         const anchosGuardados = localStorage.getItem(STORAGE_KEYS.columnWidths);
@@ -1598,7 +1399,7 @@
         state.sortKey = '';
         state.sortDirection = 'asc';
         state.approvedValues = {};
-        state.visibleColumnKeys = [];
+        state.visibleColumnKeys = columnasTabla.map((col) => col.key);
         state.columnWidths = {};
       }
     }
@@ -1620,24 +1421,51 @@
       aplicarFiltrosYOrden();
     }
 
+
+    function obtenerRoleCelda(colKey) {
+      if (colKey === 'saldo') return 'saldo';
+      if (colKey === 'programacion') return 'sugerido';
+      if (colKey === 'saldoDespuesProgramacion') return 'saldoDespues';
+      return '';
+    }
+
     function construirCeldaFila(row, col) {
-      if (col.key === '__aprobadoManual') {
+      if (col.key === 'aprobado') {
         return `
-          <td class="num celda-aprobado" data-row-id="${escapeHtml(row.__rowId)}" data-col-key="${escapeHtml(col.key)}">
-            ${crearEtiquetaAprobado(row.__rowId, row.__aprobadoManual)}
+          <td class="num">
+            <input
+              type="text"
+              class="programacion-input aprobado-input"
+              inputmode="decimal"
+              data-row-id="${escapeHtml(row.__rowId)}"
+              data-saldo="${escapeHtml(row.saldo)}"
+              value="${row.aprobado === '' ? '' : escapeHtml(moneyInputValue(row.aprobado))}"
+              placeholder="0,00"
+              title="Valor aprobado"
+            />
           </td>
         `;
       }
 
-      if (col.tipo === 'moneda' || col.tipo === 'numero' || col.tipo === 'input') {
-        const numero = obtenerNumeroColumna(row, col.key);
-        const className = [col.clase, col.key === claveSaldo ? 'celda-saldo' : '', claseNegativo(numero).trim()].filter(Boolean).join(' ');
-        return `<td class="${className}" data-col-key="${escapeHtml(col.key)}">${money(numero)}</td>`;
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        return `<td>${escapeHtml(row[col.key])}</td>`;
+      }
+
+      if (col.key === 'diasVencida') {
+        const className = ['num', claseNegativo(row.diasVencida).trim()].filter(Boolean).join(' ');
+        return `<td class="${className}">${escapeHtml(row.diasVencida)}</td>`;
+      }
+
+      if (col.tipo === 'moneda') {
+        const className = [col.clase, claseNegativo(row[col.key]).trim()].filter(Boolean).join(' ');
+        const role = obtenerRoleCelda(col.key);
+        const roleAttr = role ? ` data-role="${role}"` : '';
+        return `<td class="${className}"${roleAttr}>${money(row[col.key])}</td>`;
       }
 
       const className = [col.clase].filter(Boolean).join(' ');
       const classAttr = className ? ` class="${className}"` : '';
-      return `<td${classAttr} data-col-key="${escapeHtml(col.key)}">${escapeHtml(getColumnValue(row, col))}</td>`;
+      return `<td${classAttr}>${escapeHtml(getColumnValue(row, col))}</td>`;
     }
 
     function aplicarFiltrosYOrden() {
@@ -1645,9 +1473,10 @@
 
       let resultado = state.rows.filter((r) => {
         const pasaBusquedaGlobal = cumpleConsultaBusqueda(construirTextoBusquedaFila(r), q);
+
         if (!pasaBusquedaGlobal) return false;
 
-        return columnasTabla.every((col) => {
+        return columnas.every((col) => {
           const filtroColumna = state.columnFilters[col.key] || '';
           if (!filtroColumna) return true;
           return evaluarFiltro(getColumnValue(r, col), filtroColumna, col);
@@ -1655,7 +1484,7 @@
       });
 
       if (state.sortKey) {
-        const col = columnasTabla.find((x) => x.key === state.sortKey);
+        const col = columnas.find((x) => x.key === state.sortKey);
         if (col) {
           resultado = resultado.slice().sort((a, b) => {
             const comparacion = compararValores(a, b, col);
@@ -1689,10 +1518,6 @@
 
       state.filteredRows.forEach((r) => {
         const tr = document.createElement('tr');
-        tr.dataset.rowId = r.__rowId;
-        if (filaTieneValorAprobado(r)) {
-          tr.classList.add('fila-aprobada');
-        }
         tr.innerHTML = columnasVisibles.map((col) => construirCeldaFila(r, col)).join('');
         frag.appendChild(tr);
       });
@@ -1720,20 +1545,22 @@
           throw new Error(payload && payload.message ? payload.message : 'No fue posible leer los datos.');
         }
 
-        establecerColumnas(payload.columns || []);
-
         state.rows = (payload.rows || []).map((row, index) => {
           const rowId = obtenerIdFila(row, index);
+          const saldo = Number(row.saldo || 0);
           const aprobadoPersistido = Object.prototype.hasOwnProperty.call(state.approvedValues, rowId)
             ? state.approvedValues[rowId]
-            : row.__aprobadoManual;
+            : row.aprobado;
 
           return {
             ...row,
             __rowId: rowId,
-            __aprobadoManual: aprobadoPersistido === '' || aprobadoPersistido === null || aprobadoPersistido === undefined
+            diasVencida: calcularDiasVencimiento(row.fechaVencimiento, row.diasVencida),
+            programacion: row.programacion === '' ? '' : Number(row.programacion || 0),
+            saldoDespuesProgramacion: Number(row.saldoDespuesProgramacion ?? (saldo - Number(row.programacion || 0))),
+            aprobado: aprobadoPersistido === '' || aprobadoPersistido === null || aprobadoPersistido === undefined
               ? ''
-              : normalizarAprobadoContraSaldo(aprobadoPersistido, obtenerSaldoMaximoFila(row))
+              : normalizarAprobadoContraSaldo(aprobadoPersistido, saldo)
           };
         });
 
@@ -1743,10 +1570,6 @@
         );
         guardarAprobados();
 
-        construirColgroup();
-        construirEncabezados();
-        aplicarFiltrosPersistidosAInputs();
-        renderPanelColumnasVisibles();
         aplicarFiltrosYOrden();
         actualizarSobrante();
       } catch (error) {
@@ -1771,18 +1594,23 @@
     }
 
     function obtenerValorExportableExcel(row, col) {
-      if (col.key === '__aprobadoManual') {
-        return money(obtenerValorAprobado(row));
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        return safe(row[col.key]);
       }
 
-      if (col.tipo === 'moneda' || col.tipo === 'numero') {
-        return money(obtenerNumeroColumna(row, col.key));
+      if (col.tipo === 'moneda' || col.tipo === 'input') {
+        const valor = col.key === 'aprobado' ? obtenerValorAprobado(row) : obtenerNumeroColumna(row, col.key);
+        return money(valor);
+      }
+
+      if (col.key === 'diasVencida') {
+        return safe(row.diasVencida);
       }
 
       return obtenerTextoCelda(row, col);
     }
 
-    function convertirFilaExcelHtml(row, columnas) {
+    function convertirFilaExcelHtml(row) {
       return '<tr>' + columnas.map((col) => {
         const valor = escapeHtml(obtenerValorExportableExcel(row, col));
         const clase = col.clase && col.clase.includes('num') ? ' class="num"' : '';
@@ -1790,9 +1618,9 @@
       }).join('') + '</tr>';
     }
 
-    function descargarExcel(rows, columnas, prefijoNombre, mensajeExito) {
+    function descargarExcel(rows, prefijoNombre, mensajeExito) {
       const encabezados = columnas.map((col) => '<th>' + escapeHtml(col.titulo) + '</th>').join('');
-      const filas = rows.map((row) => convertirFilaExcelHtml(row, columnas)).join('');
+      const filas = rows.map(convertirFilaExcelHtml).join('');
       const contenido = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1844,75 +1672,56 @@
         return;
       }
 
-      const columnasVisibles = obtenerColumnasVisibles();
-
       descargarExcel(
         state.filteredRows,
-        columnasVisibles,
         'programacion_cxp_visibles',
         'Exportación Excel completada con ' + state.filteredRows.length + ' fila(s) visibles.'
       );
     }
 
-    const aplicarBusquedaGlobalDebounced = debounce(() => {
-      guardarBusquedaGlobal();
-      aplicarFiltrosYOrden();
-    });
 
     txtBuscar.addEventListener('input', () => {
-      aplicarBusquedaGlobalDebounced();
+      guardarBusquedaGlobal();
+      aplicarFiltrosYOrden();
     });
 
     txtDisponible.addEventListener('input', () => {
       guardarDisponible();
       actualizarSobrante();
     });
-
     txtDisponible.addEventListener('blur', () => {
       normalizarInputMonetario(txtDisponible);
       guardarDisponible();
     });
 
-    tbody.addEventListener('click', (e) => {
-      const inputAprobado = e.target.closest('.aprobado-input');
-      if (inputAprobado) return;
-
-      const celdaAprobado = e.target.closest('.celda-aprobado');
-      if (celdaAprobado) {
-        activarEdicionAprobado(celdaAprobado);
-        return;
-      }
-
-      const celdaSaldo = e.target.closest('.celda-saldo');
-      if (!celdaSaldo || !claveSaldo) return;
-
-      if (celdaSaldo.dataset.colKey !== claveSaldo) return;
-
-      const fila = celdaSaldo.closest('tr');
-      const rowId = fila ? fila.dataset.rowId || '' : '';
-      if (!rowId) return;
-
-      alternarSaldoEnAprobado(rowId);
-    });
-
-    tbody.addEventListener('keydown', (e) => {
+    tbody.addEventListener('change', (e) => {
       if (!e.target.classList.contains('aprobado-input')) return;
 
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        finalizarEdicionAprobado(e.target);
-        return;
-      }
+      const rowId = e.target.dataset.rowId || '';
+      if (!rowId) return;
 
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        finalizarEdicionAprobado(e.target, true);
-      }
+      const texto = safe(e.target.value).trim();
+      const valor = texto ? parseNumeroFlexible(texto) : '';
+      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
+
+      e.target.value = resultado.valorFinal === '' ? '' : moneyInputValue(resultado.valorFinal);
+      renderFilaTotales();
+      actualizarSobrante();
     });
 
     tbody.addEventListener('blur', (e) => {
       if (!e.target.classList.contains('aprobado-input')) return;
-      finalizarEdicionAprobado(e.target);
+
+      const rowId = e.target.dataset.rowId || '';
+      if (!rowId) return;
+
+      const texto = safe(e.target.value).trim();
+      const valor = texto ? parseNumeroFlexible(texto) : '';
+      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
+
+      e.target.value = resultado.valorFinal === '' ? '' : moneyInputValue(resultado.valorFinal);
+      renderFilaTotales();
+      actualizarSobrante();
     }, true);
 
     window.addEventListener('pagehide', () => {
@@ -1928,16 +1737,13 @@
     btnRecargar.addEventListener('click', cargarDatos);
     btnExportar.addEventListener('click', exportarVisiblesExcel);
     btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
-    btnAutofit.addEventListener('click', aplicarAutofitTodasLasColumnas);
     btnColumnasVisibles.addEventListener('click', (e) => {
       e.stopPropagation();
       alternarPanelColumnasVisibles();
     });
-
     btnMostrarTodasColumnas.addEventListener('click', () => {
       mostrarTodasLasColumnas();
     });
-
     btnCerrarColumnasVisibles.addEventListener('click', () => {
       cerrarPanelColumnasVisibles();
     });

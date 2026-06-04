@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programación de CxP - Arcadia</title>
+  <style>
+    :root {
+      --borde: #c2cad3;
+      --borde-fuerte: #aeb8c3;
+      --fondo: #f6f8fa;
+      --texto: #1f2328;
+      --muted: #57606a;
+      --ok: #1a7f37;
+      --error: #cf222e;
+      --aviso: #9a6700;
+      --verde-calculado: rgb(218,242,208);
+      --filtro: #f8fafc;
+      --orden-activo: #dbeafe;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: var(--texto);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 10px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .titulo-barra {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 8px;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      flex: 0 0 auto;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .panel {
+      background: var(--fondo);
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+      flex: 0 0 auto;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 8px 10px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      min-width: 320px;
+      flex: 1 1 420px;
+    }
+
+    .input-monetario-panel {
+      min-width: 140px !important;
+      max-width: 140px;
+      flex: 0 0 140px !important;
+      text-align: right;
+    }
+
+    .input-monetario-panel[readonly] {
+      background: #fff;
+      cursor: default;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    button:hover { background: #f3f4f6; }
+
+    .estado {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .estado.ok { color: var(--ok); }
+    .estado.error { color: var(--error); }
+    .estado.aviso { color: var(--aviso); }
+
+    .tabla-wrap {
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+      background: #fff;
+      border: 1px solid var(--borde-fuerte);
+    }
+
+    col { width: auto; }
+
+    th,
+    td {
+      border: 1px solid var(--borde);
+      vertical-align: middle;
+      overflow: hidden;
+    }
+
+    thead tr.totals-row th {
+      background: #eef3f8;
+      border-color: var(--borde-fuerte);
+      border-bottom: 1.5px solid var(--borde-fuerte);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.15;
+      padding: 6px;
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    thead tr.totals-row th:first-child {
+      text-align: left;
+    }
+
+    thead tr.header-row th {
+      background: #f3f6f9;
+      border-color: var(--borde-fuerte);
+      border-bottom: 1.5px solid var(--borde-fuerte);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.15;
+      padding: 4px 6px;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      height: auto;
+      min-height: 1px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    thead tr.filter-row th {
+      background: var(--filtro);
+      border-color: var(--borde-fuerte);
+      padding: 4px;
+      position: sticky;
+      top: 42px;
+      z-index: 2;
+    }
+
+    thead th.orden-activo {
+      background: var(--orden-activo) !important;
+    }
+
+    .th-contenido {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      min-height: 20px;
+    }
+
+    .indicador-orden {
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 12px;
+    }
+
+    .filtro-columna {
+      width: 100%;
+      min-width: 70px;
+      padding: 5px 6px;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    .col-prog,
+    .celda-prog {
+      text-align: center !important;
+    }
+
+    .checkbox-prog {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #2563eb;
+    }
+
+    .check-todos-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .saldo-sobrante.negativo {
+      color: var(--error) !important;
+      font-weight: 700;
+    }
+
+    tbody td {
+      padding: 6px 8px;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      background: #fff;
+    }
+
+    .negativo {
+      color: var(--error) !important;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+    }
+
+    thead tr.header-row th.num {
+      text-align: center;
+    }
+
+    .encabezado-calculado {
+      background: var(--verde-calculado) !important;
+    }
+
+    .programacion-input {
+      width: 100%;
+      min-width: 90px;
+      padding: 6px 8px;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      text-align: right;
+      font-size: 14px;
+      color: inherit;
+    }
+
+    .aprobado-input:focus {
+      outline: 2px solid #bfdbfe;
+      outline-offset: 0;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .medidor {
+      position: absolute;
+      left: -99999px;
+      top: -99999px;
+      visibility: hidden;
+      white-space: nowrap;
+      padding: 0;
+      margin: 0;
+      border: 0;
+    }
+
+    .panel {
+      position: relative;
+    }
+
+    .panel-columnas-visibles {
+      position: absolute;
+      top: calc(100% - 2px);
+      right: 12px;
+      width: min(340px, calc(100vw - 40px));
+      max-height: 420px;
+      overflow: hidden;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid var(--borde-fuerte);
+      border-radius: 10px;
+      background: #fff;
+      box-shadow: 0 12px 28px rgba(31, 35, 40, 0.18);
+      z-index: 20;
+    }
+
+    .panel-columnas-visibles.abierto {
+      display: flex;
+    }
+
+    .panel-columnas-encabezado {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .panel-columnas-titulo {
+      margin: 0;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .panel-columnas-acciones {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+    }
+
+    .btn-cerrar-panel {
+      min-width: 36px;
+      padding: 6px 10px;
+      line-height: 1;
+      font-size: 16px;
+    }
+
+    .lista-columnas-visibles {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .item-columna-visible {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 7px 8px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      background: #fff;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .item-columna-visible:hover {
+      background: #f8fafc;
+    }
+
+    .item-columna-visible input[type="checkbox"] {
+      width: 16px;
+      height: 16px;
+      margin: 0;
+      flex: 0 0 auto;
+      cursor: pointer;
+    }
+
+    .item-columna-visible-texto {
+      min-width: 0;
+      line-height: 1.2;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="titulo-barra">
+      <h1>Programación de CxP - Arcadia</h1>
+      <div id="estado" class="estado aviso">Cargando datos...</div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <input type="text" id="txtBuscar" placeholder="Buscar en todas las columnas..." />
+        <input type="text" id="txtSobrante" class="input-monetario-panel saldo-sobrante" placeholder="Sobrante" readonly />
+        <input type="text" id="txtDisponible" class="input-monetario-panel" placeholder="Disponible" inputmode="decimal" />
+        <button id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
+        <button id="btnExportar" type="button">Exportar visibles Excel</button>
+        <button id="btnColumnasVisibles" type="button">Columnas visibles</button>
+        <button id="btnRecargar" type="button">Recargar</button>
+      </div>
+      <div id="panelColumnasVisibles" class="panel-columnas-visibles" aria-hidden="true">
+        <div class="panel-columnas-encabezado">
+          <div class="panel-columnas-titulo">Columnas visibles</div>
+          <button id="btnCerrarColumnasVisibles" type="button" class="btn-cerrar-panel" aria-label="Cerrar">×</button>
+        </div>
+        <div class="panel-columnas-acciones">
+          <button id="btnMostrarTodasColumnas" type="button">Mostrar todas</button>
+        </div>
+        <div id="listaColumnasVisibles" class="lista-columnas-visibles"></div>
+      </div>
+    </div>
+
+    <div class="tabla-wrap">
+      <table id="tabla">
+        <colgroup id="colgroup"></colgroup>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzaQXeALfNhOr2jyOJxHqGEnJTucIRT9QtaUqybFSghNKYLGrrubFc_9gGbFtcIxB5/exec';
+
+    const INTERRUPTORES = {
+      headerRows: {
+        '1T-99tlkUibLlKUcszPftZlntoI4qCW_PVghrieBZ01I': 2
+      }
+    };
+
+    const columnas = [
+      { key: 'centroCosto', titulo: 'Centro de costo', clase: '' },
+      { key: 'nombreTercero', titulo: 'Nombre tercero', clase: '' },
+      { key: 'descripcion', titulo: 'Descripción del bien, servicio o impuesto', clase: '' },
+      { key: 'facturaMesPeriodo', titulo: 'Factura, mes o período', clase: '' },
+      { key: 'fechaObligacion', titulo: 'Fecha de la obligación', clase: '' },
+      { key: 'fechaVencimiento', titulo: 'Fecha vencimiento', clase: '' },
+      { key: 'diasVencida', titulo: 'Días vencida', clase: 'num', tipo: 'textoCorto', esCalculada: true },
+      { key: 'valorInicial', titulo: 'Valor inicial de la obligación', clase: 'num', tipo: 'moneda' },
+      { key: 'retenciones', titulo: 'Retenciones y descuentos', clase: 'num', tipo: 'moneda' },
+      { key: 'pagosAnteriores', titulo: 'Pagos anteriores', clase: 'num', tipo: 'moneda' },
+      { key: 'saldo', titulo: 'Saldo', clase: 'num', tipo: 'moneda', esCalculada: true },
+      { key: 'programacion', titulo: 'Sugerido', clase: 'num', tipo: 'moneda' },
+      { key: 'saldoDespuesProgramacion', titulo: 'Saldo después de sugerido', clase: 'num', tipo: 'moneda', esCalculada: true },
+      { key: 'origen', titulo: 'Libro de origen', clase: '' },
+      { key: 'aprobado', titulo: 'Aprobado', clase: 'num', tipo: 'input' }
+    ];
+
+    const columnasTabla = [...columnas];
+
+    const columnasMonetarias = columnas.filter((col) => col.tipo === 'moneda' || col.tipo === 'input').map((col) => col.key);
+
+    const STORAGE_KEYS = {
+      globalSearch: 'cxp_filtro_global',
+      columnFilters: 'cxp_filtros_columna',
+      sortKey: 'cxp_sort_key',
+      sortDirection: 'cxp_sort_direction',
+      disponible: 'cxp_disponible',
+      approvedValues: 'cxp_aprobados',
+      visibleColumns: 'cxp_columnas_visibles',
+      columnWidths: 'cxp_anchos_columnas'
+    };
+
+    const state = {
+      rows: [],
+      filteredRows: [],
+      columnFilters: {},
+      sortKey: '',
+      sortDirection: 'asc',
+      approvedValues: {},
+      visibleColumnKeys: columnasTabla.map((col) => col.key),
+      columnWidths: {},
+      isColumnPanelOpen: false
+    };
+
+    const estado = document.getElementById('estado');
+    const tbody = document.getElementById('tbody');
+    const thead = document.getElementById('thead');
+    const txtBuscar = document.getElementById('txtBuscar');
+    const txtDisponible = document.getElementById('txtDisponible');
+    const txtSobrante = document.getElementById('txtSobrante');
+    const btnRecargar = document.getElementById('btnRecargar');
+    const btnExportar = document.getElementById('btnExportar');
+    const btnColumnasVisibles = document.getElementById('btnColumnasVisibles');
+    const btnMostrarTodasColumnas = document.getElementById('btnMostrarTodasColumnas');
+    const btnCerrarColumnasVisibles = document.getElementById('btnCerrarColumnasVisibles');
+    const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
+    const panelColumnasVisibles = document.getElementById('panelColumnasVisibles');
+    const listaColumnasVisibles = document.getElementById('listaColumnasVisibles');
+    const tabla = document.getElementById('tabla');
+    const tablaWrap = document.querySelector('.tabla-wrap');
+    const colgroup = document.getElementById('colgroup');
+
+    function setEstado(texto, tipo = 'aviso') {
+      estado.textContent = texto;
+      estado.className = 'estado ' + tipo;
+    }
+
+    function money(n) {
+      const num = Number(n || 0);
+      return num.toLocaleString('es-CO', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function moneyInputValue(n) {
+      return money(n);
+    }
+
+    function normalizarAprobadoContraSaldo(valor, saldo) {
+      if (valor === '' || valor === null || valor === undefined) return '';
+
+      const numero = Number(valor);
+      if (Number.isNaN(numero)) return '';
+
+      const saldoNumero = Math.max(Number(saldo || 0), 0);
+      if (numero < 0) return 0;
+      if (numero > saldoNumero) return saldoNumero;
+      return numero;
+    }
+
+    function obtenerValorAprobado(row) {
+      return Number(row && row.aprobado ? row.aprobado : 0);
+    }
+
+    function normalizarColumnasVisibles(keys) {
+      const ordenOriginal = columnasTabla.map((col) => col.key);
+      const visibles = new Set(Array.isArray(keys) ? keys : []);
+      const resultado = ordenOriginal.filter((key) => visibles.has(key));
+      return resultado.length ? resultado : ordenOriginal.slice();
+    }
+
+    function obtenerColumnasVisibles() {
+      return columnasTabla.filter((col) => state.visibleColumnKeys.includes(col.key));
+    }
+
+    function esColumnaVisible(key) {
+      return state.visibleColumnKeys.includes(key);
+    }
+
+    function guardarColumnasVisibles() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.visibleColumns, JSON.stringify(state.visibleColumnKeys));
+      } catch (error) {}
+    }
+
+    function guardarAnchosColumnas() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.columnWidths, JSON.stringify(state.columnWidths || {}));
+      } catch (error) {}
+    }
+
+    function obtenerPosicionScrollTabla() {
+      return {
+        left: tablaWrap ? tablaWrap.scrollLeft : 0,
+        top: tablaWrap ? tablaWrap.scrollTop : 0
+      };
+    }
+
+    function restaurarPosicionScrollTabla(posicion) {
+      if (!tablaWrap || !posicion) return;
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          tablaWrap.scrollLeft = posicion.left || 0;
+          tablaWrap.scrollTop = posicion.top || 0;
+        });
+      });
+    }
+
+    function renderPanelColumnasVisibles() {
+      if (!listaColumnasVisibles) return;
+
+      listaColumnasVisibles.innerHTML = columnasTabla.map((col) => {
+        const checked = esColumnaVisible(col.key) ? ' checked' : '';
+        return `
+          <label class="item-columna-visible">
+            <input type="checkbox" class="checkbox-columna-visible" data-column-key="${escapeHtml(col.key)}"${checked} />
+            <span class="item-columna-visible-texto">${escapeHtml(col.titulo)}</span>
+          </label>
+        `;
+      }).join('');
+    }
+
+    function abrirPanelColumnasVisibles() {
+      if (!panelColumnasVisibles || state.isColumnPanelOpen) return;
+      state.isColumnPanelOpen = true;
+      renderPanelColumnasVisibles();
+      panelColumnasVisibles.classList.add('abierto');
+      panelColumnasVisibles.setAttribute('aria-hidden', 'false');
+    }
+
+    function cerrarPanelColumnasVisibles() {
+      if (!panelColumnasVisibles || !state.isColumnPanelOpen) return;
+      state.isColumnPanelOpen = false;
+      panelColumnasVisibles.classList.remove('abierto');
+      panelColumnasVisibles.setAttribute('aria-hidden', 'true');
+    }
+
+    function alternarPanelColumnasVisibles() {
+      if (state.isColumnPanelOpen) {
+        cerrarPanelColumnasVisibles();
+        return;
+      }
+      abrirPanelColumnasVisibles();
+    }
+
+    function reconstruirVistaPorColumnasVisibles() {
+      const posicionScroll = obtenerPosicionScrollTabla();
+      construirColgroup();
+      construirEncabezados();
+      aplicarFiltrosPersistidosAInputs();
+      renderTabla();
+      renderPanelColumnasVisibles();
+      guardarColumnasVisibles();
+      guardarAnchosColumnas();
+      restaurarPosicionScrollTabla(posicionScroll);
+    }
+
+    function cambiarVisibilidadColumna(key, visible) {
+      const columnasActuales = new Set(state.visibleColumnKeys);
+
+      if (!visible && columnasActuales.size <= 1 && columnasActuales.has(key)) {
+        setEstado('Debes dejar al menos una columna visible.', 'aviso');
+        renderPanelColumnasVisibles();
+        return;
+      }
+
+      if (visible) {
+        columnasActuales.add(key);
+      } else {
+        columnasActuales.delete(key);
+      }
+
+      state.visibleColumnKeys = normalizarColumnasVisibles(Array.from(columnasActuales));
+      reconstruirVistaPorColumnasVisibles();
+    }
+
+    function mostrarTodasLasColumnas() {
+      state.visibleColumnKeys = columnasTabla.map((col) => col.key);
+      reconstruirVistaPorColumnasVisibles();
+    }
+
+    function construirMapaAprobados() {
+      return state.rows.reduce((acum, row) => {
+        if (!row || !row.__rowId) return acum;
+        if (row.aprobado === '' || row.aprobado === null || row.aprobado === undefined) return acum;
+        acum[row.__rowId] = Number(row.aprobado || 0);
+        return acum;
+      }, {});
+    }
+
+    function guardarAprobados() {
+      try {
+        state.approvedValues = construirMapaAprobados();
+        localStorage.setItem(STORAGE_KEYS.approvedValues, JSON.stringify(state.approvedValues));
+      } catch (error) {}
+    }
+
+    function obtenerTotalAprobado() {
+      return state.rows.reduce((suma, row) => {
+        return suma + obtenerValorAprobado(row);
+      }, 0);
+    }
+
+    function actualizarSobrante() {
+      const disponibleTexto = safe(txtDisponible.value).trim();
+
+      if (!disponibleTexto) {
+        txtSobrante.value = '';
+        txtSobrante.classList.remove('negativo');
+        return;
+      }
+
+      const disponible = parseNumeroFlexible(disponibleTexto);
+      const disponibleNumero = Number.isNaN(disponible) ? 0 : disponible;
+      const sobrante = disponibleNumero - obtenerTotalAprobado();
+
+      txtSobrante.value = moneyInputValue(sobrante);
+      txtSobrante.classList.toggle('negativo', sobrante < 0);
+    }
+
+    function normalizarInputMonetario(input) {
+      const texto = safe(input.value).trim();
+
+      if (!texto) {
+        input.value = '';
+        actualizarSobrante();
+        return;
+      }
+
+      const valor = parseNumeroFlexible(texto);
+      if (Number.isNaN(valor)) {
+        actualizarSobrante();
+        return;
+      }
+
+      input.value = moneyInputValue(valor);
+      actualizarSobrante();
+    }
+
+    function obtenerNumeroColumna(row, colKey) {
+      if (colKey === 'programacion') return Number(row.programacion || 0);
+      if (colKey === 'aprobado') return obtenerValorAprobado(row);
+      return Number(row[colKey] || 0);
+    }
+
+    function esValorNegativo(valor) {
+      return Number(valor) < 0;
+    }
+
+    function claseNegativo(valor) {
+      return esValorNegativo(valor) ? ' negativo' : '';
+    }
+
+    function safe(v) {
+      return v === null || v === undefined ? '' : String(v);
+    }
+
+    function capitalizarPalabras(texto) {
+      return safe(texto)
+        .toLowerCase()
+        .replace(/(^|[\s\-\/\(\)\[\]\{\},.;:]+)([a-záéíóúüñ])/g, (m, separador, letra) => separador + letra.toUpperCase());
+    }
+
+    function formatearTextoPorColumna(colKey, valor) {
+      const texto = safe(valor);
+
+      if (colKey === 'centroCosto' || colKey === 'nombreTercero' || colKey === 'descripcion') {
+        return capitalizarPalabras(texto);
+      }
+
+      if (colKey === 'facturaMesPeriodo') {
+        return texto.toUpperCase();
+      }
+
+      if (colKey === 'origen') {
+        return texto.toLowerCase();
+      }
+
+      return texto;
+    }
+
+    function escapeHtml(text) {
+      return safe(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function valorDescripcion(row) {
+      return safe(
+        row.descripcion ??
+        row.descripcionBienServicioImpuesto ??
+        row['Descripción del bien, servicio o impuesto'] ??
+        row['Descripcion del bien, servicio o impuesto'] ??
+        row['Descripción del bien servicio o impuesto'] ??
+        row['Descripcion del bien servicio o impuesto'] ??
+        row['Descripción'] ??
+        row['Descripcion'] ??
+        ''
+      );
+    }
+
+    function obtenerIdFila(row, index) {
+      return [
+        safe(row.centroCosto),
+        safe(row.nombreTercero),
+        valorDescripcion(row),
+        safe(row.facturaMesPeriodo),
+        safe(row.fechaObligacion),
+        safe(row.fechaVencimiento),
+        String(index)
+      ].join('||');
+    }
+
+    function nextCallbackName(base) {
+      return base + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    }
+
+    function jsonp(url, callbackName) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        const finalUrl = url + (url.includes('?') ? '&' : '?') + 'prefix=' + encodeURIComponent(callbackName) + '&_ts=' + Date.now();
+
+        const cleanup = () => {
+          if (window[callbackName]) delete window[callbackName];
+          script.remove();
+        };
+
+        window[callbackName] = (payload) => {
+          cleanup();
+          resolve(payload);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('No se pudo cargar el servicio.'));
+        };
+
+        script.src = finalUrl;
+        document.body.appendChild(script);
+      });
+    }
+
+    function medirTexto(texto, estilo) {
+      const span = document.createElement('span');
+      span.className = 'medidor';
+      Object.assign(span.style, estilo);
+      span.textContent = texto || '';
+      document.body.appendChild(span);
+      const ancho = Math.ceil(span.getBoundingClientRect().width);
+      span.remove();
+      return ancho;
+    }
+
+    function getColumnValue(row, col) {
+      let valor;
+
+      if (col.key === 'origen') {
+        valor = row.__meta?.spreadsheetName || '';
+      } else if (col.key === 'descripcion') {
+        valor = valorDescripcion(row);
+      } else {
+        valor = row[col.key];
+      }
+
+      return formatearTextoPorColumna(col.key, valor);
+    }
+
+    function obtenerTextoCelda(row, col) {
+      if (col.key === 'origen') {
+        return getColumnValue(row, col);
+      }
+      if (col.tipo === 'input') {
+        const valor = getColumnValue(row, col);
+        return valor === '' ? '' : money(valor);
+      }
+      if (col.tipo === 'moneda') {
+        return money(getColumnValue(row, col));
+      }
+      return safe(getColumnValue(row, col));
+    }
+
+    function construirColgroup() {
+      colgroup.innerHTML = '';
+      obtenerColumnasVisibles().forEach(() => {
+        const col = document.createElement('col');
+        colgroup.appendChild(col);
+      });
+    }
+
+    function calcularTotalesFiltrados() {
+      return columnasMonetarias.reduce((acum, key) => {
+        acum[key] = state.filteredRows.reduce((suma, row) => suma + obtenerNumeroColumna(row, key), 0);
+        return acum;
+      }, {});
+    }
+
+    function renderFilaTotales() {
+      const trTotales = thead.querySelector('tr.totals-row');
+      if (!trTotales) return;
+
+      const totales = calcularTotalesFiltrados();
+      trTotales.querySelectorAll('th[data-total-key]').forEach((th) => {
+        const key = th.dataset.totalKey;
+        const total = Number(totales[key] || 0);
+        th.textContent = money(total);
+        th.classList.toggle('negativo', esValorNegativo(total));
+      });
+    }
+
+    function construirEncabezados() {
+      thead.innerHTML = '';
+
+      const trTotales = document.createElement('tr');
+      trTotales.className = 'totals-row';
+
+      const trHeader = document.createElement('tr');
+      trHeader.className = 'header-row';
+
+      const trFiltros = document.createElement('tr');
+      trFiltros.className = 'filter-row';
+
+      const columnasVisibles = obtenerColumnasVisibles();
+
+      columnasVisibles.forEach((col, index) => {
+        const thTotal = document.createElement('th');
+        thTotal.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
+
+        if (index === 0) {
+          thTotal.textContent = 'Totales';
+        } else if (columnasMonetarias.includes(col.key)) {
+          thTotal.dataset.totalKey = col.key;
+          thTotal.textContent = money(0);
+        } else {
+          thTotal.innerHTML = '&nbsp;';
+        }
+
+        trTotales.appendChild(thTotal);
+
+        const th = document.createElement('th');
+        th.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
+
+        th.dataset.sortKey = col.key;
+        th.innerHTML = `
+          <div class="th-contenido">
+            <span>${escapeHtml(col.titulo)}</span>
+            <span class="indicador-orden" data-indicador="${escapeHtml(col.key)}">↕</span>
+          </div>
+        `;
+        th.addEventListener('click', () => cambiarOrden(col.key));
+
+        trHeader.appendChild(th);
+
+        const thFiltro = document.createElement('th');
+        thFiltro.className = col.clase;
+
+        thFiltro.innerHTML = `
+          <input
+            type="text"
+            class="filtro-columna"
+            data-filter-key="${escapeHtml(col.key)}"
+            placeholder="Filtrar..."
+            title="Filtrar ${escapeHtml(col.titulo)}"
+          />
+        `;
+
+        trFiltros.appendChild(thFiltro);
+      });
+
+      thead.appendChild(trTotales);
+      thead.appendChild(trHeader);
+      thead.appendChild(trFiltros);
+      refrescarEncabezadosOrden();
+      renderFilaTotales();
+
+      thead.querySelectorAll('.filtro-columna').forEach((input) => {
+        input.addEventListener('input', (e) => {
+          state.columnFilters[e.target.dataset.filterKey] = e.target.value || '';
+          guardarFiltrosColumna();
+          aplicarFiltrosYOrden();
+        });
+
+        input.addEventListener('click', (e) => e.stopPropagation());
+      });
+    }
+
+    function actualizarCheckboxSeleccionarTodos() {
+      return;
+    }
+
+    function refrescarEncabezadosOrden() {
+      const ths = thead.querySelectorAll('tr.header-row th');
+      ths.forEach((th) => {
+        const key = th.dataset.sortKey;
+        const indicador = th.querySelector('.indicador-orden');
+        th.classList.remove('orden-activo');
+        if (!indicador) return;
+
+        if (state.sortKey === key) {
+          th.classList.add('orden-activo');
+          indicador.textContent = state.sortDirection === 'asc' ? '▲' : '▼';
+        } else {
+          indicador.textContent = '↕';
+        }
+      });
+    }
+
+    function ajustarTopFiltros() {
+      const totalsRow = thead.querySelector('tr.totals-row');
+      const headerRow = thead.querySelector('tr.header-row');
+      const totalCells = thead.querySelectorAll('tr.totals-row th');
+      const headerCells = thead.querySelectorAll('tr.header-row th');
+      const filterCells = thead.querySelectorAll('tr.filter-row th');
+      const totalHeight = totalsRow ? Math.ceil(totalsRow.getBoundingClientRect().height) : 0;
+      const headerHeight = headerRow ? Math.ceil(headerRow.getBoundingClientRect().height) : 0;
+
+      totalCells.forEach((th) => {
+        th.style.top = '0px';
+      });
+
+      headerCells.forEach((th) => {
+        th.style.top = totalHeight + 'px';
+      });
+
+      filterCells.forEach((th) => {
+        th.style.top = (totalHeight + headerHeight) + 'px';
+      });
+    }
+
+    function ajustarColumnasYEncabezados() {
+      if (!colgroup.children.length) construirColgroup();
+
+      const columnasVisibles = obtenerColumnasVisibles();
+      if (!columnasVisibles.length) return;
+
+      const anchoDisponible = tabla.parentElement.clientWidth - 2;
+      const muestra = state.filteredRows.slice(0, 35);
+      const totalesFiltrados = calcularTotalesFiltrados();
+
+      let anchos = columnasVisibles.map((col) => {
+        const palabras = col.titulo.split(/\s+/).filter(Boolean);
+        const palabraMasLarga = palabras.reduce((a, b) => a.length >= b.length ? a : b, '');
+
+        const anchoTituloNatural = medirTexto(col.titulo, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          fontWeight: '700'
+        });
+
+        const anchoPalabra = medirTexto(palabraMasLarga, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          fontWeight: '700'
+        });
+
+        let anchoDatos = 0;
+        muestra.forEach((row) => {
+          const valor = obtenerTextoCelda(row, col);
+          const ancho = medirTexto(valor, {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            fontWeight: '400'
+          });
+          if (ancho > anchoDatos) anchoDatos = ancho;
+        });
+
+        if (columnasMonetarias.includes(col.key)) {
+          const anchoTotal = medirTexto(money(totalesFiltrados[col.key] || 0), {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '12px',
+            fontWeight: '700'
+          });
+          if (anchoTotal > anchoDatos) anchoDatos = anchoTotal;
+        }
+
+        let minimo = Math.max(anchoPalabra + 22, 72);
+        let ideal = Math.max(Math.min(anchoTituloNatural * 0.62, 220), Math.min(anchoDatos + 24, 220), minimo);
+
+        if (col.tipo === 'textoCorto') {
+          ideal = Math.max(minimo, Math.min(ideal, 100));
+        }
+        if (col.tipo === 'moneda') {
+          ideal = Math.max(minimo, Math.min(Math.max(anchoDatos + 22, 110), 150));
+        }
+        if (col.tipo === 'input') {
+          ideal = Math.max(minimo, 120);
+        }
+        if (col.key === 'descripcion') {
+          ideal = Math.max(ideal, 145);
+        }
+        if (col.key === 'origen') {
+          ideal = Math.max(ideal, 120);
+        }
+
+        const anchoPersistido = Number(state.columnWidths[col.key] || 0);
+        if (anchoPersistido > 0) {
+          ideal = Math.max(ideal, Math.min(anchoPersistido, 320));
+        }
+
+        return {
+          minimo,
+          ideal,
+          actual: ideal
+        };
+      });
+
+      let total = anchos.reduce((s, a) => s + a.actual, 0);
+
+      if (total > anchoDisponible) {
+        let exceso = total - anchoDisponible;
+        let ajustable = true;
+
+        while (exceso > 0.5 && ajustable) {
+          ajustable = false;
+          const flexTotal = anchos.reduce((s, a) => s + Math.max(a.actual - a.minimo, 0), 0);
+          if (flexTotal <= 0) break;
+
+          anchos = anchos.map((a) => {
+            const flex = Math.max(a.actual - a.minimo, 0);
+            if (flex <= 0) return a;
+            ajustable = true;
+            const recorte = Math.min(flex, exceso * (flex / flexTotal));
+            return { ...a, actual: a.actual - recorte };
+          });
+
+          total = anchos.reduce((s, a) => s + a.actual, 0);
+          exceso = total - anchoDisponible;
+        }
+      } else if (total < anchoDisponible) {
+        const extra = anchoDisponible - total;
+        const pesoTotal = anchos.reduce((s, a) => s + a.actual, 0);
+        anchos = anchos.map((a) => ({
+          ...a,
+          actual: a.actual + (extra * (a.actual / pesoTotal))
+        }));
+      }
+
+      Array.from(colgroup.children).forEach((col, i) => {
+        const anchoActual = anchos[i].actual;
+        col.style.width = anchoActual + 'px';
+        if (columnasVisibles[i]) {
+          state.columnWidths[columnasVisibles[i].key] = anchoActual;
+        }
+      });
+
+      requestAnimationFrame(() => {
+        const ths = thead.querySelectorAll('tr.header-row th');
+        let alturaMax = 0;
+
+        ths.forEach((th) => {
+          th.style.height = 'auto';
+        });
+
+        ths.forEach((th) => {
+          const altura = Math.ceil(th.scrollHeight);
+          if (altura > alturaMax) alturaMax = altura;
+        });
+
+        ths.forEach((th) => {
+          th.style.height = alturaMax + 'px';
+        });
+
+        ajustarTopFiltros();
+      });
+    }
+
+    function normalizarParaComparacion(valor) {
+      return safe(valor)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+
+    function analizarConsultaBusqueda(texto) {
+      const consulta = safe(texto);
+      const tokens = [];
+      const regex = /(-?)"([^"]+)"|(-?)(\S+)/g;
+      let match;
+
+      while ((match = regex.exec(consulta)) !== null) {
+        const esFrase = match[2] !== undefined;
+        const valorOriginal = esFrase ? match[2] : match[4];
+        const excluir = (esFrase ? match[1] : match[3]) === '-';
+        const valor = normalizarParaComparacion(valorOriginal);
+
+        if (!valor) continue;
+
+        tokens.push({
+          valor,
+          excluir,
+          esFrase
+        });
+      }
+
+      return {
+        incluir: tokens.filter((token) => !token.excluir),
+        excluir: tokens.filter((token) => token.excluir)
+      };
+    }
+
+    function cumpleConsultaBusqueda(textoBase, consulta) {
+      const grupos = analizarConsultaBusqueda(consulta);
+      if (!grupos.incluir.length && !grupos.excluir.length) return true;
+
+      const baseNormalizada = normalizarParaComparacion(textoBase);
+
+      const cumpleInclusiones = grupos.incluir.every((token) => baseNormalizada.includes(token.valor));
+      if (!cumpleInclusiones) return false;
+
+      return grupos.excluir.every((token) => !baseNormalizada.includes(token.valor));
+    }
+
+    function construirTextoBusquedaFila(row) {
+      return [
+        row.centroCosto,
+        row.nombreTercero,
+        valorDescripcion(row),
+        row.facturaMesPeriodo,
+        row.fechaObligacion,
+        row.fechaVencimiento,
+        row.diasVencida,
+        row.valorInicial,
+        row.retenciones,
+        row.pagosAnteriores,
+        row.saldo,
+        row.programacion,
+        row.saldoDespuesProgramacion,
+        row.__meta && row.__meta.spreadsheetName,
+        row.aprobado
+      ].join(' | ');
+    }
+
+    function parseNumeroFlexible(texto) {
+      const limpio = safe(texto).trim();
+      if (!limpio) return NaN;
+      const soloNumero = limpio.replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+      return Number(soloNumero);
+    }
+
+    function parseFechaFlexible(valor) {
+      const texto = safe(valor).trim();
+      if (!texto) return NaN;
+
+      const formatoLatino = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (formatoLatino) {
+        const dia = formatoLatino[1].padStart(2, '0');
+        const mes = formatoLatino[2].padStart(2, '0');
+        const anio = formatoLatino[3].length === 2 ? ('20' + formatoLatino[3]) : formatoLatino[3];
+        return new Date(`${anio}-${mes}-${dia}T00:00:00`).getTime();
+      }
+
+      const ms = Date.parse(texto);
+      return Number.isNaN(ms) ? NaN : ms;
+    }
+
+    function calcularDiasVencimiento(fechaVencimiento, diasOriginales) {
+      const msFecha = parseFechaFlexible(fechaVencimiento);
+      if (!Number.isNaN(msFecha)) {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+
+        const fecha = new Date(msFecha);
+        fecha.setHours(0, 0, 0, 0);
+
+        return Math.round((fecha.getTime() - hoy.getTime()) / 86400000);
+      }
+
+      return Number(diasOriginales || 0) * -1;
+    }
+
+    function compararValores(a, b, col) {
+      const valA = getColumnValue(a, col);
+      const valB = getColumnValue(b, col);
+
+      if (col.tipo === 'moneda' || col.tipo === 'input' || col.key === 'diasVencida') {
+        const numA = Number(valA || 0);
+        const numB = Number(valB || 0);
+        return numA - numB;
+      }
+
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        const fechaA = parseFechaFlexible(valA);
+        const fechaB = parseFechaFlexible(valB);
+        if (!Number.isNaN(fechaA) && !Number.isNaN(fechaB)) {
+          return fechaA - fechaB;
+        }
+      }
+
+      return normalizarParaComparacion(valA).localeCompare(normalizarParaComparacion(valB), 'es');
+    }
+
+    function evaluarFiltro(valorCelda, textoFiltro, col) {
+      const filtro = safe(textoFiltro).trim();
+      if (!filtro) return true;
+
+      const textoCelda = safe(valorCelda);
+
+      const matchOperador = filtro.match(/^(>=|<=|>|<|=)\s*(.+)$/);
+      if (matchOperador) {
+        const operador = matchOperador[1];
+        const valorFiltro = matchOperador[2];
+
+        let valorA = parseNumeroFlexible(textoCelda);
+        let valorB = parseNumeroFlexible(valorFiltro);
+
+        if ((Number.isNaN(valorA) || Number.isNaN(valorB)) && (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento')) {
+          valorA = parseFechaFlexible(textoCelda);
+          valorB = parseFechaFlexible(valorFiltro);
+        }
+
+        if (!Number.isNaN(valorA) && !Number.isNaN(valorB)) {
+          if (operador === '>') return valorA > valorB;
+          if (operador === '<') return valorA < valorB;
+          if (operador === '>=') return valorA >= valorB;
+          if (operador === '<=') return valorA <= valorB;
+          if (operador === '=') return valorA === valorB;
+        }
+      }
+
+      return cumpleConsultaBusqueda(textoCelda, filtro);
+    }
+
+    function guardarBusquedaGlobal() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.globalSearch, txtBuscar.value || '');
+      } catch (error) {}
+    }
+
+    function guardarFiltrosColumna() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.columnFilters, JSON.stringify(state.columnFilters || {}));
+      } catch (error) {}
+    }
+
+    function guardarOrden() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.sortKey, state.sortKey || '');
+        localStorage.setItem(STORAGE_KEYS.sortDirection, state.sortDirection || 'asc');
+      } catch (error) {}
+    }
+
+    function guardarDisponible() {
+      try {
+        localStorage.setItem(STORAGE_KEYS.disponible, txtDisponible.value || '');
+      } catch (error) {}
+    }
+
+    function aplicarValorAprobado(rowId, valor, opciones = {}) {
+      const row = state.rows.find((item) => item.__rowId === rowId);
+      if (!row) return { ok: false, valorFinal: '' };
+
+      const valorNormalizado = valor === '' ? '' : normalizarAprobadoContraSaldo(valor, row.saldo);
+      row.aprobado = valorNormalizado;
+      state.approvedValues = construirMapaAprobados();
+      guardarAprobados();
+
+      if (!opciones.silencioso && valor !== '' && Number(valorNormalizado) < Number(valor)) {
+        setEstado('El valor aprobado no puede ser superior al saldo. Se ajustó automáticamente.', 'aviso');
+      }
+
+      return { ok: true, valorFinal: valorNormalizado };
+    }
+
+    function cargarFiltrosPersistidos() {
+      try {
+        const busquedaGlobalGuardada = localStorage.getItem(STORAGE_KEYS.globalSearch);
+        if (busquedaGlobalGuardada !== null) {
+          txtBuscar.value = busquedaGlobalGuardada;
+        }
+
+        const filtrosGuardados = localStorage.getItem(STORAGE_KEYS.columnFilters);
+        if (filtrosGuardados) {
+          const filtros = JSON.parse(filtrosGuardados);
+          state.columnFilters = filtros && typeof filtros === 'object' ? filtros : {};
+        }
+
+        const sortKeyGuardado = localStorage.getItem(STORAGE_KEYS.sortKey);
+        const sortDirectionGuardada = localStorage.getItem(STORAGE_KEYS.sortDirection);
+        state.sortKey = sortKeyGuardado || '';
+        state.sortDirection = sortDirectionGuardada === 'desc' ? 'desc' : 'asc';
+
+        const disponibleGuardado = localStorage.getItem(STORAGE_KEYS.disponible);
+        if (disponibleGuardado !== null) {
+          txtDisponible.value = disponibleGuardado;
+        }
+
+        const aprobadosGuardados = localStorage.getItem(STORAGE_KEYS.approvedValues);
+        if (aprobadosGuardados) {
+          const aprobados = JSON.parse(aprobadosGuardados);
+          state.approvedValues = aprobados && typeof aprobados === 'object' ? aprobados : {};
+        }
+
+        const columnasVisiblesGuardadas = localStorage.getItem(STORAGE_KEYS.visibleColumns);
+        if (columnasVisiblesGuardadas) {
+          const visibles = JSON.parse(columnasVisiblesGuardadas);
+          state.visibleColumnKeys = normalizarColumnasVisibles(visibles);
+        }
+
+        const anchosGuardados = localStorage.getItem(STORAGE_KEYS.columnWidths);
+        if (anchosGuardados) {
+          const anchos = JSON.parse(anchosGuardados);
+          state.columnWidths = anchos && typeof anchos === 'object' ? anchos : {};
+        }
+      } catch (error) {
+        state.columnFilters = {};
+        state.sortKey = '';
+        state.sortDirection = 'asc';
+        state.approvedValues = {};
+        state.visibleColumnKeys = columnasTabla.map((col) => col.key);
+        state.columnWidths = {};
+      }
+    }
+
+    function aplicarFiltrosPersistidosAInputs() {
+      thead.querySelectorAll('.filtro-columna').forEach((input) => {
+        input.value = state.columnFilters[input.dataset.filterKey] || '';
+      });
+    }
+
+    function cambiarOrden(key) {
+      if (state.sortKey === key) {
+        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortKey = key;
+        state.sortDirection = 'asc';
+      }
+      guardarOrden();
+      aplicarFiltrosYOrden();
+    }
+
+
+    function obtenerRoleCelda(colKey) {
+      if (colKey === 'saldo') return 'saldo';
+      if (colKey === 'programacion') return 'sugerido';
+      if (colKey === 'saldoDespuesProgramacion') return 'saldoDespues';
+      return '';
+    }
+
+    function construirCeldaFila(row, col) {
+      if (col.key === 'aprobado') {
+        return `
+          <td class="num">
+            <input
+              type="text"
+              class="programacion-input aprobado-input"
+              inputmode="decimal"
+              data-row-id="${escapeHtml(row.__rowId)}"
+              data-saldo="${escapeHtml(row.saldo)}"
+              value="${row.aprobado === '' ? '' : escapeHtml(moneyInputValue(row.aprobado))}"
+              placeholder="0,00"
+              title="Valor aprobado"
+            />
+          </td>
+        `;
+      }
+
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        return `<td>${escapeHtml(row[col.key])}</td>`;
+      }
+
+      if (col.key === 'diasVencida') {
+        const className = ['num', claseNegativo(row.diasVencida).trim()].filter(Boolean).join(' ');
+        return `<td class="${className}">${escapeHtml(row.diasVencida)}</td>`;
+      }
+
+      if (col.tipo === 'moneda') {
+        const className = [col.clase, claseNegativo(row[col.key]).trim()].filter(Boolean).join(' ');
+        const role = obtenerRoleCelda(col.key);
+        const roleAttr = role ? ` data-role="${role}"` : '';
+        return `<td class="${className}"${roleAttr}>${money(row[col.key])}</td>`;
+      }
+
+      const className = [col.clase].filter(Boolean).join(' ');
+      const classAttr = className ? ` class="${className}"` : '';
+      return `<td${classAttr}>${escapeHtml(getColumnValue(row, col))}</td>`;
+    }
+
+    function aplicarFiltrosYOrden() {
+      const q = txtBuscar.value || '';
+
+      let resultado = state.rows.filter((r) => {
+        const pasaBusquedaGlobal = cumpleConsultaBusqueda(construirTextoBusquedaFila(r), q);
+
+        if (!pasaBusquedaGlobal) return false;
+
+        return columnas.every((col) => {
+          const filtroColumna = state.columnFilters[col.key] || '';
+          if (!filtroColumna) return true;
+          return evaluarFiltro(getColumnValue(r, col), filtroColumna, col);
+        });
+      });
+
+      if (state.sortKey) {
+        const col = columnas.find((x) => x.key === state.sortKey);
+        if (col) {
+          resultado = resultado.slice().sort((a, b) => {
+            const comparacion = compararValores(a, b, col);
+            return state.sortDirection === 'asc' ? comparacion : comparacion * -1;
+          });
+        }
+      } else {
+        resultado = resultado.slice();
+      }
+
+      state.filteredRows = resultado;
+      refrescarEncabezadosOrden();
+      renderTabla();
+    }
+
+    function renderTabla() {
+      tbody.innerHTML = '';
+      renderFilaTotales();
+
+      const columnasVisibles = obtenerColumnasVisibles();
+      const totalColumnasVisibles = columnasVisibles.length || 1;
+
+      if (!state.filteredRows.length) {
+        tbody.innerHTML = '<tr><td colspan="' + totalColumnasVisibles + '">No hay registros para mostrar.</td></tr>';
+        ajustarColumnasYEncabezados();
+        setEstado('No hay registros que cumplan los filtros activos.', 'aviso');
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+
+      state.filteredRows.forEach((r) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = columnasVisibles.map((col) => construirCeldaFila(r, col)).join('');
+        frag.appendChild(tr);
+      });
+
+      tbody.appendChild(frag);
+
+      ajustarColumnasYEncabezados();
+      actualizarSobrante();
+      setEstado('Mostrando ' + state.filteredRows.length + ' fila(s) de ' + state.rows.length + '.', 'ok');
+    }
+
+    async function cargarDatos() {
+      setEstado('Cargando datos...', 'aviso');
+
+      const callbackName = nextCallbackName('onData');
+      const params = new URLSearchParams({
+        action: 'data',
+        headerRows: JSON.stringify(INTERRUPTORES.headerRows)
+      });
+
+      try {
+        const payload = await jsonp(SCRIPT_URL + '?' + params.toString(), callbackName);
+
+        if (!payload || !payload.ok) {
+          throw new Error(payload && payload.message ? payload.message : 'No fue posible leer los datos.');
+        }
+
+        state.rows = (payload.rows || []).map((row, index) => {
+          const rowId = obtenerIdFila(row, index);
+          const saldo = Number(row.saldo || 0);
+          const aprobadoPersistido = Object.prototype.hasOwnProperty.call(state.approvedValues, rowId)
+            ? state.approvedValues[rowId]
+            : row.aprobado;
+
+          return {
+            ...row,
+            __rowId: rowId,
+            diasVencida: calcularDiasVencimiento(row.fechaVencimiento, row.diasVencida),
+            programacion: row.programacion === '' ? '' : Number(row.programacion || 0),
+            saldoDespuesProgramacion: Number(row.saldoDespuesProgramacion ?? (saldo - Number(row.programacion || 0))),
+            aprobado: aprobadoPersistido === '' || aprobadoPersistido === null || aprobadoPersistido === undefined
+              ? ''
+              : normalizarAprobadoContraSaldo(aprobadoPersistido, saldo)
+          };
+        });
+
+        const idsValidos = new Set(state.rows.map((row) => row.__rowId));
+        state.approvedValues = Object.fromEntries(
+          Object.entries(state.approvedValues || {}).filter(([id]) => idsValidos.has(id))
+        );
+        guardarAprobados();
+
+        aplicarFiltrosYOrden();
+        actualizarSobrante();
+      } catch (error) {
+        setEstado('Error al cargar: ' + error.message, 'error');
+      }
+    }
+
+    function limpiarFiltros() {
+      txtBuscar.value = '';
+      state.columnFilters = {};
+      state.sortKey = '';
+      state.sortDirection = 'asc';
+
+      thead.querySelectorAll('.filtro-columna').forEach((input) => {
+        input.value = '';
+      });
+
+      guardarBusquedaGlobal();
+      guardarFiltrosColumna();
+      guardarOrden();
+      aplicarFiltrosYOrden();
+    }
+
+    function obtenerValorExportableExcel(row, col) {
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        return safe(row[col.key]);
+      }
+
+      if (col.tipo === 'moneda' || col.tipo === 'input') {
+        const valor = col.key === 'aprobado' ? obtenerValorAprobado(row) : obtenerNumeroColumna(row, col.key);
+        return money(valor);
+      }
+
+      if (col.key === 'diasVencida') {
+        return safe(row.diasVencida);
+      }
+
+      return obtenerTextoCelda(row, col);
+    }
+
+    function convertirFilaExcelHtml(row) {
+      return '<tr>' + columnas.map((col) => {
+        const valor = escapeHtml(obtenerValorExportableExcel(row, col));
+        const clase = col.clase && col.clase.includes('num') ? ' class="num"' : '';
+        return '<td' + clase + '>' + valor + '</td>';
+      }).join('') + '</tr>';
+    }
+
+    function descargarExcel(rows, prefijoNombre, mensajeExito) {
+      const encabezados = columnas.map((col) => '<th>' + escapeHtml(col.titulo) + '</th>').join('');
+      const filas = rows.map(convertirFilaExcelHtml).join('');
+      const contenido = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Type" content="application/vnd.ms-excel; charset=UTF-8" />
+  <style>
+    table { border-collapse: collapse; width: 100%; font-family: Arial, sans-serif; font-size: 12px; }
+    th, td { border: 1px solid #bfc7d1; padding: 6px 8px; vertical-align: middle; }
+    th { background: #eef3f8; font-weight: 700; text-align: center; }
+    td.num { text-align: right; }
+  </style>
+</head>
+<body>
+  <table>
+    <thead>
+      <tr>${encabezados}</tr>
+    </thead>
+    <tbody>
+      ${filas}
+    </tbody>
+  </table>
+</body>
+</html>`;
+      const blob = new Blob(['\uFEFF' + contenido], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fecha = new Date();
+      const nombre = prefijoNombre + '_' +
+        fecha.getFullYear() +
+        String(fecha.getMonth() + 1).padStart(2, '0') +
+        String(fecha.getDate()).padStart(2, '0') + '_' +
+        String(fecha.getHours()).padStart(2, '0') +
+        String(fecha.getMinutes()).padStart(2, '0') +
+        String(fecha.getSeconds()).padStart(2, '0') + '.xls';
+
+      a.href = url;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      setEstado(mensajeExito, 'ok');
+    }
+
+    function exportarVisiblesExcel() {
+      if (!state.filteredRows.length) {
+        setEstado('No hay información visible para exportar.', 'aviso');
+        return;
+      }
+
+      descargarExcel(
+        state.filteredRows,
+        'programacion_cxp_visibles',
+        'Exportación Excel completada con ' + state.filteredRows.length + ' fila(s) visibles.'
+      );
+    }
+
+
+    txtBuscar.addEventListener('input', () => {
+      guardarBusquedaGlobal();
+      aplicarFiltrosYOrden();
+    });
+
+    txtDisponible.addEventListener('input', () => {
+      guardarDisponible();
+      actualizarSobrante();
+    });
+    txtDisponible.addEventListener('blur', () => {
+      normalizarInputMonetario(txtDisponible);
+      guardarDisponible();
+    });
+
+    tbody.addEventListener('change', (e) => {
+      if (!e.target.classList.contains('aprobado-input')) return;
+
+      const rowId = e.target.dataset.rowId || '';
+      if (!rowId) return;
+
+      const texto = safe(e.target.value).trim();
+      const valor = texto ? parseNumeroFlexible(texto) : '';
+      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
+
+      e.target.value = resultado.valorFinal === '' ? '' : moneyInputValue(resultado.valorFinal);
+      renderFilaTotales();
+      actualizarSobrante();
+    });
+
+    tbody.addEventListener('blur', (e) => {
+      if (!e.target.classList.contains('aprobado-input')) return;
+
+      const rowId = e.target.dataset.rowId || '';
+      if (!rowId) return;
+
+      const texto = safe(e.target.value).trim();
+      const valor = texto ? parseNumeroFlexible(texto) : '';
+      const resultado = aplicarValorAprobado(rowId, Number.isNaN(valor) ? '' : valor);
+
+      e.target.value = resultado.valorFinal === '' ? '' : moneyInputValue(resultado.valorFinal);
+      renderFilaTotales();
+      actualizarSobrante();
+    }, true);
+
+    window.addEventListener('pagehide', () => {
+      guardarBusquedaGlobal();
+      guardarFiltrosColumna();
+      guardarOrden();
+      guardarDisponible();
+      guardarAprobados();
+      guardarColumnasVisibles();
+      guardarAnchosColumnas();
+    });
+
+    btnRecargar.addEventListener('click', cargarDatos);
+    btnExportar.addEventListener('click', exportarVisiblesExcel);
+    btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+    btnColumnasVisibles.addEventListener('click', (e) => {
+      e.stopPropagation();
+      alternarPanelColumnasVisibles();
+    });
+    btnMostrarTodasColumnas.addEventListener('click', () => {
+      mostrarTodasLasColumnas();
+    });
+    btnCerrarColumnasVisibles.addEventListener('click', () => {
+      cerrarPanelColumnasVisibles();
+    });
+
+    panelColumnasVisibles.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
+
+    listaColumnasVisibles.addEventListener('change', (e) => {
+      if (!e.target.classList.contains('checkbox-columna-visible')) return;
+      const key = e.target.dataset.columnKey || '';
+      if (!key) return;
+      cambiarVisibilidadColumna(key, e.target.checked);
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!state.isColumnPanelOpen) return;
+      if (panelColumnasVisibles.contains(e.target) || btnColumnasVisibles.contains(e.target)) return;
+      cerrarPanelColumnasVisibles();
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        cerrarPanelColumnasVisibles();
+      }
+    });
+
+    window.addEventListener('resize', ajustarColumnasYEncabezados);
+
+    cargarFiltrosPersistidos();
+    construirColgroup();
+    construirEncabezados();
+    aplicarFiltrosPersistidosAInputs();
+    renderPanelColumnasVisibles();
+    actualizarSobrante();
+    cargarDatos();
+  </script>
+</body>
+</html>

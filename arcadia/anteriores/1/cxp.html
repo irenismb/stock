@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Programación de CxP - Arcadia</title>
+  <style>
+    :root {
+      --borde: #c2cad3;
+      --borde-fuerte: #aeb8c3;
+      --fondo: #f6f8fa;
+      --texto: #1f2328;
+      --muted: #57606a;
+      --ok: #1a7f37;
+      --error: #cf222e;
+      --aviso: #9a6700;
+      --verde-calculado: rgb(218,242,208);
+      --filtro: #f8fafc;
+      --orden-activo: #dbeafe;
+    }
+
+    * { box-sizing: border-box; }
+
+    html,
+    body {
+      height: 100%;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      color: var(--texto);
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .wrap {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      padding: 10px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+
+    .titulo-barra {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin: 0 0 8px;
+      flex: 0 0 auto;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 26px;
+      flex: 0 0 auto;
+    }
+
+    .sub {
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+
+    .panel {
+      background: var(--fondo);
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 14px;
+      flex: 0 0 auto;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    input[type="text"] {
+      padding: 8px 10px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      min-width: 320px;
+      flex: 1 1 420px;
+    }
+
+    button {
+      padding: 8px 12px;
+      border: 1px solid var(--borde);
+      border-radius: 8px;
+      cursor: pointer;
+      background: #fff;
+    }
+
+    button:hover { background: #f3f4f6; }
+
+    .estado {
+      margin: 0;
+      font-size: 14px;
+      color: var(--muted);
+      text-align: right;
+      white-space: nowrap;
+      flex: 0 0 auto;
+    }
+
+    .estado.ok { color: var(--ok); }
+    .estado.error { color: var(--error); }
+    .estado.aviso { color: var(--aviso); }
+
+    .tabla-wrap {
+      width: 100%;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: auto;
+      border: 1px solid var(--borde);
+      border-radius: 10px;
+      background: #fff;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+      background: #fff;
+      border: 1px solid var(--borde-fuerte);
+    }
+
+    col { width: auto; }
+
+    th,
+    td {
+      border: 1px solid var(--borde);
+      vertical-align: middle;
+      overflow: hidden;
+    }
+
+    thead tr.totals-row th {
+      background: #eef3f8;
+      border-color: var(--borde-fuerte);
+      border-bottom: 1.5px solid var(--borde-fuerte);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.15;
+      padding: 6px;
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      text-align: right;
+    }
+
+    thead tr.totals-row th:first-child {
+      text-align: left;
+    }
+
+    thead tr.header-row th {
+      background: #f3f6f9;
+      border-color: var(--borde-fuerte);
+      border-bottom: 1.5px solid var(--borde-fuerte);
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.15;
+      padding: 4px 6px;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      height: auto;
+      min-height: 1px;
+      position: sticky;
+      top: 0;
+      z-index: 3;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    thead tr.filter-row th {
+      background: var(--filtro);
+      border-color: var(--borde-fuerte);
+      padding: 4px;
+      position: sticky;
+      top: 42px;
+      z-index: 2;
+    }
+
+    thead th.orden-activo {
+      background: var(--orden-activo) !important;
+    }
+
+    .th-contenido {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      min-height: 20px;
+    }
+
+    .indicador-orden {
+      font-size: 11px;
+      color: var(--muted);
+      min-width: 12px;
+    }
+
+    .filtro-columna {
+      width: 100%;
+      min-width: 70px;
+      padding: 5px 6px;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    tbody td {
+      padding: 6px 8px;
+      font-size: 14px;
+      line-height: 1.2;
+      white-space: normal;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+      background: #fff;
+    }
+
+    .negativo {
+      color: var(--error) !important;
+    }
+
+    td.num,
+    th.num {
+      text-align: right;
+    }
+
+    thead tr.header-row th.num {
+      text-align: center;
+    }
+
+    .encabezado-calculado {
+      background: var(--verde-calculado) !important;
+    }
+
+    .programacion-input {
+      width: 100%;
+      min-width: 90px;
+      padding: 6px 8px;
+      border: 1px solid var(--borde);
+      border-radius: 6px;
+      text-align: right;
+      font-size: 14px;
+      color: inherit;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .medidor {
+      position: absolute;
+      left: -99999px;
+      top: -99999px;
+      visibility: hidden;
+      white-space: nowrap;
+      padding: 0;
+      margin: 0;
+      border: 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="titulo-barra">
+      <h1>Programación de CxP - Arcadia</h1>
+      <div id="estado" class="estado aviso">Cargando datos...</div>
+    </div>
+    <div class="panel">
+      <div class="row">
+        <input type="text" id="txtBuscar" placeholder="Buscar en todas las columnas..." />
+        <button id="btnLimpiarFiltros" type="button">Limpiar filtros</button>
+        <button id="btnExportar" type="button">Exportar visibles CSV</button>
+        <button id="btnRecargar" type="button">Recargar</button>
+      </div>
+    </div>
+
+    <div class="tabla-wrap">
+      <table id="tabla">
+        <colgroup id="colgroup"></colgroup>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxzaQXeALfNhOr2jyOJxHqGEnJTucIRT9QtaUqybFSghNKYLGrrubFc_9gGbFtcIxB5/exec';
+
+    const INTERRUPTORES = {
+      headerRows: {
+        '1T-99tlkUibLlKUcszPftZlntoI4qCW_PVghrieBZ01I': 2
+      }
+    };
+
+    const columnas = [
+      { key: 'centroCosto', titulo: 'Centro de costo', clase: '' },
+      { key: 'nombreTercero', titulo: 'Nombre tercero', clase: '' },
+      { key: 'descripcion', titulo: 'Descripción del bien, servicio o impuesto', clase: '' },
+      { key: 'facturaMesPeriodo', titulo: 'Factura, mes o período', clase: '' },
+      { key: 'fechaObligacion', titulo: 'Fecha de la obligación', clase: '' },
+      { key: 'fechaVencimiento', titulo: 'Fecha vencimiento', clase: '' },
+      { key: 'diasVencida', titulo: 'Días vencida', clase: 'num', tipo: 'textoCorto', esCalculada: true },
+      { key: 'valorInicial', titulo: 'Valor inicial de la obligación', clase: 'num', tipo: 'moneda' },
+      { key: 'retenciones', titulo: 'Retenciones y descuentos', clase: 'num', tipo: 'moneda' },
+      { key: 'pagosAnteriores', titulo: 'Pagos anteriores', clase: 'num', tipo: 'moneda' },
+      { key: 'saldo', titulo: 'Saldo', clase: 'num', tipo: 'moneda', esCalculada: true },
+      { key: 'programacion', titulo: 'Sugerido', clase: 'num', tipo: 'moneda' },
+      { key: 'saldoDespuesProgramacion', titulo: 'Saldo después de sugerido', clase: 'num', tipo: 'moneda', esCalculada: true },
+      { key: 'origen', titulo: 'Libro de origen', clase: '' }
+    ];
+
+    const columnasMonetarias = columnas.filter((col) => col.tipo === 'moneda' || col.tipo === 'input').map((col) => col.key);
+
+    const state = {
+      rows: [],
+      filteredRows: [],
+      columnFilters: {},
+      sortKey: '',
+      sortDirection: 'asc'
+    };
+
+    const estado = document.getElementById('estado');
+    const tbody = document.getElementById('tbody');
+    const thead = document.getElementById('thead');
+    const txtBuscar = document.getElementById('txtBuscar');
+    const btnRecargar = document.getElementById('btnRecargar');
+    const btnExportar = document.getElementById('btnExportar');
+    const btnLimpiarFiltros = document.getElementById('btnLimpiarFiltros');
+    const tabla = document.getElementById('tabla');
+    const colgroup = document.getElementById('colgroup');
+
+    function setEstado(texto, tipo = 'aviso') {
+      estado.textContent = texto;
+      estado.className = 'estado ' + tipo;
+    }
+
+    function money(n) {
+      const num = Number(n || 0);
+      return num.toLocaleString('es-CO', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function obtenerNumeroColumna(row, colKey) {
+      if (colKey === 'programacion') return Number(row.programacion || 0);
+      return Number(row[colKey] || 0);
+    }
+
+    function esValorNegativo(valor) {
+      return Number(valor) < 0;
+    }
+
+    function claseNegativo(valor) {
+      return esValorNegativo(valor) ? ' negativo' : '';
+    }
+
+    function safe(v) {
+      return v === null || v === undefined ? '' : String(v);
+    }
+
+    function capitalizarPalabras(texto) {
+      return safe(texto)
+        .toLowerCase()
+        .replace(/(^|[\s\-\/\(\)\[\]\{\},.;:]+)([a-záéíóúüñ])/g, (m, separador, letra) => separador + letra.toUpperCase());
+    }
+
+    function formatearTextoPorColumna(colKey, valor) {
+      const texto = safe(valor);
+
+      if (colKey === 'centroCosto' || colKey === 'nombreTercero' || colKey === 'descripcion') {
+        return capitalizarPalabras(texto);
+      }
+
+      if (colKey === 'facturaMesPeriodo') {
+        return texto.toUpperCase();
+      }
+
+      if (colKey === 'origen') {
+        return texto.toLowerCase();
+      }
+
+      return texto;
+    }
+
+    function escapeHtml(text) {
+      return safe(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function valorDescripcion(row) {
+      return safe(
+        row.descripcion ??
+        row.descripcionBienServicioImpuesto ??
+        row['Descripción del bien, servicio o impuesto'] ??
+        row['Descripcion del bien, servicio o impuesto'] ??
+        row['Descripción del bien servicio o impuesto'] ??
+        row['Descripcion del bien servicio o impuesto'] ??
+        row['Descripción'] ??
+        row['Descripcion'] ??
+        ''
+      );
+    }
+
+    function nextCallbackName(base) {
+      return base + '_' + Date.now() + '_' + Math.floor(Math.random() * 100000);
+    }
+
+    function jsonp(url, callbackName) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        const finalUrl = url + (url.includes('?') ? '&' : '?') + 'prefix=' + encodeURIComponent(callbackName) + '&_ts=' + Date.now();
+
+        const cleanup = () => {
+          if (window[callbackName]) delete window[callbackName];
+          script.remove();
+        };
+
+        window[callbackName] = (payload) => {
+          cleanup();
+          resolve(payload);
+        };
+
+        script.onerror = () => {
+          cleanup();
+          reject(new Error('No se pudo cargar el servicio.'));
+        };
+
+        script.src = finalUrl;
+        document.body.appendChild(script);
+      });
+    }
+
+    function medirTexto(texto, estilo) {
+      const span = document.createElement('span');
+      span.className = 'medidor';
+      Object.assign(span.style, estilo);
+      span.textContent = texto || '';
+      document.body.appendChild(span);
+      const ancho = Math.ceil(span.getBoundingClientRect().width);
+      span.remove();
+      return ancho;
+    }
+
+    function getColumnValue(row, col) {
+      let valor;
+
+      if (col.key === 'origen') {
+        valor = row.__meta?.spreadsheetName || '';
+      } else if (col.key === 'descripcion') {
+        valor = valorDescripcion(row);
+      } else {
+        valor = row[col.key];
+      }
+
+      return formatearTextoPorColumna(col.key, valor);
+    }
+
+    function obtenerTextoCelda(row, col) {
+      if (col.key === 'origen') {
+        return getColumnValue(row, col);
+      }
+      if (col.tipo === 'moneda') {
+        return money(getColumnValue(row, col));
+      }
+      return safe(getColumnValue(row, col));
+    }
+
+    function construirColgroup() {
+      colgroup.innerHTML = '';
+      columnas.forEach(() => {
+        const col = document.createElement('col');
+        colgroup.appendChild(col);
+      });
+    }
+
+    function calcularTotalesFiltrados() {
+      return columnasMonetarias.reduce((acum, key) => {
+        acum[key] = state.filteredRows.reduce((suma, row) => suma + obtenerNumeroColumna(row, key), 0);
+        return acum;
+      }, {});
+    }
+
+    function renderFilaTotales() {
+      const trTotales = thead.querySelector('tr.totals-row');
+      if (!trTotales) return;
+
+      const totales = calcularTotalesFiltrados();
+      trTotales.querySelectorAll('th[data-total-key]').forEach((th) => {
+        const key = th.dataset.totalKey;
+        const total = Number(totales[key] || 0);
+        th.textContent = money(total);
+        th.classList.toggle('negativo', esValorNegativo(total));
+      });
+    }
+
+    function construirEncabezados() {
+      thead.innerHTML = '';
+
+      const trTotales = document.createElement('tr');
+      trTotales.className = 'totals-row';
+
+      const trHeader = document.createElement('tr');
+      trHeader.className = 'header-row';
+
+      const trFiltros = document.createElement('tr');
+      trFiltros.className = 'filter-row';
+
+      columnas.forEach((col, index) => {
+        const thTotal = document.createElement('th');
+        thTotal.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
+
+        if (index === 0) {
+          thTotal.textContent = 'Totales';
+        } else if (columnasMonetarias.includes(col.key)) {
+          thTotal.dataset.totalKey = col.key;
+          thTotal.textContent = money(0);
+        } else {
+          thTotal.innerHTML = '&nbsp;';
+        }
+
+        trTotales.appendChild(thTotal);
+
+        const th = document.createElement('th');
+        th.className = col.clase + (col.esCalculada ? ' encabezado-calculado' : '');
+        th.dataset.sortKey = col.key;
+        th.innerHTML = `
+          <div class="th-contenido">
+            <span>${escapeHtml(col.titulo)}</span>
+            <span class="indicador-orden" data-indicador="${escapeHtml(col.key)}">↕</span>
+          </div>
+        `;
+        th.addEventListener('click', () => cambiarOrden(col.key));
+        trHeader.appendChild(th);
+
+        const thFiltro = document.createElement('th');
+        thFiltro.className = col.clase;
+        thFiltro.innerHTML = `
+          <input
+            type="text"
+            class="filtro-columna"
+            data-filter-key="${escapeHtml(col.key)}"
+            placeholder="Filtrar..."
+            title="Filtrar ${escapeHtml(col.titulo)}"
+          />
+        `;
+        trFiltros.appendChild(thFiltro);
+      });
+
+      thead.appendChild(trTotales);
+      thead.appendChild(trHeader);
+      thead.appendChild(trFiltros);
+      refrescarEncabezadosOrden();
+      renderFilaTotales();
+
+      thead.querySelectorAll('.filtro-columna').forEach((input) => {
+        input.addEventListener('input', (e) => {
+          state.columnFilters[e.target.dataset.filterKey] = e.target.value || '';
+          aplicarFiltrosYOrden();
+        });
+
+        input.addEventListener('click', (e) => e.stopPropagation());
+      });
+    }
+
+    function refrescarEncabezadosOrden() {
+      const ths = thead.querySelectorAll('tr.header-row th');
+      ths.forEach((th) => {
+        const key = th.dataset.sortKey;
+        const indicador = th.querySelector('.indicador-orden');
+        th.classList.remove('orden-activo');
+        if (!indicador) return;
+
+        if (state.sortKey === key) {
+          th.classList.add('orden-activo');
+          indicador.textContent = state.sortDirection === 'asc' ? '▲' : '▼';
+        } else {
+          indicador.textContent = '↕';
+        }
+      });
+    }
+
+    function ajustarTopFiltros() {
+      const totalsRow = thead.querySelector('tr.totals-row');
+      const headerRow = thead.querySelector('tr.header-row');
+      const totalCells = thead.querySelectorAll('tr.totals-row th');
+      const headerCells = thead.querySelectorAll('tr.header-row th');
+      const filterCells = thead.querySelectorAll('tr.filter-row th');
+      const totalHeight = totalsRow ? Math.ceil(totalsRow.getBoundingClientRect().height) : 0;
+      const headerHeight = headerRow ? Math.ceil(headerRow.getBoundingClientRect().height) : 0;
+
+      totalCells.forEach((th) => {
+        th.style.top = '0px';
+      });
+
+      headerCells.forEach((th) => {
+        th.style.top = totalHeight + 'px';
+      });
+
+      filterCells.forEach((th) => {
+        th.style.top = (totalHeight + headerHeight) + 'px';
+      });
+    }
+
+    function ajustarColumnasYEncabezados() {
+      if (!colgroup.children.length) construirColgroup();
+
+      const anchoDisponible = tabla.parentElement.clientWidth - 2;
+      const muestra = state.filteredRows.slice(0, 35);
+      const totalesFiltrados = calcularTotalesFiltrados();
+
+      let anchos = columnas.map((col) => {
+        const palabras = col.titulo.split(/\s+/).filter(Boolean);
+        const palabraMasLarga = palabras.reduce((a, b) => a.length >= b.length ? a : b, '');
+
+        const anchoTituloNatural = medirTexto(col.titulo, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          fontWeight: '700'
+        });
+
+        const anchoPalabra = medirTexto(palabraMasLarga, {
+          fontFamily: 'Arial, sans-serif',
+          fontSize: '12px',
+          fontWeight: '700'
+        });
+
+        let anchoDatos = 0;
+        muestra.forEach((row) => {
+          const valor = obtenerTextoCelda(row, col);
+          const ancho = medirTexto(valor, {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px',
+            fontWeight: '400'
+          });
+          if (ancho > anchoDatos) anchoDatos = ancho;
+        });
+
+        if (columnasMonetarias.includes(col.key)) {
+          const anchoTotal = medirTexto(money(totalesFiltrados[col.key] || 0), {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '12px',
+            fontWeight: '700'
+          });
+          if (anchoTotal > anchoDatos) anchoDatos = anchoTotal;
+        }
+
+        let minimo = Math.max(anchoPalabra + 22, 72);
+        let ideal = Math.max(Math.min(anchoTituloNatural * 0.62, 220), Math.min(anchoDatos + 24, 220), minimo);
+
+        if (col.tipo === 'textoCorto') {
+          ideal = Math.max(minimo, Math.min(ideal, 100));
+        }
+        if (col.tipo === 'moneda') {
+          ideal = Math.max(minimo, Math.min(Math.max(anchoDatos + 22, 110), 150));
+        }
+        if (col.tipo === 'input') {
+          ideal = Math.max(minimo, 120);
+        }
+        if (col.key === 'descripcion') {
+          ideal = Math.max(ideal, 145);
+        }
+        if (col.key === 'origen') {
+          ideal = Math.max(ideal, 120);
+        }
+
+        return {
+          minimo,
+          ideal,
+          actual: ideal
+        };
+      });
+
+      let total = anchos.reduce((s, a) => s + a.actual, 0);
+
+      if (total > anchoDisponible) {
+        let exceso = total - anchoDisponible;
+        let ajustable = true;
+
+        while (exceso > 0.5 && ajustable) {
+          ajustable = false;
+          const flexTotal = anchos.reduce((s, a) => s + Math.max(a.actual - a.minimo, 0), 0);
+          if (flexTotal <= 0) break;
+
+          anchos = anchos.map((a) => {
+            const flex = Math.max(a.actual - a.minimo, 0);
+            if (flex <= 0) return a;
+            ajustable = true;
+            const recorte = Math.min(flex, exceso * (flex / flexTotal));
+            return { ...a, actual: a.actual - recorte };
+          });
+
+          total = anchos.reduce((s, a) => s + a.actual, 0);
+          exceso = total - anchoDisponible;
+        }
+      } else if (total < anchoDisponible) {
+        const extra = anchoDisponible - total;
+        const pesoTotal = anchos.reduce((s, a) => s + a.actual, 0);
+        anchos = anchos.map((a) => ({
+          ...a,
+          actual: a.actual + (extra * (a.actual / pesoTotal))
+        }));
+      }
+
+      Array.from(colgroup.children).forEach((col, i) => {
+        col.style.width = anchos[i].actual + 'px';
+      });
+
+      requestAnimationFrame(() => {
+        const ths = thead.querySelectorAll('tr.header-row th');
+        let alturaMax = 0;
+
+        ths.forEach((th) => {
+          th.style.height = 'auto';
+        });
+
+        ths.forEach((th) => {
+          const altura = Math.ceil(th.scrollHeight);
+          if (altura > alturaMax) alturaMax = altura;
+        });
+
+        ths.forEach((th) => {
+          th.style.height = alturaMax + 'px';
+        });
+
+        ajustarTopFiltros();
+      });
+    }
+
+    function normalizarParaComparacion(valor) {
+      return safe(valor)
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    }
+
+
+    function dividirEnTerminosBusqueda(texto) {
+      return normalizarParaComparacion(texto)
+        .split(/\s+/)
+        .map((termino) => termino.trim())
+        .filter(Boolean);
+    }
+
+    function cumpleBusquedaIncremental(textoBase, consulta) {
+      const terminos = dividirEnTerminosBusqueda(consulta);
+      if (!terminos.length) return true;
+
+      const baseNormalizada = normalizarParaComparacion(textoBase);
+      return terminos.every((termino) => baseNormalizada.includes(termino));
+    }
+
+    function construirTextoBusquedaFila(row) {
+      return [
+        row.centroCosto,
+        row.nombreTercero,
+        valorDescripcion(row),
+        row.facturaMesPeriodo,
+        row.fechaObligacion,
+        row.fechaVencimiento,
+        row.diasVencida,
+        row.valorInicial,
+        row.retenciones,
+        row.pagosAnteriores,
+        row.saldo,
+        row.programacion,
+        row.saldoDespuesProgramacion,
+        row.__meta && row.__meta.spreadsheetName
+      ].join(' | ');
+    }
+
+    function parseNumeroFlexible(texto) {
+      const limpio = safe(texto).trim();
+      if (!limpio) return NaN;
+      const soloNumero = limpio.replace(/\s/g, '').replace(/\./g, '').replace(/,/g, '.').replace(/[^0-9.-]/g, '');
+      return Number(soloNumero);
+    }
+
+    function parseFechaFlexible(valor) {
+      const texto = safe(valor).trim();
+      if (!texto) return NaN;
+
+      const formatoLatino = texto.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+      if (formatoLatino) {
+        const dia = formatoLatino[1].padStart(2, '0');
+        const mes = formatoLatino[2].padStart(2, '0');
+        const anio = formatoLatino[3].length === 2 ? ('20' + formatoLatino[3]) : formatoLatino[3];
+        return new Date(`${anio}-${mes}-${dia}T00:00:00`).getTime();
+      }
+
+      const ms = Date.parse(texto);
+      return Number.isNaN(ms) ? NaN : ms;
+    }
+
+    function compararValores(a, b, col) {
+      const valA = getColumnValue(a, col);
+      const valB = getColumnValue(b, col);
+
+      if (col.tipo === 'moneda' || col.tipo === 'input' || col.key === 'diasVencida') {
+        const numA = Number(valA || 0);
+        const numB = Number(valB || 0);
+        return numA - numB;
+      }
+
+      if (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento') {
+        const fechaA = parseFechaFlexible(valA);
+        const fechaB = parseFechaFlexible(valB);
+        if (!Number.isNaN(fechaA) && !Number.isNaN(fechaB)) {
+          return fechaA - fechaB;
+        }
+      }
+
+      return normalizarParaComparacion(valA).localeCompare(normalizarParaComparacion(valB), 'es');
+    }
+
+    function evaluarFiltro(valorCelda, textoFiltro, col) {
+      const filtro = safe(textoFiltro).trim();
+      if (!filtro) return true;
+
+      const textoCelda = safe(valorCelda);
+      const filtroNormalizado = normalizarParaComparacion(filtro);
+      const celdaNormalizada = normalizarParaComparacion(textoCelda);
+
+      const matchOperador = filtro.match(/^(>=|<=|>|<|=)\s*(.+)$/);
+      if (matchOperador) {
+        const operador = matchOperador[1];
+        const valorFiltro = matchOperador[2];
+
+        let valorA = parseNumeroFlexible(textoCelda);
+        let valorB = parseNumeroFlexible(valorFiltro);
+
+        if ((Number.isNaN(valorA) || Number.isNaN(valorB)) && (col.key === 'fechaObligacion' || col.key === 'fechaVencimiento')) {
+          valorA = parseFechaFlexible(textoCelda);
+          valorB = parseFechaFlexible(valorFiltro);
+        }
+
+        if (!Number.isNaN(valorA) && !Number.isNaN(valorB)) {
+          if (operador === '>') return valorA > valorB;
+          if (operador === '<') return valorA < valorB;
+          if (operador === '>=') return valorA >= valorB;
+          if (operador === '<=') return valorA <= valorB;
+          if (operador === '=') return valorA === valorB;
+        }
+      }
+
+      return celdaNormalizada.includes(filtroNormalizado);
+    }
+
+    function cambiarOrden(key) {
+      if (state.sortKey === key) {
+        state.sortDirection = state.sortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        state.sortKey = key;
+        state.sortDirection = 'asc';
+      }
+      aplicarFiltrosYOrden();
+    }
+
+    function aplicarFiltrosYOrden() {
+      const q = txtBuscar.value || '';
+
+      let resultado = state.rows.filter((r) => {
+        const pasaBusquedaGlobal = cumpleBusquedaIncremental(construirTextoBusquedaFila(r), q);
+
+        if (!pasaBusquedaGlobal) return false;
+
+        return columnas.every((col) => {
+          const filtroColumna = state.columnFilters[col.key] || '';
+          if (!filtroColumna) return true;
+          return evaluarFiltro(getColumnValue(r, col), filtroColumna, col);
+        });
+      });
+
+      if (state.sortKey) {
+        const col = columnas.find((x) => x.key === state.sortKey);
+        if (col) {
+          resultado = resultado.slice().sort((a, b) => {
+            const comparacion = compararValores(a, b, col);
+            return state.sortDirection === 'asc' ? comparacion : comparacion * -1;
+          });
+        }
+      } else {
+        resultado = resultado.slice();
+      }
+
+      state.filteredRows = resultado;
+      refrescarEncabezadosOrden();
+      renderTabla();
+    }
+
+    function renderTabla() {
+      tbody.innerHTML = '';
+      renderFilaTotales();
+
+      if (!state.filteredRows.length) {
+        tbody.innerHTML = '<tr><td colspan="14">No hay registros para mostrar.</td></tr>';
+        ajustarColumnasYEncabezados();
+        setEstado('No hay registros que cumplan los filtros activos.', 'aviso');
+        return;
+      }
+
+      const frag = document.createDocumentFragment();
+
+      state.filteredRows.forEach((r, index) => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${escapeHtml(getColumnValue(r, { key: 'centroCosto' }))}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'nombreTercero' }))}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'descripcion' }))}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'facturaMesPeriodo' }))}</td>
+          <td>${escapeHtml(r.fechaObligacion)}</td>
+          <td>${escapeHtml(r.fechaVencimiento)}</td>
+          <td class="num${claseNegativo(r.diasVencida)}">${escapeHtml(r.diasVencida)}</td>
+          <td class="num${claseNegativo(r.valorInicial)}">${money(r.valorInicial)}</td>
+          <td class="num${claseNegativo(r.retenciones)}">${money(r.retenciones)}</td>
+          <td class="num${claseNegativo(r.pagosAnteriores)}">${money(r.pagosAnteriores)}</td>
+          <td class="num${claseNegativo(r.saldo)}" data-role="saldo">${money(r.saldo)}</td>
+          <td class="num${claseNegativo(r.programacion)}" data-role="sugerido">${money(r.programacion)}</td>
+          <td class="num${claseNegativo(r.saldoDespuesProgramacion)}" data-role="saldoDespues">${money(r.saldoDespuesProgramacion)}</td>
+          <td>${escapeHtml(getColumnValue(r, { key: 'origen' }))}</td>
+        `;
+
+        frag.appendChild(tr);
+      });
+
+      tbody.appendChild(frag);
+
+      ajustarColumnasYEncabezados();
+      setEstado('Mostrando ' + state.filteredRows.length + ' fila(s) de ' + state.rows.length + '.', 'ok');
+    }
+
+    async function cargarDatos() {
+      setEstado('Cargando datos...', 'aviso');
+
+      const callbackName = nextCallbackName('onData');
+      const params = new URLSearchParams({
+        action: 'data',
+        headerRows: JSON.stringify(INTERRUPTORES.headerRows)
+      });
+
+      try {
+        const payload = await jsonp(SCRIPT_URL + '?' + params.toString(), callbackName);
+
+        if (!payload || !payload.ok) {
+          throw new Error(payload && payload.message ? payload.message : 'No fue posible leer los datos.');
+        }
+
+        state.rows = (payload.rows || []).map((row) => ({
+          ...row,
+          programacion: row.programacion === '' ? '' : Number(row.programacion || 0),
+          saldoDespuesProgramacion: Number(row.saldoDespuesProgramacion ?? (Number(row.saldo || 0) - Number(row.programacion || 0)))
+        }));
+
+        aplicarFiltrosYOrden();
+      } catch (error) {
+        setEstado('Error al cargar: ' + error.message, 'error');
+      }
+    }
+
+    function limpiarFiltros() {
+      txtBuscar.value = '';
+      state.columnFilters = {};
+      state.sortKey = '';
+      state.sortDirection = 'asc';
+
+      thead.querySelectorAll('.filtro-columna').forEach((input) => {
+        input.value = '';
+      });
+
+      aplicarFiltrosYOrden();
+    }
+
+    function convertirFilaCsv(row) {
+      return columnas.map((col) => {
+        const texto = obtenerTextoCelda(row, col).replace(/"/g, '""');
+        return '"' + texto + '"';
+      }).join(';');
+    }
+
+    function exportarVisiblesCsv() {
+      if (!state.filteredRows.length) {
+        setEstado('No hay información visible para exportar.', 'aviso');
+        return;
+      }
+
+      const encabezados = columnas.map((col) => '"' + col.titulo.replace(/"/g, '""') + '"').join(';');
+      const filas = state.filteredRows.map(convertirFilaCsv);
+      const contenido = '\uFEFF' + [encabezados, ...filas].join('\r\n');
+      const blob = new Blob([contenido], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const fecha = new Date();
+      const nombre = 'programacion_cxp_visibles_' +
+        fecha.getFullYear() +
+        String(fecha.getMonth() + 1).padStart(2, '0') +
+        String(fecha.getDate()).padStart(2, '0') + '_' +
+        String(fecha.getHours()).padStart(2, '0') +
+        String(fecha.getMinutes()).padStart(2, '0') +
+        String(fecha.getSeconds()).padStart(2, '0') + '.csv';
+
+      a.href = url;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      setEstado('Exportación completada con ' + state.filteredRows.length + ' fila(s) visibles.', 'ok');
+    }
+
+    txtBuscar.addEventListener('input', aplicarFiltrosYOrden);
+    btnRecargar.addEventListener('click', cargarDatos);
+    btnExportar.addEventListener('click', exportarVisiblesCsv);
+    btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
+    window.addEventListener('resize', ajustarColumnasYEncabezados);
+
+    construirColgroup();
+    construirEncabezados();
+    cargarDatos();
+  </script>
+</body>
+</html>

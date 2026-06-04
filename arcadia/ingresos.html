@@ -996,7 +996,7 @@
     };
 
     const CLIENT_VERSION = '205';
-    const REQUIRED_API_VERSION = 'api_prevenir_duplicados_v3';
+    const REQUIRED_API_VERSION = 'api_prevenir_duplicados_v4';
 
     const UI = {
       fecha: document.getElementById('fecha'),
@@ -1141,9 +1141,19 @@
       return String(version || '').trim() === REQUIRED_API_VERSION;
     }
 
-    function buildApiVersionMessage(apiVersion){
+    function buildApiVersionMessage(apiVersion, rawError = ''){
       const received = String(apiVersion || '').trim() || 'sin versión';
-      return `La página está llamando una API antigua o diferente (${received}). Actualiza la implementación del Apps Script con ${REQUIRED_API_VERSION} y verifica que esta página tenga la URL /exec de esa implementación.`;
+      const detail = rawError ? ` Respuesta recibida: ${rawError}` : '';
+      return `La página está llamando una API antigua o diferente (${received}).${detail} Actualiza la implementación del Apps Script con ${REQUIRED_API_VERSION} y verifica que esta página tenga la URL /exec de esa implementación.`;
+    }
+
+    function buildApiResultError(result, httpStatus){
+      const rawError = String(result?.error || `Error HTTP ${httpStatus}`).trim();
+      const apiVersion = String(result?.apiVersion || '').trim();
+      const looksLikeOldApi = !apiVersion || /Faltan parámetros from\/to|Faltan parametros from\/to|Acción no soportada|Accion no soportada|Falta parámetro action|Falta parametro action/i.test(rawError);
+      const error = new Error(looksLikeOldApi ? buildApiVersionMessage(apiVersion, rawError) : rawError);
+      error.code = looksLikeOldApi ? 'API_VERSION_MISMATCH' : String(result?.code || '');
+      return error;
     }
 
     function ensureExpectedApiVersion(result){
@@ -1525,7 +1535,7 @@
       }
 
       if (!response.ok || result.result !== 'ok') {
-        throw new Error(result.error || `Error HTTP ${response.status}`);
+        throw buildApiResultError(result, response.status);
       }
 
       return {
@@ -1556,9 +1566,7 @@
       }
 
       if (!response.ok || result.result !== 'ok') {
-        const statusError = new Error(result.error || `Error HTTP ${response.status}`);
-        statusError.code = result.code || '';
-        throw statusError;
+        throw buildApiResultError(result, response.status);
       }
 
       ensureExpectedApiVersion(result);
@@ -2110,9 +2118,7 @@
         }
 
         if (!response.ok || result.result !== 'success') {
-          const saveError = new Error(result.error || `Error HTTP ${response.status}`);
-          saveError.code = result.code || '';
-          throw saveError;
+          throw buildApiResultError(result, response.status);
         }
 
         ensureExpectedApiVersion(result);

@@ -1,0 +1,2351 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Caja Arcadia v205</title>
+  <meta name="description" content="Registra aqui tus ventas.">
+  <style>
+    :root{
+      --navy:#122033;
+      --navy-2:#173a68;
+      --navy-3:#22344f;
+      --bg:#f2f4f8;
+      --card:#ffffff;
+      --text:#17202a;
+      --muted:#6b7280;
+      --line:#dde5ef;
+      --blue-soft:#eef4ff;
+      --green:#1f7a4d;
+      --blue:#245fca;
+      --purple:#6c49b8;
+      --gold:#cc8a11;
+      --red:#c0392b;
+      --shadow:0 10px 24px rgba(0,0,0,.06);
+      --radius:16px;
+      --touch:44px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family:Arial,sans-serif;
+      background:var(--bg);
+      color:var(--text);
+      overflow:hidden;
+      min-height:0;
+    }
+    a{text-decoration:none}
+    input,select,textarea,button{font:inherit}
+    .hidden{display:none !important}
+    .muted{color:var(--muted)}
+    .no-print{}
+    .app-layout{
+      display:grid;
+      grid-template-columns:290px 1fr;
+      min-height:100vh;
+      height:100vh;
+    }
+    .side{
+      background:var(--navy);
+      color:#fff;
+      padding:12px 10px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      overflow:hidden;
+    }
+    .brand-title{
+      font-size:22px;
+      font-weight:700;
+      letter-spacing:.6px;
+      margin-bottom:2px;
+    }
+    .brand-subtitle{
+      color:#bfd0e4;
+      font-size:12px;
+    }
+    .side-panel-group{display:grid;gap:6px}
+    .side-panel-title{
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#9fb4cc;
+      margin-bottom:2px;
+    }
+    .group-nav .side-panel-title{color:#8fdcff}
+    .group-nav .side-buttons{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .group-nav .btn-nav-wide{grid-column:1 / -1;text-align:center !important}
+    .group-session .side-panel-title{color:#ffd56a}
+    .group-contado .side-panel-title{color:#63e6be}
+    .group-credito .side-panel-title{color:#c4b5fd}
+    .group-gastos .side-panel-title{color:#ffb86b}
+    .group-tools .side-panel-title{color:#f9a8d4}
+    .group-switches .side-panel-title{color:#93c5fd}
+    .group-final .side-panel-title{color:#fca5a5}
+    .side-buttons{
+      display:grid;
+      gap:6px;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+    .side .btn{
+      width:100%;
+      padding:6px 7px;
+      min-height:28px;
+      font-size:11.5px;
+      line-height:1.1;
+      text-align:left;
+    }
+    .side .btn-small{
+      min-height:28px;
+      padding:6px 7px;
+    }
+    .side .btn-info,
+    .side .btn-primary,
+    .side .btn-success,
+    .side .btn-warning,
+    .side .btn-purple,
+    .side .btn-danger{
+      color:#fff;
+      border:0;
+    }
+    .side .btn-soft{
+      background:#e9eef6;
+      color:var(--navy-2);
+      border:1px solid #d6deea;
+    }
+    .side .btn-primary{background:var(--navy-2)}
+    .side .btn-success{background:var(--green)}
+    .side .btn-info{background:var(--blue)}
+    .side .btn-warning{background:var(--gold)}
+    .side .btn-danger{background:var(--red)}
+    .side .btn-purple{background:var(--purple)}
+    .side .btn-teal{
+      background:linear-gradient(135deg,#0f766e,#14b8a6);
+      color:#fff;
+      border:0;
+      box-shadow:0 8px 18px rgba(20,184,166,.28);
+      grid-column:1 / -1;
+      text-align:center !important;
+    }
+    .switch-list{
+      display:grid;
+      gap:8px;
+    }
+    .switch-item{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      align-items:center;
+      gap:10px;
+      padding:8px 10px;
+      border-radius:12px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      cursor:pointer;
+    }
+    .switch-text{
+      display:grid;
+      gap:3px;
+      min-width:0;
+    }
+    .switch-text strong{
+      color:#fff;
+      font-size:12px;
+      line-height:1.2;
+    }
+    .switch-text small{
+      color:#bfd0e4;
+      font-size:11px;
+      line-height:1.25;
+    }
+    .switch-control{
+      position:relative;
+      width:46px;
+      height:26px;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      flex:0 0 auto;
+    }
+    .switch-control input{
+      position:absolute;
+      inset:0;
+      opacity:0;
+      margin:0;
+      cursor:pointer;
+    }
+    .switch-slider{
+      position:relative;
+      width:46px;
+      height:26px;
+      border-radius:999px;
+      background:#5b6b80;
+      transition:background .2s ease;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.1);
+    }
+    .switch-slider::after{
+      content:'';
+      position:absolute;
+      top:3px;
+      left:3px;
+      width:20px;
+      height:20px;
+      border-radius:50%;
+      background:#fff;
+      transition:transform .2s ease;
+      box-shadow:0 2px 6px rgba(0,0,0,.25);
+    }
+    .switch-control input:checked + .switch-slider{
+      background:#14b8a6;
+    }
+    .switch-control input:checked + .switch-slider::after{
+      transform:translateX(20px);
+    }
+    .switch-control input:focus-visible + .switch-slider{
+      outline:2px solid #93c5fd;
+      outline-offset:2px;
+    }
+    .side-card{
+      margin-top:auto;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:14px;
+      padding:8px 10px;
+      color:#d9e4f2;
+      font-size:12px;
+      line-height:1.35;
+      display:grid;
+      gap:5px;
+    }
+    .side-card strong{color:#ffffff}
+    .session-fields{
+      display:grid;
+      gap:8px;
+    }
+    .session-fields label{
+      color:#dce7f6;
+      font-size:12px;
+      font-weight:700;
+      display:block;
+      margin-bottom:4px;
+    }
+    .session-fields input,
+    .session-fields select{
+      width:100%;
+      background:#0f1e31;
+      border:1px solid #314760;
+      color:#fff;
+      min-height:34px;
+      padding:8px 10px;
+      border-radius:10px;
+      font-size:13px;
+    }
+    .session-fields input[disabled]{
+      opacity:.8;
+      color:#d4e1f4;
+    }
+    .session-fields input::-webkit-calendar-picker-indicator{
+      filter:invert(1);
+      opacity:.85;
+      cursor:pointer;
+    }
+    .main-shell{
+      padding:8px 14px 12px;
+      display:grid;
+      grid-template-rows:auto 1fr;
+      height:100vh;
+      overflow:hidden;
+    }
+    .header-bar{
+      margin-bottom:6px;
+      display:block;
+    }
+    .header-point-only{
+      display:block;
+      min-height:26px;
+    }
+    .month-sales-card{
+      background:var(--card);
+      border-radius:12px;
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .month-sales-scroll{
+      overflow-x:auto;
+    }
+    .month-sales-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+      min-width:980px;
+    }
+    .month-sales-table th,
+    .month-sales-table td{
+      padding:6px 4px;
+      line-height:1.12;
+      border:1px solid var(--line);
+      text-align:center;
+      font-size:12px;
+      vertical-align:middle;
+    }
+    .month-sales-table thead th{
+      position:static;
+      background:#f6f8fb;
+      color:#0f2340;
+      font-weight:800;
+    }
+.month-sales-range{
+      background:linear-gradient(180deg,#f8fbff 0%,#edf4ff 100%) !important;
+      color:#16345c !important;
+      font-weight:800;
+      font-size:11px;
+      letter-spacing:.01em;
+      text-align:center !important;
+      padding:5px 10px !important;
+      line-height:1.15;
+    }
+    .month-sales-label{
+      width:88px;
+      min-width:88px;
+      text-align:left !important;
+      color:var(--navy-2) !important;
+      font-weight:800;
+      padding-left:10px !important;
+    }
+    .month-sales-month{
+      color:#0f2340;
+      font-weight:800;
+      font-size:11px;
+      white-space:normal;
+    }
+    .month-sales-table tbody th{
+      background:#f6f8fb;
+    }
+    .month-sales-value{
+      font-weight:800;
+      color:#0f2340;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:clip;
+      font-size:11px;
+      letter-spacing:-0.01em;
+      font-variant-numeric:tabular-nums;
+    }
+    .month-sales-value.is-loading{
+      color:#6a7f95;
+    }
+    .workspace{
+      min-height:0;
+      overflow:hidden;
+      display:grid;
+      gap:6px;
+      align-content:start;
+    }
+    .card{
+      background:var(--card);
+      border-radius:12px;
+      padding:12px 14px;
+      box-shadow:var(--shadow);
+    }
+    .hero{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:18px;
+      padding:14px 16px;
+    }
+    .hero h2{
+      margin:4px 0;
+      font-size:22px;
+    }
+    .hero p{margin:0;font-size:13px}
+    .section-badge{
+      display:inline-block;
+      padding:5px 10px;
+      border-radius:999px;
+      background:#e9eef6;
+      color:var(--navy-2);
+      font-size:12px;
+      font-weight:700;
+    }
+    .hero-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .hero-actions .btn{
+      width:auto;
+      min-height:36px;
+      padding:8px 12px;
+    }
+    .btn{
+      border-radius:10px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .12s ease, opacity .12s ease;
+      border:0;
+    }
+    .btn:active{transform:translateY(1px)}
+    .btn:disabled{opacity:.6;cursor:not-allowed}
+    .btn-primary{background:var(--navy-2);color:#fff}
+    .btn-success{background:var(--green);color:#fff}
+    .btn-info{background:var(--blue);color:#fff}
+    .btn-warning{background:var(--gold);color:#fff}
+    .btn-danger{background:var(--red);color:#fff}
+    .btn-purple{background:var(--purple);color:#fff}
+    .btn-soft{
+      background:#e9eef6;
+      color:var(--navy-2);
+      border:1px solid #d6deea;
+    }
+    .summary-grid{
+      display:grid;
+      grid-template-columns:repeat(6,minmax(0,1fr));
+      gap:6px;
+    }
+    .kpi{
+      padding:6px 8px;
+      min-height:42px;
+      border-radius:10px;
+      border:1px solid #e6ebf2;
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .kpi small{
+      display:block;
+      font-size:10px;
+      line-height:1.1;
+      color:var(--muted);
+      margin-bottom:3px;
+      min-height:auto;
+    }
+    .kpi b{
+      display:block;
+      font-size:15px;
+      line-height:1.05;
+      color:#111827;
+    }
+    .table-card{
+      display:grid;
+      grid-template-rows:1fr auto;
+      min-height:0;
+      gap:8px;
+    }
+    .records-container{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      height:100%;
+      min-height:0;
+    }
+	table{
+	  width:100%;
+	  border-collapse:collapse;
+	}
+
+	.month-sales-table{
+	  width:100%;
+	  border-collapse:collapse;
+	  table-layout:fixed;
+	  min-width:980px;
+	}
+
+	.records-container table{
+	  min-width:980px;
+	}
+    th,td{
+      padding:8px 10px;
+      border-top:1px solid #eef2f7;
+      text-align:left;
+      vertical-align:middle;
+      font-size:13px;
+    }
+    thead th{
+      position:sticky;
+      top:0;
+      z-index:2;
+      background:#f6f9fc;
+      border-bottom:1px solid var(--line);
+      font-size:13px;
+      color:#374151;
+    }
+    tbody tr:nth-child(odd){background:#fbfcfe}
+    tbody tr:hover{background:#eef4ff !important}
+    .num{text-align:right}
+    .center{text-align:center}
+    .table-input{
+      width:100%;
+      padding:7px 9px;
+      border-radius:10px;
+      border:1px solid #d6deea;
+      background:#fff;
+      min-height:34px;
+      font-size:13px;
+    }
+    .table-input:focus{
+      outline:none;
+      border-color:#8ca7cf;
+      box-shadow:0 0 0 3px rgba(36,95,202,.12);
+    }
+    .row-efectivo{background:#eef9f1}
+    .row-electronica{background:#f7f9fc}
+    .row-credito{background:#eef7ff}
+    .row-gasto{background:#fff8eb}
+    .row-rappi{background:#f2f0ff}
+    tbody tr.row-efectivo:nth-child(odd){background:#e6f4ea}
+    tbody tr.row-electronica:nth-child(odd){background:#f1f4f8}
+    tbody tr.row-credito:nth-child(odd){background:#e5f0fb}
+    tbody tr.row-gasto:nth-child(odd){background:#fcf2d8}
+    tbody tr.row-rappi:nth-child(odd){background:#e9e4ff}
+    .table-actions{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
+    .table-actions .btn{
+      min-height:40px;
+      padding:9px 12px;
+    }
+    .empty{
+      border:1px dashed #d6deea;
+      border-radius:12px;
+      padding:18px 16px;
+      text-align:center;
+      color:var(--muted);
+      background:#fbfcfe;
+    }
+    .empty strong{
+      display:block;
+      color:#334155;
+      margin-bottom:6px;
+    }
+    .records-message-row td{
+      padding:18px 14px;
+      text-align:center;
+      color:var(--muted);
+      font-weight:700;
+      background:#fbfcfe;
+    }
+    .status-notice{
+      border-radius:12px;
+      padding:10px 12px;
+      border:1px solid #d6deea;
+      background:#f8fbff;
+      color:#1f2937;
+      font-size:13px;
+      line-height:1.35;
+      box-shadow:var(--shadow);
+    }
+    .status-notice strong{
+      display:block;
+      margin-bottom:2px;
+      color:#111827;
+    }
+    .status-notice-info{
+      background:#eff6ff;
+      border-color:#bfdbfe;
+      color:#1e3a8a;
+    }
+    .status-notice-success{
+      background:#ecfdf5;
+      border-color:#bbf7d0;
+      color:#14532d;
+    }
+    .status-notice-warning{
+      background:#fffbeb;
+      border-color:#fde68a;
+      color:#78350f;
+    }
+    .status-notice-error{
+      background:#fef2f2;
+      border-color:#fecaca;
+      color:#7f1d1d;
+    }
+    .table-input.input-error{
+      border-color:#c0392b;
+      background:#fff5f5;
+      box-shadow:0 0 0 3px rgba(192,57,43,.10);
+    }
+    .field-hint{
+      display:block;
+      margin-top:4px;
+      font-size:11px;
+      line-height:1.2;
+      color:#c0392b;
+      font-weight:700;
+    }
+    .modal-overlay{
+      position:fixed;
+      inset:0;
+      background:rgba(15,23,42,.45);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+      z-index:3000;
+    }
+    .modal-card{
+      width:min(1260px,calc(100vw - 32px));
+      background:#fff;
+      border-radius:18px;
+      box-shadow:0 24px 60px rgba(15,23,42,.25);
+      padding:16px 18px;
+      max-height:calc(100vh - 36px);
+      overflow:auto;
+    }
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+    .modal-header h2{
+      margin:0;
+      font-size:22px;
+      color:#0f172a;
+    }
+    .formula-grid{
+      display:block;
+    }
+    .formula-compare-wrapper{
+      border:1px solid #dbe5f0;
+      border-radius:16px;
+      overflow:hidden;
+      background:#fff;
+    }
+    .formula-compare-table{
+      width:100%;
+      border-collapse:collapse;
+      table-layout:fixed;
+    }
+    .formula-compare-table th,
+    .formula-compare-table td{
+      border:1px solid #dbe5f0;
+      padding:10px 12px;
+      vertical-align:top;
+      text-align:left;
+      word-break:break-word;
+    }
+    .formula-compare-table thead th{
+      background:#eff6ff;
+      color:#16365f;
+      font-size:13px;
+      font-weight:700;
+    }
+    .formula-compare-table thead th:first-child{
+      width:26%;
+      min-width:220px;
+    }
+    .formula-row-title{
+      font-weight:700;
+      color:#16365f;
+      background:#f8fbff;
+    }
+    .formula-cell{
+      font-size:13px;
+      line-height:1.4;
+      color:#334155;
+      background:#fff;
+    }
+    .formula-cell-current,
+    .formula-head-current{
+      background:#f8fbff !important;
+    }
+    .formula-cell-alert,
+    .formula-row-alert{
+      background:#fff1f2 !important;
+      color:#b91c1c !important;
+      border-color:#fecdd3 !important;
+    }
+    .formula-cell-empty{
+      font-style:italic;
+    }
+    .formula-head-note{
+      display:block;
+      margin-top:4px;
+      font-size:11px;
+      font-weight:600;
+      color:#64748b;
+    }
+    @media (max-height:900px){
+      .app-layout{grid-template-columns:270px 1fr}
+      .side{padding:10px 8px;gap:8px;overflow:auto}
+      .brand-title{font-size:20px}
+      .brand-subtitle{font-size:11px}
+      .side-panel-group{gap:5px}
+      .side-panel-title{font-size:10px}
+      .session-fields{gap:6px}
+      .session-fields label{font-size:11px;margin-bottom:3px}
+      .session-fields input,
+      .session-fields select{min-height:32px;padding:7px 9px;font-size:12px}
+      .side .btn,
+      .side .btn-small{min-height:26px;padding:5px 6px;font-size:11px}
+      .switch-item{padding:7px 9px;gap:8px}
+      .switch-text strong{font-size:11px}
+      .switch-text small{font-size:10px}
+      .switch-control,.switch-slider{width:42px;height:24px}
+      .switch-slider::after{width:18px;height:18px}
+      .switch-control input:checked + .switch-slider::after{transform:translateX(18px)}
+      .side-card{padding:7px 9px;font-size:11px;gap:4px}
+    }
+    @media (max-height:760px){
+      .app-layout{grid-template-columns:252px 1fr}
+      .side{padding:8px 7px;gap:7px}
+      .side-buttons{gap:5px}
+      .side-panel-group{gap:4px}
+      .brand-title{font-size:18px}
+      .brand-subtitle{font-size:10px}
+      .session-fields{gap:5px}
+      .session-fields label{font-size:10.5px}
+      .session-fields input,
+      .session-fields select{min-height:30px;padding:6px 8px;font-size:11.5px;border-radius:8px}
+      .side .btn,
+      .side .btn-small{min-height:24px;padding:4px 6px;font-size:10.5px;border-radius:8px}
+      .switch-item{padding:6px 8px;border-radius:10px}
+      .switch-text strong{font-size:10.5px}
+      .switch-text small{font-size:9.5px}
+      .switch-control,.switch-slider{width:40px;height:22px}
+      .switch-slider::after{width:16px;height:16px}
+      .switch-control input:checked + .switch-slider::after{transform:translateX(18px)}
+      .side-card{padding:6px 8px;font-size:10.5px;border-radius:10px}
+    }
+    @media (max-width:1280px){
+      .summary-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+    @media (max-width:1200px){
+      .formula-compare-table{min-width:860px}
+      .formula-compare-wrapper{overflow:auto}
+    }
+    @media (max-width:980px){
+      body{overflow:auto}
+      .app-layout{grid-template-columns:1fr;height:auto;min-height:100vh}
+      .side{overflow:visible}
+      .main-shell{height:auto;overflow:visible;padding:12px}
+      .workspace{overflow:visible}
+      .summary-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:760px){
+      .summary-grid{grid-template-columns:1fr}
+      .formula-compare-table{min-width:760px}
+      .hero{flex-direction:column;align-items:flex-start}
+      .hero-actions{width:100%}
+      .hero-actions .btn{width:100%}
+      table{min-width:760px}
+    }
+    @media print{
+      .no-print,.side{display:none !important}
+      body{background:#fff;overflow:visible}
+      .main-shell{padding:0;height:auto}
+      .card{box-shadow:none;border:1px solid #d9e1ea}
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="side no-print">
+      <div>
+        <div class="brand-title">Caja Arcadia</div>
+        <div class="brand-subtitle">Versión 205</div>   
+      </div>
+
+      <div class="side-panel-group group-nav">        
+        <div class="side-buttons">
+          <button id="open-formulas-btn" type="button" class="btn btn-soft btn-nav-wide">Fórmulas</button>
+          <button id="btn-guardar-side" type="button" class="btn btn-primary">Guardar nube</button>
+          <button id="btn-limpiar-side" type="button" class="btn btn-danger">Limpiar</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-session">     
+        <div class="session-fields">
+          <div>
+            <label for="fecha">Fecha de las ventas</label>
+            <input id="fecha" type="date">
+          </div>
+          <div>
+            <label for="puntoVenta">Punto de venta</label>
+            <select id="puntoVenta"></select>
+          </div>
+          <div>
+            <label for="perfilVista">Perfil de cálculo</label>
+            <input id="perfilVista" type="text" disabled>
+          </div>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-contado">
+        <div class="side-panel-title">Efectivo</div>
+        <div class="side-buttons">
+          <button id="btn-efectivo" type="button" class="btn btn-info">Efectivo</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-electronica">
+        <div class="side-panel-title">Medios electrónicos</div>
+        <div class="side-buttons">
+          <button id="btn-qr" type="button" class="btn btn-info">QR</button>
+          <button id="btn-debito" type="button" class="btn btn-info">Tarjeta débito</button>
+          <button id="btn-credito-tarjeta" type="button" class="btn btn-info">Tarjeta crédito</button>
+          <button id="btn-rappi" type="button" class="btn btn-info">Rappi</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-credito">
+        <div class="side-panel-title">Créditos</div>
+        <div class="side-buttons">
+          <button id="btn-nomina" type="button" class="btn btn-info">Descuentos por nómina</button>
+          <button id="btn-formulas" type="button" class="btn btn-info">Fórmulas</button>
+          <button id="btn-kardex" type="button" class="btn btn-info">Faltantes en kardex</button>
+          <button id="btn-interco" type="button" class="btn btn-info">A empresas del grupo</button>
+          <button id="btn-autoconsumo" type="button" class="btn btn-info">Autoconsumo</button>
+          <button id="btn-otros-creditos" type="button" class="btn btn-info">Otros Créditos</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-gastos">
+        <div class="side-panel-title">Gastos</div>
+        <div class="side-buttons">
+          <button id="btn-gasto" type="button" class="btn btn-info">Gastos en efectivo</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-tools">
+        <div class="side-panel-title">Utilidades</div>
+        <div class="side-buttons">
+          <button id="btn-todos" type="button" class="btn btn-info">Todos</button>
+        </div>
+      </div>
+
+      <div class="side-panel-group group-switches">
+        <div class="side-panel-title">Interruptores</div>
+        <div class="switch-list">
+          <label class="switch-item" for="toggle-summary-values">
+            <span class="switch-text">
+              <strong>Mostrar valores superiores</strong>
+              <small>Permanece desactivado al abrir y solicita clave al activarlo.</small>
+            </span>
+            <span class="switch-control">
+              <input id="toggle-summary-values" type="checkbox">
+              <span class="switch-slider" aria-hidden="true"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="side-card">
+        <strong>Estado de conexión</strong>
+        <span id="network-status">Online</span>
+      </div>
+
+    </aside>
+
+    <div class="main-shell">
+      <div class="header-bar">
+        <div class="header-point-only">
+          <div class="month-sales-card">
+            <div class="month-sales-scroll">
+              <div id="summary-concepts-container"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <main class="workspace">
+
+        <div id="status-notice" class="status-notice hidden" role="status" aria-live="polite"></div>
+
+        <section id="summary-grid" class="summary-grid">
+          <div class="card kpi"><small id="label-kpi-efectivo">Total ventas en efectivo</small><b id="kpi-efectivo">$ 0</b></div>
+          <div class="card kpi"><small>Total ventas por medios electrónicos</small><b id="kpi-electronica">$ 0</b></div>
+          <div class="card kpi"><small>Total ventas a crédito</small><b id="kpi-credito">$ 0</b></div>
+          <div class="card kpi"><small>Total ventas</small><b id="kpi-total-ventas">$ 0</b></div>
+          <div class="card kpi"><small>Total gastos</small><b id="kpi-gastos">$ 0</b></div>
+          <div class="card kpi"><small>Total efectivo a recibir por tesorería</small><b id="kpi-tesoreria">$ 0</b></div>
+        </section>
+
+        <section class="card table-card">
+
+          <div class="records-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Tipo</th>
+                  <th class="num">Valor</th>
+                  <th class="num">Devoluciones</th>
+                  <th class="num">Total</th>
+                  <th>Tercero / Destino</th>
+                  <th>Detalle</th>
+                  <th class="center">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="recordsBody"></tbody>
+            </table>
+          </div>
+
+          <div class="table-actions no-print hidden">
+            <button id="btn-guardar-bottom" type="button" class="btn btn-primary">Guardar nube</button>
+            <button id="btn-limpiar-bottom" type="button" class="btn btn-danger">Limpiar</button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <div id="formulas-modal" class="modal-overlay hidden no-print" aria-hidden="true">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="formulas-modal-title">
+      <div class="modal-header">
+        <h2 id="formulas-modal-title">Comparativo de fórmulas</h2>
+        <button type="button" class="btn btn-soft" id="close-formulas-btn">Cerrar</button>
+      </div>
+      <div id="formula-profile-caption" class="muted" style="margin:0 0 12px; font-size:13px;">Comparativo general de fórmulas</div>
+      <div id="formula-grid" class="formula-grid"></div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyVTytyjjRHPhzAaeOdXl_Cy8kAOrRzwRNlyMp-mp4UGcAxPcWRkCbHOW23DRekju9c/exec',
+      API_KEY: '',
+      DEFAULT_PUNTO_VENTA: '',
+      EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones Arcadia','Doctor Ahorro','Heritage','Distribuidora'],
+      PUNTOS_VENTA: [
+        { value: 'Aroma Playa', label: 'Aroma Playa', profile: 'AROMA' },
+        { value: 'Aroma Rodadero', label: 'Aroma Rodadero', profile: 'AROMA' },
+        { value: 'Almendros', label: 'Almendros', profile: 'DRHE' },
+        { value: 'Ferrocarril', label: 'Ferrocarril', profile: 'DRHE' },
+        { value: 'Flora', label: 'Flora', profile: 'DRHE' },
+        { value: 'Irotama', label: 'Irotama', profile: 'DRHE' },
+        { value: 'Libertador', label: 'Libertador', profile: 'DRHE' },
+        { value: 'Neguanje', label: 'Neguanje', profile: 'DRHE' },
+        { value: 'Playa', label: 'Playa', profile: 'DRHE' },
+        { value: 'Reserva', label: 'Reserva', profile: 'DRHE' }
+      ],
+      PROFILE_DEFINITIONS: {
+        AROMA: {
+          label: 'IA',
+          totals: {
+            efectivo: 'Total ventas en efectivo',
+            electronica: 'Total ventas por medios electrónicos',
+            credito: 'Total ventas a crédito',
+            ventas: 'Total ventas',
+            gasto: 'Total gastos',
+            tesoreria: 'Total efectivo a recibir por tesorería'
+          },
+          formulas: [
+            { titulo: 'Total ventas en efectivo', texto: 'Suma de: Efectivo' },
+            { titulo: 'Total ventas por medios electrónicos', texto: 'Suma de: QR + Rappi + Tarjeta débito + Tarjeta crédito' },
+            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo + Otros Créditos' },
+            { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
+            { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
+            { titulo: 'Total efectivo a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
+          ],
+          operations: {
+            efectivo: { tipo: 'Efectivo', displayTipo: 'Efectivo', category: 'efectivo', styleClass: 'row-efectivo' },
+            qr: { tipo: 'QR', displayTipo: 'QR', category: 'electronica', styleClass: 'row-electronica' },
+            debito: { tipo: 'Tarjeta débito', displayTipo: 'Tarjeta débito', category: 'electronica', styleClass: 'row-electronica' },
+            creditoTarjeta: { tipo: 'Tarjeta crédito', displayTipo: 'Tarjeta crédito', category: 'electronica', styleClass: 'row-electronica' },
+            nomina: { tipo: 'Descuentos por nómina', displayTipo: 'Descuentos por nómina', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            formulas: { tipo: 'Fórmulas', displayTipo: 'Fórmulas', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            kardex: { tipo: 'Faltantes en kardex', displayTipo: 'Faltantes en kardex', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            interco: { tipo: 'A empresas del grupo', displayTipo: 'A empresas del grupo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            autoconsumo: { tipo: 'Autoconsumo', displayTipo: 'Autoconsumo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            otrosCreditos: { tipo: 'Otros Créditos', displayTipo: 'Otros Créditos', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            rappi: { tipo: 'Rappi', displayTipo: 'Rappi', category: 'electronica', styleClass: 'row-rappi', terceroRequired: true, defaultTercero: 'Rappi' },
+            gasto: { tipo: 'Gastos en efectivo', displayTipo: 'Gastos en efectivo', category: 'gasto', styleClass: 'row-gasto' }
+          }
+        },
+        DRHE: {
+          label: 'Dr-He',
+          totals: {
+            efectivo: 'Total ventas en efectivo',
+            electronica: 'Total ventas por medios electrónicos',
+            credito: 'Total ventas a crédito',
+            ventas: 'Total ventas',
+            gasto: 'Total gastos',
+            tesoreria: 'Total efectivo a recibir por tesorería'
+          },
+          formulas: [
+            { titulo: 'Total ventas en efectivo', texto: 'Efectivo y créditos - Total ventas a crédito' },
+            { titulo: 'Total ventas por medios electrónicos', texto: 'Suma de: QR + Rappi + Tarjeta débito + Tarjeta crédito' },
+            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo + Otros Créditos' },
+            { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
+            { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
+            { titulo: 'Total efectivo a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
+          ],
+          operations: {
+            efectivo: { tipo: 'Efectivo y créditos', displayTipo: 'Efectivo y créditos', category: 'efectivo', styleClass: 'row-efectivo' },
+            qr: { tipo: 'QR', displayTipo: 'QR', category: 'electronica', styleClass: 'row-electronica' },
+            debito: { tipo: 'Tarjeta débito', displayTipo: 'Tarjeta débito', category: 'electronica', styleClass: 'row-electronica' },
+            creditoTarjeta: { tipo: 'Tarjeta crédito', displayTipo: 'Tarjeta crédito', category: 'electronica', styleClass: 'row-electronica' },
+            nomina: { tipo: 'Descuentos por nómina', displayTipo: 'Descuentos por nómina', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            formulas: { tipo: 'Fórmulas', displayTipo: 'Fórmulas', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            kardex: { tipo: 'Faltantes en kardex', displayTipo: 'Faltantes en kardex', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            interco: { tipo: 'A empresas del grupo', displayTipo: 'A empresas del grupo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            autoconsumo: { tipo: 'Autoconsumo', displayTipo: 'Autoconsumo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            otrosCreditos: { tipo: 'Otros Créditos', displayTipo: 'Otros Créditos', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
+            rappi: { tipo: 'Rappi', displayTipo: 'Rappi', category: 'electronica', styleClass: 'row-rappi', terceroRequired: true, defaultTercero: 'Rappi' },
+            gasto: { tipo: 'Gastos en efectivo', displayTipo: 'Gastos en efectivo', category: 'gasto', styleClass: 'row-gasto' }
+          }
+        }
+      }
+    };
+
+    const CLIENT_VERSION = '205';
+    const REQUIRED_API_VERSION = 'api_ingresos_con_restr_v1';
+
+    const UI = {
+      fecha: document.getElementById('fecha'),
+      puntoVenta: document.getElementById('puntoVenta'),
+      perfilVista: document.getElementById('perfilVista'),
+      recordsBody: document.getElementById('recordsBody'),
+      emptyBox: document.getElementById('empty-box'),
+      guardarBtnSide: document.getElementById('btn-guardar-side'),
+      limpiarBtnSide: document.getElementById('btn-limpiar-side'),
+      guardarBtnBottom: document.getElementById('btn-guardar-bottom'),
+      limpiarBtnBottom: document.getElementById('btn-limpiar-bottom'),
+      formulaGrid: document.getElementById('formula-grid'),
+      formulaCaption: document.getElementById('formula-profile-caption'),
+      formulasModal: document.getElementById('formulas-modal'),
+      statusNotice: document.getElementById('status-notice'),
+      networkStatus: document.getElementById('network-status'),
+      openFormulasBtn: document.getElementById('open-formulas-btn'),
+      closeFormulasBtn: document.getElementById('close-formulas-btn'),
+      kpiEfectivo: document.getElementById('kpi-efectivo'),
+      kpiElectronica: document.getElementById('kpi-electronica'),
+      kpiCredito: document.getElementById('kpi-credito'),
+      kpiVentas: document.getElementById('kpi-total-ventas'),
+      kpiGastos: document.getElementById('kpi-gastos'),
+      kpiTesoreria: document.getElementById('kpi-tesoreria'),
+      labelKpiEfectivo: document.getElementById('label-kpi-efectivo'),
+      btnEfectivo: document.getElementById('btn-efectivo'),
+      toggleSummaryValues: document.getElementById('toggle-summary-values'),
+      pointRequiredButtons: [
+        document.getElementById('open-formulas-btn'),
+        document.getElementById('btn-limpiar-side'),
+        document.getElementById('btn-limpiar-bottom'),
+        document.getElementById('btn-efectivo'),
+        document.getElementById('btn-qr'),
+        document.getElementById('btn-debito'),
+        document.getElementById('btn-credito-tarjeta'),
+        document.getElementById('btn-nomina'),
+        document.getElementById('btn-formulas'),
+        document.getElementById('btn-kardex'),
+        document.getElementById('btn-interco'),
+        document.getElementById('btn-autoconsumo'),
+        document.getElementById('btn-otros-creditos'),
+        document.getElementById('btn-rappi'),
+        document.getElementById('btn-gasto'),
+        document.getElementById('btn-todos')
+      ],
+      captureButtons: [
+        document.getElementById('btn-efectivo'),
+        document.getElementById('btn-qr'),
+        document.getElementById('btn-debito'),
+        document.getElementById('btn-credito-tarjeta'),
+        document.getElementById('btn-nomina'),
+        document.getElementById('btn-formulas'),
+        document.getElementById('btn-kardex'),
+        document.getElementById('btn-interco'),
+        document.getElementById('btn-autoconsumo'),
+        document.getElementById('btn-otros-creditos'),
+        document.getElementById('btn-rappi'),
+        document.getElementById('btn-gasto'),
+        document.getElementById('btn-todos')
+      ],
+      summaryConceptsContainer: document.getElementById('summary-concepts-container')
+    };
+
+    const state = {
+      session: { date: '', pos: '' },
+      conceptSummaryRequestId: 0,
+      dayStatusRequestId: 0,
+      dayStatus: { checked: false, loading: false, exists: false, message: '' },
+      captureLocked: false,
+      lockMessage: '',
+      isSaving: false
+    };
+
+    const LAST_SESSION_KEY = 'caja-unificada-v1::last-session';
+    const SUMMARY_VALUES_PASSWORD = '2020';
+    const DUPLICATE_DAY_CODE = 'DUPLICATE_DAY_POINT';
+    let showSummaryValues = false;
+
+    function getLocalDateISO(){
+      const now = new Date();
+      const offsetMs = now.getTimezoneOffset() * 60000;
+      return new Date(now.getTime() - offsetMs).toISOString().slice(0,10);
+    }
+
+    function bindClick(element, handler){
+      if (element) element.addEventListener('click', handler);
+    }
+
+    function showNotice(type, message, reason = 'manual'){
+      if (!UI.statusNotice) return;
+      const cleanType = ['success','error','warning','info'].includes(type) ? type : 'info';
+      const titles = { success: 'Listo', error: 'Atención', warning: 'Aviso', info: 'Información' };
+      UI.statusNotice.className = `status-notice status-notice-${cleanType}`;
+      UI.statusNotice.dataset.reason = reason;
+      UI.statusNotice.innerHTML = `<strong>${titles[cleanType]}</strong><span>${escapeHtml(message)}</span>`;
+    }
+
+    function clearNotice(reason = ''){
+      if (!UI.statusNotice) return;
+      if (reason && UI.statusNotice.dataset.reason !== reason) return;
+      UI.statusNotice.className = 'status-notice hidden';
+      UI.statusNotice.dataset.reason = '';
+      UI.statusNotice.innerHTML = '';
+    }
+
+    function setBusyState(buttons, disabled, text){
+      buttons.filter(Boolean).forEach(btn => {
+        btn.disabled = disabled;
+        btn.textContent = text;
+        btn.dataset.busy = disabled ? '1' : '0';
+      });
+    }
+
+    function formatCurrency(value){
+      return new Intl.NumberFormat('es-CO', {
+        style: 'currency',
+        currency: 'COP',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(Math.round(Number(value || 0)));
+    }
+
+    function safeNumber(value){
+      if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+      let text = String(value ?? '').trim();
+      if (!text) return 0;
+      text = text.replace(/[^0-9,.-]/g, '');
+      text = text.replace(/\./g, '').replace(/,/g, '.');
+      const num = parseFloat(text);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function escapeHtml(value){
+      return String(value == null ? '' : value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;');
+    }
+
+    function isExpectedApiVersion(version){
+      return String(version || '').trim() === REQUIRED_API_VERSION;
+    }
+
+    function buildApiVersionMessage(apiVersion, rawError = ''){
+      const received = String(apiVersion || '').trim() || 'sin versión';
+      const detail = rawError ? ` Respuesta recibida: ${rawError}` : '';
+      return `La página está llamando una API antigua o diferente (${received}).${detail} Usa el Apps Script amoldado a ingresos-con restr.html (${REQUIRED_API_VERSION}) y verifica que CONFIG.SCRIPT_URL tenga la URL /exec correcta.`;
+    }
+
+    function buildApiResultError(result, httpStatus){
+      const rawError = String(result?.error || `Error HTTP ${httpStatus}`).trim();
+      const apiVersion = String(result?.apiVersion || '').trim();
+      const looksLikeOldApi = !apiVersion || /Faltan parámetros from\/to|Faltan parametros from\/to|Acción no soportada|Accion no soportada|Falta parámetro action|Falta parametro action/i.test(rawError);
+      const error = new Error(looksLikeOldApi ? buildApiVersionMessage(apiVersion, rawError) : rawError);
+      error.code = looksLikeOldApi ? 'API_VERSION_MISMATCH' : String(result?.code || '');
+      return error;
+    }
+
+    function ensureExpectedApiVersion(result){
+      if (isExpectedApiVersion(result?.apiVersion)) return;
+      const error = new Error(buildApiVersionMessage(result?.apiVersion));
+      error.code = 'API_VERSION_MISMATCH';
+      throw error;
+    }
+
+    function newId(){
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+      return `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+
+    function getSelectedPointConfig(){
+      const pv = String(UI.puntoVenta.value || '').trim();
+      return CONFIG.PUNTOS_VENTA.find(item => item.value === pv) || null;
+    }
+
+    function getCurrentProfile(){
+      const point = getSelectedPointConfig();
+      const profileKey = point ? point.profile : 'AROMA';
+      return CONFIG.PROFILE_DEFINITIONS[profileKey];
+    }
+
+    function refreshOperationButtons(){
+      const profile = getCurrentProfile();
+      if (UI.btnEfectivo) {
+        UI.btnEfectivo.textContent = profile?.operations?.efectivo?.displayTipo || 'Efectivo';
+        UI.btnEfectivo.title = profile?.operations?.efectivo?.displayTipo || 'Efectivo';
+      }
+    }
+
+    function getDraftStorageKey(dateValue = UI.fecha.value, posValue = UI.puntoVenta.value){
+      const fecha = String(dateValue || '').trim();
+      const pv = String(posValue || '').trim();
+      if (!fecha || !pv) return '';
+      return `caja-unificada-v1::${fecha}::${pv}`;
+    }
+
+    function getStorageKey(){
+      return getDraftStorageKey();
+    }
+
+    function saveLastSession(){
+      localStorage.setItem(LAST_SESSION_KEY, JSON.stringify({
+        date: String(UI.fecha.value || '').trim(),
+        pos: String(UI.puntoVenta.value || '').trim()
+      }));
+    }
+
+    function restoreLastSession(){
+      try {
+        const last = JSON.parse(localStorage.getItem(LAST_SESSION_KEY) || '{}');
+        if (last.date) UI.fecha.value = String(last.date).trim();
+      } catch (error) {
+        console.error(error);
+      }
+      UI.puntoVenta.value = '';
+    }
+
+    function normalizeRowValue(value, fallback = ''){
+      if (value === 0 || value === '0') return '0';
+      if (value == null || value === '') return fallback === '' ? '' : String(fallback);
+      return String(value);
+    }
+
+    function focusAndSelect(input){
+      if (!input) return;
+      requestAnimationFrame(() => {
+        try {
+          input.focus();
+          input.select();
+        } catch (error) {
+          console.error(error);
+        }
+      });
+    }
+
+    function hasMissingRequiredTercero(){
+      return Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).some(tr => {
+        if (tr.dataset.terceroRequired !== '1') return false;
+        const terceroField = tr.querySelector('[data-field="tercero"]');
+        return !String(terceroField?.value || '').trim();
+      });
+    }
+
+    function hasSelectedPoint(){
+      return !!String(UI.puntoVenta?.value || '').trim();
+    }
+
+    function getCaptureBlockingMessage(){
+      if (state.isSaving) return 'Guardando información en la nube. Espera a que termine el proceso.';
+      if (state.captureLocked) return state.lockMessage || 'Esta captura ya fue guardada y quedó bloqueada para evitar un reenvío.';
+      if (state.dayStatus?.exists) return state.dayStatus.message || 'Ya existe información para este punto de venta en esta fecha.';
+      return '';
+    }
+
+    function setCaptureLocked(locked, message = ''){
+      state.captureLocked = !!locked;
+      state.lockMessage = locked ? (message || 'Esta captura ya fue guardada y quedó bloqueada para evitar un reenvío.') : '';
+      updatePointDependentUI();
+      updateCloudSaveAvailability();
+    }
+
+    function resetDayStatus(){
+      state.dayStatus = { checked: false, loading: false, exists: false, message: '', error: false };
+      clearNotice('day-status');
+    }
+
+    function renderRecordsPlaceholder(){
+      const rows = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]'));
+      const existingPlaceholder = UI.recordsBody.querySelector('tr[data-placeholder="1"]');
+
+      if (rows.length) {
+        if (existingPlaceholder) existingPlaceholder.remove();
+        return;
+      }
+
+      const blockingMessage = getCaptureBlockingMessage();
+      const message = !hasSelectedPoint()
+        ? 'Selecciona primero el punto de venta para habilitar la captura.'
+        : (blockingMessage || 'Aún no hay movimientos cargados.');
+      const html = `<td colspan="7">${escapeHtml(message)}</td>`;
+
+      if (existingPlaceholder) {
+        existingPlaceholder.innerHTML = html;
+        return;
+      }
+
+      const tr = document.createElement('tr');
+      tr.dataset.placeholder = '1';
+      tr.className = 'records-message-row';
+      tr.innerHTML = html;
+      UI.recordsBody.appendChild(tr);
+    }
+
+    function updatePointDependentUI(){
+      const hasPoint = hasSelectedPoint();
+      const blockingMessage = getCaptureBlockingMessage();
+      const lockTitle = hasPoint ? '' : 'Selecciona primero el punto de venta.';
+      const captureTitle = !hasPoint ? lockTitle : blockingMessage;
+      const captureDisabled = !hasPoint || !!blockingMessage;
+
+      (UI.pointRequiredButtons || []).filter(Boolean).forEach(btn => {
+        if (btn.dataset.busy === '1') return;
+        btn.disabled = !hasPoint || state.isSaving;
+        btn.title = !hasPoint ? lockTitle : (state.isSaving ? blockingMessage : '');
+      });
+
+      (UI.captureButtons || []).filter(Boolean).forEach(btn => {
+        if (btn.dataset.busy === '1') return;
+        btn.disabled = captureDisabled;
+        btn.title = captureTitle || '';
+      });
+
+      [UI.limpiarBtnSide, UI.limpiarBtnBottom].filter(Boolean).forEach(btn => {
+        if (btn.dataset.busy === '1') return;
+        btn.disabled = !hasPoint || state.isSaving;
+        btn.title = !hasPoint ? lockTitle : (state.isSaving ? blockingMessage : '');
+      });
+
+      Array.from(UI.recordsBody.querySelectorAll('tr[data-id] input, tr[data-id] select, tr[data-id] button')).forEach(control => {
+        control.disabled = captureDisabled;
+        control.title = captureTitle || '';
+      });
+
+      renderRecordsPlaceholder();
+    }
+
+    function requireSelectedPoint(){
+      if (hasSelectedPoint()) return true;
+      showNotice('warning', 'Debes seleccionar el punto de venta para continuar.', 'validation');
+      UI.puntoVenta.focus();
+      updatePointDependentUI();
+      return false;
+    }
+
+    function updateRequiredTerceroWarnings(){
+      Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).forEach(tr => {
+        const required = tr.dataset.terceroRequired === '1';
+        const terceroField = tr.querySelector('[data-field="tercero"]');
+        const hint = tr.querySelector('[data-field-hint="tercero"]');
+        const missing = required && !String(terceroField?.value || '').trim();
+        if (terceroField) {
+          terceroField.classList.toggle('input-error', missing);
+          terceroField.title = missing ? 'Seleccione tercero' : '';
+        }
+        if (hint) hint.classList.toggle('hidden', !missing);
+      });
+    }
+
+    function updateCloudSaveAvailability(){
+      const hasPoint = hasSelectedPoint();
+      const missingRequiredTercero = hasMissingRequiredTercero();
+      const blockingMessage = getCaptureBlockingMessage();
+      const checkingDay = !!state.dayStatus?.loading;
+
+      let title = '';
+      if (!hasPoint) {
+        title = 'Selecciona el punto de venta para guardar en la nube.';
+      } else if (checkingDay) {
+        title = 'Verificando si ya existe información para esta fecha y punto de venta.';
+      } else if (blockingMessage) {
+        title = blockingMessage;
+      } else if (state.dayStatus?.error) {
+        title = state.dayStatus.message || 'No se pudo verificar previamente la información guardada.';
+      } else if (missingRequiredTercero) {
+        title = 'Debes escoger el tercero en los movimientos donde es obligatorio.';
+      }
+
+      updateRequiredTerceroWarnings();
+
+      [UI.guardarBtnSide, UI.guardarBtnBottom].filter(Boolean).forEach(btn => {
+        if (btn.dataset.busy === '1') return;
+        btn.disabled = !hasPoint || checkingDay || !!blockingMessage || missingRequiredTercero;
+        btn.title = title;
+      });
+    }
+
+    function renderPoints(){
+      UI.puntoVenta.innerHTML = '<option value="">Seleccione...</option>';
+      CONFIG.PUNTOS_VENTA.forEach(item => {
+        UI.puntoVenta.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(item.value)}">${escapeHtml(item.label)}</option>`);
+      });
+    }
+
+    function formatPlainNumber(value){
+      return new Intl.NumberFormat('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(Math.round(Number(value || 0)));
+    }
+
+    function buildConceptSummaryRangeText(meta = {}, loading = false){
+      if (loading) return 'Consultando...';
+
+      const rangoTexto = String(meta?.rangoTexto || '').trim();
+      if (rangoTexto) return rangoTexto;
+
+      const fecha = String(meta?.fecha || '').trim();
+      if (fecha) return fecha;
+
+      return '';
+    }
+
+    function renderConceptSummaryTable(items = [], options = {}){
+      if (!UI.summaryConceptsContainer) return;
+
+      const loading = !!options.loading;
+      const emptyText = String(options.emptyText || 'Sin datos').trim();
+      const rangeText = buildConceptSummaryRangeText(options, loading);
+
+      const orderedItems = Array.isArray(items)
+        ? [...items].sort((a, b) => {
+            const diff = Number(b?.valor || 0) - Number(a?.valor || 0);
+            if (diff !== 0) return diff;
+            return String(a?.punto || '').localeCompare(String(b?.punto || ''), 'es', { sensitivity: 'base' });
+          })
+        : [];
+
+      const baseColumns = loading
+        ? [{ punto: 'Consultando...', valor: 0, tesoreria: 0, valorTexto: '...', tesoreriaTexto: '...' }]
+        : (orderedItems.length
+          ? orderedItems.map(item => ({
+              punto: String(item?.punto || '').trim() || 'Sin punto',
+              valor: Number(item?.valor || 0),
+              tesoreria: Number(item?.tesoreria || 0),
+              valorTexto: formatPlainNumber(item?.valor || 0),
+              tesoreriaTexto: formatPlainNumber(item?.tesoreria || 0)
+            }))
+          : [{ punto: emptyText, valor: 0, tesoreria: 0, valorTexto: '', tesoreriaTexto: '' }]);
+
+      const totalValor = loading
+        ? null
+        : baseColumns.reduce((sum, item) => sum + Number(item?.valor || 0), 0);
+
+      const totalTesoreria = loading
+        ? null
+        : baseColumns.reduce((sum, item) => sum + Number(item?.tesoreria || 0), 0);
+
+      const columns = loading
+        ? baseColumns
+        : [...baseColumns, {
+            punto: 'Total',
+            valor: totalValor,
+            tesoreria: totalTesoreria,
+            valorTexto: formatPlainNumber(totalValor || 0),
+            tesoreriaTexto: formatPlainNumber(totalTesoreria || 0)
+          }];
+
+      const headerCells = columns.map(item => `
+        <th class="month-sales-month" title="${escapeHtml(item.punto)}">${escapeHtml(item.punto)}</th>
+      `).join('');
+
+      const valueCells = columns.map(item => `
+        <td class="month-sales-value${loading ? ' is-loading' : ''}" title="${escapeHtml(item.valorTexto)}">${escapeHtml(item.valorTexto)}</td>
+      `).join('');
+
+      const tesoreriaCells = columns.map(item => `
+        <td class="month-sales-value${loading ? ' is-loading' : ''}" title="${escapeHtml(item.tesoreriaTexto)}">${escapeHtml(item.tesoreriaTexto)}</td>
+      `).join('');
+
+      const totalColumns = columns.length + 1;
+
+      UI.summaryConceptsContainer.innerHTML = `
+        <table class="month-sales-table" aria-label="Ventas del día seleccionado">
+          <thead>
+            <tr>
+              <th class="month-sales-range" colspan="${totalColumns}" title="${escapeHtml(rangeText)}">${escapeHtml(rangeText)}</th>
+            </tr>
+            <tr>
+              <th class="month-sales-label">Punto</th>
+              ${headerCells}
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="month-sales-label">Ventas</th>
+              ${valueCells}
+            </tr>
+            <tr>
+              <th class="month-sales-label">Efectivo rec.</th>
+              ${tesoreriaCells}
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function renderConceptSummaryDisabled(){
+      if (!UI.summaryConceptsContainer) return;
+      UI.summaryConceptsContainer.innerHTML = `
+        <table class="month-sales-table" aria-label="Ventas del día seleccionado">
+          <thead>
+            <tr>
+              <th class="month-sales-range" colspan="2">Visualización desactivada</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th class="month-sales-label">Ventas</th>
+              <td class="month-sales-value">Oculto</td>
+            </tr>
+            <tr>
+              <th class="month-sales-label">Efectivo rec.</th>
+              <td class="month-sales-value">Oculto</td>
+            </tr>
+          </tbody>
+        </table>
+      `;
+    }
+
+    function clearConceptSummaryTable(){
+      if (!showSummaryValues) {
+        renderConceptSummaryDisabled();
+        return;
+      }
+      renderConceptSummaryTable([], { emptyText: 'Sin datos', rangoTexto: '' });
+    }
+
+    async function fetchConceptSummary(date){
+      const params = new URLSearchParams({
+        action: 'pointSalesOnDate',
+        date
+      });
+      if (CONFIG.API_KEY) params.set('key', CONFIG.API_KEY);
+
+      const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`);
+      const text = await response.text();
+
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error('La respuesta del Apps Script no fue JSON válido.');
+      }
+
+      if (!response.ok || result.result !== 'ok') {
+        throw buildApiResultError(result, response.status);
+      }
+
+      return {
+        puntos: Array.isArray(result.puntos) ? result.puntos : [],
+        fecha: String(result.fecha || '').trim(),
+        rangoTexto: String(result.rangoTexto || '').trim()
+      };
+    }
+
+    async function fetchDayStatus(date, puntoVenta){
+      const params = new URLSearchParams({
+        action: 'dayStatus',
+        date,
+        puntoVenta,
+        clientVersion: CLIENT_VERSION,
+        _ts: String(Date.now())
+      });
+      if (CONFIG.API_KEY) params.set('key', CONFIG.API_KEY);
+
+      const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
+      const text = await response.text();
+
+      let result;
+      try {
+        result = JSON.parse(text);
+      } catch {
+        throw new Error('La respuesta del Apps Script no fue JSON válido.');
+      }
+
+      if (!response.ok || result.result !== 'ok') {
+        throw buildApiResultError(result, response.status);
+      }
+
+      ensureExpectedApiVersion(result);
+      return result;
+    }
+
+    async function refreshDayStatus(showLoadingNotice = false){
+      const fecha = String(UI.fecha.value || '').trim();
+      const puntoVenta = String(UI.puntoVenta.value || '').trim();
+
+      if (!fecha || !puntoVenta) {
+        state.dayStatusRequestId = Date.now();
+        resetDayStatus();
+        updatePointDependentUI();
+        updateCloudSaveAvailability();
+        return state.dayStatus;
+      }
+
+      const requestId = Date.now();
+      state.dayStatusRequestId = requestId;
+      state.dayStatus = { checked: false, loading: true, exists: false, message: '' };
+      updatePointDependentUI();
+      updateCloudSaveAvailability();
+      if (showLoadingNotice) showNotice('info', 'Verificando si ya existe información para esta fecha y punto de venta.', 'day-status');
+
+      try {
+        const result = await fetchDayStatus(fecha, puntoVenta);
+        if (state.dayStatusRequestId !== requestId) return state.dayStatus;
+
+        const defaultMessage = `Ya existe información guardada para ${puntoVenta} el día ${fecha}. Llame al administrador para que borre primero la información que ya existe para ese día.`;
+        state.dayStatus = {
+          checked: true,
+          loading: false,
+          exists: !!result.exists,
+          message: String(result.message || (result.exists ? defaultMessage : '')).trim(),
+          error: false,
+          apiVersion: String(result.apiVersion || '').trim()
+        };
+
+        if (state.dayStatus.exists) {
+          showNotice('warning', state.dayStatus.message, 'day-status');
+        } else {
+          clearNotice('day-status');
+        }
+      } catch (error) {
+        console.error(error);
+        if (state.dayStatusRequestId !== requestId) return state.dayStatus;
+        const message = String(error.message || 'No se pudo verificar si ya existe información para esta fecha y punto de venta.');
+        state.dayStatus = { checked: false, loading: false, exists: false, message, error: true };
+        showNotice('error', message, 'day-status');
+      }
+
+      updatePointDependentUI();
+      updateCloudSaveAvailability();
+      return state.dayStatus;
+    }
+
+    async function refreshConceptSummary(){
+      const fecha = String(UI.fecha.value || '').trim();
+
+      if (!showSummaryValues) {
+        state.conceptSummaryRequestId = Date.now();
+        renderConceptSummaryDisabled();
+        updateCloudSaveAvailability();
+        return;
+      }
+
+      if (!fecha) {
+        clearConceptSummaryTable();
+        updateCloudSaveAvailability();
+        return;
+      }
+
+      renderConceptSummaryTable([], { loading: true });
+      const requestId = Date.now();
+      state.conceptSummaryRequestId = requestId;
+
+      try {
+        const summary = await fetchConceptSummary(fecha);
+        if (state.conceptSummaryRequestId !== requestId) return;
+        renderConceptSummaryTable(summary.puntos, {
+          fecha: summary.fecha,
+          rangoTexto: summary.rangoTexto
+        });
+      } catch (error) {
+        console.error(error);
+        if (state.conceptSummaryRequestId !== requestId) return;
+        renderConceptSummaryTable([], { emptyText: 'No disponible', rangoTexto: fecha || '' });
+      }
+
+      updateCloudSaveAvailability();
+    }
+
+    function renderFormulaComparison(){
+      const point = getSelectedPointConfig();
+      const currentProfileKey = point ? point.profile : null;
+      const profileEntries = Object.entries(CONFIG.PROFILE_DEFINITIONS);
+      const profileUsageMap = profileEntries.reduce((acc, [profileKey, profile]) => {
+        acc[profileKey] = CONFIG.PUNTOS_VENTA
+          .filter(item => item.profile === profileKey)
+          .map(item => item.label);
+        return acc;
+      }, {});
+
+      const formulaTitles = [...new Set(profileEntries.flatMap(([, profile]) => (profile.formulas || []).map(item => item.titulo)))];
+
+      if (UI.formulaCaption) {
+        const captionBase = point
+          ? `Punto actual: ${point.label} · Perfil actual: ${CONFIG.PROFILE_DEFINITIONS[currentProfileKey]?.label || ''}`
+          : 'Comparativo general de fórmulas';
+        UI.formulaCaption.textContent = `${captionBase}. Las diferencias o fórmulas ausentes aparecen en rojo.`;
+      }
+
+      const bodyRows = formulaTitles.map(title => {
+        const values = profileEntries.map(([profileKey, profile]) => {
+          const match = (profile.formulas || []).find(item => item.titulo === title);
+          return {
+            profileKey,
+            label: profile.label,
+            text: match?.texto || ''
+          };
+        });
+
+        const normalizedCounts = new Map();
+        values.forEach(item => {
+          const normalized = item.text.trim().toLowerCase();
+          normalizedCounts.set(normalized, (normalizedCounts.get(normalized) || 0) + 1);
+        });
+        const maxCount = Math.max(...normalizedCounts.values());
+        const hasDifference = normalizedCounts.size > 1;
+
+        const cells = values.map(item => {
+          const normalized = item.text.trim().toLowerCase();
+          const isUniqueDifference = hasDifference && normalizedCounts.get(normalized) < maxCount;
+          const isTieDifference = hasDifference && normalizedCounts.get(normalized) === maxCount && normalizedCounts.size > 1 && maxCount === 1;
+          const isMissing = !item.text.trim();
+          const cellClasses = ['formula-cell'];
+
+          if (item.profileKey === currentProfileKey) cellClasses.push('formula-cell-current');
+          if (isMissing) cellClasses.push('formula-cell-empty');
+          if (hasDifference && (isUniqueDifference || isTieDifference || isMissing)) cellClasses.push('formula-cell-alert');
+
+          return `<td class="${cellClasses.join(' ')}">${escapeHtml(item.text || 'No aplica en este perfil')}</td>`;
+        }).join('');
+
+        return `
+          <tr>
+            <th class="formula-row-title${hasDifference ? ' formula-row-alert' : ''}">${escapeHtml(title)}</th>
+            ${cells}
+          </tr>
+        `;
+      }).join('');
+
+      const headerCells = profileEntries.map(([profileKey, profile]) => {
+        const pointLabels = profileUsageMap[profileKey] || [];
+        const note = pointLabels.length ? `<span class="formula-head-note">Aplica en: ${escapeHtml(pointLabels.join(', '))}</span>` : '';
+        const headerClass = profileKey === currentProfileKey ? 'formula-head-current' : '';
+        return `<th class="${headerClass}">${escapeHtml(profile.label)}${note}</th>`;
+      }).join('');
+
+      UI.formulaGrid.innerHTML = `
+        <div class="formula-compare-wrapper">
+          <table class="formula-compare-table">
+            <thead>
+              <tr>
+                <th>Concepto</th>
+                ${headerCells}
+              </tr>
+            </thead>
+            <tbody>${bodyRows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    function renderProfileInfo(){
+      const point = getSelectedPointConfig();
+      const profile = getCurrentProfile();
+      UI.perfilVista.value = point ? profile.label : '';
+      UI.labelKpiEfectivo.textContent = profile.totals.efectivo;
+      refreshOperationButtons();
+      renderFormulaComparison();
+      refreshConceptSummary();
+    }
+
+    function createTerceroOptions(selected, required){
+      const placeholder = required ? 'Seleccione...' : '(Opcional) Seleccione...';
+      const options = [`<option value="">${placeholder}</option>`];
+      CONFIG.EMPRESAS_GRUPO.forEach(name => {
+        const isSelected = selected === name ? 'selected' : '';
+        options.push(`<option value="${escapeHtml(name)}" ${isSelected}>${escapeHtml(name)}</option>`);
+      });
+      ['Rappi','Otros','Varias'].forEach(name => {
+        const isSelected = selected === name ? 'selected' : '';
+        options.push(`<option value="${escapeHtml(name)}" ${isSelected}>${escapeHtml(name)}</option>`);
+      });
+      return `<select class="table-input" data-field="tercero" data-required="${required ? '1' : '0'}">${options.join('')}</select><small class="field-hint hidden" data-field-hint="tercero">Seleccione tercero</small>`;
+    }
+
+    function addRow(operationKey, rowData = null, skipSave = false){
+      if (!rowData && !requireSelectedPoint()) return;
+      const blockingMessage = getCaptureBlockingMessage();
+      if (!rowData && blockingMessage) {
+        showNotice('warning', blockingMessage, state.dayStatus?.exists ? 'day-status' : 'validation');
+        return;
+      }
+
+      const profile = getCurrentProfile();
+      const operation = profile.operations[operationKey];
+      if (!operation) return;
+
+      const placeholder = UI.recordsBody.querySelector('tr[data-placeholder="1"]');
+      if (placeholder) placeholder.remove();
+
+      const data = {
+        id: rowData?.id || newId(),
+        operationKey,
+        tipo: operation.tipo,
+        displayTipo: operation.displayTipo,
+        valor: normalizeRowValue(rowData?.valor, 1),
+        devoluciones: normalizeRowValue(rowData?.devoluciones, ''),
+        tercero: rowData?.tercero ?? operation.defaultTercero ?? '',
+        detalle: rowData?.detalle ?? '',
+        category: operation.category,
+        styleClass: operation.styleClass,
+        terceroRequired: !!operation.terceroRequired
+      };
+
+      const tr = document.createElement('tr');
+      tr.dataset.id = data.id;
+      tr.dataset.operationKey = data.operationKey;
+      tr.dataset.tipo = data.tipo;
+      tr.dataset.category = data.category;
+      tr.dataset.styleClass = data.styleClass;
+      tr.dataset.terceroRequired = data.terceroRequired ? '1' : '0';
+      tr.className = data.styleClass || '';
+
+      const total = safeNumber(data.valor) - safeNumber(data.devoluciones);
+
+      tr.innerHTML = `
+        <td>${escapeHtml(data.displayTipo)}</td>
+        <td class="num"><input class="table-input" type="text" data-field="valor" value="${escapeHtml(data.valor)}" placeholder="0"></td>
+        <td class="num"><input class="table-input" type="text" data-field="devoluciones" value="${escapeHtml(data.devoluciones)}" placeholder="0"></td>
+        <td class="num" data-field="total">${formatCurrency(total)}</td>
+        <td>${createTerceroOptions(data.tercero || '', !!data.terceroRequired)}</td>
+        <td><input class="table-input" type="text" data-field="detalle" value="${escapeHtml(data.detalle || '')}"></td>
+        <td class="center"><button type="button" class="btn btn-danger" data-action="delete">Borrar</button></td>
+      `;
+
+      UI.recordsBody.appendChild(tr);
+      updateTotals();
+      updateCloudSaveAvailability();
+      updatePointDependentUI();
+      if (!skipSave) saveDraft();
+      if (!getCaptureBlockingMessage()) focusAndSelect(tr.querySelector('[data-field="valor"]'));
+    }
+
+    function addAllRows(){
+      if (!requireSelectedPoint()) return;
+      const blockingMessage = getCaptureBlockingMessage();
+      if (blockingMessage) {
+        showNotice('warning', blockingMessage, state.dayStatus?.exists ? 'day-status' : 'validation');
+        return;
+      }
+
+      const profile = getCurrentProfile();
+      const existingKeys = new Set(Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).map(tr => tr.dataset.operationKey));
+      Object.keys(profile.operations).forEach(key => {
+        if (!existingKeys.has(key)) addRow(key, null, true);
+      });
+      updateTotals();
+      saveDraft();
+    }
+
+    function deleteRow(button){
+      const tr = button.closest('tr');
+      if (!tr) return;
+      tr.remove();
+      updateTotals();
+      updateCloudSaveAvailability();
+      updatePointDependentUI();
+      saveDraft();
+    }
+
+    function collectRows(){
+      return Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).map(tr => {
+        const valor = safeNumber(tr.querySelector('[data-field="valor"]').value);
+        const devoluciones = safeNumber(tr.querySelector('[data-field="devoluciones"]').value);
+        const tercero = tr.querySelector('[data-field="tercero"]').value || '';
+        const detalle = tr.querySelector('[data-field="detalle"]').value || '';
+        return {
+          id: tr.dataset.id,
+          operationKey: tr.dataset.operationKey,
+          tipo: tr.dataset.tipo,
+          displayTipo: tr.cells[0].textContent,
+          valor,
+          devoluciones,
+          total: valor - devoluciones,
+          tercero,
+          detalle,
+          category: tr.dataset.category,
+          styleClass: tr.dataset.styleClass,
+          terceroRequired: tr.dataset.terceroRequired === '1'
+        };
+      });
+    }
+
+    function validateRows(rows){
+      updateRequiredTerceroWarnings();
+      for (const row of rows) {
+        if (row.terceroRequired && !String(row.tercero || '').trim()) {
+          showNotice('warning', `Debes escoger el tercero para: ${row.displayTipo}`, 'validation');
+          const tr = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).find(item => item.dataset.id === row.id);
+          const terceroField = tr?.querySelector('[data-field="tercero"]');
+          if (terceroField) terceroField.focus();
+          return false;
+        }
+      }
+      clearNotice('validation');
+      return true;
+    }
+
+    function calculateSummary(rows){
+      let efectivo = 0;
+      let electronica = 0;
+      let credito = 0;
+      let gasto = 0;
+
+      rows.forEach(row => {
+        const total = Number(row.total || 0);
+        if (row.category === 'efectivo') efectivo += total;
+        if (row.category === 'electronica') electronica += total;
+        if (row.category === 'credito') credito += total;
+        if (row.category === 'gasto') gasto += total;
+      });
+
+      const profileKey = getSelectedPointConfig()?.profile || 'AROMA';
+      if (profileKey === 'AROMA') {
+        const ventasEfectivo = efectivo;
+        return {
+          ventasEfectivo,
+          ventasElectronicas: electronica,
+          ventasCredito: credito,
+          ventasGlobal: ventasEfectivo + electronica + credito,
+          gastosEfectivo: gasto,
+          tesoreria: ventasEfectivo - gasto
+        };
+      }
+
+      const ventasEfectivo = efectivo - credito;
+      return {
+        ventasEfectivo,
+        ventasElectronicas: electronica,
+        ventasCredito: credito,
+        ventasGlobal: ventasEfectivo + electronica + credito,
+        gastosEfectivo: gasto,
+        tesoreria: ventasEfectivo - gasto
+      };
+    }
+
+    function updateTotals(){
+      const rows = collectRows();
+      const trs = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]'));
+      rows.forEach((row, index) => {
+        const tr = trs[index];
+        if (tr) {
+          tr.querySelector('[data-field="total"]').textContent = formatCurrency(row.total);
+        }
+      });
+
+      const summary = calculateSummary(rows);
+      UI.kpiEfectivo.textContent = formatCurrency(summary.ventasEfectivo);
+      UI.kpiElectronica.textContent = formatCurrency(summary.ventasElectronicas);
+      UI.kpiCredito.textContent = formatCurrency(summary.ventasCredito);
+      UI.kpiVentas.textContent = formatCurrency(summary.ventasGlobal);
+      UI.kpiGastos.textContent = formatCurrency(summary.gastosEfectivo);
+      UI.kpiTesoreria.textContent = formatCurrency(summary.tesoreria);
+      if (UI.emptyBox) UI.emptyBox.classList.toggle('hidden', rows.length > 0);
+      updateCloudSaveAvailability();
+    }
+
+    function saveDraft(){
+      const key = getStorageKey();
+      if (!key) return;
+      const payload = {
+        session: { date: UI.fecha.value || '', pos: UI.puntoVenta.value || '' },
+        rows: collectRows(),
+        saved: !!state.captureLocked,
+        lockMessage: state.lockMessage || ''
+      };
+      localStorage.setItem(key, JSON.stringify(payload));
+    }
+
+    function resolveOperationKey(row){
+      const operations = getCurrentProfile().operations;
+      return row?.operationKey || Object.keys(operations).find(key => operations[key].tipo === row?.tipo) || '';
+    }
+
+    function populateRows(rows){
+      UI.recordsBody.innerHTML = '';
+      (rows || []).forEach(row => {
+        const operationKey = resolveOperationKey(row);
+        if (!operationKey) return;
+        addRow(operationKey, {
+          ...row,
+          operationKey,
+          tercero: row.tercero || '',
+          detalle: row.detalle || '',
+          valor: row.valor ?? '',
+          devoluciones: row.devoluciones ?? ''
+        }, true);
+      });
+      updateTotals();
+      updatePointDependentUI();
+    }
+
+    function hasRowsToPreserve(rows){
+      return (rows || []).some(row => (
+        Number(row?.valor || 0) !== 0 ||
+        Number(row?.devoluciones || 0) !== 0 ||
+        String(row?.tercero || '').trim() ||
+        String(row?.detalle || '').trim()
+      ));
+    }
+
+    function loadDraft(){
+      UI.recordsBody.innerHTML = '';
+      const key = getStorageKey();
+      if (!key) {
+        updateTotals();
+        return;
+      }
+
+      const raw = localStorage.getItem(key);
+      if (!raw) {
+        state.captureLocked = false;
+        state.lockMessage = '';
+        updateTotals();
+        return;
+      }
+      try {
+        const payload = JSON.parse(raw);
+        state.captureLocked = !!payload.saved;
+        state.lockMessage = state.captureLocked
+          ? (payload.lockMessage || 'Esta captura ya fue guardada y quedó bloqueada para evitar un reenvío.')
+          : '';
+        populateRows(payload.rows || []);
+      } catch (error) {
+        console.error(error);
+        updateTotals();
+      }
+    }
+
+    function clearDraft(){
+      const key = getStorageKey();
+      if (key) localStorage.removeItem(key);
+    }
+
+    async function saveToCloud(){
+      clearNotice('validation');
+      if (!requireSelectedPoint()) return;
+
+      const fecha = String(UI.fecha.value || '').trim();
+      const puntoVenta = String(UI.puntoVenta.value || '').trim();
+      if (!fecha) {
+        showNotice('warning', 'Debes seleccionar la fecha del reporte.', 'validation');
+        UI.fecha.focus();
+        return;
+      }
+      if (!puntoVenta) {
+        showNotice('warning', 'Debes seleccionar el punto de venta.', 'validation');
+        UI.puntoVenta.focus();
+        return;
+      }
+
+      const blockingMessage = getCaptureBlockingMessage();
+      if (blockingMessage && !state.dayStatus?.loading && !state.dayStatus?.error) {
+        showNotice('warning', blockingMessage, state.dayStatus?.exists ? 'day-status' : 'validation');
+        return;
+      }
+
+      const dayStatus = await refreshDayStatus(true);
+      if (dayStatus.error) {
+        showNotice('error', dayStatus.message || 'No se pudo verificar si ya existe información. No se enviará nada para evitar duplicados.', 'day-status');
+        return;
+      }
+      if (dayStatus.exists) {
+        showNotice('warning', dayStatus.message, 'day-status');
+        return;
+      }
+
+      const rows = collectRows().filter(row => row.valor !== 0 || row.devoluciones !== 0);
+      if (!rows.length) {
+        showNotice('warning', 'No hay registros con valores para guardar.', 'validation');
+        return;
+      }
+      if (!validateRows(rows)) return;
+
+      const profile = getCurrentProfile();
+      const summary = calculateSummary(rows);
+
+      const detailData = rows.map(row => ({
+        fecha,
+        puntoVenta,
+        tipo: row.tipo,
+        tercero: row.tercero || '',
+        detalle: row.detalle || '',
+        valor: Number(row.total || 0)
+      }));
+
+      const totalsData = [
+        { tipo: profile.totals.efectivo, valor: summary.ventasEfectivo },
+        { tipo: profile.totals.electronica, valor: summary.ventasElectronicas },
+        { tipo: profile.totals.credito, valor: summary.ventasCredito },
+        { tipo: profile.totals.ventas, valor: summary.ventasGlobal },
+        { tipo: profile.totals.gasto, valor: summary.gastosEfectivo },
+        { tipo: profile.totals.tesoreria, valor: summary.tesoreria }
+      ].map(item => ({
+        fecha,
+        puntoVenta,
+        tipo: item.tipo,
+        tercero: '',
+        detalle: '',
+        valor: Number(item.valor || 0)
+      }));
+
+      const postParams = new URLSearchParams({ clientVersion: CLIENT_VERSION, _ts: String(Date.now()) });
+      if (CONFIG.API_KEY) postParams.set('key', CONFIG.API_KEY);
+      const url = `${CONFIG.SCRIPT_URL}?${postParams.toString()}`;
+      const saveButtons = [UI.guardarBtnSide, UI.guardarBtnBottom];
+      state.isSaving = true;
+      setBusyState(saveButtons, true, 'Guardando...');
+      updatePointDependentUI();
+      updateCloudSaveAvailability();
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify([...detailData, ...totalsData])
+        });
+
+        const text = await response.text();
+        let result;
+        try {
+          result = JSON.parse(text);
+        } catch {
+          throw new Error('La respuesta del Apps Script no fue JSON válido.');
+        }
+
+        if (!response.ok || result.result !== 'success') {
+          throw buildApiResultError(result, response.status);
+        }
+
+        ensureExpectedApiVersion(result);
+
+        const successMessage = 'Registros guardados correctamente. La captura quedó bloqueada para evitar un reenvío.';
+        setCaptureLocked(true, successMessage);
+        showNotice('success', successMessage, 'save');
+        saveDraft();
+        refreshConceptSummary();
+      } catch (error) {
+        console.error(error);
+        const message = String(error.message || error);
+        if (error.code === DUPLICATE_DAY_CODE) {
+          state.dayStatus = { checked: true, loading: false, exists: true, message };
+          showNotice('warning', message, 'day-status');
+          updatePointDependentUI();
+          updateCloudSaveAvailability();
+        } else {
+          showNotice('error', `No se pudo guardar: ${message}`, 'save');
+        }
+      } finally {
+        state.isSaving = false;
+        setBusyState(saveButtons, false, 'Guardar nube');
+        updatePointDependentUI();
+        updateCloudSaveAvailability();
+      }
+    }
+
+    function clearCurrentCapture(){
+      if (!requireSelectedPoint()) return;
+      if (state.isSaving) {
+        showNotice('info', 'Espera a que termine el guardado antes de limpiar la captura.', 'validation');
+        return;
+      }
+
+      const hasRows = collectRows().length > 0;
+      const hasLocalDraft = !!getStorageKey() && !!localStorage.getItem(getStorageKey());
+      if ((hasRows || hasLocalDraft) && !window.confirm('¿Seguro que deseas limpiar los movimientos cargados? Esto solo limpia la captura local y no borra información guardada en la nube.')) {
+        return;
+      }
+
+      state.captureLocked = false;
+      state.lockMessage = '';
+      UI.recordsBody.innerHTML = '';
+      clearDraft();
+      updateTotals();
+      updateCloudSaveAvailability();
+      updatePointDependentUI();
+      showNotice('info', 'Captura local limpiada. Si necesitas borrar información ya guardada en la nube, llama al administrador.', 'clear');
+    }
+
+    function refreshNetworkStatus(){
+      const online = navigator.onLine;
+      if (UI.networkStatus) UI.networkStatus.textContent = online ? 'Online' : 'Offline';
+      if (!online) showNotice('warning', 'Sin conexión. El guardado en la nube no estará disponible hasta recuperar internet.', 'network');
+      if (online) clearNotice('network');
+    }
+
+    function handleSessionChange(){
+      const previousSession = { ...state.session };
+      const nextSession = {
+        date: String(UI.fecha.value || '').trim(),
+        pos: String(UI.puntoVenta.value || '').trim()
+      };
+      const currentRows = collectRows();
+      const pointChanged = previousSession.pos !== nextSession.pos;
+      const preserveCapture = pointChanged && hasRowsToPreserve(currentRows);
+
+      state.captureLocked = false;
+      state.lockMessage = '';
+      resetDayStatus();
+      renderProfileInfo();
+
+      if (preserveCapture) {
+        populateRows(currentRows.map(row => ({ ...row })));
+        saveDraft();
+      } else {
+        loadDraft();
+      }
+
+      state.session = nextSession;
+      saveLastSession();
+      updatePointDependentUI();
+      updateCloudSaveAvailability();
+      refreshDayStatus();
+    }
+
+    function handleSummaryToggleChange(){
+      const wantsEnabled = !!UI.toggleSummaryValues?.checked;
+
+      if (wantsEnabled) {
+        const password = window.prompt('Digite la contraseña para activar la visualización de valores:', '');
+
+        if (password === null) {
+          UI.toggleSummaryValues.checked = false;
+          showSummaryValues = false;
+          refreshConceptSummary();
+          return;
+        }
+
+        if (String(password).trim() !== SUMMARY_VALUES_PASSWORD) {
+          alert('Contraseña incorrecta. La visualización seguirá desactivada.');
+          UI.toggleSummaryValues.checked = false;
+          showSummaryValues = false;
+          refreshConceptSummary();
+          return;
+        }
+
+        showSummaryValues = true;
+        refreshConceptSummary();
+        return;
+      }
+
+      showSummaryValues = false;
+      refreshConceptSummary();
+    }
+
+    function openFormulasModal(){
+      if (!requireSelectedPoint() || !UI.formulasModal) return;
+      renderFormulaComparison();
+      UI.formulasModal.classList.remove('hidden');
+      UI.formulasModal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeFormulasModal(){
+      if (!UI.formulasModal) return;
+      UI.formulasModal.classList.add('hidden');
+      UI.formulasModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function bindEvents(){
+      document.getElementById('btn-efectivo').addEventListener('click', () => addRow('efectivo'));
+      document.getElementById('btn-qr').addEventListener('click', () => addRow('qr'));
+      document.getElementById('btn-debito').addEventListener('click', () => addRow('debito'));
+      document.getElementById('btn-credito-tarjeta').addEventListener('click', () => addRow('creditoTarjeta'));
+      document.getElementById('btn-nomina').addEventListener('click', () => addRow('nomina'));
+      document.getElementById('btn-formulas').addEventListener('click', () => addRow('formulas'));
+      document.getElementById('btn-kardex').addEventListener('click', () => addRow('kardex'));
+      document.getElementById('btn-interco').addEventListener('click', () => addRow('interco'));
+      document.getElementById('btn-autoconsumo').addEventListener('click', () => addRow('autoconsumo'));
+      document.getElementById('btn-otros-creditos').addEventListener('click', () => addRow('otrosCreditos'));
+      document.getElementById('btn-rappi').addEventListener('click', () => addRow('rappi'));
+      document.getElementById('btn-gasto').addEventListener('click', () => addRow('gasto'));
+      document.getElementById('btn-todos').addEventListener('click', addAllRows);
+
+      bindClick(UI.guardarBtnSide, saveToCloud);
+      bindClick(UI.guardarBtnBottom, saveToCloud);
+
+      bindClick(UI.limpiarBtnSide, clearCurrentCapture);
+      bindClick(UI.limpiarBtnBottom, clearCurrentCapture);
+
+      bindClick(UI.openFormulasBtn, openFormulasModal);
+      bindClick(UI.closeFormulasBtn, closeFormulasModal);
+      if (UI.formulasModal) {
+        UI.formulasModal.addEventListener('click', event => {
+          if (event.target === UI.formulasModal) closeFormulasModal();
+        });
+      }
+      document.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && !UI.formulasModal.classList.contains('hidden')) {
+          closeFormulasModal();
+        }
+      });
+
+      UI.fecha.addEventListener('change', handleSessionChange);
+      UI.puntoVenta.addEventListener('change', handleSessionChange);
+      if (UI.toggleSummaryValues) UI.toggleSummaryValues.addEventListener('change', handleSummaryToggleChange);
+
+      UI.recordsBody.addEventListener('input', event => {
+        if (event.target.matches('input, select')) {
+          clearNotice('validation');
+          clearNotice('save');
+          updateTotals();
+          updateRequiredTerceroWarnings();
+          saveDraft();
+        }
+      });
+
+      UI.recordsBody.addEventListener('focusin', event => {
+        if (event.target.matches('input[data-field="valor"]')) {
+          event.target.select();
+        }
+      });
+
+      UI.recordsBody.addEventListener('click', event => {
+        const button = event.target.closest('button[data-action="delete"]');
+        if (button) deleteRow(button);
+      });
+
+      window.addEventListener('online', refreshNetworkStatus);
+      window.addEventListener('offline', refreshNetworkStatus);
+    }
+
+    function init(){
+      renderPoints();
+      refreshNetworkStatus();
+
+      if (UI.toggleSummaryValues) {
+        UI.toggleSummaryValues.checked = false;
+      }
+      showSummaryValues = false;
+
+      UI.fecha.value = getLocalDateISO();
+      restoreLastSession();
+
+      if (!String(UI.fecha.value || '').trim()) {
+        UI.fecha.value = getLocalDateISO();
+      }
+
+      UI.puntoVenta.value = '';
+
+      renderProfileInfo();
+      renderConceptSummaryDisabled();
+      updateCloudSaveAvailability();
+      bindEvents();
+      loadDraft();
+      updateTotals();
+      updatePointDependentUI();
+      state.session = {
+        date: String(UI.fecha.value || '').trim(),
+        pos: String(UI.puntoVenta.value || '').trim()
+      };
+      saveLastSession();
+      refreshDayStatus();
+    }
+
+    init();
+  </script>
+</body>
+</html>

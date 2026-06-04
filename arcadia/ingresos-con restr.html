@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-  <title>Caja Arcadia v205</title>
+  <title>Caja Arcadia</title>
   <meta name="description" content="Registra aqui tus ventas.">
   <style>
     :root{
@@ -530,54 +530,6 @@
       font-weight:700;
       background:#fbfcfe;
     }
-    .status-notice{
-      border-radius:12px;
-      padding:10px 12px;
-      border:1px solid #d6deea;
-      background:#f8fbff;
-      color:#1f2937;
-      font-size:13px;
-      line-height:1.35;
-      box-shadow:var(--shadow);
-    }
-    .status-notice strong{
-      display:block;
-      margin-bottom:2px;
-      color:#111827;
-    }
-    .status-notice-info{
-      background:#eff6ff;
-      border-color:#bfdbfe;
-      color:#1e3a8a;
-    }
-    .status-notice-success{
-      background:#ecfdf5;
-      border-color:#bbf7d0;
-      color:#14532d;
-    }
-    .status-notice-warning{
-      background:#fffbeb;
-      border-color:#fde68a;
-      color:#78350f;
-    }
-    .status-notice-error{
-      background:#fef2f2;
-      border-color:#fecaca;
-      color:#7f1d1d;
-    }
-    .table-input.input-error{
-      border-color:#c0392b;
-      background:#fff5f5;
-      box-shadow:0 0 0 3px rgba(192,57,43,.10);
-    }
-    .field-hint{
-      display:block;
-      margin-top:4px;
-      font-size:11px;
-      line-height:1.2;
-      color:#c0392b;
-      font-weight:700;
-    }
     .modal-overlay{
       position:fixed;
       inset:0;
@@ -749,8 +701,7 @@
   <div class="app-layout">
     <aside class="side no-print">
       <div>
-        <div class="brand-title">Caja Arcadia</div>
-        <div class="brand-subtitle">Versión 205</div>   
+        <div class="brand-title">Caja Arcadia</div>   
       </div>
 
       <div class="side-panel-group group-nav">        
@@ -803,7 +754,6 @@
           <button id="btn-kardex" type="button" class="btn btn-info">Faltantes en kardex</button>
           <button id="btn-interco" type="button" class="btn btn-info">A empresas del grupo</button>
           <button id="btn-autoconsumo" type="button" class="btn btn-info">Autoconsumo</button>
-          <button id="btn-otros-creditos" type="button" class="btn btn-info">Otros Créditos</button>
         </div>
       </div>
 
@@ -837,11 +787,6 @@
         </div>
       </div>
 
-      <div class="side-card">
-        <strong>Estado de conexión</strong>
-        <span id="network-status">Online</span>
-      </div>
-
     </aside>
 
     <div class="main-shell">
@@ -856,8 +801,6 @@
       </div>
 
       <main class="workspace">
-
-        <div id="status-notice" class="status-notice hidden" role="status" aria-live="polite"></div>
 
         <section id="summary-grid" class="summary-grid">
           <div class="card kpi"><small id="label-kpi-efectivo">Total ventas en efectivo</small><b id="kpi-efectivo">$ 0</b></div>
@@ -909,7 +852,7 @@
 
   <script>
     const CONFIG = {
-      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbxZKEAGFbayjtkxKnyQccQml_GS-WpZyQGpdiSL-o901gq2nSQd57cucR2yoTT0cQ-V/exec',
+      SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyVTytyjjRHPhzAaeOdXl_Cy8kAOrRzwRNlyMp-mp4UGcAxPcWRkCbHOW23DRekju9c/exec',
       API_KEY: '',
       DEFAULT_PUNTO_VENTA: '',
       EMPRESAS_GRUPO: ['Unidad Hemato O.','Sembrando Esperanza','Inversiones Arcadia','Doctor Ahorro','Heritage','Distribuidora'],
@@ -939,7 +882,7 @@
           formulas: [
             { titulo: 'Total ventas en efectivo', texto: 'Suma de: Efectivo' },
             { titulo: 'Total ventas por medios electrónicos', texto: 'Suma de: QR + Rappi + Tarjeta débito + Tarjeta crédito' },
-            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo + Otros Créditos' },
+            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo' },
             { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
             { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
             { titulo: 'Total efectivo a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
@@ -954,7 +897,6 @@
             kardex: { tipo: 'Faltantes en kardex', displayTipo: 'Faltantes en kardex', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
             interco: { tipo: 'A empresas del grupo', displayTipo: 'A empresas del grupo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
             autoconsumo: { tipo: 'Autoconsumo', displayTipo: 'Autoconsumo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
-            otrosCreditos: { tipo: 'Otros Créditos', displayTipo: 'Otros Créditos', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
             rappi: { tipo: 'Rappi', displayTipo: 'Rappi', category: 'electronica', styleClass: 'row-rappi', terceroRequired: true, defaultTercero: 'Rappi' },
             gasto: { tipo: 'Gastos en efectivo', displayTipo: 'Gastos en efectivo', category: 'gasto', styleClass: 'row-gasto' }
           }
@@ -972,7 +914,7 @@
           formulas: [
             { titulo: 'Total ventas en efectivo', texto: 'Efectivo y créditos - Total ventas a crédito' },
             { titulo: 'Total ventas por medios electrónicos', texto: 'Suma de: QR + Rappi + Tarjeta débito + Tarjeta crédito' },
-            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo + Otros Créditos' },
+            { titulo: 'Total ventas a crédito', texto: 'Suma de: A empresas del grupo + Descuentos por nómina + Fórmulas + Faltantes en kardex + Autoconsumo' },
             { titulo: 'Total ventas', texto: 'Total ventas en efectivo + Total ventas por medios electrónicos + Total ventas a crédito' },
             { titulo: 'Total gastos', texto: 'Suma de: Gastos en efectivo' },
             { titulo: 'Total efectivo a recibir por tesorería', texto: 'Total ventas en efectivo - Total gastos' }
@@ -987,16 +929,12 @@
             kardex: { tipo: 'Faltantes en kardex', displayTipo: 'Faltantes en kardex', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
             interco: { tipo: 'A empresas del grupo', displayTipo: 'A empresas del grupo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
             autoconsumo: { tipo: 'Autoconsumo', displayTipo: 'Autoconsumo', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
-            otrosCreditos: { tipo: 'Otros Créditos', displayTipo: 'Otros Créditos', category: 'credito', styleClass: 'row-credito', terceroRequired: true },
             rappi: { tipo: 'Rappi', displayTipo: 'Rappi', category: 'electronica', styleClass: 'row-rappi', terceroRequired: true, defaultTercero: 'Rappi' },
             gasto: { tipo: 'Gastos en efectivo', displayTipo: 'Gastos en efectivo', category: 'gasto', styleClass: 'row-gasto' }
           }
         }
       }
     };
-
-    const CLIENT_VERSION = '205';
-    const REQUIRED_API_VERSION = 'api_prevenir_duplicados_v4';
 
     const UI = {
       fecha: document.getElementById('fecha'),
@@ -1011,8 +949,6 @@
       formulaGrid: document.getElementById('formula-grid'),
       formulaCaption: document.getElementById('formula-profile-caption'),
       formulasModal: document.getElementById('formulas-modal'),
-      statusNotice: document.getElementById('status-notice'),
-      networkStatus: document.getElementById('network-status'),
       openFormulasBtn: document.getElementById('open-formulas-btn'),
       closeFormulasBtn: document.getElementById('close-formulas-btn'),
       kpiEfectivo: document.getElementById('kpi-efectivo'),
@@ -1037,22 +973,6 @@
         document.getElementById('btn-kardex'),
         document.getElementById('btn-interco'),
         document.getElementById('btn-autoconsumo'),
-        document.getElementById('btn-otros-creditos'),
-        document.getElementById('btn-rappi'),
-        document.getElementById('btn-gasto'),
-        document.getElementById('btn-todos')
-      ],
-      captureButtons: [
-        document.getElementById('btn-efectivo'),
-        document.getElementById('btn-qr'),
-        document.getElementById('btn-debito'),
-        document.getElementById('btn-credito-tarjeta'),
-        document.getElementById('btn-nomina'),
-        document.getElementById('btn-formulas'),
-        document.getElementById('btn-kardex'),
-        document.getElementById('btn-interco'),
-        document.getElementById('btn-autoconsumo'),
-        document.getElementById('btn-otros-creditos'),
         document.getElementById('btn-rappi'),
         document.getElementById('btn-gasto'),
         document.getElementById('btn-todos')
@@ -1062,17 +982,11 @@
 
     const state = {
       session: { date: '', pos: '' },
-      conceptSummaryRequestId: 0,
-      dayStatusRequestId: 0,
-      dayStatus: { checked: false, loading: false, exists: false, message: '' },
-      captureLocked: false,
-      lockMessage: '',
-      isSaving: false
+      conceptSummaryRequestId: 0
     };
 
     const LAST_SESSION_KEY = 'caja-unificada-v1::last-session';
     const SUMMARY_VALUES_PASSWORD = '2020';
-    const DUPLICATE_DAY_CODE = 'DUPLICATE_DAY_POINT';
     let showSummaryValues = false;
 
     function getLocalDateISO(){
@@ -1083,23 +997,6 @@
 
     function bindClick(element, handler){
       if (element) element.addEventListener('click', handler);
-    }
-
-    function showNotice(type, message, reason = 'manual'){
-      if (!UI.statusNotice) return;
-      const cleanType = ['success','error','warning','info'].includes(type) ? type : 'info';
-      const titles = { success: 'Listo', error: 'Atención', warning: 'Aviso', info: 'Información' };
-      UI.statusNotice.className = `status-notice status-notice-${cleanType}`;
-      UI.statusNotice.dataset.reason = reason;
-      UI.statusNotice.innerHTML = `<strong>${titles[cleanType]}</strong><span>${escapeHtml(message)}</span>`;
-    }
-
-    function clearNotice(reason = ''){
-      if (!UI.statusNotice) return;
-      if (reason && UI.statusNotice.dataset.reason !== reason) return;
-      UI.statusNotice.className = 'status-notice hidden';
-      UI.statusNotice.dataset.reason = '';
-      UI.statusNotice.innerHTML = '';
     }
 
     function setBusyState(buttons, disabled, text){
@@ -1135,32 +1032,6 @@
         .replaceAll('<', '&lt;')
         .replaceAll('>', '&gt;')
         .replaceAll('"', '&quot;');
-    }
-
-    function isExpectedApiVersion(version){
-      return String(version || '').trim() === REQUIRED_API_VERSION;
-    }
-
-    function buildApiVersionMessage(apiVersion, rawError = ''){
-      const received = String(apiVersion || '').trim() || 'sin versión';
-      const detail = rawError ? ` Respuesta recibida: ${rawError}` : '';
-      return `La página está llamando una API antigua o diferente (${received}).${detail} Actualiza la implementación del Apps Script con ${REQUIRED_API_VERSION} y verifica que esta página tenga la URL /exec de esa implementación.`;
-    }
-
-    function buildApiResultError(result, httpStatus){
-      const rawError = String(result?.error || `Error HTTP ${httpStatus}`).trim();
-      const apiVersion = String(result?.apiVersion || '').trim();
-      const looksLikeOldApi = !apiVersion || /Faltan parámetros from\/to|Faltan parametros from\/to|Acción no soportada|Accion no soportada|Falta parámetro action|Falta parametro action/i.test(rawError);
-      const error = new Error(looksLikeOldApi ? buildApiVersionMessage(apiVersion, rawError) : rawError);
-      error.code = looksLikeOldApi ? 'API_VERSION_MISMATCH' : String(result?.code || '');
-      return error;
-    }
-
-    function ensureExpectedApiVersion(result){
-      if (isExpectedApiVersion(result?.apiVersion)) return;
-      const error = new Error(buildApiVersionMessage(result?.apiVersion));
-      error.code = 'API_VERSION_MISMATCH';
-      throw error;
     }
 
     function newId(){
@@ -1247,25 +1118,6 @@
       return !!String(UI.puntoVenta?.value || '').trim();
     }
 
-    function getCaptureBlockingMessage(){
-      if (state.isSaving) return 'Guardando información en la nube. Espera a que termine el proceso.';
-      if (state.captureLocked) return state.lockMessage || 'Esta captura ya fue guardada y quedó bloqueada para evitar un reenvío.';
-      if (state.dayStatus?.exists) return state.dayStatus.message || 'Ya existe información para este punto de venta en esta fecha.';
-      return '';
-    }
-
-    function setCaptureLocked(locked, message = ''){
-      state.captureLocked = !!locked;
-      state.lockMessage = locked ? (message || 'Esta captura ya fue guardada y quedó bloqueada para evitar un reenvío.') : '';
-      updatePointDependentUI();
-      updateCloudSaveAvailability();
-    }
-
-    function resetDayStatus(){
-      state.dayStatus = { checked: false, loading: false, exists: false, message: '', error: false };
-      clearNotice('day-status');
-    }
-
     function renderRecordsPlaceholder(){
       const rows = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]'));
       const existingPlaceholder = UI.recordsBody.querySelector('tr[data-placeholder="1"]');
@@ -1275,10 +1127,9 @@
         return;
       }
 
-      const blockingMessage = getCaptureBlockingMessage();
-      const message = !hasSelectedPoint()
-        ? 'Selecciona primero el punto de venta para habilitar la captura.'
-        : (blockingMessage || 'Aún no hay movimientos cargados.');
+      const message = hasSelectedPoint()
+        ? 'Aún no hay movimientos cargados.'
+        : 'Selecciona primero el punto de venta para habilitar la captura.';
       const html = `<td colspan="7">${escapeHtml(message)}</td>`;
 
       if (existingPlaceholder) {
@@ -1295,32 +1146,16 @@
 
     function updatePointDependentUI(){
       const hasPoint = hasSelectedPoint();
-      const blockingMessage = getCaptureBlockingMessage();
       const lockTitle = hasPoint ? '' : 'Selecciona primero el punto de venta.';
-      const captureTitle = !hasPoint ? lockTitle : blockingMessage;
-      const captureDisabled = !hasPoint || !!blockingMessage;
 
       (UI.pointRequiredButtons || []).filter(Boolean).forEach(btn => {
-        if (btn.dataset.busy === '1') return;
-        btn.disabled = !hasPoint || state.isSaving;
-        btn.title = !hasPoint ? lockTitle : (state.isSaving ? blockingMessage : '');
-      });
-
-      (UI.captureButtons || []).filter(Boolean).forEach(btn => {
-        if (btn.dataset.busy === '1') return;
-        btn.disabled = captureDisabled;
-        btn.title = captureTitle || '';
-      });
-
-      [UI.limpiarBtnSide, UI.limpiarBtnBottom].filter(Boolean).forEach(btn => {
-        if (btn.dataset.busy === '1') return;
-        btn.disabled = !hasPoint || state.isSaving;
-        btn.title = !hasPoint ? lockTitle : (state.isSaving ? blockingMessage : '');
+        btn.disabled = !hasPoint;
+        btn.title = lockTitle;
       });
 
       Array.from(UI.recordsBody.querySelectorAll('tr[data-id] input, tr[data-id] select, tr[data-id] button')).forEach(control => {
-        control.disabled = captureDisabled;
-        control.title = captureTitle || '';
+        control.disabled = !hasPoint;
+        control.title = lockTitle;
       });
 
       renderRecordsPlaceholder();
@@ -1328,50 +1163,26 @@
 
     function requireSelectedPoint(){
       if (hasSelectedPoint()) return true;
-      showNotice('warning', 'Debes seleccionar el punto de venta para continuar.', 'validation');
+      alert('Debes seleccionar el punto de venta para continuar.');
       UI.puntoVenta.focus();
       updatePointDependentUI();
       return false;
     }
 
-    function updateRequiredTerceroWarnings(){
-      Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).forEach(tr => {
-        const required = tr.dataset.terceroRequired === '1';
-        const terceroField = tr.querySelector('[data-field="tercero"]');
-        const hint = tr.querySelector('[data-field-hint="tercero"]');
-        const missing = required && !String(terceroField?.value || '').trim();
-        if (terceroField) {
-          terceroField.classList.toggle('input-error', missing);
-          terceroField.title = missing ? 'Seleccione tercero' : '';
-        }
-        if (hint) hint.classList.toggle('hidden', !missing);
-      });
-    }
-
     function updateCloudSaveAvailability(){
       const hasPoint = hasSelectedPoint();
       const missingRequiredTercero = hasMissingRequiredTercero();
-      const blockingMessage = getCaptureBlockingMessage();
-      const checkingDay = !!state.dayStatus?.loading;
 
       let title = '';
       if (!hasPoint) {
         title = 'Selecciona el punto de venta para guardar en la nube.';
-      } else if (checkingDay) {
-        title = 'Verificando si ya existe información para esta fecha y punto de venta.';
-      } else if (blockingMessage) {
-        title = blockingMessage;
-      } else if (state.dayStatus?.error) {
-        title = state.dayStatus.message || 'No se pudo verificar previamente la información guardada.';
       } else if (missingRequiredTercero) {
         title = 'Debes escoger el tercero en los movimientos donde es obligatorio.';
       }
 
-      updateRequiredTerceroWarnings();
-
       [UI.guardarBtnSide, UI.guardarBtnBottom].filter(Boolean).forEach(btn => {
         if (btn.dataset.busy === '1') return;
-        btn.disabled = !hasPoint || checkingDay || !!blockingMessage || missingRequiredTercero;
+        btn.disabled = !hasPoint || missingRequiredTercero;
         btn.title = title;
       });
     }
@@ -1535,7 +1346,7 @@
       }
 
       if (!response.ok || result.result !== 'ok') {
-        throw buildApiResultError(result, response.status);
+        throw new Error(result.error || `Error HTTP ${response.status}`);
       }
 
       return {
@@ -1543,85 +1354,6 @@
         fecha: String(result.fecha || '').trim(),
         rangoTexto: String(result.rangoTexto || '').trim()
       };
-    }
-
-    async function fetchDayStatus(date, puntoVenta){
-      const params = new URLSearchParams({
-        action: 'dayStatus',
-        date,
-        puntoVenta,
-        clientVersion: CLIENT_VERSION,
-        _ts: String(Date.now())
-      });
-      if (CONFIG.API_KEY) params.set('key', CONFIG.API_KEY);
-
-      const response = await fetch(`${CONFIG.SCRIPT_URL}?${params.toString()}`, { cache: 'no-store' });
-      const text = await response.text();
-
-      let result;
-      try {
-        result = JSON.parse(text);
-      } catch {
-        throw new Error('La respuesta del Apps Script no fue JSON válido.');
-      }
-
-      if (!response.ok || result.result !== 'ok') {
-        throw buildApiResultError(result, response.status);
-      }
-
-      ensureExpectedApiVersion(result);
-      return result;
-    }
-
-    async function refreshDayStatus(showLoadingNotice = false){
-      const fecha = String(UI.fecha.value || '').trim();
-      const puntoVenta = String(UI.puntoVenta.value || '').trim();
-
-      if (!fecha || !puntoVenta) {
-        state.dayStatusRequestId = Date.now();
-        resetDayStatus();
-        updatePointDependentUI();
-        updateCloudSaveAvailability();
-        return state.dayStatus;
-      }
-
-      const requestId = Date.now();
-      state.dayStatusRequestId = requestId;
-      state.dayStatus = { checked: false, loading: true, exists: false, message: '' };
-      updatePointDependentUI();
-      updateCloudSaveAvailability();
-      if (showLoadingNotice) showNotice('info', 'Verificando si ya existe información para esta fecha y punto de venta.', 'day-status');
-
-      try {
-        const result = await fetchDayStatus(fecha, puntoVenta);
-        if (state.dayStatusRequestId !== requestId) return state.dayStatus;
-
-        const defaultMessage = `Ya existe información guardada para ${puntoVenta} el día ${fecha}. Llame al administrador para que borre primero la información que ya existe para ese día.`;
-        state.dayStatus = {
-          checked: true,
-          loading: false,
-          exists: !!result.exists,
-          message: String(result.message || (result.exists ? defaultMessage : '')).trim(),
-          error: false,
-          apiVersion: String(result.apiVersion || '').trim()
-        };
-
-        if (state.dayStatus.exists) {
-          showNotice('warning', state.dayStatus.message, 'day-status');
-        } else {
-          clearNotice('day-status');
-        }
-      } catch (error) {
-        console.error(error);
-        if (state.dayStatusRequestId !== requestId) return state.dayStatus;
-        const message = String(error.message || 'No se pudo verificar si ya existe información para esta fecha y punto de venta.');
-        state.dayStatus = { checked: false, loading: false, exists: false, message, error: true };
-        showNotice('error', message, 'day-status');
-      }
-
-      updatePointDependentUI();
-      updateCloudSaveAvailability();
-      return state.dayStatus;
     }
 
     async function refreshConceptSummary(){
@@ -1763,16 +1495,11 @@
         const isSelected = selected === name ? 'selected' : '';
         options.push(`<option value="${escapeHtml(name)}" ${isSelected}>${escapeHtml(name)}</option>`);
       });
-      return `<select class="table-input" data-field="tercero" data-required="${required ? '1' : '0'}">${options.join('')}</select><small class="field-hint hidden" data-field-hint="tercero">Seleccione tercero</small>`;
+      return `<select class="table-input" data-field="tercero">${options.join('')}</select>`;
     }
 
     function addRow(operationKey, rowData = null, skipSave = false){
       if (!rowData && !requireSelectedPoint()) return;
-      const blockingMessage = getCaptureBlockingMessage();
-      if (!rowData && blockingMessage) {
-        showNotice('warning', blockingMessage, state.dayStatus?.exists ? 'day-status' : 'validation');
-        return;
-      }
 
       const profile = getCurrentProfile();
       const operation = profile.operations[operationKey];
@@ -1819,18 +1546,12 @@
       UI.recordsBody.appendChild(tr);
       updateTotals();
       updateCloudSaveAvailability();
-      updatePointDependentUI();
       if (!skipSave) saveDraft();
-      if (!getCaptureBlockingMessage()) focusAndSelect(tr.querySelector('[data-field="valor"]'));
+      focusAndSelect(tr.querySelector('[data-field="valor"]'));
     }
 
     function addAllRows(){
       if (!requireSelectedPoint()) return;
-      const blockingMessage = getCaptureBlockingMessage();
-      if (blockingMessage) {
-        showNotice('warning', blockingMessage, state.dayStatus?.exists ? 'day-status' : 'validation');
-        return;
-      }
 
       const profile = getCurrentProfile();
       const existingKeys = new Set(Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).map(tr => tr.dataset.operationKey));
@@ -1875,17 +1596,12 @@
     }
 
     function validateRows(rows){
-      updateRequiredTerceroWarnings();
       for (const row of rows) {
         if (row.terceroRequired && !String(row.tercero || '').trim()) {
-          showNotice('warning', `Debes escoger el tercero para: ${row.displayTipo}`, 'validation');
-          const tr = Array.from(UI.recordsBody.querySelectorAll('tr[data-id]')).find(item => item.dataset.id === row.id);
-          const terceroField = tr?.querySelector('[data-field="tercero"]');
-          if (terceroField) terceroField.focus();
+          alert(`Debes escoger el tercero para: ${row.displayTipo}`);
           return false;
         }
       }
-      clearNotice('validation');
       return true;
     }
 
@@ -1953,9 +1669,7 @@
       if (!key) return;
       const payload = {
         session: { date: UI.fecha.value || '', pos: UI.puntoVenta.value || '' },
-        rows: collectRows(),
-        saved: !!state.captureLocked,
-        lockMessage: state.lockMessage || ''
+        rows: collectRows()
       };
       localStorage.setItem(key, JSON.stringify(payload));
     }
@@ -2002,17 +1716,11 @@
 
       const raw = localStorage.getItem(key);
       if (!raw) {
-        state.captureLocked = false;
-        state.lockMessage = '';
         updateTotals();
         return;
       }
       try {
         const payload = JSON.parse(raw);
-        state.captureLocked = !!payload.saved;
-        state.lockMessage = state.captureLocked
-          ? (payload.lockMessage || 'Esta captura ya fue guardada y quedó bloqueada para evitar un reenvío.')
-          : '';
         populateRows(payload.rows || []);
       } catch (error) {
         console.error(error);
@@ -2026,41 +1734,24 @@
     }
 
     async function saveToCloud(){
-      clearNotice('validation');
       if (!requireSelectedPoint()) return;
 
       const fecha = String(UI.fecha.value || '').trim();
       const puntoVenta = String(UI.puntoVenta.value || '').trim();
       if (!fecha) {
-        showNotice('warning', 'Debes seleccionar la fecha del reporte.', 'validation');
+        alert('Debes seleccionar la fecha del reporte.');
         UI.fecha.focus();
         return;
       }
       if (!puntoVenta) {
-        showNotice('warning', 'Debes seleccionar el punto de venta.', 'validation');
+        alert('Debes seleccionar el punto de venta.');
         UI.puntoVenta.focus();
-        return;
-      }
-
-      const blockingMessage = getCaptureBlockingMessage();
-      if (blockingMessage && !state.dayStatus?.loading && !state.dayStatus?.error) {
-        showNotice('warning', blockingMessage, state.dayStatus?.exists ? 'day-status' : 'validation');
-        return;
-      }
-
-      const dayStatus = await refreshDayStatus(true);
-      if (dayStatus.error) {
-        showNotice('error', dayStatus.message || 'No se pudo verificar si ya existe información. No se enviará nada para evitar duplicados.', 'day-status');
-        return;
-      }
-      if (dayStatus.exists) {
-        showNotice('warning', dayStatus.message, 'day-status');
         return;
       }
 
       const rows = collectRows().filter(row => row.valor !== 0 || row.devoluciones !== 0);
       if (!rows.length) {
-        showNotice('warning', 'No hay registros con valores para guardar.', 'validation');
+        alert('No hay registros con valores para guardar.');
         return;
       }
       if (!validateRows(rows)) return;
@@ -2093,14 +1784,9 @@
         valor: Number(item.valor || 0)
       }));
 
-      const postParams = new URLSearchParams({ clientVersion: CLIENT_VERSION, _ts: String(Date.now()) });
-      if (CONFIG.API_KEY) postParams.set('key', CONFIG.API_KEY);
-      const url = `${CONFIG.SCRIPT_URL}?${postParams.toString()}`;
+      const url = CONFIG.SCRIPT_URL + (CONFIG.API_KEY ? `?key=${encodeURIComponent(CONFIG.API_KEY)}` : '');
       const saveButtons = [UI.guardarBtnSide, UI.guardarBtnBottom];
-      state.isSaving = true;
       setBusyState(saveButtons, true, 'Guardando...');
-      updatePointDependentUI();
-      updateCloudSaveAvailability();
 
       try {
         const response = await fetch(url, {
@@ -2118,63 +1804,34 @@
         }
 
         if (!response.ok || result.result !== 'success') {
-          throw buildApiResultError(result, response.status);
+          throw new Error(result.error || `Error HTTP ${response.status}`);
         }
 
-        ensureExpectedApiVersion(result);
-
-        const successMessage = 'Registros guardados correctamente. La captura quedó bloqueada para evitar un reenvío.';
-        setCaptureLocked(true, successMessage);
-        showNotice('success', successMessage, 'save');
+        alert('Registros guardados correctamente.');
         saveDraft();
         refreshConceptSummary();
       } catch (error) {
         console.error(error);
-        const message = String(error.message || error);
-        if (error.code === DUPLICATE_DAY_CODE) {
-          state.dayStatus = { checked: true, loading: false, exists: true, message };
-          showNotice('warning', message, 'day-status');
-          updatePointDependentUI();
-          updateCloudSaveAvailability();
-        } else {
-          showNotice('error', `No se pudo guardar: ${message}`, 'save');
-        }
+        alert(`No se pudo guardar: ${error.message || error}`);
       } finally {
-        state.isSaving = false;
         setBusyState(saveButtons, false, 'Guardar nube');
-        updatePointDependentUI();
         updateCloudSaveAvailability();
       }
     }
 
     function clearCurrentCapture(){
       if (!requireSelectedPoint()) return;
-      if (state.isSaving) {
-        showNotice('info', 'Espera a que termine el guardado antes de limpiar la captura.', 'validation');
-        return;
-      }
 
-      const hasRows = collectRows().length > 0;
-      const hasLocalDraft = !!getStorageKey() && !!localStorage.getItem(getStorageKey());
-      if ((hasRows || hasLocalDraft) && !window.confirm('¿Seguro que deseas limpiar los movimientos cargados? Esto solo limpia la captura local y no borra información guardada en la nube.')) {
-        return;
-      }
-
-      state.captureLocked = false;
-      state.lockMessage = '';
       UI.recordsBody.innerHTML = '';
       clearDraft();
       updateTotals();
       updateCloudSaveAvailability();
       updatePointDependentUI();
-      showNotice('info', 'Captura local limpiada. Si necesitas borrar información ya guardada en la nube, llama al administrador.', 'clear');
     }
 
     function refreshNetworkStatus(){
       const online = navigator.onLine;
       if (UI.networkStatus) UI.networkStatus.textContent = online ? 'Online' : 'Offline';
-      if (!online) showNotice('warning', 'Sin conexión. El guardado en la nube no estará disponible hasta recuperar internet.', 'network');
-      if (online) clearNotice('network');
     }
 
     function handleSessionChange(){
@@ -2187,9 +1844,6 @@
       const pointChanged = previousSession.pos !== nextSession.pos;
       const preserveCapture = pointChanged && hasRowsToPreserve(currentRows);
 
-      state.captureLocked = false;
-      state.lockMessage = '';
-      resetDayStatus();
       renderProfileInfo();
 
       if (preserveCapture) {
@@ -2202,8 +1856,6 @@
       state.session = nextSession;
       saveLastSession();
       updatePointDependentUI();
-      updateCloudSaveAvailability();
-      refreshDayStatus();
     }
 
     function handleSummaryToggleChange(){
@@ -2259,7 +1911,6 @@
       document.getElementById('btn-kardex').addEventListener('click', () => addRow('kardex'));
       document.getElementById('btn-interco').addEventListener('click', () => addRow('interco'));
       document.getElementById('btn-autoconsumo').addEventListener('click', () => addRow('autoconsumo'));
-      document.getElementById('btn-otros-creditos').addEventListener('click', () => addRow('otrosCreditos'));
       document.getElementById('btn-rappi').addEventListener('click', () => addRow('rappi'));
       document.getElementById('btn-gasto').addEventListener('click', () => addRow('gasto'));
       document.getElementById('btn-todos').addEventListener('click', addAllRows);
@@ -2289,10 +1940,7 @@
 
       UI.recordsBody.addEventListener('input', event => {
         if (event.target.matches('input, select')) {
-          clearNotice('validation');
-          clearNotice('save');
           updateTotals();
-          updateRequiredTerceroWarnings();
           saveDraft();
         }
       });
@@ -2342,7 +1990,6 @@
         pos: String(UI.puntoVenta.value || '').trim()
       };
       saveLastSession();
-      refreshDayStatus();
     }
 
     init();

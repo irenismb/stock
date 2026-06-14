@@ -47,6 +47,7 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 .visitors{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:900;color:var(--azul);padding:5px}
 .visitorCount{min-width:46px;border-radius:999px;background:#ffe5e5;color:#9b0000;border:2px solid var(--rojo);padding:4px 10px;font-size:18px;line-height:1}
 .visitorStatus{font-size:12px;color:var(--suave);font-weight:800}
+.visitorBlock{display:flex;align-items:center;gap:6px}
 @media(max-width:720px){main{padding:4px}.controls{grid-template-columns:1fr}.day{align-items:flex-start;flex-direction:column}.visitors{flex-wrap:wrap}table,thead,tbody,tr,td{display:block}thead{display:none}tr{border-bottom:1px solid var(--linea);padding:4px 6px;background:#fff}td{border:0;padding:2px 0}td:before{content:attr(data-label) ': ';color:var(--suave);font-weight:800}}
 </style>
 </head>
@@ -71,8 +72,8 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 </section>
 
 <section class="panel visitors" aria-label="Visitantes en línea">
-<span>Visitantes ahora</span>
-<strong id="visitorCount" class="visitorCount">--</strong>
+<span class="visitorBlock"><span>Visitantes ahora</span><strong id="visitorCount" class="visitorCount">--</strong></span>
+<span class="visitorBlock"><span>Visitantes totales</span><strong id="totalVisitCount" class="visitorCount">--</strong></span>
 <span id="visitorStatus" class="visitorStatus">Configura Firebase</span>
 </section>
 </main>
@@ -304,11 +305,13 @@ const firebaseConfig={
 };
 
 const visitorCount=document.getElementById("visitorCount");
+const totalVisitCount=document.getElementById("totalVisitCount");
 const visitorStatus=document.getElementById("visitorStatus");
 const firebasePendiente=Object.values(firebaseConfig).some(v=>String(v).includes("PEGA_AQUI"));
 
 if(firebasePendiente){
  visitorCount.textContent="--";
+ totalVisitCount.textContent="--";
  visitorStatus.textContent="Pendiente configurar Firebase Realtime Database";
 }else{
  iniciarVisitantes();
@@ -319,6 +322,7 @@ async function iniciarVisitantes(){
  const auth=getAuth(app);
  const db=getDatabase(app);
  const conexionesRaiz=ref(db,"presencia_mundial_2026/conexiones");
+ const visitantesTotalesRef=ref(db,"presencia_mundial_2026/ultimas_salidas");
  const conectadoRef=ref(db,".info/connected");
  let usuario=null;
  let conectado=false;
@@ -339,6 +343,16 @@ async function iniciarVisitantes(){
  onAuthStateChanged(auth,user=>{
   usuario=user;
   intentarRegistro(db,usuario,conectado);
+  registrarVisitante(user);
+ });
+
+ onValue(visitantesTotalesRef,snapshot=>{
+  let total=0;
+  snapshot.forEach(()=>{total++;});
+  totalVisitCount.textContent=total;
+ },error=>{
+  totalVisitCount.textContent="--";
+  console.error(error);
  });
 
  onValue(conectadoRef,snapshot=>{
@@ -371,6 +385,17 @@ async function iniciarVisitantes(){
    console.error(error);
   }finally{
    registrando=false;
+  }
+ }
+
+ async function registrarVisitante(user){
+  if(!user)return;
+  const visitaRef=ref(db,`presencia_mundial_2026/ultimas_salidas/${user.uid}`);
+  try{
+   await set(visitaRef,{ultima_visita:serverTimestamp()});
+  }catch(error){
+   totalVisitCount.textContent="--";
+   console.error(error);
   }
  }
 }

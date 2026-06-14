@@ -44,9 +44,10 @@ tr.nextMatch td{color:var(--rojo);font-weight:900}
 tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{color:var(--rojo)}
 .empty{padding:8px;text-align:center;border:1px dashed #a6c8ff;border-radius:8px;background:#fff;color:var(--suave);font-weight:800}
 
-.visitors{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:900;color:var(--azul);padding:5px}
+.visitors{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:900;color:var(--azul);padding:5px;flex-wrap:wrap}
 .visitorCount{min-width:46px;border-radius:999px;background:#ffe5e5;color:#9b0000;border:2px solid var(--rojo);padding:4px 10px;font-size:18px;line-height:1}
-.visitorStatus{font-size:12px;color:var(--suave);font-weight:800}
+.visitorStatus{flex-basis:100%;font-size:12px;color:var(--suave);font-weight:800}
+.visitorStatus:empty{display:none}
 .visitorBlock{display:flex;align-items:center;gap:6px}
 @media(max-width:720px){main{padding:4px}.controls{grid-template-columns:1fr}.day{align-items:flex-start;flex-direction:column}.visitors{flex-wrap:wrap}table,thead,tbody,tr,td{display:block}thead{display:none}tr{border-bottom:1px solid var(--linea);padding:4px 6px;background:#fff}td{border:0;padding:2px 0}td:before{content:attr(data-label) ': ';color:var(--suave);font-weight:800}}
 </style>
@@ -74,7 +75,7 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 <section class="panel visitors" aria-label="Visitantes en línea">
 <span class="visitorBlock"><span>Visitantes ahora</span><strong id="visitorCount" class="visitorCount">--</strong></span>
 <span class="visitorBlock"><span>Visitantes totales</span><strong id="totalVisitCount" class="visitorCount">--</strong></span>
-<span id="visitorStatus" class="visitorStatus">Configura Firebase</span>
+<span id="visitorStatus" class="visitorStatus"></span>
 </section>
 </main>
 <script>
@@ -329,7 +330,7 @@ async function iniciarVisitantes(){
  let registrando=false;
  let registrado=false;
 
- visitorStatus.textContent="Conectando...";
+ visitorStatus.textContent="";
 
  onValue(conexionesRaiz,snapshot=>{
   let total=0;
@@ -358,7 +359,7 @@ async function iniciarVisitantes(){
  onValue(conectadoRef,snapshot=>{
   conectado=snapshot.val()===true;
   if(!conectado)registrado=false;
-  visitorStatus.textContent=conectado?"En línea":"Sin conexión";
+  visitorStatus.textContent=conectado?"":"Sin conexión";
   intentarRegistro(db,usuario,conectado);
  });
 
@@ -379,7 +380,7 @@ async function iniciarVisitantes(){
    await onDisconnect(ultimaSalida).set(serverTimestamp());
    await set(miConexion,{activo:true,desde:serverTimestamp()});
    registrado=true;
-   visitorStatus.textContent="En línea";
+   visitorStatus.textContent="";
   }catch(error){
    visitorStatus.textContent="Revisa reglas de Realtime Database";
    console.error(error);

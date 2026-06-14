@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v: 2026-06-14 12:30:21
-Se quitó el panel de botones de países mostrado en la imagen y se dejó la selección de equipos solo en el desplegable. -->
+<!-- v: 2026-06-14 13:30:00
+Se corrigio Visitantes hoy para calcularlo desde la actividad guardada y evitar escrituras rechazadas por Firebase. -->
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -360,7 +360,6 @@ async function iniciarVisitantes(){
  const hoy=fechaHoyColombia();
  const conexionesRaiz=ref(db,`${base}/conexiones`);
  const legacyRef=ref(db,`${base}/ultimas_salidas`);
- const visitantesHoyRef=ref(db,`${base}/visitantes_por_dia/${hoy}`);
  const contadorTotalRef=ref(db,`${base}/contadores/visitantes_totales`);
  const conectadoRef=ref(db,".info/connected");
  let usuario=null;
@@ -382,17 +381,12 @@ async function iniciarVisitantes(){
 
  onValue(legacyRef,snapshot=>{
   totalAnterior=Math.max(contarHijos(snapshot),totalMinimoHistorico);
+  todayVisitCount.textContent=contarVisitantesHoy(snapshot,hoy);
   pintarTotal();
  },error=>{
   totalAnterior=totalMinimoHistorico;
-  pintarTotal();
-  console.error(error);
- });
-
- onValue(visitantesHoyRef,snapshot=>{
-  todayVisitCount.textContent=contarHijos(snapshot);
- },error=>{
   todayVisitCount.textContent="--";
+  pintarTotal();
   console.error(error);
  });
 
@@ -434,8 +428,8 @@ async function iniciarVisitantes(){
    const snapshot=await get(legacyRef);
    const total=Math.max(contarHijos(snapshot),totalMinimoHistorico);
    totalAnterior=total;
+   todayVisitCount.textContent=contarVisitantesHoy(snapshot,hoy);
    pintarTotal();
-   await runTransaction(contadorTotalRef,actual=>Math.max(Number(actual)||0,total,totalMinimoHistorico));
   }catch(error){
    pintarTotal();
    console.error(error);
@@ -452,21 +446,15 @@ async function iniciarVisitantes(){
      nuevo=true;
      return {primera_visita:Date.now(),ultima_visita:Date.now()};
     }
+    if(typeof actual==="number"){
+     nuevo=false;
+     return {primera_visita:actual,ultima_visita:Date.now()};
+    }
     nuevo=false;
     actual.ultima_visita=Date.now();
     return actual;
    });
-   if(nuevo){
-    await runTransaction(contadorTotalRef,actual=>Math.max(Number(actual)||0,totalMinimoHistorico)+1);
-   }
   }catch(error){
-   console.error(error);
-  }
-
-  try{
-   await set(ref(db,`${base}/visitantes_por_dia/${hoy}/${user.uid}`),{ultima_visita:serverTimestamp()});
-  }catch(error){
-   todayVisitCount.textContent="--";
    console.error(error);
   }
  }
@@ -475,7 +463,7 @@ async function iniciarVisitantes(){
   if(!user||!estaConectado||registrando||registrado)return;
   registrando=true;
   const miConexion=push(ref(db,`${base}/conexiones/${user.uid}`));
-  const ultimaSalida=ref(db,`${base}/ultimas_salidas/${user.uid}`);
+  const ultimaSalida=ref(db,`${base}/ultimas_salidas/${user.uid}/ultima_visita`);
   try{
    await onDisconnect(miConexion).remove();
    await onDisconnect(ultimaSalida).set(serverTimestamp());
@@ -500,8 +488,22 @@ async function iniciarVisitantes(){
   return total;
  }
 
+ function contarVisitantesHoy(snapshot,hoyColombia){
+  let total=0;
+  snapshot.forEach(childSnapshot=>{
+   const valor=childSnapshot.val();
+   const marca=typeof valor==="number"?valor:Number(valor&&valor.ultima_visita);
+   if(Number.isFinite(marca)&&fechaColombia(marca)===hoyColombia)total++;
+  });
+  return total;
+ }
+
  function fechaHoyColombia(){
-  return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+  return fechaColombia(Date.now());
+ }
+
+ function fechaColombia(fecha){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(fecha));
  }
 }
 </script>

@@ -1,5 +1,5 @@
-<!-- v: 2026-06-13 21:51:59
-Se actualizó el título principal, se agregó la donación al final y se configuró mundial_futbol_2026.png como icono y vista previa del enlace. -->
+<!-- v: 2026-06-14 03:28:35
+Se reemplazó la grilla de países por una lista desplegable ubicada debajo de la lista de fechas. -->
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -25,19 +25,13 @@ h1{margin:0 auto;font-size:clamp(17px,2.6vw,24px);line-height:1.08;max-width:980
 p{margin:0;color:var(--suave)}
 main{max-width:1040px;margin:auto;padding:4px}
 .panel{background:var(--tarjeta);border-radius:10px;padding:5px;box-shadow:0 3px 8px #0b1b5518;border:1px solid #fff;margin-top:4px}
-.controls{display:grid;grid-template-columns:auto 1fr auto;gap:4px;align-items:center}
+.controls{display:grid;grid-template-columns:auto minmax(180px,1fr) auto;gap:4px;align-items:center}
+.countrySelect{grid-column:2}
 button,select{width:100%;border:0;border-radius:8px;padding:5px 7px;font-size:13px;font-weight:800;line-height:1.05}
 button{cursor:pointer;background:var(--amarillo);color:var(--texto);box-shadow:0 2px 0 #d8a900}
 button:active{transform:translateY(1px);box-shadow:0 1px 0 #d8a900}
 button:disabled{opacity:.45;cursor:not-allowed;transform:none}
 select{background:#fff;border:2px solid #a6c8ff;text-align:center;color:var(--texto)}
-.countryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:4px}
-.country{background:#f5f9ff;border:1px solid #dceaff;box-shadow:none;border-radius:8px;min-height:25px;padding:4px 6px;color:var(--azul)}
-.country.playing{background:#fff7c2;border-color:#ffd54f;box-shadow:inset 0 0 0 2px #ffd54f}
-.country:hover,.country.active{background:var(--amarillo);border-color:#d8a900;box-shadow:inset 0 0 0 2px #d8a900}
-.country.active{background:var(--verde);border-color:#168757;color:#fff;box-shadow:inset 0 0 0 2px #168757}
-.country.nextCountry{background:#ffe5e5;border-color:#ff4d4d;color:#9b0000;box-shadow:inset 0 0 0 2px #ff4d4d}
-.country.nextCountry:hover,.country.nextCountry.active{background:#ff4d4d;border-color:#d10000;color:#fff;box-shadow:inset 0 0 0 2px #d10000}
 .day{display:flex;justify-content:space-between;gap:4px;align-items:center;margin-bottom:3px}
 h2{margin:0;color:var(--azul);font-size:clamp(16px,2.3vw,22px);line-height:1.05}
 table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:8px;border:1px solid var(--linea)}
@@ -61,7 +55,7 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 .visitorBlock{display:flex;align-items:center;gap:6px}
 .donacion{text-align:center;font-weight:900;color:var(--azul);font-size:clamp(15px,2.2vw,20px);line-height:1.25}
 .donacion strong{color:#9b0000}
-@media(max-width:720px){main{padding:4px}.controls{grid-template-columns:1fr}.day{align-items:flex-start;flex-direction:column}.visitors{flex-wrap:wrap}table,thead,tbody,tr,td{display:block}thead{display:none}tr{border-bottom:1px solid var(--linea);padding:4px 6px;background:#fff}td{border:0;padding:2px 0}td:before{content:attr(data-label) ': ';color:var(--suave);font-weight:800}}
+@media(max-width:720px){main{padding:4px}.controls{grid-template-columns:1fr}.countrySelect{grid-column:1}.day{align-items:flex-start;flex-direction:column}.visitors{flex-wrap:wrap}table,thead,tbody,tr,td{display:block}thead{display:none}tr{border-bottom:1px solid var(--linea);padding:4px 6px;background:#fff}td{border:0;padding:2px 0}td:before{content:attr(data-label) ': ';color:var(--suave);font-weight:800}}
 </style>
 </head>
 <body>
@@ -69,19 +63,17 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 <h1>🏆 Copa Mundial de la FIFA 26™ — 23.ª edición de la Copa Mundial de la FIFA™, organizada por Canadá, México y Estados Unidos, con 48 selecciones participantes.</h1>
 </header>
 <main>
-<section class="panel controls" aria-label="Navegación por días">
+<section class="panel controls" aria-label="Navegación y filtros">
 <button id="prev" type="button">← Día anterior</button>
 <select id="dates" aria-label="Seleccionar fecha"></select>
 <button id="next" type="button">Siguiente día →</button>
+<select id="countrySelect" class="countrySelect" aria-label="Seleccionar país"></select>
 </section>
 <section class="panel">
 <div class="day">
 <h2 id="title"></h2>
 </div>
 <div id="view"></div>
-</section>
-<section class="panel" aria-label="Seleccionar país">
-<div id="countries" class="countryGrid"></div>
 </section>
 
 <section class="panel visitors" aria-label="Visitantes en línea">
@@ -174,24 +166,27 @@ const prev=document.getElementById("prev");
 const next=document.getElementById("next");
 const title=document.getElementById("title");
 const view=document.getElementById("view");
-const countries=document.getElementById("countries");
+const countrySelect=document.getElementById("countrySelect");
 let diaActual=Math.max(0,dias.findIndex(d=>new Date(`${d}T23:59:59-05:00`).getTime()>=Date.now()));
 let paisActual="";
-let paisesArriba=new Set();
 function iniciar(){
  dates.innerHTML=dias.map((d,i)=>`<option value="${i}">${fechaCorta(d)}</option>`).join("");
  prev.onclick=()=>mover(-1);
  next.onclick=()=>mover(1);
- dates.onchange=e=>{paisActual="";mostrar(+e.target.value)};
+ dates.onchange=e=>{paisActual="";countrySelect.value="";mostrar(+e.target.value)};
  document.onkeydown=e=>{if(!paisActual&&e.key==="ArrowLeft")mover(-1);if(!paisActual&&e.key==="ArrowRight")mover(1)};
- pintarPaises();
+ cargarPaises();
  mostrar(diaActual);
  setInterval(actualizar,1000);
 }
-function pintarPaises(){
+function cargarPaises(){
  const paises=[...new Set(partidos.flatMap(p=>p.partido.split(" vs ")))].sort((a,b)=>a.localeCompare(b,"es"));
- countries.innerHTML=paises.map(p=>`<button type="button" class="country" data-country="${p}">${p}</button>`).join("");
- document.querySelectorAll(".country").forEach(b=>b.onclick=()=>mostrarPais(b.dataset.country));
+ countrySelect.innerHTML=`<option value="">Todos los partidos del día</option>${paises.map(p=>`<option value="${p}">${p}</option>`).join("")}`;
+ countrySelect.onchange=e=>{
+  const pais=e.target.value;
+  if(pais)mostrarPais(pais);
+  else mostrar(diaActual);
+ };
 }
 function juegan(partido,pais){
  const equipos=partido.partido.split(" vs ");
@@ -199,19 +194,19 @@ function juegan(partido,pais){
 }
 function mover(n){
  const i=diaActual+n;
- if(i>=0&&i<dias.length){paisActual="";mostrar(i)}
+ if(i>=0&&i<dias.length){paisActual="";countrySelect.value="";mostrar(i)}
 }
 function mostrar(i){
  diaActual=i;
+ paisActual="";
+ countrySelect.value="";
  const fecha=dias[i];
  const lista=partidos.filter(p=>p.fecha===fecha).sort((a,b)=>a.hora.localeCompare(b.hora));
  title.textContent=fechaLarga(fecha);
  dates.value=i;
  prev.disabled=i===0;
  next.disabled=i===dias.length-1;
- paisesArriba=new Set(lista.flatMap(p=>p.partido.split(" vs ")));
  view.innerHTML=lista.length?tabla(lista,false):'<div class="empty">Sin partidos</div>';
- activarPais();
  actualizar();
 }
 function mostrarPais(pais){
@@ -220,16 +215,9 @@ function mostrarPais(pais){
  title.textContent=`Partidos de ${pais}`;
  prev.disabled=diaActual===0;
  next.disabled=diaActual===dias.length-1;
- paisesArriba=new Set(lista.flatMap(p=>p.partido.split(" vs ")));
+ countrySelect.value=pais;
  view.innerHTML=lista.length?tabla(lista,true):'<div class="empty">Sin partidos para este país</div>';
- activarPais();
  actualizar();
-}
-function activarPais(){
- document.querySelectorAll(".country").forEach(b=>{
-  b.classList.toggle("playing",paisesArriba.has(b.dataset.country));
-  b.classList.toggle("active",b.dataset.country===paisActual);
- });
 }
 function tabla(lista,conFecha){
  const cabecera=conFecha?"<th>Fecha</th>":"";
@@ -273,12 +261,7 @@ function actualizar(){
   }
  });
  const filasMarcadas=actuales.length?actuales:(proxima?[proxima]:[]);
- const equiposMarcados=new Set();
- filasMarcadas.forEach(fila=>{
-  fila.classList.add("nextMatch");
-  (fila.dataset.partido||"").split(" vs ").forEach(e=>equiposMarcados.add(e));
- });
- document.querySelectorAll(".country").forEach(b=>b.classList.toggle("nextCountry",equiposMarcados.has(b.dataset.country)));
+ filasMarcadas.forEach(fila=>fila.classList.add("nextMatch"));
 }
 function duracion(ms){
  const s=Math.max(0,Math.floor(ms/1000));

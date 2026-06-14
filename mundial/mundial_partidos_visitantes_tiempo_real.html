@@ -1,0 +1,379 @@
+<!doctype html>
+<!-- v: 2026-06-13 22:32:10
+Se reemplaza la sección de comentarios por un contador público de visitantes en línea usando Firebase Realtime Database. -->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partidos Mundial 2026</title>
+<style>
+:root{--azul:#0b1b55;--azul2:#1746a2;--rojo:#ff4d4d;--verde:#22a06b;--amarillo:#ffd54f;--fondo:#f2f8ff;--tarjeta:#ffffff;--texto:#102040;--suave:#5d6b85;--linea:#dceaff}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:linear-gradient(180deg,#fff7c2 0,#f2f8ff 18px,#e8f1ff 100%);color:var(--texto)}
+header{padding:4px 8px;text-align:center;background:linear-gradient(135deg,#10256d,#1746a2);color:#fff;border-bottom:3px solid var(--amarillo)}
+h1{margin:0;font-size:clamp(17px,2.6vw,24px);line-height:1.05}
+p{margin:0;color:var(--suave)}
+main{max-width:1040px;margin:auto;padding:4px}
+.panel{background:var(--tarjeta);border-radius:10px;padding:5px;box-shadow:0 3px 8px #0b1b5518;border:1px solid #fff;margin-top:4px}
+.controls{display:grid;grid-template-columns:auto 1fr auto;gap:4px;align-items:center}
+button,select{width:100%;border:0;border-radius:8px;padding:5px 7px;font-size:13px;font-weight:800;line-height:1.05}
+button{cursor:pointer;background:var(--amarillo);color:var(--texto);box-shadow:0 2px 0 #d8a900}
+button:active{transform:translateY(1px);box-shadow:0 1px 0 #d8a900}
+button:disabled{opacity:.45;cursor:not-allowed;transform:none}
+select{background:#fff;border:2px solid #a6c8ff;text-align:center;color:var(--texto)}
+.countryGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(108px,1fr));gap:4px}
+.country{background:#f5f9ff;border:1px solid #dceaff;box-shadow:none;border-radius:8px;min-height:25px;padding:4px 6px;color:var(--azul)}
+.country.playing{background:#fff7c2;border-color:#ffd54f;box-shadow:inset 0 0 0 2px #ffd54f}
+.country:hover,.country.active{background:var(--amarillo);border-color:#d8a900;box-shadow:inset 0 0 0 2px #d8a900}
+.country.active{background:var(--verde);border-color:#168757;color:#fff;box-shadow:inset 0 0 0 2px #168757}
+.country.nextCountry{background:#ffe5e5;border-color:#ff4d4d;color:#9b0000;box-shadow:inset 0 0 0 2px #ff4d4d}
+.country.nextCountry:hover,.country.nextCountry.active{background:#ff4d4d;border-color:#d10000;color:#fff;box-shadow:inset 0 0 0 2px #d10000}
+.day{display:flex;justify-content:space-between;gap:4px;align-items:center;margin-bottom:3px}
+h2{margin:0;color:var(--azul);font-size:clamp(16px,2.3vw,22px);line-height:1.05}
+table{width:100%;border-collapse:separate;border-spacing:0;overflow:hidden;border-radius:8px;border:1px solid var(--linea)}
+th,td{padding:4px 6px;border-bottom:1px solid var(--linea);text-align:left;background:#fff;line-height:1.1}
+th{background:#f5f9ff;color:var(--azul);font-size:11px;font-weight:900}
+tr:last-child td{border-bottom:0}
+.time{font-weight:900;color:var(--azul);white-space:nowrap}
+.group{width:58px;text-align:center;font-weight:900}
+.dateCell{white-space:nowrap;font-weight:800;color:var(--azul)}
+.left,.endleft{font-variant-numeric:tabular-nums;white-space:nowrap;font-weight:900;color:var(--verde)}
+.live{color:var(--rojo)}
+.done{color:var(--suave)}
+tr.nextMatch td{color:var(--rojo);font-weight:900}
+tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{color:var(--rojo)}
+.empty{padding:8px;text-align:center;border:1px dashed #a6c8ff;border-radius:8px;background:#fff;color:var(--suave);font-weight:800}
+
+.visitors{display:flex;align-items:center;justify-content:center;gap:8px;text-align:center;font-weight:900;color:var(--azul);padding:5px}
+.visitorCount{min-width:46px;border-radius:999px;background:#ffe5e5;color:#9b0000;border:2px solid var(--rojo);padding:4px 10px;font-size:18px;line-height:1}
+.visitorStatus{font-size:12px;color:var(--suave);font-weight:800}
+@media(max-width:720px){main{padding:4px}.controls{grid-template-columns:1fr}.day{align-items:flex-start;flex-direction:column}.visitors{flex-wrap:wrap}table,thead,tbody,tr,td{display:block}thead{display:none}tr{border-bottom:1px solid var(--linea);padding:4px 6px;background:#fff}td{border:0;padding:2px 0}td:before{content:attr(data-label) ': ';color:var(--suave);font-weight:800}}
+</style>
+</head>
+<body>
+<header>
+<h1>🏆 Partidos Mundial 2026</h1>
+</header>
+<main>
+<section class="panel controls" aria-label="Navegación por días">
+<button id="prev" type="button">← Día anterior</button>
+<select id="dates" aria-label="Seleccionar fecha"></select>
+<button id="next" type="button">Siguiente día →</button>
+</section>
+<section class="panel">
+<div class="day">
+<h2 id="title"></h2>
+</div>
+<div id="view"></div>
+</section>
+<section class="panel" aria-label="Seleccionar país">
+<div id="countries" class="countryGrid"></div>
+</section>
+
+<section class="panel visitors" aria-label="Visitantes en línea">
+<span>Visitantes ahora</span>
+<strong id="visitorCount" class="visitorCount">--</strong>
+<span id="visitorStatus" class="visitorStatus">Configura Firebase</span>
+</section>
+</main>
+<script>
+const partidos=[
+{fecha:"2026-06-11",hora:"14:00",partido:"México vs Sudáfrica",grupo:"A"},
+{fecha:"2026-06-11",hora:"21:00",partido:"Corea del Sur vs Chequia",grupo:"A"},
+{fecha:"2026-06-12",hora:"14:00",partido:"Canadá vs Bosnia y Herzegovina",grupo:"B"},
+{fecha:"2026-06-12",hora:"20:00",partido:"Estados Unidos vs Paraguay",grupo:"D"},
+{fecha:"2026-06-13",hora:"14:00",partido:"Catar vs Suiza",grupo:"B"},
+{fecha:"2026-06-13",hora:"17:00",partido:"Brasil vs Marruecos",grupo:"C"},
+{fecha:"2026-06-13",hora:"20:00",partido:"Haití vs Escocia",grupo:"C"},
+{fecha:"2026-06-13",hora:"23:00",partido:"Australia vs Turquía",grupo:"D"},
+{fecha:"2026-06-14",hora:"12:00",partido:"Alemania vs Curazao",grupo:"E"},
+{fecha:"2026-06-14",hora:"15:00",partido:"Países Bajos vs Japón",grupo:"F"},
+{fecha:"2026-06-14",hora:"18:00",partido:"Costa de Marfil vs Ecuador",grupo:"E"},
+{fecha:"2026-06-14",hora:"21:00",partido:"Suecia vs Túnez",grupo:"F"},
+{fecha:"2026-06-15",hora:"11:00",partido:"España vs Cabo Verde",grupo:"H"},
+{fecha:"2026-06-15",hora:"14:00",partido:"Bélgica vs Egipto",grupo:"G"},
+{fecha:"2026-06-15",hora:"17:00",partido:"Arabia Saudita vs Uruguay",grupo:"H"},
+{fecha:"2026-06-15",hora:"20:00",partido:"Irán vs Nueva Zelanda",grupo:"G"},
+{fecha:"2026-06-16",hora:"14:00",partido:"Francia vs Senegal",grupo:"I"},
+{fecha:"2026-06-16",hora:"17:00",partido:"Irak vs Noruega",grupo:"I"},
+{fecha:"2026-06-16",hora:"20:00",partido:"Argentina vs Argelia",grupo:"J"},
+{fecha:"2026-06-16",hora:"23:00",partido:"Austria vs Jordania",grupo:"J"},
+{fecha:"2026-06-17",hora:"12:00",partido:"Portugal vs República Democrática del Congo",grupo:"K"},
+{fecha:"2026-06-17",hora:"15:00",partido:"Inglaterra vs Croacia",grupo:"L"},
+{fecha:"2026-06-17",hora:"18:00",partido:"Ghana vs Panamá",grupo:"L"},
+{fecha:"2026-06-17",hora:"21:00",partido:"Uzbekistán vs Colombia",grupo:"K"},
+{fecha:"2026-06-18",hora:"11:00",partido:"Chequia vs Sudáfrica",grupo:"A"},
+{fecha:"2026-06-18",hora:"14:00",partido:"Suiza vs Bosnia y Herzegovina",grupo:"B"},
+{fecha:"2026-06-18",hora:"17:00",partido:"Canadá vs Catar",grupo:"B"},
+{fecha:"2026-06-18",hora:"20:00",partido:"México vs Corea del Sur",grupo:"A"},
+{fecha:"2026-06-19",hora:"14:00",partido:"Estados Unidos vs Australia",grupo:"D"},
+{fecha:"2026-06-19",hora:"17:00",partido:"Escocia vs Marruecos",grupo:"C"},
+{fecha:"2026-06-19",hora:"19:30",partido:"Brasil vs Haití",grupo:"C"},
+{fecha:"2026-06-19",hora:"22:00",partido:"Turquía vs Paraguay",grupo:"D"},
+{fecha:"2026-06-20",hora:"12:00",partido:"Países Bajos vs Suecia",grupo:"F"},
+{fecha:"2026-06-20",hora:"15:00",partido:"Alemania vs Costa de Marfil",grupo:"E"},
+{fecha:"2026-06-20",hora:"19:00",partido:"Ecuador vs Curazao",grupo:"E"},
+{fecha:"2026-06-20",hora:"23:00",partido:"Túnez vs Japón",grupo:"F"},
+{fecha:"2026-06-21",hora:"11:00",partido:"España vs Arabia Saudita",grupo:"H"},
+{fecha:"2026-06-21",hora:"14:00",partido:"Bélgica vs Irán",grupo:"G"},
+{fecha:"2026-06-21",hora:"17:00",partido:"Uruguay vs Cabo Verde",grupo:"H"},
+{fecha:"2026-06-21",hora:"20:00",partido:"Nueva Zelanda vs Egipto",grupo:"G"},
+{fecha:"2026-06-22",hora:"12:00",partido:"Argentina vs Austria",grupo:"J"},
+{fecha:"2026-06-22",hora:"16:00",partido:"Francia vs Irak",grupo:"I"},
+{fecha:"2026-06-22",hora:"19:00",partido:"Noruega vs Senegal",grupo:"I"},
+{fecha:"2026-06-22",hora:"22:00",partido:"Jordania vs Argelia",grupo:"J"},
+{fecha:"2026-06-23",hora:"12:00",partido:"Portugal vs Uzbekistán",grupo:"K"},
+{fecha:"2026-06-23",hora:"15:00",partido:"Inglaterra vs Ghana",grupo:"L"},
+{fecha:"2026-06-23",hora:"18:00",partido:"Panamá vs Croacia",grupo:"L"},
+{fecha:"2026-06-23",hora:"21:00",partido:"Colombia vs República Democrática del Congo",grupo:"K"},
+{fecha:"2026-06-24",hora:"14:00",partido:"Suiza vs Canadá",grupo:"B"},
+{fecha:"2026-06-24",hora:"14:00",partido:"Bosnia y Herzegovina vs Catar",grupo:"B"},
+{fecha:"2026-06-24",hora:"17:00",partido:"Escocia vs Brasil",grupo:"C"},
+{fecha:"2026-06-24",hora:"17:00",partido:"Marruecos vs Haití",grupo:"C"},
+{fecha:"2026-06-24",hora:"20:00",partido:"Chequia vs México",grupo:"A"},
+{fecha:"2026-06-24",hora:"20:00",partido:"Sudáfrica vs Corea del Sur",grupo:"A"},
+{fecha:"2026-06-25",hora:"15:00",partido:"Ecuador vs Alemania",grupo:"E"},
+{fecha:"2026-06-25",hora:"15:00",partido:"Curazao vs Costa de Marfil",grupo:"E"},
+{fecha:"2026-06-25",hora:"18:00",partido:"Túnez vs Países Bajos",grupo:"F"},
+{fecha:"2026-06-25",hora:"18:00",partido:"Japón vs Suecia",grupo:"F"},
+{fecha:"2026-06-25",hora:"21:00",partido:"Turquía vs Estados Unidos",grupo:"D"},
+{fecha:"2026-06-25",hora:"21:00",partido:"Paraguay vs Australia",grupo:"D"},
+{fecha:"2026-06-26",hora:"14:00",partido:"Noruega vs Francia",grupo:"I"},
+{fecha:"2026-06-26",hora:"14:00",partido:"Senegal vs Irak",grupo:"I"},
+{fecha:"2026-06-26",hora:"19:00",partido:"Uruguay vs España",grupo:"H"},
+{fecha:"2026-06-26",hora:"19:00",partido:"Cabo Verde vs Arabia Saudita",grupo:"H"},
+{fecha:"2026-06-26",hora:"22:00",partido:"Nueva Zelanda vs Bélgica",grupo:"G"},
+{fecha:"2026-06-26",hora:"22:00",partido:"Egipto vs Irán",grupo:"G"},
+{fecha:"2026-06-27",hora:"16:00",partido:"Panamá vs Inglaterra",grupo:"L"},
+{fecha:"2026-06-27",hora:"16:00",partido:"Croacia vs Ghana",grupo:"L"},
+{fecha:"2026-06-27",hora:"18:30",partido:"Colombia vs Portugal",grupo:"K"},
+{fecha:"2026-06-27",hora:"18:30",partido:"República Democrática del Congo vs Uzbekistán",grupo:"K"},
+{fecha:"2026-06-27",hora:"21:00",partido:"Jordania vs Argentina",grupo:"J"},
+{fecha:"2026-06-27",hora:"21:00",partido:"Argelia vs Austria",grupo:"J"}
+];
+const dias=[...new Set(partidos.map(p=>p.fecha))].sort();
+const dates=document.getElementById("dates");
+const prev=document.getElementById("prev");
+const next=document.getElementById("next");
+const title=document.getElementById("title");
+const view=document.getElementById("view");
+const countries=document.getElementById("countries");
+let diaActual=Math.max(0,dias.findIndex(d=>new Date(`${d}T23:59:59-05:00`).getTime()>=Date.now()));
+let paisActual="";
+let paisesArriba=new Set();
+function iniciar(){
+ dates.innerHTML=dias.map((d,i)=>`<option value="${i}">${fechaCorta(d)}</option>`).join("");
+ prev.onclick=()=>mover(-1);
+ next.onclick=()=>mover(1);
+ dates.onchange=e=>{paisActual="";mostrar(+e.target.value)};
+ document.onkeydown=e=>{if(!paisActual&&e.key==="ArrowLeft")mover(-1);if(!paisActual&&e.key==="ArrowRight")mover(1)};
+ pintarPaises();
+ mostrar(diaActual);
+ setInterval(actualizar,1000);
+}
+function pintarPaises(){
+ const paises=[...new Set(partidos.flatMap(p=>p.partido.split(" vs ")))].sort((a,b)=>a.localeCompare(b,"es"));
+ countries.innerHTML=paises.map(p=>`<button type="button" class="country" data-country="${p}">${p}</button>`).join("");
+ document.querySelectorAll(".country").forEach(b=>b.onclick=()=>mostrarPais(b.dataset.country));
+}
+function juegan(partido,pais){
+ const equipos=partido.partido.split(" vs ");
+ return equipos[0]===pais||equipos[1]===pais;
+}
+function mover(n){
+ const i=diaActual+n;
+ if(i>=0&&i<dias.length){paisActual="";mostrar(i)}
+}
+function mostrar(i){
+ diaActual=i;
+ const fecha=dias[i];
+ const lista=partidos.filter(p=>p.fecha===fecha).sort((a,b)=>a.hora.localeCompare(b.hora));
+ title.textContent=fechaLarga(fecha);
+ dates.value=i;
+ prev.disabled=i===0;
+ next.disabled=i===dias.length-1;
+ paisesArriba=new Set(lista.flatMap(p=>p.partido.split(" vs ")));
+ view.innerHTML=lista.length?tabla(lista,false):'<div class="empty">Sin partidos</div>';
+ activarPais();
+ actualizar();
+}
+function mostrarPais(pais){
+ paisActual=pais;
+ const lista=partidos.filter(p=>juegan(p,pais)).sort((a,b)=>(a.fecha+a.hora).localeCompare(b.fecha+b.hora));
+ title.textContent=`Partidos de ${pais}`;
+ prev.disabled=diaActual===0;
+ next.disabled=diaActual===dias.length-1;
+ paisesArriba=new Set(lista.flatMap(p=>p.partido.split(" vs ")));
+ view.innerHTML=lista.length?tabla(lista,true):'<div class="empty">Sin partidos para este país</div>';
+ activarPais();
+ actualizar();
+}
+function activarPais(){
+ document.querySelectorAll(".country").forEach(b=>{
+  b.classList.toggle("playing",paisesArriba.has(b.dataset.country));
+  b.classList.toggle("active",b.dataset.country===paisActual);
+ });
+}
+function tabla(lista,conFecha){
+ const cabecera=conFecha?"<th>Fecha</th>":"";
+ return `<table><thead><tr>${cabecera}<th>Hora</th><th>Partido</th><th class="group">Grupo</th><th>Falta</th><th>Termina</th></tr></thead><tbody>${lista.map(p=>`<tr data-partido="${p.partido}">${conFecha?`<td class="dateCell" data-label="Fecha">${fechaCorta(p.fecha)}</td>`:""}<td class="time" data-label="Hora">${hora12(p.hora)}</td><td data-label="Partido">${p.partido}</td><td class="group" data-label="Grupo">${p.grupo}</td><td class="left" data-label="Falta" data-start="${p.fecha}T${p.hora}:00-05:00">...</td><td class="endleft" data-label="Termina">...</td></tr>`).join("")}</tbody></table>`;
+}
+function actualizar(){
+ const celdas=[...document.querySelectorAll(".left[data-start]")];
+ const ahora=Date.now();
+ const actuales=[];
+ let proxima=null;
+ let menor=Infinity;
+ celdas.forEach(el=>{
+  const fila=el.closest("tr");
+  const finEl=fila?fila.querySelector(".endleft"):null;
+  if(fila)fila.classList.remove("nextMatch");
+  const inicio=new Date(el.dataset.start).getTime();
+  const fin=inicio+120*60*1000;
+  el.className="left";
+  if(finEl)finEl.className="endleft";
+  if(ahora<inicio){
+   el.textContent=duracion(inicio-ahora);
+   if(finEl)finEl.textContent=duracion(fin-ahora);
+   if(inicio<menor){menor=inicio;proxima=fila}
+   return;
+  }
+  if(ahora<=fin){
+   el.textContent="En juego";
+   el.classList.add("live");
+   if(finEl){
+    finEl.textContent=duracion(fin-ahora);
+    finEl.classList.add("live");
+   }
+   if(fila)actuales.push(fila);
+   return;
+  }
+  el.textContent="Finalizado";
+  el.classList.add("done");
+  if(finEl){
+   finEl.textContent="Finalizado";
+   finEl.classList.add("done");
+  }
+ });
+ const filasMarcadas=actuales.length?actuales:(proxima?[proxima]:[]);
+ const equiposMarcados=new Set();
+ filasMarcadas.forEach(fila=>{
+  fila.classList.add("nextMatch");
+  (fila.dataset.partido||"").split(" vs ").forEach(e=>equiposMarcados.add(e));
+ });
+ document.querySelectorAll(".country").forEach(b=>b.classList.toggle("nextCountry",equiposMarcados.has(b.dataset.country)));
+}
+function duracion(ms){
+ const s=Math.max(0,Math.floor(ms/1000));
+ const d=Math.floor(s/86400);
+ const h=Math.floor(s%86400/3600);
+ const m=Math.floor(s%3600/60);
+ const seg=s%60;
+ if(d>0)return `${d}d ${h}h ${m}m`;
+ return `${h}h ${m}m ${seg}s`;
+}
+function hora12(h){
+ const [hh,mm]=h.split(":").map(Number);
+ return `${hh%12||12}:${String(mm).padStart(2,"0")} ${hh>=12?"p. m.":"a. m."}`;
+}
+function fechaLarga(f){
+ const [a,m,d]=f.split("-").map(Number);
+ return new Intl.DateTimeFormat("es-CO",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).format(new Date(a,m-1,d)).replace(/^./,c=>c.toUpperCase());
+}
+function fechaCorta(f){
+ const [a,m,d]=f.split("-").map(Number);
+ return new Intl.DateTimeFormat("es-CO",{weekday:"short",day:"2-digit",month:"short"}).format(new Date(a,m-1,d));
+}
+iniciar();
+</script>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
+import { getDatabase, ref, push, set, onValue, onDisconnect, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+
+const firebaseConfig={
+ apiKey:"AIzaSyCrC5pmGyX-VaX4f-KI0AU8A6GWP-YDngM",
+ authDomain:"mundial-a9de1.firebaseapp.com",
+ databaseURL:"https://mundial-a9de1-default-rtdb.firebaseio.com",
+ projectId:"mundial-a9de1",
+ storageBucket:"mundial-a9de1.firebasestorage.app",
+ messagingSenderId:"598028608340",
+ appId:"1:598028608340:web:a176c1fbdfcef564419ec1",
+ measurementId:"G-YJY5PWKPGJ"
+};
+
+const visitorCount=document.getElementById("visitorCount");
+const visitorStatus=document.getElementById("visitorStatus");
+const firebasePendiente=Object.values(firebaseConfig).some(v=>String(v).includes("PEGA_AQUI"));
+
+if(firebasePendiente){
+ visitorCount.textContent="--";
+ visitorStatus.textContent="Pendiente configurar Firebase Realtime Database";
+}else{
+ iniciarVisitantes();
+}
+
+async function iniciarVisitantes(){
+ const app=initializeApp(firebaseConfig);
+ const auth=getAuth(app);
+ const db=getDatabase(app);
+ const conexionesRaiz=ref(db,"presencia_mundial_2026/conexiones");
+ const conectadoRef=ref(db,".info/connected");
+ let usuario=null;
+ let conectado=false;
+ let registrando=false;
+ let registrado=false;
+
+ visitorStatus.textContent="Conectando...";
+
+ onValue(conexionesRaiz,snapshot=>{
+  let total=0;
+  snapshot.forEach(()=>{total++;});
+  visitorCount.textContent=total;
+ },error=>{
+  visitorStatus.textContent="Sin lectura de visitantes";
+  console.error(error);
+ });
+
+ onAuthStateChanged(auth,user=>{
+  usuario=user;
+  intentarRegistro(db,usuario,conectado);
+ });
+
+ onValue(conectadoRef,snapshot=>{
+  conectado=snapshot.val()===true;
+  if(!conectado)registrado=false;
+  visitorStatus.textContent=conectado?"En línea":"Sin conexión";
+  intentarRegistro(db,usuario,conectado);
+ });
+
+ try{
+  await signInAnonymously(auth);
+ }catch(error){
+  visitorStatus.textContent="Activa Authentication anónimo";
+  console.error(error);
+ }
+
+ async function intentarRegistro(db,user,estaConectado){
+  if(!user||!estaConectado||registrando||registrado)return;
+  registrando=true;
+  const miConexion=push(ref(db,`presencia_mundial_2026/conexiones/${user.uid}`));
+  const ultimaSalida=ref(db,`presencia_mundial_2026/ultimas_salidas/${user.uid}`);
+  try{
+   await onDisconnect(miConexion).remove();
+   await onDisconnect(ultimaSalida).set(serverTimestamp());
+   await set(miConexion,{activo:true,desde:serverTimestamp()});
+   registrado=true;
+   visitorStatus.textContent="En línea";
+  }catch(error){
+   visitorStatus.textContent="Revisa reglas de Realtime Database";
+   console.error(error);
+  }finally{
+   registrando=false;
+  }
+ }
+}
+</script>
+</body>
+</html>

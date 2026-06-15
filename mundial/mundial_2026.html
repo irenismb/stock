@@ -54,6 +54,9 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 .visitorCount{min-width:42px;border-radius:999px;background:#ffe5e5;color:var(--rojoOscuro);border:2px solid var(--rojo);padding:4px 10px;font-size:18px;line-height:1}
 .visitorStatus{grid-column:1/-1;font-size:12px;color:var(--suave);font-weight:800}
 .visitorStatus:empty{display:none}
+.visitorCities{grid-column:1/-1;background:#fff;border:1px dashed var(--linea);border-radius:10px;padding:7px 10px;color:var(--texto);font-size:13px;line-height:1.25;text-align:left}
+.visitorCities strong{color:var(--azul)}
+.visitorCities:empty{display:none}
 .donacion{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;text-align:center;font-weight:800;color:var(--azul);font-size:clamp(14px,2vw,18px);line-height:1.25;padding:9px}
 .donacionIntro{font-weight:900}
 .donacion strong{display:inline-block;color:var(--rojoOscuro);background:#fff2f2;border:1px solid #ffd1d1;border-radius:999px;padding:2px 8px;white-space:nowrap}
@@ -114,6 +117,7 @@ tr.nextMatch .left,tr.nextMatch .endleft,tr.nextMatch .time,tr.nextMatch .group{
 <span class="visitorBlock"><span>Visitantes hoy</span><strong id="todayVisitCount" class="visitorCount">--</strong></span>
 <span class="visitorBlock"><span>Visitantes totales</span><strong id="totalVisitCount" class="visitorCount">--</strong></span>
 <span id="visitorStatus" class="visitorStatus"></span>
+<div id="visitorCities" class="visitorCities"></div>
 </section>
 <section class="panel donacion" aria-label="Donación">
 <span class="donacionIntro">Apoya este proyecto:</span>
@@ -340,6 +344,7 @@ const visitorCount=document.getElementById("visitorCount");
 const todayVisitCount=document.getElementById("todayVisitCount");
 const totalVisitCount=document.getElementById("totalVisitCount");
 const visitorStatus=document.getElementById("visitorStatus");
+const visitorCities=document.getElementById("visitorCities");
 const firebasePendiente=Object.values(firebaseConfig).some(v=>String(v).includes("PEGA_AQUI"));
 const totalMinimoHistorico=9;
 
@@ -347,6 +352,7 @@ if(firebasePendiente){
  visitorCount.textContent="--";
  todayVisitCount.textContent="--";
  totalVisitCount.textContent=totalMinimoHistorico;
+ visitorCities.textContent="";
  visitorStatus.textContent="Pendiente configurar Firebase Realtime Database";
 }else{
  iniciarVisitantes();
@@ -374,8 +380,11 @@ async function iniciarVisitantes(){
  let conexionesSnapshot=null;
  let desfaseServidor=0;
  let latidoId=null;
+ let conexionActual=null;
+ let ubicacionVisitante={ciudad:"Ubicación no disponible",pais:"",etiqueta:"Ubicación no disponible"};
 
  visitorStatus.textContent="";
+ visitorCities.textContent="";
  pintarTotal();
 
  onValue(conexionesRaiz,snapshot=>{
@@ -432,6 +441,12 @@ async function iniciarVisitantes(){
   intentarRegistro(usuario,conectado);
  });
 
+ obtenerUbicacionVisitante().then(ubicacion=>{
+  ubicacionVisitante=ubicacion;
+  if(conexionActual)actualizarUbicacionConexion(conexionActual);
+  intentarRegistro(usuario,conectado);
+ }).catch(error=>console.error(error));
+
  try{
   await signInAnonymously(auth);
  }catch(error){
@@ -483,7 +498,8 @@ async function iniciarVisitantes(){
   try{
    await onDisconnect(miConexion).remove();
    await onDisconnect(ultimaSalida).set(serverTimestamp());
-   await set(miConexion,{activo:true,desde:serverTimestamp(),visto:serverTimestamp()});
+   await set(miConexion,{activo:true,desde:serverTimestamp(),visto:serverTimestamp(),ciudad:ubicacionVisitante.ciudad,pais:ubicacionVisitante.pais,ubicacion:ubicacionVisitante.etiqueta});
+   conexionActual=miConexion;
    registrado=true;
    iniciarLatido(miConexion);
    visitorStatus.textContent="";
@@ -507,10 +523,16 @@ async function iniciarVisitantes(){
    clearInterval(latidoId);
    latidoId=null;
   }
+  conexionActual=null;
+ }
+
+ function actualizarUbicacionConexion(miConexion){
+  update(miConexion,{ciudad:ubicacionVisitante.ciudad,pais:ubicacionVisitante.pais,ubicacion:ubicacionVisitante.etiqueta}).catch(error=>console.error(error));
  }
 
  function pintarVisitantesAhora(){
   visitorCount.textContent=conexionesSnapshot?contarConexionesActivas(conexionesSnapshot):"--";
+  visitorCities.innerHTML=conexionesSnapshot?pintarCiudadesActivas(conexionesSnapshot):"";
  }
 
  function pintarTotal(){
@@ -536,6 +558,27 @@ async function iniciarVisitantes(){
   return total;
  }
 
+ function pintarCiudadesActivas(snapshot){
+  const ciudades=contarCiudadesActivas(snapshot);
+  if(!ciudades.length)return "";
+  return `<strong>Ahora por ciudad:</strong> ${ciudades.map(item=>`${item.ciudad}: ${item.total}`).join(" · ")}`;
+ }
+
+ function contarCiudadesActivas(snapshot){
+  const ahoraServidor=Date.now()+desfaseServidor;
+  const ciudades=new Map();
+  snapshot.forEach(usuarioSnapshot=>{
+   usuarioSnapshot.forEach(conexionSnapshot=>{
+    const valor=conexionSnapshot.val();
+    const marca=Number(valor&&valor.visto);
+    if(!valor||valor.activo!==true||!Number.isFinite(marca)||Math.abs(ahoraServidor-marca)>conexionVivaMs)return;
+    const ciudad=normalizarTexto(valor.ubicacion||[valor.ciudad,valor.pais].filter(Boolean).join(", ")||"Ubicación no disponible");
+    ciudades.set(ciudad,(ciudades.get(ciudad)||0)+1);
+   });
+  });
+  return [...ciudades.entries()].map(([ciudad,total])=>({ciudad,total})).sort((a,b)=>b.total-a.total||a.ciudad.localeCompare(b.ciudad,"es"));
+ }
+
  function contarVisitantesHoy(snapshot,hoyColombia){
   let total=0;
   snapshot.forEach(childSnapshot=>{
@@ -552,6 +595,33 @@ async function iniciarVisitantes(){
 
  function fechaColombia(fecha){
   return new Intl.DateTimeFormat("en-CA",{timeZone:"America/Bogota",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date(fecha));
+ }
+
+ async function obtenerUbicacionVisitante(){
+  const servicios=[
+   {url:"https://ipapi.co/json/",ciudad:d=>d.city,pais:d=>d.country_name||d.country},
+   {url:"https://api.db-ip.com/v2/free/self",ciudad:d=>d.city,pais:d=>d.countryName||d.countryCode},
+   {url:"https://ipwho.is/",ciudad:d=>d.city,pais:d=>d.country||d.country_code,fallo:d=>d&&d.success===false}
+  ];
+  for(const servicio of servicios){
+   try{
+    const respuesta=await fetch(servicio.url,{cache:"no-store"});
+    if(!respuesta.ok)continue;
+    const datos=await respuesta.json();
+    if(servicio.fallo&&servicio.fallo(datos))continue;
+    const ciudad=normalizarTexto(servicio.ciudad(datos)||"");
+    const pais=normalizarTexto(servicio.pais(datos)||"");
+    const etiqueta=[ciudad,pais].filter(Boolean).join(", ");
+    if(etiqueta)return {ciudad:ciudad||"Ubicación no disponible",pais,etiqueta};
+   }catch(error){
+    console.error(error);
+   }
+  }
+  return {ciudad:"Ubicación no disponible",pais:"",etiqueta:"Ubicación no disponible"};
+ }
+
+ function normalizarTexto(valor){
+  return String(valor||"").replace(/[<>]/g,"").trim().slice(0,80);
  }
 }
 </script>

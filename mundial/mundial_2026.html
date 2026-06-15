@@ -1,6 +1,6 @@
 <!doctype html>
-<!-- v: 2026-06-14 13:30:00
-Se corrigio Visitantes hoy para calcularlo desde la actividad guardada y evitar escrituras rechazadas por Firebase. -->
+<!-- v: 2026-06-15 03:40:00
+Se corrigio Visitantes ahora para contar solo conexiones activas con latido reciente. -->
 <html lang="es">
 <head>
 <meta charset="utf-8">
@@ -323,7 +323,7 @@ iniciar();
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-import { getDatabase, ref, push, set, onValue, onDisconnect, serverTimestamp, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+import { getDatabase, ref, push, set, update, onValue, onDisconnect, serverTimestamp, get, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
 
 const firebaseConfig={
  apiKey:"AIzaSyCrC5pmGyX-VaX4f-KI0AU8A6GWP-YDngM",
@@ -362,21 +362,34 @@ async function iniciarVisitantes(){
  const legacyRef=ref(db,`${base}/ultimas_salidas`);
  const contadorTotalRef=ref(db,`${base}/contadores/visitantes_totales`);
  const conectadoRef=ref(db,".info/connected");
+ const desfaseServidorRef=ref(db,".info/serverTimeOffset");
+ const conexionVivaMs=120000;
+ const latidoMs=30000;
  let usuario=null;
  let conectado=false;
  let registrando=false;
  let registrado=false;
  let totalAnterior=totalMinimoHistorico;
  let totalGuardado=totalMinimoHistorico;
+ let conexionesSnapshot=null;
+ let desfaseServidor=0;
+ let latidoId=null;
 
  visitorStatus.textContent="";
  pintarTotal();
 
  onValue(conexionesRaiz,snapshot=>{
-  visitorCount.textContent=contarHijos(snapshot);
+  conexionesSnapshot=snapshot;
+  pintarVisitantesAhora();
  },error=>{
   visitorStatus.textContent="Sin lectura de visitantes";
   console.error(error);
+ });
+
+ onValue(desfaseServidorRef,snapshot=>{
+  const n=Number(snapshot.val());
+  desfaseServidor=Number.isFinite(n)?n:0;
+  pintarVisitantesAhora();
  });
 
  onValue(legacyRef,snapshot=>{
@@ -411,7 +424,10 @@ async function iniciarVisitantes(){
 
  onValue(conectadoRef,snapshot=>{
   conectado=snapshot.val()===true;
-  if(!conectado)registrado=false;
+  if(!conectado){
+   registrado=false;
+   detenerLatido();
+  }
   visitorStatus.textContent=conectado?"":"Sin conexión";
   intentarRegistro(usuario,conectado);
  });
@@ -467,8 +483,9 @@ async function iniciarVisitantes(){
   try{
    await onDisconnect(miConexion).remove();
    await onDisconnect(ultimaSalida).set(serverTimestamp());
-   await set(miConexion,{activo:true,desde:serverTimestamp()});
+   await set(miConexion,{activo:true,desde:serverTimestamp(),visto:serverTimestamp()});
    registrado=true;
+   iniciarLatido(miConexion);
    visitorStatus.textContent="";
   }catch(error){
    visitorStatus.textContent="Revisa reglas de Realtime Database";
@@ -478,6 +495,24 @@ async function iniciarVisitantes(){
   }
  }
 
+ function iniciarLatido(miConexion){
+  detenerLatido();
+  latidoId=setInterval(()=>{
+   update(miConexion,{activo:true,visto:serverTimestamp()}).catch(error=>console.error(error));
+  },latidoMs);
+ }
+
+ function detenerLatido(){
+  if(latidoId){
+   clearInterval(latidoId);
+   latidoId=null;
+  }
+ }
+
+ function pintarVisitantesAhora(){
+  visitorCount.textContent=conexionesSnapshot?contarConexionesActivas(conexionesSnapshot):"--";
+ }
+
  function pintarTotal(){
   totalVisitCount.textContent=Math.max(totalMinimoHistorico,totalAnterior,totalGuardado);
  }
@@ -485,6 +520,19 @@ async function iniciarVisitantes(){
  function contarHijos(snapshot){
   let total=0;
   snapshot.forEach(()=>{total++;});
+  return total;
+ }
+
+ function contarConexionesActivas(snapshot){
+  const ahoraServidor=Date.now()+desfaseServidor;
+  let total=0;
+  snapshot.forEach(usuarioSnapshot=>{
+   usuarioSnapshot.forEach(conexionSnapshot=>{
+    const valor=conexionSnapshot.val();
+    const marca=Number(valor&&valor.visto);
+    if(valor&&valor.activo===true&&Number.isFinite(marca)&&Math.abs(ahoraServidor-marca)<=conexionVivaMs)total++;
+   });
+  });
   return total;
  }
 

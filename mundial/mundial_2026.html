@@ -378,9 +378,11 @@ async function iniciarVisitantes(){
  let totalAnterior=totalMinimoHistorico;
  let totalGuardado=totalMinimoHistorico;
  let conexionesSnapshot=null;
+ let visitasSnapshot=null;
  let desfaseServidor=0;
  let latidoId=null;
  let conexionActual=null;
+ let visitaActual=null;
  let ubicacionVisitante={ciudad:"Ubicación no disponible",pais:"",etiqueta:"Ubicación no disponible"};
 
  visitorStatus.textContent="";
@@ -402,13 +404,17 @@ async function iniciarVisitantes(){
  });
 
  onValue(legacyRef,snapshot=>{
+  visitasSnapshot=snapshot;
   totalAnterior=Math.max(contarHijos(snapshot),totalMinimoHistorico);
   todayVisitCount.textContent=contarVisitantesHoy(snapshot,hoy);
   pintarTotal();
+  pintarResumenCiudades();
  },error=>{
+  visitasSnapshot=null;
   totalAnterior=totalMinimoHistorico;
   todayVisitCount.textContent="--";
   pintarTotal();
+  pintarResumenCiudades();
   console.error(error);
  });
 
@@ -444,6 +450,7 @@ async function iniciarVisitantes(){
  obtenerUbicacionVisitante().then(ubicacion=>{
   ubicacionVisitante=ubicacion;
   if(conexionActual)actualizarUbicacionConexion(conexionActual);
+  if(visitaActual)actualizarUbicacionVisita(visitaActual);
   intentarRegistro(usuario,conectado);
  }).catch(error=>console.error(error));
 
@@ -470,19 +477,32 @@ async function iniciarVisitantes(){
  async function registrarVisitante(user){
   if(!user)return;
   const visitaRef=ref(db,`${base}/ultimas_salidas/${user.uid}`);
+  visitaActual=visitaRef;
+  const ahora=Date.now();
   try{
-   let nuevo=false;
    await runTransaction(visitaRef,actual=>{
     if(actual===null){
-     nuevo=true;
-     return {primera_visita:Date.now(),ultima_visita:Date.now()};
+     return {
+      primera_visita:ahora,
+      ultima_visita:ahora,
+      ciudad:ubicacionVisitante.ciudad,
+      pais:ubicacionVisitante.pais,
+      ubicacion:ubicacionVisitante.etiqueta
+     };
     }
     if(typeof actual==="number"){
-     nuevo=false;
-     return {primera_visita:actual,ultima_visita:Date.now()};
+     return {
+      primera_visita:actual,
+      ultima_visita:ahora,
+      ciudad:ubicacionVisitante.ciudad,
+      pais:ubicacionVisitante.pais,
+      ubicacion:ubicacionVisitante.etiqueta
+     };
     }
-    nuevo=false;
-    actual.ultima_visita=Date.now();
+    actual.ultima_visita=ahora;
+    actual.ciudad=ubicacionVisitante.ciudad;
+    actual.pais=ubicacionVisitante.pais;
+    actual.ubicacion=ubicacionVisitante.etiqueta;
     return actual;
    });
   }catch(error){
@@ -530,13 +550,26 @@ async function iniciarVisitantes(){
   update(miConexion,{ciudad:ubicacionVisitante.ciudad,pais:ubicacionVisitante.pais,ubicacion:ubicacionVisitante.etiqueta}).catch(error=>console.error(error));
  }
 
+ function actualizarUbicacionVisita(miVisita){
+  update(miVisita,{ciudad:ubicacionVisitante.ciudad,pais:ubicacionVisitante.pais,ubicacion:ubicacionVisitante.etiqueta}).catch(error=>console.error(error));
+ }
+
  function pintarVisitantesAhora(){
   visitorCount.textContent=conexionesSnapshot?contarConexionesActivas(conexionesSnapshot):"--";
-  visitorCities.innerHTML=conexionesSnapshot?pintarCiudadesActivas(conexionesSnapshot):"";
+  pintarResumenCiudades();
  }
 
  function pintarTotal(){
   totalVisitCount.textContent=Math.max(totalMinimoHistorico,totalAnterior,totalGuardado);
+ }
+
+ function pintarResumenCiudades(){
+  const lineas=[];
+  const ahora=conexionesSnapshot?pintarCiudadesActivas(conexionesSnapshot):"";
+  const historico=visitasSnapshot?pintarCiudadesHistoricas(visitasSnapshot):"";
+  if(ahora)lineas.push(ahora);
+  if(historico)lineas.push(historico);
+  visitorCities.innerHTML=lineas.join("<br>");
  }
 
  function contarHijos(snapshot){
@@ -575,6 +608,23 @@ async function iniciarVisitantes(){
     const ciudad=normalizarTexto(valor.ubicacion||[valor.ciudad,valor.pais].filter(Boolean).join(", ")||"Ubicación no disponible");
     ciudades.set(ciudad,(ciudades.get(ciudad)||0)+1);
    });
+  });
+  return [...ciudades.entries()].map(([ciudad,total])=>({ciudad,total})).sort((a,b)=>b.total-a.total||a.ciudad.localeCompare(b.ciudad,"es"));
+ }
+
+ function pintarCiudadesHistoricas(snapshot){
+  const ciudades=contarCiudadesHistoricas(snapshot);
+  if(!ciudades.length)return "";
+  return `<strong>Totales por ciudad:</strong> ${ciudades.map(item=>`${item.ciudad}: ${item.total}`).join(" | ")}`;
+ }
+
+ function contarCiudadesHistoricas(snapshot){
+  const ciudades=new Map();
+  snapshot.forEach(childSnapshot=>{
+   const valor=childSnapshot.val();
+   if(!valor)return;
+   const ciudad=typeof valor==="number"?"Sin ciudad registrada":normalizarTexto(valor.ubicacion||[valor.ciudad,valor.pais].filter(Boolean).join(", ")||"Sin ciudad registrada");
+   ciudades.set(ciudad,(ciudades.get(ciudad)||0)+1);
   });
   return [...ciudades.entries()].map(([ciudad,total])=>({ciudad,total})).sort((a,b)=>b.total-a.total||a.ciudad.localeCompare(b.ciudad,"es"));
  }

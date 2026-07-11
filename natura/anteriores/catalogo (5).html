@@ -1,5 +1,4 @@
 <!doctype html>
-<!-- v: 2026-07-11 - contador semanal en panel plegable cerrado por defecto. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -1701,241 +1700,6 @@
     ::-webkit-scrollbar-thumb:hover{
       background: linear-gradient(180deg, #34466a, #243049);
     }
-
-    /* Panel plegable de visitantes semanales */
-    .visitor-week-details{
-      width:100%;
-      margin-top:10px;
-      border:1px solid var(--line);
-      border-radius:var(--br);
-      background:rgba(18,24,38,.78);
-      box-shadow:var(--shadow-sm);
-      overflow:hidden;
-    }
-    .visitor-week-details[open]{
-      background:rgba(18,24,38,.92);
-    }
-    .visitor-week-summary{
-      min-height:48px;
-      padding:9px 12px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      cursor:pointer;
-      list-style:none;
-      user-select:none;
-      font-family:Calibri, Arial, sans-serif;
-      font-size:11pt;
-      color:var(--txt);
-      background:linear-gradient(135deg, rgba(34,211,168,.12), rgba(45,212,191,.05));
-      transition:background .2s var(--ease), border-color .2s var(--ease);
-    }
-    .visitor-week-summary::-webkit-details-marker{
-      display:none;
-    }
-    .visitor-week-summary::marker{
-      content:"";
-    }
-    .visitor-week-summary:hover{
-      background:linear-gradient(135deg, rgba(34,211,168,.17), rgba(45,212,191,.08));
-    }
-    .visitor-week-summary:focus-visible{
-      outline:2px solid var(--focus);
-      outline-offset:-3px;
-    }
-    .visitor-week-summary-main{
-      min-width:0;
-      display:flex;
-      align-items:center;
-      gap:8px;
-      flex-wrap:wrap;
-    }
-    .visitor-week-summary-item{
-      display:inline-flex;
-      align-items:center;
-      gap:5px;
-      min-height:28px;
-      padding:4px 9px;
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:999px;
-      background:rgba(11,18,32,.34);
-      color:var(--mut);
-      white-space:nowrap;
-    }
-    .visitor-week-summary-item strong{
-      color:#ffffff;
-      font-weight:900;
-      font-variant-numeric:tabular-nums;
-    }
-    .visitor-week-summary-action{
-      display:inline-flex;
-      align-items:center;
-      justify-content:flex-end;
-      gap:8px;
-      flex:0 0 auto;
-      color:#d1fae5;
-      font-size:10.5pt;
-      font-weight:800;
-      white-space:nowrap;
-    }
-    .visitor-week-summary-hide{
-      display:none;
-    }
-    .visitor-week-chevron{
-      width:8px;
-      height:8px;
-      border-right:2px solid currentColor;
-      border-bottom:2px solid currentColor;
-      transform:rotate(45deg) translateY(-2px);
-      transform-origin:center;
-      transition:transform .2s var(--ease-out);
-    }
-    .visitor-week-details[open] .visitor-week-summary{
-      border-bottom:1px solid var(--line);
-    }
-    .visitor-week-details[open] .visitor-week-summary-show{
-      display:none;
-    }
-    .visitor-week-details[open] .visitor-week-summary-hide{
-      display:inline;
-    }
-    .visitor-week-details[open] .visitor-week-chevron{
-      transform:rotate(225deg) translate(-1px,-1px);
-    }
-    .visitor-week-content{
-      padding:10px;
-    }
-    .visitor-week-grid{
-      display:grid;
-      grid-template-columns:repeat(2, minmax(0, 1fr));
-      gap:10px;
-      width:100%;
-      align-items:stretch;
-    }
-    .visitor-week-card{
-      background:rgba(18,24,38,.92);
-      border:1px solid var(--line);
-      border-radius:var(--br);
-      overflow:hidden;
-      box-shadow:var(--shadow-sm);
-      min-width:0;
-      display:flex;
-      flex-direction:column;
-      transition:transform .2s var(--ease-out), border-color .2s var(--ease);
-    }
-    .visitor-week-card:hover{
-      transform:translateY(-2px);
-      border-color:#324666;
-    }
-    .visitor-week-table-wrap{
-      width:100%;
-      min-width:0;
-      overflow:auto;
-      flex:1 1 auto;
-      background:#0b1220;
-    }
-    .visitor-week-table{
-      width:100%;
-      border-collapse:collapse;
-      table-layout:fixed;
-      font-family:Calibri, Arial, sans-serif;
-      font-size:11pt;
-      color:var(--txt);
-      font-variant-numeric:tabular-nums;
-    }
-    .visitor-week-table th,
-    .visitor-week-table td{
-      height:31px;
-      padding:5px 10px;
-      border-right:1px solid var(--line);
-      border-bottom:1px solid var(--line);
-      text-align:left;
-      vertical-align:middle;
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-    .visitor-week-table th:last-child,
-    .visitor-week-table td:last-child{
-      border-right:0;
-    }
-    .visitor-week-table thead th{
-      background:#161e30;
-      color:#ffffff;
-      font-weight:900;
-      text-align:center;
-    }
-    .visitor-week-table tbody td{
-      background:rgba(18,24,38,.92);
-      color:var(--txt);
-      font-weight:600;
-    }
-    .visitor-week-table tbody td:last-child{
-      text-align:center;
-      font-weight:900;
-    }
-    .visitor-week-table .visitor-week-title-row th{
-      background:linear-gradient(135deg, rgba(34,211,168,.18), rgba(45,212,191,.09));
-      color:#ffffff;
-      font-weight:900;
-      text-align:left;
-      height:37px;
-    }
-    .visitor-week-table .visitor-empty-cell{
-      color:var(--mut-2);
-      font-weight:500;
-    }
-    .visitor-week-status{
-      margin:10px 0 0;
-      padding:7px 10px;
-      min-height:29px;
-      border:1px solid var(--line);
-      border-radius:10px;
-      color:var(--mut);
-      background:rgba(11,18,32,.55);
-      font-family:Calibri, Arial, sans-serif;
-      font-size:11pt;
-      line-height:1.25;
-    }
-    .visitor-week-status:empty{
-      display:none;
-    }
-    @media (max-width:760px){
-      .visitor-week-summary{
-        align-items:flex-start;
-      }
-      .visitor-week-summary-main{
-        gap:6px;
-      }
-      .visitor-week-summary-item{
-        font-size:10.5pt;
-      }
-    }
-    @media (max-width:560px){
-      .visitor-week-summary{
-        padding:9px 10px;
-      }
-      .visitor-week-summary-main{
-        flex-direction:column;
-        align-items:flex-start;
-      }
-      .visitor-week-summary-item{
-        min-height:0;
-        padding:2px 0;
-        border:0;
-        border-radius:0;
-        background:transparent;
-        white-space:normal;
-      }
-      .visitor-week-summary-action{
-        padding-top:2px;
-      }
-      .visitor-week-grid{
-        grid-template-columns:1fr;
-      }
-    }
-
   </style>
 
   <script type="application/ld+json">
@@ -2107,78 +1871,7 @@
         <div class="album-path" id="albumPath" aria-live="polite"></div>
       </div>
     </div>
-
     <section id="grid" class="grid" aria-label="Productos"></section>
-
-    <details id="visitorWeekDetails" class="visitor-week-details">
-      <summary class="visitor-week-summary">
-        <span class="visitor-week-summary-main">
-          <span class="visitor-week-summary-item">Visitantes esta semana: <strong id="visitorWeekTotal">--</strong></span>
-          <span class="visitor-week-summary-item">Hoy: <strong id="visitorTodayTotal">--</strong></span>
-          <span class="visitor-week-summary-item">Ciudad principal: <strong id="visitorTopCity">Cargando...</strong></span>
-        </span>
-        <span class="visitor-week-summary-action" aria-hidden="true">
-          <span class="visitor-week-summary-show">Ver detalle</span>
-          <span class="visitor-week-summary-hide">Ocultar detalle</span>
-          <span class="visitor-week-chevron"></span>
-        </span>
-      </summary>
-
-      <div class="visitor-week-content">
-        <section id="visitorWeekCards" class="visitor-week-grid" aria-label="Detalle de visitantes de la semana">
-          <article class="visitor-week-card" aria-label="Visitantes de la semana por día">
-            <div class="visitor-week-table-wrap">
-              <table class="visitor-week-table">
-                <thead>
-                  <tr class="visitor-week-title-row">
-                    <th colspan="2" scope="colgroup">Visitantes de la semana por día</th>
-                  </tr>
-                  <tr>
-                    <th scope="col">Día</th>
-                    <th scope="col">Cantidad</th>
-                  </tr>
-                </thead>
-                <tbody id="visitorWeekDaysBody" aria-live="polite">
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-          <article class="visitor-week-card" aria-label="Visitantes de la semana por ciudad">
-            <div class="visitor-week-table-wrap">
-              <table class="visitor-week-table">
-                <thead>
-                  <tr class="visitor-week-title-row">
-                    <th colspan="2" scope="colgroup">Visitantes de la semana por ciudad</th>
-                  </tr>
-                  <tr>
-                    <th scope="col">Ciudad</th>
-                    <th scope="col">Cantidad</th>
-                  </tr>
-                </thead>
-                <tbody id="visitorWeekCitiesBody" aria-live="polite">
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                  <tr><td>--</td><td>--</td></tr>
-                </tbody>
-              </table>
-            </div>
-          </article>
-        </section>
-        <p id="visitorWeekStatus" class="visitor-week-status" role="status" aria-live="polite"></p>
-      </div>
-    </details>
   </main>
 
   <footer class="site-footer">
@@ -5078,499 +4771,135 @@
     // Arranque
     init();
   </script>
+  <!-- ✅ Registro de ubicación (1 sola vez al cargar) -->
+<script>
+(function () {
+  // ✅ Respeta el interruptor ya existente en tu página
+  if (window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false) return;
 
-  <!-- Visitantes semanales: Firebase, GPS y respaldo por IP -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";
-    import { getDatabase, ref, onValue, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-database.js";
+  // ✅ Endpoint de Google Apps Script (Google Sheets)
+  const GPS_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyCrC5pmGyX-VaX4f-KI0AU8A6GWP-YDngM",
-      authDomain: "mundial-a9de1.firebaseapp.com",
-      databaseURL: "https://mundial-a9de1-default-rtdb.firebaseio.com",
-      projectId: "mundial-a9de1",
-      storageBucket: "mundial-a9de1.firebasestorage.app",
-      messagingSenderId: "598028608340",
-      appId: "1:598028608340:web:a176c1fbdfcef564419ec1",
-      measurementId: "G-YJY5PWKPGJ"
-    };
+  const LOAD_ID = (Date.now() + "-" + Math.random().toString(16).slice(2));
+  const USER_ID_KEY = "irenismb_user_id";
 
-    const FIREBASE_VISITAS = "presencia_mundial_2026/ultimas_salidas";
-    const CATALOGO_NODO = "catalogo_visitas_semana";
-    const GPS_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
-    const USER_ID_KEY = "irenismb_user_id";
-    const MAX_CITY_ROWS = 7;
+  function getUserId() {
+    try {
+      let id = localStorage.getItem(USER_ID_KEY);
+      if (id) return id;
 
-    const daysBody = document.getElementById("visitorWeekDaysBody");
-    const citiesBody = document.getElementById("visitorWeekCitiesBody");
-    const statusEl = document.getElementById("visitorWeekStatus");
-    const weekTotalEl = document.getElementById("visitorWeekTotal");
-    const todayTotalEl = document.getElementById("visitorTodayTotal");
-    const topCityEl = document.getElementById("visitorTopCity");
+      id = (window.crypto && typeof window.crypto.randomUUID === "function")
+        ? window.crypto.randomUUID()
+        : (Date.now() + "-" + Math.random().toString(16).slice(2));
 
-    if (daysBody && citiesBody && statusEl && weekTotalEl && todayTotalEl && topCityEl) {
-      iniciarTarjetasVisitantes();
+      localStorage.setItem(USER_ID_KEY, id);
+      return id;
+    } catch (_) {
+      return (Date.now() + "-" + Math.random().toString(16).slice(2));
     }
+  }
 
-    window.gpsLogOnce = async function () {
-      const ubicacion = await obtenerUbicacionPreferida();
-      enviarRegistroUbicacion(ubicacion);
-      return ubicacion;
-    };
+  const USER_ID = getUserId();
+  let loggedNoGeo = false;
 
-    async function iniciarTarjetasVisitantes() {
-      const hoy = fechaColombia(Date.now());
-      const fechas = Array.from({ length: 7 }, (_, index) => sumarDias(hoy, index - 6));
-      const lecturas = new Map(fechas.map(fecha => [fecha, null]));
+  function guessFuenteFromAccuracy(acc) {
+    const a = Number(acc);
+    if (!isFinite(a)) return "GEO";
+    if (a <= 35) return "GPS";
+    if (a <= 120) return "WI-FI";
+    if (a <= 1000) return "CELULAR";
+    return "GEO";
+  }
 
-      pintarDias(fechas, lecturas);
-      pintarCiudades(lecturas);
-      actualizarResumenVisitantes(lecturas);
-      statusEl.textContent = "Cargando visitantes...";
+  function sendLog(params) {
+    try {
+      const lat = (params && params.lat != null) ? params.lat : "";
+      const lng = (params && params.lng != null) ? params.lng : "";
+      const acc = (params && params.acc != null) ? params.acc : "";
+      const fuente = (params && params.fuente) ? String(params.fuente) : "";
 
-      let app;
-      let auth;
-      let db;
+      const payload = new URLSearchParams({
+        lat: String(lat),
+        lng: String(lng),
+        acc: acc === "" ? "" : String(acc),
 
-      try {
-        app = initializeApp(firebaseConfig, "catalogoVisitantesSemana");
-        auth = getAuth(app);
-        db = getDatabase(app);
-      } catch (error) {
-        statusEl.textContent = "No fue posible iniciar el contador.";
-        console.error(error);
+        fuente: fuente,
+        src: fuente,
+
+        navegador: USER_ID,
+        user_id: USER_ID,
+
+        load_id: LOAD_ID,
+        ts: String(Date.now()),
+        cb: Math.random().toString(36).slice(2)
+      });
+
+      const url = GPS_LOG_ENDPOINT + "?" + payload.toString();
+
+      // ✅ Envío (1) fetch GET, (2) fallback Image()
+      fetch(url, {
+        method: "GET",
+        mode: "no-cors",
+        cache: "no-store",
+        keepalive: true
+      }).catch(() => {
+        try {
+          const img = new Image();
+          img.src = url;
+        } catch (_) {}
+      });
+
+    } catch (_) {}
+  }
+
+  function logNoGeoOnce() {
+    if (loggedNoGeo) return;
+    loggedNoGeo = true;
+    sendLog({ lat: "", lng: "", acc: "", fuente: "SIN_UBICACION" });
+  }
+
+  function logOnce() {
+    try {
+      if (!("geolocation" in navigator)) {
+        logNoGeoOnce();
         return;
       }
 
-      onValue(
-        ref(db, FIREBASE_VISITAS),
-        snapshot => {
-          const visitasPorDia = extraerVisitasSemana(snapshot.val(), fechas);
-          for (const fecha of fechas) {
-            lecturas.set(fecha, visitasPorDia.get(fecha) || {});
-          }
-          pintarDias(fechas, lecturas);
-          pintarCiudades(lecturas);
-          actualizarResumenVisitantes(lecturas);
-          statusEl.textContent = "";
-        },
-        error => {
-          statusEl.textContent = "Sin lectura de visitantes.";
-          console.error(error);
-        }
-      );
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const c = pos && pos.coords;
+          if (!c) { logNoGeoOnce(); return; }
 
-      let usuario = null;
-      let ubicacion = null;
-      let registrado = false;
-
-      onAuthStateChanged(auth, async user => {
-        usuario = user || null;
-        await registrarCuandoEsteListo();
-      });
-
-      const ubicacionPromise = obtenerUbicacionPreferida()
-        .then(resultado => {
-          ubicacion = resultado;
-          enviarRegistroUbicacion(resultado);
-          return registrarCuandoEsteListo();
-        })
-        .catch(error => {
-          console.error(error);
-          ubicacion = ubicacionNoDisponible();
-          enviarRegistroUbicacion(ubicacion);
-          return registrarCuandoEsteListo();
-        });
-
-      window.catalogoUbicacionPromise = ubicacionPromise;
-
-      try {
-        await signInAnonymously(auth);
-      } catch (error) {
-        statusEl.textContent = "Activa Authentication anónimo en Firebase.";
-        console.error(error);
-      }
-
-      async function registrarCuandoEsteListo() {
-        if (registrado || !usuario || !ubicacion) return;
-        registrado = true;
-
-        const visitaRef = ref(db, `${FIREBASE_VISITAS}/${usuario.uid}/${CATALOGO_NODO}/${hoy}`);
-        const ahora = Date.now();
-
-        try {
-          await runTransaction(visitaRef, actual => {
-            const base = actual && typeof actual === "object" ? actual : {};
-            return {
-              primera_visita: Number(base.primera_visita) || ahora,
-              ultima_visita: ahora,
-              ciudad: normalizarTexto(ubicacion.ciudad || "Ubicación no disponible"),
-              pais: normalizarTexto(ubicacion.pais || ""),
-              fuente: normalizarTexto(ubicacion.fuente || "SIN_UBICACION")
-            };
+          sendLog({
+            lat: c.latitude,
+            lng: c.longitude,
+            acc: c.accuracy,
+            fuente: guessFuenteFromAccuracy(c.accuracy)
           });
-        } catch (error) {
-          registrado = false;
-          statusEl.textContent = "Revisa las reglas de Realtime Database.";
-          console.error(error);
-        }
-      }
-    }
-
-    function extraerVisitasSemana(usuarios, fechas) {
-      const resultado = new Map(fechas.map(fecha => [fecha, {}]));
-
-      if (!usuarios || typeof usuarios !== "object") return resultado;
-
-      for (const [uid, registroUsuario] of Object.entries(usuarios)) {
-        if (!registroUsuario || typeof registroUsuario !== "object") continue;
-
-        const visitasCatalogo = registroUsuario[CATALOGO_NODO];
-        if (!visitasCatalogo || typeof visitasCatalogo !== "object") continue;
-
-        for (const fecha of fechas) {
-          const visita = visitasCatalogo[fecha];
-          if (!visita || typeof visita !== "object") continue;
-          resultado.get(fecha)[uid] = visita;
-        }
-      }
-
-      return resultado;
-    }
-
-    function pintarDias(fechas, lecturas) {
-      const fragmento = document.createDocumentFragment();
-
-      for (const fecha of fechas) {
-        const fila = document.createElement("tr");
-        const celdaFecha = document.createElement("td");
-        const celdaCantidad = document.createElement("td");
-        const lectura = lecturas.get(fecha);
-
-        celdaFecha.textContent = fecha;
-        celdaCantidad.textContent = lectura === null ? "--" : String(Object.keys(lectura).length);
-
-        fila.append(celdaFecha, celdaCantidad);
-        fragmento.appendChild(fila);
-      }
-
-      daysBody.replaceChildren(fragmento);
-    }
-
-    function pintarCiudades(lecturas) {
-      const cantidades = new Map();
-
-      for (const lectura of lecturas.values()) {
-        if (!lectura || typeof lectura !== "object") continue;
-
-        for (const visita of Object.values(lectura)) {
-          if (!visita || typeof visita !== "object") continue;
-          const ciudad = normalizarTexto(visita.ciudad || "Ubicación no disponible");
-          cantidades.set(ciudad, (cantidades.get(ciudad) || 0) + 1);
-        }
-      }
-
-      const ciudades = [...cantidades.entries()]
-        .map(([ciudad, cantidad]) => ({ ciudad, cantidad }))
-        .sort((a, b) => b.cantidad - a.cantidad || a.ciudad.localeCompare(b.ciudad, "es"))
-        .slice(0, MAX_CITY_ROWS);
-
-      const fragmento = document.createDocumentFragment();
-
-      for (let index = 0; index < MAX_CITY_ROWS; index += 1) {
-        const fila = document.createElement("tr");
-        const celdaCiudad = document.createElement("td");
-        const celdaCantidad = document.createElement("td");
-        const item = ciudades[index];
-
-        if (item) {
-          celdaCiudad.textContent = item.ciudad;
-          celdaCantidad.textContent = String(item.cantidad);
-        } else {
-          celdaCiudad.textContent = "";
-          celdaCantidad.textContent = "";
-          celdaCiudad.className = "visitor-empty-cell";
-          celdaCantidad.className = "visitor-empty-cell";
-        }
-
-        fila.append(celdaCiudad, celdaCantidad);
-        fragmento.appendChild(fila);
-      }
-
-      citiesBody.replaceChildren(fragmento);
-    }
-
-    function actualizarResumenVisitantes(lecturas) {
-      const hoy = fechaColombia(Date.now());
-      const cantidadesCiudad = new Map();
-      let totalSemana = 0;
-      let totalHoy = 0;
-      let hayLecturasPendientes = false;
-
-      for (const [fecha, lectura] of lecturas.entries()) {
-        if (lectura === null) {
-          hayLecturasPendientes = true;
-          continue;
-        }
-        if (!lectura || typeof lectura !== "object") continue;
-
-        const visitas = Object.values(lectura);
-        totalSemana += visitas.length;
-        if (fecha === hoy) totalHoy = visitas.length;
-
-        for (const visita of visitas) {
-          if (!visita || typeof visita !== "object") continue;
-          const ciudad = normalizarTexto(visita.ciudad || "Ubicación no disponible");
-          cantidadesCiudad.set(ciudad, (cantidadesCiudad.get(ciudad) || 0) + 1);
-        }
-      }
-
-      if (hayLecturasPendientes) {
-        weekTotalEl.textContent = "--";
-        todayTotalEl.textContent = "--";
-        topCityEl.textContent = "Cargando...";
-        return;
-      }
-
-      const ciudadPrincipal = [...cantidadesCiudad.entries()]
-        .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "es"))[0];
-
-      weekTotalEl.textContent = String(totalSemana);
-      todayTotalEl.textContent = String(totalHoy);
-      topCityEl.textContent = ciudadPrincipal ? ciudadPrincipal[0] : "Sin datos";
-    }
-
-    async function obtenerUbicacionPreferida() {
-      if (window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false) {
-        return obtenerUbicacionPorIp();
-      }
-
-      try {
-        const coordenadas = await obtenerCoordenadasGps();
-        const ubicacionGps = await obtenerCiudadDesdeGps(coordenadas);
-        return {
-          ...ubicacionGps,
-          fuente: fuenteGps(coordenadas.accuracy),
-          lat: coordenadas.latitude,
-          lng: coordenadas.longitude,
-          acc: coordenadas.accuracy
-        };
-      } catch (error) {
-        console.info("GPS no disponible; se usa ubicación por IP.", error);
-        return obtenerUbicacionPorIp();
-      }
-    }
-
-    function obtenerCoordenadasGps() {
-      return new Promise((resolve, reject) => {
-        if (!("geolocation" in navigator)) {
-          reject(new Error("Geolocalización no disponible"));
-          return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-          posicion => {
-            const coords = posicion && posicion.coords;
-            if (!coords) {
-              reject(new Error("Coordenadas no disponibles"));
-              return;
-            }
-
-            resolve({
-              latitude: Number(coords.latitude),
-              longitude: Number(coords.longitude),
-              accuracy: Number(coords.accuracy)
-            });
-          },
-          error => reject(error || new Error("No se obtuvo permiso de ubicación")),
-          {
-            enableHighAccuracy: true,
-            timeout: 15000,
-            maximumAge: 300000
-          }
-        );
-      });
-    }
-
-    async function obtenerCiudadDesdeGps(coords) {
-      const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
-      url.searchParams.set("latitude", String(coords.latitude));
-      url.searchParams.set("longitude", String(coords.longitude));
-      url.searchParams.set("localityLanguage", "es");
-
-      const respuesta = await fetchConTiempo(url.toString(), 8000);
-      if (!respuesta.ok) throw new Error("Sin geocodificación GPS");
-
-      const datos = await respuesta.json();
-      const ciudad = normalizarTexto(
-        datos.locality ||
-        datos.city ||
-        datos.principalSubdivision ||
-        ""
+        },
+        (err) => {
+          // 1 = permiso denegado
+          if (err && err.code === 1) logNoGeoOnce();
+        },
+        { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
       );
-      const pais = normalizarTexto(datos.countryName || datos.countryCode || "");
+    } catch (_) {}
+  }
 
-      if (!ciudad) throw new Error("Ciudad GPS no disponible");
-      return { ciudad, pais };
-    }
+  // ✅ Opcional: deja disponible una función por si luego quieres llamarla con un botón
+  window.gpsLogOnce = logOnce;
 
-    async function obtenerUbicacionPorIp() {
-      const servicios = [
-        {
-          url: "https://ipapi.co/json/",
-          ciudad: datos => datos.city,
-          pais: datos => datos.country_name || datos.country
-        },
-        {
-          url: "https://api.db-ip.com/v2/free/self",
-          ciudad: datos => datos.city,
-          pais: datos => datos.countryName || datos.countryCode
-        },
-        {
-          url: "https://ipwho.is/",
-          ciudad: datos => datos.city,
-          pais: datos => datos.country || datos.country_code,
-          fallo: datos => datos && datos.success === false
-        }
-      ];
+  // ✅ Ejecuta una vez al cargar (igual que tu script original)
+  const hasIdle = ("requestIdleCallback" in window);
+  const gpsRunIdle = (fn, timeout = 1600) =>
+    hasIdle ? requestIdleCallback(fn, { timeout }) : setTimeout(fn, Math.min(350, timeout));
 
-      for (const servicio of servicios) {
-        try {
-          const respuesta = await fetchConTiempo(servicio.url, 7000);
-          if (!respuesta.ok) continue;
-
-          const datos = await respuesta.json();
-          if (servicio.fallo && servicio.fallo(datos)) continue;
-
-          const ciudad = normalizarTexto(servicio.ciudad(datos) || "");
-          const pais = normalizarTexto(servicio.pais(datos) || "");
-
-          if (ciudad || pais) {
-            return {
-              ciudad: ciudad || "Ubicación no disponible",
-              pais,
-              fuente: "IP",
-              lat: "",
-              lng: "",
-              acc: ""
-            };
-          }
-        } catch (error) {
-          console.error(error);
-        }
-      }
-
-      return ubicacionNoDisponible();
-    }
-
-    async function fetchConTiempo(url, timeoutMs) {
-      const controlador = new AbortController();
-      const temporizador = setTimeout(() => controlador.abort(), timeoutMs);
-
-      try {
-        return await fetch(url, {
-          cache: "no-store",
-          signal: controlador.signal
-        });
-      } finally {
-        clearTimeout(temporizador);
-      }
-    }
-
-    function enviarRegistroUbicacion(ubicacion) {
-      try {
-        const userId = obtenerIdLocal();
-        const loadId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-        const payload = new URLSearchParams({
-          lat: ubicacion.lat === "" ? "" : String(ubicacion.lat ?? ""),
-          lng: ubicacion.lng === "" ? "" : String(ubicacion.lng ?? ""),
-          acc: ubicacion.acc === "" ? "" : String(ubicacion.acc ?? ""),
-          fuente: String(ubicacion.fuente || "SIN_UBICACION"),
-          src: String(ubicacion.fuente || "SIN_UBICACION"),
-          ciudad: String(ubicacion.ciudad || ""),
-          pais: String(ubicacion.pais || ""),
-          navegador: userId,
-          user_id: userId,
-          load_id: loadId,
-          ts: String(Date.now()),
-          cb: Math.random().toString(36).slice(2)
-        });
-
-        const url = `${GPS_LOG_ENDPOINT}?${payload.toString()}`;
-
-        fetch(url, {
-          method: "GET",
-          mode: "no-cors",
-          cache: "no-store",
-          keepalive: true
-        }).catch(() => {
-          try {
-            const imagen = new Image();
-            imagen.src = url;
-          } catch (_) {}
-        });
-      } catch (_) {}
-    }
-
-    function obtenerIdLocal() {
-      try {
-        let id = localStorage.getItem(USER_ID_KEY);
-        if (id) return id;
-
-        id = window.crypto && typeof window.crypto.randomUUID === "function"
-          ? window.crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-        localStorage.setItem(USER_ID_KEY, id);
-        return id;
-      } catch (_) {
-        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      }
-    }
-
-    function fuenteGps(accuracy) {
-      const valor = Number(accuracy);
-      if (!Number.isFinite(valor)) return "GPS";
-      if (valor <= 35) return "GPS";
-      if (valor <= 120) return "WI-FI";
-      if (valor <= 1000) return "CELULAR";
-      return "GPS";
-    }
-
-    function ubicacionNoDisponible() {
-      return {
-        ciudad: "Ubicación no disponible",
-        pais: "",
-        fuente: "SIN_UBICACION",
-        lat: "",
-        lng: "",
-        acc: ""
-      };
-    }
-
-    function fechaColombia(fecha) {
-      return new Intl.DateTimeFormat("en-CA", {
-        timeZone: "America/Bogota",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).format(new Date(fecha));
-    }
-
-    function sumarDias(fechaIso, cantidad) {
-      const [anio, mes, dia] = fechaIso.split("-").map(Number);
-      const fecha = new Date(Date.UTC(anio, mes - 1, dia + cantidad));
-      return fecha.toISOString().slice(0, 10);
-    }
-
-    function normalizarTexto(valor) {
-      return String(valor || "")
-        .replace(/[<>]/g, "")
-        .trim()
-        .slice(0, 80);
-    }
-  </script>
-
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => gpsRunIdle(logOnce, 1600), { once: true });
+  } else {
+    gpsRunIdle(logOnce, 1600);
+  }
+})();
+</script>  
 </body>
 </html>

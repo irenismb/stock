@@ -1,0 +1,54 @@
+name: Ejecutar actualizacion de visitantes globales
+
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  ejecutar:
+    if: github.event.issue.title == 'EJECUTAR VISITANTES GLOBALES 20260715'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Ejecutar modificacion preparada
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          ruta_flujo = Path('.github/workflows/actualizar-visitantes-globales-20260715.yml')
+          contenido = ruta_flujo.read_text(encoding='utf-8')
+          inicio_marca = "          python - <<'PY'\n"
+          fin_marca = "\n          PY\n"
+          inicio = contenido.index(inicio_marca) + len(inicio_marca)
+          fin = contenido.index(fin_marca, inicio)
+          lineas = contenido[inicio:fin].splitlines()
+          codigo = '\n'.join(linea[10:] if linea.startswith('          ') else linea for linea in lineas)
+          exec(compile(codigo, str(ruta_flujo), 'exec'), {'__name__': '__main__'})
+          PY
+
+      - name: Validar y publicar
+        shell: bash
+        run: |
+          grep -q "Visitantes globales por ciudad" natura/catalogo.html
+          grep -q "Total visitantes" natura/catalogo.html
+          grep -q "Visitantes hoy" natura/catalogo.html
+          grep -q "function extraerCiudadesGlobales" natura/catalogo.html
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add natura/catalogo.html
+          git rm .github/workflows/actualizar-visitantes-globales-20260715.yml
+          git rm .github/workflows/ejecutar-actualizacion-visitantes-20260715.yml
+          git commit -m "Mostrar visitantes globales por ciudad"
+          git push
+
+      - name: Cerrar solicitud temporal
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh issue close "${{ github.event.issue.number }}" --comment "Actualizacion aplicada automaticamente."

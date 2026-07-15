@@ -16,6 +16,7 @@ const firebaseConfig = {
 const FIREBASE_VISITAS = "presencia_mundial_2026/ultimas_salidas";
 const CATALOGO_NODO = "catalogo_visitas_semana";
 const MAX_CITY_ROWS = 7;
+const MAX_TOP_DAYS = 3;
 
 const daysBody = reemplazarElemento("visitorWeekDaysBody", false);
 const citiesBody = reemplazarElemento("visitorWeekCitiesBody", false);
@@ -54,11 +55,11 @@ function prepararPresentacionGlobal() {
   if (topCityItem) topCityItem.replaceChildren(document.createTextNode("Ciudad principal global: "), topCityEl);
 
   const daysCard = daysBody.closest(".visitor-week-card");
-  if (daysCard) daysCard.setAttribute("aria-label", "Visitantes globales de los últimos siete días");
+  if (daysCard) daysCard.setAttribute("aria-label", "Tres días históricos con más visitantes globales");
 
   const daysTable = daysBody.closest("table");
   const daysTitle = daysTable?.querySelector(".visitor-week-title-row th");
-  if (daysTitle) daysTitle.textContent = "Visitantes globales de los últimos 7 días";
+  if (daysTitle) daysTitle.textContent = "Los 3 días históricos con más visitas";
 
   const citiesCard = citiesBody.closest(".visitor-week-card");
   if (citiesCard) citiesCard.setAttribute("aria-label", "Visitantes globales por ciudad y país");
@@ -109,16 +110,11 @@ function crearEncabezado(texto) {
 }
 
 function pintarCargaInicial() {
-  const fechas = ultimasSieteFechas();
   const fragmentoDias = document.createDocumentFragment();
 
-  for (const fecha of fechas) {
+  for (let index = 0; index < MAX_TOP_DAYS; index += 1) {
     const fila = document.createElement("tr");
-    const celdaFecha = document.createElement("td");
-    const celdaCantidad = document.createElement("td");
-    celdaFecha.textContent = fecha;
-    celdaCantidad.textContent = "--";
-    fila.append(celdaFecha, celdaCantidad);
+    fila.append(crearCelda("--"), crearCelda("--"));
     fragmentoDias.appendChild(fila);
   }
   daysBody.replaceChildren(fragmentoDias);
@@ -138,7 +134,7 @@ function pintarCargaInicial() {
 }
 
 async function iniciarLecturaGlobal() {
-  let app = getApps().find(item => item.name === "catalogoVisitantesSemana");
+  let app = getApps().find(item => item.name === "catalogoVisitantesGlobales");
 
   if (!app) {
     app = initializeApp(firebaseConfig, "catalogoVisitantesGlobales");
@@ -157,7 +153,7 @@ async function iniciarLecturaGlobal() {
     ref(db, FIREBASE_VISITAS),
     snapshot => {
       const datos = resumirVisitantesGlobales(snapshot.val());
-      pintarDias(datos.fechas, datos.visitantesPorDia);
+      pintarDias(datos.diasTop);
       pintarCiudades(datos.ciudades);
       weekTotalEl.textContent = String(datos.totalSemana);
       todayTotalEl.textContent = String(datos.totalHoy);
@@ -173,9 +169,10 @@ async function iniciarLecturaGlobal() {
 
 function resumirVisitantesGlobales(usuarios) {
   const hoy = fechaColombia(Date.now());
-  const fechas = ultimasSieteFechas();
-  const fechasSet = new Set(fechas);
-  const visitantesPorDia = new Map(fechas.map(fecha => [fecha, 0]));
+  const fechasSemana = ultimasSieteFechas();
+  const fechasSemanaSet = new Set(fechasSemana);
+  const visitantesSemana = new Map(fechasSemana.map(fecha => [fecha, 0]));
+  const visitantesHistoricos = new Map();
   const ciudades = new Map();
 
   if (usuarios && typeof usuarios === "object") {
@@ -189,8 +186,10 @@ function resumirVisitantesGlobales(usuarios) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) continue;
         if (!visita || typeof visita !== "object") continue;
 
-        if (fechasSet.has(fecha)) {
-          visitantesPorDia.set(fecha, (visitantesPorDia.get(fecha) || 0) + 1);
+        visitantesHistoricos.set(fecha, (visitantesHistoricos.get(fecha) || 0) + 1);
+
+        if (fechasSemanaSet.has(fecha)) {
+          visitantesSemana.set(fecha, (visitantesSemana.get(fecha) || 0) + 1);
         }
 
         const ciudad = normalizarTexto(visita.ciudad || "Ubicación no disponible");
@@ -209,6 +208,11 @@ function resumirVisitantesGlobales(usuarios) {
     }
   }
 
+  const diasTop = [...visitantesHistoricos.entries()]
+    .map(([fecha, cantidad]) => ({ fecha, cantidad }))
+    .sort((a, b) => b.cantidad - a.cantidad || b.fecha.localeCompare(a.fecha))
+    .slice(0, MAX_TOP_DAYS);
+
   const listaCiudades = [...ciudades.values()].sort((a, b) =>
     b.total - a.total ||
     b.hoy - a.hoy ||
@@ -216,25 +220,34 @@ function resumirVisitantesGlobales(usuarios) {
   );
 
   return {
-    fechas,
-    visitantesPorDia,
+    diasTop,
     ciudades: listaCiudades.slice(0, MAX_CITY_ROWS),
-    totalSemana: [...visitantesPorDia.values()].reduce((total, cantidad) => total + cantidad, 0),
-    totalHoy: visitantesPorDia.get(hoy) || 0,
+    totalSemana: [...visitantesSemana.values()].reduce((total, cantidad) => total + cantidad, 0),
+    totalHoy: visitantesHistoricos.get(hoy) || 0,
     ciudadPrincipal: listaCiudades[0]?.ciudad || ""
   };
 }
 
-function pintarDias(fechas, visitantesPorDia) {
+function pintarDias(diasTop) {
   const fragmento = document.createDocumentFragment();
 
-  for (const fecha of fechas) {
+  for (let index = 0; index < MAX_TOP_DAYS; index += 1) {
+    const item = diasTop[index];
     const fila = document.createElement("tr");
-    const celdaFecha = document.createElement("td");
-    const celdaCantidad = document.createElement("td");
-    celdaFecha.textContent = fecha;
-    celdaCantidad.textContent = String(visitantesPorDia.get(fecha) || 0);
-    fila.append(celdaFecha, celdaCantidad);
+
+    if (item) {
+      fila.append(
+        crearCelda(item.fecha),
+        crearCelda(String(item.cantidad))
+      );
+    } else {
+      const fecha = crearCelda("");
+      const cantidad = crearCelda("");
+      fecha.className = "visitor-empty-cell";
+      cantidad.className = "visitor-empty-cell";
+      fila.append(fecha, cantidad);
+    }
+
     fragmento.appendChild(fila);
   }
 

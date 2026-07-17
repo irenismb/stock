@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v: 2026-07-16 - total historico mundial de visitantes en el resumen. -->
+<!-- v: 2026-07-16 - vistas globales totales de todo el historico. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -28,11 +28,17 @@
         if(!respuesta.ok) throw new Error("HTTP " + respuesta.status);
 
         let html = await respuesta.text();
+        html = html
+          .replace(/Visitantes globales esta semana:/g, "Vistas globales totales:")
+          .replace(/Visitantes esta semana:/g, "Vistas globales totales:")
+          .replace(/Total histórico mundial:/g, "Vistas globales totales:");
+
         const cierreBody = "</bo" + "dy>";
         if(!html.includes(cierreBody)) throw new Error("Documento base incompleto");
 
-        const modulo = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-1\"></scr" + "ipt>";
-        html = html.replace(cierreBody, modulo + "\n" + cierreBody);
+        const moduloVisitantes = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-2\"></scr" + "ipt>";
+        const ajusteTexto = "<scr" + "ipt type=\"module\">const total=document.getElementById('visitorWeekTotal');const item=total?.closest('.visitor-week-summary-item');if(item)item.replaceChildren(document.createTextNode('Vistas globales totales: '),total);</scr" + "ipt>";
+        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + cierreBody);
 
         document.open();
         document.write(html);

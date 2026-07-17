@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v: 2026-07-15 - cargador del catalogo con visitantes globales por ciudad. -->
+<!-- v: 2026-07-16 - total historico mundial de visitantes en el resumen. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -31,7 +31,7 @@
         const cierreBody = "</bo" + "dy>";
         if(!html.includes(cierreBody)) throw new Error("Documento base incompleto");
 
-        const modulo = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260715-2\"></scr" + "ipt>";
+        const modulo = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-1\"></scr" + "ipt>";
         html = html.replace(cierreBody, modulo + "\n" + cierreBody);
 
         document.open();

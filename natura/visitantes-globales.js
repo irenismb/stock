@@ -50,7 +50,7 @@ function prepararPresentacionGlobal() {
   const todayItem = todayTotalEl.closest(".visitor-week-summary-item");
   const topCityItem = topCityEl.closest(".visitor-week-summary-item");
 
-  if (weekItem) weekItem.replaceChildren(document.createTextNode("Visitantes globales esta semana: "), weekTotalEl);
+  if (weekItem) weekItem.replaceChildren(document.createTextNode("Total histórico mundial: "), weekTotalEl);
   if (todayItem) todayItem.replaceChildren(document.createTextNode("Hoy en el mundo: "), todayTotalEl);
   if (topCityItem) topCityItem.replaceChildren(document.createTextNode("Ciudad principal global: "), topCityEl);
 
@@ -155,7 +155,7 @@ async function iniciarLecturaGlobal() {
       const datos = resumirVisitantesGlobales(snapshot.val());
       pintarDias(datos.diasTop);
       pintarCiudades(datos.ciudades);
-      weekTotalEl.textContent = String(datos.totalSemana);
+      weekTotalEl.textContent = String(datos.totalHistorico);
       todayTotalEl.textContent = String(datos.totalHoy);
       topCityEl.textContent = datos.ciudadPrincipal || "Sin datos";
       statusEl.textContent = "";
@@ -169,11 +169,9 @@ async function iniciarLecturaGlobal() {
 
 function resumirVisitantesGlobales(usuarios) {
   const hoy = fechaColombia(Date.now());
-  const fechasSemana = ultimasSieteFechas();
-  const fechasSemanaSet = new Set(fechasSemana);
-  const visitantesSemana = new Map(fechasSemana.map(fecha => [fecha, 0]));
   const visitantesHistoricos = new Map();
   const ciudades = new Map();
+  let totalHistorico = 0;
 
   if (usuarios && typeof usuarios === "object") {
     for (const registroUsuario of Object.values(usuarios)) {
@@ -186,11 +184,8 @@ function resumirVisitantesGlobales(usuarios) {
         if (!/^\d{4}-\d{2}-\d{2}$/.test(fecha)) continue;
         if (!visita || typeof visita !== "object") continue;
 
+        totalHistorico += 1;
         visitantesHistoricos.set(fecha, (visitantesHistoricos.get(fecha) || 0) + 1);
-
-        if (fechasSemanaSet.has(fecha)) {
-          visitantesSemana.set(fecha, (visitantesSemana.get(fecha) || 0) + 1);
-        }
 
         const ciudad = normalizarTexto(visita.ciudad || "Ubicación no disponible");
         const pais = normalizarTexto(visita.pais || "");
@@ -222,7 +217,7 @@ function resumirVisitantesGlobales(usuarios) {
   return {
     diasTop,
     ciudades: listaCiudades.slice(0, MAX_CITY_ROWS),
-    totalSemana: [...visitantesSemana.values()].reduce((total, cantidad) => total + cantidad, 0),
+    totalHistorico,
     totalHoy: visitantesHistoricos.get(hoy) || 0,
     ciudadPrincipal: listaCiudades[0]?.ciudad || ""
   };
@@ -289,11 +284,6 @@ function crearCelda(texto) {
   return td;
 }
 
-function ultimasSieteFechas() {
-  const hoy = fechaColombia(Date.now());
-  return Array.from({ length: 7 }, (_, index) => sumarDias(hoy, index - 6));
-}
-
 function fechaColombia(fecha) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Bogota",
@@ -301,12 +291,6 @@ function fechaColombia(fecha) {
     month: "2-digit",
     day: "2-digit"
   }).format(new Date(fecha));
-}
-
-function sumarDias(fechaIso, cantidad) {
-  const [anio, mes, dia] = fechaIso.split("-").map(Number);
-  const fecha = new Date(Date.UTC(anio, mes - 1, dia + cantidad));
-  return fecha.toISOString().slice(0, 10);
 }
 
 function normalizarTexto(valor) {

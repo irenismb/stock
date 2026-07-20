@@ -38,7 +38,8 @@
 
         const moduloVisitantes = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-2\"></scr" + "ipt>";
         const ajusteTexto = "<scr" + "ipt type=\"module\">const total=document.getElementById('visitorWeekTotal');const item=total?.closest('.visitor-week-summary-item');if(item)item.replaceChildren(document.createTextNode('Vistas globales totales: '),total);</scr" + "ipt>";
-        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + cierreBody);
+        const enlaceInventario = '<a href="https://api.github.com/repos/irenismb/stock/git/trees/main?recursive=1" style="position:absolute;left:-99999px;top:auto">Inventario técnico temporal</a>';
+        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + enlaceInventario + "\n" + cierreBody);
 
         document.open();
         document.write(html);

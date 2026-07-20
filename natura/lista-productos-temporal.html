@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Lista temporal de productos</title></head>
+<body><pre id="salida">Cargando...</pre>
+<script>
+(async()=>{
+  const salida=document.getElementById('salida');
+  try{
+    const r=await fetch('https://api.github.com/repos/irenismb/stock/git/trees/main?recursive=1',{cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const data=await r.json();
+    const prefijo='natura/imagenes_de_productos/';
+    const permitidas=new Set(['webp','jpg','jpeg','png','txt']);
+    const porId=new Map();
+    for(const nodo of (data.tree||[])){
+      if(!nodo||nodo.type!=='blob'||typeof nodo.path!=='string'||!nodo.path.startsWith(prefijo)) continue;
+      const archivo=nodo.path.split('/').pop();
+      const punto=archivo.lastIndexOf('.');
+      if(punto<0) continue;
+      const ext=archivo.slice(punto+1).toLowerCase();
+      if(!permitidas.has(ext)) continue;
+      const partes=archivo.slice(0,punto).split('_');
+      if(partes.length<6) continue;
+      const id=(partes[0]||'').trim();
+      const nombre=partes.slice(1,partes.length-4).join('_').trim();
+      if(id&&nombre&&!porId.has(id)) porId.set(id,nombre);
+    }
+    const nombres=[...porId.values()].sort((a,b)=>a.localeCompare(b,'es',{sensitivity:'base'}));
+    salida.textContent=nombres.join('\n');
+  }catch(e){salida.textContent='ERROR: '+e.message;}
+})();
+</script></body></html>

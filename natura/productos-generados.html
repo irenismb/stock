@@ -1,7 +1,0 @@
----
-layout: null
-permalink: /natura/productos-generados.html
----
-<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><title>Productos del catálogo</title></head><body><pre>{% assign vistos = '|' %}{% assign archivos = site.static_files | sort: 'path' %}{% for archivo in archivos %}{% if archivo.path contains '/natura/imagenes_de_productos/' %}{% assign extension = archivo.extname | downcase %}{% if extension == '.txt' or extension == '.webp' or extension == '.jpg' or extension == '.jpeg' or extension == '.png' %}{% assign partes = archivo.basename | split: '_' %}{% if partes.size >= 6 %}{% assign marca_id = '|' | append: partes[0] | append: '|' %}{% unless vistos contains marca_id %}{{ partes[1] }}
-{% assign vistos = vistos | append: partes[0] | append: '|' %}{% endunless %}{% endif %}{% endif %}{% endif %}{% endfor %}</pre></body></html>

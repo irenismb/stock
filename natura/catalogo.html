@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- v: 2026-07-16 - vistas globales totales de todo el historico. -->
+<!-- v: 2026-07-20 - lista desplegable de productos para indexacion. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -11,9 +11,22 @@
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
   <style>
     html,body{margin:0;min-height:100%;background:#0a0e15;color:#eef2f8;font-family:Calibri,Arial,sans-serif}
-    body{display:grid;place-items:center;padding:24px;box-sizing:border-box}
-    main{max-width:620px;text-align:center;line-height:1.5}
+    body{padding:24px;box-sizing:border-box}
+    main{max-width:620px;margin:0 auto;text-align:center;line-height:1.5}
     a{color:#6ee7d1}
+  </style>
+  <style id="estilosListaProductos">
+    #listaProductosSeo{width:min(1180px,calc(100% - 32px));margin:32px auto 48px;box-sizing:border-box;font-family:Calibri,Arial,sans-serif}
+    #listaProductosSeo details{overflow:hidden;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(11,15,20,.88);box-shadow:0 12px 32px rgba(0,0,0,.18)}
+    #listaProductosSeo summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px;padding:0 18px;box-sizing:border-box;cursor:pointer;list-style:none;color:#f3f6fa;font-weight:700;font-size:16px;line-height:1.25;user-select:none}
+    #listaProductosSeo summary::-webkit-details-marker{display:none}
+    #listaProductosSeo summary::after{content:"+";flex:0 0 auto;color:#6ee7d1;font-size:24px;font-weight:400;line-height:1}
+    #listaProductosSeo details[open] summary::after{content:"−"}
+    #listaProductosSeo summary:focus-visible{outline:3px solid #6ee7d1;outline-offset:-3px}
+    #listaProductosSeo .lista-productos-contenido{border-top:1px solid rgba(255,255,255,.12);padding:18px}
+    #listaProductosSeo ul{columns:3 260px;column-gap:32px;margin:0;padding-left:20px;color:#dce3ec;font-size:14px;line-height:1.45}
+    #listaProductosSeo li{break-inside:avoid;margin:0 0 8px;padding-right:8px}
+    @media(max-width:640px){#listaProductosSeo{width:calc(100% - 20px);margin:24px auto 36px}#listaProductosSeo summary{min-height:50px;padding:0 14px;font-size:15px}#listaProductosSeo .lista-productos-contenido{padding:14px}#listaProductosSeo ul{columns:1;font-size:13px}}
   </style>
 </head>
 <body>
@@ -21,8 +34,338 @@
     <p>Cargando catálogo...</p>
     <p><a href="catalogo-base-20260715.html">Abrir catálogo base</a></p>
   </main>
+
+  <section id="listaProductosSeo" aria-label="Lista de productos disponibles">
+    <details>
+      <summary>Lista de productos</summary>
+      <div class="lista-productos-contenido">
+        <ul>
+          <li>Aguas Citrico 150 ml</li>
+          <li>Aguas Frambuesa 150 ml</li>
+          <li>Aguas Jabuticaba 150 ml</li>
+          <li>Aguas Lirio 150 ml</li>
+          <li>Aguas Tropicales 150 ml</li>
+          <li>Andiroba Fluido De Masajes 100 g Envase</li>
+          <li>Biografia Clasica Femenino 100 ml</li>
+          <li>Blossoming Petals Colonia Spray Con Destellos 120 ml</li>
+          <li>Caja De Jabones para bebes x5 100 g x5</li>
+          <li>Care Aceite De Argan Y Naranja Crema Corporal 400 ml</li>
+          <li>Care Aceite De Argan Y Naranja Crema Corporal Litro</li>
+          <li>Care Aceite De Coco Crema Corporal 400 ml</li>
+          <li>Care Aceite De Coco Crema Corporal Litro</li>
+          <li>Care Aguacate Crema Corporal 400 ml</li>
+          <li>Care Aguacate Crema Corporal Litro</li>
+          <li>Care Avena Y Extracto De Vainilla Crema Corporal Litro</li>
+          <li>Care Derma Crema Corporal Iluminadora 750 ml</li>
+          <li>Care Derma Crema Corporal Reafirmante 400 ml</li>
+          <li>Care Derma Crema Corporal Reafirmante 750 ml</li>
+          <li>Care Extracto De Almendras Crema Corporal Litro</li>
+          <li>Care Fruto Rojos Crema Corporal 400 ml</li>
+          <li>Care Glicerina Y Aceite De Almendra Crema Corporal Litro</li>
+          <li>Care Rosa Mosqueta Crema Facial 3 En 1 75 g</li>
+          <li>Care Sandia Crema Corporal Litro</li>
+          <li>Chronos Agua Micelar Desmaquillante Repuesto 150 ml</li>
+          <li>Chronos Agua Micelar Desmaquillante Suave 150 ml</li>
+          <li>Chronos Aqua Biohidratante Renovador 30 ml</li>
+          <li>Chronos Aqua Renovador Hidratante 30 ml</li>
+          <li>Chronos Esencia De Tratamiento 100 ml Envase</li>
+          <li>Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Noche Repuesto 45 30 ml</li>
+          <li>Chronos Gel Crema Antiseñales Renovacion Y Prevencion Dia Repuesto 30 30 ml</li>
+          <li>Chronos Gel De Limpieza Purificante Antioleosidad 130 g</li>
+          <li>Chronos Mousse De Limpieza Intensiva 85 g</li>
+          <li>Chronos Protector Solar Facial Antioleosidad Reductor De Poros Fps 30 Incoloro 50 ml</li>
+          <li>Chronos Protector Solar Facial Antiseñales Fps 50 50 ml</li>
+          <li>Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Medio Oscuro Nuevo 50 ml</li>
+          <li>Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Tono Claro Medio 50 ml</li>
+          <li>Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Tono Medio Oscuro 50 ml</li>
+          <li>Chronos Serum Intensivo Antioxidante 15 ml Envase</li>
+          <li>Chronos Serum Intensivo Lifting Y Firmeza 30 ml Envase</li>
+          <li>Chronos Serum Intensivo Multiaclarador De Manchas Repuesto 30 ml</li>
+          <li>Chronos Serum Intensivo Reductor Oleosidad 30 ml Envase</li>
+          <li>Chronos Serum Intensivo Reductor Oleosidad 30 ml Repuesto</li>
+          <li>Chronos Serum Intensivo Rellenador Biohidratante 30 ml Envase</li>
+          <li>Chronos Serum Intensivo Rellenador Biohidratante Repuesto 30 ml</li>
+          <li>Chronos Super Serum Reductor De Arrugas 30 ml Envase</li>
+          <li>Chronos Super Serum Reductor De Arrugas 30 ml Repuesto</li>
+          <li>Chronos Super Serum Reductor De Arrugas Y Flacidez Ojos 30 ml Envase</li>
+          <li>Chronos Super Serum Reductor De Arrugas Y Flacidez Ojos Repuesto 30 ml</li>
+          <li>Chronos Triple Exfoliante Peeling Antiseñales 50 g</li>
+          <li>Combo Aguas Violeta 150 ml Jabon En Barra 90 g</li>
+          <li>Combo Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Dia Noche 45 30 ml</li>
+          <li>Combo Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Dia Noche Repuesto 45 30 ml</li>
+          <li>Combo Chronos Gel Crema Antiseñales Relleno Y Revitalizacion Dia Noche Repuesto 60 30 ml</li>
+          <li>Combo Ekos Murumuru Shampoo Acondicionador Mascara Crema De Peinar x4</li>
+          <li>Combo Ekos Murumuru Shampoo Acondicionador Mascara Pre Shampoo x4</li>
+          <li>Combo Ekos Murumuru Shampoo Acondicionador x2</li>
+          <li>Combo Ekos Pitanga Preta Femenino Frescor 150 ml Caja De Jabones De 6 Unidades De 25 g Cdu</li>
+          <li>Combo Faces Facial Jabon De Limpieza Hidratante Matificante 50 ml</li>
+          <li>Combo Kaiak Clasico Masculino Perfume Shampoo Gel De Afeitar 2 En 1</li>
+          <li>Combo Lumina Anticaida Repuesto Shampoo 300 ml Acondicionador 300 ml Mascara 250 ml</li>
+          <li>Combo Lumina Anticaida Shampoo Acondicionador Mascara Envase x3</li>
+          <li>Combo Lumina Anticaida Shampoo Acondicionador Mascara Tonico Envase x4</li>
+          <li>Combo Lumina Brillo Y Proteccion De Color Shampoo Acondicionador Envase x2</li>
+          <li>Combo Lumina Fuerza Y Reparacion Molecular Shampoo Acondicionador Mascara Envase x3</li>
+          <li>Combo Lumina Fuerza Y Reparacion Molecular Shampoo Acondicionador Mascara Repuesto x3</li>
+          <li>Combo Lumina Hidratacion Y Proteccion Antipolucion Shampoo Acondicionador Fluido Envase x3</li>
+          <li>Combo Lumina Nutricion Y Reparacion Profunda Shampoo Repuesto 300 ml Acondicionador Repuesto 300 ml Mascara Repuesto 250 ml x3</li>
+          <li>Combo Lumina Reconstruccion Shampoo Acondicionador Mascara Repuesto x3</li>
+          <li>Combo Lumina Reconstruccion Shampoo Acondicionador Mascara Serum Envase x4</li>
+          <li>Combo Lumina Reconstruccion Shampoo Acondicionador Repuesto x2</li>
+          <li>Combo Lumina Restauracion Y Liso Prolongado Shampoo Acondicionador Envase x2</li>
+          <li>Combo Lumina Restauracion Y Liso Prolongado Shampoo Acondicionador Mascara Envase x3</li>
+          <li>Combo Lumina Rizado Shampoo Acondicionador Envase x2</li>
+          <li>Combo Lumina Rizado Shampoo Acondicionador Mascara Crema De Peinar Envase x4</li>
+          <li>Combo Lumina Rizado Shampoo Acondicionador Mascara Crema De Peinar Repuesto x4</li>
+          <li>Combo Tododia Avellana Y Casis Aceite Bifasico Crema 120 ml 100 ml</li>
+          <li>Combo Tododia Cabello Rizado Cachos E Crespos Shampoo Repuesto Acondicionador Repuesto Crema Para Peinar Repuesto x3</li>
+          <li>Combo Tododia Capilar Durazno Y Almendra Shampoo 300 ml Acondicionador 280 ml Crema Para Peinar 180 ml Mascara 250 g x4</li>
+          <li>Combo Tododia Cereza Negra Y Praline x3</li>
+          <li>Combo Tododia Cereza Y Avellana x3</li>
+          <li>Combo Tododia Ciruela Y Flor De Vainilla x3</li>
+          <li>Combo Tododia Hidratacion Shampoo Acondicionador Mascara Repuesto x3</li>
+          <li>Combo Tododia Hidratacion Shampoo Acondicionador Mascara x3</li>
+          <li>Combo Tododia Hidratacion Shampoo Acondicionador Repuesto x2</li>
+          <li>Combo Tododia Manzana Caramelizada Y Vainilla x3</li>
+          <li>Combo Tododia Nutricion Shampoo Acondicionador Mascara Repuestos x3</li>
+          <li>Combo Tododia Nutricion Shampoo Acondicionador Repuestos x2</li>
+          <li>Combo Tododia Reparacion Shampoo Acondicionador Mascara Repuestos x3</li>
+          <li>Combo Tododia Reparacion Shampoo Acondicionador Mascara x2</li>
+          <li>Combo Tododia Reparacion Shampoo Acondicionador Repuestos x2</li>
+          <li>Combo Tododia Rizado Y Afros Shampoo Acondicionador Crema De Peinar Repuesto x3</li>
+          <li>Ekos Acai Bruma Facial Hidratante 100 ml</li>
+          <li>Ekos Acai Crema Corporal 400 ml Envase</li>
+          <li>Ekos Acai Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Acai Frescor 150 ml</li>
+          <li>Ekos Acai Minifrescor 75 ml</li>
+          <li>Ekos Amazo Femenino Miniatura Frescor 75 ml</li>
+          <li>Ekos Andiroba Crema Corporal 400 ml Envase</li>
+          <li>Ekos Cacao Crema Corporal 400 ml Envase</li>
+          <li>Ekos Cacao Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Cacao Frescor 150 ml Envase</li>
+          <li>Ekos Caja De Jabones Cremosos Exfoliantes Y Refrescantes 4 Unidades 100 g x4</li>
+          <li>Ekos Caja De Jabones Cremosos x4 100 g x4</li>
+          <li>Ekos Caja De Jabones Cremosos Y Exfoliantes 4 Unidades 100 g x4</li>
+          <li>Ekos Castaña Crema Corporal 200 ml</li>
+          <li>Ekos Castaña Crema Corporal 400 ml Envase</li>
+          <li>Ekos Castaña Crema Corporal 400 ml Repuesto</li>
+          <li>Ekos Castaña Crema Exfoliante Para Manos Y Pies 75 g</li>
+          <li>Ekos Castaña Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Castaña Frescor 150 ml</li>
+          <li>Ekos Castaña Frescor 150 ml Repuesto</li>
+          <li>Ekos Castaña Jabon Liquido Corporal 195 ml Repuesto</li>
+          <li>Ekos Castaña Jabon Liquido Corporal Cremoso 100 ml</li>
+          <li>Ekos Castaña Jabon Liquido Para Manos 250 ml Repuesto</li>
+          <li>Ekos Chuva 75 ml</li>
+          <li>Ekos Estoraque Frescor 150 ml</li>
+          <li>Ekos Ishpink Frescor 150 ml</li>
+          <li>Ekos Jabones Cremosos Y Exfoliantes 100 g x4</li>
+          <li>Ekos Jabones En Barra Cremosos Y Exfoliantes 100 g x4</li>
+          <li>Ekos Jabones En Barra Tukuma 100 g x4</li>
+          <li>Ekos Madeira Em Flor Frescor 150 ml</li>
+          <li>Ekos Maracuya Caja De Jabones Cremosos Y Exfoliantes 4 Unidades 100 g x4</li>
+          <li>Ekos Maracuya Crema Corporal 200 ml</li>
+          <li>Ekos Maracuya Crema Corporal 400 ml Envase</li>
+          <li>Ekos Maracuya Crema Corporal Repuesto 400 ml</li>
+          <li>Ekos Maracuya Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Maracuya Frescor 150 ml Envase</li>
+          <li>Ekos Maracuya Jabon Liquido Exfoliante 185 ml</li>
+          <li>Ekos Maracuya Jabon Masajeador 100 g</li>
+          <li>Ekos Maracuya Noche Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Murumuru Crema Para Peinar Multibeneficios 150 ml</li>
+          <li>Ekos Murumuru Mascara Pre Shampoo 100 g</li>
+          <li>Ekos Murumuru Serum Capilar Nocturno 30 ml</li>
+          <li>Ekos Murumuru Shampoo</li>
+          <li>Ekos Murumuru Shampoo Y Acondicionador antidaños 300 ml</li>
+          <li>Ekos Pataua Shampoo Acondicionador Repuesto</li>
+          <li>Ekos Pataua Shampoo Acondicionador Tonico Envase</li>
+          <li>Ekos Pitanga Clasica Frescor 150 ml</li>
+          <li>Ekos Pitanga Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Pitanga Preta Femenino Frescor 150 ml</li>
+          <li>Ekos Ryo Festa 75 ml</li>
+          <li>Ekos Ryo Vivo 75 ml</li>
+          <li>Ekos Surtidos Jabones Cremosos</li>
+          <li>Ekos Tukuma Crema Hidratante Para Manos 75 g</li>
+          <li>Ekos Tukuma Jabon Liquido Exfoliante 185 ml</li>
+          <li>Ekos Ucuuba Crema Corporal 400 ml Envase</li>
+          <li>Ekos Ucuuba Crema Corporal Repuesto 400 ml</li>
+          <li>Ekos Ucuuba Crema Hidratante Para Manos 75 g</li>
+          <li>Erva Doce Unisex Desodorante Antitranspirante Crema 80 g</li>
+          <li>Erva Doce Unisex Desodorante Antitranspirante Roll On 70 ml</li>
+          <li>Erva Doce Unisex Desodorante En Crema 80 g</li>
+          <li>Essencial Clasico Masculino 100 ml</li>
+          <li>Essencial Exclusivo Masculino 100 ml</li>
+          <li>Essencial Oud Masculino 100 ml</li>
+          <li>Essencial Oud Pimienta Masculino 100 ml</li>
+          <li>Essencial Sentir Femenino 50 ml</li>
+          <li>Essencial Sentir Masculino 100 ml</li>
+          <li>Far Away Clasico Femenino 50 ml</li>
+          <li>Fotoequilibrio Protector Facial Gel Crema Toque Seco Fps 50 50 g</li>
+          <li>Fotoequilibrio Protector Solar Corporal Fps 50 200 ml</li>
+          <li>Fotoequilibrio Protector Solar Corporal Y Rostro Niños Fps 50 200 ml</li>
+          <li>Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 30 50 g</li>
+          <li>Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 50 50 g</li>
+          <li>Hidratante Facial Piel Mixta 50 ml Faces</li>
+          <li>Homem Balsamo Post Barba 75 ml</li>
+          <li>Homem Caja De Jabones Masculinos x3 Unidades 110 g x3</li>
+          <li>Homem Coragio Masculino Crema Corporal Perfumada 125 ml</li>
+          <li>Homem Essence Masculino 100 ml</li>
+          <li>Homem Essence Masculino Splash Perfumado 100 ml</li>
+          <li>Homem Gel Para Afeitar 75 ml</li>
+          <li>Homem Masculino Desodorante En Roll On 75 ml</li>
+          <li>Homem Nos Masculino 100 ml</li>
+          <li>Homem Potence Masculino Splash Perfumado 100 ml</li>
+          <li>Homem Potence Miniatura 25 ml</li>
+          <li>Homem Sin Perfume Masculino Desodorante En Roll On 75 ml</li>
+          <li>Humor Beijo Femenino 75 ml</li>
+          <li>Humor Conexion Masculino 75 ml</li>
+          <li>Humor Envolve 75 ml</li>
+          <li>Humor Galaxia Femenino 75 ml</li>
+          <li>Humor Liberta Unisex Splash Perfumado 100 ml</li>
+          <li>Humor On Line Femenino 75 ml</li>
+          <li>Humor On Line Masculino 75 ml</li>
+          <li>Humor Online Femenino Perfume 75 ml</li>
+          <li>Humor Primeiro Crema Corporal Gel Iluminadora Perfumada 75 ml</li>
+          <li>Humor Propio Femenino Splash Perfumado 200 ml</li>
+          <li>Humor Transforma Unisex 75 ml</li>
+          <li>Ilia Clasico Femenino 50 ml</li>
+          <li>Ilia Plena Femenino 50 ml</li>
+          <li>Ilia Secreto Femenino 50 ml</li>
+          <li>Jabon Liquido Perfumado Humor Primeiro Femenino De 75 ml</li>
+          <li>Kaiak Aero Femenino 100 ml</li>
+          <li>Kaiak Aero Masculino 100 ml</li>
+          <li>Kaiak Aventura Femenino 100 ml</li>
+          <li>Kaiak Aventura Masculino 100 ml</li>
+          <li>Kaiak Clasico Femenino 100 ml</li>
+          <li>Kaiak Clasico Femenino Crema Corporal Gel Acqua Pos Solar Perfumada 390 ml</li>
+          <li>Kaiak Clasico Femenino Crema Hidratante Corporal Refrescante Baño Perfumada 100 ml</li>
+          <li>Kaiak Clasico Femenino Jabon Liquido Corporal Perfumado 200 ml</li>
+          <li>Kaiak Clasico Femenino Miniatura 25 ml</li>
+          <li>Kaiak Clasico Masculino 100 ml</li>
+          <li>Kaiak Clasico Masculino Shampoo Refrescante Perfumado 125 ml</li>
+          <li>Kaiak K Masculino 100 ml</li>
+          <li>Kaiak K Noite Masculino Shampoo Perfumado 125 ml</li>
+          <li>Kaiak Oceano Masculino 100 ml</li>
+          <li>Kaiak Oxigeno Masculino 100 ml</li>
+          <li>Kaiak Sonar Femenino 100 ml</li>
+          <li>Kaiak Sonar Masculino 100 ml</li>
+          <li>Kaiak Urbe Masculino 100 ml</li>
+          <li>Kaiak Urbe Masculino Splash Perfumado 100 ml</li>
+          <li>Kriska Flores Femenino Jabon Liquido Corporal Perfumado 125 ml</li>
+          <li>Lumina Anticaida Y Crecimiento Shampu Acondicionador Y Mascara En Repuesto</li>
+          <li>Lumina Anticaspa Shampoo Repuesto 300 ml</li>
+          <li>Lumina Brillo Y Proteccion De Color Shampoo Repuesto 300 ml</li>
+          <li>Lumina Hidratacion Y Proteccion Antipolucion Shampoo Envase</li>
+          <li>Lumina Hidratacion Y Proteccion Antipolucion Shampoo Repuesto 300 ml</li>
+          <li>Lumina Matizacion Y Restauracion Envase</li>
+          <li>Lumina Reconstruccion Acondicionador</li>
+          <li>Lumina Rizado Acondicionador</li>
+          <li>Luna Liberdade Femenino 75 ml</li>
+          <li>Luna Radiante Femenino 75 ml</li>
+          <li>Luna Radiante Femenino Jabon Liquido Corporal Perfumado 100 ml</li>
+          <li>Luna Viva Femenino 75 ml</li>
+          <li>Perfume Cabello Esencia Lumina 30 ml</li>
+          <li>Power Stay Pestañina 5 En 1 Genius 10 ml</li>
+          <li>Primer Blur 30 ml</li>
+          <li>Protector Solar Facial Piel Mixta A Grasa Fps 50 50 ml</li>
+          <li>Protector Solar Facial Stick Fps 50 Todo Tipo De Piel g</li>
+          <li>Seve Almendras Dulce Aceite Corporal 200 ml</li>
+          <li>Simply Delicate Extracto De Avena Femenino Gel De Limpieza Intima 250 ml</li>
+          <li>Solar Protector Solar Corporal Fps 70 200 ml</li>
+          <li>Solar Protector Solar Facial Control De Oleosidad Fps 50 50 ml</li>
+          <li>Solar Protector Solar Facial Control De Oleosidad Fps 70 50 ml</li>
+          <li>Solar Protector Solar Facial Hidratante Fps 50 50 ml</li>
+          <li>Solar Protector Solar Facial Hidratante Fps 70 50 ml</li>
+          <li>Splash Perfumado Humor Primeiro Femenino De 100 ml</li>
+          <li>Splash Perfumado Kaiak Clasico Femenino De 200 ml</li>
+          <li>Today Tomorrow Always Radiance 50 ml</li>
+          <li>Tododia Acerola E Hibisco Body Splash 200 ml</li>
+          <li>Tododia Aclarador Femenino Desodorante En Roll On 70 ml</li>
+          <li>Tododia Avellana Y Casis Femenino Desodorante En Crema 80 g</li>
+          <li>Tododia Avellana Y Casis Femenino Desodorante En Roll On 70 ml</li>
+          <li>Tododia Avellanas Y Casis Crema Corporal Repuesto 400 ml</li>
+          <li>Tododia Caja De Jabones Nuez Pecan 5 Unidades 90 g x5</li>
+          <li>Tododia Caja De Jabones Surtidos 5 Unidades 90 g x5</li>
+          <li>Tododia Cereza Negra Y Praline Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Cereza Y Avellana Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Cereza Y Avellana Desodorante Femenino En Roll On 70 ml</li>
+          <li>Tododia Ciruela Y Flor De Vainilla Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Ciruela Y Flor De Vainilla Crema Corporal 400 ml Envase</li>
+          <li>Tododia Ciruela Y Flor De Vainilla Crema Corporal Repuesto 400 ml</li>
+          <li>Tododia Ciruela Y Flor De Vainilla Splash ml</li>
+          <li>Tododia Flor De Ciruela Perfume Capilar 60 ml</li>
+          <li>Tododia Flor De Jengibre Y Mandarina Crema Corporal 400 ml Envase</li>
+          <li>Tododia Flor De Jengibre Y Mandarina Splash ml</li>
+          <li>Tododia Flor De Pera Y Melisa Crema Corporal 400 ml Envase</li>
+          <li>Tododia Frambuesa Y Pimienta Rosa Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Frambuesa Y Pimienta Rosa Splash ml</li>
+          <li>Tododia Frutas Rojas Crema Corporal 400 ml Envase</li>
+          <li>Tododia Frutas Rojas Crema Hidratante De Manos 50 ml</li>
+          <li>Tododia Frutas Rojas Exfoliante Corporal 100 g</li>
+          <li>Tododia Frutas Rojas Splash ml</li>
+          <li>Tododia Frutos Rojos Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Hojas De Limon Y Guanabana Crema Corporal 400 ml Envase</li>
+          <li>Tododia Hojas De Limon Y Guanabana Crema Corporal Repuesto 400 ml</li>
+          <li>Tododia Hojas De Limon Y Guanabana Femenino Desodorante En Roll On 70 ml</li>
+          <li>Tododia Hojas De Limon Y Guanabana Splash ml</li>
+          <li>Tododia Leche De Algodon Femenino Desodorante En Crema 80 g</li>
+          <li>Tododia Leche De Algodon Femenino Desodorante En Roll On 70 ml</li>
+          <li>Tododia Mango Rosa Y Agua De Coco Crema Corporal 400 ml Envase</li>
+          <li>Tododia Mango Rosa Y Agua De Coco Crema Corporal Repuesto 400 ml</li>
+          <li>Tododia Mango Rosa Y Agua De Coco Splash ml</li>
+          <li>Tododia Manzana Caramelizada Y Vainilla Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Manzana Caramelizada Y Vainilla Crema Corporal 400 ml</li>
+          <li>Tododia Manzana Caramelizada Y Vainilla Splash ml</li>
+          <li>Tododia Mora Roja Y Jabuticaba Femenino Desodorante En Roll On 70 ml</li>
+          <li>Tododia Nuez Pecan Y Cacao Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Nuez Pecan Y Cacao Crema Corporal 200 ml</li>
+          <li>Tododia Nuez Pecan Y Cacao Crema Corporal Envase 400 ml</li>
+          <li>Tododia Nuez Pecan Y Cacao Crema Corporal Repuesto 400 ml</li>
+          <li>Tododia Nuez Pecan Y Cacao Jabon Liquido 300 ml</li>
+          <li>Tododia Nutricion Acondicionador Repuesto 300 ml</li>
+          <li>Tododia Nutricion Shampoo Acondicionador Crema De Peinar</li>
+          <li>Tododia Piel Uniforme Balsamo Ultra Nutritivo Regenerador Pera Y Flor De Loto 200 ml</li>
+          <li>Tododia Piel Uniforme Exfoliante Nutritivo Pera Y Flor De Loto 190 g</li>
+          <li>Tododia Piel Uniforme Manteca Uniformadora De Tono Pera Y Flor De Loto 200 g</li>
+          <li>Tododia Reparacion Capilar Shampoo Acondicionador Mascara Crema Para Peinar Envase x4</li>
+          <li>Tododia Reparacion Shampoo 300 ml Repuesto</li>
+          <li>Tododia Rizado Spray Reactivador De Rizos 200 ml</li>
+          <li>Tododia Rizado Y Afros Crema De Peinar Repuesto</li>
+          <li>Tododia Sin Perfume Desodorante Femenino En Roll On 70 ml</li>
+          <li>Tododia Sin Perfume Femenino Desodorante En Crema 80 g</li>
+          <li>Tododia Te De Manzanilla Y Lavanda Caja De Jabones 2 Unidades 90 g x2</li>
+          <li>Tododia Te De Manzanilla Y Lavanda Caja De Jabones 5 Unidades 90 g x5</li>
+          <li>Tododia Te De Manzanilla Y Lavanda Crema Corporal 200 ml</li>
+          <li>Tododia Te De Manzanilla Y Lavanda Crema Corporal 400 ml Envase</li>
+          <li>Tododia Te De Manzanilla Y Lavanda Crema Nube Relajante Corporal 200 ml</li>
+          <li>Tododia Te De Manzanilla Y Lavanda Splash ml</li>
+          <li>Trescientos 300 Kilometros Virtual Adrenaline Masculino 100 ml</li>
+          <li>Una Brillo Femenino 75 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 10n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 15n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 19n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 21n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 24n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 27n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 30n 8 ml</li>
+          <li>Una Corrector Cobertura Extrema 24h Tono 32n 8 ml</li>
+          <li>Una Glos Labial Fps 15 8 ml</li>
+          <li>Una Labial Cc Tono Rose 4c 3 8 g</li>
+          <li>Una Lapiz Kajal Ojos Tono Negro 1 14 g</li>
+          <li>Una Mascara Para Pestaña Volumen Magnifico 8 ml</li>
+          <li>Una Primer Facial Fps 40 30 ml</li>
+          <li>Una Rubor Intense Me Tono Bronce Perlado 6 g</li>
+          <li>Una Serum Labial 1 8 g</li>
+          <li>Works Crema Reparadora Para Pies Con Callosidades 100 g</li>
+        </ul>
+      </div>
+    </details>
+  </section>
+
   <script>
     (async function cargarCatalogo(){
+      const listaProductosSeo = document.getElementById("listaProductosSeo")?.outerHTML || "";
+      const estilosListaProductos = document.getElementById("estilosListaProductos")?.outerHTML || "";
+
       try{
         const respuesta = await fetch("catalogo-base-20260715.html?v=20260715", { cache:"no-store" });
         if(!respuesta.ok) throw new Error("HTTP " + respuesta.status);
@@ -33,12 +376,17 @@
           .replace(/Visitantes esta semana:/g, "Vistas globales totales:")
           .replace(/Total histórico mundial:/g, "Vistas globales totales:");
 
+        const cierreHead = "</he" + "ad>";
         const cierreBody = "</bo" + "dy>";
         if(!html.includes(cierreBody)) throw new Error("Documento base incompleto");
 
+        if(estilosListaProductos && html.includes(cierreHead)){
+          html = html.replace(cierreHead, estilosListaProductos + "\n" + cierreHead);
+        }
+
         const moduloVisitantes = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-2\"></scr" + "ipt>";
         const ajusteTexto = "<scr" + "ipt type=\"module\">const total=document.getElementById('visitorWeekTotal');const item=total?.closest('.visitor-week-summary-item');if(item)item.replaceChildren(document.createTextNode('Vistas globales totales: '),total);</scr" + "ipt>";
-        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + cierreBody);
+        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + listaProductosSeo + "\n" + cierreBody);
 
         document.open();
         document.write(html);

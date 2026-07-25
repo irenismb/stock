@@ -1,4 +1,3 @@
-# Activación del ajuste
 name: Mover contador debajo del contenido
 
 on:
@@ -15,70 +14,78 @@ jobs:
   ajustar:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Mover contador al flujo normal de la página
-        shell: python
+      - name: Ajustar posición del contador
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
-          ruta = Path("reparacion/reparacion_de_computadores_santa_marta.html")
-          texto = ruta.read_text(encoding="utf-8")
+          ruta = Path('reparacion/reparacion_de_computadores_santa_marta.html')
+          texto = ruta.read_text(encoding='utf-8')
 
-          cambios = [
-              (
-                  "html,body{width:100%;height:100%;margin:0;overflow:hidden}",
-                  "html,body{width:100%;min-height:100%;margin:0;overflow-x:hidden;overflow-y:auto}"
-              ),
-              (
-                  ".p{height:100svh;display:grid;grid-template-rows:auto 1fr}",
-                  ".p{min-height:100svh;height:auto;display:grid;grid-template-rows:auto 1fr}"
-              ),
-              (
-                  """    .visitor-week-shell{
-      position:fixed;left:50%;bottom:8px;z-index:100;
-      width:min(1100px,calc(100% - 20px));transform:translateX(-50%);
-      font-family:Calibri,Arial,sans-serif;
-    }
-    .visitor-week-shell .visitor-week-details{margin-top:0;box-shadow:0 12px 34px rgba(0,0,0,.28)}
-    .visitor-week-shell .visitor-week-details[open]{max-height:min(82vh,700px);overflow:auto}
-    .visitor-week-shell .visitor-week-details[open] .visitor-week-summary{
-      position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#173a3a,#15243a)
-    }
-    @media(max-width:560px){
-      .visitor-week-shell{bottom:5px;width:calc(100% - 10px)}
-      .visitor-week-shell .visitor-week-details[open]{max-height:88vh}
-    }
-""",
-                  """    .visitor-week-shell{
-      position:relative;z-index:1;
-      width:min(1100px,calc(100% - 20px));margin:18px auto 28px;
-      font-family:Calibri,Arial,sans-serif;
-    }
-    .visitor-week-shell .visitor-week-details{margin-top:0;box-shadow:0 12px 34px rgba(0,0,0,.28)}
-    .visitor-week-shell .visitor-week-details[open]{max-height:none;overflow:visible}
-    .visitor-week-shell .visitor-week-details[open] .visitor-week-summary{
-      position:relative;top:auto;z-index:1;background:linear-gradient(135deg,#173a3a,#15243a)
-    }
-    @media(max-width:560px){
-      .visitor-week-shell{width:calc(100% - 10px);margin:12px auto 18px}
-      .visitor-week-shell .visitor-week-details[open]{max-height:none}
-    }
-"""
-              )
-          ]
+          texto = texto.replace(
+              'html,body{width:100%;height:100%;margin:0;overflow:hidden}',
+              'html,body{width:100%;min-height:100%;margin:0;overflow-x:hidden;overflow-y:auto}',
+              1
+          )
+          texto = texto.replace(
+              '.p{height:100svh;display:grid;grid-template-rows:auto 1fr}',
+              '.p{min-height:100svh;height:auto;display:grid;grid-template-rows:auto 1fr}',
+              1
+          )
 
-          for anterior, nuevo in cambios:
-              if anterior not in texto:
-                  raise SystemExit("No se encontró uno de los bloques esperados; no se modificó el archivo.")
-              texto = texto.replace(anterior, nuevo, 1)
+          anterior = '''    .visitor-week-shell{
+              position:fixed;left:50%;bottom:8px;z-index:100;
+              width:min(1100px,calc(100% - 20px));transform:translateX(-50%);
+              font-family:Calibri,Arial,sans-serif;
+            }
+            .visitor-week-shell .visitor-week-details{margin-top:0;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+            .visitor-week-shell .visitor-week-details[open]{max-height:min(82vh,700px);overflow:auto}
+            .visitor-week-shell .visitor-week-details[open] .visitor-week-summary{
+              position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#173a3a,#15243a)
+            }
+            @media(max-width:560px){
+              .visitor-week-shell{bottom:5px;width:calc(100% - 10px)}
+              .visitor-week-shell .visitor-week-details[open]{max-height:88vh}
+            }
+          '''
 
-          ruta.write_text(texto, encoding="utf-8")
+          nuevo = '''    .visitor-week-shell{
+              position:relative;z-index:1;
+              width:min(1100px,calc(100% - 20px));margin:18px auto 28px;
+              font-family:Calibri,Arial,sans-serif;
+            }
+            .visitor-week-shell .visitor-week-details{margin-top:0;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+            .visitor-week-shell .visitor-week-details[open]{max-height:none;overflow:visible}
+            .visitor-week-shell .visitor-week-details[open] .visitor-week-summary{
+              position:relative;top:auto;z-index:1;background:linear-gradient(135deg,#173a3a,#15243a)
+            }
+            @media(max-width:560px){
+              .visitor-week-shell{width:calc(100% - 10px);margin:12px auto 18px}
+              .visitor-week-shell .visitor-week-details[open]{max-height:none}
+            }
+          '''
 
-      - name: Publicar cambio
+          if anterior not in texto:
+              raise RuntimeError('No se encontró el bloque de posición del contador.')
+
+          texto = texto.replace(anterior, nuevo, 1)
+          ruta.write_text(texto, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Guardar cambios
+        shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add reparacion/reparacion_de_computadores_santa_marta.html
+          if git diff --cached --quiet; then
+            exit 0
+          fi
           git commit -m "Mover contador debajo del contenido principal"
           git push

@@ -1,0 +1,76 @@
+name: Agregar Facebook temporal
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/agregar-facebook-temporal.yml
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Agregar enlace e icono de Facebook
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          pagina = Path("reparación/reparación_de_computadores.html")
+          texto = pagina.read_text(encoding="utf-8")
+          enlace = "https://www.facebook.com/share/19LgeUrXNT/"
+
+          if enlace not in texto:
+              ancla_css = "    .contacto a { color: #8ee2ae; font-weight: 800; }\n"
+              css = '''    .contacto a { color: #8ee2ae; font-weight: 800; }
+    .red-social {
+      min-height: 46px;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 8px;
+      padding: 10px 16px;
+      border-radius: 12px;
+      color: var(--blanco) !important;
+      background: #1877f2;
+      box-shadow: 0 10px 24px rgba(0,0,0,.18);
+      transition: transform .2s ease, box-shadow .2s ease;
+    }
+    .red-social:hover { transform: translateY(-2px); box-shadow: 0 14px 28px rgba(0,0,0,.24); }
+    .icono-red { width: 23px; height: 23px; flex: 0 0 23px; fill: currentColor; }
+'''
+              if ancla_css not in texto:
+                  raise SystemExit("No se encontró el punto de inserción CSS")
+              texto = texto.replace(ancla_css, css, 1)
+
+              ancla_html = '          <p><strong>Zona de atención:</strong> Santa Marta, Colombia<br><strong>Horario:</strong> A convenir<br><strong>WhatsApp:</strong> <a href="https://wa.me/573114040809" target="_blank" rel="noopener noreferrer">311 404 0809</a></p>'
+              bloque = ancla_html + '''
+          <a class="red-social" href="https://www.facebook.com/share/19LgeUrXNT/" target="_blank" rel="noopener noreferrer" aria-label="Abrir Facebook de Servicio Técnico Martín">
+            <svg class="icono-red" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 12.06C22 6.5 17.52 2 12 2S2 6.5 2 12.06C2 17.08 5.66 21.24 10.44 22v-7.03H7.9v-2.91h2.54V9.85c0-2.52 1.49-3.91 3.77-3.91 1.09 0 2.23.2 2.23.2v2.47h-1.25c-1.24 0-1.63.77-1.63 1.57v1.88h2.77l-.44 2.91h-2.33V22C18.34 21.24 22 17.08 22 12.06Z"/></svg>
+            <span>Sígueme en Facebook</span>
+          </a>'''
+              if ancla_html not in texto:
+                  raise SystemExit("No se encontró el punto de inserción del enlace")
+              texto = texto.replace(ancla_html, bloque, 1)
+              pagina.write_text(texto, encoding="utf-8", newline="\n")
+
+          Path(".github/workflows/agregar-facebook-temporal.yml").unlink(missing_ok=True)
+          PY
+
+      - name: Guardar actualización
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Agregar enlace e icono de Facebook [skip ci]"
+          git push

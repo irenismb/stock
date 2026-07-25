@@ -1,0 +1,65 @@
+name: Ajustar espacio y textos de reparación
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/ajustar-espacio-y-textos-reparacion.yml
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Aplicar ajustes solicitados
+        shell: python
+        run: |
+          from pathlib import Path
+
+          limpia = Path("reparacion/reparacion_de_computadores_santa_marta.html")
+          interna = Path("reparación/reparación_de_computadores_santa_marta.html")
+
+          texto_limpio = limpia.read_text(encoding="utf-8")
+          texto_interno = interna.read_text(encoding="utf-8")
+
+          reemplazos_limpia = [
+              (
+                  ".contador{position:relative;width:min(1100px,calc(100% - 20px));margin:18px auto 28px;z-index:1}",
+                  ".contador{position:relative;width:min(1100px,calc(100% - 20px));margin:1mm auto 28px;z-index:1}"
+              ),
+              (
+                  "@media(max-width:560px){.contador{width:calc(100% - 10px);margin:12px auto 18px}",
+                  "@media(max-width:560px){.contador{width:calc(100% - 10px);margin:1mm auto 18px}"
+              )
+          ]
+
+          for anterior, nuevo in reemplazos_limpia:
+              if anterior not in texto_limpio:
+                  raise SystemExit(f"No se encontró el bloque esperado en la página limpia: {anterior}")
+              texto_limpio = texto_limpio.replace(anterior, nuevo, 1)
+
+          estilo = '<style id="ajustes-alineacion-solicitados">.tag{text-align:center;justify-self:center;width:100%}h1,.intro{text-align:justify;text-justify:inter-word}</style>'
+          if estilo not in texto_interno:
+              if "</head>" not in texto_interno:
+                  raise SystemExit("No se encontró el cierre de head en la página interna.")
+              texto_interno = texto_interno.replace("</head>", estilo + "</head>", 1)
+
+          limpia.write_text(texto_limpio, encoding="utf-8", newline="\n")
+          interna.write_text(texto_interno, encoding="utf-8", newline="\n")
+
+      - name: Publicar cambios
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "reparacion/reparacion_de_computadores_santa_marta.html" "reparación/reparación_de_computadores_santa_marta.html"
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Ajustar separación y alineación de textos"
+          git push

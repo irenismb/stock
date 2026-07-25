@@ -1,0 +1,145 @@
+name: Publicar contador de visitantes reparacion
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - .github/workflows/publicar-contador-reparacion.yml
+
+permissions:
+  contents: write
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Copiar sistema del catalogo Natura
+        shell: bash
+        run: |
+          python - <<'PY'
+          import re
+          from pathlib import Path
+
+          base_path = Path('natura/catalogo-base-20260715.html')
+          global_path = Path('natura/visitantes-globales.js')
+          pagina_tilde = Path('reparación/reparación_de_computadores_santa_marta.html')
+          pagina_limpia = Path('reparacion/reparacion_de_computadores_santa_marta.html')
+
+          base = base_path.read_text(encoding='utf-8')
+          global_js = global_path.read_text(encoding='utf-8')
+          pagina = pagina_tilde.read_text(encoding='utf-8')
+
+          marcador = '<!-- contador-visitas-reparacion -->'
+          if marcador not in pagina:
+              css_match = re.search(
+                  r'(\/\* Panel plegable de visitantes semanales \*\/.*?)(?=\n\s*<\/style>)',
+                  base,
+                  flags=re.S,
+              )
+              panel_match = re.search(
+                  r'(<details id="visitorWeekDetails" class="visitor-week-details">.*?<\/details>)',
+                  base,
+                  flags=re.S,
+              )
+              script_match = re.search(
+                  r'<!-- Visitantes semanales: Firebase, GPS y respaldo por IP -->\s*<script type="module">(.*?)<\/script>',
+                  base,
+                  flags=re.S,
+              )
+
+              if not css_match or not panel_match or not script_match:
+                  raise RuntimeError('No fue posible extraer el contador activo del catalogo Natura.')
+
+              css_natura = css_match.group(1)
+              panel_natura = panel_match.group(1)
+              script_registro = script_match.group(1)
+
+              reemplazos = {
+                  'const CATALOGO_NODO = "catalogo_visitas_semana";': 'const PAGINA_NODO = "reparacion_computadores_visitas";',
+                  'CATALOGO_NODO': 'PAGINA_NODO',
+                  'catalogoVisitantesSemana': 'reparacionVisitantesSemana',
+                  'catalogoVisitantesGlobales': 'reparacionVisitantesGlobales',
+                  'catalogoUbicacionPromise': 'reparacionUbicacionPromise',
+              }
+              for anterior, nuevo in reemplazos.items():
+                  script_registro = script_registro.replace(anterior, nuevo)
+                  global_js = global_js.replace(anterior, nuevo)
+
+              global_js = global_js.replace(
+                  'const CATALOGO_NODO = "catalogo_visitas_semana";',
+                  'const PAGINA_NODO = "reparacion_computadores_visitas";'
+              ).replace('CATALOGO_NODO', 'PAGINA_NODO')
+
+              variables_y_posicion = '''
+              :root{
+                --line:#243049;--br:16px;--txt:#eef2f8;--mut:#a3aec0;--mut-2:#7e8a9d;
+                --focus:#7dd3fc;--shadow-sm:0 1px 2px rgba(0,0,0,.25);
+                --ease:cubic-bezier(.2,.7,.2,1);--ease-out:cubic-bezier(.16,1,.3,1);
+              }
+              .visitor-week-shell{
+                position:fixed;left:50%;bottom:8px;z-index:100;
+                width:min(1100px,calc(100% - 20px));transform:translateX(-50%);
+                font-family:Calibri,Arial,sans-serif;
+              }
+              .visitor-week-shell .visitor-week-details{margin-top:0;box-shadow:0 12px 34px rgba(0,0,0,.28)}
+              .visitor-week-shell .visitor-week-details[open]{max-height:min(82vh,700px);overflow:auto}
+              .visitor-week-shell .visitor-week-details[open] .visitor-week-summary{
+                position:sticky;top:0;z-index:2;background:linear-gradient(135deg,#173a3a,#15243a)
+              }
+              @media(max-width:560px){
+                .visitor-week-shell{bottom:5px;width:calc(100% - 10px)}
+                .visitor-week-shell .visitor-week-details[open]{max-height:88vh}
+              }
+              '''
+
+              estilo = (
+                  '\n' + marcador + '\n'
+                  + '<style id="estilos-contador-visitas-reparacion">\n'
+                  + variables_y_posicion + '\n' + css_natura
+                  + '\n</style>\n'
+              )
+
+              panel = (
+                  '\n' + marcador + '\n'
+                  + '<section class="visitor-week-shell" aria-label="Contador de visitantes">\n'
+                  + panel_natura + '\n</section>\n'
+              )
+
+              scripts = (
+                  '\n' + marcador + '\n'
+                  + '<script type="module" id="registro-visitas-reparacion">\n'
+                  + script_registro + '\n</script>\n'
+                  + '<script type="module" id="visitantes-globales-reparacion">\n'
+                  + global_js + '\n</script>\n'
+                  + '<script type="module">\n'
+                  + "const total=document.getElementById('visitorWeekTotal');"
+                    "const item=total?.closest('.visitor-week-summary-item');"
+                    "if(item)item.replaceChildren(document.createTextNode('Vistas globales totales: '),total);\n"
+                  + '</script>\n'
+              )
+
+              pagina = pagina.replace('</head>', estilo + '</head>', 1)
+              pagina = pagina.replace('</body>', panel + scripts + '</body>', 1)
+
+          pagina_tilde.write_text(pagina, encoding='utf-8', newline='\n')
+          pagina_limpia.parent.mkdir(parents=True, exist_ok=True)
+          pagina_limpia.write_text(pagina, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Guardar cambios
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "reparación/reparación_de_computadores_santa_marta.html" "reparacion/reparacion_de_computadores_santa_marta.html"
+          if git diff --cached --quiet; then
+            exit 0
+          fi
+          git commit -m "Agregar contador Natura a pagina de reparacion"
+          git push

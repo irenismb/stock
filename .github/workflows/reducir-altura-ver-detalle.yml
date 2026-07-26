@@ -1,0 +1,35 @@
+name: Reducir altura Ver detalle
+
+on:
+  push:
+    paths:
+      - '.github/workflows/reducir-altura-ver-detalle.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reducir altura a la mitad
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          ruta = Path('reparación/reparación_de_computadores_santa_marta.html')
+          texto = ruta.read_text(encoding='utf-8')
+          original = texto
+          texto = texto.replace('--compact-card-height:58px;', '--compact-card-height:29px;')
+          texto = texto.replace(':root { --compact-card-height:50px; }', ':root { --compact-card-height:25px; }')
+          if texto == original:
+              raise SystemExit('No se encontraron los valores esperados para modificar.')
+          ruta.write_text(texto, encoding='utf-8', newline='\n')
+          PY
+      - name: Guardar cambio
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add 'reparación/reparación_de_computadores_santa_marta.html'
+          git commit -m 'Reducir altura del boton Ver detalle a la mitad'
+          git push

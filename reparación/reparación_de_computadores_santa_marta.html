@@ -128,8 +128,8 @@
       fill:none; stroke:currentColor; stroke-width:1.9;
       stroke-linecap:round; stroke-linejoin:round;
     }
-    .service strong { display:block; color:var(--navy); font-size:.94rem; line-height:1.08; }
-    .service small { display:block; margin-top:3px; color:var(--muted); font-size:.75rem; line-height:1.14; }
+    .service strong { display:block; color:var(--navy); font-size:1.02rem; line-height:1.05; letter-spacing:-.01em; }
+    .service small { display:block; margin-top:3px; color:var(--muted); font-size:.78rem; line-height:1.12; }
     .actions { display:grid; grid-template-columns:1.55fr .85fr .85fr; gap:7px; }
     .button {
       min-height:42px;
@@ -196,8 +196,8 @@
     }
     .trust-icon { width:25px; height:25px; border-radius:7px; }
     .trust-icon svg { width:15px; height:15px; }
-    .trust-item strong { display:block; color:var(--navy); font-size:.82rem; line-height:1.06; }
-    .trust-item small { display:block; margin-top:2px; color:var(--muted); font-size:.68rem; line-height:1.1; }
+    .trust-item strong { display:block; color:var(--navy); font-size:.92rem; line-height:1.04; letter-spacing:-.01em; }
+    .trust-item small { display:block; margin-top:2px; color:var(--muted); font-size:.71rem; line-height:1.08; }
 
     .visitor-shell {
       width:min(1100px, calc(100% - 20px));
@@ -297,8 +297,8 @@
       .service { min-height:57px; padding:6px; grid-template-columns:27px 1fr; gap:6px; border-radius:11px; }
       .service-icon { width:27px; height:27px; border-radius:7px; }
       .service-icon svg { width:17px; height:17px; }
-      .service strong { font-size:.82rem; }
-      .service small { font-size:.66rem; line-height:1.08; }
+      .service strong { font-size:clamp(.88rem, 2.45vw, .96rem); line-height:1.04; }
+      .service small { font-size:.69rem; line-height:1.06; }
       .actions { grid-template-columns:1fr 1fr; gap:5px; }
       .whatsapp { grid-column:1 / -1; }
       .button { min-height:37px; padding:6px 8px; font-size:.85rem; }
@@ -312,8 +312,8 @@
       .trust-item { padding:4px; grid-template-columns:21px 1fr; gap:4px; border-radius:8px; }
       .trust-icon { width:21px; height:21px; }
       .trust-icon svg { width:13px; height:13px; }
-      .trust-item strong { font-size:.70rem; }
-      .trust-item small { font-size:.59rem; }
+      .trust-item strong { font-size:clamp(.78rem, 2.2vw, .86rem); line-height:1.03; }
+      .trust-item small { font-size:.62rem; }
       .visitor-shell { width:calc(100% - 10px); margin-bottom:5px; }
       .visitor-summary { min-height:44px; padding:7px 9px; }
       .visitor-grid { grid-template-columns:1fr; }
@@ -329,6 +329,8 @@
     @media (max-width:390px) {
       .eyebrow { font-size:.72rem; }
       h1 { font-size:clamp(1.62rem, 8.2vw, 2.25rem); }
+      .service strong { font-size:.87rem; }
+      .trust-item strong { font-size:.76rem; }
       .button { font-size:.80rem; }
     }
   </style>

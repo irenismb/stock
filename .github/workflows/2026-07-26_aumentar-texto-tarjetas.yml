@@ -1,0 +1,71 @@
+name: Aumentar texto de tarjetas
+
+on:
+  push:
+    paths:
+      - '.github/workflows/2026-07-26_aumentar-texto-tarjetas.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Aumentar tipografia de servicios y confianza
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          pagina = Path('reparación/reparación_de_computadores_santa_marta.html')
+          texto = pagina.read_text(encoding='utf-8')
+
+          cambios = {
+              '.service strong { display:block; color:var(--navy); font-size:.94rem; line-height:1.08; }':
+              '.service strong { display:block; color:var(--navy); font-size:1.02rem; line-height:1.05; letter-spacing:-.01em; }',
+
+              '.service small { display:block; margin-top:3px; color:var(--muted); font-size:.75rem; line-height:1.14; }':
+              '.service small { display:block; margin-top:3px; color:var(--muted); font-size:.78rem; line-height:1.12; }',
+
+              '.trust-item strong { display:block; color:var(--navy); font-size:.82rem; line-height:1.06; }':
+              '.trust-item strong { display:block; color:var(--navy); font-size:.92rem; line-height:1.04; letter-spacing:-.01em; }',
+
+              '.trust-item small { display:block; margin-top:2px; color:var(--muted); font-size:.68rem; line-height:1.1; }':
+              '.trust-item small { display:block; margin-top:2px; color:var(--muted); font-size:.71rem; line-height:1.08; }',
+
+              '      .service strong { font-size:.82rem; }':
+              '      .service strong { font-size:clamp(.88rem, 2.45vw, .96rem); line-height:1.04; }',
+
+              '      .service small { font-size:.66rem; line-height:1.08; }':
+              '      .service small { font-size:.69rem; line-height:1.06; }',
+
+              '      .trust-item strong { font-size:.70rem; }':
+              '      .trust-item strong { font-size:clamp(.78rem, 2.2vw, .86rem); line-height:1.03; }',
+
+              '      .trust-item small { font-size:.59rem; }':
+              '      .trust-item small { font-size:.62rem; }',
+
+              '      .button { font-size:.80rem; }':
+              '      .service strong { font-size:.87rem; }\n      .trust-item strong { font-size:.76rem; }\n      .button { font-size:.80rem; }',
+          }
+
+          for anterior, nuevo in cambios.items():
+              cantidad = texto.count(anterior)
+              if cantidad != 1:
+                  raise SystemExit(f'No se pudo aplicar el cambio. Coincidencias: {cantidad}. Texto: {anterior}')
+              texto = texto.replace(anterior, nuevo)
+
+          pagina.write_text(texto, encoding='utf-8', newline='\n')
+          PY
+
+          rm -f .github/workflows/2026-07-26_aumentar-texto-tarjetas.yml
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "reparación/reparación_de_computadores_santa_marta.html" .github/workflows/2026-07-26_aumentar-texto-tarjetas.yml
+          git commit -m "Aumentar texto de servicios y confianza"
+          git push

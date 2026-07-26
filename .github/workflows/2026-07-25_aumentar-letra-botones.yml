@@ -1,0 +1,144 @@
+name: Aumentar letra de botones
+
+on:
+  push:
+    paths:
+      - '.github/workflows/2026-07-25_aumentar-letra-botones.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Crear respaldo y ajustar tipografia
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          origen = Path('reparación/reparación_de_computadores_santa_marta.html')
+          respaldo = Path('copias/2026-07-25_reparacion-de-computadores-santa-marta-respaldo-botones.html')
+          texto = origen.read_text(encoding='utf-8')
+
+          respaldo.parent.mkdir(parents=True, exist_ok=True)
+          if respaldo.exists():
+              raise SystemExit(f'El respaldo ya existe: {respaldo}')
+          respaldo.write_text(texto, encoding='utf-8')
+
+          def cambiar(antes, despues, nombre):
+              global texto
+              cantidad = texto.count(antes)
+              if cantidad != 1:
+                  raise SystemExit(f'{nombre}: se esperaba 1 coincidencia y se encontraron {cantidad}')
+              texto = texto.replace(antes, despues, 1)
+
+          cambiar(
+              '      --counter-line:#294654;\n      --compact-card-height:29px;',
+              '      --counter-line:#294654;\n      --detail-button-height:29px;',
+              'variable de altura del boton de detalle'
+          )
+
+          cambiar(
+              '    .service strong { display:block; color:var(--navy); font-size:.88rem; line-height:1.08; }\n    .service small { display:block; margin-top:3px; color:var(--muted); font-size:.72rem; line-height:1.12; }',
+              '    .service strong { display:block; color:var(--navy); font-size:.92rem; line-height:1.08; }\n    .service small { display:block; margin-top:3px; color:var(--muted); font-size:.74rem; line-height:1.12; }',
+              'textos de servicios en escritorio'
+          )
+
+          cambiar(
+              '      font-weight:900;\n      text-align:center;\n    }',
+              '      font-weight:900;\n      font-size:.94rem;\n      line-height:1.08;\n      text-align:center;\n      text-wrap:balance;\n    }',
+              'tipografia general de botones'
+          )
+
+          cambiar(
+              '    .promise {\n      height:var(--compact-card-height);\n      padding:9px 11px;\n      display:grid;\n      align-content:center;',
+              '    .promise {\n      min-height:58px;\n      padding:8px 11px;\n      display:grid;\n      align-content:center;',
+              'altura independiente del bloque de diagnostico'
+          )
+
+          cambiar(
+              '    .promise strong { display:block; color:#fff; font-size:clamp(1rem, 1.5vw, 1.35rem); line-height:1.08; }\n    .promise small { display:block; margin-top:4px; font-size:.75rem; line-height:1.18; }',
+              '    .promise strong { display:block; color:#fff; font-size:clamp(1.02rem, 1.5vw, 1.35rem); line-height:1.08; }\n    .promise small { display:block; margin-top:4px; font-size:.77rem; line-height:1.18; }',
+              'texto del bloque de diagnostico'
+          )
+
+          cambiar(
+              '    .summary-action { color:#d1fae5; font-weight:900; white-space:nowrap; }',
+              '    .summary-action { color:#d1fae5; font-size:.92rem; line-height:1; font-weight:900; white-space:nowrap; }',
+              'texto del boton ver detalle'
+          )
+
+          cambiar(
+              '    .visitor-details:not([open]) .visitor-summary {\n      min-height:var(--compact-card-height);\n      height:var(--compact-card-height);\n      justify-content:center;\n    }',
+              '    .visitor-details:not([open]) .visitor-summary {\n      min-height:var(--detail-button-height);\n      height:var(--detail-button-height);\n      padding:2px 10px;\n      justify-content:center;\n    }',
+              'altura y espacio del boton ver detalle'
+          )
+
+          cambiar(
+              '      :root { --compact-card-height:25px; }',
+              '      :root { --detail-button-height:25px; }',
+              'altura movil del boton ver detalle'
+          )
+
+          cambiar(
+              '      .service strong { font-size:.76rem; }\n      .service small { font-size:.62rem; line-height:1.06; }',
+              '      .service strong { font-size:.80rem; }\n      .service small { font-size:.65rem; line-height:1.07; }',
+              'textos de servicios en movil'
+          )
+
+          cambiar(
+              '      .actions { grid-template-columns:1fr 1fr; gap:5px; }',
+              '      .actions { grid-template-columns:1.2fr .8fr; gap:5px; }',
+              'ancho inteligente de botones secundarios'
+          )
+
+          cambiar(
+              '      .button { min-height:37px; padding:6px 8px; font-size:.79rem; }',
+              '      .button { min-height:38px; padding:6px 7px; font-size:clamp(.82rem, 3.7vw, .88rem); line-height:1.08; }',
+              'botones en movil'
+          )
+
+          cambiar(
+              '      .promise { padding:7px 8px; border-radius:9px; }\n      .promise strong { font-size:.94rem; }\n      .promise small { font-size:.63rem; margin-top:3px; }',
+              '      .promise { min-height:50px; padding:6px 8px; border-radius:9px; }\n      .promise strong { font-size:1rem; }\n      .promise small { font-size:.66rem; margin-top:3px; }',
+              'diagnostico en movil'
+          )
+
+          cambiar(
+              '      .trust-item strong { font-size:.65rem; }\n      .trust-item small { font-size:.56rem; }',
+              '      .trust-item strong { font-size:.68rem; }\n      .trust-item small { font-size:.58rem; }',
+              'textos de confianza en movil'
+          )
+
+          cambiar(
+              '      .visitor-summary { min-height:44px; padding:7px 9px; }',
+              '      .visitor-summary { min-height:44px; padding:7px 9px; }\n      .visitor-details:not([open]) .visitor-summary { padding:1px 8px; }\n      .visitor-details:not([open]) .summary-action { font-size:.88rem; }',
+              'boton ver detalle en movil'
+          )
+
+          cambiar(
+              '      .button { font-size:.73rem; }',
+              '      .button { font-size:.80rem; }\n      .visitor-details:not([open]) .summary-action { font-size:.86rem; }',
+              'botones en pantallas estrechas'
+          )
+
+          if '--compact-card-height' in texto:
+              raise SystemExit('Quedo una referencia antigua a --compact-card-height')
+
+          origen.write_text(texto, encoding='utf-8')
+          PY
+
+      - name: Guardar cambios
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "reparación/reparación_de_computadores_santa_marta.html" "copias/2026-07-25_reparacion-de-computadores-santa-marta-respaldo-botones.html"
+          git diff --cached --quiet && exit 0
+          git commit -m "Aumentar letra de botones y guardar respaldo"
+          git push

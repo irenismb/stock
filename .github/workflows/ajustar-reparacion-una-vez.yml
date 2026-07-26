@@ -1,0 +1,64 @@
+name: Ajustar pagina de reparacion una vez
+
+on:
+  push:
+    paths:
+      - '.github/workflows/ajustar-reparacion-una-vez.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  ajustar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Igualar altura del boton Ver detalle
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          ruta = Path('reparación/reparación_de_computadores_santa_marta.html')
+          texto = ruta.read_text(encoding='utf-8')
+
+          cambios = [
+              (
+                  '      --counter-line:#294654;\n    }',
+                  '      --counter-line:#294654;\n      --compact-card-height:58px;\n    }'
+              ),
+              (
+                  '    .promise {\n      padding:9px 11px;',
+                  '    .promise {\n      height:var(--compact-card-height);\n      padding:9px 11px;\n      display:grid;\n      align-content:center;'
+              ),
+              (
+                  '    .visitor-details:not([open]) .visitor-summary { justify-content:center; }',
+                  '    .visitor-details:not([open]) .visitor-summary {\n      min-height:var(--compact-card-height);\n      height:var(--compact-card-height);\n      justify-content:center;\n    }'
+              ),
+              (
+                  '    @media (max-width:800px) {\n      header {',
+                  '    @media (max-width:800px) {\n      :root { --compact-card-height:50px; }\n      header {'
+              )
+          ]
+
+          for anterior, nuevo in cambios:
+              if anterior not in texto:
+                  raise SystemExit(f'No se encontro el bloque esperado: {anterior[:80]}')
+              texto = texto.replace(anterior, nuevo, 1)
+
+          ruta.write_text(texto, encoding='utf-8', newline='\n')
+          PY
+
+      - name: Eliminar flujo temporal y guardar cambios
+        shell: bash
+        run: |
+          rm -f .github/workflows/ajustar-reparacion-una-vez.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Igualar altura de Ver detalle y diagnostico"
+          git push

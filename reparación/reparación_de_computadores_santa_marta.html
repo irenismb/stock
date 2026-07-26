@@ -20,6 +20,7 @@
       --panel:#f8fbff;
       --counter:#102d3a;
       --counter-line:#294654;
+      --compact-card-height:58px;
     }
     * { box-sizing:border-box; }
     html { scroll-behavior:smooth; }
@@ -169,7 +170,10 @@
     }
     .profile-body { min-width:0; display:grid; gap:7px; align-content:center; }
     .promise {
+      height:var(--compact-card-height);
       padding:9px 11px;
+      display:grid;
+      align-content:center;
       border-radius:12px;
       background:linear-gradient(145deg, var(--navy), #123a63);
       color:#dcecf8;
@@ -234,7 +238,11 @@
     .summary-item strong { color:#fff; font-weight:900; font-variant-numeric:tabular-nums; }
     .summary-action { color:#d1fae5; font-weight:900; white-space:nowrap; }
     .summary-hide { display:none; }
-    .visitor-details:not([open]) .visitor-summary { justify-content:center; }
+    .visitor-details:not([open]) .visitor-summary {
+      min-height:var(--compact-card-height);
+      height:var(--compact-card-height);
+      justify-content:center;
+    }
     .visitor-details:not([open]) .summary-data,
     .visitor-details:not([open]) .summary-hide { display:none; }
     .visitor-details:not([open]) .summary-action { width:100%; text-align:center; }
@@ -273,6 +281,7 @@
     .visitor-status:empty { display:none; }
 
     @media (max-width:800px) {
+      :root { --compact-card-height:50px; }
       header { min-height:49px; padding:5px 9px; }
       .logo { width:37px; height:37px; flex-basis:37px; }
       .brand small { display:none; }

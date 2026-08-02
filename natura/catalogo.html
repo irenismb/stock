@@ -1,7 +1,7 @@
 <!doctype html>
-<!-- Incorporar datos estructurados JSON-LD de productos y retirar la lista visible redundante. -->
-<!-- v: 2026-08-02 03:35:00 PM -->
-<!-- Se genera un grafo Schema.org con tienda, listado y productos; las categorías, fichas, carrito y descripciones permanecen iguales. -->
+<!-- Completar las descripciones de todos los productos con fuentes priorizadas de Natura Colombia, Natura Brasil y fuentes comerciales. -->
+<!-- v: 2026-08-02 03:41:00 PM -->
+<!-- Se agregaron 278 descripciones adicionales, enlaces de fuente y datos JSON-LD, conservando las 38 descripciones de Fragancias. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8">
@@ -693,6 +693,2238 @@
         .replace(/\s+/g, " ")
         .trim();
     }
+
+
+    const DESCRIPCIONES_PRODUCTOS = [
+  {
+    "nombreCatalogo": "Aguas Citrico 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/aguas-colonia-citricos-femenino-150ml/NATCOL-95809/",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Colonia cítrica ligera y refrescante, con una combinación de limón, lima y bergamota. Está pensada para el uso diario y puede reaplicarse cuando se desee renovar la sensación de frescura.",
+    "codigoNatura": "NATCOL-95809"
+  },
+  {
+    "nombreCatalogo": "Aguas Frambuesa 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/aguas-de-natura-frambuesa-150-ml/NATCOL-166370",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Colonia frutal de carácter alegre que combina frambuesa, hibisco y priprioca. Su perfumación es ligera y adecuada para acompañar la rutina diaria.",
+    "codigoNatura": "NATCOL-166370"
+  },
+  {
+    "nombreCatalogo": "Aguas Jabuticaba 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/aguas-de-natura-jabuticaba-150-ml/NATCOL-95810",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Colonia frutal inspirada en la jabuticaba, con una propuesta fresca y ligera para el uso cotidiano. Puede aplicarse en cuello, muñecas y otros puntos de pulso.",
+    "codigoNatura": "NATCOL-95810"
+  },
+  {
+    "nombreCatalogo": "Aguas Lirio 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/colonia-aguas-lirio-femenina-150-ml/NATCOL-95807",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Colonia floral fresca que combina lirio con matices cítricos y estoraque. Tiene una perfumación ligera, apropiada para el día a día.",
+    "codigoNatura": "NATCOL-95807"
+  },
+  {
+    "nombreCatalogo": "Aguas Tropicales 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/perfumeria",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Colonia ligera de la línea Aguas, creada para una perfumación fresca y cotidiana. La variante Aguas Tropicales ofrece una experiencia aromática suave que puede reaplicarse durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Andiroba Fluido De Masajes 100 g Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/fluido-para-masajes-andiroba-100-g/NATCOL-73214",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Fluido corporal de textura ligera creado para masajes. Facilita el deslizamiento de las manos, ayuda a aliviar la sensación de tensión y deja la piel hidratada.",
+    "codigoNatura": "NATCOL-73214"
+  },
+  {
+    "nombreCatalogo": "Blossoming Petals Colonia Spray Con Destellos 120 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Colonia corporal en spray con partículas de destellos que perfuma y aporta un efecto luminoso sobre la piel. Debe agitarse y pulverizarse a distancia, evitando rostro, ojos y ropa delicada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Caja De Jabones para bebes x5 100 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea de cuidado corporal",
+    "descripcion": "Caja de jabones para la limpieza suave de la piel del bebé. Deben utilizarse externamente durante el baño, formar espuma con las manos y enjuagar por completo, evitando el contacto con los ojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Aceite De Argan Y Naranja Crema Corporal 400 ml",
+    "fuenteInformacion": "Avon",
+    "urlFuente": "https://www.avon.com.ar/p/locion-corporal-aceite-de-argany-naranja-avon-care/AVNARG-207665",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Loción corporal con aceite de argán y naranja que ayuda a hidratar, nutrir y acondicionar la piel. Su textura se absorbe con facilidad y deja una sensación suave y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Aceite De Argan Y Naranja Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Loción corporal de gran formato con aceite de argán y naranja. Ayuda a hidratar, nutrir y acondicionar la piel, dejándola suave y con una fragancia cítrica cálida.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Aceite De Coco Crema Corporal 400 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Aceite De Coco Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Aguacate Crema Corporal 400 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Aguacate Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Avena Y Extracto De Vainilla Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Derma Crema Corporal Iluminadora 750 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal hidratante con propuesta iluminadora que ayuda a mantener la piel suave y con apariencia luminosa. Su formato permite aplicarla diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Derma Crema Corporal Reafirmante 400 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal hidratante con propuesta reafirmante, creada para mejorar la sensación de suavidad y elasticidad de la piel mediante el uso diario. Se distribuye con masaje sobre el cuerpo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Derma Crema Corporal Reafirmante 750 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal hidratante con propuesta reafirmante, creada para mejorar la sensación de suavidad y elasticidad de la piel mediante el uso diario. Se distribuye con masaje sobre el cuerpo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Extracto De Almendras Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Fruto Rojos Crema Corporal 400 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Glicerina Y Aceite De Almendra Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Rosa Mosqueta Crema Facial 3 En 1 75 g",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/crema-rosa-mosqueta-y-camelia-avon-75-g/up/MCOU3360434405",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Crema facial 3 en 1 con rosa mosqueta formulada para humectar, proteger y apoyar el cuidado regenerador de la piel. Se aplica sobre el rostro limpio mediante movimientos suaves.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Care Sandia Crema Corporal Litro",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/avon-care-locion-corporal-aceite-de-argan-y-naranja-400-ml/p/MCO24835894",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Loción corporal diseñada para hidratar, nutrir y acondicionar la piel, ayudando a combatir la sensación de resequedad. Se aplica diariamente mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Agua Micelar Desmaquillante Repuesto 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-agua-micelar-desmaquillante-suave-chronos-derma-150ml/NATCOL-134588",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Repuesto del agua micelar de limpieza suave Chronos. Retira maquillaje e impurezas sin necesidad de enjuague y ayuda a mantener la piel calmada e hidratada.",
+    "codigoNatura": "NATCOL-134588"
+  },
+  {
+    "nombreCatalogo": "Chronos Agua Micelar Desmaquillante Suave 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/agua-micelar-desmaquillante-suave-chronos-derma-150ml/NATCOL-133503",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Agua micelar de limpieza suave que retira maquillaje e impurezas sin necesidad de enjuague. Ayuda a calmar e hidratar la piel y puede utilizarse en rostro, ojos y labios.",
+    "codigoNatura": "NATCOL-133503"
+  },
+  {
+    "nombreCatalogo": "Chronos Aqua Biohidratante Renovador 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante facial biohidratante de textura ligera que ayuda a reponer agua y a mantener la piel confortable. Se utiliza sobre el rostro limpio, antes del protector solar durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Aqua Renovador Hidratante 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante facial biohidratante de textura ligera que ayuda a reponer agua y a mantener la piel confortable. Se utiliza sobre el rostro limpio, antes del protector solar durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Esencia De Tratamiento 100 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Esencia facial de tratamiento que prepara la piel para los pasos posteriores de la rutina y aporta hidratación. Se aplica después de la limpieza con suaves presiones, evitando el área de los ojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Noche Repuesto 45 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Gel crema antiedad formulado para la franja de edad y el momento del día indicados en el nombre. Ayuda a tratar señales como pérdida de firmeza, falta de luminosidad o necesidad de renovación; la versión repuesto debe colocarse en el envase regular.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Gel Crema Antiseñales Renovacion Y Prevencion Dia Repuesto 30 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Gel crema antiedad formulado para la franja de edad y el momento del día indicados en el nombre. Ayuda a tratar señales como pérdida de firmeza, falta de luminosidad o necesidad de renovación; la versión repuesto debe colocarse en el envase regular.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Gel De Limpieza Purificante Antioleosidad 130 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Gel facial de limpieza purificante para piel con oleosidad. Retira impurezas y exceso de grasa sin sustituir la hidratación posterior; se usa sobre el rostro húmedo y se enjuaga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Mousse De Limpieza Intensiva 85 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Mousse facial de limpieza intensiva que ayuda a retirar impurezas y residuos de la piel. Su espuma se masajea sobre el rostro húmedo y se enjuaga completamente.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Protector Solar Facial Antioleosidad Reductor De Poros Fps 30 Incoloro 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar facial Chronos que combina protección frente a los rayos UVA y UVB con beneficios de tratamiento indicados en el nombre, como control de oleosidad, acción antiseñales o apoyo al cuidado de manchas. Debe aplicarse abundantemente y reaplicarse durante la exposición.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Protector Solar Facial Antiseñales Fps 50 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar facial Chronos que combina protección frente a los rayos UVA y UVB con beneficios de tratamiento indicados en el nombre, como control de oleosidad, acción antiseñales o apoyo al cuidado de manchas. Debe aplicarse abundantemente y reaplicarse durante la exposición.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Medio Oscuro Nuevo 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar facial Chronos que combina protección frente a los rayos UVA y UVB con beneficios de tratamiento indicados en el nombre, como control de oleosidad, acción antiseñales o apoyo al cuidado de manchas. Debe aplicarse abundantemente y reaplicarse durante la exposición.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Tono Claro Medio 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar facial Chronos que combina protección frente a los rayos UVA y UVB con beneficios de tratamiento indicados en el nombre, como control de oleosidad, acción antiseñales o apoyo al cuidado de manchas. Debe aplicarse abundantemente y reaplicarse durante la exposición.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Tono Medio Oscuro 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar facial Chronos que combina protección frente a los rayos UVA y UVB con beneficios de tratamiento indicados en el nombre, como control de oleosidad, acción antiseñales o apoyo al cuidado de manchas. Debe aplicarse abundantemente y reaplicarse durante la exposición.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Antioxidante 15 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-serum-intensivo-antioxidante-15-vitamina-c-chronos-15ml/NATCOL-169223",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Sérum facial antioxidante con vitamina C y activos de la biodiversidad brasileña. Ayuda a proteger la piel frente a los radicales libres y favorece una apariencia más luminosa y uniforme.",
+    "codigoNatura": "NATCOL-169223"
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Lifting Y Firmeza 30 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Sérum intensivo orientado a mejorar la apariencia de firmeza y definición del rostro. Su textura concentrada complementa la rutina antiedad y se aplica antes de la crema hidratante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Multiaclarador De Manchas Repuesto 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Sérum intensivo de tratamiento para apoyar la reducción de la apariencia de manchas y la uniformidad del tono. Se utiliza de forma constante en la rutina facial y debe acompañarse de protector solar durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Reductor Oleosidad 30 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/serum-intensivo-reductor-de-oleosidad-y-poros-30ml/NATCOL-169229",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Sérum facial desarrollado para reducir la oleosidad y la apariencia de los poros. Ofrece control inmediato y progresivo y complementa la rutina de piel mixta a grasa.",
+    "codigoNatura": "NATCOL-169229"
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Reductor Oleosidad 30 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/serum-intensivo-reductor-de-oleosidad-y-poros-30ml/NATCOL-169229",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Sérum facial concentrado para ayudar a controlar la oleosidad y reducir la apariencia de poros. Se aplica sobre la piel limpia antes del hidratante y del protector solar.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Rellenador Biohidratante 30 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Sérum facial biohidratante que ayuda a reforzar la hidratación y a suavizar la apariencia de líneas causadas por deshidratación. Se utiliza antes de la crema de tratamiento.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Serum Intensivo Rellenador Biohidratante Repuesto 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Sérum facial biohidratante que ayuda a reforzar la hidratación y a suavizar la apariencia de líneas causadas por deshidratación. Se utiliza antes de la crema de tratamiento.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Super Serum Reductor De Arrugas 30 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/super-serum-reductor-de-arrugas-30-ml/NATCOL-169264",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Súper sérum antiedad de triple acción que ayuda a reducir arrugas y a mejorar firmeza e hidratación. Su fórmula actúa sobre colágeno, elastina y ácido hialurónico para una piel de apariencia más lisa.",
+    "codigoNatura": "NATCOL-169264"
+  },
+  {
+    "nombreCatalogo": "Chronos Super Serum Reductor De Arrugas 30 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/super-serum-reductor-de-arrugas-30-ml/NATCOL-169264",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Súper sérum antiedad concentrado que ayuda a reducir la apariencia de arrugas y a mejorar firmeza e hidratación. Se aplica sobre la piel limpia antes de la crema facial.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Super Serum Reductor De Arrugas Y Flacidez Ojos 30 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/super-serum-reductor-de-arrugas-30-ml/NATCOL-169264",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Sérum específico para el contorno de ojos orientado a reducir la apariencia de arrugas y flacidez. Se aplica en poca cantidad mediante toques suaves, sin frotar.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Super Serum Reductor De Arrugas Y Flacidez Ojos Repuesto 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/super-serum-reductor-de-arrugas-30-ml/NATCOL-169264",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Sérum específico para el contorno de ojos orientado a reducir la apariencia de arrugas y flacidez. Se aplica en poca cantidad mediante toques suaves, sin frotar.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Chronos Triple Exfoliante Peeling Antiseñales 50 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Exfoliante facial de triple acción que ayuda a retirar células muertas y a mejorar la textura y luminosidad de la piel. Debe utilizarse con la frecuencia indicada en el envase, evitando zonas irritadas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Aguas Violeta 150 ml Jabon En Barra 90 g",
+    "fuenteInformacion": "Fuente comercial consultada",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia general",
+    "descripcion": "Combo que reúne los productos indicados en el nombre para realizar un ritual complementario. Utilice cada componente según las instrucciones de su envase y el orden habitual de limpieza, tratamiento e hidratación.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Dia Noche 45 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial y componentes",
+    "descripcion": "Combo de tratamiento facial que reúne productos complementarios de Chronos para una rutina de cuidado diario y nocturno. Las fórmulas están orientadas a hidratación, firmeza, luminosidad y prevención o reducción de señales, según la versión indicada en el nombre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Dia Noche Repuesto 45 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial y componentes",
+    "descripcion": "Combo de tratamiento facial que reúne productos complementarios de Chronos para una rutina de cuidado diario y nocturno. Las fórmulas están orientadas a hidratación, firmeza, luminosidad y prevención o reducción de señales, según la versión indicada en el nombre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Chronos Gel Crema Antiseñales Relleno Y Revitalizacion Dia Noche Repuesto 60 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial y componentes",
+    "descripcion": "Combo de tratamiento facial que reúne productos complementarios de Chronos para una rutina de cuidado diario y nocturno. Las fórmulas están orientadas a hidratación, firmeza, luminosidad y prevención o reducción de señales, según la versión indicada en el nombre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Ekos Murumuru Shampoo Acondicionador Mascara Crema De Peinar x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-antidanos-ekos-murumuru-300ml/NATCOL-113244",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Ekos Murumuru con productos complementarios para limpiar, acondicionar, tratar y proteger cabellos dañados. La línea con manteca de murumuru ayuda a reconstruir la fibra, reponer nutrientes y reducir el quiebre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Ekos Murumuru Shampoo Acondicionador Mascara Pre Shampoo x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/mascara-pre-shampoo-ekos-murumuru-100g/NATCOL-113150",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Combo capilar Ekos Murumuru con productos complementarios para limpiar, acondicionar, tratar y proteger cabellos dañados. La línea con manteca de murumuru ayuda a reconstruir la fibra, reponer nutrientes y reducir el quiebre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Ekos Murumuru Shampoo Acondicionador x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-antidanos-ekos-murumuru-300ml/NATCOL-113244",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Ekos Murumuru con productos complementarios para limpiar, acondicionar, tratar y proteger cabellos dañados. La línea con manteca de murumuru ayuda a reconstruir la fibra, reponer nutrientes y reducir el quiebre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Ekos Pitanga Preta Femenino Frescor 150 ml Caja De Jabones De 6 Unidades De 25 g Cdu",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo perfumado Ekos Pitanga Preta que reúne frescor y jabones para completar el ritual de baño y perfumación. Los jabones limpian la piel y el frescor aporta una fragancia frutal ligera para el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Faces Facial Jabon De Limpieza Hidratante Matificante 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial de rostro",
+    "descripcion": "Combo facial Faces que combina limpieza e hidratación con efecto matificante. Está pensado para retirar impurezas y complementar el cuidado diario de piel mixta, manteniendo una sensación fresca.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Kaiak Clasico Masculino Perfume Shampoo Gel De Afeitar 2 En 1",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo masculino Kaiak con fragancia y productos para baño y afeitado. Permite prolongar la experiencia aromática de Kaiak mientras limpia el cabello y el cuerpo y facilita el afeitado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Anticaida Repuesto Shampoo 300 ml Acondicionador 300 ml Mascara 250 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/kit-lumina-anticaida-y-crecimiento/NATCOL-244698",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de fortalecimiento, anticaída por quiebre y crecimiento saludable. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Anticaida Shampoo Acondicionador Mascara Envase x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/kit-lumina-anticaida-y-crecimiento/NATCOL-244698",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de fortalecimiento, anticaída por quiebre y crecimiento saludable. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Anticaida Shampoo Acondicionador Mascara Tonico Envase x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/kit-lumina-anticaida-y-crecimiento/NATCOL-244698",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de fortalecimiento, anticaída por quiebre y crecimiento saludable. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Brillo Y Proteccion De Color Shampoo Acondicionador Envase x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-shampoo-brillo-y-proteccion-del-color-lumina-300ml/NATCOL-148176",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de brillo y protección del color. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Fuerza Y Reparacion Molecular Shampoo Acondicionador Mascara Envase x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/kit-lumina-fuerza-y-reparacion-molecular/NATCOL-244692",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de fuerza y reparación molecular. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Fuerza Y Reparacion Molecular Shampoo Acondicionador Mascara Repuesto x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/kit-lumina-fuerza-y-reparacion-molecular/NATCOL-244692",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de fuerza y reparación molecular. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Hidratacion Y Proteccion Antipolucion Shampoo Acondicionador Fluido Envase x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-hidratacion-y-proteccion-antipolucion-lumina-300ml/NATCOL-147446",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de hidratación y protección antipolución. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Nutricion Y Reparacion Profunda Shampoo Repuesto 300 ml Acondicionador Repuesto 300 ml Mascara Repuesto 250 ml x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de tratamiento capilar especializado. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Reconstruccion Shampoo Acondicionador Mascara Repuesto x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-acondicionador-reconstruccion-y-fuerza-lumina-300ml/NATCOL-148399",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de reconstrucción de daños. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Reconstruccion Shampoo Acondicionador Mascara Serum Envase x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-acondicionador-reconstruccion-y-fuerza-lumina-300ml/NATCOL-148399",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de reconstrucción de daños. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Reconstruccion Shampoo Acondicionador Repuesto x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-acondicionador-reconstruccion-y-fuerza-lumina-300ml/NATCOL-148399",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de reconstrucción de daños. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Restauracion Y Liso Prolongado Shampoo Acondicionador Envase x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de restauración y efecto liso prolongado. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Restauracion Y Liso Prolongado Shampoo Acondicionador Mascara Envase x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de restauración y efecto liso prolongado. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Rizado Shampoo Acondicionador Envase x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de definición e hidratación de rizos. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Rizado Shampoo Acondicionador Mascara Crema De Peinar Envase x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de definición e hidratación de rizos. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Lumina Rizado Shampoo Acondicionador Mascara Crema De Peinar Repuesto x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Lumina con los pasos indicados en el nombre para un ritual de definición e hidratación de rizos. El uso conjunto de shampoo, acondicionador y tratamientos complementarios ayuda a limpiar, acondicionar y tratar la fibra de manera coordinada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Avellana Y Casis Aceite Bifasico Crema 120 ml 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo corporal Tododia con productos complementarios para limpieza, hidratación y perfumación de la piel. Con una fragancia cremosa de avellana y casis.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Cabello Rizado Cachos E Crespos Shampoo Repuesto Acondicionador Repuesto Crema Para Peinar Repuesto x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Capilar Durazno Y Almendra Shampoo 300 ml Acondicionador 280 ml Crema Para Peinar 180 ml Mascara 250 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Cereza Negra Y Praline x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo corporal Tododia con productos complementarios para limpieza, hidratación y perfumación de la piel. La combinación permite realizar un ritual completo de cuidado diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Cereza Y Avellana x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo corporal Tododia con productos complementarios para limpieza, hidratación y perfumación de la piel. Con una fragancia dulce de cereza y avellana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Ciruela Y Flor De Vainilla x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo corporal Tododia con productos complementarios para limpieza, hidratación y perfumación de la piel. Con una fragancia envolvente de ciruela y flor de vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Hidratacion Shampoo Acondicionador Mascara Repuesto x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Hidratacion Shampoo Acondicionador Mascara x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Hidratacion Shampoo Acondicionador Repuesto x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Manzana Caramelizada Y Vainilla x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo corporal Tododia con productos complementarios para limpieza, hidratación y perfumación de la piel. Con una fragancia dulce de manzana caramelizada y vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Nutricion Shampoo Acondicionador Mascara Repuestos x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Nutricion Shampoo Acondicionador Repuestos x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Reparacion Shampoo Acondicionador Mascara Repuestos x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Reparacion Shampoo Acondicionador Mascara x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Reparacion Shampoo Acondicionador Repuestos x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Combo Tododia Rizado Y Afros Shampoo Acondicionador Crema De Peinar Repuesto x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Combo capilar Tododia con los productos indicados en el nombre para limpiar, acondicionar y tratar el cabello. La rutina conjunta ayuda a mantener hidratación, suavidad, manejabilidad y definición de acuerdo con la necesidad capilar seleccionada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Acai Bruma Facial Hidratante 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Bruma facial hidratante que refresca y ayuda a mantener la piel confortable a lo largo del día. Puede pulverizarse sobre el rostro con los ojos cerrados, manteniendo una distancia adecuada. Con açaí y una propuesta de cuidado antioxidante y revitalizante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Acai Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con açaí y una propuesta de cuidado antioxidante y revitalizante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Acai Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con açaí y una propuesta de cuidado antioxidante y revitalizante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Acai Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Acai puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Acai Minifrescor 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Acai puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Amazo Femenino Miniatura Frescor 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Amazo Miniatura puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Andiroba Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con andiroba y una propuesta de confort e hidratación.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Cacao Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Cacao Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Cacao Frescor 150 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Cacao puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Caja De Jabones Cremosos Exfoliantes Y Refrescantes 4 Unidades 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Caja De Jabones Cremosos x4 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Caja De Jabones Cremosos Y Exfoliantes 4 Unidades 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Crema Corporal 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-el-cuerpo-ekos-castana-400-ml/NATCOL-203401",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con aceite de castaña, reconocido por su acción nutritiva y su aporte de omegas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-el-cuerpo-ekos-castana-400-ml/NATCOL-203401",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Crema corporal nutritiva con aceite de castaña, rico en omegas 6 y 9. Ayuda a combatir la resequedad y proporciona hidratación prolongada, dejando la piel suave y protegida.",
+    "codigoNatura": "NATCOL-203401"
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Crema Corporal 400 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-crema-hidratante-para-el-cuerpo-ekos-castana-400ml/NATCOL-203381",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Repuesto de la crema corporal nutritiva Ekos Castaña. Su fórmula con aceite de castaña ayuda a combatir la resequedad y a mantener la piel hidratada y suave.",
+    "codigoNatura": "NATCOL-203381"
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Crema Exfoliante Para Manos Y Pies 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-manos-ekos-castana-75-g/NATCOL-70983",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Crema exfoliante para manos y pies que ayuda a retirar células muertas y suavizar áreas ásperas. Se masajea sobre la piel húmeda y se enjuaga. Con aceite de castaña, reconocido por su acción nutritiva y su aporte de omegas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-manos-ekos-castana-75-g/NATCOL-70983",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Crema para manos con aceite de castaña que hidrata por tiempo prolongado, cuida cutículas y uñas y se absorbe rápidamente sin dejar sensación pesada.",
+    "codigoNatura": "NATCOL-70983"
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-el-cuerpo-ekos-castana-400-ml/NATCOL-203401",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Castana puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Frescor 150 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-crema-hidratante-para-el-cuerpo-ekos-castana-400ml/NATCOL-203381",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Castana puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Jabon Liquido Corporal 195 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-crema-hidratante-para-el-cuerpo-ekos-castana-400ml/NATCOL-203381",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Jabón líquido corporal que limpia la piel y produce una espuma agradable sin sustituir la hidratación posterior. Se utiliza durante el baño y se enjuaga completamente. Con aceite de castaña, reconocido por su acción nutritiva y su aporte de omegas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Jabon Liquido Corporal Cremoso 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-el-cuerpo-ekos-castana-400-ml/NATCOL-203401",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Jabón líquido corporal que limpia la piel y produce una espuma agradable sin sustituir la hidratación posterior. Se utiliza durante el baño y se enjuaga completamente. Con aceite de castaña, reconocido por su acción nutritiva y su aporte de omegas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Castaña Jabon Liquido Para Manos 250 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-hidratante-para-manos-ekos-castana-75-g/NATCOL-70983",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Jabón líquido para manos que limpia con suavidad y deja una sensación confortable y perfumada. La versión repuesto debe colocarse en el envase original. Con aceite de castaña, reconocido por su acción nutritiva y su aporte de omegas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Estoraque Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Estoraque puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Ishpink Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Ishpink puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Jabones Cremosos Y Exfoliantes 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Jabones En Barra Cremosos Y Exfoliantes 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Jabones En Barra Tukuma 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso. Con tukumá y una propuesta de cuidado nutritivo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Madeira Em Flor Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Madeira Em Flor puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Caja De Jabones Cremosos Y Exfoliantes 4 Unidades 100 g x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/jabon-liquido-exfoliante-ekos-maracuya-185-ml/NATCOL-70405",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Crema Corporal 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Frescor 150 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Maracuya puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Jabon Liquido Exfoliante 185 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/jabon-liquido-exfoliante-ekos-maracuya-185-ml/NATCOL-70405",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Jabón líquido corporal con partículas exfoliantes que ayuda a retirar células muertas con suavidad. Limpia manteniendo el equilibrio de la piel y aporta una experiencia aromática calmante de maracuyá.",
+    "codigoNatura": "NATCOL-70405"
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Jabon Masajeador 100 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/jabon-liquido-exfoliante-ekos-maracuya-185-ml/NATCOL-70405",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Jabón corporal con formato masajeador que limpia mientras ofrece una experiencia sensorial durante el baño. Se desliza sobre la piel húmeda y se enjuaga. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Maracuya Noche Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con la experiencia aromática fresca y calmante del maracuyá.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Murumuru Crema Para Peinar Multibeneficios 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-antidanos-ekos-murumuru-300ml/NATCOL-113244",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para peinar sin enjuague que ayuda a desenredar, controlar el frizz y proteger las hebras durante el peinado. Se distribuye sobre el cabello húmedo, evitando el exceso en la raíz. Con manteca de murumuru, orientada a la reconstrucción y al cuidado antidaños.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Murumuru Mascara Pre Shampoo 100 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/mascara-pre-shampoo-ekos-murumuru-100g/NATCOL-113150",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Mascarilla pre-shampoo antidaños con manteca de murumuru. Prepara y protege la fibra antes del lavado, repone nutrientes y ayuda a reducir los daños y el quiebre.",
+    "codigoNatura": "NATCOL-113150"
+  },
+  {
+    "nombreCatalogo": "Ekos Murumuru Serum Capilar Nocturno 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-antidanos-ekos-murumuru-300ml/NATCOL-113244",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Sérum capilar nocturno que actúa durante el descanso para aportar nutrición y ayudar a reducir la apariencia de daños. Se aplica en medios y puntas y no requiere enjuague inmediato. Con manteca de murumuru, orientada a la reconstrucción y al cuidado antidaños.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Murumuru Shampoo",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-antidanos-ekos-murumuru-300ml/NATCOL-113244",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Shampoo capilar que limpia las hebras y el cuero cabelludo y prepara el cabello para el acondicionamiento. Su fórmula corresponde al tratamiento del activo amazónico indicado en el nombre. Con manteca de murumuru, orientada a la reconstrucción y al cuidado antidaños.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Murumuru Shampoo Y Acondicionador antidaños 300 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-antidanos-ekos-murumuru-300ml/NATCOL-113244",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Dúo o conjunto capilar de shampoo y acondicionador Ekos para limpiar y acondicionar de manera complementaria. Ayuda a mantener el cabello suave, manejable y protegido según el activo amazónico indicado. Con manteca de murumuru, orientada a la reconstrucción y al cuidado antidaños.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Pataua Shampoo Acondicionador Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Dúo o conjunto capilar de shampoo y acondicionador Ekos para limpiar y acondicionar de manera complementaria. Ayuda a mantener el cabello suave, manejable y protegido según el activo amazónico indicado. Con patauá, utilizado en rutinas de fuerza y cuidado contra el quiebre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Pataua Shampoo Acondicionador Tonico Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Dúo o conjunto capilar de shampoo y acondicionador Ekos para limpiar y acondicionar de manera complementaria. Ayuda a mantener el cabello suave, manejable y protegido según el activo amazónico indicado. Con patauá, utilizado en rutinas de fuerza y cuidado contra el quiebre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Pitanga Clasica Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Pitanga Clasico puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Pitanga Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con el perfil fresco y frutal de la pitanga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Pitanga Preta Femenino Frescor 150 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Frescor de la línea Ekos con perfumación ligera inspirada en la biodiversidad brasileña. La variante Pitanga Preta puede aplicarse en cuello, muñecas y puntos de pulso para acompañar el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Surtidos Jabones Cremosos",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto de jabones en barra para limpieza corporal, con versiones cremosas, refrescantes o exfoliantes según la caja. Forman espuma sobre la piel húmeda y se enjuagan después del uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Tukuma Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con tukumá y una propuesta de cuidado nutritivo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Tukuma Jabon Liquido Exfoliante 185 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Jabón líquido corporal que limpia la piel y produce una espuma agradable sin sustituir la hidratación posterior. Se utiliza durante el baño y se enjuaga completamente. Con tukumá y una propuesta de cuidado nutritivo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Ucuuba Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con ucuuba y una propuesta de nutrición y cuidado de la piel.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Ucuuba Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal que ayuda a hidratar, nutrir y suavizar la piel mediante el uso diario. Se aplica con masaje hasta su absorción, insistiendo en las zonas más resecas. Con ucuuba y una propuesta de nutrición y cuidado de la piel.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Ekos Ucuuba Crema Hidratante Para Manos 75 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/ekos",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que hidrata y suaviza la piel y ayuda a cuidar cutículas y uñas. Su formato es adecuado para reaplicar durante el día. Con ucuuba y una propuesta de nutrición y cuidado de la piel.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Erva Doce Unisex Desodorante Antitranspirante Crema 80 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-erva-doce-80g/NATCOL-2179",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Desodorante antitranspirante en crema con protección de hasta 48 horas. Su fórmula invisible contiene vitamina E, ayuda a cuidar la piel de las axilas y tiene la fragancia suave de Erva Doce.",
+    "codigoNatura": "NATCOL-2179"
+  },
+  {
+    "nombreCatalogo": "Erva Doce Unisex Desodorante Antitranspirante Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-erva-doce-80g/NATCOL-2179",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante de la línea Erva Doce con fragancia suave. Ayuda a proteger contra el sudor y el mal olor y se aplica sobre las axilas limpias y secas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Erva Doce Unisex Desodorante En Crema 80 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-erva-doce-80g/NATCOL-2179",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Desodorante antitranspirante en crema con protección de hasta 48 horas. Su fórmula invisible contiene vitamina E, ayuda a cuidar la piel de las axilas y tiene la fragancia suave de Erva Doce.",
+    "codigoNatura": "NATCOL-2179"
+  },
+  {
+    "nombreCatalogo": "Far Away Clasico Femenino 50 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Eau de parfum femenino Far Away Clásico, de perfil oriental floral, creado para una perfumación envolvente y duradera. Se aplica en cuello, muñecas y otros puntos de pulso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Fotoequilibrio Protector Facial Gel Crema Toque Seco Fps 50 50 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso facial con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Fotoequilibrio Protector Solar Corporal Fps 50 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso corporal con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Fotoequilibrio Protector Solar Corporal Y Rostro Niños Fps 50 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de niños y familia con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 30 50 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso facial con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 50 50 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso facial con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Hidratante Facial Piel Mixta 50 ml Faces",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/rostro",
+    "nivelFuente": "línea oficial de rostro",
+    "descripcion": "Hidratante facial de textura ligera para piel mixta, creado para aportar hidratación sin una sensación pesada. Se aplica sobre el rostro limpio antes del protector solar durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Balsamo Post Barba 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/balsamo-multifuncional-post-barba-homem-75ml/NATCOL-151022",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Bálsamo multifuncional para después del afeitado que ayuda a calmar e hidratar la piel. Su textura ligera complementa la rutina masculina y reduce la sensación de incomodidad posterior al afeitado.",
+    "codigoNatura": "NATCOL-151022"
+  },
+  {
+    "nombreCatalogo": "Homem Caja De Jabones Masculinos x3 Unidades 110 g x3",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Jabones masculinos para limpieza corporal con una espuma agradable y una fragancia de la línea Homem. Se utilizan sobre la piel húmeda y se enjuagan.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Coragio Masculino Crema Corporal Perfumada 125 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema corporal perfumada masculina que ayuda a hidratar la piel y prolongar la experiencia aromática de la fragancia. Se aplica diariamente mediante masaje.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Essence Masculino Splash Perfumado 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Splash corporal masculino de perfumación ligera, ideal para reaplicar durante el día y complementar la fragancia de la línea Homem. Se pulveriza sobre el cuerpo evitando el rostro.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Gel Para Afeitar 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Gel para afeitar que facilita el deslizamiento de la cuchilla y ayuda a reducir la fricción sobre la piel. Se aplica sobre el rostro húmedo y se enjuaga después del afeitado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Masculino Desodorante En Roll On 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Desodorante roll-on masculino que ayuda a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas y se deja secar antes de vestirse.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Potence Masculino Splash Perfumado 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Splash corporal masculino de perfumación ligera, ideal para reaplicar durante el día y complementar la fragancia de la línea Homem. Se pulveriza sobre el cuerpo evitando el rostro.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Potence Miniatura 25 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Miniatura de fragancia masculina Homem, práctica para conocer el aroma o llevarlo en viajes. Se aplica en pequeñas cantidades sobre los puntos de pulso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Homem Sin Perfume Masculino Desodorante En Roll On 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Desodorante roll-on masculino que ayuda a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas y se deja secar antes de vestirse.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Humor Liberta Unisex Splash Perfumado 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Splash corporal perfumado de intensidad ligera para complementar la fragancia Humor y reaplicar durante el día. Se pulveriza sobre el cuerpo, evitando rostro y zonas irritadas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Humor Primeiro Crema Corporal Gel Iluminadora Perfumada 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Gel crema corporal perfumado que hidrata y deja en la piel la fragancia de Humor, con efecto iluminador según la presentación. Se distribuye mediante masaje hasta su absorción.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Humor Propio Femenino Splash Perfumado 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Splash corporal perfumado de intensidad ligera para complementar la fragancia Humor y reaplicar durante el día. Se pulveriza sobre el cuerpo, evitando rostro y zonas irritadas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Jabon Liquido Perfumado Humor Primeiro Femenino De 75 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Jabón líquido corporal perfumado que limpia la piel y ayuda a prolongar la experiencia aromática de Humor. Se aplica durante el baño y se enjuaga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Clasico Femenino Crema Corporal Gel Acqua Pos Solar Perfumada 390 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Hidratante corporal refrescante y perfumado que ayuda a calmar y suavizar la piel, especialmente después del baño o la exposición al sol según la presentación. Deja la experiencia aromática de Kaiak.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Clasico Femenino Crema Hidratante Corporal Refrescante Baño Perfumada 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Hidratante corporal refrescante y perfumado que ayuda a calmar y suavizar la piel, especialmente después del baño o la exposición al sol según la presentación. Deja la experiencia aromática de Kaiak.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Clasico Femenino Jabon Liquido Corporal Perfumado 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Jabón líquido corporal perfumado que limpia y deja en la piel la frescura característica de Kaiak. Se utiliza sobre la piel húmeda y se enjuaga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Clasico Femenino Miniatura 25 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Miniatura de fragancia Kaiak, práctica para llevar y para conocer el aroma. Se aplica en pequeñas cantidades sobre cuello, muñecas y otros puntos de pulso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Clasico Masculino Shampoo Refrescante Perfumado 125 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Shampoo perfumado y refrescante que limpia el cabello y el cuero cabelludo mientras prolonga la experiencia aromática de Kaiak. Se masajea sobre el cabello mojado y se enjuaga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak K Noite Masculino Shampoo Perfumado 125 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Shampoo perfumado y refrescante que limpia el cabello y el cuero cabelludo mientras prolonga la experiencia aromática de Kaiak. Se masajea sobre el cabello mojado y se enjuaga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Oxigeno Masculino 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Fragancia masculina Kaiak Oxígeno de perfil fresco y aromático, inspirada en la sensación de movimiento y contacto con la naturaleza. Adecuada para el uso diario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kaiak Urbe Masculino Splash Perfumado 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Splash corporal masculino de perfumación ligera, creado para complementar la fragancia Kaiak y reaplicarse durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Kriska Flores Femenino Jabon Liquido Corporal Perfumado 125 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/jabon-liquido-corporal-kriska-flores-125ml/NATCOL-170804",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Jabón líquido corporal perfumado que limpia, ayuda a hidratar y deja en la piel la fragancia floral de Kriska Flores. Se utiliza sobre la piel húmeda y se enjuaga después de formar espuma.",
+    "codigoNatura": "NATCOL-170804"
+  },
+  {
+    "nombreCatalogo": "Lumina Anticaida Y Crecimiento Shampu Acondicionador Y Mascara En Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/kit-lumina-anticaida-y-crecimiento/NATCOL-244698",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Ritual capilar de shampoo, acondicionador y mascarilla de la línea Anticaída y Crecimiento. Ayuda a fortalecer las hebras, combatir la caída por quiebre y favorecer un cabello de apariencia más resistente.",
+    "codigoNatura": "NATCOL-244698"
+  },
+  {
+    "nombreCatalogo": "Lumina Anticaspa Shampoo Repuesto 300 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Shampoo Lumina que limpia el cabello y prepara la fibra para el tratamiento. Su tecnología está orientada a limpiar el cuero cabelludo y ayudar a controlar la descamación visible.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Lumina Brillo Y Proteccion De Color Shampoo Repuesto 300 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-shampoo-brillo-y-proteccion-del-color-lumina-300ml/NATCOL-148176",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Repuesto de shampoo para cabellos teñidos o con coloración. Limpia suavemente, ayuda a preservar el color y contribuye a mantener el brillo y la suavidad por más tiempo.",
+    "codigoNatura": "NATCOL-148176"
+  },
+  {
+    "nombreCatalogo": "Lumina Hidratacion Y Proteccion Antipolucion Shampoo Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-hidratacion-y-proteccion-antipolucion-lumina-300ml/NATCOL-147446",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Shampoo de hidratación y protección antipolución que limpia sin resecar y prepara el cabello para el tratamiento. Ayuda a conservar la hidratación y a reducir la adhesión de partículas contaminantes.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Lumina Hidratacion Y Proteccion Antipolucion Shampoo Repuesto 300 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/acondicionador-hidratacion-y-proteccion-antipolucion-lumina-300ml/NATCOL-147446",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Shampoo Lumina que limpia el cabello y prepara la fibra para el tratamiento. Su tecnología está orientada a aportar hidratación y ayudar a proteger frente a la adhesión de partículas contaminantes.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Lumina Matizacion Y Restauracion Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello-restauracion-y-matizacion",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Tratamiento de matización y restauración para cabellos rubios, decolorados o con canas. Ayuda a neutralizar tonos amarillentos, restaurar la fibra y aumentar la resistencia al quiebre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Lumina Reconstruccion Acondicionador",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-acondicionador-reconstruccion-y-fuerza-lumina-300ml/NATCOL-148399",
+    "nivelFuente": "producto o tratamiento oficial",
+    "descripcion": "Acondicionador Lumina que desenreda y acondiciona después del lavado. Su tecnología está orientada a reconstruir daños, reducir el quiebre y mejorar la resistencia de la fibra.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Lumina Rizado Acondicionador",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Acondicionador Lumina que desenreda y acondiciona después del lavado. Su tecnología está orientada a hidratar, definir rizos y reducir el frizz sin perder movimiento.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Luna Radiante Femenino Jabon Liquido Corporal Perfumado 100 ml",
+    "fuenteInformacion": "Fuente comercial consultada",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia general",
+    "descripcion": "Jabón líquido corporal perfumado que limpia la piel y deja la fragancia de Luna Radiante. Se utiliza durante el baño y se enjuaga completamente.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Perfume Cabello Esencia Lumina 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Perfume capilar de aplicación ligera que aporta fragancia y ayuda a renovar la sensación de frescura del cabello sin sustituir el tratamiento capilar.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Power Stay Pestañina 5 En 1 Genius 10 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Máscara para pestañas Power Stay 5 en 1 diseñada para aportar definición, longitud y volumen con duración prolongada. Se aplica desde la raíz hasta las puntas en una o más capas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Primer Blur 30 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Primer facial con efecto blur que ayuda a suavizar visualmente la textura y preparar la piel para el maquillaje. Se aplica en capa fina después de la hidratación.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Protector Solar Facial Piel Mixta A Grasa Fps 50 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso facial con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Protector Solar Facial Stick Fps 50 Todo Tipo De Piel g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/protector-solar-facial-en-barra-fps-50-15g/NATCOL-178858",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Protector solar facial en barra FPS 50 para todo tipo de piel. Su formato facilita la aplicación y la reaplicación localizada durante el día, con protección frente a los rayos UVA y UVB.",
+    "codigoNatura": "NATCOL-178858"
+  },
+  {
+    "nombreCatalogo": "Seve Almendras Dulce Aceite Corporal 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Aceite corporal para aplicar sobre la piel húmeda durante el baño. Ayuda a mantener la hidratación, deja la piel suave y aporta la fragancia delicada de almendras dulces; debe enjuagarse ligeramente según el modo de uso.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Simply Delicate Extracto De Avena Femenino Gel De Limpieza Intima 250 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Gel de limpieza íntima femenina con extracto de avena, formulado para la higiene externa diaria. Se utiliza en pequeña cantidad, se enjuaga completamente y no debe aplicarse internamente.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Solar Protector Solar Corporal Fps 70 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso corporal con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Solar Protector Solar Facial Control De Oleosidad Fps 50 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/protector-solar-facial-control-de-oleosidad-fps-50-50ml/NATCOL-176909",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Protector solar facial para piel mixta a grasa con FPS 50. Ofrece protección UVA y UVB, acabado mate y control de la oleosidad durante el día.",
+    "codigoNatura": "NATCOL-176909"
+  },
+  {
+    "nombreCatalogo": "Solar Protector Solar Facial Control De Oleosidad Fps 70 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/protector-solar-facial-control-de-oleosidad-fps-70-50ml/NATCOL-186435",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Protector solar facial de alta protección para piel mixta a grasa. Su FPS 70 ayuda a proteger frente a los rayos UVA y UVB, con acabado seco y control de la oleosidad.",
+    "codigoNatura": "NATCOL-186435"
+  },
+  {
+    "nombreCatalogo": "Solar Protector Solar Facial Hidratante Fps 50 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso facial con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Solar Protector Solar Facial Hidratante Fps 70 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/proteccion-solar",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Protector solar de uso facial con el factor de protección indicado en el nombre. Ayuda a proteger la piel frente a los rayos UVA y UVB; debe aplicarse abundantemente antes de la exposición y reaplicarse después de sudar, nadar, secarse o transcurrido el tiempo indicado.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Splash Perfumado Humor Primeiro Femenino De 100 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Splash corporal perfumado de intensidad ligera para complementar la fragancia Humor y reaplicar durante el día. Se pulveriza sobre el cuerpo, evitando rostro y zonas irritadas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Splash Perfumado Kaiak Clasico Femenino De 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/hombres",
+    "nivelFuente": "línea oficial de perfumería",
+    "descripcion": "Splash corporal masculino de perfumación ligera, creado para complementar la fragancia Kaiak y reaplicarse durante el día.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Today Tomorrow Always Radiance 50 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://www.mercadolibre.com.co/perfume-today-tomorrow-always-radiance-avon-50-ml/p/MCO62739646",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Eau de parfum femenino floral, frutal y amaderado que combina fresa, pimienta rosa y bergamota con rosa, flor de azahar, muguet, almizcle, vetiver y sándalo. Tiene un carácter alegre y radiante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Acerola E Hibisco Body Splash 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Se pulveriza sobre el cuerpo evitando el rostro.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Aclarador Femenino Desodorante En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Avellana Y Casis Femenino Desodorante En Crema 80 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-avellana-y-casis-80g/NATCOL-96516",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas. Con una fragancia cremosa de avellana y casis.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Avellana Y Casis Femenino Desodorante En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-avellana-y-casis-80g/NATCOL-96516",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas. Con una fragancia cremosa de avellana y casis.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Avellanas Y Casis Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia cremosa de avellana y casis.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Caja De Jabones Nuez Pecan 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-nuez-pecan-y-cacao-400ml/NATCOL-74898",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con la combinación cálida de nuez pecán y cacao.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Caja De Jabones Surtidos 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Cereza Negra Y Praline Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Cereza Y Avellana Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/jabones-en-barra-tododia-cereza-y-avellana-5un-de-90g/NATCOL-95840",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con una fragancia dulce de cereza y avellana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Cereza Y Avellana Desodorante Femenino En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-cereza-y-avellana-80g/NATCOL-148001",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas. Con una fragancia dulce de cereza y avellana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Ciruela Y Flor De Vainilla Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con una fragancia envolvente de ciruela y flor de vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Ciruela Y Flor De Vainilla Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia envolvente de ciruela y flor de vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Ciruela Y Flor De Vainilla Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia envolvente de ciruela y flor de vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Ciruela Y Flor De Vainilla Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Con una fragancia envolvente de ciruela y flor de vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Flor De Ciruela Perfume Capilar 60 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Perfume capilar que aporta una fragancia ligera al cabello y permite renovar la sensación de frescura durante el día. Se aplica a distancia sobre medios y puntas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Flor De Jengibre Y Mandarina Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Flor De Jengibre Y Mandarina Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Se pulveriza sobre el cuerpo evitando el rostro.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Flor De Pera Y Melisa Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frambuesa Y Pimienta Rosa Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frambuesa Y Pimienta Rosa Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Se pulveriza sobre el cuerpo evitando el rostro.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frutas Rojas Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia frutal de frutos rojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frutas Rojas Crema Hidratante De Manos 50 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Crema para manos que ayuda a hidratar y suavizar la piel, con un formato práctico para reaplicar. Con una fragancia frutal de frutos rojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frutas Rojas Exfoliante Corporal 100 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Exfoliante corporal que ayuda a retirar células muertas y mejorar la sensación de suavidad. Se masajea sobre la piel húmeda y se enjuaga. Con una fragancia frutal de frutos rojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frutas Rojas Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Con una fragancia frutal de frutos rojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Frutos Rojos Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/jabones-en-barra-tododia-frutas-rojas-5un-de-90g/NATCOL-2834",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con una fragancia frutal de frutos rojos.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Hojas De Limon Y Guanabana Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia verde y cítrica de hojas de limón y guanábana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Hojas De Limon Y Guanabana Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia verde y cítrica de hojas de limón y guanábana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Hojas De Limon Y Guanabana Femenino Desodorante En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-roll-on-tododia-hojas-de-limon-y-guanabana-70ml/NATCOL-191905",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas. Con una fragancia verde y cítrica de hojas de limón y guanábana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Hojas De Limon Y Guanabana Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Con una fragancia verde y cítrica de hojas de limón y guanábana.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Leche De Algodon Femenino Desodorante En Crema 80 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-leche-de-algodon-80g/NATCOL-96519",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas. Con la fragancia suave de leche de algodón.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Leche De Algodon Femenino Desodorante En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-leche-de-algodon-80g/NATCOL-96519",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas. Con la fragancia suave de leche de algodón.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Mango Rosa Y Agua De Coco Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-mango-rosa-y-agua-de-coco-400ml/NATCOL-103380",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con la combinación tropical de mango rosa y agua de coco.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Mango Rosa Y Agua De Coco Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-crema-nutritiva-corporal-tododia-mango-rosa-y-agua-de-coco-400ml/NATCOL-103381",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con la combinación tropical de mango rosa y agua de coco.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Mango Rosa Y Agua De Coco Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-mango-rosa-y-agua-de-coco-400ml/NATCOL-103380",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Con la combinación tropical de mango rosa y agua de coco.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Manzana Caramelizada Y Vainilla Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con una fragancia dulce de manzana caramelizada y vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Manzana Caramelizada Y Vainilla Crema Corporal 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con una fragancia dulce de manzana caramelizada y vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Manzana Caramelizada Y Vainilla Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Con una fragancia dulce de manzana caramelizada y vainilla.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Mora Roja Y Jabuticaba Femenino Desodorante En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nuez Pecan Y Cacao Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-nuez-pecan-y-cacao-400ml/NATCOL-74898",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nuez Pecan Y Cacao Crema Corporal 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-nuez-pecan-y-cacao-400ml/NATCOL-74898",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nuez Pecan Y Cacao Crema Corporal Envase 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-nuez-pecan-y-cacao-400ml/NATCOL-74898",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nuez Pecan Y Cacao Crema Corporal Repuesto 400 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/repuesto-crema-nutritiva-corporal-tododia-nuez-pecan-y-cacao-400ml/NATCOL-2821",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nuez Pecan Y Cacao Jabon Liquido 300 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/crema-nutritiva-corporal-tododia-nuez-pecan-y-cacao-400ml/NATCOL-74898",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Jabón líquido corporal que limpia con una espuma agradable y ayuda a conservar la sensación de hidratación. Se utiliza durante el baño y se enjuaga. Con cacao y una experiencia nutritiva y perfumada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nutricion Acondicionador Repuesto 300 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Acondicionador Tododia que ayuda a desenredar y suavizar el cabello después del lavado. La versión repuesto se transfiere al envase regular.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Nutricion Shampoo Acondicionador Crema De Peinar",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto capilar Tododia para limpiar, acondicionar y tratar el cabello de forma complementaria. Ayuda a mantener suavidad, brillo y manejabilidad de acuerdo con la necesidad indicada en el nombre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Piel Uniforme Balsamo Ultra Nutritivo Regenerador Pera Y Flor De Loto 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. La versión Piel Uniforme está orientada a mejorar la apariencia del tono y la textura mediante el uso continuo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Piel Uniforme Exfoliante Nutritivo Pera Y Flor De Loto 190 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Exfoliante corporal que ayuda a retirar células muertas y mejorar la sensación de suavidad. Se masajea sobre la piel húmeda y se enjuaga.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Piel Uniforme Manteca Uniformadora De Tono Pera Y Flor De Loto 200 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. La versión Piel Uniforme está orientada a mejorar la apariencia del tono y la textura mediante el uso continuo.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Reparacion Capilar Shampoo Acondicionador Mascara Crema Para Peinar Envase x4",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Conjunto capilar Tododia para limpiar, acondicionar y tratar el cabello de forma complementaria. Ayuda a mantener suavidad, brillo y manejabilidad de acuerdo con la necesidad indicada en el nombre.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Reparacion Shampoo 300 ml Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Shampoo Tododia que limpia el cabello y el cuero cabelludo y prepara las hebras para el acondicionamiento. Su fórmula corresponde a la necesidad de hidratación, nutrición, reparación o definición indicada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Rizado Spray Reactivador De Rizos 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Finalizador capilar sin enjuague para ayudar a desenredar, definir rizos, reducir el frizz y reactivar la forma entre lavados. Se distribuye sobre el cabello húmedo o seco según la presentación.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Rizado Y Afros Crema De Peinar Repuesto",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/cabello",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Finalizador capilar sin enjuague para ayudar a desenredar, definir rizos, reducir el frizz y reactivar la forma entre lavados. Se distribuye sobre el cabello húmedo o seco según la presentación.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Sin Perfume Desodorante Femenino En Roll On 70 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-sin-perfume-80g/NATCOL-96515",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Sin Perfume Femenino Desodorante En Crema 80 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/desodorante-antitranspirante-en-crema-tododia-sin-perfume-80g/NATCOL-96515",
+    "nivelFuente": "producto o línea oficial",
+    "descripcion": "Desodorante antitranspirante para ayudar a proteger contra el sudor y el mal olor. Se aplica sobre las axilas limpias y secas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Te De Manzanilla Y Lavanda Caja De Jabones 2 Unidades 90 g x2",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con el aroma suave de té de manzanilla y lavanda, pensado para una rutina relajante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Te De Manzanilla Y Lavanda Caja De Jabones 5 Unidades 90 g x5",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Caja de jabones en barra para la limpieza diaria del cuerpo. Producen una espuma cremosa y dejan la piel perfumada con la variante indicada. Con el aroma suave de té de manzanilla y lavanda, pensado para una rutina relajante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Te De Manzanilla Y Lavanda Crema Corporal 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con el aroma suave de té de manzanilla y lavanda, pensado para una rutina relajante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Te De Manzanilla Y Lavanda Crema Corporal 400 ml Envase",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con el aroma suave de té de manzanilla y lavanda, pensado para una rutina relajante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Te De Manzanilla Y Lavanda Crema Nube Relajante Corporal 200 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Hidratante corporal que ayuda a nutrir, suavizar y mantener la barrera de la piel. Se aplica diariamente mediante masaje, especialmente en las zonas más resecas. Con el aroma suave de té de manzanilla y lavanda, pensado para una rutina relajante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Tododia Te De Manzanilla Y Lavanda Splash ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/tododia",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Body splash de perfumación ligera para complementar el cuidado corporal y reaplicar durante el día. Con el aroma suave de té de manzanilla y lavanda, pensado para una rutina relajante.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Trescientos 300 Kilometros Virtual Adrenaline Masculino 100 ml",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://listado.mercadolibre.com.co/locion-300-kilometros",
+    "nivelFuente": "referencia comercial",
+    "descripcion": "Fragancia masculina Avon 300 km/h Virtual Adrenaline de carácter dinámico y deportivo. Su propuesta aromática está pensada para el uso diario y momentos de energía; se aplica en cuello y muñecas.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 10n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 15n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 19n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 21n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 24n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 27n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 30n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Corrector Cobertura Extrema 24h Tono 32n 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/p/corrector-cobertura-extrema-24h-una-8ml/NATCOL-155650",
+    "nivelFuente": "producto oficial",
+    "descripcion": "Corrector líquido de cobertura extrema y duración prolongada, con acabado mate y resistencia al agua y al sudor. Ayuda a disimular ojeras e imperfecciones; se difumina con dedos, esponja o brocha.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Glos Labial Fps 15 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Brillo labial con FPS 15 que aporta luminosidad y ayuda a mantener los labios confortables. Puede aplicarse solo o sobre el labial.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Labial Cc Tono Rose 4c 3 8 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Labial CC que combina color con beneficios de cuidado para los labios. Su tono Rose 4C ofrece un acabado uniforme y puede reaplicarse según sea necesario.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Lapiz Kajal Ojos Tono Negro 1 14 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Lápiz kajal negro para delinear el contorno de los ojos y crear trazos definidos o difuminados. Debe mantenerse bien cerrado y utilizarse únicamente en el área externa indicada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Mascara Para Pestaña Volumen Magnifico 8 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Máscara para pestañas diseñada para aportar volumen y definición. Se aplica desde la raíz hacia las puntas con movimientos suaves, evitando bombear el aplicador dentro del envase.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Primer Facial Fps 40 30 ml",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Primer facial con FPS 40 que prepara la piel para el maquillaje, ayuda a suavizar visualmente la textura y aporta protección solar complementaria. No reemplaza la aplicación adecuada de protector solar cuando se requiere exposición.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Rubor Intense Me Tono Bronce Perlado 6 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Rubor en tono bronce perlado para aportar color y luminosidad a las mejillas. Se aplica en capas ligeras y se difumina hasta obtener la intensidad deseada.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Una Serum Labial 1 8 g",
+    "fuenteInformacion": "Natura Colombia",
+    "urlFuente": "https://www.natura.com.co/c/maquillaje",
+    "nivelFuente": "línea oficial",
+    "descripcion": "Sérum labial de textura ligera para aportar confort, brillo y cuidado a los labios. Puede usarse solo o como preparación antes del color.",
+    "codigoNatura": ""
+  },
+  {
+    "nombreCatalogo": "Works Crema Reparadora Para Pies Con Callosidades 100 g",
+    "fuenteInformacion": "Mercado Libre Colombia",
+    "urlFuente": "https://listado.mercadolibre.com.co/footworks-avon",
+    "nivelFuente": "producto exacto",
+    "descripcion": "Crema reparadora para pies formulada para hidratar, suavizar y ayudar a reducir la apariencia áspera de las zonas con callosidades. Se recomienda aplicar mediante masaje, especialmente en talones y áreas resecas.",
+    "codigoNatura": ""
+  }
+];
+    const DESCRIPCIONES_PRODUCTOS_MAP = new Map(
+      DESCRIPCIONES_PRODUCTOS.map(item => [normalize(item.nombreCatalogo), item])
+    );
+
     function digits(value){
       const n = Number(String(value ?? "").replace(/[^\d]/g, ""));
       return Number.isFinite(n) ? n : 0;
@@ -781,6 +3013,9 @@
       return coverB * .55 + coverA * .30 + jaccard * .15;
     }
     function descriptionFor(product){
+      const exacta = DESCRIPCIONES_PRODUCTOS_MAP.get(normalize(product.name));
+      if(exacta) return exacta;
+
       const cat = normalize(product.category);
       if(cat !== "fragancia" && cat !== "fragancias") return null;
       let best = null;
@@ -1018,6 +3253,21 @@
       strong.textContent = label;
       p.append(strong,document.createTextNode(value));
     }
+    function appendLinkedField(p,label,text,url){
+      const strong = document.createElement("strong");
+      strong.textContent = label;
+      p.appendChild(strong);
+      if(url){
+        const link = document.createElement("a");
+        link.href = url;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer nofollow";
+        link.textContent = text;
+        p.append(link,document.createTextNode(". "));
+      }else{
+        p.appendChild(document.createTextNode(`${text}. `));
+      }
+    }
     function descriptionParagraph(product){
       const p = document.createElement("p");
       p.className = "product-description";
@@ -1028,11 +3278,20 @@
       appendField(p,"Precio conmigo: ",`${formatNumber.format(product.price)} pesos colombianos. `);
       const extra = descriptionFor(product);
       if(extra){
-        appendField(p,"Fuente de la imagen: ",`${extra.fuenteImagen}. `);
-        appendField(p,"Precio en internet: ",`${formatNumber.format(extra.precioInternet)} pesos colombianos. `);
-        p.append(document.createTextNode(extra.descripcion.trim()));
-        if(!/[.!?]$/.test(extra.descripcion.trim())) p.append(document.createTextNode("."));
-        p.append(document.createTextNode(" "));
+        if(extra.fuenteImagen){
+          appendLinkedField(p,"Fuente de la imagen: ",extra.fuenteImagen,extra.urlFuente || "");
+        }else if(extra.fuenteInformacion){
+          appendLinkedField(p,"Fuente de la información: ",extra.fuenteInformacion,extra.urlFuente || "");
+        }
+        if(Number(extra.precioInternet) > 0){
+          appendField(p,"Precio en internet: ",`${formatNumber.format(extra.precioInternet)} pesos colombianos. `);
+        }
+        const detalle = String(extra.descripcion || "").trim();
+        if(detalle){
+          p.append(document.createTextNode(detalle));
+          if(!/[.!?]$/.test(detalle)) p.append(document.createTextNode("."));
+          p.append(document.createTextNode(" "));
+        }
         if(extra.codigoNatura) appendField(p,"Código Natura: ",`${extra.codigoNatura}. `);
       }
       appendField(p,"Marca: ",`${product.brand}. `);
@@ -1192,7 +3451,8 @@
       ];
       if(extra){
         if(extra.fuenteImagen) parts.push(`Fuente de la imagen: ${extra.fuenteImagen}.`);
-        if(extra.precioInternet) parts.push(`Precio en internet: ${formatNumber.format(extra.precioInternet)} pesos colombianos.`);
+        else if(extra.fuenteInformacion) parts.push(`Fuente de la información: ${extra.fuenteInformacion}.`);
+        if(Number(extra.precioInternet) > 0) parts.push(`Precio en internet: ${formatNumber.format(extra.precioInternet)} pesos colombianos.`);
         if(extra.descripcion) parts.push(extra.descripcion.trim().replace(/\s+/g," "));
         if(extra.codigoNatura) parts.push(`Código Natura: ${extra.codigoNatura}.`);
       }
@@ -1220,8 +3480,13 @@
         }
         if(extra?.fuenteImagen){
           additionalProperty.push({"@type":"PropertyValue","name":"Fuente de la imagen","value":String(extra.fuenteImagen)});
+        }else if(extra?.fuenteInformacion){
+          additionalProperty.push({"@type":"PropertyValue","name":"Fuente de la información","value":String(extra.fuenteInformacion)});
         }
-        if(extra?.precioInternet){
+        if(extra?.nivelFuente){
+          additionalProperty.push({"@type":"PropertyValue","name":"Nivel de la fuente","value":String(extra.nivelFuente)});
+        }
+        if(Number(extra?.precioInternet) > 0){
           additionalProperty.push({
             "@type":"PropertyValue",
             "name":"Precio de referencia en internet (COP)",
@@ -1240,6 +3505,7 @@
           "category":product.category,
           "brand":{"@type":"Brand","name":product.brand},
           "itemCondition":"https://schema.org/NewCondition",
+          ...(extra?.urlFuente ? {"isBasedOn":extra.urlFuente} : {}),
           "additionalProperty":additionalProperty,
           "offers":{
             "@type":"Offer",

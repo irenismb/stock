@@ -1,5 +1,7 @@
 <!doctype html>
-<!-- v: 2026-07-20 - lista desplegable de productos para indexacion. -->
+<!-- Mostrar los productos de cada categoria con imagen centrada y descripcion continua debajo. -->
+<!-- v: 2026-08-02 02:32:00 PM -->
+<!-- Se conservaron las categorias, filtros, carrito y lectura de los seis campos del nombre del archivo. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -27,6 +29,190 @@
     #listaProductosSeo ul{columns:3 260px;column-gap:32px;margin:0;padding-left:20px;color:#dce3ec;font-size:14px;line-height:1.45}
     #listaProductosSeo li{break-inside:avoid;margin:0 0 8px;padding-right:8px}
     @media(max-width:640px){#listaProductosSeo{width:calc(100% - 20px);margin:24px auto 36px}#listaProductosSeo summary{min-height:50px;padding:0 14px;font-size:15px}#listaProductosSeo .lista-productos-contenido{padding:14px}#listaProductosSeo ul{columns:1;font-size:13px}}
+  </style>
+
+  <style id="estilosFormatoGoogleProductos">
+    /* Las fichas de categorias conservan el diseño y funcionamiento originales. */
+    /* Solo las fichas de productos abiertas adoptan el orden del documento de Google. */
+    .grid:not(.album-grid-mode){
+      grid-template-columns:1fr !important;
+      gap:24px !important;
+      width:min(820px,100%);
+      margin:18px auto 0 !important;
+      align-items:start;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card){
+      display:flex !important;
+      flex-direction:column;
+      width:100%;
+      min-height:0;
+      height:auto;
+      overflow:hidden;
+      color:#111827;
+      background:#ffffff;
+      border:1px solid #d8dde6;
+      border-radius:10px;
+      box-shadow:0 10px 28px rgba(0,0,0,.24);
+      content-visibility:auto;
+      contain-intrinsic-size:620px 820px;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card):hover{
+      transform:translateY(-2px);
+      border-color:#c7ceda;
+      box-shadow:0 14px 32px rgba(0,0,0,.28);
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .img{
+      position:relative;
+      width:100%;
+      height:auto !important;
+      min-height:330px;
+      padding:28px 24px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      border:0;
+      background:#ffffff;
+      overflow:hidden;
+      cursor:zoom-in;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .img::before{
+      display:none !important;
+      content:none !important;
+      padding-top:0 !important;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .img > img{
+      position:static !important;
+      inset:auto !important;
+      top:auto !important;
+      left:auto !important;
+      right:auto !important;
+      bottom:auto !important;
+      transform:none !important;
+      display:block;
+      width:auto !important;
+      height:auto !important;
+      max-width:min(360px,calc(100% - 12px)) !important;
+      max-height:350px !important;
+      margin:auto;
+      object-fit:contain;
+      background:#ffffff;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .pad{
+      min-width:0;
+      padding:4px 30px 26px;
+      display:flex;
+      flex-direction:column;
+      gap:16px;
+      color:#111827;
+      background:#ffffff;
+      font-family:Calibri,Arial,sans-serif;
+    }
+
+    /* Los elementos originales se mantienen en el DOM para no alterar el programa. */
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .name,
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .meta,
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .row{
+      display:none !important;
+    }
+
+    .descripcion-producto-google{
+      margin:0;
+      color:#111827;
+      font-family:Calibri,Arial,sans-serif;
+      font-size:11pt;
+      font-weight:400;
+      line-height:1.5;
+      text-align:justify;
+      text-justify:inter-word;
+      overflow-wrap:anywhere;
+    }
+
+    .descripcion-producto-google .producto-titulo-google{
+      color:#e53935;
+      font-weight:700;
+      text-transform:uppercase;
+    }
+
+    .descripcion-producto-google strong{
+      color:#111827;
+      font-weight:700;
+    }
+
+    .descripcion-producto-google a{
+      color:#1155cc;
+      text-decoration:underline;
+      text-underline-offset:2px;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
+      grid-template-columns:repeat(2,minmax(0,190px));
+      justify-content:center;
+      gap:10px;
+      width:100%;
+      margin:2px auto 0;
+    }
+
+    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions button{
+      min-height:41px;
+      font-family:Calibri,Arial,sans-serif;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    @media(max-width:700px){
+      .grid:not(.album-grid-mode){
+        gap:18px !important;
+        margin-top:14px !important;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card){
+        contain-intrinsic-size:560px 360px;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .img{
+        min-height:270px;
+        padding:20px 15px 10px;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .img > img{
+        max-width:min(300px,calc(100% - 8px)) !important;
+        max-height:290px !important;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .pad{
+        padding:4px 18px 20px;
+        gap:14px;
+      }
+
+      .descripcion-producto-google{
+        font-size:11pt;
+        line-height:1.45;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
+        grid-template-columns:repeat(2,minmax(0,1fr));
+      }
+    }
+
+    @media(max-width:380px){
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .img{
+        min-height:235px;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .img > img{
+        max-height:250px !important;
+      }
+
+      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
+        grid-template-columns:1fr;
+      }
+    }
   </style>
 </head>
 <body>
@@ -361,10 +547,238 @@
     </details>
   </section>
 
+
+  <template id="moduloFormatoGoogleProductos">
+    <script>
+      (function activarFormatoGoogleProductos(){
+        "use strict";
+
+        /*
+          Descripciones futuras, relacionadas por codigo.
+          Ejemplo:
+          window.DESCRIPCIONES_PRODUCTOS = {
+            "0032": {
+              fuenteImagen: "Natura Brasil",
+              urlFuenteImagen: "https://...",
+              precioInternet: 132720,
+              descripcion: "Fragancia femenina..."
+            }
+          };
+        */
+        const descripciones = window.DESCRIPCIONES_PRODUCTOS || {};
+        const formatoNumero = new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 });
+
+        function numeroSoloDigitos(valor){
+          const numero = Number(String(valor ?? "").replace(/[^\d]/g, ""));
+          return Number.isFinite(numero) ? numero : 0;
+        }
+
+        function nombreArchivoDesdeImagen(card){
+          const imagen = card.querySelector(".img img");
+          if(!imagen) return "";
+
+          const fuente = imagen.getAttribute("src") || imagen.currentSrc || imagen.src || "";
+          if(!fuente) return "";
+
+          try{
+            const ruta = new URL(fuente, document.baseURI).pathname;
+            return decodeURIComponent(ruta.split("/").pop() || "");
+          }catch(_){
+            const limpia = String(fuente).split(/[?#]/)[0];
+            const parte = limpia.split("/").pop() || "";
+            try{ return decodeURIComponent(parte); }catch(__){ return parte; }
+          }
+        }
+
+        function quitarExtension(nombreArchivo){
+          return String(nombreArchivo || "").replace(/\.[^.]+$/, "");
+        }
+
+        function interpretarSeisCampos(nombreArchivo){
+          const partes = quitarExtension(nombreArchivo).split("_");
+          if(partes.length < 6) return null;
+
+          const codigo = String(partes[0] || "").trim();
+          const cantidadTexto = String(partes.pop() || "").trim();
+          const precioTexto = String(partes.pop() || "").trim();
+          const categoria = String(partes.pop() || "").trim();
+          const marca = String(partes.pop() || "").trim();
+          partes.shift();
+          const nombre = partes.join("_").trim();
+
+          if(!codigo || !nombre) return null;
+
+          return {
+            codigo,
+            nombre,
+            marca,
+            categoria,
+            precio: numeroSoloDigitos(precioTexto),
+            cantidad: numeroSoloDigitos(cantidadTexto)
+          };
+        }
+
+        function interpretarDesdeTarjeta(card){
+          const codigo = String(card.dataset.id || "").trim();
+          const nombre = String(card.querySelector(".name")?.textContent || "").trim();
+          const precio = numeroSoloDigitos(card.querySelector(".price")?.textContent || "");
+          const meta = String(card.querySelector(".meta")?.textContent || "");
+          const bloques = meta.split("·").map(item => item.trim()).filter(Boolean);
+          const categoria = bloques[0] || "";
+          const marca = bloques[1] || "";
+          const stock = meta.match(/Stock:\s*(\d+)/i);
+
+          if(!codigo || !nombre) return null;
+          return {
+            codigo,
+            nombre,
+            marca,
+            categoria,
+            precio,
+            cantidad: stock ? numeroSoloDigitos(stock[1]) : 0
+          };
+        }
+
+        function agregarTexto(parrafo, texto){
+          parrafo.appendChild(document.createTextNode(texto));
+        }
+
+        function agregarCampo(parrafo, etiqueta, valor){
+          const fuerte = document.createElement("strong");
+          fuerte.textContent = etiqueta;
+          parrafo.appendChild(fuerte);
+          agregarTexto(parrafo, valor);
+        }
+
+        function agregarFuente(parrafo, extra){
+          const fuente = String(extra?.fuenteImagen || "").trim();
+          if(!fuente) return;
+
+          const fuerte = document.createElement("strong");
+          fuerte.textContent = "Fuente de la imagen: ";
+          parrafo.appendChild(fuerte);
+
+          const url = String(extra?.urlFuenteImagen || "").trim();
+          if(url){
+            const enlace = document.createElement("a");
+            enlace.href = url;
+            enlace.target = "_blank";
+            enlace.rel = "noopener noreferrer";
+            enlace.textContent = fuente;
+            parrafo.appendChild(enlace);
+            agregarTexto(parrafo, ". ");
+          }else{
+            agregarTexto(parrafo, fuente + ". ");
+          }
+        }
+
+        function crearDescripcion(datos){
+          const parrafo = document.createElement("p");
+          parrafo.className = "descripcion-producto-google";
+
+          const titulo = document.createElement("span");
+          titulo.className = "producto-titulo-google";
+          titulo.textContent = `${datos.codigo} - ${datos.nombre}`;
+          parrafo.appendChild(titulo);
+          agregarTexto(parrafo, ". ");
+
+          agregarCampo(
+            parrafo,
+            "Precio conmigo: ",
+            `${formatoNumero.format(datos.precio)} pesos colombianos. `
+          );
+          agregarCampo(parrafo, "Marca: ", `${datos.marca}. `);
+          agregarCampo(parrafo, "Categoría: ", `${datos.categoria}. `);
+
+          const unidad = datos.cantidad === 1 ? "unidad" : "unidades";
+          agregarCampo(
+            parrafo,
+            "Cantidad disponible: ",
+            `${formatoNumero.format(datos.cantidad)} ${unidad}.`
+          );
+
+          const extra = descripciones[String(datos.codigo)] || null;
+          if(extra){
+            agregarTexto(parrafo, " ");
+            agregarFuente(parrafo, extra);
+
+            const precioInternet = numeroSoloDigitos(extra.precioInternet);
+            if(precioInternet > 0){
+              agregarCampo(
+                parrafo,
+                "Precio en internet: ",
+                `${formatoNumero.format(precioInternet)} pesos colombianos. `
+              );
+            }
+
+            const detalle = typeof extra === "string"
+              ? extra.trim()
+              : String(extra.descripcion || "").trim();
+            if(detalle){
+              agregarTexto(parrafo, detalle);
+              if(!/[.!?]$/.test(detalle)) agregarTexto(parrafo, ".");
+            }
+          }
+
+          return parrafo;
+        }
+
+        function procesarTarjeta(card){
+          if(!(card instanceof HTMLElement)) return;
+          if(card.classList.contains("album-card")) return;
+          if(card.dataset.formatoGoogleAplicado === "1") return;
+
+          const nombreArchivo = nombreArchivoDesdeImagen(card);
+          const datos = interpretarSeisCampos(nombreArchivo) || interpretarDesdeTarjeta(card);
+          if(!datos) return;
+
+          const contenedor = card.querySelector(".pad");
+          if(!contenedor) return;
+
+          const anterior = contenedor.querySelector(".descripcion-producto-google");
+          if(anterior) anterior.remove();
+
+          const descripcion = crearDescripcion(datos);
+          const acciones = contenedor.querySelector(".actions");
+          contenedor.insertBefore(descripcion, acciones || null);
+          card.dataset.formatoGoogleAplicado = "1";
+          card.setAttribute(
+            "aria-label",
+            `${datos.codigo} - ${datos.nombre}. Precio ${formatoNumero.format(datos.precio)} pesos colombianos.`
+          );
+        }
+
+        let pendiente = false;
+        function procesarProductosVisibles(){
+          pendiente = false;
+          document
+            .querySelectorAll(".grid:not(.album-grid-mode) > .card:not(.album-card)")
+            .forEach(procesarTarjeta);
+        }
+
+        function programarProceso(){
+          if(pendiente) return;
+          pendiente = true;
+          requestAnimationFrame(procesarProductosVisibles);
+        }
+
+        const observador = new MutationObserver(programarProceso);
+        observador.observe(document.body, { childList:true, subtree:true });
+
+        document.addEventListener("click", programarProceso, true);
+        document.addEventListener("input", programarProceso, true);
+        document.addEventListener("change", programarProceso, true);
+
+        programarProceso();
+      })();
+    </script>
+  </template>
   <script>
     (async function cargarCatalogo(){
       const listaProductosSeo = document.getElementById("listaProductosSeo")?.outerHTML || "";
       const estilosListaProductos = document.getElementById("estilosListaProductos")?.outerHTML || "";
+      const estilosFormatoGoogleProductos = document.getElementById("estilosFormatoGoogleProductos")?.outerHTML || "";
+      const moduloFormatoGoogleProductos = document.getElementById("moduloFormatoGoogleProductos")?.innerHTML || "";
 
       try{
         const respuesta = await fetch("catalogo-base-20260715.html?v=20260715", { cache:"no-store" });
@@ -380,13 +794,18 @@
         const cierreBody = "</bo" + "dy>";
         if(!html.includes(cierreBody)) throw new Error("Documento base incompleto");
 
-        if(estilosListaProductos && html.includes(cierreHead)){
-          html = html.replace(cierreHead, estilosListaProductos + "\n" + cierreHead);
+        if(html.includes(cierreHead)){
+          const estilosInyectados = [estilosListaProductos, estilosFormatoGoogleProductos]
+            .filter(Boolean)
+            .join("\n");
+          if(estilosInyectados){
+            html = html.replace(cierreHead, estilosInyectados + "\n" + cierreHead);
+          }
         }
 
         const moduloVisitantes = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-2\"></scr" + "ipt>";
         const ajusteTexto = "<scr" + "ipt type=\"module\">const total=document.getElementById('visitorWeekTotal');const item=total?.closest('.visitor-week-summary-item');if(item)item.replaceChildren(document.createTextNode('Vistas globales totales: '),total);</scr" + "ipt>";
-        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + listaProductosSeo + "\n" + cierreBody);
+        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + moduloFormatoGoogleProductos + "\n" + listaProductosSeo + "\n" + cierreBody);
 
         document.open();
         document.write(html);

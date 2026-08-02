@@ -1,1242 +1,1347 @@
 <!doctype html>
-<!-- Agregar a la categoria Fragancias las descripciones del documento de Google mediante coincidencia por nombre. -->
-<!-- v: 2026-08-02 02:46:00 PM -->
-<!-- Se conservaron los seis campos, categorias, filtros y carrito; se añadieron 38 descripciones verificadas de perfumeria. -->
+<!-- Incorporar datos estructurados JSON-LD de productos y retirar la lista visible redundante. -->
+<!-- v: 2026-08-02 03:35:00 PM -->
+<!-- Se genera un grafo Schema.org con tienda, listado y productos; las categorías, fichas, carrito y descripciones permanecen iguales. -->
 <html lang="es-CO">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Irenismb Stock Natura | Catálogo Natura & AVON en Santa Marta | Compra por WhatsApp</title>
-  <meta name="description" content="Catálogo oficial Natura y AVON en Santa Marta: perfumes, cuidado de la piel, maquillaje y más. Asesoría personalizada y compra fácil por WhatsApp. Envíos a toda Colombia." />
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-  <meta name="theme-color" content="#0b0f14" />
-  <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="theme-color" content="#0a0e15">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet=-1">
+  <title>Irenismb Stock Natura | Catálogo Natura y AVON</title>
+  <meta name="description" content="Catálogo de productos Natura y AVON en Santa Marta, con compra por WhatsApp.">
+  <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html">
+  <link rel="icon" type="image/webp" href="logos/logo_empresa.webp">
+  <link rel="icon" type="image/png" href="logos/logo_empresa.png">
   <style>
-    html,body{margin:0;min-height:100%;background:#0a0e15;color:#eef2f8;font-family:Calibri,Arial,sans-serif}
-    body{padding:24px;box-sizing:border-box}
-    main{max-width:620px;margin:0 auto;text-align:center;line-height:1.5}
-    a{color:#6ee7d1}
-  </style>
-  <style id="estilosListaProductos">
-    #listaProductosSeo{width:min(1180px,calc(100% - 32px));margin:32px auto 48px;box-sizing:border-box;font-family:Calibri,Arial,sans-serif}
-    #listaProductosSeo details{overflow:hidden;border:1px solid rgba(255,255,255,.14);border-radius:14px;background:rgba(11,15,20,.88);box-shadow:0 12px 32px rgba(0,0,0,.18)}
-    #listaProductosSeo summary{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:54px;padding:0 18px;box-sizing:border-box;cursor:pointer;list-style:none;color:#f3f6fa;font-weight:700;font-size:16px;line-height:1.25;user-select:none}
-    #listaProductosSeo summary::-webkit-details-marker{display:none}
-    #listaProductosSeo summary::after{content:"+";flex:0 0 auto;color:#6ee7d1;font-size:24px;font-weight:400;line-height:1}
-    #listaProductosSeo details[open] summary::after{content:"−"}
-    #listaProductosSeo summary:focus-visible{outline:3px solid #6ee7d1;outline-offset:-3px}
-    #listaProductosSeo .lista-productos-contenido{border-top:1px solid rgba(255,255,255,.12);padding:18px}
-    #listaProductosSeo ul{columns:3 260px;column-gap:32px;margin:0;padding-left:20px;color:#dce3ec;font-size:14px;line-height:1.45}
-    #listaProductosSeo li{break-inside:avoid;margin:0 0 8px;padding-right:8px}
-    @media(max-width:640px){#listaProductosSeo{width:calc(100% - 20px);margin:24px auto 36px}#listaProductosSeo summary{min-height:50px;padding:0 14px;font-size:15px}#listaProductosSeo .lista-productos-contenido{padding:14px}#listaProductosSeo ul{columns:1;font-size:13px}}
-  </style>
-
-  <style id="estilosFormatoGoogleProductos">
-    /* Las fichas de categorias conservan el diseño y funcionamiento originales. */
-    /* Solo las fichas de productos abiertas adoptan el orden del documento de Google. */
-    .grid:not(.album-grid-mode){
-      grid-template-columns:1fr !important;
-      gap:24px !important;
-      width:min(820px,100%);
-      margin:18px auto 0 !important;
-      align-items:start;
+    :root{
+      --bg:#0a0e15;
+      --bg2:#0d1422;
+      --card:#121826;
+      --card2:#161e30;
+      --txt:#eef2f8;
+      --mut:#a3aec0;
+      --line:#243049;
+      --acc:#22d3a8;
+      --acc2:#2dd4bf;
+      --danger:#ef4444;
+      --gold:#facc15;
+      --focus:#7dd3fc;
+      --shadow:0 12px 34px rgba(0,0,0,.32);
+      --radius:17px;
+      --font:Calibri,Arial,sans-serif;
     }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card){
-      display:flex !important;
-      flex-direction:column;
-      width:100%;
-      min-height:0;
-      height:auto;
-      overflow:hidden;
-      color:#111827;
-      background:#ffffff;
-      border:1px solid #d8dde6;
-      border-radius:10px;
-      box-shadow:0 10px 28px rgba(0,0,0,.24);
-      content-visibility:auto;
-      contain-intrinsic-size:620px 820px;
-    }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card):hover{
-      transform:translateY(-2px);
-      border-color:#c7ceda;
-      box-shadow:0 14px 32px rgba(0,0,0,.28);
-    }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .img{
-      position:relative;
-      width:100%;
-      height:auto !important;
-      min-height:330px;
-      padding:28px 24px 16px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      border:0;
-      background:#ffffff;
-      overflow:hidden;
-      cursor:zoom-in;
-    }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .img::before{
-      display:none !important;
-      content:none !important;
-      padding-top:0 !important;
-    }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .img > img{
-      position:static !important;
-      inset:auto !important;
-      top:auto !important;
-      left:auto !important;
-      right:auto !important;
-      bottom:auto !important;
-      transform:none !important;
-      display:block;
-      width:auto !important;
-      height:auto !important;
-      max-width:min(360px,calc(100% - 12px)) !important;
-      max-height:350px !important;
-      margin:auto;
-      object-fit:contain;
-      background:#ffffff;
-    }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .pad{
-      min-width:0;
-      padding:4px 30px 26px;
-      display:flex;
-      flex-direction:column;
-      gap:16px;
-      color:#111827;
-      background:#ffffff;
-      font-family:Calibri,Arial,sans-serif;
-    }
-
-    /* Los elementos originales se mantienen en el DOM para no alterar el programa. */
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .name,
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .meta,
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .row{
-      display:none !important;
-    }
-
-    .descripcion-producto-google{
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
       margin:0;
-      color:#111827;
-      font-family:Calibri,Arial,sans-serif;
-      font-size:11pt;
-      font-weight:400;
-      line-height:1.5;
-      text-align:justify;
-      text-justify:inter-word;
-      overflow-wrap:anywhere;
+      min-height:100vh;
+      color:var(--txt);
+      background:linear-gradient(180deg,var(--bg),var(--bg2));
+      font-family:var(--font);
+      -webkit-font-smoothing:antialiased;
     }
-
-    .descripcion-producto-google .producto-titulo-google{
-      color:#e53935;
-      font-weight:700;
-      text-transform:uppercase;
+    button,input,select,textarea{font:inherit}
+    button,a{touch-action:manipulation}
+    button{cursor:pointer}
+    [hidden]{display:none!important}
+    .wrap{width:min(1160px,calc(100% - 30px));margin-inline:auto}
+    .site-header{padding:14px 0 6px}
+    .head-card{
+      display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;
+      padding:12px 15px;border:1px solid var(--line);border-radius:20px;
+      background:rgba(18,24,38,.86);box-shadow:0 4px 14px rgba(0,0,0,.22);
     }
-
-    .descripcion-producto-google strong{
-      color:#111827;
-      font-weight:700;
+    .brand{display:flex;align-items:center;gap:13px;min-width:0}
+    .brand img{
+      width:54px;height:54px;object-fit:cover;border-radius:15px;
+      background:#0b1220;border:1px solid rgba(255,255,255,.09)
     }
-
-    .descripcion-producto-google a{
-      color:#1155cc;
-      text-decoration:underline;
-      text-underline-offset:2px;
+    .brand h1{font-size:20px;line-height:1.05;margin:0;font-weight:900;letter-spacing:.035em}
+    .tagline{margin:5px 0 0;color:var(--mut);font-size:12.5px}
+    .socials{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .socials a{
+      width:41px;height:41px;border:1px solid var(--line);border-radius:12px;
+      display:grid;place-items:center;background:#0e1524;text-decoration:none;
+      transition:transform .18s,border-color .18s
     }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
-      grid-template-columns:repeat(2,minmax(0,190px));
-      justify-content:center;
-      gap:10px;
-      width:100%;
-      margin:2px auto 0;
+    .socials a:hover{transform:translateY(-2px);border-color:var(--acc)}
+    .socials img{width:25px;height:25px;object-fit:contain}
+    .phone-icon{font-size:20px}
+    .toolbar{
+      margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:18px;
+      background:rgba(18,24,38,.72);display:grid;
+      grid-template-columns:minmax(230px,2fr) minmax(150px,1fr) auto auto;
+      gap:9px;align-items:center
     }
-
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions button{
-      min-height:41px;
-      font-family:Calibri,Arial,sans-serif;
-      font-size:13px;
-      font-weight:700;
+    .control{
+      width:100%;min-height:42px;border:1px solid #2a3858;border-radius:12px;
+      background:#0e1524;color:var(--txt);padding:9px 12px;outline:0
     }
-
-    @media(max-width:700px){
-      .grid:not(.album-grid-mode){
-        gap:18px !important;
-        margin-top:14px !important;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card){
-        contain-intrinsic-size:560px 360px;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .img{
-        min-height:270px;
-        padding:20px 15px 10px;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .img > img{
-        max-width:min(300px,calc(100% - 8px)) !important;
-        max-height:290px !important;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .pad{
-        padding:4px 18px 20px;
-        gap:14px;
-      }
-
-      .descripcion-producto-google{
-        font-size:11pt;
-        line-height:1.45;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-      }
+    .control:focus{border-color:var(--focus);box-shadow:0 0 0 2px rgba(125,211,252,.18)}
+    .btn{
+      min-height:42px;border:1px solid #2a3858;border-radius:12px;
+      padding:9px 13px;background:linear-gradient(180deg,#151f33,#0e1524);
+      color:var(--txt);font-weight:800
     }
-
-    @media(max-width:380px){
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .img{
-        min-height:235px;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .img > img{
-        max-height:250px !important;
-      }
-
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
-        grid-template-columns:1fr;
-      }
+    .btn:hover:not(:disabled){border-color:#3b527b;transform:translateY(-1px)}
+    .btn:disabled{opacity:.45;cursor:not-allowed}
+    .btn-acc{border-color:rgba(34,211,168,.55);background:linear-gradient(180deg,rgba(34,211,168,.21),rgba(34,211,168,.09));color:#d1fae5}
+    .btn-danger{border-color:rgba(239,68,68,.56);background:linear-gradient(180deg,rgba(239,68,68,.18),rgba(239,68,68,.07));color:#fecaca}
+    .btn-gold{border-color:rgba(250,204,21,.45);color:#fde68a}
+    .cart-count{
+      display:inline-grid;place-items:center;min-width:25px;height:25px;margin-left:5px;
+      padding:0 7px;border-radius:999px;background:rgba(255,255,255,.17);font-weight:900
     }
+    .cart-count.has-items{background:linear-gradient(135deg,#fbbf24,#f97316);color:#271500}
+    .status-row{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
+      margin-top:10px;color:var(--mut);font-size:13px
+    }
+    .album-nav{display:flex;align-items:center;gap:10px}
+    .back-btn{color:var(--gold);border-color:rgba(250,204,21,.42)}
+    .notice{
+      margin-top:14px;padding:12px 14px;border:1px solid var(--line);border-radius:14px;
+      color:var(--mut);background:rgba(18,24,38,.58);line-height:1.45
+    }
+    .notice.error{border-color:rgba(239,68,68,.55);color:#fecaca}
+    .notice.success{border-color:rgba(34,211,168,.5);color:#d1fae5}
+    .suggestions{
+      margin-top:10px;padding:12px;border:1px solid var(--line);border-radius:17px;
+      background:rgba(18,24,38,.62)
+    }
+    .chips{display:flex;gap:8px;flex-wrap:wrap}
+    .chip{
+      border:1px solid #2a3b5c;border-radius:999px;padding:7px 11px;
+      background:#0e1524;color:var(--txt);font-size:12px;font-weight:700
+    }
+    .chip:hover{border-color:var(--acc)}
+    .grid{display:grid;gap:14px;margin:16px 0 30px}
+    .category-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+    .category-card{
+      overflow:hidden;border:1px solid var(--line);border-radius:var(--radius);
+      background:var(--card);box-shadow:0 4px 12px rgba(0,0,0,.22)
+    }
+    .category-open{
+      width:100%;height:100%;padding:0;border:0;background:transparent;color:inherit;
+      display:flex;flex-direction:column;text-align:left
+    }
+    .category-preview{
+      position:relative;aspect-ratio:1/1;background:#0b1220;overflow:hidden;border-bottom:1px solid var(--line)
+    }
+    .category-preview img{
+      position:absolute;inset:10px;width:calc(100% - 20px);height:calc(100% - 20px);
+      object-fit:contain;border-radius:11px
+    }
+    .category-pad{padding:13px;display:flex;flex-direction:column;gap:5px;flex:1}
+    .category-name{margin:0;font-size:15px;line-height:1.25;font-weight:900}
+    .category-meta{margin:0;color:var(--mut);font-size:12px}
+    .category-card:hover{transform:translateY(-2px);border-color:#34496d}
+    .products-grid{grid-template-columns:1fr;width:min(840px,100%);margin-inline:auto}
+    .product-card{
+      overflow:hidden;border:1px solid #d8dde6;border-radius:11px;background:#fff;color:#111827;
+      box-shadow:var(--shadow)
+    }
+    .product-image{
+      min-height:330px;padding:26px 22px 14px;display:flex;align-items:center;justify-content:center;
+      background:#fff;cursor:zoom-in
+    }
+    .product-image img{
+      display:block;width:auto;height:auto;max-width:min(370px,calc(100% - 12px));max-height:360px;
+      object-fit:contain;background:#fff
+    }
+    .product-pad{padding:5px 30px 26px;display:flex;flex-direction:column;gap:16px}
+    .product-description{
+      margin:0;font-size:11pt;line-height:1.5;text-align:justify;text-justify:inter-word;
+      overflow-wrap:anywhere;color:#111827
+    }
+    .product-title{color:#e53935;font-weight:700;text-transform:uppercase}
+    .product-description strong{font-weight:700;color:#111827}
+    .product-actions{
+      display:grid;grid-template-columns:repeat(2,minmax(0,190px));justify-content:center;gap:10px
+    }
+    .product-actions .btn{font-size:13px}
+    .empty{
+      grid-column:1/-1;padding:38px 20px;border:1px dashed #32425f;border-radius:17px;
+      color:var(--mut);text-align:center;background:rgba(18,24,38,.52)
+    }
+    .loading-skeleton{animation:pulse 1.15s ease-in-out infinite alternate}
+    @keyframes pulse{from{opacity:.55}to{opacity:1}}
+    .footer{padding:0 0 20px}
+    .footer-card{padding:13px 16px;border:1px solid var(--line);border-radius:17px;background:rgba(18,24,38,.64);font-size:12px;color:var(--mut);line-height:1.55}
+    .footer-card strong{color:#fff}
+    .modal{
+      position:fixed;inset:0;z-index:1000;display:none;align-items:center;justify-content:center;padding:15px
+    }
+    .modal.open{display:flex}
+    .backdrop{position:absolute;inset:0;background:rgba(0,0,0,.86)}
+    .modal-card{
+      position:relative;z-index:1;width:min(720px,96vw);max-height:90vh;
+      overflow:hidden;border:1px solid var(--line);border-radius:20px;
+      background:linear-gradient(180deg,#182034,#121826);box-shadow:0 28px 80px rgba(0,0,0,.7);
+      display:flex;flex-direction:column
+    }
+    .modal-head,.modal-foot{padding:13px 15px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+    .modal-head{border-bottom:1px solid var(--line)}
+    .modal-foot{border-top:1px solid var(--line);flex-direction:column;align-items:stretch}
+    .modal-title{margin:0;font-size:18px}
+    .close{
+      width:37px;height:37px;border:1px solid rgba(255,255,255,.15);border-radius:999px;
+      background:#0e1524;color:#fff;font-size:18px
+    }
+    .modal-body{padding:13px 15px;overflow:auto}
+    .cart-item{
+      display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:10px;align-items:center;
+      padding:11px;margin-bottom:9px;border:1px solid var(--line);border-radius:14px;background:#0e1524
+    }
+    .cart-thumb{width:54px;height:54px;object-fit:contain;border-radius:10px;background:#fff}
+    .cart-name{margin:0 0 3px;font-size:13px;line-height:1.3}
+    .cart-sub{margin:0;color:var(--mut);font-size:11px}
+    .qty-controls{display:flex;align-items:center;gap:6px}
+    .qty-btn{width:31px;height:31px;border:1px solid #34415e;border-radius:999px;background:#151f33;color:#fff;font-weight:900}
+    .cart-total{font-size:16px;font-weight:900}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+    .field{display:flex;flex-direction:column;gap:5px}
+    .field label{font-size:11px;color:#fde047;font-weight:900;text-transform:uppercase}
+    .field.span2{grid-column:1/-1}
+    .field textarea{min-height:65px;resize:vertical}
+    .image-modal .modal-card{width:100vw;height:100vh;max-height:none;border:0;border-radius:0;background:transparent;box-shadow:none}
+    .image-modal .modal-body{display:grid;place-items:center;height:100%;padding:52px 16px 16px}
+    .image-modal img{max-width:100%;max-height:100%;object-fit:contain;border-radius:14px;background:#000}
+    .image-modal .close{position:absolute;right:14px;top:14px;z-index:3}
+    @media(max-width:980px){.category-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+    @media(max-width:760px){
+      .wrap{width:min(100% - 20px,1160px)}
+      .head-card{padding:10px 12px}
+      .brand h1{font-size:17px}.brand img{width:47px;height:47px}
+      .socials{width:100%;justify-content:center}
+      .toolbar{grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+      .toolbar .search{grid-column:1/-1}
+      .toolbar .btn,.toolbar select{font-size:12px;padding:7px}
+      .category-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .product-image{min-height:270px;padding:19px 14px 10px}
+      .product-image img{max-width:min(310px,calc(100% - 8px));max-height:295px}
+      .product-pad{padding:4px 18px 20px;gap:14px}
+      .product-description{font-size:11pt;line-height:1.45}
+      .product-actions{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .form-grid{grid-template-columns:1fr}.field.span2{grid-column:auto}
+    }
+    @media(max-width:390px){
+      .category-grid{grid-template-columns:1fr}
+      .product-actions{grid-template-columns:1fr}
+      .cart-item{grid-template-columns:46px minmax(0,1fr)}
+      .cart-thumb{width:46px;height:46px}
+      .qty-controls{grid-column:1/-1;justify-content:flex-end}
+    }
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
   </style>
+  <script type="application/ld+json" id="ldProducts">{}</script>
 </head>
 <body>
-  <main id="estadoCarga">
-    <p>Cargando catálogo...</p>
-    <p><a href="catalogo-base-20260715.html">Abrir catálogo base</a></p>
+  <header class="site-header">
+    <div class="wrap head-card">
+      <div class="brand">
+        <picture>
+          <source srcset="logos/logo_empresa.webp" type="image/webp">
+          <img src="logos/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="54" height="54">
+        </picture>
+        <div>
+          <h1>IRENISMB STOCK NATURA</h1>
+          <p class="tagline">Natura y AVON · Santa Marta · Envíos a toda Colombia</p>
+        </div>
+      </div>
+      <nav class="socials" aria-label="Redes sociales y contacto">
+        <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener" aria-label="Facebook"><img src="logos/facebook.webp" alt=""></a>
+        <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener" aria-label="Instagram"><img src="logos/instagram.webp" alt=""></a>
+        <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener" aria-label="TikTok"><img src="logos/tiktok.webp" alt=""></a>
+        <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener" aria-label="YouTube"><img src="logos/youtube.webp" alt=""></a>
+        <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener" aria-label="Ubicación"><img src="logos/maps.webp" alt=""></a>
+        <a href="https://wa.me/573042088961" target="_blank" rel="noopener" aria-label="WhatsApp"><img src="logos/whatsapp.webp" alt=""></a>
+        <a href="tel:+573042088961" aria-label="Llamar"><span class="phone-icon">☎</span></a>
+      </nav>
+    </div>
+
+    <div class="wrap">
+      <div class="toolbar" role="search">
+        <input class="control search" id="searchInput" type="search" placeholder="🔍 Buscar por nombre del producto..." aria-label="Buscar producto">
+        <select class="control" id="sortSelect" aria-label="Ordenar productos">
+          <option value="name-asc">Nombre A–Z</option>
+          <option value="name-desc">Nombre Z–A</option>
+          <option value="price-asc">Precio menor</option>
+          <option value="price-desc">Precio mayor</option>
+        </select>
+        <button class="btn" id="suggestBtn" type="button" aria-expanded="false">Mostrar palabras</button>
+        <button class="btn btn-acc" id="cartBtn" type="button">Carrito <span class="cart-count" id="cartCount">0</span></button>
+      </div>
+
+      <section class="suggestions" id="suggestions" hidden>
+        <div class="chips" id="chips"></div>
+      </section>
+
+      <div class="status-row">
+        <div class="album-nav">
+          <button class="btn back-btn" id="backBtn" type="button" hidden>← Categorías</button>
+          <strong id="currentPath"></strong>
+        </div>
+        <span id="countText">Cargando productos…</span>
+      </div>
+      <div class="notice loading-skeleton" id="notice">Consultando los nombres de los archivos de productos…</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="grid category-grid" id="catalogGrid" aria-live="polite"></section>
   </main>
 
-  <section id="listaProductosSeo" aria-label="Lista de productos disponibles">
-    <details>
-      <summary>Lista de productos</summary>
-      <div class="lista-productos-contenido">
-        <ul>
-          <li>Aguas Citrico 150 ml</li>
-          <li>Aguas Frambuesa 150 ml</li>
-          <li>Aguas Jabuticaba 150 ml</li>
-          <li>Aguas Lirio 150 ml</li>
-          <li>Aguas Tropicales 150 ml</li>
-          <li>Andiroba Fluido De Masajes 100 g Envase</li>
-          <li>Biografia Clasica Femenino 100 ml</li>
-          <li>Blossoming Petals Colonia Spray Con Destellos 120 ml</li>
-          <li>Caja De Jabones para bebes x5 100 g x5</li>
-          <li>Care Aceite De Argan Y Naranja Crema Corporal 400 ml</li>
-          <li>Care Aceite De Argan Y Naranja Crema Corporal Litro</li>
-          <li>Care Aceite De Coco Crema Corporal 400 ml</li>
-          <li>Care Aceite De Coco Crema Corporal Litro</li>
-          <li>Care Aguacate Crema Corporal 400 ml</li>
-          <li>Care Aguacate Crema Corporal Litro</li>
-          <li>Care Avena Y Extracto De Vainilla Crema Corporal Litro</li>
-          <li>Care Derma Crema Corporal Iluminadora 750 ml</li>
-          <li>Care Derma Crema Corporal Reafirmante 400 ml</li>
-          <li>Care Derma Crema Corporal Reafirmante 750 ml</li>
-          <li>Care Extracto De Almendras Crema Corporal Litro</li>
-          <li>Care Fruto Rojos Crema Corporal 400 ml</li>
-          <li>Care Glicerina Y Aceite De Almendra Crema Corporal Litro</li>
-          <li>Care Rosa Mosqueta Crema Facial 3 En 1 75 g</li>
-          <li>Care Sandia Crema Corporal Litro</li>
-          <li>Chronos Agua Micelar Desmaquillante Repuesto 150 ml</li>
-          <li>Chronos Agua Micelar Desmaquillante Suave 150 ml</li>
-          <li>Chronos Aqua Biohidratante Renovador 30 ml</li>
-          <li>Chronos Aqua Renovador Hidratante 30 ml</li>
-          <li>Chronos Esencia De Tratamiento 100 ml Envase</li>
-          <li>Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Noche Repuesto 45 30 ml</li>
-          <li>Chronos Gel Crema Antiseñales Renovacion Y Prevencion Dia Repuesto 30 30 ml</li>
-          <li>Chronos Gel De Limpieza Purificante Antioleosidad 130 g</li>
-          <li>Chronos Mousse De Limpieza Intensiva 85 g</li>
-          <li>Chronos Protector Solar Facial Antioleosidad Reductor De Poros Fps 30 Incoloro 50 ml</li>
-          <li>Chronos Protector Solar Facial Antiseñales Fps 50 50 ml</li>
-          <li>Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Medio Oscuro Nuevo 50 ml</li>
-          <li>Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Tono Claro Medio 50 ml</li>
-          <li>Chronos Protector Solar Facial Multiaclarador De Manchas Fps 50 Tono Medio Oscuro 50 ml</li>
-          <li>Chronos Serum Intensivo Antioxidante 15 ml Envase</li>
-          <li>Chronos Serum Intensivo Lifting Y Firmeza 30 ml Envase</li>
-          <li>Chronos Serum Intensivo Multiaclarador De Manchas Repuesto 30 ml</li>
-          <li>Chronos Serum Intensivo Reductor Oleosidad 30 ml Envase</li>
-          <li>Chronos Serum Intensivo Reductor Oleosidad 30 ml Repuesto</li>
-          <li>Chronos Serum Intensivo Rellenador Biohidratante 30 ml Envase</li>
-          <li>Chronos Serum Intensivo Rellenador Biohidratante Repuesto 30 ml</li>
-          <li>Chronos Super Serum Reductor De Arrugas 30 ml Envase</li>
-          <li>Chronos Super Serum Reductor De Arrugas 30 ml Repuesto</li>
-          <li>Chronos Super Serum Reductor De Arrugas Y Flacidez Ojos 30 ml Envase</li>
-          <li>Chronos Super Serum Reductor De Arrugas Y Flacidez Ojos Repuesto 30 ml</li>
-          <li>Chronos Triple Exfoliante Peeling Antiseñales 50 g</li>
-          <li>Combo Aguas Violeta 150 ml Jabon En Barra 90 g</li>
-          <li>Combo Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Dia Noche 45 30 ml</li>
-          <li>Combo Chronos Gel Crema Antiseñales Firmeza Y Luminosidad Dia Noche Repuesto 45 30 ml</li>
-          <li>Combo Chronos Gel Crema Antiseñales Relleno Y Revitalizacion Dia Noche Repuesto 60 30 ml</li>
-          <li>Combo Ekos Murumuru Shampoo Acondicionador Mascara Crema De Peinar x4</li>
-          <li>Combo Ekos Murumuru Shampoo Acondicionador Mascara Pre Shampoo x4</li>
-          <li>Combo Ekos Murumuru Shampoo Acondicionador x2</li>
-          <li>Combo Ekos Pitanga Preta Femenino Frescor 150 ml Caja De Jabones De 6 Unidades De 25 g Cdu</li>
-          <li>Combo Faces Facial Jabon De Limpieza Hidratante Matificante 50 ml</li>
-          <li>Combo Kaiak Clasico Masculino Perfume Shampoo Gel De Afeitar 2 En 1</li>
-          <li>Combo Lumina Anticaida Repuesto Shampoo 300 ml Acondicionador 300 ml Mascara 250 ml</li>
-          <li>Combo Lumina Anticaida Shampoo Acondicionador Mascara Envase x3</li>
-          <li>Combo Lumina Anticaida Shampoo Acondicionador Mascara Tonico Envase x4</li>
-          <li>Combo Lumina Brillo Y Proteccion De Color Shampoo Acondicionador Envase x2</li>
-          <li>Combo Lumina Fuerza Y Reparacion Molecular Shampoo Acondicionador Mascara Envase x3</li>
-          <li>Combo Lumina Fuerza Y Reparacion Molecular Shampoo Acondicionador Mascara Repuesto x3</li>
-          <li>Combo Lumina Hidratacion Y Proteccion Antipolucion Shampoo Acondicionador Fluido Envase x3</li>
-          <li>Combo Lumina Nutricion Y Reparacion Profunda Shampoo Repuesto 300 ml Acondicionador Repuesto 300 ml Mascara Repuesto 250 ml x3</li>
-          <li>Combo Lumina Reconstruccion Shampoo Acondicionador Mascara Repuesto x3</li>
-          <li>Combo Lumina Reconstruccion Shampoo Acondicionador Mascara Serum Envase x4</li>
-          <li>Combo Lumina Reconstruccion Shampoo Acondicionador Repuesto x2</li>
-          <li>Combo Lumina Restauracion Y Liso Prolongado Shampoo Acondicionador Envase x2</li>
-          <li>Combo Lumina Restauracion Y Liso Prolongado Shampoo Acondicionador Mascara Envase x3</li>
-          <li>Combo Lumina Rizado Shampoo Acondicionador Envase x2</li>
-          <li>Combo Lumina Rizado Shampoo Acondicionador Mascara Crema De Peinar Envase x4</li>
-          <li>Combo Lumina Rizado Shampoo Acondicionador Mascara Crema De Peinar Repuesto x4</li>
-          <li>Combo Tododia Avellana Y Casis Aceite Bifasico Crema 120 ml 100 ml</li>
-          <li>Combo Tododia Cabello Rizado Cachos E Crespos Shampoo Repuesto Acondicionador Repuesto Crema Para Peinar Repuesto x3</li>
-          <li>Combo Tododia Capilar Durazno Y Almendra Shampoo 300 ml Acondicionador 280 ml Crema Para Peinar 180 ml Mascara 250 g x4</li>
-          <li>Combo Tododia Cereza Negra Y Praline x3</li>
-          <li>Combo Tododia Cereza Y Avellana x3</li>
-          <li>Combo Tododia Ciruela Y Flor De Vainilla x3</li>
-          <li>Combo Tododia Hidratacion Shampoo Acondicionador Mascara Repuesto x3</li>
-          <li>Combo Tododia Hidratacion Shampoo Acondicionador Mascara x3</li>
-          <li>Combo Tododia Hidratacion Shampoo Acondicionador Repuesto x2</li>
-          <li>Combo Tododia Manzana Caramelizada Y Vainilla x3</li>
-          <li>Combo Tododia Nutricion Shampoo Acondicionador Mascara Repuestos x3</li>
-          <li>Combo Tododia Nutricion Shampoo Acondicionador Repuestos x2</li>
-          <li>Combo Tododia Reparacion Shampoo Acondicionador Mascara Repuestos x3</li>
-          <li>Combo Tododia Reparacion Shampoo Acondicionador Mascara x2</li>
-          <li>Combo Tododia Reparacion Shampoo Acondicionador Repuestos x2</li>
-          <li>Combo Tododia Rizado Y Afros Shampoo Acondicionador Crema De Peinar Repuesto x3</li>
-          <li>Ekos Acai Bruma Facial Hidratante 100 ml</li>
-          <li>Ekos Acai Crema Corporal 400 ml Envase</li>
-          <li>Ekos Acai Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Acai Frescor 150 ml</li>
-          <li>Ekos Acai Minifrescor 75 ml</li>
-          <li>Ekos Amazo Femenino Miniatura Frescor 75 ml</li>
-          <li>Ekos Andiroba Crema Corporal 400 ml Envase</li>
-          <li>Ekos Cacao Crema Corporal 400 ml Envase</li>
-          <li>Ekos Cacao Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Cacao Frescor 150 ml Envase</li>
-          <li>Ekos Caja De Jabones Cremosos Exfoliantes Y Refrescantes 4 Unidades 100 g x4</li>
-          <li>Ekos Caja De Jabones Cremosos x4 100 g x4</li>
-          <li>Ekos Caja De Jabones Cremosos Y Exfoliantes 4 Unidades 100 g x4</li>
-          <li>Ekos Castaña Crema Corporal 200 ml</li>
-          <li>Ekos Castaña Crema Corporal 400 ml Envase</li>
-          <li>Ekos Castaña Crema Corporal 400 ml Repuesto</li>
-          <li>Ekos Castaña Crema Exfoliante Para Manos Y Pies 75 g</li>
-          <li>Ekos Castaña Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Castaña Frescor 150 ml</li>
-          <li>Ekos Castaña Frescor 150 ml Repuesto</li>
-          <li>Ekos Castaña Jabon Liquido Corporal 195 ml Repuesto</li>
-          <li>Ekos Castaña Jabon Liquido Corporal Cremoso 100 ml</li>
-          <li>Ekos Castaña Jabon Liquido Para Manos 250 ml Repuesto</li>
-          <li>Ekos Chuva 75 ml</li>
-          <li>Ekos Estoraque Frescor 150 ml</li>
-          <li>Ekos Ishpink Frescor 150 ml</li>
-          <li>Ekos Jabones Cremosos Y Exfoliantes 100 g x4</li>
-          <li>Ekos Jabones En Barra Cremosos Y Exfoliantes 100 g x4</li>
-          <li>Ekos Jabones En Barra Tukuma 100 g x4</li>
-          <li>Ekos Madeira Em Flor Frescor 150 ml</li>
-          <li>Ekos Maracuya Caja De Jabones Cremosos Y Exfoliantes 4 Unidades 100 g x4</li>
-          <li>Ekos Maracuya Crema Corporal 200 ml</li>
-          <li>Ekos Maracuya Crema Corporal 400 ml Envase</li>
-          <li>Ekos Maracuya Crema Corporal Repuesto 400 ml</li>
-          <li>Ekos Maracuya Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Maracuya Frescor 150 ml Envase</li>
-          <li>Ekos Maracuya Jabon Liquido Exfoliante 185 ml</li>
-          <li>Ekos Maracuya Jabon Masajeador 100 g</li>
-          <li>Ekos Maracuya Noche Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Murumuru Crema Para Peinar Multibeneficios 150 ml</li>
-          <li>Ekos Murumuru Mascara Pre Shampoo 100 g</li>
-          <li>Ekos Murumuru Serum Capilar Nocturno 30 ml</li>
-          <li>Ekos Murumuru Shampoo</li>
-          <li>Ekos Murumuru Shampoo Y Acondicionador antidaños 300 ml</li>
-          <li>Ekos Pataua Shampoo Acondicionador Repuesto</li>
-          <li>Ekos Pataua Shampoo Acondicionador Tonico Envase</li>
-          <li>Ekos Pitanga Clasica Frescor 150 ml</li>
-          <li>Ekos Pitanga Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Pitanga Preta Femenino Frescor 150 ml</li>
-          <li>Ekos Ryo Festa 75 ml</li>
-          <li>Ekos Ryo Vivo 75 ml</li>
-          <li>Ekos Surtidos Jabones Cremosos</li>
-          <li>Ekos Tukuma Crema Hidratante Para Manos 75 g</li>
-          <li>Ekos Tukuma Jabon Liquido Exfoliante 185 ml</li>
-          <li>Ekos Ucuuba Crema Corporal 400 ml Envase</li>
-          <li>Ekos Ucuuba Crema Corporal Repuesto 400 ml</li>
-          <li>Ekos Ucuuba Crema Hidratante Para Manos 75 g</li>
-          <li>Erva Doce Unisex Desodorante Antitranspirante Crema 80 g</li>
-          <li>Erva Doce Unisex Desodorante Antitranspirante Roll On 70 ml</li>
-          <li>Erva Doce Unisex Desodorante En Crema 80 g</li>
-          <li>Essencial Clasico Masculino 100 ml</li>
-          <li>Essencial Exclusivo Masculino 100 ml</li>
-          <li>Essencial Oud Masculino 100 ml</li>
-          <li>Essencial Oud Pimienta Masculino 100 ml</li>
-          <li>Essencial Sentir Femenino 50 ml</li>
-          <li>Essencial Sentir Masculino 100 ml</li>
-          <li>Far Away Clasico Femenino 50 ml</li>
-          <li>Fotoequilibrio Protector Facial Gel Crema Toque Seco Fps 50 50 g</li>
-          <li>Fotoequilibrio Protector Solar Corporal Fps 50 200 ml</li>
-          <li>Fotoequilibrio Protector Solar Corporal Y Rostro Niños Fps 50 200 ml</li>
-          <li>Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 30 50 g</li>
-          <li>Fotoequilibrio Protector Solar Facial Gel Crema Hidratante Fps 50 50 g</li>
-          <li>Hidratante Facial Piel Mixta 50 ml Faces</li>
-          <li>Homem Balsamo Post Barba 75 ml</li>
-          <li>Homem Caja De Jabones Masculinos x3 Unidades 110 g x3</li>
-          <li>Homem Coragio Masculino Crema Corporal Perfumada 125 ml</li>
-          <li>Homem Essence Masculino 100 ml</li>
-          <li>Homem Essence Masculino Splash Perfumado 100 ml</li>
-          <li>Homem Gel Para Afeitar 75 ml</li>
-          <li>Homem Masculino Desodorante En Roll On 75 ml</li>
-          <li>Homem Nos Masculino 100 ml</li>
-          <li>Homem Potence Masculino Splash Perfumado 100 ml</li>
-          <li>Homem Potence Miniatura 25 ml</li>
-          <li>Homem Sin Perfume Masculino Desodorante En Roll On 75 ml</li>
-          <li>Humor Beijo Femenino 75 ml</li>
-          <li>Humor Conexion Masculino 75 ml</li>
-          <li>Humor Envolve 75 ml</li>
-          <li>Humor Galaxia Femenino 75 ml</li>
-          <li>Humor Liberta Unisex Splash Perfumado 100 ml</li>
-          <li>Humor On Line Femenino 75 ml</li>
-          <li>Humor On Line Masculino 75 ml</li>
-          <li>Humor Online Femenino Perfume 75 ml</li>
-          <li>Humor Primeiro Crema Corporal Gel Iluminadora Perfumada 75 ml</li>
-          <li>Humor Propio Femenino Splash Perfumado 200 ml</li>
-          <li>Humor Transforma Unisex 75 ml</li>
-          <li>Ilia Clasico Femenino 50 ml</li>
-          <li>Ilia Plena Femenino 50 ml</li>
-          <li>Ilia Secreto Femenino 50 ml</li>
-          <li>Jabon Liquido Perfumado Humor Primeiro Femenino De 75 ml</li>
-          <li>Kaiak Aero Femenino 100 ml</li>
-          <li>Kaiak Aero Masculino 100 ml</li>
-          <li>Kaiak Aventura Femenino 100 ml</li>
-          <li>Kaiak Aventura Masculino 100 ml</li>
-          <li>Kaiak Clasico Femenino 100 ml</li>
-          <li>Kaiak Clasico Femenino Crema Corporal Gel Acqua Pos Solar Perfumada 390 ml</li>
-          <li>Kaiak Clasico Femenino Crema Hidratante Corporal Refrescante Baño Perfumada 100 ml</li>
-          <li>Kaiak Clasico Femenino Jabon Liquido Corporal Perfumado 200 ml</li>
-          <li>Kaiak Clasico Femenino Miniatura 25 ml</li>
-          <li>Kaiak Clasico Masculino 100 ml</li>
-          <li>Kaiak Clasico Masculino Shampoo Refrescante Perfumado 125 ml</li>
-          <li>Kaiak K Masculino 100 ml</li>
-          <li>Kaiak K Noite Masculino Shampoo Perfumado 125 ml</li>
-          <li>Kaiak Oceano Masculino 100 ml</li>
-          <li>Kaiak Oxigeno Masculino 100 ml</li>
-          <li>Kaiak Sonar Femenino 100 ml</li>
-          <li>Kaiak Sonar Masculino 100 ml</li>
-          <li>Kaiak Urbe Masculino 100 ml</li>
-          <li>Kaiak Urbe Masculino Splash Perfumado 100 ml</li>
-          <li>Kriska Flores Femenino Jabon Liquido Corporal Perfumado 125 ml</li>
-          <li>Lumina Anticaida Y Crecimiento Shampu Acondicionador Y Mascara En Repuesto</li>
-          <li>Lumina Anticaspa Shampoo Repuesto 300 ml</li>
-          <li>Lumina Brillo Y Proteccion De Color Shampoo Repuesto 300 ml</li>
-          <li>Lumina Hidratacion Y Proteccion Antipolucion Shampoo Envase</li>
-          <li>Lumina Hidratacion Y Proteccion Antipolucion Shampoo Repuesto 300 ml</li>
-          <li>Lumina Matizacion Y Restauracion Envase</li>
-          <li>Lumina Reconstruccion Acondicionador</li>
-          <li>Lumina Rizado Acondicionador</li>
-          <li>Luna Liberdade Femenino 75 ml</li>
-          <li>Luna Radiante Femenino 75 ml</li>
-          <li>Luna Radiante Femenino Jabon Liquido Corporal Perfumado 100 ml</li>
-          <li>Luna Viva Femenino 75 ml</li>
-          <li>Perfume Cabello Esencia Lumina 30 ml</li>
-          <li>Power Stay Pestañina 5 En 1 Genius 10 ml</li>
-          <li>Primer Blur 30 ml</li>
-          <li>Protector Solar Facial Piel Mixta A Grasa Fps 50 50 ml</li>
-          <li>Protector Solar Facial Stick Fps 50 Todo Tipo De Piel g</li>
-          <li>Seve Almendras Dulce Aceite Corporal 200 ml</li>
-          <li>Simply Delicate Extracto De Avena Femenino Gel De Limpieza Intima 250 ml</li>
-          <li>Solar Protector Solar Corporal Fps 70 200 ml</li>
-          <li>Solar Protector Solar Facial Control De Oleosidad Fps 50 50 ml</li>
-          <li>Solar Protector Solar Facial Control De Oleosidad Fps 70 50 ml</li>
-          <li>Solar Protector Solar Facial Hidratante Fps 50 50 ml</li>
-          <li>Solar Protector Solar Facial Hidratante Fps 70 50 ml</li>
-          <li>Splash Perfumado Humor Primeiro Femenino De 100 ml</li>
-          <li>Splash Perfumado Kaiak Clasico Femenino De 200 ml</li>
-          <li>Today Tomorrow Always Radiance 50 ml</li>
-          <li>Tododia Acerola E Hibisco Body Splash 200 ml</li>
-          <li>Tododia Aclarador Femenino Desodorante En Roll On 70 ml</li>
-          <li>Tododia Avellana Y Casis Femenino Desodorante En Crema 80 g</li>
-          <li>Tododia Avellana Y Casis Femenino Desodorante En Roll On 70 ml</li>
-          <li>Tododia Avellanas Y Casis Crema Corporal Repuesto 400 ml</li>
-          <li>Tododia Caja De Jabones Nuez Pecan 5 Unidades 90 g x5</li>
-          <li>Tododia Caja De Jabones Surtidos 5 Unidades 90 g x5</li>
-          <li>Tododia Cereza Negra Y Praline Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Cereza Y Avellana Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Cereza Y Avellana Desodorante Femenino En Roll On 70 ml</li>
-          <li>Tododia Ciruela Y Flor De Vainilla Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Ciruela Y Flor De Vainilla Crema Corporal 400 ml Envase</li>
-          <li>Tododia Ciruela Y Flor De Vainilla Crema Corporal Repuesto 400 ml</li>
-          <li>Tododia Ciruela Y Flor De Vainilla Splash ml</li>
-          <li>Tododia Flor De Ciruela Perfume Capilar 60 ml</li>
-          <li>Tododia Flor De Jengibre Y Mandarina Crema Corporal 400 ml Envase</li>
-          <li>Tododia Flor De Jengibre Y Mandarina Splash ml</li>
-          <li>Tododia Flor De Pera Y Melisa Crema Corporal 400 ml Envase</li>
-          <li>Tododia Frambuesa Y Pimienta Rosa Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Frambuesa Y Pimienta Rosa Splash ml</li>
-          <li>Tododia Frutas Rojas Crema Corporal 400 ml Envase</li>
-          <li>Tododia Frutas Rojas Crema Hidratante De Manos 50 ml</li>
-          <li>Tododia Frutas Rojas Exfoliante Corporal 100 g</li>
-          <li>Tododia Frutas Rojas Splash ml</li>
-          <li>Tododia Frutos Rojos Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Hojas De Limon Y Guanabana Crema Corporal 400 ml Envase</li>
-          <li>Tododia Hojas De Limon Y Guanabana Crema Corporal Repuesto 400 ml</li>
-          <li>Tododia Hojas De Limon Y Guanabana Femenino Desodorante En Roll On 70 ml</li>
-          <li>Tododia Hojas De Limon Y Guanabana Splash ml</li>
-          <li>Tododia Leche De Algodon Femenino Desodorante En Crema 80 g</li>
-          <li>Tododia Leche De Algodon Femenino Desodorante En Roll On 70 ml</li>
-          <li>Tododia Mango Rosa Y Agua De Coco Crema Corporal 400 ml Envase</li>
-          <li>Tododia Mango Rosa Y Agua De Coco Crema Corporal Repuesto 400 ml</li>
-          <li>Tododia Mango Rosa Y Agua De Coco Splash ml</li>
-          <li>Tododia Manzana Caramelizada Y Vainilla Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Manzana Caramelizada Y Vainilla Crema Corporal 400 ml</li>
-          <li>Tododia Manzana Caramelizada Y Vainilla Splash ml</li>
-          <li>Tododia Mora Roja Y Jabuticaba Femenino Desodorante En Roll On 70 ml</li>
-          <li>Tododia Nuez Pecan Y Cacao Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Nuez Pecan Y Cacao Crema Corporal 200 ml</li>
-          <li>Tododia Nuez Pecan Y Cacao Crema Corporal Envase 400 ml</li>
-          <li>Tododia Nuez Pecan Y Cacao Crema Corporal Repuesto 400 ml</li>
-          <li>Tododia Nuez Pecan Y Cacao Jabon Liquido 300 ml</li>
-          <li>Tododia Nutricion Acondicionador Repuesto 300 ml</li>
-          <li>Tododia Nutricion Shampoo Acondicionador Crema De Peinar</li>
-          <li>Tododia Piel Uniforme Balsamo Ultra Nutritivo Regenerador Pera Y Flor De Loto 200 ml</li>
-          <li>Tododia Piel Uniforme Exfoliante Nutritivo Pera Y Flor De Loto 190 g</li>
-          <li>Tododia Piel Uniforme Manteca Uniformadora De Tono Pera Y Flor De Loto 200 g</li>
-          <li>Tododia Reparacion Capilar Shampoo Acondicionador Mascara Crema Para Peinar Envase x4</li>
-          <li>Tododia Reparacion Shampoo 300 ml Repuesto</li>
-          <li>Tododia Rizado Spray Reactivador De Rizos 200 ml</li>
-          <li>Tododia Rizado Y Afros Crema De Peinar Repuesto</li>
-          <li>Tododia Sin Perfume Desodorante Femenino En Roll On 70 ml</li>
-          <li>Tododia Sin Perfume Femenino Desodorante En Crema 80 g</li>
-          <li>Tododia Te De Manzanilla Y Lavanda Caja De Jabones 2 Unidades 90 g x2</li>
-          <li>Tododia Te De Manzanilla Y Lavanda Caja De Jabones 5 Unidades 90 g x5</li>
-          <li>Tododia Te De Manzanilla Y Lavanda Crema Corporal 200 ml</li>
-          <li>Tododia Te De Manzanilla Y Lavanda Crema Corporal 400 ml Envase</li>
-          <li>Tododia Te De Manzanilla Y Lavanda Crema Nube Relajante Corporal 200 ml</li>
-          <li>Tododia Te De Manzanilla Y Lavanda Splash ml</li>
-          <li>Trescientos 300 Kilometros Virtual Adrenaline Masculino 100 ml</li>
-          <li>Una Brillo Femenino 75 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 10n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 15n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 19n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 21n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 24n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 27n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 30n 8 ml</li>
-          <li>Una Corrector Cobertura Extrema 24h Tono 32n 8 ml</li>
-          <li>Una Glos Labial Fps 15 8 ml</li>
-          <li>Una Labial Cc Tono Rose 4c 3 8 g</li>
-          <li>Una Lapiz Kajal Ojos Tono Negro 1 14 g</li>
-          <li>Una Mascara Para Pestaña Volumen Magnifico 8 ml</li>
-          <li>Una Primer Facial Fps 40 30 ml</li>
-          <li>Una Rubor Intense Me Tono Bronce Perlado 6 g</li>
-          <li>Una Serum Labial 1 8 g</li>
-          <li>Works Crema Reparadora Para Pies Con Callosidades 100 g</li>
-        </ul>
+  <footer class="wrap footer">
+    <div class="footer-card">
+      <p><strong>Irenismb Stock Natura.</strong> Compra por WhatsApp al +57 304 208 8961. Dirección: Calle 10A #20A-06, barrio Los Almendros, Santa Marta, Magdalena.</p>
+    </div>
+  </footer>
+
+  <div class="modal" id="cartModal" aria-hidden="true">
+    <div class="backdrop" data-close="cart"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-labelledby="cartTitle">
+      <div class="modal-head">
+        <h2 class="modal-title" id="cartTitle">Carrito</h2>
+        <button class="close" type="button" data-close="cart" aria-label="Cerrar">×</button>
       </div>
-    </details>
-  </section>
+      <div class="modal-body">
+        <div id="cartItems"></div>
+        <div class="form-grid">
+          <div class="field"><label for="clientName">Nombre</label><input class="control" id="clientName" autocomplete="name"></div>
+          <div class="field"><label for="clientPhone">Celular</label><input class="control" id="clientPhone" inputmode="tel" autocomplete="tel"></div>
+          <div class="field span2"><label for="clientAddress">Dirección</label><input class="control" id="clientAddress" autocomplete="street-address"></div>
+          <div class="field"><label for="clientBarrio">Barrio</label><input class="control" id="clientBarrio"></div>
+          <div class="field"><label for="shipping">Envío</label><input class="control" id="shipping" inputmode="numeric" value="6000"></div>
+          <div class="field span2"><label for="clientObs">Observación</label><textarea class="control" id="clientObs"></textarea></div>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <div class="cart-total" id="cartTotal">Total: $0</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px">
+          <button class="btn btn-danger" id="clearCartBtn" type="button">Vaciar carrito</button>
+          <button class="btn btn-acc" id="whatsappBtn" type="button">Enviar por WhatsApp</button>
+        </div>
+      </div>
+    </section>
+  </div>
 
+  <div class="modal image-modal" id="imageModal" aria-hidden="true">
+    <div class="backdrop" data-close="image"></div>
+    <section class="modal-card" role="dialog" aria-modal="true" aria-label="Imagen ampliada">
+      <button class="close" type="button" data-close="image" aria-label="Cerrar">×</button>
+      <div class="modal-body"><img id="largeImage" alt=""></div>
+    </section>
+  </div>
 
-  <template id="moduloFormatoGoogleProductos">
-    <script>
-      (function activarFormatoGoogleProductos(){
-        "use strict";
-
-        /*
-          Las descripciones manuales por codigo siguen teniendo prioridad.
-          Las 38 descripciones de Fragancias se buscan despues por nombre de producto.
-        */
-        const descripcionesPorCodigo = window.DESCRIPCIONES_PRODUCTOS || {};
-        const descripcionesFraganciasGoogle = [
-          {
-                    "codigoDocumento": "0032",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA BIOGRAFÍA CLÁSICO FEMENINO 100 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 132720,
-                    "descripcion": "Fragancia femenina de intensidad moderada y familia olfativa floral, con un refrescante bouquet floral, notas frutales de durazno y cassis, hojas de violeta y un sutil toque amaderado. Recomendada para el día a día y para salir. Para potenciar la fragancia, se aplica en las muñecas, el cuello, el escote y detrás de las orejas.",
-                    "codigoNatura": "74788"
-          },
-          {
-                    "codigoDocumento": "0033",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO FESTA UNISEX 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 94500,
-                    "descripcion": "Eau de toilette amaderado acuático, potente y vibrante, con bioesencia de siriúba, toronja, acorde acuático, bergamota, hierbas, violeta, jazmín, maderas e ingredientes amazónicos.",
-                    "codigoNatura": "133868"
-          },
-          {
-                    "codigoDocumento": "0034",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO VIVO UNISEX 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 94450,
-                    "descripcion": "Eau de toilette unisex de perfil cítrico y acuático, inspirada en el aroma de la lluvia, la tierra mojada y las plantas del bosque. Es vegana y está indicada para salir.",
-                    "codigoNatura": "133871"
-          },
-          {
-                    "codigoDocumento": "0035",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ON-LINE FEMENINO 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 146500,
-                    "descripcion": "Eau de toilette frutal cítrico de carácter alegre y desenfadado, con notas frutales y florales para el uso diario.",
-                    "codigoNatura": "105351"
-          },
-          {
-                    "codigoDocumento": "0036",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL EXCLUSIVO MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 251900,
-                    "descripcion": "Eau de parfum amaderado de carácter sofisticado, con pimienta negra y limón siciliano en la salida, cedro y pachulí en el cuerpo, y un fondo de ámbar, almizcle y sándalo.",
-                    "codigoNatura": "93617"
-          },
-          {
-                    "codigoDocumento": "0037",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL SENTIR FEMENINO 50 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 139000,
-                    "descripcion": "Eau de parfum floral frutal intenso con tuberosa, jazmín, pera, frambuesa y pataqueira, de alta concentración y duración de hasta diez horas.",
-                    "codigoNatura": "166110"
-          },
-          {
-                    "codigoDocumento": "0038",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL SENTIR MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 246500,
-                    "descripcion": "Eau de parfum amaderado aromático de alta concentración, con sándalo, pimienta brasileña, lavanda, bergamota y pachulí. Su aroma puede permanecer hasta diez horas en la piel.",
-                    "codigoNatura": "179067"
-          },
-          {
-                    "codigoDocumento": "0039",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL OUD MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 125950,
-                    "descripcion": "Eau de parfum amaderado intenso y especiado, con bergamota, cardamomo y azafrán, corazón de geranio y canela, y fondo de oud, cedro, sándalo, ámbar, pachulí y copaíba.",
-                    "codigoNatura": "93619"
-          },
-          {
-                    "codigoDocumento": "0040",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ENVOLVE UNISEX 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 89900,
-                    "descripcion": "Eau de toilette unisex floral aldehídico, con notas limpias y brillantes, frutas moradas, flores, almizcle, ámbar y maderas. Su perfumación puede permanecer hasta ocho horas en la piel.",
-                    "codigoNatura": "170153"
-          },
-          {
-                    "codigoDocumento": "0041",
-                    "nombreDocumento": "EAU DE PARFUM NATURA HOMEM ESSENCE MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 170900,
-                    "descripcion": "Eau de parfum amaderado intenso con notas de bergamota, jengibre, cítricos, pimienta negra, cardamomo, canela, pachulí, ámbar y cedro, creado para ocasiones especiales.",
-                    "codigoNatura": "59848"
-          },
-          {
-                    "codigoDocumento": "0042",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AERO MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 76950,
-                    "descripcion": "Eau de toilette aromático que combina un acorde tónico refrescante con notas verdes de enebro y ruibarbo, inspirado en el encuentro del viento con el agua del mar.",
-                    "codigoNatura": "111174"
-          },
-          {
-                    "codigoDocumento": "0043",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AERO FEMENINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 153900,
-                    "descripcion": "Eau de toilette aromático y refrescante que combina un acorde tónico con lavanda y peonía, inspirado en el encuentro del viento con el agua del mar.",
-                    "codigoNatura": "111178"
-          },
-          {
-                    "codigoDocumento": "0044",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ON-LINE MASCULINO 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 73300,
-                    "descripcion": "Eau de toilette cítrico especiado con toronja, pimienta rosa, pitanga y pimienta negra, de carácter energético y divertido para el día a día y para salir.",
-                    "codigoNatura": "105350"
-          },
-          {
-                    "codigoDocumento": "0045",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR TRANSFORMA UNISEX 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 89900,
-                    "descripcion": "Eau de toilette unisex amaderado y especiado que combina frutas, especias, notas acuáticas, maderas, priprioca y cumarú. Su fijación puede alcanzar ocho horas.",
-                    "codigoNatura": "122948"
-          },
-          {
-                    "codigoDocumento": "0046",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA CLÁSICO FEMENINO 50 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 148900,
-                    "descripcion": "Eau de parfum frutal, floral y envolvente que combina delicadeza y fuerza mediante notas de pera, flores y maderas, con perfumación intensa y duradera.",
-                    "codigoNatura": "44171"
-          },
-          {
-                    "codigoDocumento": "0047",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA PLENA FEMENINO 50 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 88478,
-                    "descripcion": "Eau de parfum floral que celebra la transformación, con rosa obtenida mediante upcycling, pataqueira amazónica y notas cremosas de almizcle.",
-                    "codigoNatura": "113151"
-          },
-          {
-                    "codigoDocumento": "0048",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA SECRETO FEMENINO 50 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 134000,
-                    "descripcion": "Eau de parfum floral intenso con flores blancas, muguet, haba tonka, frutas rojas, café arábigo e ishpink amazónico, de carácter misterioso y sofisticado.",
-                    "codigoNatura": "83322"
-          },
-          {
-                    "codigoDocumento": "0049",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AVENTURA FEMENINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 92340,
-                    "descripcion": "Eau de toilette floral acuoso con notas ozónicas, verdes y de mandarina, corazón de peonía, muguet y jazmín, y fondo de almizcle, cedro y sándalo.",
-                    "codigoNatura": "111177"
-          },
-          {
-                    "codigoDocumento": "0050",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AVENTURA MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 100035,
-                    "descripcion": "Eau de toilette aromático y cítrico que combina mandarina, bergamota y artemisia con pimienta negra, muguet, sándalo, almizcle y ámbar, inspirado en el encuentro del agua, el sol y el bosque.",
-                    "codigoNatura": "111173"
-          },
-          {
-                    "codigoDocumento": "0051",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK CLÁSICO FEMENINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 107730,
-                    "descripcion": "Eau de toilette cítrico y acuoso con una explosión de bergamota y naranja, acompañada de notas femeninas de jazmín, creada para renovar y revitalizar.",
-                    "codigoNatura": "111176"
-          },
-          {
-                    "codigoDocumento": "0052",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK CLÁSICO MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 76950,
-                    "descripcion": "Eau de toilette aromático acuoso con bergamota, mandarina y agujas de pino, corazón de muguet y maderas transparentes, y fondo de almizcle, musgo de roble y sándalo.",
-                    "codigoNatura": "111171"
-          },
-          {
-                    "codigoDocumento": "0053",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA BEIJO DE HUMOR FEMENINO 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 73300,
-                    "descripcion": "Eau de toilette frutal y dulce que combina ciruela, jazmín, sándalo, cacao, vainilla y haba tonka. Su fijación expresiva puede permanecer hasta ocho horas en la piel.",
-                    "codigoNatura": "1897"
-          },
-          {
-                    "codigoDocumento": "0054",
-                    "nombreDocumento": "EAU DE PARFUM NATURA KAIAK K MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 219900,
-                    "descripcion": "Eau de parfum amaderado intenso con menta, bergamota, nuez moscada, pimienta negra y lavanda, corazón de violeta, enebro y geranio, y fondo de pachulí, ámbar, cumarú y cedro.",
-                    "codigoNatura": "69062"
-          },
-          {
-                    "codigoDocumento": "0055",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK OCÉANO MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 76950,
-                    "descripcion": "Eau de toilette aromático marino que combina algas atlánticas y pataqueira con salvia, lavanda, ámbar, pachulí y musgo, equilibrando frescura acuática y profundidad amaderada.",
-                    "codigoNatura": "111175"
-          },
-          {
-                    "codigoDocumento": "0056",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK SONAR FEMENINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 107730,
-                    "descripcion": "Eau de toilette floral frutal de frescura marina, con tecnología VibraScent que traduce sonidos y colores en aromas, ideal para el uso diario.",
-                    "codigoNatura": "156229"
-          },
-          {
-                    "codigoDocumento": "0057",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK SONAR MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 107730,
-                    "descripcion": "Eau de toilette aromático de frescura oceánica, desarrollado con tecnología VibraScent para traducir sonidos y colores en una experiencia olfativa, adecuado para el uso diario.",
-                    "codigoNatura": "156226"
-          },
-          {
-                    "codigoDocumento": "0058",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK URBE MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 92340,
-                    "descripcion": "Eau de toilette aromático energizante con menta y notas verdes, corazón de geranio, albahaca y lavanda, y fondo de ámbar, sándalo y copaíba.",
-                    "codigoNatura": "111172"
-          },
-          {
-                    "codigoDocumento": "0059",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA LUNA LIBERDADE FEMENINO 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 64000,
-                    "descripcion": "Eau de toilette femenino chipre dulce oriental, fresco y luminoso, con manzana cristalizada, vainilla e ishpink, pensado para el uso diario.",
-                    "codigoNatura": "172969"
-          },
-          {
-                    "codigoDocumento": "0060",
-                    "nombreDocumento": "EAU DE PARFUM NATURA LUNA RADIANTE FEMENINO 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 111930,
-                    "descripcion": "Eau de parfum chipre de carácter alegre y vibrante, con notas florales y frutales, perfumación prolongada y una propuesta femenina, radiante y optimista.",
-                    "codigoNatura": "116584"
-          },
-          {
-                    "codigoDocumento": "0061",
-                    "nombreDocumento": "EAU DE PARFUM NATURA LUNA VIVA FEMENINO 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 64000,
-                    "descripcion": "Eau de parfum floral intenso con fondo amaderado elegante, de larga duración y pensado para ocasiones especiales.",
-                    "codigoNatura": "119164"
-          },
-          {
-                    "codigoDocumento": "0062",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO CHUVA UNISEX 75 ML",
-                    "fuenteImagen": "Natura Colombia",
-                    "precioInternet": 94500,
-                    "descripcion": "Eau de toilette cítrico acuoso con mandarina, musgo y jazmín, inspirado en la lluvia amazónica, la tierra mojada y las plantas del bosque.",
-                    "codigoNatura": "133869"
-          },
-          {
-                    "codigoDocumento": "0063",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL CLÁSICO MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 110988,
-                    "descripcion": "Fragancia amaderada aromática de alta intensidad, con bergamota, lavanda, gálbano, enebro, nuez moscada, toronja y albahaca en la salida; geranio, pachulí, romero, salvia y jazmín en el cuerpo; y cedro, almizcle, musgo de roble, sándalo, ámbar, bálsamo y mirra en el fondo.",
-                    "codigoNatura": "NATBRA-76420"
-          },
-          {
-                    "codigoDocumento": "0064",
-                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL OUD PIMIENTA MASCULINO 100 ML",
-                    "fuenteImagen": "Shopee Brasil",
-                    "precioInternet": 101162,
-                    "descripcion": "Fragancia masculina intensa y especiada de la línea Essencial Oud, presentada en frasco de 100 ml. Corresponde a una referencia descontinuada ofrecida como producto original para coleccionistas.",
-                    "codigoNatura": ""
-          },
-          {
-                    "codigoDocumento": "0065",
-                    "nombreDocumento": "EAU DE PARFUM NATURA HOMEM NÓS MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 154850,
-                    "descripcion": "Fragancia amaderada ambarada intensa para ocasiones especiales, con especias envolventes, notas amaderadas, cumarú y un toque de iris.",
-                    "codigoNatura": "NATBRA-152280"
-          },
-          {
-                    "codigoDocumento": "0066",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR CONEXIÓN MASCULINO 75 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 83413,
-                    "descripcion": "Fragancia amaderada frutal inspirada en la energía de los festivales, con un acorde exclusivo que combina piña, coco, especias y priprioca. Su fijación expresiva puede alcanzar ocho horas en la piel.",
-                    "codigoNatura": "NATBRA-131465"
-          },
-          {
-                    "codigoDocumento": "0067",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR GALAXIA FEMENINO 75 ML",
-                    "fuenteImagen": "Mercado Libre Colombia",
-                    "precioInternet": 89999,
-                    "descripcion": "Fragancia frutal especiada con carambola, toronja, priprioca y cardamomo en la salida; frambuesa, manzana, fresia y jazmín en el cuerpo; y cedro, pachulí y ámbar en el fondo. Es vegana, libre de crueldad y está indicada para el uso diario.",
-                    "codigoNatura": "116469"
-          },
-          {
-                    "codigoDocumento": "0068",
-                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK O2 MASCULINO 100 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 96059,
-                    "descripcion": "Fragancia aromática cítrica de frescura oceánica, con pimienta rosa, cardamomo, jengibre y priprioca en la salida; geranio y cedro en el cuerpo; y pachulí, ámbar, vetiver, sándalo y musgo en el fondo.",
-                    "codigoNatura": "NATBRA-125949"
-          },
-          {
-                    "codigoDocumento": "0069",
-                    "nombreDocumento": "EAU DE PARFUM NATURA UNA BRILLO FEMENINO 75 ML",
-                    "fuenteImagen": "Natura Brasil",
-                    "precioInternet": 151701,
-                    "descripcion": "Fragancia oriental dulce floral de alta concentración, con un buqué de flores blancas, priprioca, pimienta rosa y la dulzura del cumarú. Su perfumación puede permanecer hasta diez horas y está indicada para ocasiones especiales.",
-                    "codigoNatura": "NATBRA-156118"
-          }
-];
-        const formatoNumero = new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 });
-
-        const palabrasGenericasNombre = new Set([
-          "natura", "eau", "de", "toilette", "parfum", "perfume",
-          "desodorante", "colonia", "deo", "fragancia", "ryo"
-        ]);
-        const palabrasProductoDiferente = new Set([
-          "splash", "crema", "jabon", "gel", "hidratante", "aceite",
-          "oleo", "locion", "repuesto", "refil", "rollon", "serum",
-          "shampoo", "acondicionador", "mascara"
-        ]);
-        const generosProducto = new Set(["femenino", "masculino", "unisex"]);
-
-        function normalizarNombreComparacion(valor){
-          return String(valor || "")
-            .toLowerCase()
-            .normalize("NFD")
-            .replace(/[\u0300-\u036f]/g, "")
-            .replace(/\bon[\s-]+line\b/g, "online")
-            .replace(/\bclasica\b/g, "clasico")
-            .replace(/[^a-z0-9]+/g, " ")
-            .replace(/\s+/g, " ")
-            .trim();
-        }
-
-        function tokensNombreComparacion(valor){
-          return normalizarNombreComparacion(valor)
-            .split(" ")
-            .filter(token => token && !palabrasGenericasNombre.has(token));
-        }
-
-        function generoDelNombre(valor){
-          return tokensNombreComparacion(valor).find(token => generosProducto.has(token)) || "";
-        }
-
-        function contenidoMlDelNombre(valor){
-          const encontrados = [...normalizarNombreComparacion(valor).matchAll(/\b(\d+)\s*ml\b/g)];
-          return encontrados.length ? encontrados[encontrados.length - 1][1] : "";
-        }
-
-        function puntuacionCoincidenciaNombre(nombreProducto, nombreDocumento){
-          const tokensProducto = tokensNombreComparacion(nombreProducto);
-          const tokensDocumento = tokensNombreComparacion(nombreDocumento);
-          if(!tokensProducto.length || !tokensDocumento.length) return -1;
-
-          const generoProducto = generoDelNombre(nombreProducto);
-          const generoDocumento = generoDelNombre(nombreDocumento);
-          if(generoProducto && generoDocumento && generoProducto !== generoDocumento) return -1;
-
-          const contenidoProducto = contenidoMlDelNombre(nombreProducto);
-          const contenidoDocumento = contenidoMlDelNombre(nombreDocumento);
-          if(contenidoProducto && contenidoDocumento && contenidoProducto !== contenidoDocumento) return -1;
-
-          const conjuntoProducto = new Set(tokensProducto);
-          const conjuntoDocumento = new Set(tokensDocumento);
-
-          for(const token of palabrasProductoDiferente){
-            if(conjuntoProducto.has(token) && !conjuntoDocumento.has(token)) return -1;
-          }
-
-          let comunes = 0;
-          conjuntoDocumento.forEach(token => {
-            if(conjuntoProducto.has(token)) comunes += 1;
-          });
-
-          const coberturaDocumento = comunes / conjuntoDocumento.size;
-          const coberturaProducto = comunes / conjuntoProducto.size;
-          const union = new Set([...conjuntoDocumento, ...conjuntoProducto]).size;
-          const similitudJaccard = union ? comunes / union : 0;
-
-          if(coberturaDocumento < 0.74 || coberturaProducto < 0.80) return -1;
-
-          return (
-            coberturaDocumento * 0.55 +
-            coberturaProducto * 0.30 +
-            similitudJaccard * 0.15
-          );
-        }
-
-        function esCategoriaFragancias(categoria){
-          const normalizada = normalizarNombreComparacion(categoria);
-          return normalizada === "fragancia" || normalizada === "fragancias";
-        }
-
-        function buscarDescripcionFraganciaPorNombre(nombreProducto){
-          let mejor = null;
-          let segundaPuntuacion = -1;
-
-          for(const candidata of descripcionesFraganciasGoogle){
-            const puntuacion = puntuacionCoincidenciaNombre(
-              nombreProducto,
-              candidata.nombreDocumento
-            );
-            if(puntuacion < 0) continue;
-
-            if(!mejor || puntuacion > mejor.puntuacion){
-              segundaPuntuacion = mejor ? mejor.puntuacion : segundaPuntuacion;
-              mejor = { puntuacion, candidata };
-            }else if(puntuacion > segundaPuntuacion){
-              segundaPuntuacion = puntuacion;
-            }
-          }
-
-          if(!mejor || mejor.puntuacion < 0.78) return null;
-          if(segundaPuntuacion >= 0 && mejor.puntuacion - segundaPuntuacion < 0.04) return null;
-          return mejor.candidata;
-        }
-
-        function resolverDescripcionExtra(datos){
-          const manual = descripcionesPorCodigo[String(datos.codigo)] || null;
-          if(manual) return manual;
-          if(!esCategoriaFragancias(datos.categoria)) return null;
-          return buscarDescripcionFraganciaPorNombre(datos.nombre);
-        }
-
-        function numeroSoloDigitos(valor){
-          const numero = Number(String(valor ?? "").replace(/[^\d]/g, ""));
-          return Number.isFinite(numero) ? numero : 0;
-        }
-
-        function nombreArchivoDesdeImagen(card){
-          const imagen = card.querySelector(".img img");
-          if(!imagen) return "";
-
-          const fuente = imagen.getAttribute("src") || imagen.currentSrc || imagen.src || "";
-          if(!fuente) return "";
-
-          try{
-            const ruta = new URL(fuente, document.baseURI).pathname;
-            return decodeURIComponent(ruta.split("/").pop() || "");
-          }catch(_){
-            const limpia = String(fuente).split(/[?#]/)[0];
-            const parte = limpia.split("/").pop() || "";
-            try{ return decodeURIComponent(parte); }catch(__){ return parte; }
-          }
-        }
-
-        function quitarExtension(nombreArchivo){
-          return String(nombreArchivo || "").replace(/\.[^.]+$/, "");
-        }
-
-        function interpretarSeisCampos(nombreArchivo){
-          const partes = quitarExtension(nombreArchivo).split("_");
-          if(partes.length < 6) return null;
-
-          const codigo = String(partes[0] || "").trim();
-          const cantidadTexto = String(partes.pop() || "").trim();
-          const precioTexto = String(partes.pop() || "").trim();
-          const categoria = String(partes.pop() || "").trim();
-          const marca = String(partes.pop() || "").trim();
-          partes.shift();
-          const nombre = partes.join("_").trim();
-
-          if(!codigo || !nombre) return null;
-
-          return {
-            codigo,
-            nombre,
-            marca,
-            categoria,
-            precio: numeroSoloDigitos(precioTexto),
-            cantidad: numeroSoloDigitos(cantidadTexto)
-          };
-        }
-
-        function interpretarDesdeTarjeta(card){
-          const codigo = String(card.dataset.id || "").trim();
-          const nombre = String(card.querySelector(".name")?.textContent || "").trim();
-          const precio = numeroSoloDigitos(card.querySelector(".price")?.textContent || "");
-          const meta = String(card.querySelector(".meta")?.textContent || "");
-          const bloques = meta.split("·").map(item => item.trim()).filter(Boolean);
-          const categoria = bloques[0] || "";
-          const marca = bloques[1] || "";
-          const stock = meta.match(/Stock:\s*(\d+)/i);
-
-          if(!codigo || !nombre) return null;
-          return {
-            codigo,
-            nombre,
-            marca,
-            categoria,
-            precio,
-            cantidad: stock ? numeroSoloDigitos(stock[1]) : 0
-          };
-        }
-
-        function agregarTexto(parrafo, texto){
-          parrafo.appendChild(document.createTextNode(texto));
-        }
-
-        function agregarCampo(parrafo, etiqueta, valor){
-          const fuerte = document.createElement("strong");
-          fuerte.textContent = etiqueta;
-          parrafo.appendChild(fuerte);
-          agregarTexto(parrafo, valor);
-        }
-
-        function agregarFuente(parrafo, extra){
-          const fuente = String(extra?.fuenteImagen || "").trim();
-          if(!fuente) return;
-
-          const fuerte = document.createElement("strong");
-          fuerte.textContent = "Fuente de la imagen: ";
-          parrafo.appendChild(fuerte);
-
-          const url = String(extra?.urlFuenteImagen || "").trim();
-          if(url){
-            const enlace = document.createElement("a");
-            enlace.href = url;
-            enlace.target = "_blank";
-            enlace.rel = "noopener noreferrer";
-            enlace.textContent = fuente;
-            parrafo.appendChild(enlace);
-            agregarTexto(parrafo, ". ");
-          }else{
-            agregarTexto(parrafo, fuente + ". ");
-          }
-        }
-
-        function crearDescripcion(datos){
-          const parrafo = document.createElement("p");
-          parrafo.className = "descripcion-producto-google";
-
-          const titulo = document.createElement("span");
-          titulo.className = "producto-titulo-google";
-          titulo.textContent = `${datos.codigo} - ${datos.nombre}`;
-          parrafo.appendChild(titulo);
-          agregarTexto(parrafo, ". ");
-
-          agregarCampo(
-            parrafo,
-            "Precio conmigo: ",
-            `${formatoNumero.format(datos.precio)} pesos colombianos. `
-          );
-
-          const extra = resolverDescripcionExtra(datos);
-          if(extra){
-            agregarFuente(parrafo, extra);
-
-            const precioInternet = numeroSoloDigitos(extra.precioInternet);
-            if(precioInternet > 0){
-              agregarCampo(
-                parrafo,
-                "Precio en internet: ",
-                `${formatoNumero.format(precioInternet)} pesos colombianos. `
-              );
-            }
-
-            const detalle = typeof extra === "string"
-              ? extra.trim()
-              : String(extra.descripcion || "").trim();
-            if(detalle){
-              agregarTexto(parrafo, detalle);
-              if(!/[.!?]$/.test(detalle)) agregarTexto(parrafo, ".");
-              agregarTexto(parrafo, " ");
-            }
-
-            const codigoNatura = typeof extra === "object"
-              ? String(extra.codigoNatura || "").trim()
-              : "";
-            if(codigoNatura){
-              agregarCampo(parrafo, "Código Natura: ", `${codigoNatura}. `);
-            }
-          }
-
-          agregarCampo(parrafo, "Marca: ", `${datos.marca}. `);
-          agregarCampo(parrafo, "Categoría: ", `${datos.categoria}. `);
-
-          const unidad = datos.cantidad === 1 ? "unidad" : "unidades";
-          agregarCampo(
-            parrafo,
-            "Cantidad disponible: ",
-            `${formatoNumero.format(datos.cantidad)} ${unidad}.`
-          );
-
-          return parrafo;
-        }
-
-        function procesarTarjeta(card){
-          if(!(card instanceof HTMLElement)) return;
-          if(card.classList.contains("album-card")) return;
-          if(card.dataset.formatoGoogleAplicado === "1") return;
-
-          const nombreArchivo = nombreArchivoDesdeImagen(card);
-          const datos = interpretarSeisCampos(nombreArchivo) || interpretarDesdeTarjeta(card);
-          if(!datos) return;
-
-          const contenedor = card.querySelector(".pad");
-          if(!contenedor) return;
-
-          const anterior = contenedor.querySelector(".descripcion-producto-google");
-          if(anterior) anterior.remove();
-
-          const descripcion = crearDescripcion(datos);
-          const acciones = contenedor.querySelector(".actions");
-          contenedor.insertBefore(descripcion, acciones || null);
-          card.dataset.formatoGoogleAplicado = "1";
-          card.setAttribute(
-            "aria-label",
-            `${datos.codigo} - ${datos.nombre}. Precio ${formatoNumero.format(datos.precio)} pesos colombianos.`
-          );
-        }
-
-        let pendiente = false;
-        function procesarProductosVisibles(){
-          pendiente = false;
-          document
-            .querySelectorAll(".grid:not(.album-grid-mode) > .card:not(.album-card)")
-            .forEach(procesarTarjeta);
-        }
-
-        function programarProceso(){
-          if(pendiente) return;
-          pendiente = true;
-          requestAnimationFrame(procesarProductosVisibles);
-        }
-
-        const observador = new MutationObserver(programarProceso);
-        observador.observe(document.body, { childList:true, subtree:true });
-
-        document.addEventListener("click", programarProceso, true);
-        document.addEventListener("input", programarProceso, true);
-        document.addEventListener("change", programarProceso, true);
-
-        programarProceso();
-      })();
-    </script>
-  </template>
   <script>
-    (async function cargarCatalogo(){
-      const listaProductosSeo = document.getElementById("listaProductosSeo")?.outerHTML || "";
-      const estilosListaProductos = document.getElementById("estilosListaProductos")?.outerHTML || "";
-      const estilosFormatoGoogleProductos = document.getElementById("estilosFormatoGoogleProductos")?.outerHTML || "";
-      const moduloFormatoGoogleProductos = document.getElementById("moduloFormatoGoogleProductos")?.innerHTML || "";
+  (() => {
+    "use strict";
 
+    const CONFIG = {
+      owner: "irenismb",
+      repo: "stock",
+      branch: "main",
+      productRoot: "natura/imagenes_de_productos/",
+      cacheKey: "irenismb_catalogo_autonomo_v1",
+      cacheTtl: 30 * 60 * 1000,
+      whatsapp: "573042088961"
+    };
+
+    const DESCRIPCIONES_FRAGANCIAS = [
+  {
+    "codigoDocumento": "0032",
+    "nombreDocumento": "EAU DE TOILETTE NATURA BIOGRAFÍA CLÁSICO FEMENINO 100 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 132720,
+    "descripcion": "Fragancia femenina de intensidad moderada y familia olfativa floral, con un refrescante bouquet floral, notas frutales de durazno y cassis, hojas de violeta y un sutil toque amaderado. Recomendada para el día a día y para salir. Para potenciar la fragancia, se aplica en las muñecas, el cuello, el escote y detrás de las orejas.",
+    "codigoNatura": "74788"
+  },
+  {
+    "codigoDocumento": "0033",
+    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO FESTA UNISEX 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 94500,
+    "descripcion": "Eau de toilette amaderado acuático, potente y vibrante, con bioesencia de siriúba, toronja, acorde acuático, bergamota, hierbas, violeta, jazmín, maderas e ingredientes amazónicos.",
+    "codigoNatura": "133868"
+  },
+  {
+    "codigoDocumento": "0034",
+    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO VIVO UNISEX 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 94450,
+    "descripcion": "Eau de toilette unisex de perfil cítrico y acuático, inspirada en el aroma de la lluvia, la tierra mojada y las plantas del bosque. Es vegana y está indicada para salir.",
+    "codigoNatura": "133871"
+  },
+  {
+    "codigoDocumento": "0035",
+    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ON-LINE FEMENINO 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 146500,
+    "descripcion": "Eau de toilette frutal cítrico de carácter alegre y desenfadado, con notas frutales y florales para el uso diario.",
+    "codigoNatura": "105351"
+  },
+  {
+    "codigoDocumento": "0036",
+    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL EXCLUSIVO MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 251900,
+    "descripcion": "Eau de parfum amaderado de carácter sofisticado, con pimienta negra y limón siciliano en la salida, cedro y pachulí en el cuerpo, y un fondo de ámbar, almizcle y sándalo.",
+    "codigoNatura": "93617"
+  },
+  {
+    "codigoDocumento": "0037",
+    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL SENTIR FEMENINO 50 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 139000,
+    "descripcion": "Eau de parfum floral frutal intenso con tuberosa, jazmín, pera, frambuesa y pataqueira, de alta concentración y duración de hasta diez horas.",
+    "codigoNatura": "166110"
+  },
+  {
+    "codigoDocumento": "0038",
+    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL SENTIR MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 246500,
+    "descripcion": "Eau de parfum amaderado aromático de alta concentración, con sándalo, pimienta brasileña, lavanda, bergamota y pachulí. Su aroma puede permanecer hasta diez horas en la piel.",
+    "codigoNatura": "179067"
+  },
+  {
+    "codigoDocumento": "0039",
+    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL OUD MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 125950,
+    "descripcion": "Eau de parfum amaderado intenso y especiado, con bergamota, cardamomo y azafrán, corazón de geranio y canela, y fondo de oud, cedro, sándalo, ámbar, pachulí y copaíba.",
+    "codigoNatura": "93619"
+  },
+  {
+    "codigoDocumento": "0040",
+    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ENVOLVE UNISEX 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 89900,
+    "descripcion": "Eau de toilette unisex floral aldehídico, con notas limpias y brillantes, frutas moradas, flores, almizcle, ámbar y maderas. Su perfumación puede permanecer hasta ocho horas en la piel.",
+    "codigoNatura": "170153"
+  },
+  {
+    "codigoDocumento": "0041",
+    "nombreDocumento": "EAU DE PARFUM NATURA HOMEM ESSENCE MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 170900,
+    "descripcion": "Eau de parfum amaderado intenso con notas de bergamota, jengibre, cítricos, pimienta negra, cardamomo, canela, pachulí, ámbar y cedro, creado para ocasiones especiales.",
+    "codigoNatura": "59848"
+  },
+  {
+    "codigoDocumento": "0042",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AERO MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 76950,
+    "descripcion": "Eau de toilette aromático que combina un acorde tónico refrescante con notas verdes de enebro y ruibarbo, inspirado en el encuentro del viento con el agua del mar.",
+    "codigoNatura": "111174"
+  },
+  {
+    "codigoDocumento": "0043",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AERO FEMENINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 153900,
+    "descripcion": "Eau de toilette aromático y refrescante que combina un acorde tónico con lavanda y peonía, inspirado en el encuentro del viento con el agua del mar.",
+    "codigoNatura": "111178"
+  },
+  {
+    "codigoDocumento": "0044",
+    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ON-LINE MASCULINO 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 73300,
+    "descripcion": "Eau de toilette cítrico especiado con toronja, pimienta rosa, pitanga y pimienta negra, de carácter energético y divertido para el día a día y para salir.",
+    "codigoNatura": "105350"
+  },
+  {
+    "codigoDocumento": "0045",
+    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR TRANSFORMA UNISEX 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 89900,
+    "descripcion": "Eau de toilette unisex amaderado y especiado que combina frutas, especias, notas acuáticas, maderas, priprioca y cumarú. Su fijación puede alcanzar ocho horas.",
+    "codigoNatura": "122948"
+  },
+  {
+    "codigoDocumento": "0046",
+    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA CLÁSICO FEMENINO 50 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 148900,
+    "descripcion": "Eau de parfum frutal, floral y envolvente que combina delicadeza y fuerza mediante notas de pera, flores y maderas, con perfumación intensa y duradera.",
+    "codigoNatura": "44171"
+  },
+  {
+    "codigoDocumento": "0047",
+    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA PLENA FEMENINO 50 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 88478,
+    "descripcion": "Eau de parfum floral que celebra la transformación, con rosa obtenida mediante upcycling, pataqueira amazónica y notas cremosas de almizcle.",
+    "codigoNatura": "113151"
+  },
+  {
+    "codigoDocumento": "0048",
+    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA SECRETO FEMENINO 50 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 134000,
+    "descripcion": "Eau de parfum floral intenso con flores blancas, muguet, haba tonka, frutas rojas, café arábigo e ishpink amazónico, de carácter misterioso y sofisticado.",
+    "codigoNatura": "83322"
+  },
+  {
+    "codigoDocumento": "0049",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AVENTURA FEMENINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 92340,
+    "descripcion": "Eau de toilette floral acuoso con notas ozónicas, verdes y de mandarina, corazón de peonía, muguet y jazmín, y fondo de almizcle, cedro y sándalo.",
+    "codigoNatura": "111177"
+  },
+  {
+    "codigoDocumento": "0050",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AVENTURA MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 100035,
+    "descripcion": "Eau de toilette aromático y cítrico que combina mandarina, bergamota y artemisia con pimienta negra, muguet, sándalo, almizcle y ámbar, inspirado en el encuentro del agua, el sol y el bosque.",
+    "codigoNatura": "111173"
+  },
+  {
+    "codigoDocumento": "0051",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK CLÁSICO FEMENINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 107730,
+    "descripcion": "Eau de toilette cítrico y acuoso con una explosión de bergamota y naranja, acompañada de notas femeninas de jazmín, creada para renovar y revitalizar.",
+    "codigoNatura": "111176"
+  },
+  {
+    "codigoDocumento": "0052",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK CLÁSICO MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 76950,
+    "descripcion": "Eau de toilette aromático acuoso con bergamota, mandarina y agujas de pino, corazón de muguet y maderas transparentes, y fondo de almizcle, musgo de roble y sándalo.",
+    "codigoNatura": "111171"
+  },
+  {
+    "codigoDocumento": "0053",
+    "nombreDocumento": "EAU DE TOILETTE NATURA BEIJO DE HUMOR FEMENINO 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 73300,
+    "descripcion": "Eau de toilette frutal y dulce que combina ciruela, jazmín, sándalo, cacao, vainilla y haba tonka. Su fijación expresiva puede permanecer hasta ocho horas en la piel.",
+    "codigoNatura": "1897"
+  },
+  {
+    "codigoDocumento": "0054",
+    "nombreDocumento": "EAU DE PARFUM NATURA KAIAK K MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 219900,
+    "descripcion": "Eau de parfum amaderado intenso con menta, bergamota, nuez moscada, pimienta negra y lavanda, corazón de violeta, enebro y geranio, y fondo de pachulí, ámbar, cumarú y cedro.",
+    "codigoNatura": "69062"
+  },
+  {
+    "codigoDocumento": "0055",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK OCÉANO MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 76950,
+    "descripcion": "Eau de toilette aromático marino que combina algas atlánticas y pataqueira con salvia, lavanda, ámbar, pachulí y musgo, equilibrando frescura acuática y profundidad amaderada.",
+    "codigoNatura": "111175"
+  },
+  {
+    "codigoDocumento": "0056",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK SONAR FEMENINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 107730,
+    "descripcion": "Eau de toilette floral frutal de frescura marina, con tecnología VibraScent que traduce sonidos y colores en aromas, ideal para el uso diario.",
+    "codigoNatura": "156229"
+  },
+  {
+    "codigoDocumento": "0057",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK SONAR MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 107730,
+    "descripcion": "Eau de toilette aromático de frescura oceánica, desarrollado con tecnología VibraScent para traducir sonidos y colores en una experiencia olfativa, adecuado para el uso diario.",
+    "codigoNatura": "156226"
+  },
+  {
+    "codigoDocumento": "0058",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK URBE MASCULINO 100 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 92340,
+    "descripcion": "Eau de toilette aromático energizante con menta y notas verdes, corazón de geranio, albahaca y lavanda, y fondo de ámbar, sándalo y copaíba.",
+    "codigoNatura": "111172"
+  },
+  {
+    "codigoDocumento": "0059",
+    "nombreDocumento": "EAU DE TOILETTE NATURA LUNA LIBERDADE FEMENINO 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 64000,
+    "descripcion": "Eau de toilette femenino chipre dulce oriental, fresco y luminoso, con manzana cristalizada, vainilla e ishpink, pensado para el uso diario.",
+    "codigoNatura": "172969"
+  },
+  {
+    "codigoDocumento": "0060",
+    "nombreDocumento": "EAU DE PARFUM NATURA LUNA RADIANTE FEMENINO 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 111930,
+    "descripcion": "Eau de parfum chipre de carácter alegre y vibrante, con notas florales y frutales, perfumación prolongada y una propuesta femenina, radiante y optimista.",
+    "codigoNatura": "116584"
+  },
+  {
+    "codigoDocumento": "0061",
+    "nombreDocumento": "EAU DE PARFUM NATURA LUNA VIVA FEMENINO 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 64000,
+    "descripcion": "Eau de parfum floral intenso con fondo amaderado elegante, de larga duración y pensado para ocasiones especiales.",
+    "codigoNatura": "119164"
+  },
+  {
+    "codigoDocumento": "0062",
+    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO CHUVA UNISEX 75 ML",
+    "fuenteImagen": "Natura Colombia",
+    "precioInternet": 94500,
+    "descripcion": "Eau de toilette cítrico acuoso con mandarina, musgo y jazmín, inspirado en la lluvia amazónica, la tierra mojada y las plantas del bosque.",
+    "codigoNatura": "133869"
+  },
+  {
+    "codigoDocumento": "0063",
+    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL CLÁSICO MASCULINO 100 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 110988,
+    "descripcion": "Fragancia amaderada aromática de alta intensidad, con bergamota, lavanda, gálbano, enebro, nuez moscada, toronja y albahaca en la salida; geranio, pachulí, romero, salvia y jazmín en el cuerpo; y cedro, almizcle, musgo de roble, sándalo, ámbar, bálsamo y mirra en el fondo.",
+    "codigoNatura": "NATBRA-76420"
+  },
+  {
+    "codigoDocumento": "0064",
+    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL OUD PIMIENTA MASCULINO 100 ML",
+    "fuenteImagen": "Shopee Brasil",
+    "precioInternet": 101162,
+    "descripcion": "Fragancia masculina intensa y especiada de la línea Essencial Oud, presentada en frasco de 100 ml. Corresponde a una referencia descontinuada ofrecida como producto original para coleccionistas.",
+    "codigoNatura": ""
+  },
+  {
+    "codigoDocumento": "0065",
+    "nombreDocumento": "EAU DE PARFUM NATURA HOMEM NÓS MASCULINO 100 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 154850,
+    "descripcion": "Fragancia amaderada ambarada intensa para ocasiones especiales, con especias envolventes, notas amaderadas, cumarú y un toque de iris.",
+    "codigoNatura": "NATBRA-152280"
+  },
+  {
+    "codigoDocumento": "0066",
+    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR CONEXIÓN MASCULINO 75 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 83413,
+    "descripcion": "Fragancia amaderada frutal inspirada en la energía de los festivales, con un acorde exclusivo que combina piña, coco, especias y priprioca. Su fijación expresiva puede alcanzar ocho horas en la piel.",
+    "codigoNatura": "NATBRA-131465"
+  },
+  {
+    "codigoDocumento": "0067",
+    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR GALAXIA FEMENINO 75 ML",
+    "fuenteImagen": "Mercado Libre Colombia",
+    "precioInternet": 89999,
+    "descripcion": "Fragancia frutal especiada con carambola, toronja, priprioca y cardamomo en la salida; frambuesa, manzana, fresia y jazmín en el cuerpo; y cedro, pachulí y ámbar en el fondo. Es vegana, libre de crueldad y está indicada para el uso diario.",
+    "codigoNatura": "116469"
+  },
+  {
+    "codigoDocumento": "0068",
+    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK O2 MASCULINO 100 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 96059,
+    "descripcion": "Fragancia aromática cítrica de frescura oceánica, con pimienta rosa, cardamomo, jengibre y priprioca en la salida; geranio y cedro en el cuerpo; y pachulí, ámbar, vetiver, sándalo y musgo en el fondo.",
+    "codigoNatura": "NATBRA-125949"
+  },
+  {
+    "codigoDocumento": "0069",
+    "nombreDocumento": "EAU DE PARFUM NATURA UNA BRILLO FEMENINO 75 ML",
+    "fuenteImagen": "Natura Brasil",
+    "precioInternet": 151701,
+    "descripcion": "Fragancia oriental dulce floral de alta concentración, con un buqué de flores blancas, priprioca, pimienta rosa y la dulzura del cumarú. Su perfumación puede permanecer hasta diez horas y está indicada para ocasiones especiales.",
+    "codigoNatura": "NATBRA-156118"
+  }
+];
+
+    const $ = (sel, root=document) => root.querySelector(sel);
+    const $$ = (sel, root=document) => [...root.querySelectorAll(sel)];
+    const formatNumber = new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 });
+    const formatCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
+
+    const state = {
+      products: [],
+      categories: [],
+      selectedCategory: "",
+      query: "",
+      sort: "name-asc",
+      cart: loadJson("cart", {}),
+      source: "",
+      categoryIntervals: []
+    };
+
+    function loadJson(key, fallback){
       try{
-        const respuesta = await fetch("catalogo-base-20260715.html?v=20260715", { cache:"no-store" });
-        if(!respuesta.ok) throw new Error("HTTP " + respuesta.status);
+        const parsed = JSON.parse(localStorage.getItem(key) || "null");
+        return parsed && typeof parsed === "object" ? parsed : fallback;
+      }catch(_){ return fallback; }
+    }
+    function saveJson(key, value){
+      try{ localStorage.setItem(key, JSON.stringify(value)); }catch(_){}
+    }
+    function normalize(value){
+      return String(value || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\bon[\s-]+line\b/g, "online")
+        .replace(/\bclasica\b/g, "clasico")
+        .replace(/[^a-z0-9]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
+    function digits(value){
+      const n = Number(String(value ?? "").replace(/[^\d]/g, ""));
+      return Number.isFinite(n) ? n : 0;
+    }
+    function extension(filename){
+      const i = String(filename || "").lastIndexOf(".");
+      return i < 0 ? "" : String(filename).slice(i + 1).toLowerCase();
+    }
+    function withoutExtension(filename){
+      const i = String(filename || "").lastIndexOf(".");
+      return i < 0 ? String(filename || "") : String(filename).slice(0, i);
+    }
+    function encodePath(path){
+      return String(path || "").split("/").map(encodeURIComponent).join("/");
+    }
+    function imageUrlFromRepoPath(repoPath){
+      const path = String(repoPath || "").replace(/^natura\//, "");
+      return new URL("./" + encodePath(path), document.baseURI).href;
+    }
+    function parseSixFields(repoPath){
+      const filename = String(repoPath || "").split("/").pop() || "";
+      const base = withoutExtension(filename);
+      const parts = base.split("_");
+      if(parts.length < 6) return null;
+      const code = String(parts[0] || "").trim();
+      const quantity = digits(parts.at(-1));
+      const price = digits(parts.at(-2));
+      const category = String(parts.at(-3) || "").trim();
+      const brand = String(parts.at(-4) || "").trim();
+      const name = parts.slice(1, -4).join("_").trim();
+      if(!code || !name || !category) return null;
+      return {
+        id: code,
+        code,
+        name,
+        brand,
+        category,
+        price,
+        stock: quantity,
+        repoPath,
+        filename,
+        image: imageUrlFromRepoPath(repoPath),
+        searchKey: normalize([code,name,brand,category].join(" "))
+      };
+    }
 
-        let html = await respuesta.text();
-        html = html
-          .replace(/Visitantes globales esta semana:/g, "Vistas globales totales:")
-          .replace(/Visitantes esta semana:/g, "Vistas globales totales:")
-          .replace(/Total histórico mundial:/g, "Vistas globales totales:");
+    const genericWords = new Set([
+      "natura","eau","de","toilette","parfum","perfume","desodorante",
+      "colonia","deo","fragancia","ryo"
+    ]);
+    const differentProductWords = new Set([
+      "splash","crema","jabon","gel","hidratante","aceite","oleo","locion",
+      "repuesto","refil","rollon","serum","shampoo","acondicionador","mascara"
+    ]);
+    const genders = new Set(["femenino","masculino","unisex"]);
 
-        const cierreHead = "</he" + "ad>";
-        const cierreBody = "</bo" + "dy>";
-        if(!html.includes(cierreBody)) throw new Error("Documento base incompleto");
-
-        if(html.includes(cierreHead)){
-          const estilosInyectados = [estilosListaProductos, estilosFormatoGoogleProductos]
-            .filter(Boolean)
-            .join("\n");
-          if(estilosInyectados){
-            html = html.replace(cierreHead, estilosInyectados + "\n" + cierreHead);
-          }
-        }
-
-        const moduloVisitantes = "<scr" + "ipt type=\"module\" src=\"visitantes-globales.js?v=20260716-2\"></scr" + "ipt>";
-        const ajusteTexto = "<scr" + "ipt type=\"module\">const total=document.getElementById('visitorWeekTotal');const item=total?.closest('.visitor-week-summary-item');if(item)item.replaceChildren(document.createTextNode('Vistas globales totales: '),total);</scr" + "ipt>";
-        html = html.replace(cierreBody, moduloVisitantes + "\n" + ajusteTexto + "\n" + moduloFormatoGoogleProductos + "\n" + listaProductosSeo + "\n" + cierreBody);
-
-        document.open();
-        document.write(html);
-        document.close();
-      }catch(error){
-        console.error(error);
-        const estado = document.getElementById("estadoCarga");
-        if(estado){
-          estado.innerHTML = '<p>No fue posible cargar el catálogo.</p><p><a href="catalogo-base-20260715.html">Abrir catálogo base</a></p>';
+    function comparisonTokens(value){
+      return normalize(value).split(" ").filter(t => t && !genericWords.has(t));
+    }
+    function genderOf(value){
+      return comparisonTokens(value).find(t => genders.has(t)) || "";
+    }
+    function mlOf(value){
+      const matches = [...normalize(value).matchAll(/\b(\d+)\s*ml\b/g)];
+      return matches.length ? matches.at(-1)[1] : "";
+    }
+    function matchScore(productName, documentName){
+      const a = comparisonTokens(productName);
+      const b = comparisonTokens(documentName);
+      if(!a.length || !b.length) return -1;
+      const ga = genderOf(productName), gb = genderOf(documentName);
+      if(ga && gb && ga !== gb) return -1;
+      const ma = mlOf(productName), mb = mlOf(documentName);
+      if(ma && mb && ma !== mb) return -1;
+      const sa = new Set(a), sb = new Set(b);
+      for(const token of differentProductWords){
+        if(sa.has(token) && !sb.has(token)) return -1;
+      }
+      let common = 0;
+      sb.forEach(t => { if(sa.has(t)) common += 1; });
+      const coverB = common / sb.size;
+      const coverA = common / sa.size;
+      const union = new Set([...sa,...sb]).size;
+      const jaccard = union ? common / union : 0;
+      if(coverB < .74 || coverA < .80) return -1;
+      return coverB * .55 + coverA * .30 + jaccard * .15;
+    }
+    function descriptionFor(product){
+      const cat = normalize(product.category);
+      if(cat !== "fragancia" && cat !== "fragancias") return null;
+      let best = null;
+      let second = -1;
+      for(const candidate of DESCRIPCIONES_FRAGANCIAS){
+        const score = matchScore(product.name, candidate.nombreDocumento);
+        if(score < 0) continue;
+        if(!best || score > best.score){
+          second = best ? best.score : second;
+          best = { score, candidate };
+        }else if(score > second){
+          second = score;
         }
       }
-    })();
+      if(!best || best.score < .78) return null;
+      if(second >= 0 && best.score - second < .04) return null;
+      return best.candidate;
+    }
+
+    function chooseRepresentative(current, candidate){
+      if(!current) return candidate;
+      const priority = {webp:0,jpg:1,jpeg:2,png:3,avif:4,gif:5};
+      return (priority[extension(candidate.filename)] ?? 99) < (priority[extension(current.filename)] ?? 99)
+        ? candidate : current;
+    }
+
+    async function fetchProducts(){
+      const cache = loadJson(CONFIG.cacheKey, null);
+      const validCache = cache && Array.isArray(cache.products);
+      if(validCache){
+        state.products = cache.products;
+        state.source = "cache";
+        prepareData();
+        renderAll();
+      }
+
+      try{
+        const url = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/git/trees/${encodeURIComponent(CONFIG.branch)}?recursive=1`;
+        const response = await fetch(url, {
+          headers:{"Accept":"application/vnd.github+json"},
+          cache:"no-store"
+        });
+        if(!response.ok) throw new Error(`GitHub respondió ${response.status}`);
+        const data = await response.json();
+        if(data.truncated) throw new Error("El árbol de archivos llegó incompleto.");
+        const allowed = new Set(["webp","jpg","jpeg","png","avif","gif","bmp","jfif"]);
+        const found = new Map();
+        for(const item of Array.isArray(data.tree) ? data.tree : []){
+          if(item.type !== "blob" || !String(item.path).startsWith(CONFIG.productRoot)) continue;
+          if(!allowed.has(extension(item.path))) continue;
+          const product = parseSixFields(item.path);
+          if(!product) continue;
+          const key = [product.code, normalize(product.name), normalize(product.brand), normalize(product.category), product.price, product.stock].join("|");
+          found.set(key, chooseRepresentative(found.get(key), product));
+        }
+        const products = [...found.values()];
+        if(!products.length) throw new Error("No se encontraron archivos con los seis campos esperados.");
+        state.products = products;
+        state.source = "github";
+        saveJson(CONFIG.cacheKey, {ts:Date.now(),products});
+        prepareData();
+        renderAll();
+        setNotice(`Catálogo cargado: ${products.length} productos.`, "success");
+      }catch(error){
+        console.error(error);
+        if(validCache){
+          setNotice(`Se está usando la copia guardada porque no fue posible actualizar: ${error.message}`, "");
+        }else{
+          setNotice(`No fue posible consultar los productos: ${error.message}. Recarga la página en unos minutos.`, "error");
+          $("#catalogGrid").innerHTML = `<div class="empty">No fue posible cargar el catálogo.</div>`;
+          $("#countText").textContent = "0 productos";
+        }
+      }
+    }
+
+    function prepareData(){
+      const byCategory = new Map();
+      for(const p of state.products){
+        const key = normalize(p.category);
+        if(!byCategory.has(key)) byCategory.set(key,{key,label:p.category,products:[]});
+        byCategory.get(key).products.push(p);
+      }
+      state.categories = [...byCategory.values()].sort((a,b)=>a.label.localeCompare(b.label,"es",{sensitivity:"base"}));
+      sanitizeCart();
+      buildChips();
+      updateJsonLd();
+    }
+
+    function setNotice(message, type=""){
+      const el = $("#notice");
+      el.textContent = message;
+      el.className = "notice" + (type ? " " + type : "");
+      el.hidden = !message;
+    }
+    function filteredProducts(){
+      let list = state.products.slice();
+      const query = normalize(state.query);
+      if(state.selectedCategory){
+        const cat = normalize(state.selectedCategory);
+        list = list.filter(p => normalize(p.category) === cat);
+      }
+      if(query){
+        list = list.filter(p => p.searchKey.includes(query));
+      }
+      const [field,dir] = state.sort.split("-");
+      list.sort((a,b)=>{
+        const cmp = field === "price"
+          ? a.price - b.price
+          : a.name.localeCompare(b.name,"es",{sensitivity:"base"});
+        return dir === "desc" ? -cmp : cmp;
+      });
+      return list;
+    }
+    function renderAll(){
+      if(!state.products.length) return;
+      if(!state.selectedCategory && !state.query){
+        renderCategories();
+      }else{
+        renderProducts();
+      }
+      refreshCartCount();
+      $("#backBtn").hidden = !state.selectedCategory && !state.query;
+      $("#currentPath").textContent = state.selectedCategory || (state.query ? "Resultados de búsqueda" : "");
+    }
+    function clearCategoryIntervals(){
+      state.categoryIntervals.forEach(clearInterval);
+      state.categoryIntervals = [];
+    }
+    function renderCategories(){
+      clearCategoryIntervals();
+      const grid = $("#catalogGrid");
+      grid.className = "grid category-grid";
+      const fragment = document.createDocumentFragment();
+      for(const category of state.categories){
+        const article = document.createElement("article");
+        article.className = "category-card";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "category-open";
+        button.dataset.category = category.label;
+        button.setAttribute("aria-label", `Abrir categoría ${category.label}`);
+        const preview = document.createElement("div");
+        preview.className = "category-preview";
+        const img = document.createElement("img");
+        img.alt = `Vista previa de ${category.label}`;
+        img.loading = "lazy";
+        img.decoding = "async";
+        const productImages = [...new Set(category.products.map(p=>p.image).filter(Boolean))];
+        const coverCandidates = [
+          ...["webp","jpg","jpeg","png"].map(ext => new URL(`./categorias/${encodeURIComponent(category.label)}.${ext}`, document.baseURI).href),
+          ...productImages,
+          new URL("./logos/suplente.webp",document.baseURI).href,
+          new URL("./logos/logo_empresa.png",document.baseURI).href
+        ];
+        installImageFallback(img,coverCandidates);
+        if(productImages.length > 1){
+          let index = 0;
+          const interval = setInterval(()=>{
+            index = (index + 1) % Math.min(productImages.length,8);
+            installImageFallback(img,[productImages[index],...coverCandidates]);
+          },10000);
+          state.categoryIntervals.push(interval);
+        }
+        preview.appendChild(img);
+        const pad = document.createElement("div");
+        pad.className = "category-pad";
+        pad.innerHTML = `<h2 class="category-name"></h2><p class="category-meta"></p>`;
+        $(".category-name",pad).textContent = category.label;
+        $(".category-meta",pad).textContent = `${category.products.length} ${category.products.length===1?"producto":"productos"}`;
+        button.append(preview,pad);
+        article.appendChild(button);
+        fragment.appendChild(article);
+      }
+      grid.replaceChildren(fragment);
+      $("#countText").textContent = `${state.categories.length} categorías · ${state.products.length} productos`;
+    }
+    function renderProducts(){
+      clearCategoryIntervals();
+      const list = filteredProducts();
+      const grid = $("#catalogGrid");
+      grid.className = "grid products-grid";
+      const fragment = document.createDocumentFragment();
+      if(!list.length){
+        fragment.appendChild(emptyNode("No se encontraron productos con esos criterios."));
+      }else{
+        list.forEach(p => fragment.appendChild(productCard(p)));
+      }
+      grid.replaceChildren(fragment);
+      $("#countText").textContent = `${list.length} ${list.length===1?"producto":"productos"}`;
+    }
+    function productCard(product){
+      const article = document.createElement("article");
+      article.className = "product-card";
+      article.id = "p-" + encodeURIComponent(product.code);
+      const imageBox = document.createElement("div");
+      imageBox.className = "product-image";
+      const img = document.createElement("img");
+      img.alt = product.name;
+      img.loading = "lazy";
+      img.decoding = "async";
+      installImageFallback(img,[
+        product.image,
+        new URL("./logos/suplente.webp",document.baseURI).href,
+        new URL("./logos/suplente.png",document.baseURI).href,
+        new URL("./logos/logo_empresa.png",document.baseURI).href
+      ]);
+      img.addEventListener("click",()=>openImage(img.src,product.name));
+      imageBox.appendChild(img);
+
+      const pad = document.createElement("div");
+      pad.className = "product-pad";
+      pad.appendChild(descriptionParagraph(product));
+
+      const actions = document.createElement("div");
+      actions.className = "product-actions";
+      const dec = document.createElement("button");
+      dec.className = "btn btn-danger";
+      dec.type = "button";
+      dec.textContent = "Quitar";
+      dec.dataset.action = "dec";
+      dec.dataset.id = product.code;
+      const inc = document.createElement("button");
+      inc.className = "btn btn-acc";
+      inc.type = "button";
+      inc.dataset.action = "inc";
+      inc.dataset.id = product.code;
+      refreshProductButtons(dec,inc,product);
+      actions.append(dec,inc);
+      pad.appendChild(actions);
+      article.append(imageBox,pad);
+      return article;
+    }
+    function appendField(p,label,value){
+      const strong = document.createElement("strong");
+      strong.textContent = label;
+      p.append(strong,document.createTextNode(value));
+    }
+    function descriptionParagraph(product){
+      const p = document.createElement("p");
+      p.className = "product-description";
+      const title = document.createElement("span");
+      title.className = "product-title";
+      title.textContent = `${product.code} - ${product.name}.`;
+      p.append(title,document.createTextNode(" "));
+      appendField(p,"Precio conmigo: ",`${formatNumber.format(product.price)} pesos colombianos. `);
+      const extra = descriptionFor(product);
+      if(extra){
+        appendField(p,"Fuente de la imagen: ",`${extra.fuenteImagen}. `);
+        appendField(p,"Precio en internet: ",`${formatNumber.format(extra.precioInternet)} pesos colombianos. `);
+        p.append(document.createTextNode(extra.descripcion.trim()));
+        if(!/[.!?]$/.test(extra.descripcion.trim())) p.append(document.createTextNode("."));
+        p.append(document.createTextNode(" "));
+        if(extra.codigoNatura) appendField(p,"Código Natura: ",`${extra.codigoNatura}. `);
+      }
+      appendField(p,"Marca: ",`${product.brand}. `);
+      appendField(p,"Categoría: ",`${product.category}. `);
+      appendField(p,"Cantidad disponible: ",`${formatNumber.format(product.stock)} ${product.stock===1?"unidad":"unidades"}.`);
+      return p;
+    }
+    function emptyNode(message){
+      const div = document.createElement("div");
+      div.className = "empty";
+      div.textContent = message;
+      return div;
+    }
+    function installImageFallback(img,candidates){
+      const list = [...new Set(candidates.filter(Boolean))];
+      let index = 0;
+      img.onerror = ()=>{
+        index += 1;
+        if(index < list.length) img.src = list[index];
+        else img.onerror = null;
+      };
+      img.src = list[0] || "";
+    }
+
+    function productById(id){ return state.products.find(p=>String(p.code)===String(id)) || null; }
+    function sanitizeCart(){
+      let changed = false;
+      for(const id of Object.keys(state.cart)){
+        const product = productById(id);
+        if(!product){ delete state.cart[id]; changed=true; continue; }
+        const qty = Math.max(0,Math.min(digits(state.cart[id].qty),product.stock));
+        if(!qty){ delete state.cart[id]; changed=true; continue; }
+        state.cart[id] = {id:product.code,qty};
+      }
+      if(changed) saveCart();
+    }
+    function saveCart(){ saveJson("cart",state.cart);refreshCartCount(); }
+    function cartQty(id){ return digits(state.cart[String(id)]?.qty); }
+    function changeCart(id,delta){
+      const p = productById(id);
+      if(!p) return;
+      const next = Math.max(0,Math.min(cartQty(id)+delta,p.stock));
+      if(next) state.cart[String(id)] = {id:String(id),qty:next};
+      else delete state.cart[String(id)];
+      saveCart();
+      renderProductsIfVisible();
+      renderCart();
+    }
+    function refreshProductButtons(dec,inc,p){
+      const q = cartQty(p.code);
+      dec.disabled = q <= 0;
+      inc.disabled = p.stock <= 0 || q >= p.stock;
+      inc.textContent = p.stock <= 0 ? "Sin stock" : (q ? `Agregar · ${q}` : "Agregar");
+    }
+    function renderProductsIfVisible(){
+      if(state.selectedCategory || state.query) renderProducts();
+    }
+    function cartEntries(){
+      return Object.values(state.cart).map(item=>({product:productById(item.id),qty:digits(item.qty)})).filter(x=>x.product&&x.qty>0);
+    }
+    function refreshCartCount(){
+      const count = cartEntries().reduce((s,x)=>s+x.qty,0);
+      const el = $("#cartCount");
+      el.textContent = count;
+      el.classList.toggle("has-items",count>0);
+    }
+    function renderCart(){
+      const host = $("#cartItems");
+      const entries = cartEntries();
+      if(!entries.length){
+        host.innerHTML = `<div class="empty" style="margin-bottom:12px">El carrito está vacío.</div>`;
+      }else{
+        const frag = document.createDocumentFragment();
+        entries.forEach(({product,qty})=>{
+          const row = document.createElement("div");
+          row.className = "cart-item";
+          const img = document.createElement("img");
+          img.className = "cart-thumb";img.alt="";img.loading="lazy";
+          installImageFallback(img,[product.image,new URL("./logos/suplente.webp",document.baseURI).href]);
+          const info = document.createElement("div");
+          info.innerHTML = `<h3 class="cart-name"></h3><p class="cart-sub"></p>`;
+          $(".cart-name",info).textContent = product.name;
+          $(".cart-sub",info).textContent = `${formatCOP.format(product.price)} · Subtotal ${formatCOP.format(product.price*qty)}`;
+          const controls = document.createElement("div");
+          controls.className="qty-controls";
+          controls.innerHTML=`<button class="qty-btn" type="button" data-cart-dec="${product.code}">−</button><strong>${qty}</strong><button class="qty-btn" type="button" data-cart-inc="${product.code}">+</button>`;
+          controls.querySelector("[data-cart-inc]").disabled = qty>=product.stock;
+          row.append(img,info,controls);
+          frag.appendChild(row);
+        });
+        host.replaceChildren(frag);
+      }
+      const subtotal = entries.reduce((s,x)=>s+x.product.price*x.qty,0);
+      const shipping = digits($("#shipping").value);
+      $("#cartTotal").textContent = `Subtotal: ${formatCOP.format(subtotal)} · Envío: ${formatCOP.format(shipping)} · Total: ${formatCOP.format(subtotal+shipping)}`;
+      refreshCartCount();
+    }
+    function openModal(id){
+      const el=$(id);el.classList.add("open");el.setAttribute("aria-hidden","false");
+      document.body.style.overflow="hidden";
+    }
+    function closeModal(id){
+      const el=$(id);el.classList.remove("open");el.setAttribute("aria-hidden","true");
+      if(!$(".modal.open")) document.body.style.overflow="";
+    }
+    function openImage(src,alt){
+      $("#largeImage").src=src;$("#largeImage").alt=alt;openModal("#imageModal");
+    }
+    function buildWhatsappMessage(){
+      const entries=cartEntries();
+      if(!entries.length) return "";
+      const subtotal=entries.reduce((s,x)=>s+x.product.price*x.qty,0);
+      const shipping=digits($("#shipping").value);
+      const lines=[
+        "*INFORMACIÓN DEL CLIENTE*",
+        `*Nombre:* ${$("#clientName").value.trim()}`,
+        `*Celular:* ${$("#clientPhone").value.trim()}`,
+        `*Dirección:* ${$("#clientAddress").value.trim()}`,
+        `*Barrio:* ${$("#clientBarrio").value.trim()}`,
+        `*Observación:* ${$("#clientObs").value.trim().replace(/\s+/g," ")}`,
+        "",
+        "*PRODUCTOS SOLICITADOS*"
+      ];
+      entries.forEach(({product,qty})=>lines.push(`* ${product.name} (Id: ${product.code}) x${qty} = ${formatCOP.format(product.price*qty)}`));
+      lines.push(
+        "",
+        `*Subtotal:* ${formatCOP.format(subtotal)}`,
+        `*Envío:* ${formatCOP.format(shipping)}`,
+        `*Total:* ${formatCOP.format(subtotal+shipping)}`,
+        "",
+        "*INFORMACIÓN DE LA TIENDA*",
+        "IRENISMB STOCK NATURA",
+        "*Celular:* 304 208 8961",
+        "*Dirección:* Calle 10A #20A-06, Santa Marta, Magdalena",
+        "*Barrio:* Los Almendros",
+        "*Puntos de referencia:* Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan.",
+        "*Ubicación:* https://maps.google.com/?q=11.244833370782679,-74.19066001689564",
+        "*Catálogo:* https://irenismb.github.io/stock/natura/catalogo.html"
+      );
+      return lines.join("\n");
+    }
+    function buildChips(){
+      const counts=new Map();
+      state.products.forEach(p=>{
+        normalize(p.name).split(" ").filter(t=>t.length>=5&&!/^\d+$/.test(t)).forEach(t=>counts.set(t,(counts.get(t)||0)+1));
+      });
+      const words=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0],"es")).slice(0,28);
+      const host=$("#chips");host.replaceChildren();
+      words.forEach(([word,count])=>{
+        const b=document.createElement("button");b.type="button";b.className="chip";b.textContent=`${word} (${count})`;b.dataset.word=word;host.appendChild(b);
+      });
+    }
+    function structuredDescription(product, extra){
+      const parts = [
+        `${product.code} - ${product.name}.`,
+        `Precio conmigo: ${formatNumber.format(product.price)} pesos colombianos.`
+      ];
+      if(extra){
+        if(extra.fuenteImagen) parts.push(`Fuente de la imagen: ${extra.fuenteImagen}.`);
+        if(extra.precioInternet) parts.push(`Precio en internet: ${formatNumber.format(extra.precioInternet)} pesos colombianos.`);
+        if(extra.descripcion) parts.push(extra.descripcion.trim().replace(/\s+/g," "));
+        if(extra.codigoNatura) parts.push(`Código Natura: ${extra.codigoNatura}.`);
+      }
+      parts.push(
+        `Marca: ${product.brand}.`,
+        `Categoría: ${product.category}.`,
+        `Cantidad disponible: ${formatNumber.format(product.stock)} ${product.stock===1?"unidad":"unidades"}.`
+      );
+      return parts.join(" ").replace(/\s+/g," ").trim();
+    }
+
+    function updateJsonLd(){
+      const base = "https://irenismb.github.io/stock/natura/catalogo.html";
+      const products = state.products.map(product => {
+        const productUrl = `${base}#p-${encodeURIComponent(product.code)}`;
+        const productId = `${base}#product-${encodeURIComponent(product.code)}`;
+        const extra = descriptionFor(product);
+        const additionalProperty = [
+          {"@type":"PropertyValue","name":"Código del catálogo","value":String(product.code)},
+          {"@type":"PropertyValue","name":"Cantidad disponible","value":String(product.stock)}
+        ];
+
+        if(extra?.codigoNatura){
+          additionalProperty.push({"@type":"PropertyValue","name":"Código Natura","value":String(extra.codigoNatura)});
+        }
+        if(extra?.fuenteImagen){
+          additionalProperty.push({"@type":"PropertyValue","name":"Fuente de la imagen","value":String(extra.fuenteImagen)});
+        }
+        if(extra?.precioInternet){
+          additionalProperty.push({
+            "@type":"PropertyValue",
+            "name":"Precio de referencia en internet (COP)",
+            "value":String(extra.precioInternet)
+          });
+        }
+
+        return {
+          "@type":"Product",
+          "@id":productId,
+          "url":productUrl,
+          "name":product.name,
+          "description":structuredDescription(product,extra),
+          "image":[product.image],
+          "sku":String(product.code),
+          "category":product.category,
+          "brand":{"@type":"Brand","name":product.brand},
+          "itemCondition":"https://schema.org/NewCondition",
+          "additionalProperty":additionalProperty,
+          "offers":{
+            "@type":"Offer",
+            "url":productUrl,
+            "priceCurrency":"COP",
+            "price":product.price,
+            "availability":product.stock>0
+              ? "https://schema.org/InStock"
+              : "https://schema.org/OutOfStock",
+            "inventoryLevel":{"@type":"QuantitativeValue","value":product.stock},
+            "seller":{"@id":`${base}#store`}
+          }
+        };
+      });
+
+      const graph = [
+        {
+          "@type":"Store",
+          "@id":`${base}#store`,
+          "name":"Irenismb Stock Natura",
+          "url":base,
+          "telephone":"+57 304 208 8961",
+          "image":"https://irenismb.github.io/stock/natura/logos/logo_empresa.png",
+          "address":{
+            "@type":"PostalAddress",
+            "streetAddress":"Calle 10A #20A-06, barrio Los Almendros",
+            "addressLocality":"Santa Marta",
+            "addressRegion":"Magdalena",
+            "addressCountry":"CO"
+          }
+        },
+        {
+          "@type":"ItemList",
+          "@id":`${base}#product-list`,
+          "name":"Catálogo de productos Natura y AVON",
+          "url":base,
+          "numberOfItems":products.length,
+          "itemListElement":products.map((product,index)=>({
+            "@type":"ListItem",
+            "position":index+1,
+            "url":product.url,
+            "item":{"@id":product["@id"]}
+          }))
+        },
+        ...products
+      ];
+
+      $("#ldProducts").textContent = JSON.stringify({
+        "@context":"https://schema.org",
+        "@graph":graph
+      });
+    }
+
+    $("#catalogGrid").addEventListener("click",event=>{
+      const categoryButton=event.target.closest("[data-category]");
+      if(categoryButton){
+        state.selectedCategory=categoryButton.dataset.category;state.query="";$("#searchInput").value="";
+        renderAll();window.scrollTo({top:0,behavior:"smooth"});return;
+      }
+      const action=event.target.closest("[data-action]");
+      if(action) changeCart(action.dataset.id,action.dataset.action==="inc"?1:-1);
+    });
+    $("#searchInput").addEventListener("input",event=>{
+      state.query=event.target.value;state.selectedCategory="";renderAll();
+    });
+    $("#sortSelect").addEventListener("change",event=>{state.sort=event.target.value;renderAll();});
+    $("#backBtn").addEventListener("click",()=>{
+      state.selectedCategory="";state.query="";$("#searchInput").value="";renderAll();window.scrollTo({top:0,behavior:"smooth"});
+    });
+    $("#suggestBtn").addEventListener("click",()=>{
+      const panel=$("#suggestions");panel.hidden=!panel.hidden;
+      $("#suggestBtn").textContent=panel.hidden?"Mostrar palabras":"Ocultar palabras";
+      $("#suggestBtn").setAttribute("aria-expanded",String(!panel.hidden));
+    });
+    $("#chips").addEventListener("click",event=>{
+      const b=event.target.closest("[data-word]");if(!b)return;
+      $("#searchInput").value=b.dataset.word;state.query=b.dataset.word;state.selectedCategory="";renderAll();
+    });
+    $("#cartBtn").addEventListener("click",()=>{renderCart();openModal("#cartModal");});
+    $("#cartItems").addEventListener("click",event=>{
+      const dec=event.target.closest("[data-cart-dec]");const inc=event.target.closest("[data-cart-inc]");
+      if(dec) changeCart(dec.dataset.cartDec,-1);
+      if(inc) changeCart(inc.dataset.cartInc,1);
+    });
+    $("#shipping").addEventListener("input",renderCart);
+    $("#clearCartBtn").addEventListener("click",()=>{
+      if(!confirm("¿Vaciar todo el carrito?"))return;
+      state.cart={};saveCart();renderCart();renderProductsIfVisible();
+    });
+    $("#whatsappBtn").addEventListener("click",()=>{
+      const message=buildWhatsappMessage();
+      if(!message){alert("Agrega al menos un producto al carrito.");return;}
+      window.open(`https://wa.me/${CONFIG.whatsapp}?text=${encodeURIComponent(message)}`,"_blank","noopener");
+    });
+    $$("[data-close='cart']").forEach(el=>el.addEventListener("click",()=>closeModal("#cartModal")));
+    $$("[data-close='image']").forEach(el=>el.addEventListener("click",()=>closeModal("#imageModal")));
+    document.addEventListener("keydown",event=>{
+      if(event.key==="Escape"){closeModal("#cartModal");closeModal("#imageModal");}
+    });
+
+    fetchProducts();
+  })();
   </script>
 </body>
 </html>

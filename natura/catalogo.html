@@ -1,7 +1,7 @@
 <!doctype html>
-<!-- Mostrar los productos de cada categoria con imagen centrada y descripcion continua debajo. -->
-<!-- v: 2026-08-02 02:32:00 PM -->
-<!-- Se conservaron las categorias, filtros, carrito y lectura de los seis campos del nombre del archivo. -->
+<!-- Agregar a la categoria Fragancias las descripciones del documento de Google mediante coincidencia por nombre. -->
+<!-- v: 2026-08-02 02:46:00 PM -->
+<!-- Se conservaron los seis campos, categorias, filtros y carrito; se añadieron 38 descripciones verificadas de perfumeria. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -554,19 +554,430 @@
         "use strict";
 
         /*
-          Descripciones futuras, relacionadas por codigo.
-          Ejemplo:
-          window.DESCRIPCIONES_PRODUCTOS = {
-            "0032": {
-              fuenteImagen: "Natura Brasil",
-              urlFuenteImagen: "https://...",
-              precioInternet: 132720,
-              descripcion: "Fragancia femenina..."
-            }
-          };
+          Las descripciones manuales por codigo siguen teniendo prioridad.
+          Las 38 descripciones de Fragancias se buscan despues por nombre de producto.
         */
-        const descripciones = window.DESCRIPCIONES_PRODUCTOS || {};
+        const descripcionesPorCodigo = window.DESCRIPCIONES_PRODUCTOS || {};
+        const descripcionesFraganciasGoogle = [
+          {
+                    "codigoDocumento": "0032",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA BIOGRAFÍA CLÁSICO FEMENINO 100 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 132720,
+                    "descripcion": "Fragancia femenina de intensidad moderada y familia olfativa floral, con un refrescante bouquet floral, notas frutales de durazno y cassis, hojas de violeta y un sutil toque amaderado. Recomendada para el día a día y para salir. Para potenciar la fragancia, se aplica en las muñecas, el cuello, el escote y detrás de las orejas.",
+                    "codigoNatura": "74788"
+          },
+          {
+                    "codigoDocumento": "0033",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO FESTA UNISEX 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 94500,
+                    "descripcion": "Eau de toilette amaderado acuático, potente y vibrante, con bioesencia de siriúba, toronja, acorde acuático, bergamota, hierbas, violeta, jazmín, maderas e ingredientes amazónicos.",
+                    "codigoNatura": "133868"
+          },
+          {
+                    "codigoDocumento": "0034",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO VIVO UNISEX 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 94450,
+                    "descripcion": "Eau de toilette unisex de perfil cítrico y acuático, inspirada en el aroma de la lluvia, la tierra mojada y las plantas del bosque. Es vegana y está indicada para salir.",
+                    "codigoNatura": "133871"
+          },
+          {
+                    "codigoDocumento": "0035",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ON-LINE FEMENINO 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 146500,
+                    "descripcion": "Eau de toilette frutal cítrico de carácter alegre y desenfadado, con notas frutales y florales para el uso diario.",
+                    "codigoNatura": "105351"
+          },
+          {
+                    "codigoDocumento": "0036",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL EXCLUSIVO MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 251900,
+                    "descripcion": "Eau de parfum amaderado de carácter sofisticado, con pimienta negra y limón siciliano en la salida, cedro y pachulí en el cuerpo, y un fondo de ámbar, almizcle y sándalo.",
+                    "codigoNatura": "93617"
+          },
+          {
+                    "codigoDocumento": "0037",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL SENTIR FEMENINO 50 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 139000,
+                    "descripcion": "Eau de parfum floral frutal intenso con tuberosa, jazmín, pera, frambuesa y pataqueira, de alta concentración y duración de hasta diez horas.",
+                    "codigoNatura": "166110"
+          },
+          {
+                    "codigoDocumento": "0038",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL SENTIR MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 246500,
+                    "descripcion": "Eau de parfum amaderado aromático de alta concentración, con sándalo, pimienta brasileña, lavanda, bergamota y pachulí. Su aroma puede permanecer hasta diez horas en la piel.",
+                    "codigoNatura": "179067"
+          },
+          {
+                    "codigoDocumento": "0039",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL OUD MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 125950,
+                    "descripcion": "Eau de parfum amaderado intenso y especiado, con bergamota, cardamomo y azafrán, corazón de geranio y canela, y fondo de oud, cedro, sándalo, ámbar, pachulí y copaíba.",
+                    "codigoNatura": "93619"
+          },
+          {
+                    "codigoDocumento": "0040",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ENVOLVE UNISEX 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 89900,
+                    "descripcion": "Eau de toilette unisex floral aldehídico, con notas limpias y brillantes, frutas moradas, flores, almizcle, ámbar y maderas. Su perfumación puede permanecer hasta ocho horas en la piel.",
+                    "codigoNatura": "170153"
+          },
+          {
+                    "codigoDocumento": "0041",
+                    "nombreDocumento": "EAU DE PARFUM NATURA HOMEM ESSENCE MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 170900,
+                    "descripcion": "Eau de parfum amaderado intenso con notas de bergamota, jengibre, cítricos, pimienta negra, cardamomo, canela, pachulí, ámbar y cedro, creado para ocasiones especiales.",
+                    "codigoNatura": "59848"
+          },
+          {
+                    "codigoDocumento": "0042",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AERO MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 76950,
+                    "descripcion": "Eau de toilette aromático que combina un acorde tónico refrescante con notas verdes de enebro y ruibarbo, inspirado en el encuentro del viento con el agua del mar.",
+                    "codigoNatura": "111174"
+          },
+          {
+                    "codigoDocumento": "0043",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AERO FEMENINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 153900,
+                    "descripcion": "Eau de toilette aromático y refrescante que combina un acorde tónico con lavanda y peonía, inspirado en el encuentro del viento con el agua del mar.",
+                    "codigoNatura": "111178"
+          },
+          {
+                    "codigoDocumento": "0044",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR ON-LINE MASCULINO 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 73300,
+                    "descripcion": "Eau de toilette cítrico especiado con toronja, pimienta rosa, pitanga y pimienta negra, de carácter energético y divertido para el día a día y para salir.",
+                    "codigoNatura": "105350"
+          },
+          {
+                    "codigoDocumento": "0045",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR TRANSFORMA UNISEX 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 89900,
+                    "descripcion": "Eau de toilette unisex amaderado y especiado que combina frutas, especias, notas acuáticas, maderas, priprioca y cumarú. Su fijación puede alcanzar ocho horas.",
+                    "codigoNatura": "122948"
+          },
+          {
+                    "codigoDocumento": "0046",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA CLÁSICO FEMENINO 50 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 148900,
+                    "descripcion": "Eau de parfum frutal, floral y envolvente que combina delicadeza y fuerza mediante notas de pera, flores y maderas, con perfumación intensa y duradera.",
+                    "codigoNatura": "44171"
+          },
+          {
+                    "codigoDocumento": "0047",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA PLENA FEMENINO 50 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 88478,
+                    "descripcion": "Eau de parfum floral que celebra la transformación, con rosa obtenida mediante upcycling, pataqueira amazónica y notas cremosas de almizcle.",
+                    "codigoNatura": "113151"
+          },
+          {
+                    "codigoDocumento": "0048",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ILÍA SECRETO FEMENINO 50 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 134000,
+                    "descripcion": "Eau de parfum floral intenso con flores blancas, muguet, haba tonka, frutas rojas, café arábigo e ishpink amazónico, de carácter misterioso y sofisticado.",
+                    "codigoNatura": "83322"
+          },
+          {
+                    "codigoDocumento": "0049",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AVENTURA FEMENINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 92340,
+                    "descripcion": "Eau de toilette floral acuoso con notas ozónicas, verdes y de mandarina, corazón de peonía, muguet y jazmín, y fondo de almizcle, cedro y sándalo.",
+                    "codigoNatura": "111177"
+          },
+          {
+                    "codigoDocumento": "0050",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK AVENTURA MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 100035,
+                    "descripcion": "Eau de toilette aromático y cítrico que combina mandarina, bergamota y artemisia con pimienta negra, muguet, sándalo, almizcle y ámbar, inspirado en el encuentro del agua, el sol y el bosque.",
+                    "codigoNatura": "111173"
+          },
+          {
+                    "codigoDocumento": "0051",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK CLÁSICO FEMENINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 107730,
+                    "descripcion": "Eau de toilette cítrico y acuoso con una explosión de bergamota y naranja, acompañada de notas femeninas de jazmín, creada para renovar y revitalizar.",
+                    "codigoNatura": "111176"
+          },
+          {
+                    "codigoDocumento": "0052",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK CLÁSICO MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 76950,
+                    "descripcion": "Eau de toilette aromático acuoso con bergamota, mandarina y agujas de pino, corazón de muguet y maderas transparentes, y fondo de almizcle, musgo de roble y sándalo.",
+                    "codigoNatura": "111171"
+          },
+          {
+                    "codigoDocumento": "0053",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA BEIJO DE HUMOR FEMENINO 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 73300,
+                    "descripcion": "Eau de toilette frutal y dulce que combina ciruela, jazmín, sándalo, cacao, vainilla y haba tonka. Su fijación expresiva puede permanecer hasta ocho horas en la piel.",
+                    "codigoNatura": "1897"
+          },
+          {
+                    "codigoDocumento": "0054",
+                    "nombreDocumento": "EAU DE PARFUM NATURA KAIAK K MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 219900,
+                    "descripcion": "Eau de parfum amaderado intenso con menta, bergamota, nuez moscada, pimienta negra y lavanda, corazón de violeta, enebro y geranio, y fondo de pachulí, ámbar, cumarú y cedro.",
+                    "codigoNatura": "69062"
+          },
+          {
+                    "codigoDocumento": "0055",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK OCÉANO MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 76950,
+                    "descripcion": "Eau de toilette aromático marino que combina algas atlánticas y pataqueira con salvia, lavanda, ámbar, pachulí y musgo, equilibrando frescura acuática y profundidad amaderada.",
+                    "codigoNatura": "111175"
+          },
+          {
+                    "codigoDocumento": "0056",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK SONAR FEMENINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 107730,
+                    "descripcion": "Eau de toilette floral frutal de frescura marina, con tecnología VibraScent que traduce sonidos y colores en aromas, ideal para el uso diario.",
+                    "codigoNatura": "156229"
+          },
+          {
+                    "codigoDocumento": "0057",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK SONAR MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 107730,
+                    "descripcion": "Eau de toilette aromático de frescura oceánica, desarrollado con tecnología VibraScent para traducir sonidos y colores en una experiencia olfativa, adecuado para el uso diario.",
+                    "codigoNatura": "156226"
+          },
+          {
+                    "codigoDocumento": "0058",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK URBE MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 92340,
+                    "descripcion": "Eau de toilette aromático energizante con menta y notas verdes, corazón de geranio, albahaca y lavanda, y fondo de ámbar, sándalo y copaíba.",
+                    "codigoNatura": "111172"
+          },
+          {
+                    "codigoDocumento": "0059",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA LUNA LIBERDADE FEMENINO 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 64000,
+                    "descripcion": "Eau de toilette femenino chipre dulce oriental, fresco y luminoso, con manzana cristalizada, vainilla e ishpink, pensado para el uso diario.",
+                    "codigoNatura": "172969"
+          },
+          {
+                    "codigoDocumento": "0060",
+                    "nombreDocumento": "EAU DE PARFUM NATURA LUNA RADIANTE FEMENINO 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 111930,
+                    "descripcion": "Eau de parfum chipre de carácter alegre y vibrante, con notas florales y frutales, perfumación prolongada y una propuesta femenina, radiante y optimista.",
+                    "codigoNatura": "116584"
+          },
+          {
+                    "codigoDocumento": "0061",
+                    "nombreDocumento": "EAU DE PARFUM NATURA LUNA VIVA FEMENINO 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 64000,
+                    "descripcion": "Eau de parfum floral intenso con fondo amaderado elegante, de larga duración y pensado para ocasiones especiales.",
+                    "codigoNatura": "119164"
+          },
+          {
+                    "codigoDocumento": "0062",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA EKOS RYO CHUVA UNISEX 75 ML",
+                    "fuenteImagen": "Natura Colombia",
+                    "precioInternet": 94500,
+                    "descripcion": "Eau de toilette cítrico acuoso con mandarina, musgo y jazmín, inspirado en la lluvia amazónica, la tierra mojada y las plantas del bosque.",
+                    "codigoNatura": "133869"
+          },
+          {
+                    "codigoDocumento": "0063",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL CLÁSICO MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 110988,
+                    "descripcion": "Fragancia amaderada aromática de alta intensidad, con bergamota, lavanda, gálbano, enebro, nuez moscada, toronja y albahaca en la salida; geranio, pachulí, romero, salvia y jazmín en el cuerpo; y cedro, almizcle, musgo de roble, sándalo, ámbar, bálsamo y mirra en el fondo.",
+                    "codigoNatura": "NATBRA-76420"
+          },
+          {
+                    "codigoDocumento": "0064",
+                    "nombreDocumento": "EAU DE PARFUM NATURA ESSENCIAL OUD PIMIENTA MASCULINO 100 ML",
+                    "fuenteImagen": "Shopee Brasil",
+                    "precioInternet": 101162,
+                    "descripcion": "Fragancia masculina intensa y especiada de la línea Essencial Oud, presentada en frasco de 100 ml. Corresponde a una referencia descontinuada ofrecida como producto original para coleccionistas.",
+                    "codigoNatura": ""
+          },
+          {
+                    "codigoDocumento": "0065",
+                    "nombreDocumento": "EAU DE PARFUM NATURA HOMEM NÓS MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 154850,
+                    "descripcion": "Fragancia amaderada ambarada intensa para ocasiones especiales, con especias envolventes, notas amaderadas, cumarú y un toque de iris.",
+                    "codigoNatura": "NATBRA-152280"
+          },
+          {
+                    "codigoDocumento": "0066",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR CONEXIÓN MASCULINO 75 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 83413,
+                    "descripcion": "Fragancia amaderada frutal inspirada en la energía de los festivales, con un acorde exclusivo que combina piña, coco, especias y priprioca. Su fijación expresiva puede alcanzar ocho horas en la piel.",
+                    "codigoNatura": "NATBRA-131465"
+          },
+          {
+                    "codigoDocumento": "0067",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA HUMOR GALAXIA FEMENINO 75 ML",
+                    "fuenteImagen": "Mercado Libre Colombia",
+                    "precioInternet": 89999,
+                    "descripcion": "Fragancia frutal especiada con carambola, toronja, priprioca y cardamomo en la salida; frambuesa, manzana, fresia y jazmín en el cuerpo; y cedro, pachulí y ámbar en el fondo. Es vegana, libre de crueldad y está indicada para el uso diario.",
+                    "codigoNatura": "116469"
+          },
+          {
+                    "codigoDocumento": "0068",
+                    "nombreDocumento": "EAU DE TOILETTE NATURA KAIAK O2 MASCULINO 100 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 96059,
+                    "descripcion": "Fragancia aromática cítrica de frescura oceánica, con pimienta rosa, cardamomo, jengibre y priprioca en la salida; geranio y cedro en el cuerpo; y pachulí, ámbar, vetiver, sándalo y musgo en el fondo.",
+                    "codigoNatura": "NATBRA-125949"
+          },
+          {
+                    "codigoDocumento": "0069",
+                    "nombreDocumento": "EAU DE PARFUM NATURA UNA BRILLO FEMENINO 75 ML",
+                    "fuenteImagen": "Natura Brasil",
+                    "precioInternet": 151701,
+                    "descripcion": "Fragancia oriental dulce floral de alta concentración, con un buqué de flores blancas, priprioca, pimienta rosa y la dulzura del cumarú. Su perfumación puede permanecer hasta diez horas y está indicada para ocasiones especiales.",
+                    "codigoNatura": "NATBRA-156118"
+          }
+];
         const formatoNumero = new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 });
+
+        const palabrasGenericasNombre = new Set([
+          "natura", "eau", "de", "toilette", "parfum", "perfume",
+          "desodorante", "colonia", "deo", "fragancia", "ryo"
+        ]);
+        const palabrasProductoDiferente = new Set([
+          "splash", "crema", "jabon", "gel", "hidratante", "aceite",
+          "oleo", "locion", "repuesto", "refil", "rollon", "serum",
+          "shampoo", "acondicionador", "mascara"
+        ]);
+        const generosProducto = new Set(["femenino", "masculino", "unisex"]);
+
+        function normalizarNombreComparacion(valor){
+          return String(valor || "")
+            .toLowerCase()
+            .normalize("NFD")
+            .replace(/[\u0300-\u036f]/g, "")
+            .replace(/\bon[\s-]+line\b/g, "online")
+            .replace(/\bclasica\b/g, "clasico")
+            .replace(/[^a-z0-9]+/g, " ")
+            .replace(/\s+/g, " ")
+            .trim();
+        }
+
+        function tokensNombreComparacion(valor){
+          return normalizarNombreComparacion(valor)
+            .split(" ")
+            .filter(token => token && !palabrasGenericasNombre.has(token));
+        }
+
+        function generoDelNombre(valor){
+          return tokensNombreComparacion(valor).find(token => generosProducto.has(token)) || "";
+        }
+
+        function contenidoMlDelNombre(valor){
+          const encontrados = [...normalizarNombreComparacion(valor).matchAll(/\b(\d+)\s*ml\b/g)];
+          return encontrados.length ? encontrados[encontrados.length - 1][1] : "";
+        }
+
+        function puntuacionCoincidenciaNombre(nombreProducto, nombreDocumento){
+          const tokensProducto = tokensNombreComparacion(nombreProducto);
+          const tokensDocumento = tokensNombreComparacion(nombreDocumento);
+          if(!tokensProducto.length || !tokensDocumento.length) return -1;
+
+          const generoProducto = generoDelNombre(nombreProducto);
+          const generoDocumento = generoDelNombre(nombreDocumento);
+          if(generoProducto && generoDocumento && generoProducto !== generoDocumento) return -1;
+
+          const contenidoProducto = contenidoMlDelNombre(nombreProducto);
+          const contenidoDocumento = contenidoMlDelNombre(nombreDocumento);
+          if(contenidoProducto && contenidoDocumento && contenidoProducto !== contenidoDocumento) return -1;
+
+          const conjuntoProducto = new Set(tokensProducto);
+          const conjuntoDocumento = new Set(tokensDocumento);
+
+          for(const token of palabrasProductoDiferente){
+            if(conjuntoProducto.has(token) && !conjuntoDocumento.has(token)) return -1;
+          }
+
+          let comunes = 0;
+          conjuntoDocumento.forEach(token => {
+            if(conjuntoProducto.has(token)) comunes += 1;
+          });
+
+          const coberturaDocumento = comunes / conjuntoDocumento.size;
+          const coberturaProducto = comunes / conjuntoProducto.size;
+          const union = new Set([...conjuntoDocumento, ...conjuntoProducto]).size;
+          const similitudJaccard = union ? comunes / union : 0;
+
+          if(coberturaDocumento < 0.74 || coberturaProducto < 0.80) return -1;
+
+          return (
+            coberturaDocumento * 0.55 +
+            coberturaProducto * 0.30 +
+            similitudJaccard * 0.15
+          );
+        }
+
+        function esCategoriaFragancias(categoria){
+          const normalizada = normalizarNombreComparacion(categoria);
+          return normalizada === "fragancia" || normalizada === "fragancias";
+        }
+
+        function buscarDescripcionFraganciaPorNombre(nombreProducto){
+          let mejor = null;
+          let segundaPuntuacion = -1;
+
+          for(const candidata of descripcionesFraganciasGoogle){
+            const puntuacion = puntuacionCoincidenciaNombre(
+              nombreProducto,
+              candidata.nombreDocumento
+            );
+            if(puntuacion < 0) continue;
+
+            if(!mejor || puntuacion > mejor.puntuacion){
+              segundaPuntuacion = mejor ? mejor.puntuacion : segundaPuntuacion;
+              mejor = { puntuacion, candidata };
+            }else if(puntuacion > segundaPuntuacion){
+              segundaPuntuacion = puntuacion;
+            }
+          }
+
+          if(!mejor || mejor.puntuacion < 0.78) return null;
+          if(segundaPuntuacion >= 0 && mejor.puntuacion - segundaPuntuacion < 0.04) return null;
+          return mejor.candidata;
+        }
+
+        function resolverDescripcionExtra(datos){
+          const manual = descripcionesPorCodigo[String(datos.codigo)] || null;
+          if(manual) return manual;
+          if(!esCategoriaFragancias(datos.categoria)) return null;
+          return buscarDescripcionFraganciaPorNombre(datos.nombre);
+        }
 
         function numeroSoloDigitos(valor){
           const numero = Number(String(valor ?? "").replace(/[^\d]/g, ""));
@@ -687,19 +1098,9 @@
             "Precio conmigo: ",
             `${formatoNumero.format(datos.precio)} pesos colombianos. `
           );
-          agregarCampo(parrafo, "Marca: ", `${datos.marca}. `);
-          agregarCampo(parrafo, "Categoría: ", `${datos.categoria}. `);
 
-          const unidad = datos.cantidad === 1 ? "unidad" : "unidades";
-          agregarCampo(
-            parrafo,
-            "Cantidad disponible: ",
-            `${formatoNumero.format(datos.cantidad)} ${unidad}.`
-          );
-
-          const extra = descripciones[String(datos.codigo)] || null;
+          const extra = resolverDescripcionExtra(datos);
           if(extra){
-            agregarTexto(parrafo, " ");
             agregarFuente(parrafo, extra);
 
             const precioInternet = numeroSoloDigitos(extra.precioInternet);
@@ -717,8 +1118,26 @@
             if(detalle){
               agregarTexto(parrafo, detalle);
               if(!/[.!?]$/.test(detalle)) agregarTexto(parrafo, ".");
+              agregarTexto(parrafo, " ");
+            }
+
+            const codigoNatura = typeof extra === "object"
+              ? String(extra.codigoNatura || "").trim()
+              : "";
+            if(codigoNatura){
+              agregarCampo(parrafo, "Código Natura: ", `${codigoNatura}. `);
             }
           }
+
+          agregarCampo(parrafo, "Marca: ", `${datos.marca}. `);
+          agregarCampo(parrafo, "Categoría: ", `${datos.categoria}. `);
+
+          const unidad = datos.cantidad === 1 ? "unidad" : "unidades";
+          agregarCampo(
+            parrafo,
+            "Cantidad disponible: ",
+            `${formatoNumero.format(datos.cantidad)} ${unidad}.`
+          );
 
           return parrafo;
         }

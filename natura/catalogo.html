@@ -1,7 +1,7 @@
 <!doctype html>
-<!-- Agregar un icono para compartir, un boton Inicio en cada producto y un acceso fijo al final de la pagina. -->
-<!-- v: 2026-08-02 04:20:00 PM -->
-<!-- Se conservaron la logica original, las visitas, GPS, carrito, formularios, descripciones y JSON-LD. -->
+<!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
+<!-- v: 2026-08-02 04:51:00 PM -->
+<!-- Se retiró Inicio de cada ficha y se convirtió en un control flotante lateral. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -2168,44 +2168,10 @@
       stroke-linejoin:round;
     }
 
-    /* Quitar, Agregar e Inicio permanecen en la misma fila. */
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
-      grid-template-columns:repeat(3,minmax(0,180px)) !important;
-    }
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions .btn-home{
-      color:#1e3a8a !important;
-      background:#eff6ff !important;
-      border:1px solid #93c5fd !important;
-      font-weight:800;
-    }
-    .grid:not(.album-grid-mode) > .card:not(.album-card) .actions .btn-home:hover{
-      color:#1e40af !important;
-      background:#dbeafe !important;
-      border-color:#60a5fa !important;
-    }
-    @media(max-width:700px){
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
-        grid-template-columns:repeat(3,minmax(0,1fr)) !important;
-        gap:7px !important;
-      }
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions button{
-        padding-inline:6px !important;
-        font-size:12px !important;
-      }
-    }
-    @media(max-width:340px){
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions{
-        grid-template-columns:repeat(2,minmax(0,1fr)) !important;
-      }
-      .grid:not(.album-grid-mode) > .card:not(.album-card) .actions .btn-home{
-        grid-column:1 / -1;
-      }
-    }
+    /* Navegación flotante: Inicio a la izquierda y Final a la derecha. */
 
-    /* Acceso al final: fijo, discreto y oculto cuando el pie ya está visible. */
-    .go-to-end-btn{
+    .page-nav-btn{
       position:fixed;
-      right:max(14px,env(safe-area-inset-right));
       bottom:max(16px,env(safe-area-inset-bottom));
       z-index:900;
       display:inline-flex;
@@ -2228,11 +2194,13 @@
       transform:translateY(0);
       transition:opacity .2s var(--ease),transform .2s var(--ease),border-color .2s var(--ease);
     }
-    .go-to-end-btn:hover{
+    .go-to-start-btn{left:max(14px,env(safe-area-inset-left))}
+    .go-to-end-btn{right:max(14px,env(safe-area-inset-right))}
+    .page-nav-btn:hover{
       border-color:#7dd3fc;
       transform:translateY(-2px);
     }
-    .go-to-end-btn svg{
+    .page-nav-btn svg{
       width:17px;
       height:17px;
       fill:none;
@@ -2241,22 +2209,23 @@
       stroke-linecap:round;
       stroke-linejoin:round;
     }
-    .go-to-end-btn.is-hidden{
+    .page-nav-btn.is-hidden{
       opacity:0;
       transform:translateY(14px);
       pointer-events:none;
     }
     @media(max-width:480px){
-      .go-to-end-btn{
-        right:max(10px,env(safe-area-inset-right));
+      .page-nav-btn{
         bottom:max(10px,env(safe-area-inset-bottom));
         min-height:39px;
         padding:8px 11px;
         font-size:11.5px;
       }
+      .go-to-start-btn{left:max(10px,env(safe-area-inset-left))}
+      .go-to-end-btn{right:max(10px,env(safe-area-inset-right))}
     }
     @media(prefers-reduced-motion:reduce){
-      .go-to-end-btn{transition:none}
+      .page-nav-btn{transition:none}
     }
   </style>
 
@@ -4276,7 +4245,6 @@
           <div class="actions">
             <button type="button" class="btn-danger" data-act="dec">Quitar</button>
             <button type="button" class="btn-acc" data-act="inc">Agregar</button>
-            <button type="button" class="btn-home" data-act="top">Inicio</button>
           </div>
         </div>
       </article>
@@ -5172,10 +5140,6 @@
         if(!p || p.isUnstructured) return;
 
         const act = btn.getAttribute("data-act");
-        if(act === "top"){
-          window.scrollTo({ top:0, left:0, behavior:"smooth" });
-          return;
-        }
         const enforce = shouldEnforceStockLimits();
         const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
 
@@ -8750,7 +8714,12 @@ const DESCRIPCIONES_PRODUCTOS = [
   </script>
 
 
-  <button id="goToEndBtn" class="go-to-end-btn" type="button" aria-label="Ir al final de la página" title="Ir al final de la página">
+  <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>
+    <span>Inicio</span>
+  </button>
+
+  <button id="goToEndBtn" class="page-nav-btn go-to-end-btn" type="button" aria-label="Ir al final de la página" title="Ir al final de la página">
     <span>Final</span>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
   </button>
@@ -8758,17 +8727,23 @@ const DESCRIPCIONES_PRODUCTOS = [
   <script>
     // Navegación auxiliar y compartir: módulo aislado que no altera la lógica del catálogo.
     (() => {
+      const startBtn = document.getElementById("goToStartBtn");
       const finalBtn = document.getElementById("goToEndBtn");
       const footer = document.querySelector(".site-footer");
       const shareBtn = document.getElementById("shareCatalogBtn");
 
-      function actualizarBotonFinal(){
-        if(!finalBtn) return;
+      function actualizarBotonesNavegacion(){
         const doc = document.documentElement;
         const sinDesplazamiento = doc.scrollHeight <= window.innerHeight + 24;
+        const cercaDelInicio = window.scrollY <= 180;
         const cercaDelFinal = window.scrollY + window.innerHeight >= doc.scrollHeight - 180;
-        finalBtn.classList.toggle("is-hidden", sinDesplazamiento || cercaDelFinal);
+        startBtn?.classList.toggle("is-hidden", sinDesplazamiento || cercaDelInicio);
+        finalBtn?.classList.toggle("is-hidden", sinDesplazamiento || cercaDelFinal);
       }
+
+      startBtn?.addEventListener("click", () => {
+        window.scrollTo({ top:0, left:0, behavior:"smooth" });
+      });
 
       finalBtn?.addEventListener("click", () => {
         if(footer){
@@ -8808,9 +8783,9 @@ const DESCRIPCIONES_PRODUCTOS = [
         }
       });
 
-      window.addEventListener("scroll", actualizarBotonFinal, { passive:true });
-      window.addEventListener("resize", actualizarBotonFinal, { passive:true });
-      actualizarBotonFinal();
+      window.addEventListener("scroll", actualizarBotonesNavegacion, { passive:true });
+      window.addEventListener("resize", actualizarBotonesNavegacion, { passive:true });
+      actualizarBotonesNavegacion();
     })();
   </script>
 

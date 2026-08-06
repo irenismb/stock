@@ -1758,11 +1758,11 @@
       min-height:var(--compact-card-height);
       padding:0 10px;
       height:var(--compact-card-height);
-      justify-content:center;
+      justify-content:flex-start;
     }
     .visitor-details:not([open]) .summary-data,
     .visitor-details:not([open]) .summary-hide{display:none}
-    .visitor-details:not([open]) .summary-action{width:100%;text-align:center}
+    .visitor-details:not([open]) .summary-action{width:100%;text-align:left}
     .visitor-details[open] .summary-show{display:none}
     .visitor-details[open] .summary-hide{display:inline}
     .visitor-content{padding:9px;border-top:1px solid var(--counter-line)}
@@ -2390,7 +2390,7 @@
             <span class="summary-item">Hoy en el mundo: <strong id="visitorToday">--</strong></span>
             <span class="summary-item">Ciudad principal global: <strong id="visitorTopCity">Cargando...</strong></span>
           </span>
-          <span class="summary-action" aria-hidden="true"><span class="summary-show">Ver detalle</span><span class="summary-hide">Ocultar detalle</span></span>
+          <span class="summary-action" aria-hidden="true"><span class="summary-show">Visitas</span><span class="summary-hide">Ocultar detalle</span></span>
         </summary>
         <div class="visitor-content">
           <div class="visitor-grid">
@@ -2830,1137 +2830,1138 @@
         </div>
       </details>
 
-      <section class="municipality-shipping" aria-labelledby="municipalityShippingLabel">
-        <div class="municipality-shipping-header">
-          <label class="municipality-shipping-label" id="municipalityShippingLabel" for="municipalityShippingSelect">Listado de municipios para envíos</label>
-          <span class="municipality-shipping-count">1122 municipios</span>
+      <details class="beauty-products-details municipality-products-details">
+        <summary class="beauty-products-summary">
+          <span>Listado de municipios para envíos</span>
+          <span class="beauty-products-count">1122 municipios</span>
+        </summary>
+        <div class="beauty-products-content">
+          <ol class="beauty-products-list" aria-label="Listado completo de municipios para envíos">
+            <li>Medellin</li>
+            <li>Abejorral</li>
+            <li>Abriaqui</li>
+            <li>Alejandria</li>
+            <li>Amaga</li>
+            <li>Amalfi</li>
+            <li>Andes</li>
+            <li>Angelopolis</li>
+            <li>Angostura</li>
+            <li>Anori</li>
+            <li>Santa Fe de Antioquia</li>
+            <li>Anza</li>
+            <li>Apartado</li>
+            <li>Arboletes</li>
+            <li>Argelia</li>
+            <li>Armenia</li>
+            <li>Barbosa</li>
+            <li>Belmira</li>
+            <li>Bello</li>
+            <li>Betania</li>
+            <li>Betulia</li>
+            <li>Ciudad Bolivar</li>
+            <li>Briceño</li>
+            <li>Buritica</li>
+            <li>Caceres</li>
+            <li>Caicedo</li>
+            <li>Caldas</li>
+            <li>Campamento</li>
+            <li>Cañasgordas</li>
+            <li>Caracoli</li>
+            <li>Caramanta</li>
+            <li>Carepa</li>
+            <li>El Carmen de Viboral</li>
+            <li>Carolina</li>
+            <li>Caucasia</li>
+            <li>Chigorodo</li>
+            <li>Cisneros</li>
+            <li>Cocorna</li>
+            <li>Concepcion</li>
+            <li>Concordia</li>
+            <li>Copacabana</li>
+            <li>Dabeiba</li>
+            <li>Donmatias</li>
+            <li>Ebejico</li>
+            <li>El Bagre</li>
+            <li>Entrerrios</li>
+            <li>Envigado</li>
+            <li>Fredonia</li>
+            <li>Frontino</li>
+            <li>Giraldo</li>
+            <li>Girardota</li>
+            <li>Gomez Plata</li>
+            <li>Granada</li>
+            <li>Guadalupe</li>
+            <li>Guarne</li>
+            <li>Guatape</li>
+            <li>Heliconia</li>
+            <li>Hispania</li>
+            <li>Itagui</li>
+            <li>Ituango</li>
+            <li>Jardin</li>
+            <li>Jerico</li>
+            <li>La Ceja</li>
+            <li>La Estrella</li>
+            <li>La Pintada</li>
+            <li>La Union</li>
+            <li>Liborina</li>
+            <li>Maceo</li>
+            <li>Marinilla</li>
+            <li>Montebello</li>
+            <li>Murindo</li>
+            <li>Mutata</li>
+            <li>Nariño</li>
+            <li>Necocli</li>
+            <li>Nechi</li>
+            <li>Olaya</li>
+            <li>Peñol</li>
+            <li>Peque</li>
+            <li>Pueblorrico</li>
+            <li>Puerto Berrio</li>
+            <li>Puerto Nare</li>
+            <li>Puerto Triunfo</li>
+            <li>Remedios</li>
+            <li>Retiro</li>
+            <li>Rionegro</li>
+            <li>Sabanalarga</li>
+            <li>Sabaneta</li>
+            <li>Salgar</li>
+            <li>San Andres de Cuerquia</li>
+            <li>San Carlos</li>
+            <li>San Francisco</li>
+            <li>San Jeronimo</li>
+            <li>San Jose de la Montaña</li>
+            <li>San Juan de Uraba</li>
+            <li>San Luis</li>
+            <li>San Pedro de los Milagros</li>
+            <li>San Pedro de Uraba</li>
+            <li>San Rafael</li>
+            <li>San Roque</li>
+            <li>San Vicente Ferrer</li>
+            <li>Santa Barbara</li>
+            <li>Santa Rosa de Osos</li>
+            <li>Santo Domingo</li>
+            <li>El Santuario</li>
+            <li>Segovia</li>
+            <li>Sonson</li>
+            <li>Sopetran</li>
+            <li>Tamesis</li>
+            <li>Taraza</li>
+            <li>Tarso</li>
+            <li>Titiribi</li>
+            <li>Toledo</li>
+            <li>Turbo</li>
+            <li>Uramita</li>
+            <li>Urrao</li>
+            <li>Valdivia</li>
+            <li>Valparaiso</li>
+            <li>Vegachi</li>
+            <li>Venecia</li>
+            <li>Vigia del Fuerte</li>
+            <li>Yali</li>
+            <li>Yarumal</li>
+            <li>Yolombo</li>
+            <li>Yondo</li>
+            <li>Zaragoza</li>
+            <li>Barranquilla</li>
+            <li>Baranoa</li>
+            <li>Campo de la Cruz</li>
+            <li>Candelaria</li>
+            <li>Galapa</li>
+            <li>Juan de Acosta</li>
+            <li>Luruaco</li>
+            <li>Malambo</li>
+            <li>Manati</li>
+            <li>Palmar de Varela</li>
+            <li>Piojo</li>
+            <li>Polonuevo</li>
+            <li>Ponedera</li>
+            <li>Puerto Colombia</li>
+            <li>Repelon</li>
+            <li>Sabanagrande</li>
+            <li>Sabanalarga</li>
+            <li>Santa Lucia</li>
+            <li>Santo Tomas</li>
+            <li>Soledad</li>
+            <li>Suan</li>
+            <li>Tubara</li>
+            <li>Usiacuri</li>
+            <li>Bogota, D.C.</li>
+            <li>Cartagena de Indias</li>
+            <li>Achi</li>
+            <li>Altos del Rosario</li>
+            <li>Arenal</li>
+            <li>Arjona</li>
+            <li>Arroyohondo</li>
+            <li>Barranco de Loba</li>
+            <li>Calamar</li>
+            <li>Cantagallo</li>
+            <li>Cicuco</li>
+            <li>Cordoba</li>
+            <li>Clemencia</li>
+            <li>El Carmen de Bolivar</li>
+            <li>El Guamo</li>
+            <li>El Peñon</li>
+            <li>Hatillo de Loba</li>
+            <li>Magangue</li>
+            <li>Mahates</li>
+            <li>Margarita</li>
+            <li>Maria la Baja</li>
+            <li>Montecristo</li>
+            <li>Santa Cruz de Mompox</li>
+            <li>Morales</li>
+            <li>Norosi</li>
+            <li>Pinillos</li>
+            <li>Regidor</li>
+            <li>Rio Viejo</li>
+            <li>San Cristobal</li>
+            <li>San Estanislao</li>
+            <li>San Fernando</li>
+            <li>San Jacinto</li>
+            <li>San Jacinto del Cauca</li>
+            <li>San Juan Nepomuceno</li>
+            <li>San Martin de Loba</li>
+            <li>San Pablo</li>
+            <li>Santa Catalina</li>
+            <li>Santa Rosa</li>
+            <li>Santa Rosa del Sur</li>
+            <li>Simiti</li>
+            <li>Soplaviento</li>
+            <li>Talaigua Nuevo</li>
+            <li>Tiquisio</li>
+            <li>Turbaco</li>
+            <li>Turbana</li>
+            <li>Villanueva</li>
+            <li>Zambrano</li>
+            <li>Tunja</li>
+            <li>Almeida</li>
+            <li>Aquitania</li>
+            <li>Arcabuco</li>
+            <li>Belen</li>
+            <li>Berbeo</li>
+            <li>Beteitiva</li>
+            <li>Boavita</li>
+            <li>Boyaca</li>
+            <li>Briceño</li>
+            <li>Buenavista</li>
+            <li>Busbanza</li>
+            <li>Caldas</li>
+            <li>Campohermoso</li>
+            <li>Cerinza</li>
+            <li>Chinavita</li>
+            <li>Chiquinquira</li>
+            <li>Chiscas</li>
+            <li>Chita</li>
+            <li>Chitaraque</li>
+            <li>Chivata</li>
+            <li>Cienega</li>
+            <li>Combita</li>
+            <li>Coper</li>
+            <li>Corrales</li>
+            <li>Covarachia</li>
+            <li>Cubara</li>
+            <li>Cucaita</li>
+            <li>Cuitiva</li>
+            <li>Chiquiza</li>
+            <li>Chivor</li>
+            <li>Duitama</li>
+            <li>El Cocuy</li>
+            <li>El Espino</li>
+            <li>Firavitoba</li>
+            <li>Floresta</li>
+            <li>Gachantiva</li>
+            <li>Gameza</li>
+            <li>Garagoa</li>
+            <li>Guacamayas</li>
+            <li>Guateque</li>
+            <li>Guayata</li>
+            <li>Guican de la Sierra</li>
+            <li>Iza</li>
+            <li>Jenesano</li>
+            <li>Jerico</li>
+            <li>Labranzagrande</li>
+            <li>La Capilla</li>
+            <li>La Victoria</li>
+            <li>La Uvita</li>
+            <li>Villa de Leyva</li>
+            <li>Macanal</li>
+            <li>Maripi</li>
+            <li>Miraflores</li>
+            <li>Mongua</li>
+            <li>Mongui</li>
+            <li>Moniquira</li>
+            <li>Motavita</li>
+            <li>Muzo</li>
+            <li>Nobsa</li>
+            <li>Nuevo Colon</li>
+            <li>Oicata</li>
+            <li>Otanche</li>
+            <li>Pachavita</li>
+            <li>Paez</li>
+            <li>Paipa</li>
+            <li>Pajarito</li>
+            <li>Panqueba</li>
+            <li>Pauna</li>
+            <li>Paya</li>
+            <li>Paz de Rio</li>
+            <li>Pesca</li>
+            <li>Pisba</li>
+            <li>Puerto Boyaca</li>
+            <li>Quipama</li>
+            <li>Ramiriqui</li>
+            <li>Raquira</li>
+            <li>Rondon</li>
+            <li>Saboya</li>
+            <li>Sachica</li>
+            <li>Samaca</li>
+            <li>San Eduardo</li>
+            <li>San Jose de Pare</li>
+            <li>San Luis de Gaceno</li>
+            <li>San Mateo</li>
+            <li>San Miguel de Sema</li>
+            <li>San Pablo de Borbur</li>
+            <li>Santana</li>
+            <li>Santa Maria</li>
+            <li>Santa Rosa de Viterbo</li>
+            <li>Santa Sofia</li>
+            <li>Sativanorte</li>
+            <li>Sativasur</li>
+            <li>Siachoque</li>
+            <li>Soata</li>
+            <li>Socota</li>
+            <li>Socha</li>
+            <li>Sogamoso</li>
+            <li>Somondoco</li>
+            <li>Sora</li>
+            <li>Sotaquira</li>
+            <li>Soraca</li>
+            <li>Susacon</li>
+            <li>Sutamarchan</li>
+            <li>Sutatenza</li>
+            <li>Tasco</li>
+            <li>Tenza</li>
+            <li>Tibana</li>
+            <li>Tibasosa</li>
+            <li>Tinjaca</li>
+            <li>Tipacoque</li>
+            <li>Toca</li>
+            <li>Togui</li>
+            <li>Topaga</li>
+            <li>Tota</li>
+            <li>Tunungua</li>
+            <li>Turmeque</li>
+            <li>Tuta</li>
+            <li>Tutaza</li>
+            <li>Umbita</li>
+            <li>Ventaquemada</li>
+            <li>Viracacha</li>
+            <li>Zetaquira</li>
+            <li>Manizales</li>
+            <li>Aguadas</li>
+            <li>Anserma</li>
+            <li>Aranzazu</li>
+            <li>Belalcazar</li>
+            <li>Chinchina</li>
+            <li>Filadelfia</li>
+            <li>La Dorada</li>
+            <li>La Merced</li>
+            <li>Manzanares</li>
+            <li>Marmato</li>
+            <li>Marquetalia</li>
+            <li>Marulanda</li>
+            <li>Neira</li>
+            <li>Norcasia</li>
+            <li>Pacora</li>
+            <li>Palestina</li>
+            <li>Pensilvania</li>
+            <li>Riosucio</li>
+            <li>Risaralda</li>
+            <li>Salamina</li>
+            <li>Samana</li>
+            <li>San Jose</li>
+            <li>Supia</li>
+            <li>Victoria</li>
+            <li>Villamaria</li>
+            <li>Viterbo</li>
+            <li>Florencia</li>
+            <li>Albania</li>
+            <li>Belen de los Andaquies</li>
+            <li>Cartagena del Chaira</li>
+            <li>Curillo</li>
+            <li>El Doncello</li>
+            <li>El Paujil</li>
+            <li>La Montañita</li>
+            <li>Milan</li>
+            <li>Morelia</li>
+            <li>Puerto Rico</li>
+            <li>San Jose del Fragua</li>
+            <li>San Vicente del Caguan</li>
+            <li>Solano</li>
+            <li>Solita</li>
+            <li>Valparaiso</li>
+            <li>Popayan</li>
+            <li>Almaguer</li>
+            <li>Argelia</li>
+            <li>Balboa</li>
+            <li>Bolivar</li>
+            <li>Buenos Aires</li>
+            <li>Cajibio</li>
+            <li>Caldono</li>
+            <li>Caloto</li>
+            <li>Corinto</li>
+            <li>El Tambo</li>
+            <li>Florencia</li>
+            <li>Guachene</li>
+            <li>Guapi</li>
+            <li>Inza</li>
+            <li>Jambalo</li>
+            <li>La Sierra</li>
+            <li>La Vega</li>
+            <li>Lopez de Micay</li>
+            <li>Mercaderes</li>
+            <li>Miranda</li>
+            <li>Morales</li>
+            <li>Padilla</li>
+            <li>Paez</li>
+            <li>Patia</li>
+            <li>Piamonte</li>
+            <li>Piendamo - Tunia</li>
+            <li>Puerto Tejada</li>
+            <li>Purace</li>
+            <li>Rosas</li>
+            <li>San Sebastian</li>
+            <li>Santander de Quilichao</li>
+            <li>Santa Rosa</li>
+            <li>Silvia</li>
+            <li>Sotara - Paispamba</li>
+            <li>Suarez</li>
+            <li>Sucre</li>
+            <li>Timbio</li>
+            <li>Timbiqui</li>
+            <li>Toribio</li>
+            <li>Totoro</li>
+            <li>Villa Rica</li>
+            <li>Valledupar</li>
+            <li>Aguachica</li>
+            <li>Agustin Codazzi</li>
+            <li>Astrea</li>
+            <li>Becerril</li>
+            <li>Bosconia</li>
+            <li>Chimichagua</li>
+            <li>Chiriguana</li>
+            <li>Curumani</li>
+            <li>El Copey</li>
+            <li>El Paso</li>
+            <li>Gamarra</li>
+            <li>Gonzalez</li>
+            <li>La Gloria</li>
+            <li>La Jagua de Ibirico</li>
+            <li>Manaure Balcon del Cesar</li>
+            <li>Pailitas</li>
+            <li>Pelaya</li>
+            <li>Pueblo Bello</li>
+            <li>Rio de Oro</li>
+            <li>La Paz</li>
+            <li>San Alberto</li>
+            <li>San Diego</li>
+            <li>San Martin</li>
+            <li>Tamalameque</li>
+            <li>Monteria</li>
+            <li>Ayapel</li>
+            <li>Buenavista</li>
+            <li>Canalete</li>
+            <li>Cerete</li>
+            <li>Chima</li>
+            <li>Chinu</li>
+            <li>Cienaga de Oro</li>
+            <li>Cotorra</li>
+            <li>La Apartada</li>
+            <li>Lorica</li>
+            <li>Los Cordobas</li>
+            <li>Momil</li>
+            <li>Montelibano</li>
+            <li>Moñitos</li>
+            <li>Planeta Rica</li>
+            <li>Pueblo Nuevo</li>
+            <li>Puerto Escondido</li>
+            <li>Puerto Libertador</li>
+            <li>Purisima de la Concepcion</li>
+            <li>Sahagun</li>
+            <li>San Andres de Sotavento</li>
+            <li>San Antero</li>
+            <li>San Bernardo del Viento</li>
+            <li>San Carlos</li>
+            <li>San Jose de Ure</li>
+            <li>San Pelayo</li>
+            <li>Tierralta</li>
+            <li>Tuchin</li>
+            <li>Valencia</li>
+            <li>Agua de Dios</li>
+            <li>Alban</li>
+            <li>Anapoima</li>
+            <li>Anolaima</li>
+            <li>Arbelaez</li>
+            <li>Beltran</li>
+            <li>Bituima</li>
+            <li>Bojaca</li>
+            <li>Cabrera</li>
+            <li>Cachipay</li>
+            <li>Cajica</li>
+            <li>Caparrapi</li>
+            <li>Caqueza</li>
+            <li>Carmen de Carupa</li>
+            <li>Chaguani</li>
+            <li>Chia</li>
+            <li>Chipaque</li>
+            <li>Choachi</li>
+            <li>Choconta</li>
+            <li>Cogua</li>
+            <li>Cota</li>
+            <li>Cucunuba</li>
+            <li>El Colegio</li>
+            <li>El Peñon</li>
+            <li>El Rosal</li>
+            <li>Facatativa</li>
+            <li>Fomeque</li>
+            <li>Fosca</li>
+            <li>Funza</li>
+            <li>Fuquene</li>
+            <li>Fusagasuga</li>
+            <li>Gachala</li>
+            <li>Gachancipa</li>
+            <li>Gacheta</li>
+            <li>Gama</li>
+            <li>Girardot</li>
+            <li>Granada</li>
+            <li>Guacheta</li>
+            <li>Guaduas</li>
+            <li>Guasca</li>
+            <li>Guataqui</li>
+            <li>Guatavita</li>
+            <li>Guayabal de Siquima</li>
+            <li>Guayabetal</li>
+            <li>Gutierrez</li>
+            <li>Jerusalen</li>
+            <li>Junin</li>
+            <li>La Calera</li>
+            <li>La Mesa</li>
+            <li>La Palma</li>
+            <li>La Peña</li>
+            <li>La Vega</li>
+            <li>Lenguazaque</li>
+            <li>Macheta</li>
+            <li>Madrid</li>
+            <li>Manta</li>
+            <li>Medina</li>
+            <li>Mosquera</li>
+            <li>Nariño</li>
+            <li>Nemocon</li>
+            <li>Nilo</li>
+            <li>Nimaima</li>
+            <li>Nocaima</li>
+            <li>Venecia</li>
+            <li>Pacho</li>
+            <li>Paime</li>
+            <li>Pandi</li>
+            <li>Paratebueno</li>
+            <li>Pasca</li>
+            <li>Puerto Salgar</li>
+            <li>Puli</li>
+            <li>Quebradanegra</li>
+            <li>Quetame</li>
+            <li>Quipile</li>
+            <li>Apulo</li>
+            <li>Ricaurte</li>
+            <li>San Antonio del Tequendama</li>
+            <li>San Bernardo</li>
+            <li>San Cayetano</li>
+            <li>San Francisco</li>
+            <li>San Juan de Rioseco</li>
+            <li>Sasaima</li>
+            <li>Sesquile</li>
+            <li>Sibate</li>
+            <li>Silvania</li>
+            <li>Simijaca</li>
+            <li>Soacha</li>
+            <li>Sopo</li>
+            <li>Subachoque</li>
+            <li>Suesca</li>
+            <li>Supata</li>
+            <li>Susa</li>
+            <li>Sutatausa</li>
+            <li>Tabio</li>
+            <li>Tausa</li>
+            <li>Tena</li>
+            <li>Tenjo</li>
+            <li>Tibacuy</li>
+            <li>Tibirita</li>
+            <li>Tocaima</li>
+            <li>Tocancipa</li>
+            <li>Topaipi</li>
+            <li>Ubala</li>
+            <li>Ubaque</li>
+            <li>Villa de San Diego de Ubate</li>
+            <li>Une</li>
+            <li>Utica</li>
+            <li>Vergara</li>
+            <li>Viani</li>
+            <li>Villagomez</li>
+            <li>Villapinzon</li>
+            <li>Villeta</li>
+            <li>Viota</li>
+            <li>Yacopi</li>
+            <li>Zipacon</li>
+            <li>Zipaquira</li>
+            <li>Quibdo</li>
+            <li>Acandi</li>
+            <li>Alto Baudo</li>
+            <li>Atrato</li>
+            <li>Bagado</li>
+            <li>Bahia Solano</li>
+            <li>Bajo Baudo</li>
+            <li>Bojaya</li>
+            <li>El Canton del San Pablo</li>
+            <li>Carmen del Darien</li>
+            <li>Certegui</li>
+            <li>Condoto</li>
+            <li>El Carmen de Atrato</li>
+            <li>El Litoral del San Juan</li>
+            <li>Istmina</li>
+            <li>Jurado</li>
+            <li>Lloro</li>
+            <li>Medio Atrato</li>
+            <li>Medio Baudo</li>
+            <li>Medio San Juan</li>
+            <li>Novita</li>
+            <li>Nuevo Belen de Bajira</li>
+            <li>Nuqui</li>
+            <li>Rio Iro</li>
+            <li>Rio Quito</li>
+            <li>Riosucio</li>
+            <li>San Jose del Palmar</li>
+            <li>Sipi</li>
+            <li>Tado</li>
+            <li>Unguia</li>
+            <li>Union Panamericana</li>
+            <li>Neiva</li>
+            <li>Acevedo</li>
+            <li>Agrado</li>
+            <li>Aipe</li>
+            <li>Algeciras</li>
+            <li>Altamira</li>
+            <li>Baraya</li>
+            <li>Campoalegre</li>
+            <li>Colombia</li>
+            <li>Elias</li>
+            <li>Garzon</li>
+            <li>Gigante</li>
+            <li>Guadalupe</li>
+            <li>Hobo</li>
+            <li>Iquira</li>
+            <li>Isnos</li>
+            <li>La Argentina</li>
+            <li>La Plata</li>
+            <li>Nataga</li>
+            <li>Oporapa</li>
+            <li>Paicol</li>
+            <li>Palermo</li>
+            <li>Palestina</li>
+            <li>Pital</li>
+            <li>Pitalito</li>
+            <li>Rivera</li>
+            <li>Saladoblanco</li>
+            <li>San Agustin</li>
+            <li>Santa Maria</li>
+            <li>Suaza</li>
+            <li>Tarqui</li>
+            <li>Tesalia</li>
+            <li>Tello</li>
+            <li>Teruel</li>
+            <li>Timana</li>
+            <li>Villavieja</li>
+            <li>Yaguara</li>
+            <li>Riohacha</li>
+            <li>Albania</li>
+            <li>Barrancas</li>
+            <li>Dibulla</li>
+            <li>Distraccion</li>
+            <li>El Molino</li>
+            <li>Fonseca</li>
+            <li>Hatonuevo</li>
+            <li>La Jagua del Pilar</li>
+            <li>Maicao</li>
+            <li>Manaure</li>
+            <li>San Juan del Cesar</li>
+            <li>Uribia</li>
+            <li>Urumita</li>
+            <li>Villanueva</li>
+            <li>Santa Marta</li>
+            <li>Algarrobo</li>
+            <li>Aracataca</li>
+            <li>Ariguani</li>
+            <li>Cerro de San Antonio</li>
+            <li>Chivolo</li>
+            <li>Cienaga</li>
+            <li>Concordia</li>
+            <li>El Banco</li>
+            <li>El Piñon</li>
+            <li>El Reten</li>
+            <li>Fundacion</li>
+            <li>Guamal</li>
+            <li>Nueva Granada</li>
+            <li>Pedraza</li>
+            <li>Pijiño del Carmen</li>
+            <li>Pivijay</li>
+            <li>Plato</li>
+            <li>Puebloviejo</li>
+            <li>Remolino</li>
+            <li>Sabanas de San Angel</li>
+            <li>Salamina</li>
+            <li>San Sebastian de Buenavista</li>
+            <li>San Zenon</li>
+            <li>Santa Ana</li>
+            <li>Santa Barbara de Pinto</li>
+            <li>Sitionuevo</li>
+            <li>Tenerife</li>
+            <li>Zapayan</li>
+            <li>Zona Bananera</li>
+            <li>Villavicencio</li>
+            <li>Acacias</li>
+            <li>Barranca de Upia</li>
+            <li>Cabuyaro</li>
+            <li>Castilla la Nueva</li>
+            <li>Cubarral</li>
+            <li>Cumaral</li>
+            <li>El Calvario</li>
+            <li>El Castillo</li>
+            <li>El Dorado</li>
+            <li>Fuente de Oro</li>
+            <li>Granada</li>
+            <li>Guamal</li>
+            <li>Mapiripan</li>
+            <li>Mesetas</li>
+            <li>La Macarena</li>
+            <li>Uribe</li>
+            <li>Lejanias</li>
+            <li>Puerto Concordia</li>
+            <li>Puerto Gaitan</li>
+            <li>Puerto Lopez</li>
+            <li>Puerto Lleras</li>
+            <li>Puerto Rico</li>
+            <li>Restrepo</li>
+            <li>San Carlos de Guaroa</li>
+            <li>San Juan de Arama</li>
+            <li>San Juanito</li>
+            <li>San Martin</li>
+            <li>Vistahermosa</li>
+            <li>Pasto</li>
+            <li>Alban</li>
+            <li>Aldana</li>
+            <li>Ancuya</li>
+            <li>Arboleda</li>
+            <li>Barbacoas</li>
+            <li>Belen</li>
+            <li>Buesaco</li>
+            <li>Colon</li>
+            <li>Consaca</li>
+            <li>Contadero</li>
+            <li>Cordoba</li>
+            <li>Cuaspud Carlosama</li>
+            <li>Cumbal</li>
+            <li>Cumbitara</li>
+            <li>Chachagui</li>
+            <li>El Charco</li>
+            <li>El Peñol</li>
+            <li>El Rosario</li>
+            <li>El Tablon de Gomez</li>
+            <li>El Tambo</li>
+            <li>Funes</li>
+            <li>Guachucal</li>
+            <li>Guaitarilla</li>
+            <li>Gualmatan</li>
+            <li>Iles</li>
+            <li>Imues</li>
+            <li>Ipiales</li>
+            <li>La Cruz</li>
+            <li>La Florida</li>
+            <li>La Llanada</li>
+            <li>La Tola</li>
+            <li>La Union</li>
+            <li>Leiva</li>
+            <li>Linares</li>
+            <li>Los Andes</li>
+            <li>Magui</li>
+            <li>Mallama</li>
+            <li>Mosquera</li>
+            <li>Nariño</li>
+            <li>Olaya Herrera</li>
+            <li>Ospina</li>
+            <li>Francisco Pizarro</li>
+            <li>Policarpa</li>
+            <li>Potosi</li>
+            <li>Providencia</li>
+            <li>Puerres</li>
+            <li>Pupiales</li>
+            <li>Ricaurte</li>
+            <li>Roberto Payan</li>
+            <li>Samaniego</li>
+            <li>Sandona</li>
+            <li>San Bernardo</li>
+            <li>San Lorenzo</li>
+            <li>San Pablo</li>
+            <li>San Pedro de Cartago</li>
+            <li>Santa Barbara</li>
+            <li>Santacruz</li>
+            <li>Sapuyes</li>
+            <li>Taminango</li>
+            <li>Tangua</li>
+            <li>San Andres de Tumaco</li>
+            <li>Tuquerres</li>
+            <li>Yacuanquer</li>
+            <li>San Jose de Cucuta</li>
+            <li>Abrego</li>
+            <li>Arboledas</li>
+            <li>Bochalema</li>
+            <li>Bucarasica</li>
+            <li>Cacota</li>
+            <li>Cachira</li>
+            <li>Chinacota</li>
+            <li>Chitaga</li>
+            <li>Convencion</li>
+            <li>Cucutilla</li>
+            <li>Durania</li>
+            <li>El Carmen</li>
+            <li>El Tarra</li>
+            <li>El Zulia</li>
+            <li>Gramalote</li>
+            <li>Hacari</li>
+            <li>Herran</li>
+            <li>Labateca</li>
+            <li>La Esperanza</li>
+            <li>La Playa</li>
+            <li>Los Patios</li>
+            <li>Lourdes</li>
+            <li>Mutiscua</li>
+            <li>Ocaña</li>
+            <li>Pamplona</li>
+            <li>Pamplonita</li>
+            <li>Puerto Santander</li>
+            <li>Ragonvalia</li>
+            <li>Salazar</li>
+            <li>San Calixto</li>
+            <li>San Cayetano</li>
+            <li>Santiago</li>
+            <li>Sardinata</li>
+            <li>Silos</li>
+            <li>Teorama</li>
+            <li>Tibu</li>
+            <li>Toledo</li>
+            <li>Villa Caro</li>
+            <li>Villa del Rosario</li>
+            <li>Armenia</li>
+            <li>Buenavista</li>
+            <li>Calarca</li>
+            <li>Circasia</li>
+            <li>Cordoba</li>
+            <li>Filandia</li>
+            <li>Genova</li>
+            <li>La Tebaida</li>
+            <li>Montenegro</li>
+            <li>Pijao</li>
+            <li>Quimbaya</li>
+            <li>Salento</li>
+            <li>Pereira</li>
+            <li>Apia</li>
+            <li>Balboa</li>
+            <li>Belen de Umbria</li>
+            <li>Dosquebradas</li>
+            <li>Guatica</li>
+            <li>La Celia</li>
+            <li>La Virginia</li>
+            <li>Marsella</li>
+            <li>Mistrato</li>
+            <li>Pueblo Rico</li>
+            <li>Quinchia</li>
+            <li>Santa Rosa de Cabal</li>
+            <li>Santuario</li>
+            <li>Bucaramanga</li>
+            <li>Aguada</li>
+            <li>Albania</li>
+            <li>Aratoca</li>
+            <li>Barbosa</li>
+            <li>Barichara</li>
+            <li>Barrancabermeja</li>
+            <li>Betulia</li>
+            <li>Bolivar</li>
+            <li>Cabrera</li>
+            <li>California</li>
+            <li>Capitanejo</li>
+            <li>Carcasi</li>
+            <li>Cepita</li>
+            <li>Cerrito</li>
+            <li>Charala</li>
+            <li>Charta</li>
+            <li>Chima</li>
+            <li>Chipata</li>
+            <li>Cimitarra</li>
+            <li>Concepcion</li>
+            <li>Confines</li>
+            <li>Contratacion</li>
+            <li>Coromoro</li>
+            <li>Curiti</li>
+            <li>El Carmen de Chucuri</li>
+            <li>El Guacamayo</li>
+            <li>El Peñon</li>
+            <li>El Playon</li>
+            <li>Encino</li>
+            <li>Enciso</li>
+            <li>Florian</li>
+            <li>Floridablanca</li>
+            <li>Galan</li>
+            <li>Gambita</li>
+            <li>Giron</li>
+            <li>Guaca</li>
+            <li>Guadalupe</li>
+            <li>Guapota</li>
+            <li>Guavata</li>
+            <li>Guepsa</li>
+            <li>Hato</li>
+            <li>Jesus Maria</li>
+            <li>Jordan</li>
+            <li>La Belleza</li>
+            <li>Landazuri</li>
+            <li>La Paz</li>
+            <li>Lebrija</li>
+            <li>Los Santos</li>
+            <li>Macaravita</li>
+            <li>Malaga</li>
+            <li>Matanza</li>
+            <li>Mogotes</li>
+            <li>Molagavita</li>
+            <li>Ocamonte</li>
+            <li>Oiba</li>
+            <li>Onzaga</li>
+            <li>Palmar</li>
+            <li>Palmas del Socorro</li>
+            <li>Paramo</li>
+            <li>Piedecuesta</li>
+            <li>Pinchote</li>
+            <li>Puente Nacional</li>
+            <li>Puerto Parra</li>
+            <li>Puerto Wilches</li>
+            <li>Rionegro</li>
+            <li>Sabana de Torres</li>
+            <li>San Andres</li>
+            <li>San Benito</li>
+            <li>San Gil</li>
+            <li>San Joaquin</li>
+            <li>San Jose de Miranda</li>
+            <li>San Miguel</li>
+            <li>San Vicente de Chucuri</li>
+            <li>Santa Barbara</li>
+            <li>Santa Helena del Opon</li>
+            <li>Simacota</li>
+            <li>Socorro</li>
+            <li>Suaita</li>
+            <li>Sucre</li>
+            <li>Surata</li>
+            <li>Tona</li>
+            <li>Valle de San Jose</li>
+            <li>Velez</li>
+            <li>Vetas</li>
+            <li>Villanueva</li>
+            <li>Zapatoca</li>
+            <li>Sincelejo</li>
+            <li>Buenavista</li>
+            <li>Caimito</li>
+            <li>Coloso</li>
+            <li>Corozal</li>
+            <li>Coveñas</li>
+            <li>Chalan</li>
+            <li>El Roble</li>
+            <li>Galeras</li>
+            <li>Guaranda</li>
+            <li>La Union</li>
+            <li>Los Palmitos</li>
+            <li>Majagual</li>
+            <li>Morroa</li>
+            <li>Ovejas</li>
+            <li>Palmito</li>
+            <li>Sampues</li>
+            <li>San Benito Abad</li>
+            <li>San Juan de Betulia</li>
+            <li>San Marcos</li>
+            <li>San Onofre</li>
+            <li>San Pedro</li>
+            <li>San Luis de Since</li>
+            <li>Sucre</li>
+            <li>Santiago de Tolu</li>
+            <li>San Jose de Toluviejo</li>
+            <li>Ibague</li>
+            <li>Alpujarra</li>
+            <li>Alvarado</li>
+            <li>Ambalema</li>
+            <li>Anzoategui</li>
+            <li>Armero</li>
+            <li>Ataco</li>
+            <li>Cajamarca</li>
+            <li>Carmen de Apicala</li>
+            <li>Casabianca</li>
+            <li>Chaparral</li>
+            <li>Coello</li>
+            <li>Coyaima</li>
+            <li>Cunday</li>
+            <li>Dolores</li>
+            <li>Espinal</li>
+            <li>Falan</li>
+            <li>Flandes</li>
+            <li>Fresno</li>
+            <li>Guamo</li>
+            <li>Herveo</li>
+            <li>Honda</li>
+            <li>Icononzo</li>
+            <li>Lerida</li>
+            <li>Libano</li>
+            <li>San Sebastian de Mariquita</li>
+            <li>Melgar</li>
+            <li>Murillo</li>
+            <li>Natagaima</li>
+            <li>Ortega</li>
+            <li>Palocabildo</li>
+            <li>Piedras</li>
+            <li>Planadas</li>
+            <li>Prado</li>
+            <li>Purificacion</li>
+            <li>Rioblanco</li>
+            <li>Roncesvalles</li>
+            <li>Rovira</li>
+            <li>Saldaña</li>
+            <li>San Antonio</li>
+            <li>San Luis</li>
+            <li>Santa Isabel</li>
+            <li>Suarez</li>
+            <li>Valle de San Juan</li>
+            <li>Venadillo</li>
+            <li>Villahermosa</li>
+            <li>Villarrica</li>
+            <li>Santiago de Cali</li>
+            <li>Alcala</li>
+            <li>Andalucia</li>
+            <li>Ansermanuevo</li>
+            <li>Argelia</li>
+            <li>Bolivar</li>
+            <li>Buenaventura</li>
+            <li>Guadalajara de Buga</li>
+            <li>Bugalagrande</li>
+            <li>Caicedonia</li>
+            <li>Calima</li>
+            <li>Candelaria</li>
+            <li>Cartago</li>
+            <li>Dagua</li>
+            <li>El Aguila</li>
+            <li>El Cairo</li>
+            <li>El Cerrito</li>
+            <li>El Dovio</li>
+            <li>Florida</li>
+            <li>Ginebra</li>
+            <li>Guacari</li>
+            <li>Jamundi</li>
+            <li>La Cumbre</li>
+            <li>La Union</li>
+            <li>La Victoria</li>
+            <li>Obando</li>
+            <li>Palmira</li>
+            <li>Pradera</li>
+            <li>Restrepo</li>
+            <li>Riofrio</li>
+            <li>Roldanillo</li>
+            <li>San Pedro</li>
+            <li>Sevilla</li>
+            <li>Toro</li>
+            <li>Trujillo</li>
+            <li>Tulua</li>
+            <li>Ulloa</li>
+            <li>Versalles</li>
+            <li>Vijes</li>
+            <li>Yotoco</li>
+            <li>Yumbo</li>
+            <li>Zarzal</li>
+            <li>Arauca</li>
+            <li>Arauquita</li>
+            <li>Cravo Norte</li>
+            <li>Fortul</li>
+            <li>Puerto Rondon</li>
+            <li>Saravena</li>
+            <li>Tame</li>
+            <li>Yopal</li>
+            <li>Aguazul</li>
+            <li>Chameza</li>
+            <li>Hato Corozal</li>
+            <li>La Salina</li>
+            <li>Mani</li>
+            <li>Monterrey</li>
+            <li>Nunchia</li>
+            <li>Orocue</li>
+            <li>Paz de Ariporo</li>
+            <li>Pore</li>
+            <li>Recetor</li>
+            <li>Sabanalarga</li>
+            <li>Sacama</li>
+            <li>San Luis de Palenque</li>
+            <li>Tamara</li>
+            <li>Tauramena</li>
+            <li>Trinidad</li>
+            <li>Villanueva</li>
+            <li>Mocoa</li>
+            <li>Colon</li>
+            <li>Orito</li>
+            <li>Puerto Asis</li>
+            <li>Puerto Caicedo</li>
+            <li>Puerto Guzman</li>
+            <li>Puerto Leguizamo</li>
+            <li>Sibundoy</li>
+            <li>San Francisco</li>
+            <li>San Miguel</li>
+            <li>Santiago</li>
+            <li>Valle del Guamuez</li>
+            <li>Villagarzon</li>
+            <li>San Andres</li>
+            <li>Providencia</li>
+            <li>Leticia</li>
+            <li>Puerto Nariño</li>
+            <li>Inirida</li>
+            <li>Barrancominas</li>
+            <li>San Jose del Guaviare</li>
+            <li>Calamar</li>
+            <li>El Retorno</li>
+            <li>Miraflores</li>
+            <li>Mitu</li>
+            <li>Caruru</li>
+            <li>Taraira</li>
+            <li>Puerto Carreño</li>
+            <li>La Primavera</li>
+            <li>Santa Rosalia</li>
+            <li>Cumaribo</li>
+            <li>El Encanto</li>
+            <li>La Chorrera</li>
+            <li>La Pedrera</li>
+            <li>La Victoria</li>
+            <li>Miriti - Parana</li>
+            <li>Puerto Alegria</li>
+            <li>Puerto Arica</li>
+            <li>Puerto Santander</li>
+            <li>Tarapaca</li>
+            <li>San Felipe</li>
+            <li>Puerto Colombia</li>
+            <li>La Guadalupe</li>
+            <li>Cacahual</li>
+            <li>Pana Pana</li>
+            <li>Morichal</li>
+            <li>Pacoa</li>
+            <li>Papunahua</li>
+            <li>Yavarate</li>
+          </ol>
         </div>
-        <select class="municipality-shipping-select" id="municipalityShippingSelect" name="municipioEnvio" autocomplete="address-level2">
-            <option value="">Seleccione un municipio</option>
-            <option value="Medellin" data-municipio-index="1">Medellin</option>
-            <option value="Abejorral" data-municipio-index="2">Abejorral</option>
-            <option value="Abriaqui" data-municipio-index="3">Abriaqui</option>
-            <option value="Alejandria" data-municipio-index="4">Alejandria</option>
-            <option value="Amaga" data-municipio-index="5">Amaga</option>
-            <option value="Amalfi" data-municipio-index="6">Amalfi</option>
-            <option value="Andes" data-municipio-index="7">Andes</option>
-            <option value="Angelopolis" data-municipio-index="8">Angelopolis</option>
-            <option value="Angostura" data-municipio-index="9">Angostura</option>
-            <option value="Anori" data-municipio-index="10">Anori</option>
-            <option value="Santa Fe de Antioquia" data-municipio-index="11">Santa Fe de Antioquia</option>
-            <option value="Anza" data-municipio-index="12">Anza</option>
-            <option value="Apartado" data-municipio-index="13">Apartado</option>
-            <option value="Arboletes" data-municipio-index="14">Arboletes</option>
-            <option value="Argelia" data-municipio-index="15">Argelia</option>
-            <option value="Armenia" data-municipio-index="16">Armenia</option>
-            <option value="Barbosa" data-municipio-index="17">Barbosa</option>
-            <option value="Belmira" data-municipio-index="18">Belmira</option>
-            <option value="Bello" data-municipio-index="19">Bello</option>
-            <option value="Betania" data-municipio-index="20">Betania</option>
-            <option value="Betulia" data-municipio-index="21">Betulia</option>
-            <option value="Ciudad Bolivar" data-municipio-index="22">Ciudad Bolivar</option>
-            <option value="Briceño" data-municipio-index="23">Briceño</option>
-            <option value="Buritica" data-municipio-index="24">Buritica</option>
-            <option value="Caceres" data-municipio-index="25">Caceres</option>
-            <option value="Caicedo" data-municipio-index="26">Caicedo</option>
-            <option value="Caldas" data-municipio-index="27">Caldas</option>
-            <option value="Campamento" data-municipio-index="28">Campamento</option>
-            <option value="Cañasgordas" data-municipio-index="29">Cañasgordas</option>
-            <option value="Caracoli" data-municipio-index="30">Caracoli</option>
-            <option value="Caramanta" data-municipio-index="31">Caramanta</option>
-            <option value="Carepa" data-municipio-index="32">Carepa</option>
-            <option value="El Carmen de Viboral" data-municipio-index="33">El Carmen de Viboral</option>
-            <option value="Carolina" data-municipio-index="34">Carolina</option>
-            <option value="Caucasia" data-municipio-index="35">Caucasia</option>
-            <option value="Chigorodo" data-municipio-index="36">Chigorodo</option>
-            <option value="Cisneros" data-municipio-index="37">Cisneros</option>
-            <option value="Cocorna" data-municipio-index="38">Cocorna</option>
-            <option value="Concepcion" data-municipio-index="39">Concepcion</option>
-            <option value="Concordia" data-municipio-index="40">Concordia</option>
-            <option value="Copacabana" data-municipio-index="41">Copacabana</option>
-            <option value="Dabeiba" data-municipio-index="42">Dabeiba</option>
-            <option value="Donmatias" data-municipio-index="43">Donmatias</option>
-            <option value="Ebejico" data-municipio-index="44">Ebejico</option>
-            <option value="El Bagre" data-municipio-index="45">El Bagre</option>
-            <option value="Entrerrios" data-municipio-index="46">Entrerrios</option>
-            <option value="Envigado" data-municipio-index="47">Envigado</option>
-            <option value="Fredonia" data-municipio-index="48">Fredonia</option>
-            <option value="Frontino" data-municipio-index="49">Frontino</option>
-            <option value="Giraldo" data-municipio-index="50">Giraldo</option>
-            <option value="Girardota" data-municipio-index="51">Girardota</option>
-            <option value="Gomez Plata" data-municipio-index="52">Gomez Plata</option>
-            <option value="Granada" data-municipio-index="53">Granada</option>
-            <option value="Guadalupe" data-municipio-index="54">Guadalupe</option>
-            <option value="Guarne" data-municipio-index="55">Guarne</option>
-            <option value="Guatape" data-municipio-index="56">Guatape</option>
-            <option value="Heliconia" data-municipio-index="57">Heliconia</option>
-            <option value="Hispania" data-municipio-index="58">Hispania</option>
-            <option value="Itagui" data-municipio-index="59">Itagui</option>
-            <option value="Ituango" data-municipio-index="60">Ituango</option>
-            <option value="Jardin" data-municipio-index="61">Jardin</option>
-            <option value="Jerico" data-municipio-index="62">Jerico</option>
-            <option value="La Ceja" data-municipio-index="63">La Ceja</option>
-            <option value="La Estrella" data-municipio-index="64">La Estrella</option>
-            <option value="La Pintada" data-municipio-index="65">La Pintada</option>
-            <option value="La Union" data-municipio-index="66">La Union</option>
-            <option value="Liborina" data-municipio-index="67">Liborina</option>
-            <option value="Maceo" data-municipio-index="68">Maceo</option>
-            <option value="Marinilla" data-municipio-index="69">Marinilla</option>
-            <option value="Montebello" data-municipio-index="70">Montebello</option>
-            <option value="Murindo" data-municipio-index="71">Murindo</option>
-            <option value="Mutata" data-municipio-index="72">Mutata</option>
-            <option value="Nariño" data-municipio-index="73">Nariño</option>
-            <option value="Necocli" data-municipio-index="74">Necocli</option>
-            <option value="Nechi" data-municipio-index="75">Nechi</option>
-            <option value="Olaya" data-municipio-index="76">Olaya</option>
-            <option value="Peñol" data-municipio-index="77">Peñol</option>
-            <option value="Peque" data-municipio-index="78">Peque</option>
-            <option value="Pueblorrico" data-municipio-index="79">Pueblorrico</option>
-            <option value="Puerto Berrio" data-municipio-index="80">Puerto Berrio</option>
-            <option value="Puerto Nare" data-municipio-index="81">Puerto Nare</option>
-            <option value="Puerto Triunfo" data-municipio-index="82">Puerto Triunfo</option>
-            <option value="Remedios" data-municipio-index="83">Remedios</option>
-            <option value="Retiro" data-municipio-index="84">Retiro</option>
-            <option value="Rionegro" data-municipio-index="85">Rionegro</option>
-            <option value="Sabanalarga" data-municipio-index="86">Sabanalarga</option>
-            <option value="Sabaneta" data-municipio-index="87">Sabaneta</option>
-            <option value="Salgar" data-municipio-index="88">Salgar</option>
-            <option value="San Andres de Cuerquia" data-municipio-index="89">San Andres de Cuerquia</option>
-            <option value="San Carlos" data-municipio-index="90">San Carlos</option>
-            <option value="San Francisco" data-municipio-index="91">San Francisco</option>
-            <option value="San Jeronimo" data-municipio-index="92">San Jeronimo</option>
-            <option value="San Jose de la Montaña" data-municipio-index="93">San Jose de la Montaña</option>
-            <option value="San Juan de Uraba" data-municipio-index="94">San Juan de Uraba</option>
-            <option value="San Luis" data-municipio-index="95">San Luis</option>
-            <option value="San Pedro de los Milagros" data-municipio-index="96">San Pedro de los Milagros</option>
-            <option value="San Pedro de Uraba" data-municipio-index="97">San Pedro de Uraba</option>
-            <option value="San Rafael" data-municipio-index="98">San Rafael</option>
-            <option value="San Roque" data-municipio-index="99">San Roque</option>
-            <option value="San Vicente Ferrer" data-municipio-index="100">San Vicente Ferrer</option>
-            <option value="Santa Barbara" data-municipio-index="101">Santa Barbara</option>
-            <option value="Santa Rosa de Osos" data-municipio-index="102">Santa Rosa de Osos</option>
-            <option value="Santo Domingo" data-municipio-index="103">Santo Domingo</option>
-            <option value="El Santuario" data-municipio-index="104">El Santuario</option>
-            <option value="Segovia" data-municipio-index="105">Segovia</option>
-            <option value="Sonson" data-municipio-index="106">Sonson</option>
-            <option value="Sopetran" data-municipio-index="107">Sopetran</option>
-            <option value="Tamesis" data-municipio-index="108">Tamesis</option>
-            <option value="Taraza" data-municipio-index="109">Taraza</option>
-            <option value="Tarso" data-municipio-index="110">Tarso</option>
-            <option value="Titiribi" data-municipio-index="111">Titiribi</option>
-            <option value="Toledo" data-municipio-index="112">Toledo</option>
-            <option value="Turbo" data-municipio-index="113">Turbo</option>
-            <option value="Uramita" data-municipio-index="114">Uramita</option>
-            <option value="Urrao" data-municipio-index="115">Urrao</option>
-            <option value="Valdivia" data-municipio-index="116">Valdivia</option>
-            <option value="Valparaiso" data-municipio-index="117">Valparaiso</option>
-            <option value="Vegachi" data-municipio-index="118">Vegachi</option>
-            <option value="Venecia" data-municipio-index="119">Venecia</option>
-            <option value="Vigia del Fuerte" data-municipio-index="120">Vigia del Fuerte</option>
-            <option value="Yali" data-municipio-index="121">Yali</option>
-            <option value="Yarumal" data-municipio-index="122">Yarumal</option>
-            <option value="Yolombo" data-municipio-index="123">Yolombo</option>
-            <option value="Yondo" data-municipio-index="124">Yondo</option>
-            <option value="Zaragoza" data-municipio-index="125">Zaragoza</option>
-            <option value="Barranquilla" data-municipio-index="126">Barranquilla</option>
-            <option value="Baranoa" data-municipio-index="127">Baranoa</option>
-            <option value="Campo de la Cruz" data-municipio-index="128">Campo de la Cruz</option>
-            <option value="Candelaria" data-municipio-index="129">Candelaria</option>
-            <option value="Galapa" data-municipio-index="130">Galapa</option>
-            <option value="Juan de Acosta" data-municipio-index="131">Juan de Acosta</option>
-            <option value="Luruaco" data-municipio-index="132">Luruaco</option>
-            <option value="Malambo" data-municipio-index="133">Malambo</option>
-            <option value="Manati" data-municipio-index="134">Manati</option>
-            <option value="Palmar de Varela" data-municipio-index="135">Palmar de Varela</option>
-            <option value="Piojo" data-municipio-index="136">Piojo</option>
-            <option value="Polonuevo" data-municipio-index="137">Polonuevo</option>
-            <option value="Ponedera" data-municipio-index="138">Ponedera</option>
-            <option value="Puerto Colombia" data-municipio-index="139">Puerto Colombia</option>
-            <option value="Repelon" data-municipio-index="140">Repelon</option>
-            <option value="Sabanagrande" data-municipio-index="141">Sabanagrande</option>
-            <option value="Sabanalarga" data-municipio-index="142">Sabanalarga</option>
-            <option value="Santa Lucia" data-municipio-index="143">Santa Lucia</option>
-            <option value="Santo Tomas" data-municipio-index="144">Santo Tomas</option>
-            <option value="Soledad" data-municipio-index="145">Soledad</option>
-            <option value="Suan" data-municipio-index="146">Suan</option>
-            <option value="Tubara" data-municipio-index="147">Tubara</option>
-            <option value="Usiacuri" data-municipio-index="148">Usiacuri</option>
-            <option value="Bogota, D.C." data-municipio-index="149">Bogota, D.C.</option>
-            <option value="Cartagena de Indias" data-municipio-index="150">Cartagena de Indias</option>
-            <option value="Achi" data-municipio-index="151">Achi</option>
-            <option value="Altos del Rosario" data-municipio-index="152">Altos del Rosario</option>
-            <option value="Arenal" data-municipio-index="153">Arenal</option>
-            <option value="Arjona" data-municipio-index="154">Arjona</option>
-            <option value="Arroyohondo" data-municipio-index="155">Arroyohondo</option>
-            <option value="Barranco de Loba" data-municipio-index="156">Barranco de Loba</option>
-            <option value="Calamar" data-municipio-index="157">Calamar</option>
-            <option value="Cantagallo" data-municipio-index="158">Cantagallo</option>
-            <option value="Cicuco" data-municipio-index="159">Cicuco</option>
-            <option value="Cordoba" data-municipio-index="160">Cordoba</option>
-            <option value="Clemencia" data-municipio-index="161">Clemencia</option>
-            <option value="El Carmen de Bolivar" data-municipio-index="162">El Carmen de Bolivar</option>
-            <option value="El Guamo" data-municipio-index="163">El Guamo</option>
-            <option value="El Peñon" data-municipio-index="164">El Peñon</option>
-            <option value="Hatillo de Loba" data-municipio-index="165">Hatillo de Loba</option>
-            <option value="Magangue" data-municipio-index="166">Magangue</option>
-            <option value="Mahates" data-municipio-index="167">Mahates</option>
-            <option value="Margarita" data-municipio-index="168">Margarita</option>
-            <option value="Maria la Baja" data-municipio-index="169">Maria la Baja</option>
-            <option value="Montecristo" data-municipio-index="170">Montecristo</option>
-            <option value="Santa Cruz de Mompox" data-municipio-index="171">Santa Cruz de Mompox</option>
-            <option value="Morales" data-municipio-index="172">Morales</option>
-            <option value="Norosi" data-municipio-index="173">Norosi</option>
-            <option value="Pinillos" data-municipio-index="174">Pinillos</option>
-            <option value="Regidor" data-municipio-index="175">Regidor</option>
-            <option value="Rio Viejo" data-municipio-index="176">Rio Viejo</option>
-            <option value="San Cristobal" data-municipio-index="177">San Cristobal</option>
-            <option value="San Estanislao" data-municipio-index="178">San Estanislao</option>
-            <option value="San Fernando" data-municipio-index="179">San Fernando</option>
-            <option value="San Jacinto" data-municipio-index="180">San Jacinto</option>
-            <option value="San Jacinto del Cauca" data-municipio-index="181">San Jacinto del Cauca</option>
-            <option value="San Juan Nepomuceno" data-municipio-index="182">San Juan Nepomuceno</option>
-            <option value="San Martin de Loba" data-municipio-index="183">San Martin de Loba</option>
-            <option value="San Pablo" data-municipio-index="184">San Pablo</option>
-            <option value="Santa Catalina" data-municipio-index="185">Santa Catalina</option>
-            <option value="Santa Rosa" data-municipio-index="186">Santa Rosa</option>
-            <option value="Santa Rosa del Sur" data-municipio-index="187">Santa Rosa del Sur</option>
-            <option value="Simiti" data-municipio-index="188">Simiti</option>
-            <option value="Soplaviento" data-municipio-index="189">Soplaviento</option>
-            <option value="Talaigua Nuevo" data-municipio-index="190">Talaigua Nuevo</option>
-            <option value="Tiquisio" data-municipio-index="191">Tiquisio</option>
-            <option value="Turbaco" data-municipio-index="192">Turbaco</option>
-            <option value="Turbana" data-municipio-index="193">Turbana</option>
-            <option value="Villanueva" data-municipio-index="194">Villanueva</option>
-            <option value="Zambrano" data-municipio-index="195">Zambrano</option>
-            <option value="Tunja" data-municipio-index="196">Tunja</option>
-            <option value="Almeida" data-municipio-index="197">Almeida</option>
-            <option value="Aquitania" data-municipio-index="198">Aquitania</option>
-            <option value="Arcabuco" data-municipio-index="199">Arcabuco</option>
-            <option value="Belen" data-municipio-index="200">Belen</option>
-            <option value="Berbeo" data-municipio-index="201">Berbeo</option>
-            <option value="Beteitiva" data-municipio-index="202">Beteitiva</option>
-            <option value="Boavita" data-municipio-index="203">Boavita</option>
-            <option value="Boyaca" data-municipio-index="204">Boyaca</option>
-            <option value="Briceño" data-municipio-index="205">Briceño</option>
-            <option value="Buenavista" data-municipio-index="206">Buenavista</option>
-            <option value="Busbanza" data-municipio-index="207">Busbanza</option>
-            <option value="Caldas" data-municipio-index="208">Caldas</option>
-            <option value="Campohermoso" data-municipio-index="209">Campohermoso</option>
-            <option value="Cerinza" data-municipio-index="210">Cerinza</option>
-            <option value="Chinavita" data-municipio-index="211">Chinavita</option>
-            <option value="Chiquinquira" data-municipio-index="212">Chiquinquira</option>
-            <option value="Chiscas" data-municipio-index="213">Chiscas</option>
-            <option value="Chita" data-municipio-index="214">Chita</option>
-            <option value="Chitaraque" data-municipio-index="215">Chitaraque</option>
-            <option value="Chivata" data-municipio-index="216">Chivata</option>
-            <option value="Cienega" data-municipio-index="217">Cienega</option>
-            <option value="Combita" data-municipio-index="218">Combita</option>
-            <option value="Coper" data-municipio-index="219">Coper</option>
-            <option value="Corrales" data-municipio-index="220">Corrales</option>
-            <option value="Covarachia" data-municipio-index="221">Covarachia</option>
-            <option value="Cubara" data-municipio-index="222">Cubara</option>
-            <option value="Cucaita" data-municipio-index="223">Cucaita</option>
-            <option value="Cuitiva" data-municipio-index="224">Cuitiva</option>
-            <option value="Chiquiza" data-municipio-index="225">Chiquiza</option>
-            <option value="Chivor" data-municipio-index="226">Chivor</option>
-            <option value="Duitama" data-municipio-index="227">Duitama</option>
-            <option value="El Cocuy" data-municipio-index="228">El Cocuy</option>
-            <option value="El Espino" data-municipio-index="229">El Espino</option>
-            <option value="Firavitoba" data-municipio-index="230">Firavitoba</option>
-            <option value="Floresta" data-municipio-index="231">Floresta</option>
-            <option value="Gachantiva" data-municipio-index="232">Gachantiva</option>
-            <option value="Gameza" data-municipio-index="233">Gameza</option>
-            <option value="Garagoa" data-municipio-index="234">Garagoa</option>
-            <option value="Guacamayas" data-municipio-index="235">Guacamayas</option>
-            <option value="Guateque" data-municipio-index="236">Guateque</option>
-            <option value="Guayata" data-municipio-index="237">Guayata</option>
-            <option value="Guican de la Sierra" data-municipio-index="238">Guican de la Sierra</option>
-            <option value="Iza" data-municipio-index="239">Iza</option>
-            <option value="Jenesano" data-municipio-index="240">Jenesano</option>
-            <option value="Jerico" data-municipio-index="241">Jerico</option>
-            <option value="Labranzagrande" data-municipio-index="242">Labranzagrande</option>
-            <option value="La Capilla" data-municipio-index="243">La Capilla</option>
-            <option value="La Victoria" data-municipio-index="244">La Victoria</option>
-            <option value="La Uvita" data-municipio-index="245">La Uvita</option>
-            <option value="Villa de Leyva" data-municipio-index="246">Villa de Leyva</option>
-            <option value="Macanal" data-municipio-index="247">Macanal</option>
-            <option value="Maripi" data-municipio-index="248">Maripi</option>
-            <option value="Miraflores" data-municipio-index="249">Miraflores</option>
-            <option value="Mongua" data-municipio-index="250">Mongua</option>
-            <option value="Mongui" data-municipio-index="251">Mongui</option>
-            <option value="Moniquira" data-municipio-index="252">Moniquira</option>
-            <option value="Motavita" data-municipio-index="253">Motavita</option>
-            <option value="Muzo" data-municipio-index="254">Muzo</option>
-            <option value="Nobsa" data-municipio-index="255">Nobsa</option>
-            <option value="Nuevo Colon" data-municipio-index="256">Nuevo Colon</option>
-            <option value="Oicata" data-municipio-index="257">Oicata</option>
-            <option value="Otanche" data-municipio-index="258">Otanche</option>
-            <option value="Pachavita" data-municipio-index="259">Pachavita</option>
-            <option value="Paez" data-municipio-index="260">Paez</option>
-            <option value="Paipa" data-municipio-index="261">Paipa</option>
-            <option value="Pajarito" data-municipio-index="262">Pajarito</option>
-            <option value="Panqueba" data-municipio-index="263">Panqueba</option>
-            <option value="Pauna" data-municipio-index="264">Pauna</option>
-            <option value="Paya" data-municipio-index="265">Paya</option>
-            <option value="Paz de Rio" data-municipio-index="266">Paz de Rio</option>
-            <option value="Pesca" data-municipio-index="267">Pesca</option>
-            <option value="Pisba" data-municipio-index="268">Pisba</option>
-            <option value="Puerto Boyaca" data-municipio-index="269">Puerto Boyaca</option>
-            <option value="Quipama" data-municipio-index="270">Quipama</option>
-            <option value="Ramiriqui" data-municipio-index="271">Ramiriqui</option>
-            <option value="Raquira" data-municipio-index="272">Raquira</option>
-            <option value="Rondon" data-municipio-index="273">Rondon</option>
-            <option value="Saboya" data-municipio-index="274">Saboya</option>
-            <option value="Sachica" data-municipio-index="275">Sachica</option>
-            <option value="Samaca" data-municipio-index="276">Samaca</option>
-            <option value="San Eduardo" data-municipio-index="277">San Eduardo</option>
-            <option value="San Jose de Pare" data-municipio-index="278">San Jose de Pare</option>
-            <option value="San Luis de Gaceno" data-municipio-index="279">San Luis de Gaceno</option>
-            <option value="San Mateo" data-municipio-index="280">San Mateo</option>
-            <option value="San Miguel de Sema" data-municipio-index="281">San Miguel de Sema</option>
-            <option value="San Pablo de Borbur" data-municipio-index="282">San Pablo de Borbur</option>
-            <option value="Santana" data-municipio-index="283">Santana</option>
-            <option value="Santa Maria" data-municipio-index="284">Santa Maria</option>
-            <option value="Santa Rosa de Viterbo" data-municipio-index="285">Santa Rosa de Viterbo</option>
-            <option value="Santa Sofia" data-municipio-index="286">Santa Sofia</option>
-            <option value="Sativanorte" data-municipio-index="287">Sativanorte</option>
-            <option value="Sativasur" data-municipio-index="288">Sativasur</option>
-            <option value="Siachoque" data-municipio-index="289">Siachoque</option>
-            <option value="Soata" data-municipio-index="290">Soata</option>
-            <option value="Socota" data-municipio-index="291">Socota</option>
-            <option value="Socha" data-municipio-index="292">Socha</option>
-            <option value="Sogamoso" data-municipio-index="293">Sogamoso</option>
-            <option value="Somondoco" data-municipio-index="294">Somondoco</option>
-            <option value="Sora" data-municipio-index="295">Sora</option>
-            <option value="Sotaquira" data-municipio-index="296">Sotaquira</option>
-            <option value="Soraca" data-municipio-index="297">Soraca</option>
-            <option value="Susacon" data-municipio-index="298">Susacon</option>
-            <option value="Sutamarchan" data-municipio-index="299">Sutamarchan</option>
-            <option value="Sutatenza" data-municipio-index="300">Sutatenza</option>
-            <option value="Tasco" data-municipio-index="301">Tasco</option>
-            <option value="Tenza" data-municipio-index="302">Tenza</option>
-            <option value="Tibana" data-municipio-index="303">Tibana</option>
-            <option value="Tibasosa" data-municipio-index="304">Tibasosa</option>
-            <option value="Tinjaca" data-municipio-index="305">Tinjaca</option>
-            <option value="Tipacoque" data-municipio-index="306">Tipacoque</option>
-            <option value="Toca" data-municipio-index="307">Toca</option>
-            <option value="Togui" data-municipio-index="308">Togui</option>
-            <option value="Topaga" data-municipio-index="309">Topaga</option>
-            <option value="Tota" data-municipio-index="310">Tota</option>
-            <option value="Tunungua" data-municipio-index="311">Tunungua</option>
-            <option value="Turmeque" data-municipio-index="312">Turmeque</option>
-            <option value="Tuta" data-municipio-index="313">Tuta</option>
-            <option value="Tutaza" data-municipio-index="314">Tutaza</option>
-            <option value="Umbita" data-municipio-index="315">Umbita</option>
-            <option value="Ventaquemada" data-municipio-index="316">Ventaquemada</option>
-            <option value="Viracacha" data-municipio-index="317">Viracacha</option>
-            <option value="Zetaquira" data-municipio-index="318">Zetaquira</option>
-            <option value="Manizales" data-municipio-index="319">Manizales</option>
-            <option value="Aguadas" data-municipio-index="320">Aguadas</option>
-            <option value="Anserma" data-municipio-index="321">Anserma</option>
-            <option value="Aranzazu" data-municipio-index="322">Aranzazu</option>
-            <option value="Belalcazar" data-municipio-index="323">Belalcazar</option>
-            <option value="Chinchina" data-municipio-index="324">Chinchina</option>
-            <option value="Filadelfia" data-municipio-index="325">Filadelfia</option>
-            <option value="La Dorada" data-municipio-index="326">La Dorada</option>
-            <option value="La Merced" data-municipio-index="327">La Merced</option>
-            <option value="Manzanares" data-municipio-index="328">Manzanares</option>
-            <option value="Marmato" data-municipio-index="329">Marmato</option>
-            <option value="Marquetalia" data-municipio-index="330">Marquetalia</option>
-            <option value="Marulanda" data-municipio-index="331">Marulanda</option>
-            <option value="Neira" data-municipio-index="332">Neira</option>
-            <option value="Norcasia" data-municipio-index="333">Norcasia</option>
-            <option value="Pacora" data-municipio-index="334">Pacora</option>
-            <option value="Palestina" data-municipio-index="335">Palestina</option>
-            <option value="Pensilvania" data-municipio-index="336">Pensilvania</option>
-            <option value="Riosucio" data-municipio-index="337">Riosucio</option>
-            <option value="Risaralda" data-municipio-index="338">Risaralda</option>
-            <option value="Salamina" data-municipio-index="339">Salamina</option>
-            <option value="Samana" data-municipio-index="340">Samana</option>
-            <option value="San Jose" data-municipio-index="341">San Jose</option>
-            <option value="Supia" data-municipio-index="342">Supia</option>
-            <option value="Victoria" data-municipio-index="343">Victoria</option>
-            <option value="Villamaria" data-municipio-index="344">Villamaria</option>
-            <option value="Viterbo" data-municipio-index="345">Viterbo</option>
-            <option value="Florencia" data-municipio-index="346">Florencia</option>
-            <option value="Albania" data-municipio-index="347">Albania</option>
-            <option value="Belen de los Andaquies" data-municipio-index="348">Belen de los Andaquies</option>
-            <option value="Cartagena del Chaira" data-municipio-index="349">Cartagena del Chaira</option>
-            <option value="Curillo" data-municipio-index="350">Curillo</option>
-            <option value="El Doncello" data-municipio-index="351">El Doncello</option>
-            <option value="El Paujil" data-municipio-index="352">El Paujil</option>
-            <option value="La Montañita" data-municipio-index="353">La Montañita</option>
-            <option value="Milan" data-municipio-index="354">Milan</option>
-            <option value="Morelia" data-municipio-index="355">Morelia</option>
-            <option value="Puerto Rico" data-municipio-index="356">Puerto Rico</option>
-            <option value="San Jose del Fragua" data-municipio-index="357">San Jose del Fragua</option>
-            <option value="San Vicente del Caguan" data-municipio-index="358">San Vicente del Caguan</option>
-            <option value="Solano" data-municipio-index="359">Solano</option>
-            <option value="Solita" data-municipio-index="360">Solita</option>
-            <option value="Valparaiso" data-municipio-index="361">Valparaiso</option>
-            <option value="Popayan" data-municipio-index="362">Popayan</option>
-            <option value="Almaguer" data-municipio-index="363">Almaguer</option>
-            <option value="Argelia" data-municipio-index="364">Argelia</option>
-            <option value="Balboa" data-municipio-index="365">Balboa</option>
-            <option value="Bolivar" data-municipio-index="366">Bolivar</option>
-            <option value="Buenos Aires" data-municipio-index="367">Buenos Aires</option>
-            <option value="Cajibio" data-municipio-index="368">Cajibio</option>
-            <option value="Caldono" data-municipio-index="369">Caldono</option>
-            <option value="Caloto" data-municipio-index="370">Caloto</option>
-            <option value="Corinto" data-municipio-index="371">Corinto</option>
-            <option value="El Tambo" data-municipio-index="372">El Tambo</option>
-            <option value="Florencia" data-municipio-index="373">Florencia</option>
-            <option value="Guachene" data-municipio-index="374">Guachene</option>
-            <option value="Guapi" data-municipio-index="375">Guapi</option>
-            <option value="Inza" data-municipio-index="376">Inza</option>
-            <option value="Jambalo" data-municipio-index="377">Jambalo</option>
-            <option value="La Sierra" data-municipio-index="378">La Sierra</option>
-            <option value="La Vega" data-municipio-index="379">La Vega</option>
-            <option value="Lopez de Micay" data-municipio-index="380">Lopez de Micay</option>
-            <option value="Mercaderes" data-municipio-index="381">Mercaderes</option>
-            <option value="Miranda" data-municipio-index="382">Miranda</option>
-            <option value="Morales" data-municipio-index="383">Morales</option>
-            <option value="Padilla" data-municipio-index="384">Padilla</option>
-            <option value="Paez" data-municipio-index="385">Paez</option>
-            <option value="Patia" data-municipio-index="386">Patia</option>
-            <option value="Piamonte" data-municipio-index="387">Piamonte</option>
-            <option value="Piendamo - Tunia" data-municipio-index="388">Piendamo - Tunia</option>
-            <option value="Puerto Tejada" data-municipio-index="389">Puerto Tejada</option>
-            <option value="Purace" data-municipio-index="390">Purace</option>
-            <option value="Rosas" data-municipio-index="391">Rosas</option>
-            <option value="San Sebastian" data-municipio-index="392">San Sebastian</option>
-            <option value="Santander de Quilichao" data-municipio-index="393">Santander de Quilichao</option>
-            <option value="Santa Rosa" data-municipio-index="394">Santa Rosa</option>
-            <option value="Silvia" data-municipio-index="395">Silvia</option>
-            <option value="Sotara - Paispamba" data-municipio-index="396">Sotara - Paispamba</option>
-            <option value="Suarez" data-municipio-index="397">Suarez</option>
-            <option value="Sucre" data-municipio-index="398">Sucre</option>
-            <option value="Timbio" data-municipio-index="399">Timbio</option>
-            <option value="Timbiqui" data-municipio-index="400">Timbiqui</option>
-            <option value="Toribio" data-municipio-index="401">Toribio</option>
-            <option value="Totoro" data-municipio-index="402">Totoro</option>
-            <option value="Villa Rica" data-municipio-index="403">Villa Rica</option>
-            <option value="Valledupar" data-municipio-index="404">Valledupar</option>
-            <option value="Aguachica" data-municipio-index="405">Aguachica</option>
-            <option value="Agustin Codazzi" data-municipio-index="406">Agustin Codazzi</option>
-            <option value="Astrea" data-municipio-index="407">Astrea</option>
-            <option value="Becerril" data-municipio-index="408">Becerril</option>
-            <option value="Bosconia" data-municipio-index="409">Bosconia</option>
-            <option value="Chimichagua" data-municipio-index="410">Chimichagua</option>
-            <option value="Chiriguana" data-municipio-index="411">Chiriguana</option>
-            <option value="Curumani" data-municipio-index="412">Curumani</option>
-            <option value="El Copey" data-municipio-index="413">El Copey</option>
-            <option value="El Paso" data-municipio-index="414">El Paso</option>
-            <option value="Gamarra" data-municipio-index="415">Gamarra</option>
-            <option value="Gonzalez" data-municipio-index="416">Gonzalez</option>
-            <option value="La Gloria" data-municipio-index="417">La Gloria</option>
-            <option value="La Jagua de Ibirico" data-municipio-index="418">La Jagua de Ibirico</option>
-            <option value="Manaure Balcon del Cesar" data-municipio-index="419">Manaure Balcon del Cesar</option>
-            <option value="Pailitas" data-municipio-index="420">Pailitas</option>
-            <option value="Pelaya" data-municipio-index="421">Pelaya</option>
-            <option value="Pueblo Bello" data-municipio-index="422">Pueblo Bello</option>
-            <option value="Rio de Oro" data-municipio-index="423">Rio de Oro</option>
-            <option value="La Paz" data-municipio-index="424">La Paz</option>
-            <option value="San Alberto" data-municipio-index="425">San Alberto</option>
-            <option value="San Diego" data-municipio-index="426">San Diego</option>
-            <option value="San Martin" data-municipio-index="427">San Martin</option>
-            <option value="Tamalameque" data-municipio-index="428">Tamalameque</option>
-            <option value="Monteria" data-municipio-index="429">Monteria</option>
-            <option value="Ayapel" data-municipio-index="430">Ayapel</option>
-            <option value="Buenavista" data-municipio-index="431">Buenavista</option>
-            <option value="Canalete" data-municipio-index="432">Canalete</option>
-            <option value="Cerete" data-municipio-index="433">Cerete</option>
-            <option value="Chima" data-municipio-index="434">Chima</option>
-            <option value="Chinu" data-municipio-index="435">Chinu</option>
-            <option value="Cienaga de Oro" data-municipio-index="436">Cienaga de Oro</option>
-            <option value="Cotorra" data-municipio-index="437">Cotorra</option>
-            <option value="La Apartada" data-municipio-index="438">La Apartada</option>
-            <option value="Lorica" data-municipio-index="439">Lorica</option>
-            <option value="Los Cordobas" data-municipio-index="440">Los Cordobas</option>
-            <option value="Momil" data-municipio-index="441">Momil</option>
-            <option value="Montelibano" data-municipio-index="442">Montelibano</option>
-            <option value="Moñitos" data-municipio-index="443">Moñitos</option>
-            <option value="Planeta Rica" data-municipio-index="444">Planeta Rica</option>
-            <option value="Pueblo Nuevo" data-municipio-index="445">Pueblo Nuevo</option>
-            <option value="Puerto Escondido" data-municipio-index="446">Puerto Escondido</option>
-            <option value="Puerto Libertador" data-municipio-index="447">Puerto Libertador</option>
-            <option value="Purisima de la Concepcion" data-municipio-index="448">Purisima de la Concepcion</option>
-            <option value="Sahagun" data-municipio-index="449">Sahagun</option>
-            <option value="San Andres de Sotavento" data-municipio-index="450">San Andres de Sotavento</option>
-            <option value="San Antero" data-municipio-index="451">San Antero</option>
-            <option value="San Bernardo del Viento" data-municipio-index="452">San Bernardo del Viento</option>
-            <option value="San Carlos" data-municipio-index="453">San Carlos</option>
-            <option value="San Jose de Ure" data-municipio-index="454">San Jose de Ure</option>
-            <option value="San Pelayo" data-municipio-index="455">San Pelayo</option>
-            <option value="Tierralta" data-municipio-index="456">Tierralta</option>
-            <option value="Tuchin" data-municipio-index="457">Tuchin</option>
-            <option value="Valencia" data-municipio-index="458">Valencia</option>
-            <option value="Agua de Dios" data-municipio-index="459">Agua de Dios</option>
-            <option value="Alban" data-municipio-index="460">Alban</option>
-            <option value="Anapoima" data-municipio-index="461">Anapoima</option>
-            <option value="Anolaima" data-municipio-index="462">Anolaima</option>
-            <option value="Arbelaez" data-municipio-index="463">Arbelaez</option>
-            <option value="Beltran" data-municipio-index="464">Beltran</option>
-            <option value="Bituima" data-municipio-index="465">Bituima</option>
-            <option value="Bojaca" data-municipio-index="466">Bojaca</option>
-            <option value="Cabrera" data-municipio-index="467">Cabrera</option>
-            <option value="Cachipay" data-municipio-index="468">Cachipay</option>
-            <option value="Cajica" data-municipio-index="469">Cajica</option>
-            <option value="Caparrapi" data-municipio-index="470">Caparrapi</option>
-            <option value="Caqueza" data-municipio-index="471">Caqueza</option>
-            <option value="Carmen de Carupa" data-municipio-index="472">Carmen de Carupa</option>
-            <option value="Chaguani" data-municipio-index="473">Chaguani</option>
-            <option value="Chia" data-municipio-index="474">Chia</option>
-            <option value="Chipaque" data-municipio-index="475">Chipaque</option>
-            <option value="Choachi" data-municipio-index="476">Choachi</option>
-            <option value="Choconta" data-municipio-index="477">Choconta</option>
-            <option value="Cogua" data-municipio-index="478">Cogua</option>
-            <option value="Cota" data-municipio-index="479">Cota</option>
-            <option value="Cucunuba" data-municipio-index="480">Cucunuba</option>
-            <option value="El Colegio" data-municipio-index="481">El Colegio</option>
-            <option value="El Peñon" data-municipio-index="482">El Peñon</option>
-            <option value="El Rosal" data-municipio-index="483">El Rosal</option>
-            <option value="Facatativa" data-municipio-index="484">Facatativa</option>
-            <option value="Fomeque" data-municipio-index="485">Fomeque</option>
-            <option value="Fosca" data-municipio-index="486">Fosca</option>
-            <option value="Funza" data-municipio-index="487">Funza</option>
-            <option value="Fuquene" data-municipio-index="488">Fuquene</option>
-            <option value="Fusagasuga" data-municipio-index="489">Fusagasuga</option>
-            <option value="Gachala" data-municipio-index="490">Gachala</option>
-            <option value="Gachancipa" data-municipio-index="491">Gachancipa</option>
-            <option value="Gacheta" data-municipio-index="492">Gacheta</option>
-            <option value="Gama" data-municipio-index="493">Gama</option>
-            <option value="Girardot" data-municipio-index="494">Girardot</option>
-            <option value="Granada" data-municipio-index="495">Granada</option>
-            <option value="Guacheta" data-municipio-index="496">Guacheta</option>
-            <option value="Guaduas" data-municipio-index="497">Guaduas</option>
-            <option value="Guasca" data-municipio-index="498">Guasca</option>
-            <option value="Guataqui" data-municipio-index="499">Guataqui</option>
-            <option value="Guatavita" data-municipio-index="500">Guatavita</option>
-            <option value="Guayabal de Siquima" data-municipio-index="501">Guayabal de Siquima</option>
-            <option value="Guayabetal" data-municipio-index="502">Guayabetal</option>
-            <option value="Gutierrez" data-municipio-index="503">Gutierrez</option>
-            <option value="Jerusalen" data-municipio-index="504">Jerusalen</option>
-            <option value="Junin" data-municipio-index="505">Junin</option>
-            <option value="La Calera" data-municipio-index="506">La Calera</option>
-            <option value="La Mesa" data-municipio-index="507">La Mesa</option>
-            <option value="La Palma" data-municipio-index="508">La Palma</option>
-            <option value="La Peña" data-municipio-index="509">La Peña</option>
-            <option value="La Vega" data-municipio-index="510">La Vega</option>
-            <option value="Lenguazaque" data-municipio-index="511">Lenguazaque</option>
-            <option value="Macheta" data-municipio-index="512">Macheta</option>
-            <option value="Madrid" data-municipio-index="513">Madrid</option>
-            <option value="Manta" data-municipio-index="514">Manta</option>
-            <option value="Medina" data-municipio-index="515">Medina</option>
-            <option value="Mosquera" data-municipio-index="516">Mosquera</option>
-            <option value="Nariño" data-municipio-index="517">Nariño</option>
-            <option value="Nemocon" data-municipio-index="518">Nemocon</option>
-            <option value="Nilo" data-municipio-index="519">Nilo</option>
-            <option value="Nimaima" data-municipio-index="520">Nimaima</option>
-            <option value="Nocaima" data-municipio-index="521">Nocaima</option>
-            <option value="Venecia" data-municipio-index="522">Venecia</option>
-            <option value="Pacho" data-municipio-index="523">Pacho</option>
-            <option value="Paime" data-municipio-index="524">Paime</option>
-            <option value="Pandi" data-municipio-index="525">Pandi</option>
-            <option value="Paratebueno" data-municipio-index="526">Paratebueno</option>
-            <option value="Pasca" data-municipio-index="527">Pasca</option>
-            <option value="Puerto Salgar" data-municipio-index="528">Puerto Salgar</option>
-            <option value="Puli" data-municipio-index="529">Puli</option>
-            <option value="Quebradanegra" data-municipio-index="530">Quebradanegra</option>
-            <option value="Quetame" data-municipio-index="531">Quetame</option>
-            <option value="Quipile" data-municipio-index="532">Quipile</option>
-            <option value="Apulo" data-municipio-index="533">Apulo</option>
-            <option value="Ricaurte" data-municipio-index="534">Ricaurte</option>
-            <option value="San Antonio del Tequendama" data-municipio-index="535">San Antonio del Tequendama</option>
-            <option value="San Bernardo" data-municipio-index="536">San Bernardo</option>
-            <option value="San Cayetano" data-municipio-index="537">San Cayetano</option>
-            <option value="San Francisco" data-municipio-index="538">San Francisco</option>
-            <option value="San Juan de Rioseco" data-municipio-index="539">San Juan de Rioseco</option>
-            <option value="Sasaima" data-municipio-index="540">Sasaima</option>
-            <option value="Sesquile" data-municipio-index="541">Sesquile</option>
-            <option value="Sibate" data-municipio-index="542">Sibate</option>
-            <option value="Silvania" data-municipio-index="543">Silvania</option>
-            <option value="Simijaca" data-municipio-index="544">Simijaca</option>
-            <option value="Soacha" data-municipio-index="545">Soacha</option>
-            <option value="Sopo" data-municipio-index="546">Sopo</option>
-            <option value="Subachoque" data-municipio-index="547">Subachoque</option>
-            <option value="Suesca" data-municipio-index="548">Suesca</option>
-            <option value="Supata" data-municipio-index="549">Supata</option>
-            <option value="Susa" data-municipio-index="550">Susa</option>
-            <option value="Sutatausa" data-municipio-index="551">Sutatausa</option>
-            <option value="Tabio" data-municipio-index="552">Tabio</option>
-            <option value="Tausa" data-municipio-index="553">Tausa</option>
-            <option value="Tena" data-municipio-index="554">Tena</option>
-            <option value="Tenjo" data-municipio-index="555">Tenjo</option>
-            <option value="Tibacuy" data-municipio-index="556">Tibacuy</option>
-            <option value="Tibirita" data-municipio-index="557">Tibirita</option>
-            <option value="Tocaima" data-municipio-index="558">Tocaima</option>
-            <option value="Tocancipa" data-municipio-index="559">Tocancipa</option>
-            <option value="Topaipi" data-municipio-index="560">Topaipi</option>
-            <option value="Ubala" data-municipio-index="561">Ubala</option>
-            <option value="Ubaque" data-municipio-index="562">Ubaque</option>
-            <option value="Villa de San Diego de Ubate" data-municipio-index="563">Villa de San Diego de Ubate</option>
-            <option value="Une" data-municipio-index="564">Une</option>
-            <option value="Utica" data-municipio-index="565">Utica</option>
-            <option value="Vergara" data-municipio-index="566">Vergara</option>
-            <option value="Viani" data-municipio-index="567">Viani</option>
-            <option value="Villagomez" data-municipio-index="568">Villagomez</option>
-            <option value="Villapinzon" data-municipio-index="569">Villapinzon</option>
-            <option value="Villeta" data-municipio-index="570">Villeta</option>
-            <option value="Viota" data-municipio-index="571">Viota</option>
-            <option value="Yacopi" data-municipio-index="572">Yacopi</option>
-            <option value="Zipacon" data-municipio-index="573">Zipacon</option>
-            <option value="Zipaquira" data-municipio-index="574">Zipaquira</option>
-            <option value="Quibdo" data-municipio-index="575">Quibdo</option>
-            <option value="Acandi" data-municipio-index="576">Acandi</option>
-            <option value="Alto Baudo" data-municipio-index="577">Alto Baudo</option>
-            <option value="Atrato" data-municipio-index="578">Atrato</option>
-            <option value="Bagado" data-municipio-index="579">Bagado</option>
-            <option value="Bahia Solano" data-municipio-index="580">Bahia Solano</option>
-            <option value="Bajo Baudo" data-municipio-index="581">Bajo Baudo</option>
-            <option value="Bojaya" data-municipio-index="582">Bojaya</option>
-            <option value="El Canton del San Pablo" data-municipio-index="583">El Canton del San Pablo</option>
-            <option value="Carmen del Darien" data-municipio-index="584">Carmen del Darien</option>
-            <option value="Certegui" data-municipio-index="585">Certegui</option>
-            <option value="Condoto" data-municipio-index="586">Condoto</option>
-            <option value="El Carmen de Atrato" data-municipio-index="587">El Carmen de Atrato</option>
-            <option value="El Litoral del San Juan" data-municipio-index="588">El Litoral del San Juan</option>
-            <option value="Istmina" data-municipio-index="589">Istmina</option>
-            <option value="Jurado" data-municipio-index="590">Jurado</option>
-            <option value="Lloro" data-municipio-index="591">Lloro</option>
-            <option value="Medio Atrato" data-municipio-index="592">Medio Atrato</option>
-            <option value="Medio Baudo" data-municipio-index="593">Medio Baudo</option>
-            <option value="Medio San Juan" data-municipio-index="594">Medio San Juan</option>
-            <option value="Novita" data-municipio-index="595">Novita</option>
-            <option value="Nuevo Belen de Bajira" data-municipio-index="596">Nuevo Belen de Bajira</option>
-            <option value="Nuqui" data-municipio-index="597">Nuqui</option>
-            <option value="Rio Iro" data-municipio-index="598">Rio Iro</option>
-            <option value="Rio Quito" data-municipio-index="599">Rio Quito</option>
-            <option value="Riosucio" data-municipio-index="600">Riosucio</option>
-            <option value="San Jose del Palmar" data-municipio-index="601">San Jose del Palmar</option>
-            <option value="Sipi" data-municipio-index="602">Sipi</option>
-            <option value="Tado" data-municipio-index="603">Tado</option>
-            <option value="Unguia" data-municipio-index="604">Unguia</option>
-            <option value="Union Panamericana" data-municipio-index="605">Union Panamericana</option>
-            <option value="Neiva" data-municipio-index="606">Neiva</option>
-            <option value="Acevedo" data-municipio-index="607">Acevedo</option>
-            <option value="Agrado" data-municipio-index="608">Agrado</option>
-            <option value="Aipe" data-municipio-index="609">Aipe</option>
-            <option value="Algeciras" data-municipio-index="610">Algeciras</option>
-            <option value="Altamira" data-municipio-index="611">Altamira</option>
-            <option value="Baraya" data-municipio-index="612">Baraya</option>
-            <option value="Campoalegre" data-municipio-index="613">Campoalegre</option>
-            <option value="Colombia" data-municipio-index="614">Colombia</option>
-            <option value="Elias" data-municipio-index="615">Elias</option>
-            <option value="Garzon" data-municipio-index="616">Garzon</option>
-            <option value="Gigante" data-municipio-index="617">Gigante</option>
-            <option value="Guadalupe" data-municipio-index="618">Guadalupe</option>
-            <option value="Hobo" data-municipio-index="619">Hobo</option>
-            <option value="Iquira" data-municipio-index="620">Iquira</option>
-            <option value="Isnos" data-municipio-index="621">Isnos</option>
-            <option value="La Argentina" data-municipio-index="622">La Argentina</option>
-            <option value="La Plata" data-municipio-index="623">La Plata</option>
-            <option value="Nataga" data-municipio-index="624">Nataga</option>
-            <option value="Oporapa" data-municipio-index="625">Oporapa</option>
-            <option value="Paicol" data-municipio-index="626">Paicol</option>
-            <option value="Palermo" data-municipio-index="627">Palermo</option>
-            <option value="Palestina" data-municipio-index="628">Palestina</option>
-            <option value="Pital" data-municipio-index="629">Pital</option>
-            <option value="Pitalito" data-municipio-index="630">Pitalito</option>
-            <option value="Rivera" data-municipio-index="631">Rivera</option>
-            <option value="Saladoblanco" data-municipio-index="632">Saladoblanco</option>
-            <option value="San Agustin" data-municipio-index="633">San Agustin</option>
-            <option value="Santa Maria" data-municipio-index="634">Santa Maria</option>
-            <option value="Suaza" data-municipio-index="635">Suaza</option>
-            <option value="Tarqui" data-municipio-index="636">Tarqui</option>
-            <option value="Tesalia" data-municipio-index="637">Tesalia</option>
-            <option value="Tello" data-municipio-index="638">Tello</option>
-            <option value="Teruel" data-municipio-index="639">Teruel</option>
-            <option value="Timana" data-municipio-index="640">Timana</option>
-            <option value="Villavieja" data-municipio-index="641">Villavieja</option>
-            <option value="Yaguara" data-municipio-index="642">Yaguara</option>
-            <option value="Riohacha" data-municipio-index="643">Riohacha</option>
-            <option value="Albania" data-municipio-index="644">Albania</option>
-            <option value="Barrancas" data-municipio-index="645">Barrancas</option>
-            <option value="Dibulla" data-municipio-index="646">Dibulla</option>
-            <option value="Distraccion" data-municipio-index="647">Distraccion</option>
-            <option value="El Molino" data-municipio-index="648">El Molino</option>
-            <option value="Fonseca" data-municipio-index="649">Fonseca</option>
-            <option value="Hatonuevo" data-municipio-index="650">Hatonuevo</option>
-            <option value="La Jagua del Pilar" data-municipio-index="651">La Jagua del Pilar</option>
-            <option value="Maicao" data-municipio-index="652">Maicao</option>
-            <option value="Manaure" data-municipio-index="653">Manaure</option>
-            <option value="San Juan del Cesar" data-municipio-index="654">San Juan del Cesar</option>
-            <option value="Uribia" data-municipio-index="655">Uribia</option>
-            <option value="Urumita" data-municipio-index="656">Urumita</option>
-            <option value="Villanueva" data-municipio-index="657">Villanueva</option>
-            <option value="Santa Marta" data-municipio-index="658">Santa Marta</option>
-            <option value="Algarrobo" data-municipio-index="659">Algarrobo</option>
-            <option value="Aracataca" data-municipio-index="660">Aracataca</option>
-            <option value="Ariguani" data-municipio-index="661">Ariguani</option>
-            <option value="Cerro de San Antonio" data-municipio-index="662">Cerro de San Antonio</option>
-            <option value="Chivolo" data-municipio-index="663">Chivolo</option>
-            <option value="Cienaga" data-municipio-index="664">Cienaga</option>
-            <option value="Concordia" data-municipio-index="665">Concordia</option>
-            <option value="El Banco" data-municipio-index="666">El Banco</option>
-            <option value="El Piñon" data-municipio-index="667">El Piñon</option>
-            <option value="El Reten" data-municipio-index="668">El Reten</option>
-            <option value="Fundacion" data-municipio-index="669">Fundacion</option>
-            <option value="Guamal" data-municipio-index="670">Guamal</option>
-            <option value="Nueva Granada" data-municipio-index="671">Nueva Granada</option>
-            <option value="Pedraza" data-municipio-index="672">Pedraza</option>
-            <option value="Pijiño del Carmen" data-municipio-index="673">Pijiño del Carmen</option>
-            <option value="Pivijay" data-municipio-index="674">Pivijay</option>
-            <option value="Plato" data-municipio-index="675">Plato</option>
-            <option value="Puebloviejo" data-municipio-index="676">Puebloviejo</option>
-            <option value="Remolino" data-municipio-index="677">Remolino</option>
-            <option value="Sabanas de San Angel" data-municipio-index="678">Sabanas de San Angel</option>
-            <option value="Salamina" data-municipio-index="679">Salamina</option>
-            <option value="San Sebastian de Buenavista" data-municipio-index="680">San Sebastian de Buenavista</option>
-            <option value="San Zenon" data-municipio-index="681">San Zenon</option>
-            <option value="Santa Ana" data-municipio-index="682">Santa Ana</option>
-            <option value="Santa Barbara de Pinto" data-municipio-index="683">Santa Barbara de Pinto</option>
-            <option value="Sitionuevo" data-municipio-index="684">Sitionuevo</option>
-            <option value="Tenerife" data-municipio-index="685">Tenerife</option>
-            <option value="Zapayan" data-municipio-index="686">Zapayan</option>
-            <option value="Zona Bananera" data-municipio-index="687">Zona Bananera</option>
-            <option value="Villavicencio" data-municipio-index="688">Villavicencio</option>
-            <option value="Acacias" data-municipio-index="689">Acacias</option>
-            <option value="Barranca de Upia" data-municipio-index="690">Barranca de Upia</option>
-            <option value="Cabuyaro" data-municipio-index="691">Cabuyaro</option>
-            <option value="Castilla la Nueva" data-municipio-index="692">Castilla la Nueva</option>
-            <option value="Cubarral" data-municipio-index="693">Cubarral</option>
-            <option value="Cumaral" data-municipio-index="694">Cumaral</option>
-            <option value="El Calvario" data-municipio-index="695">El Calvario</option>
-            <option value="El Castillo" data-municipio-index="696">El Castillo</option>
-            <option value="El Dorado" data-municipio-index="697">El Dorado</option>
-            <option value="Fuente de Oro" data-municipio-index="698">Fuente de Oro</option>
-            <option value="Granada" data-municipio-index="699">Granada</option>
-            <option value="Guamal" data-municipio-index="700">Guamal</option>
-            <option value="Mapiripan" data-municipio-index="701">Mapiripan</option>
-            <option value="Mesetas" data-municipio-index="702">Mesetas</option>
-            <option value="La Macarena" data-municipio-index="703">La Macarena</option>
-            <option value="Uribe" data-municipio-index="704">Uribe</option>
-            <option value="Lejanias" data-municipio-index="705">Lejanias</option>
-            <option value="Puerto Concordia" data-municipio-index="706">Puerto Concordia</option>
-            <option value="Puerto Gaitan" data-municipio-index="707">Puerto Gaitan</option>
-            <option value="Puerto Lopez" data-municipio-index="708">Puerto Lopez</option>
-            <option value="Puerto Lleras" data-municipio-index="709">Puerto Lleras</option>
-            <option value="Puerto Rico" data-municipio-index="710">Puerto Rico</option>
-            <option value="Restrepo" data-municipio-index="711">Restrepo</option>
-            <option value="San Carlos de Guaroa" data-municipio-index="712">San Carlos de Guaroa</option>
-            <option value="San Juan de Arama" data-municipio-index="713">San Juan de Arama</option>
-            <option value="San Juanito" data-municipio-index="714">San Juanito</option>
-            <option value="San Martin" data-municipio-index="715">San Martin</option>
-            <option value="Vistahermosa" data-municipio-index="716">Vistahermosa</option>
-            <option value="Pasto" data-municipio-index="717">Pasto</option>
-            <option value="Alban" data-municipio-index="718">Alban</option>
-            <option value="Aldana" data-municipio-index="719">Aldana</option>
-            <option value="Ancuya" data-municipio-index="720">Ancuya</option>
-            <option value="Arboleda" data-municipio-index="721">Arboleda</option>
-            <option value="Barbacoas" data-municipio-index="722">Barbacoas</option>
-            <option value="Belen" data-municipio-index="723">Belen</option>
-            <option value="Buesaco" data-municipio-index="724">Buesaco</option>
-            <option value="Colon" data-municipio-index="725">Colon</option>
-            <option value="Consaca" data-municipio-index="726">Consaca</option>
-            <option value="Contadero" data-municipio-index="727">Contadero</option>
-            <option value="Cordoba" data-municipio-index="728">Cordoba</option>
-            <option value="Cuaspud Carlosama" data-municipio-index="729">Cuaspud Carlosama</option>
-            <option value="Cumbal" data-municipio-index="730">Cumbal</option>
-            <option value="Cumbitara" data-municipio-index="731">Cumbitara</option>
-            <option value="Chachagui" data-municipio-index="732">Chachagui</option>
-            <option value="El Charco" data-municipio-index="733">El Charco</option>
-            <option value="El Peñol" data-municipio-index="734">El Peñol</option>
-            <option value="El Rosario" data-municipio-index="735">El Rosario</option>
-            <option value="El Tablon de Gomez" data-municipio-index="736">El Tablon de Gomez</option>
-            <option value="El Tambo" data-municipio-index="737">El Tambo</option>
-            <option value="Funes" data-municipio-index="738">Funes</option>
-            <option value="Guachucal" data-municipio-index="739">Guachucal</option>
-            <option value="Guaitarilla" data-municipio-index="740">Guaitarilla</option>
-            <option value="Gualmatan" data-municipio-index="741">Gualmatan</option>
-            <option value="Iles" data-municipio-index="742">Iles</option>
-            <option value="Imues" data-municipio-index="743">Imues</option>
-            <option value="Ipiales" data-municipio-index="744">Ipiales</option>
-            <option value="La Cruz" data-municipio-index="745">La Cruz</option>
-            <option value="La Florida" data-municipio-index="746">La Florida</option>
-            <option value="La Llanada" data-municipio-index="747">La Llanada</option>
-            <option value="La Tola" data-municipio-index="748">La Tola</option>
-            <option value="La Union" data-municipio-index="749">La Union</option>
-            <option value="Leiva" data-municipio-index="750">Leiva</option>
-            <option value="Linares" data-municipio-index="751">Linares</option>
-            <option value="Los Andes" data-municipio-index="752">Los Andes</option>
-            <option value="Magui" data-municipio-index="753">Magui</option>
-            <option value="Mallama" data-municipio-index="754">Mallama</option>
-            <option value="Mosquera" data-municipio-index="755">Mosquera</option>
-            <option value="Nariño" data-municipio-index="756">Nariño</option>
-            <option value="Olaya Herrera" data-municipio-index="757">Olaya Herrera</option>
-            <option value="Ospina" data-municipio-index="758">Ospina</option>
-            <option value="Francisco Pizarro" data-municipio-index="759">Francisco Pizarro</option>
-            <option value="Policarpa" data-municipio-index="760">Policarpa</option>
-            <option value="Potosi" data-municipio-index="761">Potosi</option>
-            <option value="Providencia" data-municipio-index="762">Providencia</option>
-            <option value="Puerres" data-municipio-index="763">Puerres</option>
-            <option value="Pupiales" data-municipio-index="764">Pupiales</option>
-            <option value="Ricaurte" data-municipio-index="765">Ricaurte</option>
-            <option value="Roberto Payan" data-municipio-index="766">Roberto Payan</option>
-            <option value="Samaniego" data-municipio-index="767">Samaniego</option>
-            <option value="Sandona" data-municipio-index="768">Sandona</option>
-            <option value="San Bernardo" data-municipio-index="769">San Bernardo</option>
-            <option value="San Lorenzo" data-municipio-index="770">San Lorenzo</option>
-            <option value="San Pablo" data-municipio-index="771">San Pablo</option>
-            <option value="San Pedro de Cartago" data-municipio-index="772">San Pedro de Cartago</option>
-            <option value="Santa Barbara" data-municipio-index="773">Santa Barbara</option>
-            <option value="Santacruz" data-municipio-index="774">Santacruz</option>
-            <option value="Sapuyes" data-municipio-index="775">Sapuyes</option>
-            <option value="Taminango" data-municipio-index="776">Taminango</option>
-            <option value="Tangua" data-municipio-index="777">Tangua</option>
-            <option value="San Andres de Tumaco" data-municipio-index="778">San Andres de Tumaco</option>
-            <option value="Tuquerres" data-municipio-index="779">Tuquerres</option>
-            <option value="Yacuanquer" data-municipio-index="780">Yacuanquer</option>
-            <option value="San Jose de Cucuta" data-municipio-index="781">San Jose de Cucuta</option>
-            <option value="Abrego" data-municipio-index="782">Abrego</option>
-            <option value="Arboledas" data-municipio-index="783">Arboledas</option>
-            <option value="Bochalema" data-municipio-index="784">Bochalema</option>
-            <option value="Bucarasica" data-municipio-index="785">Bucarasica</option>
-            <option value="Cacota" data-municipio-index="786">Cacota</option>
-            <option value="Cachira" data-municipio-index="787">Cachira</option>
-            <option value="Chinacota" data-municipio-index="788">Chinacota</option>
-            <option value="Chitaga" data-municipio-index="789">Chitaga</option>
-            <option value="Convencion" data-municipio-index="790">Convencion</option>
-            <option value="Cucutilla" data-municipio-index="791">Cucutilla</option>
-            <option value="Durania" data-municipio-index="792">Durania</option>
-            <option value="El Carmen" data-municipio-index="793">El Carmen</option>
-            <option value="El Tarra" data-municipio-index="794">El Tarra</option>
-            <option value="El Zulia" data-municipio-index="795">El Zulia</option>
-            <option value="Gramalote" data-municipio-index="796">Gramalote</option>
-            <option value="Hacari" data-municipio-index="797">Hacari</option>
-            <option value="Herran" data-municipio-index="798">Herran</option>
-            <option value="Labateca" data-municipio-index="799">Labateca</option>
-            <option value="La Esperanza" data-municipio-index="800">La Esperanza</option>
-            <option value="La Playa" data-municipio-index="801">La Playa</option>
-            <option value="Los Patios" data-municipio-index="802">Los Patios</option>
-            <option value="Lourdes" data-municipio-index="803">Lourdes</option>
-            <option value="Mutiscua" data-municipio-index="804">Mutiscua</option>
-            <option value="Ocaña" data-municipio-index="805">Ocaña</option>
-            <option value="Pamplona" data-municipio-index="806">Pamplona</option>
-            <option value="Pamplonita" data-municipio-index="807">Pamplonita</option>
-            <option value="Puerto Santander" data-municipio-index="808">Puerto Santander</option>
-            <option value="Ragonvalia" data-municipio-index="809">Ragonvalia</option>
-            <option value="Salazar" data-municipio-index="810">Salazar</option>
-            <option value="San Calixto" data-municipio-index="811">San Calixto</option>
-            <option value="San Cayetano" data-municipio-index="812">San Cayetano</option>
-            <option value="Santiago" data-municipio-index="813">Santiago</option>
-            <option value="Sardinata" data-municipio-index="814">Sardinata</option>
-            <option value="Silos" data-municipio-index="815">Silos</option>
-            <option value="Teorama" data-municipio-index="816">Teorama</option>
-            <option value="Tibu" data-municipio-index="817">Tibu</option>
-            <option value="Toledo" data-municipio-index="818">Toledo</option>
-            <option value="Villa Caro" data-municipio-index="819">Villa Caro</option>
-            <option value="Villa del Rosario" data-municipio-index="820">Villa del Rosario</option>
-            <option value="Armenia" data-municipio-index="821">Armenia</option>
-            <option value="Buenavista" data-municipio-index="822">Buenavista</option>
-            <option value="Calarca" data-municipio-index="823">Calarca</option>
-            <option value="Circasia" data-municipio-index="824">Circasia</option>
-            <option value="Cordoba" data-municipio-index="825">Cordoba</option>
-            <option value="Filandia" data-municipio-index="826">Filandia</option>
-            <option value="Genova" data-municipio-index="827">Genova</option>
-            <option value="La Tebaida" data-municipio-index="828">La Tebaida</option>
-            <option value="Montenegro" data-municipio-index="829">Montenegro</option>
-            <option value="Pijao" data-municipio-index="830">Pijao</option>
-            <option value="Quimbaya" data-municipio-index="831">Quimbaya</option>
-            <option value="Salento" data-municipio-index="832">Salento</option>
-            <option value="Pereira" data-municipio-index="833">Pereira</option>
-            <option value="Apia" data-municipio-index="834">Apia</option>
-            <option value="Balboa" data-municipio-index="835">Balboa</option>
-            <option value="Belen de Umbria" data-municipio-index="836">Belen de Umbria</option>
-            <option value="Dosquebradas" data-municipio-index="837">Dosquebradas</option>
-            <option value="Guatica" data-municipio-index="838">Guatica</option>
-            <option value="La Celia" data-municipio-index="839">La Celia</option>
-            <option value="La Virginia" data-municipio-index="840">La Virginia</option>
-            <option value="Marsella" data-municipio-index="841">Marsella</option>
-            <option value="Mistrato" data-municipio-index="842">Mistrato</option>
-            <option value="Pueblo Rico" data-municipio-index="843">Pueblo Rico</option>
-            <option value="Quinchia" data-municipio-index="844">Quinchia</option>
-            <option value="Santa Rosa de Cabal" data-municipio-index="845">Santa Rosa de Cabal</option>
-            <option value="Santuario" data-municipio-index="846">Santuario</option>
-            <option value="Bucaramanga" data-municipio-index="847">Bucaramanga</option>
-            <option value="Aguada" data-municipio-index="848">Aguada</option>
-            <option value="Albania" data-municipio-index="849">Albania</option>
-            <option value="Aratoca" data-municipio-index="850">Aratoca</option>
-            <option value="Barbosa" data-municipio-index="851">Barbosa</option>
-            <option value="Barichara" data-municipio-index="852">Barichara</option>
-            <option value="Barrancabermeja" data-municipio-index="853">Barrancabermeja</option>
-            <option value="Betulia" data-municipio-index="854">Betulia</option>
-            <option value="Bolivar" data-municipio-index="855">Bolivar</option>
-            <option value="Cabrera" data-municipio-index="856">Cabrera</option>
-            <option value="California" data-municipio-index="857">California</option>
-            <option value="Capitanejo" data-municipio-index="858">Capitanejo</option>
-            <option value="Carcasi" data-municipio-index="859">Carcasi</option>
-            <option value="Cepita" data-municipio-index="860">Cepita</option>
-            <option value="Cerrito" data-municipio-index="861">Cerrito</option>
-            <option value="Charala" data-municipio-index="862">Charala</option>
-            <option value="Charta" data-municipio-index="863">Charta</option>
-            <option value="Chima" data-municipio-index="864">Chima</option>
-            <option value="Chipata" data-municipio-index="865">Chipata</option>
-            <option value="Cimitarra" data-municipio-index="866">Cimitarra</option>
-            <option value="Concepcion" data-municipio-index="867">Concepcion</option>
-            <option value="Confines" data-municipio-index="868">Confines</option>
-            <option value="Contratacion" data-municipio-index="869">Contratacion</option>
-            <option value="Coromoro" data-municipio-index="870">Coromoro</option>
-            <option value="Curiti" data-municipio-index="871">Curiti</option>
-            <option value="El Carmen de Chucuri" data-municipio-index="872">El Carmen de Chucuri</option>
-            <option value="El Guacamayo" data-municipio-index="873">El Guacamayo</option>
-            <option value="El Peñon" data-municipio-index="874">El Peñon</option>
-            <option value="El Playon" data-municipio-index="875">El Playon</option>
-            <option value="Encino" data-municipio-index="876">Encino</option>
-            <option value="Enciso" data-municipio-index="877">Enciso</option>
-            <option value="Florian" data-municipio-index="878">Florian</option>
-            <option value="Floridablanca" data-municipio-index="879">Floridablanca</option>
-            <option value="Galan" data-municipio-index="880">Galan</option>
-            <option value="Gambita" data-municipio-index="881">Gambita</option>
-            <option value="Giron" data-municipio-index="882">Giron</option>
-            <option value="Guaca" data-municipio-index="883">Guaca</option>
-            <option value="Guadalupe" data-municipio-index="884">Guadalupe</option>
-            <option value="Guapota" data-municipio-index="885">Guapota</option>
-            <option value="Guavata" data-municipio-index="886">Guavata</option>
-            <option value="Guepsa" data-municipio-index="887">Guepsa</option>
-            <option value="Hato" data-municipio-index="888">Hato</option>
-            <option value="Jesus Maria" data-municipio-index="889">Jesus Maria</option>
-            <option value="Jordan" data-municipio-index="890">Jordan</option>
-            <option value="La Belleza" data-municipio-index="891">La Belleza</option>
-            <option value="Landazuri" data-municipio-index="892">Landazuri</option>
-            <option value="La Paz" data-municipio-index="893">La Paz</option>
-            <option value="Lebrija" data-municipio-index="894">Lebrija</option>
-            <option value="Los Santos" data-municipio-index="895">Los Santos</option>
-            <option value="Macaravita" data-municipio-index="896">Macaravita</option>
-            <option value="Malaga" data-municipio-index="897">Malaga</option>
-            <option value="Matanza" data-municipio-index="898">Matanza</option>
-            <option value="Mogotes" data-municipio-index="899">Mogotes</option>
-            <option value="Molagavita" data-municipio-index="900">Molagavita</option>
-            <option value="Ocamonte" data-municipio-index="901">Ocamonte</option>
-            <option value="Oiba" data-municipio-index="902">Oiba</option>
-            <option value="Onzaga" data-municipio-index="903">Onzaga</option>
-            <option value="Palmar" data-municipio-index="904">Palmar</option>
-            <option value="Palmas del Socorro" data-municipio-index="905">Palmas del Socorro</option>
-            <option value="Paramo" data-municipio-index="906">Paramo</option>
-            <option value="Piedecuesta" data-municipio-index="907">Piedecuesta</option>
-            <option value="Pinchote" data-municipio-index="908">Pinchote</option>
-            <option value="Puente Nacional" data-municipio-index="909">Puente Nacional</option>
-            <option value="Puerto Parra" data-municipio-index="910">Puerto Parra</option>
-            <option value="Puerto Wilches" data-municipio-index="911">Puerto Wilches</option>
-            <option value="Rionegro" data-municipio-index="912">Rionegro</option>
-            <option value="Sabana de Torres" data-municipio-index="913">Sabana de Torres</option>
-            <option value="San Andres" data-municipio-index="914">San Andres</option>
-            <option value="San Benito" data-municipio-index="915">San Benito</option>
-            <option value="San Gil" data-municipio-index="916">San Gil</option>
-            <option value="San Joaquin" data-municipio-index="917">San Joaquin</option>
-            <option value="San Jose de Miranda" data-municipio-index="918">San Jose de Miranda</option>
-            <option value="San Miguel" data-municipio-index="919">San Miguel</option>
-            <option value="San Vicente de Chucuri" data-municipio-index="920">San Vicente de Chucuri</option>
-            <option value="Santa Barbara" data-municipio-index="921">Santa Barbara</option>
-            <option value="Santa Helena del Opon" data-municipio-index="922">Santa Helena del Opon</option>
-            <option value="Simacota" data-municipio-index="923">Simacota</option>
-            <option value="Socorro" data-municipio-index="924">Socorro</option>
-            <option value="Suaita" data-municipio-index="925">Suaita</option>
-            <option value="Sucre" data-municipio-index="926">Sucre</option>
-            <option value="Surata" data-municipio-index="927">Surata</option>
-            <option value="Tona" data-municipio-index="928">Tona</option>
-            <option value="Valle de San Jose" data-municipio-index="929">Valle de San Jose</option>
-            <option value="Velez" data-municipio-index="930">Velez</option>
-            <option value="Vetas" data-municipio-index="931">Vetas</option>
-            <option value="Villanueva" data-municipio-index="932">Villanueva</option>
-            <option value="Zapatoca" data-municipio-index="933">Zapatoca</option>
-            <option value="Sincelejo" data-municipio-index="934">Sincelejo</option>
-            <option value="Buenavista" data-municipio-index="935">Buenavista</option>
-            <option value="Caimito" data-municipio-index="936">Caimito</option>
-            <option value="Coloso" data-municipio-index="937">Coloso</option>
-            <option value="Corozal" data-municipio-index="938">Corozal</option>
-            <option value="Coveñas" data-municipio-index="939">Coveñas</option>
-            <option value="Chalan" data-municipio-index="940">Chalan</option>
-            <option value="El Roble" data-municipio-index="941">El Roble</option>
-            <option value="Galeras" data-municipio-index="942">Galeras</option>
-            <option value="Guaranda" data-municipio-index="943">Guaranda</option>
-            <option value="La Union" data-municipio-index="944">La Union</option>
-            <option value="Los Palmitos" data-municipio-index="945">Los Palmitos</option>
-            <option value="Majagual" data-municipio-index="946">Majagual</option>
-            <option value="Morroa" data-municipio-index="947">Morroa</option>
-            <option value="Ovejas" data-municipio-index="948">Ovejas</option>
-            <option value="Palmito" data-municipio-index="949">Palmito</option>
-            <option value="Sampues" data-municipio-index="950">Sampues</option>
-            <option value="San Benito Abad" data-municipio-index="951">San Benito Abad</option>
-            <option value="San Juan de Betulia" data-municipio-index="952">San Juan de Betulia</option>
-            <option value="San Marcos" data-municipio-index="953">San Marcos</option>
-            <option value="San Onofre" data-municipio-index="954">San Onofre</option>
-            <option value="San Pedro" data-municipio-index="955">San Pedro</option>
-            <option value="San Luis de Since" data-municipio-index="956">San Luis de Since</option>
-            <option value="Sucre" data-municipio-index="957">Sucre</option>
-            <option value="Santiago de Tolu" data-municipio-index="958">Santiago de Tolu</option>
-            <option value="San Jose de Toluviejo" data-municipio-index="959">San Jose de Toluviejo</option>
-            <option value="Ibague" data-municipio-index="960">Ibague</option>
-            <option value="Alpujarra" data-municipio-index="961">Alpujarra</option>
-            <option value="Alvarado" data-municipio-index="962">Alvarado</option>
-            <option value="Ambalema" data-municipio-index="963">Ambalema</option>
-            <option value="Anzoategui" data-municipio-index="964">Anzoategui</option>
-            <option value="Armero" data-municipio-index="965">Armero</option>
-            <option value="Ataco" data-municipio-index="966">Ataco</option>
-            <option value="Cajamarca" data-municipio-index="967">Cajamarca</option>
-            <option value="Carmen de Apicala" data-municipio-index="968">Carmen de Apicala</option>
-            <option value="Casabianca" data-municipio-index="969">Casabianca</option>
-            <option value="Chaparral" data-municipio-index="970">Chaparral</option>
-            <option value="Coello" data-municipio-index="971">Coello</option>
-            <option value="Coyaima" data-municipio-index="972">Coyaima</option>
-            <option value="Cunday" data-municipio-index="973">Cunday</option>
-            <option value="Dolores" data-municipio-index="974">Dolores</option>
-            <option value="Espinal" data-municipio-index="975">Espinal</option>
-            <option value="Falan" data-municipio-index="976">Falan</option>
-            <option value="Flandes" data-municipio-index="977">Flandes</option>
-            <option value="Fresno" data-municipio-index="978">Fresno</option>
-            <option value="Guamo" data-municipio-index="979">Guamo</option>
-            <option value="Herveo" data-municipio-index="980">Herveo</option>
-            <option value="Honda" data-municipio-index="981">Honda</option>
-            <option value="Icononzo" data-municipio-index="982">Icononzo</option>
-            <option value="Lerida" data-municipio-index="983">Lerida</option>
-            <option value="Libano" data-municipio-index="984">Libano</option>
-            <option value="San Sebastian de Mariquita" data-municipio-index="985">San Sebastian de Mariquita</option>
-            <option value="Melgar" data-municipio-index="986">Melgar</option>
-            <option value="Murillo" data-municipio-index="987">Murillo</option>
-            <option value="Natagaima" data-municipio-index="988">Natagaima</option>
-            <option value="Ortega" data-municipio-index="989">Ortega</option>
-            <option value="Palocabildo" data-municipio-index="990">Palocabildo</option>
-            <option value="Piedras" data-municipio-index="991">Piedras</option>
-            <option value="Planadas" data-municipio-index="992">Planadas</option>
-            <option value="Prado" data-municipio-index="993">Prado</option>
-            <option value="Purificacion" data-municipio-index="994">Purificacion</option>
-            <option value="Rioblanco" data-municipio-index="995">Rioblanco</option>
-            <option value="Roncesvalles" data-municipio-index="996">Roncesvalles</option>
-            <option value="Rovira" data-municipio-index="997">Rovira</option>
-            <option value="Saldaña" data-municipio-index="998">Saldaña</option>
-            <option value="San Antonio" data-municipio-index="999">San Antonio</option>
-            <option value="San Luis" data-municipio-index="1000">San Luis</option>
-            <option value="Santa Isabel" data-municipio-index="1001">Santa Isabel</option>
-            <option value="Suarez" data-municipio-index="1002">Suarez</option>
-            <option value="Valle de San Juan" data-municipio-index="1003">Valle de San Juan</option>
-            <option value="Venadillo" data-municipio-index="1004">Venadillo</option>
-            <option value="Villahermosa" data-municipio-index="1005">Villahermosa</option>
-            <option value="Villarrica" data-municipio-index="1006">Villarrica</option>
-            <option value="Santiago de Cali" data-municipio-index="1007">Santiago de Cali</option>
-            <option value="Alcala" data-municipio-index="1008">Alcala</option>
-            <option value="Andalucia" data-municipio-index="1009">Andalucia</option>
-            <option value="Ansermanuevo" data-municipio-index="1010">Ansermanuevo</option>
-            <option value="Argelia" data-municipio-index="1011">Argelia</option>
-            <option value="Bolivar" data-municipio-index="1012">Bolivar</option>
-            <option value="Buenaventura" data-municipio-index="1013">Buenaventura</option>
-            <option value="Guadalajara de Buga" data-municipio-index="1014">Guadalajara de Buga</option>
-            <option value="Bugalagrande" data-municipio-index="1015">Bugalagrande</option>
-            <option value="Caicedonia" data-municipio-index="1016">Caicedonia</option>
-            <option value="Calima" data-municipio-index="1017">Calima</option>
-            <option value="Candelaria" data-municipio-index="1018">Candelaria</option>
-            <option value="Cartago" data-municipio-index="1019">Cartago</option>
-            <option value="Dagua" data-municipio-index="1020">Dagua</option>
-            <option value="El Aguila" data-municipio-index="1021">El Aguila</option>
-            <option value="El Cairo" data-municipio-index="1022">El Cairo</option>
-            <option value="El Cerrito" data-municipio-index="1023">El Cerrito</option>
-            <option value="El Dovio" data-municipio-index="1024">El Dovio</option>
-            <option value="Florida" data-municipio-index="1025">Florida</option>
-            <option value="Ginebra" data-municipio-index="1026">Ginebra</option>
-            <option value="Guacari" data-municipio-index="1027">Guacari</option>
-            <option value="Jamundi" data-municipio-index="1028">Jamundi</option>
-            <option value="La Cumbre" data-municipio-index="1029">La Cumbre</option>
-            <option value="La Union" data-municipio-index="1030">La Union</option>
-            <option value="La Victoria" data-municipio-index="1031">La Victoria</option>
-            <option value="Obando" data-municipio-index="1032">Obando</option>
-            <option value="Palmira" data-municipio-index="1033">Palmira</option>
-            <option value="Pradera" data-municipio-index="1034">Pradera</option>
-            <option value="Restrepo" data-municipio-index="1035">Restrepo</option>
-            <option value="Riofrio" data-municipio-index="1036">Riofrio</option>
-            <option value="Roldanillo" data-municipio-index="1037">Roldanillo</option>
-            <option value="San Pedro" data-municipio-index="1038">San Pedro</option>
-            <option value="Sevilla" data-municipio-index="1039">Sevilla</option>
-            <option value="Toro" data-municipio-index="1040">Toro</option>
-            <option value="Trujillo" data-municipio-index="1041">Trujillo</option>
-            <option value="Tulua" data-municipio-index="1042">Tulua</option>
-            <option value="Ulloa" data-municipio-index="1043">Ulloa</option>
-            <option value="Versalles" data-municipio-index="1044">Versalles</option>
-            <option value="Vijes" data-municipio-index="1045">Vijes</option>
-            <option value="Yotoco" data-municipio-index="1046">Yotoco</option>
-            <option value="Yumbo" data-municipio-index="1047">Yumbo</option>
-            <option value="Zarzal" data-municipio-index="1048">Zarzal</option>
-            <option value="Arauca" data-municipio-index="1049">Arauca</option>
-            <option value="Arauquita" data-municipio-index="1050">Arauquita</option>
-            <option value="Cravo Norte" data-municipio-index="1051">Cravo Norte</option>
-            <option value="Fortul" data-municipio-index="1052">Fortul</option>
-            <option value="Puerto Rondon" data-municipio-index="1053">Puerto Rondon</option>
-            <option value="Saravena" data-municipio-index="1054">Saravena</option>
-            <option value="Tame" data-municipio-index="1055">Tame</option>
-            <option value="Yopal" data-municipio-index="1056">Yopal</option>
-            <option value="Aguazul" data-municipio-index="1057">Aguazul</option>
-            <option value="Chameza" data-municipio-index="1058">Chameza</option>
-            <option value="Hato Corozal" data-municipio-index="1059">Hato Corozal</option>
-            <option value="La Salina" data-municipio-index="1060">La Salina</option>
-            <option value="Mani" data-municipio-index="1061">Mani</option>
-            <option value="Monterrey" data-municipio-index="1062">Monterrey</option>
-            <option value="Nunchia" data-municipio-index="1063">Nunchia</option>
-            <option value="Orocue" data-municipio-index="1064">Orocue</option>
-            <option value="Paz de Ariporo" data-municipio-index="1065">Paz de Ariporo</option>
-            <option value="Pore" data-municipio-index="1066">Pore</option>
-            <option value="Recetor" data-municipio-index="1067">Recetor</option>
-            <option value="Sabanalarga" data-municipio-index="1068">Sabanalarga</option>
-            <option value="Sacama" data-municipio-index="1069">Sacama</option>
-            <option value="San Luis de Palenque" data-municipio-index="1070">San Luis de Palenque</option>
-            <option value="Tamara" data-municipio-index="1071">Tamara</option>
-            <option value="Tauramena" data-municipio-index="1072">Tauramena</option>
-            <option value="Trinidad" data-municipio-index="1073">Trinidad</option>
-            <option value="Villanueva" data-municipio-index="1074">Villanueva</option>
-            <option value="Mocoa" data-municipio-index="1075">Mocoa</option>
-            <option value="Colon" data-municipio-index="1076">Colon</option>
-            <option value="Orito" data-municipio-index="1077">Orito</option>
-            <option value="Puerto Asis" data-municipio-index="1078">Puerto Asis</option>
-            <option value="Puerto Caicedo" data-municipio-index="1079">Puerto Caicedo</option>
-            <option value="Puerto Guzman" data-municipio-index="1080">Puerto Guzman</option>
-            <option value="Puerto Leguizamo" data-municipio-index="1081">Puerto Leguizamo</option>
-            <option value="Sibundoy" data-municipio-index="1082">Sibundoy</option>
-            <option value="San Francisco" data-municipio-index="1083">San Francisco</option>
-            <option value="San Miguel" data-municipio-index="1084">San Miguel</option>
-            <option value="Santiago" data-municipio-index="1085">Santiago</option>
-            <option value="Valle del Guamuez" data-municipio-index="1086">Valle del Guamuez</option>
-            <option value="Villagarzon" data-municipio-index="1087">Villagarzon</option>
-            <option value="San Andres" data-municipio-index="1088">San Andres</option>
-            <option value="Providencia" data-municipio-index="1089">Providencia</option>
-            <option value="Leticia" data-municipio-index="1090">Leticia</option>
-            <option value="Puerto Nariño" data-municipio-index="1091">Puerto Nariño</option>
-            <option value="Inirida" data-municipio-index="1092">Inirida</option>
-            <option value="Barrancominas" data-municipio-index="1093">Barrancominas</option>
-            <option value="San Jose del Guaviare" data-municipio-index="1094">San Jose del Guaviare</option>
-            <option value="Calamar" data-municipio-index="1095">Calamar</option>
-            <option value="El Retorno" data-municipio-index="1096">El Retorno</option>
-            <option value="Miraflores" data-municipio-index="1097">Miraflores</option>
-            <option value="Mitu" data-municipio-index="1098">Mitu</option>
-            <option value="Caruru" data-municipio-index="1099">Caruru</option>
-            <option value="Taraira" data-municipio-index="1100">Taraira</option>
-            <option value="Puerto Carreño" data-municipio-index="1101">Puerto Carreño</option>
-            <option value="La Primavera" data-municipio-index="1102">La Primavera</option>
-            <option value="Santa Rosalia" data-municipio-index="1103">Santa Rosalia</option>
-            <option value="Cumaribo" data-municipio-index="1104">Cumaribo</option>
-            <option value="El Encanto" data-municipio-index="1105">El Encanto</option>
-            <option value="La Chorrera" data-municipio-index="1106">La Chorrera</option>
-            <option value="La Pedrera" data-municipio-index="1107">La Pedrera</option>
-            <option value="La Victoria" data-municipio-index="1108">La Victoria</option>
-            <option value="Miriti - Parana" data-municipio-index="1109">Miriti - Parana</option>
-            <option value="Puerto Alegria" data-municipio-index="1110">Puerto Alegria</option>
-            <option value="Puerto Arica" data-municipio-index="1111">Puerto Arica</option>
-            <option value="Puerto Santander" data-municipio-index="1112">Puerto Santander</option>
-            <option value="Tarapaca" data-municipio-index="1113">Tarapaca</option>
-            <option value="San Felipe" data-municipio-index="1114">San Felipe</option>
-            <option value="Puerto Colombia" data-municipio-index="1115">Puerto Colombia</option>
-            <option value="La Guadalupe" data-municipio-index="1116">La Guadalupe</option>
-            <option value="Cacahual" data-municipio-index="1117">Cacahual</option>
-            <option value="Pana Pana" data-municipio-index="1118">Pana Pana</option>
-            <option value="Morichal" data-municipio-index="1119">Morichal</option>
-            <option value="Pacoa" data-municipio-index="1120">Pacoa</option>
-            <option value="Papunahua" data-municipio-index="1121">Papunahua</option>
-            <option value="Yavarate" data-municipio-index="1122">Yavarate</option>
-        </select>
-      </section>
+      </details>
 
       <section class="footer-card" aria-label="Información de la tienda">
         <p>

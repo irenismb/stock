@@ -5,5 +5,14 @@
   "oauthScopes": [
     "https://www.googleapis.com/auth/documents.readonly",
     "https://www.googleapis.com/auth/script.external_request"
-  ]
+  ],
+  "dependencies": {
+    "enabledAdvancedServices": [
+      {
+        "userSymbol": "Docs",
+        "version": "v1",
+        "serviceId": "docs"
+      }
+    ]
+  }
 }

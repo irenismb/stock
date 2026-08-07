@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Irenismb Stock | Catálogo desde Google Docs</title>
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#0b0f14" />
+  <link rel="icon" type="image/webp" href="logos/logo_empresa.webp" />
+  <style>
+    :root{
+      --bg:#0a0e15;--bg2:#0d1422;--card:#121826;--txt:#eef2f8;--mut:#a3aec0;
+      --line:#243049;--acc:#22d3a8;--acc2:#2dd4bf;--danger:#fb7185;--gold:#f6c453;
+      --shadow:0 18px 45px rgba(0,0,0,.28);
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--txt);background:linear-gradient(180deg,var(--bg),var(--bg2));min-height:100vh}
+    a{color:inherit}
+    button,input,select{font:inherit}
+    .wrap{width:min(1180px,calc(100% - 28px));margin:auto}
+    .site-header{padding:16px 0 8px}
+    .head-card{border:1px solid var(--line);border-radius:20px;background:rgba(18,24,38,.72);box-shadow:var(--shadow);padding:14px}
+    .brand{display:flex;align-items:center;gap:12px}
+    .brand img{width:54px;height:54px;border-radius:16px;object-fit:cover;background:#0b1220;border:1px solid rgba(255,255,255,.08)}
+    .brand h1{margin:0;font-size:18px;letter-spacing:.04em}
+    .brand p{margin:4px 0 0;color:var(--mut);font-size:12.5px;line-height:1.4}
+    .badge{margin-left:auto;align-self:flex-start;border-radius:999px;padding:6px 10px;font-size:11px;font-weight:900;color:#052e16;background:linear-gradient(90deg,#22c55e,#a3e635)}
+    .tools{display:grid;grid-template-columns:minmax(220px,1.5fr) minmax(170px,.8fr) minmax(160px,.7fr) auto;gap:9px;margin-top:14px}
+    input,select,button{border:1px solid #2b3b58;border-radius:12px;background:#0e1524;color:var(--txt);padding:10px 12px}
+    button{cursor:pointer;font-weight:800}
+    button.primary{border:0;color:#04120d;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+    button.ghost{background:transparent}
+    .status{margin-top:10px;padding:10px 12px;border-radius:12px;border:1px solid var(--line);background:rgba(11,18,32,.55);color:var(--mut);font-size:12px;line-height:1.45}
+    .status strong{color:var(--txt)}
+    .status.error{border-color:rgba(251,113,133,.45);color:#fecdd3}
+    .config{margin-top:12px;border:1px dashed #3a4d70;border-radius:14px;padding:12px;background:rgba(11,18,32,.52)}
+    .config[hidden]{display:none}
+    .config-title{font-weight:900;margin-bottom:6px}
+    .config p{margin:0 0 10px;color:var(--mut);font-size:12.5px;line-height:1.45}
+    .config-row{display:flex;gap:8px;flex-wrap:wrap}
+    .config-row input{flex:1;min-width:240px}
+    main{padding:12px 0 44px}
+    .summary{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 14px}
+    .pill{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:rgba(18,24,38,.68);font-size:12px;color:var(--mut)}
+    .pill strong{color:var(--txt)}
+    .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(285px,1fr));gap:16px;align-items:start}
+    .card{overflow:hidden;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(18,24,38,.98),rgba(13,20,34,.98));box-shadow:0 10px 28px rgba(0,0,0,.20)}
+    .image-box{aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;border-bottom:1px solid var(--line);cursor:zoom-in}
+    .image-box img{width:100%;height:100%;object-fit:contain;display:block}
+    .pad{padding:13px}
+    .code{font-size:11px;font-weight:900;color:var(--acc);letter-spacing:.08em}
+    .name{margin:4px 0 6px;font-size:15px;line-height:1.3;font-weight:900;color:#fff}
+    .category{font-size:11px;color:var(--mut);margin-bottom:10px}
+    .price-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+    .price{border:1px solid #273653;border-radius:12px;padding:8px;background:rgba(11,18,32,.55);min-width:0}
+    .price span{display:block;font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.05em;font-weight:800}
+    .price strong{display:block;margin-top:3px;font-size:13px;word-break:break-word}
+    .description{margin:0;color:#d7dee9;font-size:12.5px;line-height:1.55}
+    .source{margin-top:10px;padding-top:9px;border-top:1px solid var(--line);font-size:11px;color:var(--mut);line-height:1.45}
+    .source a{color:#bfdbfe;text-decoration:none}
+    .actions{display:flex;gap:8px;margin-top:11px}
+    .actions a{flex:1;text-align:center;text-decoration:none;border-radius:11px;padding:9px 10px;font-size:12px;font-weight:900;border:1px solid #2c3d5b;background:#0e1524}
+    .actions a.buy{border:0;background:linear-gradient(90deg,var(--acc),var(--acc2));color:#04120d}
+    .empty{grid-column:1/-1;border:1px dashed #344766;border-radius:16px;padding:30px;text-align:center;color:var(--mut)}
+    .modal{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;padding:18px}
+    .modal.open{display:flex}
+    .modal img{max-width:min(100%,980px);max-height:90vh;object-fit:contain;background:#fff;border-radius:14px}
+    .modal button{position:fixed;top:14px;right:14px;width:42px;height:42px;padding:0;border-radius:999px;background:#111827}
+    footer{padding:0 0 26px;color:var(--mut);font-size:11px;text-align:center}
+    @media(max-width:760px){.tools{grid-template-columns:1fr 1fr}.tools input{grid-column:1/-1}.brand{align-items:flex-start}.badge{display:none}.grid{grid-template-columns:1fr}.wrap{width:min(100% - 20px,1180px)}}
+    @media(max-width:460px){.tools{grid-template-columns:1fr}.tools input{grid-column:auto}.price-row{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="site-header">
+    <div class="wrap head-card">
+      <div class="brand">
+        <img src="logos/logo_empresa.webp" alt="Irenismb Stock" onerror="this.src='logos/logo_empresa.png'" />
+        <div>
+          <h1>Irenismb Stock · catálogo desde Google Docs</h1>
+          <p>Copia experimental: productos, imágenes, precios y descripciones se obtienen de los documentos de inventario.</p>
+        </div>
+        <span class="badge">PRUEBA</span>
+      </div>
+
+      <div class="tools" role="search">
+        <input id="q" type="search" placeholder="Buscar por código, nombre o descripción…" aria-label="Buscar" />
+        <select id="category" aria-label="Categoría"><option value="">Todas las categorías</option></select>
+        <select id="sort" aria-label="Ordenar">
+          <option value="code">Código</option>
+          <option value="name">Nombre A–Z</option>
+          <option value="price_asc">Precio menor</option>
+          <option value="price_desc">Precio mayor</option>
+        </select>
+        <button id="reload" class="primary" type="button">Actualizar</button>
+      </div>
+
+      <div id="status" class="status">Esperando el endpoint de Google Apps Script.</div>
+
+      <section id="config" class="config">
+        <div class="config-title">Conectar Google Apps Script</div>
+        <p>Pega una vez la URL <code>/exec</code> del Apps Script del prototipo. Se guarda solamente en este navegador.</p>
+        <div class="config-row">
+          <input id="endpointInput" type="url" placeholder="https://script.google.com/macros/s/.../exec" aria-label="URL del endpoint" />
+          <button id="saveEndpoint" class="primary" type="button">Guardar y cargar</button>
+          <button id="clearEndpoint" class="ghost" type="button">Borrar</button>
+        </div>
+      </section>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="summary">
+      <span class="pill">Productos: <strong id="count">0</strong></span>
+      <span class="pill">Documentos: <strong id="docCount">0</strong></span>
+      <span class="pill">Actualización: <strong id="generated">—</strong></span>
+    </div>
+    <section id="grid" class="grid" aria-live="polite"></section>
+  </main>
+
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-label="Imagen ampliada">
+    <button id="closeModal" type="button" aria-label="Cerrar">✕</button>
+    <img id="modalImg" alt="Imagen ampliada" />
+  </div>
+
+  <footer class="wrap">Prototipo independiente. El catálogo publicado <strong>natura/catalogo.html</strong> no se modifica.</footer>
+
+<script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'irenismb_inventory_docs_endpoint_v1';
+  const WHATSAPP = '573042088961';
+  const FALLBACK = new URL('logos/suplente.webp', document.baseURI).href;
+  const $ = id => document.getElementById(id);
+  const state = { products: [], documents: [], endpoint: '', payload: null };
+  const fmtCOP = new Intl.NumberFormat('es-CO', { style:'currency', currency:'COP', maximumFractionDigits:0 });
+  const fmtDate = new Intl.DateTimeFormat('es-CO', { dateStyle:'medium', timeStyle:'short' });
+
+  function endpointFromLocation(){
+    const q = new URLSearchParams(location.search).get('endpoint');
+    if(q) return q.trim();
+    try { return (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch(_) { return ''; }
+  }
+
+  function normalizeEndpoint(value){
+    const url = String(value || '').trim();
+    if(!url) return '';
+    try {
+      const u = new URL(url);
+      if(u.protocol !== 'https:') return '';
+      return u.href.replace(/\?$/, '');
+    } catch(_) { return ''; }
+  }
+
+  function setStatus(message, isError=false){
+    const el = $('status');
+    el.textContent = message;
+    el.classList.toggle('error', !!isError);
+  }
+
+  function loadJsonp(endpoint, force=false){
+    return new Promise((resolve, reject) => {
+      const callback = '__inventoryDocs_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      const timer = setTimeout(() => finish(new Error('El endpoint no respondió a tiempo.')), 30000);
+
+      function cleanup(){
+        clearTimeout(timer);
+        delete window[callback];
+        script.remove();
+      }
+      function finish(error, data){
+        cleanup();
+        error ? reject(error) : resolve(data);
+      }
+
+      window[callback] = data => finish(null, data);
+      script.onerror = () => finish(new Error('No se pudo cargar el endpoint de Google Apps Script.'));
+
+      const u = new URL(endpoint);
+      u.searchParams.set('callback', callback);
+      if(force) u.searchParams.set('refresh', '1');
+      u.searchParams.set('_', Date.now());
+      script.src = u.href;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function load(force=false){
+    state.endpoint = normalizeEndpoint(endpointFromLocation());
+    $('endpointInput').value = state.endpoint;
+    $('config').hidden = !!state.endpoint;
+
+    if(!state.endpoint){
+      setStatus('Falta conectar el endpoint de Google Apps Script. La copia está lista, pero todavía no puede leer los documentos desde el navegador.', true);
+      render();
+      return;
+    }
+
+    setStatus('Leyendo los documentos de inventario y sus imágenes…');
+    $('reload').disabled = true;
+    try {
+      const data = await loadJsonp(state.endpoint, force);
+      if(!data || !Array.isArray(data.products)) throw new Error('El endpoint devolvió una respuesta inesperada.');
+      state.payload = data;
+      state.products = data.products;
+      state.documents = Array.isArray(data.documents) ? data.documents : [];
+      populateCategories();
+      render();
+
+      const problems = [];
+      if(Array.isArray(data.duplicateCodes) && data.duplicateCodes.length) problems.push('códigos repetidos: ' + data.duplicateCodes.join(', '));
+      if(Array.isArray(data.errors) && data.errors.length) problems.push(data.errors.length + ' documento(s) con error');
+      const suffix = problems.length ? ' Atención: ' + problems.join('; ') + '.' : '';
+      setStatus(`Carga completada: ${state.products.length} productos desde ${state.documents.length} documentos.${suffix}`, problems.length > 0);
+    } catch(error){
+      console.error(error);
+      setStatus(String(error && error.message ? error.message : error), true);
+      render();
+    } finally {
+      $('reload').disabled = false;
+    }
+  }
+
+  function populateCategories(){
+    const selected = $('category').value;
+    const categories = [...new Set(state.products.map(p => String(p.category || '').trim()).filter(Boolean))]
+      .sort((a,b) => a.localeCompare(b, 'es', { sensitivity:'base' }));
+    $('category').innerHTML = '<option value="">Todas las categorías</option>' + categories
+      .map(c => `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`).join('');
+    if(categories.includes(selected)) $('category').value = selected;
+  }
+
+  function filteredProducts(){
+    const query = normalize($('q').value);
+    const category = $('category').value;
+    const sort = $('sort').value;
+    let list = state.products.filter(p => {
+      if(category && String(p.category || '') !== category) return false;
+      if(!query) return true;
+      const haystack = normalize([p.code,p.name,p.description,p.category,p.imageSource,p.documentTitle].join(' '));
+      return haystack.includes(query);
+    });
+
+    list = [...list].sort((a,b) => {
+      if(sort === 'name') return String(a.name||'').localeCompare(String(b.name||''), 'es', { sensitivity:'base' });
+      if(sort === 'price_asc') return Number(a.priceMine||0) - Number(b.priceMine||0) || String(a.code).localeCompare(String(b.code));
+      if(sort === 'price_desc') return Number(b.priceMine||0) - Number(a.priceMine||0) || String(a.code).localeCompare(String(b.code));
+      return String(a.code||'').localeCompare(String(b.code||''), 'es', { numeric:true });
+    });
+    return list;
+  }
+
+  function render(){
+    const list = filteredProducts();
+    $('count').textContent = String(list.length);
+    $('docCount').textContent = String(state.documents.length || 0);
+    $('generated').textContent = state.payload && state.payload.generatedAt ? fmtDate.format(new Date(state.payload.generatedAt)) : '—';
+
+    const grid = $('grid');
+    if(!list.length){
+      grid.innerHTML = '<div class="empty">No hay productos para mostrar con los filtros actuales.</div>';
+      return;
+    }
+    grid.innerHTML = list.map(cardHtml).join('');
+    bindCards();
+  }
+
+  function cardHtml(p){
+    const imageUrl = p && p.image && p.image.url ? p.image.url : FALLBACK;
+    const mine = Number(p.priceMine || 0);
+    const internet = Number(p.priceInternet || 0);
+    const description = String(p.description || '').trim();
+    const source = String(p.imageSource || '').trim();
+    const documentUrl = String(p.documentUrl || '');
+    const waText = `Hola. Me interesa el producto ${p.code} - ${p.name}.`;
+
+    return `<article class="card" data-code="${escapeAttr(p.code)}">
+      <div class="image-box" data-image="${escapeAttr(imageUrl)}" data-name="${escapeAttr(p.name || '')}">
+        <img src="${escapeAttr(imageUrl)}" alt="${escapeAttr(p.name || 'Producto')}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='${escapeAttr(FALLBACK)}'" />
+      </div>
+      <div class="pad">
+        <div class="code">${escapeHtml(p.code || '')}</div>
+        <h2 class="name">${escapeHtml(p.name || '')}</h2>
+        <div class="category">${escapeHtml(p.category || p.documentTitle || '')}</div>
+        <div class="price-row">
+          <div class="price"><span>Precio conmigo</span><strong>${mine ? escapeHtml(fmtCOP.format(mine)) : '—'}</strong></div>
+          <div class="price"><span>Precio en internet</span><strong>${internet ? escapeHtml(fmtCOP.format(internet)) : '—'}</strong></div>
+        </div>
+        <p class="description">${escapeHtml(description || 'Sin descripción adicional en el documento.')}</p>
+        <div class="source">Fuente de la imagen: <strong>${escapeHtml(source || '—')}</strong>${documentUrl ? ` · <a href="${escapeAttr(documentUrl)}" target="_blank" rel="noopener noreferrer">Abrir documento</a>` : ''}</div>
+        <div class="actions">
+          ${mine ? `<a class="buy" href="https://wa.me/${WHATSAPP}?text=${encodeURIComponent(waText)}" target="_blank" rel="noopener noreferrer">WhatsApp</a>` : ''}
+          ${documentUrl ? `<a href="${escapeAttr(documentUrl)}" target="_blank" rel="noopener noreferrer">Google Doc</a>` : ''}
+        </div>
+      </div>
+    </article>`;
+  }
+
+  function bindCards(){
+    document.querySelectorAll('.image-box').forEach(box => {
+      box.addEventListener('click', () => openModal(box.dataset.image, box.dataset.name));
+    });
+  }
+
+  function openModal(src, name){
+    $('modalImg').src = src || FALLBACK;
+    $('modalImg').alt = name || 'Imagen ampliada';
+    $('modal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeModal(){
+    $('modal').classList.remove('open');
+    $('modalImg').removeAttribute('src');
+    document.body.style.overflow = '';
+  }
+
+  function normalize(value){
+    return String(value || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+  }
+  function escapeHtml(value){
+    return String(value ?? '').replace(/[&<>'"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+  }
+  function escapeAttr(value){ return escapeHtml(value); }
+
+  $('q').addEventListener('input', render);
+  $('category').addEventListener('change', render);
+  $('sort').addEventListener('change', render);
+  $('reload').addEventListener('click', () => load(true));
+  $('saveEndpoint').addEventListener('click', () => {
+    const endpoint = normalizeEndpoint($('endpointInput').value);
+    if(!endpoint){ setStatus('La URL del endpoint no es válida.', true); return; }
+    try { localStorage.setItem(STORAGE_KEY, endpoint); } catch(_) {}
+    state.endpoint = endpoint;
+    load(true);
+  });
+  $('clearEndpoint').addEventListener('click', () => {
+    try { localStorage.removeItem(STORAGE_KEY); } catch(_) {}
+    state.endpoint = '';
+    $('endpointInput').value = '';
+    $('config').hidden = false;
+    state.products = [];
+    state.documents = [];
+    state.payload = null;
+    setStatus('Endpoint eliminado.');
+    render();
+  });
+  $('closeModal').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', e => { if(e.target === $('modal')) closeModal(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
+
+  load(false);
+})();
+</script>
+</body>
+</html>

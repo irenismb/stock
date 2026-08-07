@@ -1,4 +1,7 @@
 <!doctype html>
+<!-- Catalogo experimental conectado con Google Docs. -->
+<!-- v: 2026-08-07 03:08:23 PM -->
+<!-- Se agrego el endpoint predeterminado y se configuro Calibri 11. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -15,7 +18,7 @@
     }
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
-    body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;color:var(--txt);background:linear-gradient(180deg,var(--bg),var(--bg2));min-height:100vh}
+    body{margin:0;font-family:Calibri,Arial,sans-serif;font-size:11pt;color:var(--txt);background:linear-gradient(180deg,var(--bg),var(--bg2));min-height:100vh}
     a{color:inherit}
     button,input,select{font:inherit}
     .wrap{width:min(1180px,calc(100% - 28px));margin:auto}
@@ -131,6 +134,7 @@
   'use strict';
 
   const STORAGE_KEY = 'irenismb_inventory_docs_endpoint_v1';
+  const DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyFjyU55Kebyuz6N0TeQaX2DhDN9T-ZcXs9I5azANE9sRM3GciXshlsipgLMDlA0zljCg/exec';
   const WHATSAPP = '573042088961';
   const FALLBACK = new URL('logos/suplente.webp', document.baseURI).href;
   const $ = id => document.getElementById(id);
@@ -141,7 +145,7 @@
   function endpointFromLocation(){
     const q = new URLSearchParams(location.search).get('endpoint');
     if(q) return q.trim();
-    try { return (localStorage.getItem(STORAGE_KEY) || '').trim(); } catch(_) { return ''; }
+    try { return (localStorage.getItem(STORAGE_KEY) || DEFAULT_ENDPOINT).trim(); } catch(_) { return DEFAULT_ENDPOINT; }
   }
 
   function normalizeEndpoint(value){

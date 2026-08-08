@@ -1,7 +1,7 @@
 <!doctype html>
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
-<!-- v: 2026-08-07 04:56:24 p. m. -->
-<!-- Las laminas de producto se adaptaron a la altura visible sin ocultar informacion. -->
+<!-- v: 2026-08-07 10:27:13 p. m. -->
+<!-- La primera imagen de cada documento se usa como portada unica de su categoria. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -4342,7 +4342,9 @@
     // 1) INTERRUPTORES
     // 2) CATEGORÍAS OCULTAS EN TODO EL CATÁLOGO
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
-    // 4) IMÁGENES FIJAS DE TARJETAS
+
+    // Cambia solamente este enlace cuando quieras usar otra carpeta.
+    const GOOGLE_DOCS_FOLDER_URL = "https://drive.google.com/drive/folders/1E1AGk0hyocMYb4eTmI4B6lWTd0F07kvD?usp=sharing";
 
 	const INTERRUPTORES = {
 	  MOSTRAR_CANTIDAD_STOCK: false,
@@ -4369,22 +4371,6 @@
 	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
     };
     window.INTERRUPTORES = INTERRUPTORES;
-
-    // =================================
-    // IMÁGENES FIJAS DE TARJETAS
-    // =================================
-    // Escribe aquí los códigos de los productos cuyas imágenes quieres usar
-    // como portada fija de sus respectivas categorías.
-    // Conserva las comillas y separa cada código con una coma.
-    const IMAGENES_FIJAS_DE_TARJETAS = [
-      "0015",
-      "0076",
-      "0070",
-      "0087",
-      "0007",
-      "0066"
-    ];
-    window.IMAGENES_FIJAS_DE_TARJETAS = IMAGENES_FIJAS_DE_TARJETAS;
 
     const ALBUMES_OCULTOS = [
       // Agrega aquí una categoría solamente cuando quieras ocultarla.
@@ -4578,31 +4564,6 @@
 
     const GOOGLE_DOCS_CATALOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbyFjyU55Kebyuz6N0TeQaX2DhDN9T-ZcXs9I5azANE9sRM3GciXshlsipgLMDlA0zljCg/exec";
     const GOOGLE_DOCS_JSONP_TIMEOUT_MS = 25000;
-    let fixedCardImageByCategory = new Map();
-
-    function normalizeProductCode(value){
-      const raw = String(value ?? "").trim();
-      if(!raw) return "";
-      if(/^\d+$/.test(raw)) return String(Number(raw));
-      return normalizeText(raw);
-    }
-
-    function fixedCardCategoryKey(value){
-      const label = normalizeText(value)
-        .replace(/[^a-z0-9]+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim();
-
-      if(label.includes("electrodomesticos")){
-        if(label.includes("no a la venta") || label.includes("no vender")) return "electrodomesticos-no-venta";
-        if(label.includes("a la venta") || label.includes("en venta")) return "electrodomesticos-venta";
-      }
-      if(label.includes("perfumeria") || label.includes("fragancias")) return "perfumeria";
-      if(label.includes("juguetes")) return "juguetes";
-      if(label.includes("papeleria")) return "papeleria";
-      if(label.includes("medicamentos")) return "medicamentos";
-      return label;
-    }
 
     function loadGoogleDocsCatalogJsonp(){
       return new Promise((resolve, reject)=>{
@@ -4645,6 +4606,7 @@
         const separator = GOOGLE_DOCS_CATALOG_ENDPOINT.includes("?") ? "&" : "?";
         script.src = GOOGLE_DOCS_CATALOG_ENDPOINT + separator
           + "callback=" + encodeURIComponent(callbackName)
+          + "&folderUrl=" + encodeURIComponent(GOOGLE_DOCS_FOLDER_URL)
           + "&cb=" + Date.now();
         script.async = true;
         document.head.appendChild(script);
@@ -4675,6 +4637,7 @@
         imgFilename: syntheticFilename,
         fileExt: "webp",
         hasImage: Boolean(docsImageUrl),
+        isDocumentFirst: Boolean(item && item.isDocumentFirst),
         description,
         docsImageUrl,
         docsDocumentUrl: String((item && item.documentUrl) || "").trim(),
@@ -4713,24 +4676,6 @@
       }
       list.replaceChildren(fragment);
     }
-
-    function buildFixedCardImageMap(docsByCode){
-      const result = new Map();
-      const source = docsByCode instanceof Map ? docsByCode : new Map();
-      const configuredCodes = Array.isArray(window.IMAGENES_FIJAS_DE_TARJETAS)
-        ? window.IMAGENES_FIJAS_DE_TARJETAS
-        : [];
-
-      for(const configuredCode of configuredCodes){
-        const item = source.get(normalizeProductCode(configuredCode));
-        const imageUrl = String((item && item.image && item.image.url) || "").trim();
-        const categoryKey = fixedCardCategoryKey(item && item.category);
-        if(imageUrl && categoryKey) result.set(categoryKey, imageUrl);
-      }
-      return result;
-    }
-
-
 
     function isMobileDevice(){
       try{
@@ -5052,7 +4997,8 @@
         if(!found.cover) found.cover = p;
         const previewImage = String((p && p.docsImageUrl) || (p && p.imgFilename) || "").trim();
         if(p && (p.hasImage || p.docsImageUrl) && previewImage && !found.previewImages.includes(previewImage)){
-          found.previewImages.push(previewImage);
+          if(p.isDocumentFirst) found.previewImages.unshift(previewImage);
+          else found.previewImages.push(previewImage);
         }
         found.hasStructuredProducts = found.hasStructuredProducts || !Boolean(p && p.isUnstructured);
         found.hasUnstructuredProducts = found.hasUnstructuredProducts || Boolean(p && p.isUnstructured);
@@ -6034,10 +5980,9 @@
       btn.setAttribute("aria-label", `Abrir categoría ${album.label}`);
       btn.title = `${album.label} · ${album.count} ${unitLabel}`;
 
-      const configuredPreviewUrl = fixedCardImageByCategory.get(fixedCardCategoryKey(album.label)) || "";
-      const previewSource = configuredPreviewUrl
-        ? [configuredPreviewUrl]
-        : (album.previewImages && album.previewImages.length ? album.previewImages : "");
+      const previewSource = album.previewImages && album.previewImages.length
+        ? album.previewImages
+        : "";
 
       preview.appendChild(makeAlbumPreview(previewSource, album.label));
       label.textContent = album.label;
@@ -6822,13 +6767,6 @@
 
       try{
         const googleDocsProducts = await loadGoogleDocsCatalogJsonp();
-        const googleDocsByCode = new Map();
-        for(const item of googleDocsProducts){
-          const key = normalizeProductCode(item && item.code);
-          if(key) googleDocsByCode.set(key, item);
-        }
-        fixedCardImageByCategory = buildFixedCardImageMap(googleDocsByCode);
-
         const products = googleDocsProducts
           .map(makeProductFromGoogleDoc)
           .filter(Boolean);

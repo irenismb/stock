@@ -4614,11 +4614,79 @@
     }
 
 
+    function parseOptionalWholeNumber(value){
+      const raw = String(value ?? "").trim();
+      if(!raw) return null;
+      const digits = raw.replace(/[^\d]/g, "");
+      if(!digits) return null;
+      const parsed = Number(digits);
+      return Number.isSafeInteger(parsed) ? parsed : null;
+    }
+
+    function parseOfficialInventoryRecord(item){
+      const rawName = String((item && item.name) || "").trim();
+      const rawDescription = String((item && item.description) || "").trim();
+      const officialRecordPattern = /^([\s\S]+?)\.\s*Precio:\s*([\d.\s]*)\s*Costo:\s*([\d.\s]*)\s*Stock:\s*([\d\s]*)\s*Referencia externa:\s*([\s\S]*)$/i;
+
+      let match = null;
+      for(const candidate of [rawDescription, rawName]){
+        match = candidate.match(officialRecordPattern);
+        if(match) break;
+      }
+
+      if(!match){
+        const fallbackPrice = parseOptionalWholeNumber(item && item.priceMineText);
+        const numericPrice = Number(item && item.priceMine);
+        const explicitStock = parseOptionalWholeNumber(item && item.stock);
+        return {
+          matched: false,
+          name: rawName,
+          description: rawDescription,
+          price: fallbackPrice ?? (numericPrice > 0 ? numericPrice : 0),
+          hasPrice: fallbackPrice !== null || numericPrice > 0,
+          stock: explicitStock,
+          referenceExternal: ""
+        };
+      }
+
+      const priceText = match[2].trim();
+      const stockText = match[4].trim();
+      const referenceAndDescription = match[5].trim();
+      let referenceExternal = "";
+      let description = referenceAndDescription;
+      const firstSentenceEnd = referenceAndDescription.indexOf(". ");
+      if(firstSentenceEnd > 0){
+        const possibleReference = referenceAndDescription.slice(0, firstSentenceEnd).trim();
+        const remainingDescription = referenceAndDescription.slice(firstSentenceEnd + 2).trim();
+        const words = possibleReference.split(/\s+/).filter(Boolean);
+        const connectors = new Set(["a", "al", "de", "del", "el", "en", "la", "las", "los", "para", "y"]);
+        const looksLikeSourceLabel = words.length > 0
+          && words.length <= 8
+          && possibleReference.length <= 80
+          && words.every(word => connectors.has(normalizeText(word)) || /^[A-ZÁÉÍÓÚÜÑ0-9]/.test(word));
+        if(looksLikeSourceLabel && remainingDescription){
+          referenceExternal = possibleReference;
+          description = remainingDescription;
+        }
+      }
+
+      return {
+        matched: true,
+        name: match[1].trim(),
+        description,
+        price: parseOptionalWholeNumber(priceText) ?? 0,
+        hasPrice: Boolean(priceText),
+        stock: parseOptionalWholeNumber(stockText),
+        referenceExternal
+      };
+    }
+
     function makeProductFromGoogleDoc(item){
       const code = String((item && item.code) || "").trim();
-      const name = String((item && item.name) || "").trim();
+      const parsedRecord = parseOfficialInventoryRecord(item);
+      const name = parsedRecord.name;
       const category = String((item && item.category) || "General").trim() || "General";
-      const description = String((item && item.description) || "").trim();
+      const description = parsedRecord.description;
       const docsImageUrl = String((item && item.image && item.image.url) || "").trim();
       const syntheticFilename = category + "/" + (code || "producto") + ".webp";
 
@@ -4629,8 +4697,10 @@
         name,
         category,
         brand: "",
-        price: Number(item && item.priceMine) || 0,
-        stock: 1,
+        price: parsedRecord.price,
+        hasPrice: parsedRecord.hasPrice,
+        stock: parsedRecord.stock,
+        referenceExternal: parsedRecord.referenceExternal,
         isUnstructured: false,
         originalFilename: "",
         srcFilename: syntheticFilename,
@@ -5081,6 +5151,9 @@
     function cartTotalValue(){
       return cartItemsArray().reduce((s,it)=> s + ((Number(it.price)||0) * (Number(it.qty)||0)), 0);
     }
+    function cartHasUnpricedItems(){
+      return cartItemsArray().some(it => it && it.hasPrice === false);
+    }
     function cartTotalQty(){
       return cartItemsArray().reduce((s,it)=> s + (Number(it.qty)||0), 0);
     }
@@ -5127,6 +5200,7 @@
           id: p.id,
           name: p.name,
           price: p.price,
+          hasPrice: p.hasPrice !== false,
           qty: newQty,
           stock: p.stock,
           imgFilename: p.imgFilename || null
@@ -5183,6 +5257,9 @@
       const includeCode = shouldSendProductCodesByWhatsApp();
       return items.map(it => {
         const codePart = includeCode ? ` (Id: ${it.id})` : "";
+        if(it.hasPrice === false){
+          return `* ${it.name}${codePart} x${it.qty} = Precio por confirmar`;
+        }
         return `* ${it.name}${codePart} x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`;
       });
     }
@@ -5257,6 +5334,7 @@
 	  const subtotal = cartTotalValue();
 	  const envio = getShippingCop();
 	  const total = subtotal + envio;
+	  const hasUnpricedItems = cartHasUnpricedItems();
 
 	  const lines = [];
 
@@ -5276,9 +5354,12 @@
 	  }
 
 	  lines.push("");
-	  lines.push(`*Subtotal:* ${fmtCOP.format(subtotal)}`);
+	  lines.push(`*Subtotal:* ${hasUnpricedItems ? "Por confirmar" : fmtCOP.format(subtotal)}`);
 	  lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
-	  lines.push(`*Total:* ${fmtCOP.format(total)}`);
+	  lines.push(`*Total:* ${hasUnpricedItems ? "Por confirmar" : fmtCOP.format(total)}`);
+	  if(hasUnpricedItems){
+		lines.push("*Nota:* Hay productos cuyo precio debe confirmarse antes de cerrar el pedido.");
+	  }
 
 	  // ✅ Celular tienda sin +57 (solo para el mensaje)
 	  const storePhoneNo57 = String(STORE_INFO.whatsappDisplay || "")
@@ -5328,6 +5409,7 @@
           return {
             nombreProducto: it.name || "",
             valorUnitario,
+            precioPendiente: it.hasPrice === false,
             cantidadSolicitada,
             totalPedido,
             marca: p.brand || "",
@@ -5406,7 +5488,8 @@
       const enforce = shouldEnforceStockLimits();
       const items = cartItemsArray();
       const total = cartTotalValue() + getShippingCop();
-      cartTotalEl.textContent = "Total: " + fmtCOP.format(total);
+      const hasUnpricedItems = items.some(it => it && it.hasPrice === false);
+      cartTotalEl.textContent = hasUnpricedItems ? "Total: Por confirmar" : ("Total: " + fmtCOP.format(total));
 
       if(!items.length){
         cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío.</div>`;
@@ -5436,7 +5519,7 @@
         main.querySelector(".cart-item-name").textContent = it.name;
         const cartMetaParts = [];
         if(shouldShowProductCodes()) cartMetaParts.push(`Id: ${it.id}`);
-        cartMetaParts.push(`Precio: ${fmtCOP.format(Number(it.price)||0)}`);
+        cartMetaParts.push(it.hasPrice === false ? "Precio: Por confirmar" : `Precio: ${fmtCOP.format(Number(it.price)||0)}`);
         main.querySelector(".cart-item-sub").textContent = cartMetaParts.join(" · ");
         left.appendChild(main);
 
@@ -5457,7 +5540,9 @@
 
         const subtotal = document.createElement("div");
         subtotal.className = "cart-subtotal";
-        subtotal.textContent = fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0));
+        subtotal.textContent = it.hasPrice === false
+          ? "Por confirmar"
+          : fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0));
 
         const remove = document.createElement("button");
         remove.className = "cart-remove";
@@ -5763,9 +5848,17 @@
             const productUrl = baseUrl + "#p-" + encodeURIComponent(p.id);
             const imgUrl = String(p.docsImageUrl || productPlaceholderAbsoluteUrl());
             const desc = String(p.description || `Producto: ${p.name}. Categoría: ${p.category || "catálogo"}. Compra por WhatsApp.`);
-            const availability = (Number.isFinite(p.stock) && p.stock > 0)
-              ? "https://schema.org/InStock"
-              : "https://schema.org/OutOfStock";
+            const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
+            const availability = hasKnownStock
+              ? (p.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock")
+              : undefined;
+            const offer = p.hasPrice === false ? undefined : {
+              "@type":"Offer",
+              "url": productUrl,
+              "priceCurrency":"COP",
+              "price": p.price,
+              "availability": availability
+            };
             return {
               "@type":"ListItem",
               "position": i + 1,
@@ -5779,13 +5872,7 @@
                 "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
                 "sku": String(p.id),
                 "url": productUrl,
-                "offers": {
-                  "@type":"Offer",
-                  "url": productUrl,
-                  "priceCurrency":"COP",
-                  "price": p.price || 0,
-                  "availability": availability
-                }
+                "offers": offer
               }
             };
           })
@@ -5841,12 +5928,15 @@
         return "";
       }
 
-      const stockVal = Number.isFinite(p.stock) ? p.stock : 0;
+      const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
+      const stockVal = hasKnownStock ? p.stock : 0;
       let stockPart = "";
       if (INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
-        stockPart = ` · Stock: ${stockVal}`;
+        stockPart = hasKnownStock ? ` · Stock: ${stockVal}` : " · Stock: Por confirmar";
       } else if (INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
-        stockPart = ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`;
+        stockPart = hasKnownStock
+          ? ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`
+          : " · Disponibilidad por confirmar";
       } else {
         stockPart = "";
       }
@@ -5925,7 +6015,9 @@
       descriptionEl.textContent = String((p && p.description) || "").trim();
       descriptionEl.hidden = !descriptionEl.textContent;
       card.classList.toggle("has-long-description", descriptionEl.textContent.length > 900);
-      priceEl.textContent = (p && p.isUnstructured) ? "" : (shouldShowProductPrices() ? fmtCOP.format(p.price) : "");
+      priceEl.textContent = (p && p.isUnstructured)
+        ? ""
+        : (shouldShowProductPrices() ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price)) : "");
 
       if(p && p.isUnstructured){
         if(actionsEl) actionsEl.remove();
@@ -6511,12 +6603,14 @@
         if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
 
         if(sortMode === "price_asc"){
+          if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
           return (a.price||0) - (b.price||0)
             || String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
             || String(a.id).localeCompare(String(b.id));
         }
 
         if(sortMode === "price_desc"){
+          if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
           return (b.price||0) - (a.price||0)
             || String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
             || String(a.id).localeCompare(String(b.id));
@@ -6676,6 +6770,7 @@
             id: p.id,
             name: p.name,
             price: p.price,
+            hasPrice: p.hasPrice !== false,
             qty: newQty,
             stock: p.stock,
             imgFilename: p.imgFilename || null

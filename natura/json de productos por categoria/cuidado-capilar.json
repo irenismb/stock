@@ -1,0 +1,596 @@
+{
+  "categoria": "cuidado capilar",
+  "total_productos": 59,
+  "productos": {
+    "0383": {
+      "codigo": "0383",
+      "nombre": "NATURA LUMINA ANTICAIDA Y CRECIMIENTO SHAMPU ACONDICIONADOR Y MASCARA EN REPUESTO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída.",
+      "registro_txt_completo": "NATURA LUMINA ANTICAIDA Y CRECIMIENTO SHAMPU ACONDICIONADOR Y MASCARA EN REPUESTO\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída."
+    },
+    "0384": {
+      "codigo": "0384",
+      "nombre": "NATURA COMBO TODODIA NUTRICION SHAMPOO ACONDICIONADOR REPUESTOS X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de nutrición que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a mantener el cabello suave, nutrido y manejable.",
+      "registro_txt_completo": "NATURA COMBO TODODIA NUTRICION SHAMPOO ACONDICIONADOR REPUESTOS X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de nutrición que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a mantener el cabello suave, nutrido y manejable."
+    },
+    "0385": {
+      "codigo": "0385",
+      "nombre": "NATURA TODODIA REPARACION SHAMPOO 300 ML REPUESTO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA TODODIA REPARACION SHAMPOO 300 ML REPUESTO\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0386": {
+      "codigo": "0386",
+      "nombre": "NATURA COMBO TODODIA REPARACION SHAMPOO ACONDICIONADOR REPUESTOS X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad.",
+      "registro_txt_completo": "NATURA COMBO TODODIA REPARACION SHAMPOO ACONDICIONADOR REPUESTOS X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad."
+    },
+    "0387": {
+      "codigo": "0387",
+      "nombre": "NATURA COMBO EKOS MURUMURU SHAMPOO ACONDICIONADOR X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar antidaños con Murumuru que combina limpieza y acondicionamiento para ayudar a nutrir, reconstruir y mejorar la resistencia de la fibra capilar.",
+      "registro_txt_completo": "NATURA COMBO EKOS MURUMURU SHAMPOO ACONDICIONADOR X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar antidaños con Murumuru que combina limpieza y acondicionamiento para ayudar a nutrir, reconstruir y mejorar la resistencia de la fibra capilar."
+    },
+    "0388": {
+      "codigo": "0388",
+      "nombre": "NATURA COMBO KAIAK CLASICO MASCULINO PERFUME SHAMPOO GEL DE AFEITAR 2 EN 1",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA COMBO KAIAK CLASICO MASCULINO PERFUME SHAMPOO GEL DE AFEITAR 2 EN 1\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0389": {
+      "codigo": "0389",
+      "nombre": "NATURA COMBO LUMINA FUERZA Y REPARACION MOLECULAR SHAMPOO ACONDICIONADOR MASCARA ENVASE X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia.",
+      "registro_txt_completo": "NATURA COMBO LUMINA FUERZA Y REPARACION MOLECULAR SHAMPOO ACONDICIONADOR MASCARA ENVASE X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia."
+    },
+    "0390": {
+      "codigo": "0390",
+      "nombre": "NATURA COMBO TODODIA HIDRATACION SHAMPOO ACONDICIONADOR REPUESTO X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO TODODIA HIDRATACION SHAMPOO ACONDICIONADOR REPUESTO X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0391": {
+      "codigo": "0391",
+      "nombre": "NATURA COMBO TODODIA HIDRATACION SHAMPOO ACONDICIONADOR MASCARA REPUESTO X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad.",
+      "registro_txt_completo": "NATURA COMBO TODODIA HIDRATACION SHAMPOO ACONDICIONADOR MASCARA REPUESTO X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad."
+    },
+    "0392": {
+      "codigo": "0392",
+      "nombre": "NATURA TODODIA RIZADO Y AFROS CREMA DE PEINAR REPUESTO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema para peinar de uso sin enjuague, destinada a facilitar el peinado, aportar acondicionamiento y ayudar al control y definición del cabello según la línea.",
+      "registro_txt_completo": "NATURA TODODIA RIZADO Y AFROS CREMA DE PEINAR REPUESTO\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema para peinar de uso sin enjuague, destinada a facilitar el peinado, aportar acondicionamiento y ayudar al control y definición del cabello según la línea."
+    },
+    "0393": {
+      "codigo": "0393",
+      "nombre": "NATURA COMBO TODODIA RIZADO Y AFROS SHAMPOO ACONDICIONADOR CREMA DE PEINAR REPUESTO X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos de cuidado capilar con patauá que combina limpieza y acondicionamiento para ayudar a fortalecer el cabello y mejorar su resistencia.",
+      "registro_txt_completo": "NATURA COMBO TODODIA RIZADO Y AFROS SHAMPOO ACONDICIONADOR CREMA DE PEINAR REPUESTO X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos de cuidado capilar con patauá que combina limpieza y acondicionamiento para ayudar a fortalecer el cabello y mejorar su resistencia."
+    },
+    "0394": {
+      "codigo": "0394",
+      "nombre": "NATURA LUMINA BRILLO Y PROTECCION DE COLOR SHAMPOO REPUESTO 300 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA LUMINA BRILLO Y PROTECCION DE COLOR SHAMPOO REPUESTO 300 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0395": {
+      "codigo": "0395",
+      "nombre": "NATURA LUMINA HIDRATACION Y PROTECCION ANTIPOLUCION SHAMPOO REPUESTO 300 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA LUMINA HIDRATACION Y PROTECCION ANTIPOLUCION SHAMPOO REPUESTO 300 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0396": {
+      "codigo": "0396",
+      "nombre": "NATURA LUMINA ANTICASPA SHAMPOO REPUESTO 300 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída.",
+      "registro_txt_completo": "NATURA LUMINA ANTICASPA SHAMPOO REPUESTO 300 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída."
+    },
+    "0397": {
+      "codigo": "0397",
+      "nombre": "NATURA COMBO TODODIA HIDRATACION SHAMPOO ACONDICIONADOR MASCARA X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad.",
+      "registro_txt_completo": "NATURA COMBO TODODIA HIDRATACION SHAMPOO ACONDICIONADOR MASCARA X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad."
+    },
+    "0398": {
+      "codigo": "0398",
+      "nombre": "NATURA TODODIA NUTRICION ACONDICIONADOR REPUESTO 300 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Acondicionador capilar para ayudar a desenredar, suavizar y mejorar la manejabilidad del cabello, como parte de la rutina de cuidado de la línea indicada.",
+      "registro_txt_completo": "NATURA TODODIA NUTRICION ACONDICIONADOR REPUESTO 300 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Acondicionador capilar para ayudar a desenredar, suavizar y mejorar la manejabilidad del cabello, como parte de la rutina de cuidado de la línea indicada."
+    },
+    "0399": {
+      "codigo": "0399",
+      "nombre": "NATURA TODODIA NUTRICION SHAMPOO ACONDICIONADOR CREMA DE PEINAR",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne productos de limpieza, acondicionamiento, tratamiento y finalización para ayudar a recuperar suavidad, resistencia y manejabilidad.",
+      "registro_txt_completo": "NATURA TODODIA NUTRICION SHAMPOO ACONDICIONADOR CREMA DE PEINAR\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne productos de limpieza, acondicionamiento, tratamiento y finalización para ayudar a recuperar suavidad, resistencia y manejabilidad."
+    },
+    "0400": {
+      "codigo": "0400",
+      "nombre": "NATURA COMBO TODODIA REPARACION SHAMPOO ACONDICIONADOR MASCARA X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad.",
+      "registro_txt_completo": "NATURA COMBO TODODIA REPARACION SHAMPOO ACONDICIONADOR MASCARA X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad."
+    },
+    "0401": {
+      "codigo": "0401",
+      "nombre": "NATURA TODODIA FLOR DE CIRUELA PERFUME CAPILAR 60 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Producto de cuidado personal en la presentación indicada, destinado a integrarse en la rutina correspondiente de acuerdo con su tipo y beneficio principal.",
+      "registro_txt_completo": "NATURA TODODIA FLOR DE CIRUELA PERFUME CAPILAR 60 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Producto de cuidado personal en la presentación indicada, destinado a integrarse en la rutina correspondiente de acuerdo con su tipo y beneficio principal."
+    },
+    "0402": {
+      "codigo": "0402",
+      "nombre": "NATURA TODODIA RIZADO SPRAY REACTIVADOR DE RIZOS 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Spray reactivador para refrescar y ayudar a redefinir los rizos entre lavados, aportando manejabilidad y facilitando el peinado.",
+      "registro_txt_completo": "NATURA TODODIA RIZADO SPRAY REACTIVADOR DE RIZOS 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Spray reactivador para refrescar y ayudar a redefinir los rizos entre lavados, aportando manejabilidad y facilitando el peinado."
+    },
+    "0403": {
+      "codigo": "0403",
+      "nombre": "NATURA COMBO EKOS MURUMURU SHAMPOO ACONDICIONADOR MASCARA PRE SHAMPOO X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru.",
+      "registro_txt_completo": "NATURA COMBO EKOS MURUMURU SHAMPOO ACONDICIONADOR MASCARA PRE SHAMPOO X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru."
+    },
+    "0404": {
+      "codigo": "0404",
+      "nombre": "NATURA COMBO EKOS MURUMURU SHAMPOO ACONDICIONADOR MASCARA CREMA DE PEINAR X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru.",
+      "registro_txt_completo": "NATURA COMBO EKOS MURUMURU SHAMPOO ACONDICIONADOR MASCARA CREMA DE PEINAR X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru."
+    },
+    "0405": {
+      "codigo": "0405",
+      "nombre": "NATURA LUMINA MATIZACION Y RESTAURACION ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Producto de cuidado personal en la presentación indicada, destinado a integrarse en la rutina correspondiente de acuerdo con su tipo y beneficio principal.",
+      "registro_txt_completo": "NATURA LUMINA MATIZACION Y RESTAURACION ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Producto de cuidado personal en la presentación indicada, destinado a integrarse en la rutina correspondiente de acuerdo con su tipo y beneficio principal."
+    },
+    "0406": {
+      "codigo": "0406",
+      "nombre": "NATURA LUMINA HIDRATACION Y PROTECCION ANTIPOLUCION SHAMPOO ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA LUMINA HIDRATACION Y PROTECCION ANTIPOLUCION SHAMPOO ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0407": {
+      "codigo": "0407",
+      "nombre": "NATURA COMBO LUMINA HIDRATACION Y PROTECCION ANTIPOLUCION SHAMPOO ACONDICIONADOR FLUIDO ENVASE X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA HIDRATACION Y PROTECCION ANTIPOLUCION SHAMPOO ACONDICIONADOR FLUIDO ENVASE X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0408": {
+      "codigo": "0408",
+      "nombre": "NATURA COMBO LUMINA RIZADO SHAMPOO ACONDICIONADOR MASCARA CREMA DE PEINAR REPUESTO X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador, máscara, crema para peinar, crema para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RIZADO SHAMPOO ACONDICIONADOR MASCARA CREMA DE PEINAR REPUESTO X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador, máscara, crema para peinar, crema para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0409": {
+      "codigo": "0409",
+      "nombre": "NATURA LUMINA RIZADO ACONDICIONADOR",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia.",
+      "registro_txt_completo": "NATURA LUMINA RIZADO ACONDICIONADOR\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia."
+    },
+    "0410": {
+      "codigo": "0410",
+      "nombre": "NATURA COMBO LUMINA RIZADO SHAMPOO ACONDICIONADOR ENVASE X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RIZADO SHAMPOO ACONDICIONADOR ENVASE X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0411": {
+      "codigo": "0411",
+      "nombre": "NATURA COMBO LUMINA RIZADO SHAMPOO ACONDICIONADOR MASCARA CREMA DE PEINAR ENVASE X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne productos de limpieza, acondicionamiento, tratamiento y finalización para ayudar a recuperar suavidad, resistencia y manejabilidad.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RIZADO SHAMPOO ACONDICIONADOR MASCARA CREMA DE PEINAR ENVASE X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne productos de limpieza, acondicionamiento, tratamiento y finalización para ayudar a recuperar suavidad, resistencia y manejabilidad."
+    },
+    "0412": {
+      "codigo": "0412",
+      "nombre": "NATURA COMBO LUMINA RESTAURACION Y LISO PROLONGADO SHAMPOO ACONDICIONADOR ENVASE X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RESTAURACION Y LISO PROLONGADO SHAMPOO ACONDICIONADOR ENVASE X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0413": {
+      "codigo": "0413",
+      "nombre": "NATURA COMBO LUMINA RESTAURACION Y LISO PROLONGADO SHAMPOO ACONDICIONADOR MASCARA ENVASE X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador, máscara para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RESTAURACION Y LISO PROLONGADO SHAMPOO ACONDICIONADOR MASCARA ENVASE X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador, máscara para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0414": {
+      "codigo": "0414",
+      "nombre": "NATURA COMBO LUMINA RECONSTRUCCION SHAMPOO ACONDICIONADOR REPUESTO X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RECONSTRUCCION SHAMPOO ACONDICIONADOR REPUESTO X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0415": {
+      "codigo": "0415",
+      "nombre": "NATURA COMBO LUMINA RECONSTRUCCION SHAMPOO ACONDICIONADOR MASCARA REPUESTO X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RECONSTRUCCION SHAMPOO ACONDICIONADOR MASCARA REPUESTO X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia."
+    },
+    "0416": {
+      "codigo": "0416",
+      "nombre": "NATURA LUMINA RECONSTRUCCION ACONDICIONADOR",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Acondicionador capilar para ayudar a desenredar, suavizar y mejorar la manejabilidad del cabello, como parte de la rutina de cuidado de la línea indicada.",
+      "registro_txt_completo": "NATURA LUMINA RECONSTRUCCION ACONDICIONADOR\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Acondicionador capilar para ayudar a desenredar, suavizar y mejorar la manejabilidad del cabello, como parte de la rutina de cuidado de la línea indicada."
+    },
+    "0417": {
+      "codigo": "0417",
+      "nombre": "NATURA COMBO LUMINA RECONSTRUCCION SHAMPOO ACONDICIONADOR MASCARA SERUM ENVASE X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador, máscara, sérum para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA RECONSTRUCCION SHAMPOO ACONDICIONADOR MASCARA SERUM ENVASE X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador, máscara, sérum para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0418": {
+      "codigo": "0418",
+      "nombre": "NATURA COMBO LUMINA BRILLO Y PROTECCION DE COLOR SHAMPOO ACONDICIONADOR ENVASE X2",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA BRILLO Y PROTECCION DE COLOR SHAMPOO ACONDICIONADOR ENVASE X2\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0419": {
+      "codigo": "0419",
+      "nombre": "NATURA COMBO LUMINA ANTICAIDA SHAMPOO ACONDICIONADOR MASCARA ENVASE X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída.",
+      "registro_txt_completo": "NATURA COMBO LUMINA ANTICAIDA SHAMPOO ACONDICIONADOR MASCARA ENVASE X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída."
+    },
+    "0420": {
+      "codigo": "0420",
+      "nombre": "NATURA KAIAK K NOITE MASCULINO SHAMPOO PERFUMADO 125 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA KAIAK K NOITE MASCULINO SHAMPOO PERFUMADO 125 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0421": {
+      "codigo": "0421",
+      "nombre": "NATURA KAIAK CLASICO MASCULINO SHAMPOO REFRESCANTE PERFUMADO 125 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior.",
+      "registro_txt_completo": "NATURA KAIAK CLASICO MASCULINO SHAMPOO REFRESCANTE PERFUMADO 125 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Shampoo para la limpieza de el cabello, formulado para integrarse en la rutina de la línea indicada y preparar el cabello para el acondicionamiento o tratamiento posterior."
+    },
+    "0422": {
+      "codigo": "0422",
+      "nombre": "NATURA EKOS MURUMURU SHAMPOO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru.",
+      "registro_txt_completo": "NATURA EKOS MURUMURU SHAMPOO\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru."
+    },
+    "0423": {
+      "codigo": "0423",
+      "nombre": "NATURA COMBO LUMINA ANTICAIDA SHAMPOO ACONDICIONADOR MASCARA TONICO ENVASE X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída.",
+      "registro_txt_completo": "NATURA COMBO LUMINA ANTICAIDA SHAMPOO ACONDICIONADOR MASCARA TONICO ENVASE X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída."
+    },
+    "0424": {
+      "codigo": "0424",
+      "nombre": "NATURA TODODIA PIEL UNIFORME MANTECA UNIFORMADORA DE TONO PERA Y FLOR DE LOTO 200 G",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Manteca corporal nutritiva orientada al cuidado de la piel y a una apariencia más uniforme, con la combinación aromática de pera y flor de loto.",
+      "registro_txt_completo": "NATURA TODODIA PIEL UNIFORME MANTECA UNIFORMADORA DE TONO PERA Y FLOR DE LOTO 200 G\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Manteca corporal nutritiva orientada al cuidado de la piel y a una apariencia más uniforme, con la combinación aromática de pera y flor de loto."
+    },
+    "0425": {
+      "codigo": "0425",
+      "nombre": "NATURA TODODIA PIEL UNIFORME BALSAMO ULTRA NUTRITIVO REGENERADOR PERA Y FLOR DE LOTO 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Bálsamo corporal de nutrición intensiva diseñado para ayudar a regenerar y suavizar la piel, complementando la rutina de uniformidad del tono de la línea Piel Uniforme.",
+      "registro_txt_completo": "NATURA TODODIA PIEL UNIFORME BALSAMO ULTRA NUTRITIVO REGENERADOR PERA Y FLOR DE LOTO 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Bálsamo corporal de nutrición intensiva diseñado para ayudar a regenerar y suavizar la piel, complementando la rutina de uniformidad del tono de la línea Piel Uniforme."
+    },
+    "0426": {
+      "codigo": "0426",
+      "nombre": "NATURA EKOS MURUMURU SERUM CAPILAR NOCTURNO 30 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Sérum de tratamiento nocturno para el cabello que complementa la rutina antidaños y ayuda a nutrir y cuidar la fibra capilar durante la noche.",
+      "registro_txt_completo": "NATURA EKOS MURUMURU SERUM CAPILAR NOCTURNO 30 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Sérum de tratamiento nocturno para el cabello que complementa la rutina antidaños y ayuda a nutrir y cuidar la fibra capilar durante la noche."
+    },
+    "0427": {
+      "codigo": "0427",
+      "nombre": "NATURA EKOS MURUMURU MASCARA PRE SHAMPOO 100 G",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru.",
+      "registro_txt_completo": "NATURA EKOS MURUMURU MASCARA PRE SHAMPOO 100 G\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Tratamiento previo al lavado que ayuda a nutrir y preparar el cabello dañado antes del shampoo, complementando la rutina reconstructora con Murumuru."
+    },
+    "0428": {
+      "codigo": "0428",
+      "nombre": "NATURA EKOS MURUMURU SHAMPOO Y ACONDICIONADOR ANTIDAÑOS 300 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar antidaños con Murumuru que combina limpieza y acondicionamiento para ayudar a nutrir, reconstruir y mejorar la resistencia de la fibra capilar.",
+      "registro_txt_completo": "NATURA EKOS MURUMURU SHAMPOO Y ACONDICIONADOR ANTIDAÑOS 300 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar antidaños con Murumuru que combina limpieza y acondicionamiento para ayudar a nutrir, reconstruir y mejorar la resistencia de la fibra capilar."
+    },
+    "0429": {
+      "codigo": "0429",
+      "nombre": "NATURA EKOS MURUMURU CREMA PARA PEINAR MULTIBENEFICIOS 150 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema para peinar sin enjuague que ayuda a desenredar, acondicionar y mejorar la manejabilidad del cabello, complementando el cuidado antidaños de la línea Murumuru.",
+      "registro_txt_completo": "NATURA EKOS MURUMURU CREMA PARA PEINAR MULTIBENEFICIOS 150 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema para peinar sin enjuague que ayuda a desenredar, acondicionar y mejorar la manejabilidad del cabello, complementando el cuidado antidaños de la línea Murumuru."
+    },
+    "0430": {
+      "codigo": "0430",
+      "nombre": "NATURA EKOS PATAUA SHAMPOO ACONDICIONADOR TONICO ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar con patauá que reúne productos de limpieza, acondicionamiento y tratamiento del cuero cabelludo para apoyar el fortalecimiento y el cuidado del cabello.",
+      "registro_txt_completo": "NATURA EKOS PATAUA SHAMPOO ACONDICIONADOR TONICO ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar con patauá que reúne productos de limpieza, acondicionamiento y tratamiento del cuero cabelludo para apoyar el fortalecimiento y el cuidado del cabello."
+    },
+    "0431": {
+      "codigo": "0431",
+      "nombre": "NATURA EKOS PATAUA SHAMPOO ACONDICIONADOR REPUESTO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos de cuidado capilar con patauá que combina limpieza y acondicionamiento para ayudar a fortalecer el cabello y mejorar su resistencia.",
+      "registro_txt_completo": "NATURA EKOS PATAUA SHAMPOO ACONDICIONADOR REPUESTO\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos de cuidado capilar con patauá que combina limpieza y acondicionamiento para ayudar a fortalecer el cabello y mejorar su resistencia."
+    },
+    "0432": {
+      "codigo": "0432",
+      "nombre": "NATURA COMBO TODODIA REPARACION SHAMPOO ACONDICIONADOR MASCARA REPUESTOS X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad.",
+      "registro_txt_completo": "NATURA COMBO TODODIA REPARACION SHAMPOO ACONDICIONADOR MASCARA REPUESTOS X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne limpieza, acondicionamiento y tratamiento intensivo para ayudar a recuperar la suavidad, reducir la apariencia de daño y mejorar la manejabilidad."
+    },
+    "0433": {
+      "codigo": "0433",
+      "nombre": "NATURA COMBO LUMINA FUERZA Y REPARACION MOLECULAR SHAMPOO ACONDICIONADOR MASCARA REPUESTO X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia.",
+      "registro_txt_completo": "NATURA COMBO LUMINA FUERZA Y REPARACION MOLECULAR SHAMPOO ACONDICIONADOR MASCARA REPUESTO X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación molecular que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a fortalecer el cabello dañado y mejorar su resistencia."
+    },
+    "0434": {
+      "codigo": "0434",
+      "nombre": "NATURA COMBO LUMINA ANTICAIDA REPUESTO SHAMPOO 300 ML ACONDICIONADOR 300 ML MASCARA 250 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída.",
+      "registro_txt_completo": "NATURA COMBO LUMINA ANTICAIDA REPUESTO SHAMPOO 300 ML ACONDICIONADOR 300 ML MASCARA 250 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída."
+    },
+    "0435": {
+      "codigo": "0435",
+      "nombre": "NATURA TODODIA REPARACION CAPILAR SHAMPOO ACONDICIONADOR MASCARA CREMA PARA PEINAR ENVASE X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de reparación que reúne productos de limpieza, acondicionamiento, tratamiento y finalización para ayudar a recuperar suavidad, resistencia y manejabilidad.",
+      "registro_txt_completo": "NATURA TODODIA REPARACION CAPILAR SHAMPOO ACONDICIONADOR MASCARA CREMA PARA PEINAR ENVASE X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de reparación que reúne productos de limpieza, acondicionamiento, tratamiento y finalización para ayudar a recuperar suavidad, resistencia y manejabilidad."
+    },
+    "0436": {
+      "codigo": "0436",
+      "nombre": "NATURA COMBO TODODIA NUTRICION SHAMPOO ACONDICIONADOR MASCARA REPUESTOS X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar de nutrición que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a mantener el cabello suave, nutrido y manejable.",
+      "registro_txt_completo": "NATURA COMBO TODODIA NUTRICION SHAMPOO ACONDICIONADOR MASCARA REPUESTOS X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar de nutrición que combina limpieza, acondicionamiento y tratamiento intensivo para ayudar a mantener el cabello suave, nutrido y manejable."
+    },
+    "0437": {
+      "codigo": "0437",
+      "nombre": "NATURA PERFUME CABELLO ESENCIA LUMINA 30 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Perfume capilar ligero diseñado para perfumar el cabello y complementar la rutina de cuidado sin sustituir los tratamientos de la línea.",
+      "registro_txt_completo": "NATURA PERFUME CABELLO ESENCIA LUMINA 30 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Perfume capilar ligero diseñado para perfumar el cabello y complementar la rutina de cuidado sin sustituir los tratamientos de la línea."
+    },
+    "0551": {
+      "codigo": "0551",
+      "nombre": "NATURA COMBO LUMINA ANTICAIDA SHAMPOO ACONDICIONADOR MASCARA TONICO ENVASE X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador, máscara, tónico para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO LUMINA ANTICAIDA SHAMPOO ACONDICIONADOR MASCARA TONICO ENVASE X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador, máscara, tónico para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0559": {
+      "codigo": "0559",
+      "nombre": "NATURA COMBO LUMINA NUTRICION Y REPARACION PROFUNDA SHAMPOO REPUESTO 300 ML ACONDICIONADOR REPUESTO 300 ML MASCARA REPUESTO 250 ML X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída.",
+      "registro_txt_completo": "NATURA COMBO LUMINA NUTRICION Y REPARACION PROFUNDA SHAMPOO REPUESTO 300 ML ACONDICIONADOR REPUESTO 300 ML MASCARA REPUESTO 250 ML X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit de repuestos para cabello con caída que combina limpieza, acondicionamiento y tratamiento intensivo, orientado a fortalecer la fibra capilar y apoyar una rutina anticaída."
+    },
+    "0561": {
+      "codigo": "0561",
+      "nombre": "NATURA COMBO TODODIA CAPILAR DURAZNO Y ALMENDRA SHAMPOO 300 ML ACONDICIONADOR 280 ML CREMA PARA PEINAR 180 ML MASCARA 250 G X4",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador, máscara, crema para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO TODODIA CAPILAR DURAZNO Y ALMENDRA SHAMPOO 300 ML ACONDICIONADOR 280 ML CREMA PARA PEINAR 180 ML MASCARA 250 G X4\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador, máscara, crema para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    },
+    "0564": {
+      "codigo": "0564",
+      "nombre": "NATURA COMBO TODODIA CABELLO RIZADO CACHOS E CRESPOS SHAMPOO REPUESTO ACONDICIONADOR REPUESTO CREMA PARA PEINAR REPUESTO X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Kit capilar que reúne shampoo, acondicionador, crema para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos.",
+      "registro_txt_completo": "NATURA COMBO TODODIA CABELLO RIZADO CACHOS E CRESPOS SHAMPOO REPUESTO ACONDICIONADOR REPUESTO CREMA PARA PEINAR REPUESTO X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Kit capilar que reúne shampoo, acondicionador, crema para realizar una rutina complementaria de limpieza, acondicionamiento, tratamiento y/o finalización según los productos incluidos."
+    }
+  }
+}

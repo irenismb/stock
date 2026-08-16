@@ -1,0 +1,1016 @@
+{
+  "categoria": "medicamentos",
+  "total_productos": 101,
+  "productos": {
+    "0078": {
+      "codigo": "0078",
+      "nombre": "ACETAMINOFÉN 500 MG AG X 20 TABLETAS",
+      "precio": "",
+      "costo": "8950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y reducir la fiebre. Posología usual de referencia en adultos: 500 a 1.000 mg cada 6 a 8 horas según necesidad; no exceder 3.000 mg al día sin supervisión médica. Cuando se calcula por peso, la referencia es de 10 a 15 mg/kg por toma cada 4 a 6 horas, con máximo de 75 mg/kg al día y sin superar el límite diario del adulto.",
+      "registro_txt_completo": "ACETAMINOFÉN 500 MG AG X 20 TABLETAS\n\nPrecio:  Costo: 8.950. Stock:  Referencia externa: Farmatodo. Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y reducir la fiebre. Posología usual de referencia en adultos: 500 a 1.000 mg cada 6 a 8 horas según necesidad; no exceder 3.000 mg al día sin supervisión médica. Cuando se calcula por peso, la referencia es de 10 a 15 mg/kg por toma cada 4 a 6 horas, con máximo de 75 mg/kg al día y sin superar el límite diario del adulto."
+    },
+    "0079": {
+      "codigo": "0079",
+      "nombre": "ACICLOVIR 5 %, CREMA TÓPICA MK X 10 G",
+      "precio": "",
+      "costo": "10750",
+      "stock": "",
+      "referencia_externa": "MK",
+      "descripcion": "Antiviral. Piel y mucosas. Sirve para tratar lesiones cutáneas por herpes simple, especialmente herpes labial o genital. Posología usual: aplicar una capa fina 5 veces al día, aproximadamente cada 4 horas mientras se está despierto, durante 4 a 5 días. No aplicar dentro de los ojos, la boca ni la vagina.",
+      "registro_txt_completo": "ACICLOVIR 5 %, CREMA TÓPICA MK X 10 G\n\nPrecio:  Costo: 10.750. Stock:  Referencia externa: MK. Antiviral. Piel y mucosas. Sirve para tratar lesiones cutáneas por herpes simple, especialmente herpes labial o genital. Posología usual: aplicar una capa fina 5 veces al día, aproximadamente cada 4 horas mientras se está despierto, durante 4 a 5 días. No aplicar dentro de los ojos, la boca ni la vagina."
+    },
+    "0080": {
+      "codigo": "0080",
+      "nombre": "ACID MANTLE® JABÓN EN BARRA X 90 G X 3 UNIDADES",
+      "precio": "",
+      "costo": "20760",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Cuidado dermatológico. Piel. Sirve para la higiene diaria de piel sensible o seca y ayuda a conservar el pH y la barrera cutánea. Modo de uso: aplicar sobre la piel húmeda, masajear suavemente y enjuagar; puede utilizarse una o dos veces al día. No requiere dosificación por peso.",
+      "registro_txt_completo": "ACID MANTLE® JABÓN EN BARRA X 90 G X 3 UNIDADES\n\nPrecio:  Costo: 20.760. Stock:  Referencia externa: Farmatodo. Cuidado dermatológico. Piel. Sirve para la higiene diaria de piel sensible o seca y ayuda a conservar el pH y la barrera cutánea. Modo de uso: aplicar sobre la piel húmeda, masajear suavemente y enjuagar; puede utilizarse una o dos veces al día. No requiere dosificación por peso."
+    },
+    "0081": {
+      "codigo": "0081",
+      "nombre": "ÁCIDO FÓLICO 1 MG ECAR X 100 TABLETAS",
+      "precio": "",
+      "costo": "17950",
+      "stock": "",
+      "referencia_externa": "Ecar",
+      "descripcion": "Vitamina. General. Sirve para prevenir o tratar deficiencia de folato y apoyar la formación de glóbulos rojos; también se usa en situaciones especiales bajo indicación. Posología usual en adultos: 1 mg una vez al día cuando ha sido prescrito. Antes de tratamientos prolongados debe descartarse deficiencia de vitamina B12.",
+      "registro_txt_completo": "ÁCIDO FÓLICO 1 MG ECAR X 100 TABLETAS\n\nPrecio:  Costo: 17.950. Stock:  Referencia externa: Ecar. Vitamina. General. Sirve para prevenir o tratar deficiencia de folato y apoyar la formación de glóbulos rojos; también se usa en situaciones especiales bajo indicación. Posología usual en adultos: 1 mg una vez al día cuando ha sido prescrito. Antes de tratamientos prolongados debe descartarse deficiencia de vitamina B12."
+    },
+    "0082": {
+      "codigo": "0082",
+      "nombre": "ÁCIDO FUSÍDICO 2 %, CREMA TÓPICA X 15 G",
+      "precio": "",
+      "costo": "15900",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antibacteriano tópico. Piel u ojos. Sirve para infecciones bacterianas superficiales de la piel causadas por microorganismos sensibles. Posología usual: aplicar una capa fina 2 o 3 veces al día durante 7 días, o según fórmula médica. No prolongar el tratamiento sin revisión por riesgo de resistencia.",
+      "registro_txt_completo": "ÁCIDO FUSÍDICO 2 %, CREMA TÓPICA X 15 G\n\nPrecio:  Costo: 15.900. Stock:  Referencia externa: Cruz Verde. Antibacteriano tópico. Piel u ojos. Sirve para infecciones bacterianas superficiales de la piel causadas por microorganismos sensibles. Posología usual: aplicar una capa fina 2 o 3 veces al día durante 7 días, o según fórmula médica. No prolongar el tratamiento sin revisión por riesgo de resistencia."
+    },
+    "0083": {
+      "codigo": "0083",
+      "nombre": "AEROVIAL® BUDESONIDA 200 MCG + FORMOTEROL 6 MCG X 30 CÁPSULAS CON INHALADOR",
+      "precio": "",
+      "costo": "33950",
+      "stock": "",
+      "referencia_externa": "PLM",
+      "descripcion": "Antiasmático. Sistema respiratorio. Sirve como tratamiento controlador del asma al combinar un corticoide inhalado con un broncodilatador de acción prolongada. Posología habitual de referencia: inhalar el contenido de 1 cápsula cada 12 horas según fórmula; la cápsula no debe tragarse. Después de cada dosis se debe enjuagar la boca y no se utiliza para aliviar una crisis aguda.",
+      "registro_txt_completo": "AEROVIAL® BUDESONIDA 200 MCG + FORMOTEROL 6 MCG X 30 CÁPSULAS CON INHALADOR\n\nPrecio:  Costo: 33.950. Stock:  Referencia externa: PLM. Antiasmático. Sistema respiratorio. Sirve como tratamiento controlador del asma al combinar un corticoide inhalado con un broncodilatador de acción prolongada. Posología habitual de referencia: inhalar el contenido de 1 cápsula cada 12 horas según fórmula; la cápsula no debe tragarse. Después de cada dosis se debe enjuagar la boca y no se utiliza para aliviar una crisis aguda."
+    },
+    "0084": {
+      "codigo": "0084",
+      "nombre": "BOTIQUÍN DE PRIMEROS AUXILIOS 3M",
+      "precio": "",
+      "costo": "58900",
+      "stock": "",
+      "referencia_externa": "3M",
+      "descripcion": "Material de curación. Piel. Sirve para organizar elementos básicos de primeros auxilios ante lesiones menores. Modo de uso: revisar el contenido, las fechas de vencimiento y las instrucciones de cada elemento; reponer después de cada uso. No sustituye la atención de urgencias ante sangrado abundante, pérdida de conciencia, dificultad respiratoria o trauma grave.",
+      "registro_txt_completo": "BOTIQUÍN DE PRIMEROS AUXILIOS 3M\n\nPrecio:  Costo: 58.900. Stock:  Referencia externa: 3M. Material de curación. Piel. Sirve para organizar elementos básicos de primeros auxilios ante lesiones menores. Modo de uso: revisar el contenido, las fechas de vencimiento y las instrucciones de cada elemento; reponer después de cada uso. No sustituye la atención de urgencias ante sangrado abundante, pérdida de conciencia, dificultad respiratoria o trauma grave."
+    },
+    "0085": {
+      "codigo": "0085",
+      "nombre": "ZENTEL® ALBENDAZOL 400 MG X 1 TABLETA",
+      "precio": "",
+      "costo": "21950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiparasitario. Sistema digestivo. Sirve para tratar varias parasitosis intestinales. Posología usual en adultos para helmintos intestinales comunes: 400 mg en dosis única; en oxiuriasis puede repetirse a los 14 días. Las infecciones tisulares requieren esquemas médicos calculados por peso, frecuentemente alrededor de 15 mg/kg al día, con máximo habitual de 800 mg al día.",
+      "registro_txt_completo": "ZENTEL® ALBENDAZOL 400 MG X 1 TABLETA\n\nPrecio:  Costo: 21.950. Stock:  Referencia externa: Farmatodo. Antiparasitario. Sistema digestivo. Sirve para tratar varias parasitosis intestinales. Posología usual en adultos para helmintos intestinales comunes: 400 mg en dosis única; en oxiuriasis puede repetirse a los 14 días. Las infecciones tisulares requieren esquemas médicos calculados por peso, frecuentemente alrededor de 15 mg/kg al día, con máximo habitual de 800 mg al día."
+    },
+    "0086": {
+      "codigo": "0086",
+      "nombre": "ALFLOREX® ADULTOS X 30 CÁPSULAS",
+      "precio": "",
+      "costo": "135000",
+      "stock": "",
+      "referencia_externa": "Alflorex",
+      "descripcion": "Probiótico. Sistema digestivo. Sirve como probiótico para apoyar el equilibrio de la microbiota intestinal y puede ayudar en síntomas del intestino irritable. Posología usual: 1 cápsula al día, preferiblemente a la misma hora. No requiere cálculo por kilogramo en adultos.",
+      "registro_txt_completo": "ALFLOREX® ADULTOS X 30 CÁPSULAS\n\nPrecio:  Costo: 135.000. Stock:  Referencia externa: Alflorex. Probiótico. Sistema digestivo. Sirve como probiótico para apoyar el equilibrio de la microbiota intestinal y puede ayudar en síntomas del intestino irritable. Posología usual: 1 cápsula al día, preferiblemente a la misma hora. No requiere cálculo por kilogramo en adultos."
+    },
+    "0087": {
+      "codigo": "0087",
+      "nombre": "ALKA-SELTZER® ORIGINAL: ÁCIDO ACETILSALICÍLICO 324 MG + BICARBONATO DE SODIO 1.916 MG + ÁCIDO CÍTRICO 1.000 MG X 14 TABLETAS EFERVESCENTES",
+      "precio": "",
+      "costo": "20750",
+      "stock": "",
+      "referencia_externa": "Alka-Seltzer",
+      "descripcion": "Antiácido. Estómago. Sirve para el alivio temporal de dolor, fiebre y malestar acompañados de acidez; contiene ácido acetilsalicílico y no es un antiácido simple. Posología usual en adultos: disolver 1 o 2 tabletas en agua cada 4 a 6 horas, sin exceder 8 tabletas en 24 horas. No usar en personas con sangrado digestivo, alergia a salicilatos, tratamiento anticoagulante, embarazo avanzado ni en menores con infección viral.",
+      "registro_txt_completo": "ALKA-SELTZER® ORIGINAL: ÁCIDO ACETILSALICÍLICO 324 MG + BICARBONATO DE SODIO 1.916 MG + ÁCIDO CÍTRICO 1.000 MG X 14 TABLETAS EFERVESCENTES\n\nPrecio:  Costo: 20.750. Stock:  Referencia externa: Alka-Seltzer. Antiácido. Estómago. Sirve para el alivio temporal de dolor, fiebre y malestar acompañados de acidez; contiene ácido acetilsalicílico y no es un antiácido simple. Posología usual en adultos: disolver 1 o 2 tabletas en agua cada 4 a 6 horas, sin exceder 8 tabletas en 24 horas. No usar en personas con sangrado digestivo, alergia a salicilatos, tratamiento anticoagulante, embarazo avanzado ni en menores con infección viral."
+    },
+    "0088": {
+      "codigo": "0088",
+      "nombre": "ALLPAR® NITAZOXANIDA 500 MG GIMED X 6 TABLETAS",
+      "precio": "",
+      "costo": "90200",
+      "stock": "",
+      "referencia_externa": "iVademecum",
+      "descripcion": "Antiparasitario. Sistema digestivo. Sirve para tratar algunas parasitosis intestinales, incluidas giardiasis y criptosporidiosis, según diagnóstico. Posología usual en adultos: 500 mg cada 12 horas con alimentos durante 3 días. En adultos se utiliza dosis fija; los esquemas pediátricos dependen de la edad y no deben extrapolarse sin valoración.",
+      "registro_txt_completo": "ALLPAR® NITAZOXANIDA 500 MG GIMED X 6 TABLETAS\n\nPrecio:  Costo: 90.200. Stock:  Referencia externa: iVademecum. Antiparasitario. Sistema digestivo. Sirve para tratar algunas parasitosis intestinales, incluidas giardiasis y criptosporidiosis, según diagnóstico. Posología usual en adultos: 500 mg cada 12 horas con alimentos durante 3 días. En adultos se utiliza dosis fija; los esquemas pediátricos dependen de la edad y no deben extrapolarse sin valoración."
+    },
+    "0089": {
+      "codigo": "0089",
+      "nombre": "AMOXICILINA 500 MG GENFAR X 50 CÁPSULAS",
+      "precio": "",
+      "costo": "33950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles de vías respiratorias, urinarias, piel u otras localizaciones. Posología usual de referencia en adultos: 500 mg cada 8 horas; la duración y la dosis dependen del diagnóstico y deben ser prescritas. Cuando aplica cálculo por peso, se usan esquemas de 40 a 90 mg/kg al día divididos en 2 o 3 tomas, sin superar la dosis adulta indicada.",
+      "registro_txt_completo": "AMOXICILINA 500 MG GENFAR X 50 CÁPSULAS\n\nPrecio:  Costo: 33.950. Stock:  Referencia externa: Farmatodo. Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles de vías respiratorias, urinarias, piel u otras localizaciones. Posología usual de referencia en adultos: 500 mg cada 8 horas; la duración y la dosis dependen del diagnóstico y deben ser prescritas. Cuando aplica cálculo por peso, se usan esquemas de 40 a 90 mg/kg al día divididos en 2 o 3 tomas, sin superar la dosis adulta indicada."
+    },
+    "0090": {
+      "codigo": "0090",
+      "nombre": "AMPICILINA 500 MG LAST X 100 CÁPSULAS",
+      "precio": "",
+      "costo": "68324",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles. Posología usual de referencia en adultos por vía oral: 500 mg cada 6 horas, preferiblemente con el estómago vacío; la duración debe definirla el médico. En esquemas calculados por peso se emplean aproximadamente 50 a 100 mg/kg al día en dosis divididas, con ajustes según gravedad y función renal.",
+      "registro_txt_completo": "AMPICILINA 500 MG LAST X 100 CÁPSULAS\n\nPrecio:  Costo: 68.324. Stock:  Referencia externa: Cruz Verde. Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles. Posología usual de referencia en adultos por vía oral: 500 mg cada 6 horas, preferiblemente con el estómago vacío; la duración debe definirla el médico. En esquemas calculados por peso se emplean aproximadamente 50 a 100 mg/kg al día en dosis divididas, con ajustes según gravedad y función renal."
+    },
+    "0091": {
+      "codigo": "0091",
+      "nombre": "APRONAX® NAPROXENO SÓDICO 550 MG X 20 TABLETAS",
+      "precio": "",
+      "costo": "77950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Analgésico antiinflamatorio. Sistema musculoesquelético. Sirve para aliviar dolor e inflamación musculoesquelética, dental o menstrual. Posología usual de referencia en adultos: 550 mg cada 12 horas con alimentos; no exceder 1.100 mg al día salvo indicación médica. Debe evitarse en úlcera, sangrado digestivo, insuficiencia renal grave o alergia a antiinflamatorios.",
+      "registro_txt_completo": "APRONAX® NAPROXENO SÓDICO 550 MG X 20 TABLETAS\n\nPrecio:  Costo: 77.950. Stock:  Referencia externa: Farmatodo. Analgésico antiinflamatorio. Sistema musculoesquelético. Sirve para aliviar dolor e inflamación musculoesquelética, dental o menstrual. Posología usual de referencia en adultos: 550 mg cada 12 horas con alimentos; no exceder 1.100 mg al día salvo indicación médica. Debe evitarse en úlcera, sangrado digestivo, insuficiencia renal grave o alergia a antiinflamatorios."
+    },
+    "0092": {
+      "codigo": "0092",
+      "nombre": "ASPIRINA® ÁCIDO ACETILSALICÍLICO 100 MG BAYER X 28 TABLETAS",
+      "precio": "",
+      "costo": "22100",
+      "stock": "",
+      "referencia_externa": "Bayer",
+      "descripcion": "Antiagregante plaquetario. Sistema cardiovascular. Sirve como antiagregante plaquetario para prevenir eventos cardiovasculares en pacientes seleccionados. Posología usual en adultos: 75 a 100 mg una vez al día, únicamente por indicación médica. No debe iniciarse para prevención cardiovascular sin valoración profesional por el riesgo de sangrado.",
+      "registro_txt_completo": "ASPIRINA® ÁCIDO ACETILSALICÍLICO 100 MG BAYER X 28 TABLETAS\n\nPrecio:  Costo: 22.100. Stock:  Referencia externa: Bayer. Antiagregante plaquetario. Sistema cardiovascular. Sirve como antiagregante plaquetario para prevenir eventos cardiovasculares en pacientes seleccionados. Posología usual en adultos: 75 a 100 mg una vez al día, únicamente por indicación médica. No debe iniciarse para prevención cardiovascular sin valoración profesional por el riesgo de sangrado."
+    },
+    "0093": {
+      "codigo": "0093",
+      "nombre": "AVAMYS® FLUTICASONA FUROATO 27,5 MCG/DOSIS, SPRAY NASAL X 120 DOSIS",
+      "precio": "",
+      "costo": "32950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antialérgico nasal. Nariz y vías respiratorias. Sirve para controlar síntomas de rinitis alérgica, como congestión, estornudos y secreción nasal. Posología usual en adultos: 2 aplicaciones en cada fosa nasal una vez al día; al controlar los síntomas puede reducirse a 1 aplicación por fosa al día. Agitar el frasco y orientar el aplicador lejos del tabique nasal.",
+      "registro_txt_completo": "AVAMYS® FLUTICASONA FUROATO 27,5 MCG/DOSIS, SPRAY NASAL X 120 DOSIS\n\nPrecio:  Costo: 32.950. Stock:  Referencia externa: Farmatodo. Antialérgico nasal. Nariz y vías respiratorias. Sirve para controlar síntomas de rinitis alérgica, como congestión, estornudos y secreción nasal. Posología usual en adultos: 2 aplicaciones en cada fosa nasal una vez al día; al controlar los síntomas puede reducirse a 1 aplicación por fosa al día. Agitar el frasco y orientar el aplicador lejos del tabique nasal."
+    },
+    "0094": {
+      "codigo": "0094",
+      "nombre": "AZITROMICINA 500 MG LA SANTÉ X 3 TABLETAS",
+      "precio": "",
+      "costo": "15950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones bacterianas respiratorias, de piel o de transmisión sexual, según diagnóstico. Posología usual de referencia en adultos para varias infecciones: 500 mg una vez al día durante 3 días; existen otros esquemas que deben ser prescritos. Cuando se calcula por peso, la referencia frecuente es 10 mg/kg el primer día y 5 mg/kg al día del segundo al quinto día, sin superar la dosis adulta.",
+      "registro_txt_completo": "AZITROMICINA 500 MG LA SANTÉ X 3 TABLETAS\n\nPrecio:  Costo: 15.950. Stock:  Referencia externa: Farmatodo. Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones bacterianas respiratorias, de piel o de transmisión sexual, según diagnóstico. Posología usual de referencia en adultos para varias infecciones: 500 mg una vez al día durante 3 días; existen otros esquemas que deben ser prescritos. Cuando se calcula por peso, la referencia frecuente es 10 mg/kg el primer día y 5 mg/kg al día del segundo al quinto día, sin superar la dosis adulta."
+    },
+    "0095": {
+      "codigo": "0095",
+      "nombre": "AZITROMICINA 500 MG X 3 TABLETAS, MK",
+      "precio": "",
+      "costo": "16950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones bacterianas respiratorias, de piel o de transmisión sexual, según diagnóstico. Posología usual de referencia en adultos para varias infecciones: 500 mg una vez al día durante 3 días; existen otros esquemas que deben ser prescritos. Cuando se calcula por peso, la referencia frecuente es 10 mg/kg el primer día y 5 mg/kg al día del segundo al quinto día, sin superar la dosis adulta.",
+      "registro_txt_completo": "AZITROMICINA 500 MG X 3 TABLETAS, MK\n\nPrecio:  Costo: 16.950. Stock:  Referencia externa: Farmatodo. Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones bacterianas respiratorias, de piel o de transmisión sexual, según diagnóstico. Posología usual de referencia en adultos para varias infecciones: 500 mg una vez al día durante 3 días; existen otros esquemas que deben ser prescritos. Cuando se calcula por peso, la referencia frecuente es 10 mg/kg el primer día y 5 mg/kg al día del segundo al quinto día, sin superar la dosis adulta."
+    },
+    "0096": {
+      "codigo": "0096",
+      "nombre": "BENZAC AC® PERÓXIDO DE BENZOILO 2,5 %, GEL TÓPICO X 60 G",
+      "precio": "",
+      "costo": "69200",
+      "stock": "",
+      "referencia_externa": "Éxito",
+      "descripcion": "Tratamiento del acné. Piel. Sirve para el tratamiento tópico del acné leve o moderado. Posología usual: aplicar una capa fina una vez al día durante la primera semana y aumentar a dos veces al día si la piel lo tolera. Puede resecar o irritar y decolora telas; evitar ojos, labios y piel lesionada.",
+      "registro_txt_completo": "BENZAC AC® PERÓXIDO DE BENZOILO 2,5 %, GEL TÓPICO X 60 G\n\nPrecio:  Costo: 69.200. Stock:  Referencia externa: Éxito. Tratamiento del acné. Piel. Sirve para el tratamiento tópico del acné leve o moderado. Posología usual: aplicar una capa fina una vez al día durante la primera semana y aumentar a dos veces al día si la piel lo tolera. Puede resecar o irritar y decolora telas; evitar ojos, labios y piel lesionada."
+    },
+    "0097": {
+      "codigo": "0097",
+      "nombre": "BETAMETASONA 0,05 %, CREMA TÓPICA X 20 G",
+      "precio": "",
+      "costo": "12400",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Corticosteroide tópico. Piel. Sirve para aliviar inflamación, picazón y enrojecimiento de dermatosis sensibles a corticoides. Posología usual: aplicar una capa fina 1 o 2 veces al día durante pocos días, según fórmula. No usar en cara, pliegues, infecciones, áreas extensas ni bajo vendajes sin supervisión.",
+      "registro_txt_completo": "BETAMETASONA 0,05 %, CREMA TÓPICA X 20 G\n\nPrecio:  Costo: 12.400. Stock:  Referencia externa: Farmatodo. Corticosteroide tópico. Piel. Sirve para aliviar inflamación, picazón y enrojecimiento de dermatosis sensibles a corticoides. Posología usual: aplicar una capa fina 1 o 2 veces al día durante pocos días, según fórmula. No usar en cara, pliegues, infecciones, áreas extensas ni bajo vendajes sin supervisión."
+    },
+    "0098": {
+      "codigo": "0098",
+      "nombre": "BISOLVON® ADULTOS BROMHEXINA 8 MG/5 ML, JARABE X 120 ML",
+      "precio": "",
+      "costo": "40750",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Mucolítico y expectorante. Vías respiratorias. Sirve como mucolítico para fluidificar secreciones y facilitar la expulsión de flemas. Posología usual en adultos: 10 mL de jarabe 3 veces al día. Debe acompañarse de buena hidratación y consultar si la tos persiste, hay dificultad respiratoria o fiebre.",
+      "registro_txt_completo": "BISOLVON® ADULTOS BROMHEXINA 8 MG/5 ML, JARABE X 120 ML\n\nPrecio:  Costo: 40.750. Stock:  Referencia externa: Farmatodo. Mucolítico y expectorante. Vías respiratorias. Sirve como mucolítico para fluidificar secreciones y facilitar la expulsión de flemas. Posología usual en adultos: 10 mL de jarabe 3 veces al día. Debe acompañarse de buena hidratación y consultar si la tos persiste, hay dificultad respiratoria o fiebre."
+    },
+    "0099": {
+      "codigo": "0099",
+      "nombre": "CALTRATE® 600 D, CALCIO 600 MG + VITAMINA D3 400 UI X 30 TABLETAS",
+      "precio": "",
+      "costo": "50650",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Suplemento mineral. Huesos y metabolismo. Sirve como suplemento de calcio y vitamina D cuando la dieta es insuficiente o existe indicación para salud ósea. Posología usual: 1 tableta al día con alimentos, salvo pauta médica diferente. Separar de levotiroxina, hierro y algunos antibióticos por varias horas.",
+      "registro_txt_completo": "CALTRATE® 600 D, CALCIO 600 MG + VITAMINA D3 400 UI X 30 TABLETAS\n\nPrecio:  Costo: 50.650. Stock:  Referencia externa: Farmatodo. Suplemento mineral. Huesos y metabolismo. Sirve como suplemento de calcio y vitamina D cuando la dieta es insuficiente o existe indicación para salud ósea. Posología usual: 1 tableta al día con alimentos, salvo pauta médica diferente. Separar de levotiroxina, hierro y algunos antibióticos por varias horas."
+    },
+    "0100": {
+      "codigo": "0100",
+      "nombre": "CALMIDOL® COMPUESTO: IBUPROFENO 200 MG + CAFEÍNA 30 MG X 6 CÁPSULAS",
+      "precio": "",
+      "costo": "11950",
+      "stock": "",
+      "referencia_externa": "PLM",
+      "descripcion": "Analgésico menstrual. Sistema reproductor. Sirve para aliviar dolor leve o moderado, incluidos cefalea y dolor menstrual. Posología usual de referencia en adultos: 1 cápsula cada 8 horas con alimentos; no exceder 3 cápsulas al día y evitar otros antiinflamatorios o exceso de cafeína. No se recomienda en úlcera, enfermedad renal o embarazo avanzado.",
+      "registro_txt_completo": "CALMIDOL® COMPUESTO: IBUPROFENO 200 MG + CAFEÍNA 30 MG X 6 CÁPSULAS\n\nPrecio:  Costo: 11.950. Stock:  Referencia externa: PLM. Analgésico menstrual. Sistema reproductor. Sirve para aliviar dolor leve o moderado, incluidos cefalea y dolor menstrual. Posología usual de referencia en adultos: 1 cápsula cada 8 horas con alimentos; no exceder 3 cápsulas al día y evitar otros antiinflamatorios o exceso de cafeína. No se recomienda en úlcera, enfermedad renal o embarazo avanzado."
+    },
+    "0101": {
+      "codigo": "0101",
+      "nombre": "CEBION® VITAMINA C 500 MG SABOR NARANJA X 12 TABLETAS MASTICABLES",
+      "precio": "",
+      "costo": "12017",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Vitamina. General. Sirve como suplemento de vitamina C cuando la dieta es insuficiente o existe mayor requerimiento. Posología usual en adultos: 1 tableta masticable de 500 mg al día. Dosis altas pueden causar malestar gastrointestinal y aumentar el riesgo de cálculos en personas predispuestas.",
+      "registro_txt_completo": "CEBION® VITAMINA C 500 MG SABOR NARANJA X 12 TABLETAS MASTICABLES\n\nPrecio:  Costo: 12.017. Stock:  Referencia externa: Farmatodo. Vitamina. General. Sirve como suplemento de vitamina C cuando la dieta es insuficiente o existe mayor requerimiento. Posología usual en adultos: 1 tableta masticable de 500 mg al día. Dosis altas pueden causar malestar gastrointestinal y aumentar el riesgo de cálculos en personas predispuestas."
+    },
+    "0102": {
+      "codigo": "0102",
+      "nombre": "CEFALEXINA 500 MG LA SANTÉ X 20 CÁPSULAS",
+      "precio": "",
+      "costo": "22950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles de piel, vías respiratorias o urinarias. Posología usual de referencia en adultos: 500 mg cada 6 a 12 horas, según la infección y la función renal. La dosis por peso suele ser de 25 a 50 mg/kg al día divididos en varias tomas; los cuadros graves requieren valoración médica.",
+      "registro_txt_completo": "CEFALEXINA 500 MG LA SANTÉ X 20 CÁPSULAS\n\nPrecio:  Costo: 22.950. Stock:  Referencia externa: Farmatodo. Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles de piel, vías respiratorias o urinarias. Posología usual de referencia en adultos: 500 mg cada 6 a 12 horas, según la infección y la función renal. La dosis por peso suele ser de 25 a 50 mg/kg al día divididos en varias tomas; los cuadros graves requieren valoración médica."
+    },
+    "0103": {
+      "codigo": "0103",
+      "nombre": "CEFRADINA 500 MG RECIPE X 24 CÁPSULAS",
+      "precio": "",
+      "costo": "19900",
+      "stock": "",
+      "referencia_externa": "Farmacéutica Andina",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles de vías respiratorias, urinarias o piel. Posología usual de referencia en adultos: 500 mg cada 6 a 12 horas, según prescripción. Cuando se calcula por peso, se emplean aproximadamente 25 a 50 mg/kg al día en dosis divididas.",
+      "registro_txt_completo": "CEFRADINA 500 MG RECIPE X 24 CÁPSULAS\n\nPrecio:  Costo: 19.900. Stock:  Referencia externa: Farmacéutica Andina. Antibiótico. Uso sistémico. Sirve para tratar infecciones bacterianas sensibles de vías respiratorias, urinarias o piel. Posología usual de referencia en adultos: 500 mg cada 6 a 12 horas, según prescripción. Cuando se calcula por peso, se emplean aproximadamente 25 a 50 mg/kg al día en dosis divididas."
+    },
+    "0104": {
+      "codigo": "0104",
+      "nombre": "CLORFENIRAMINA 4 MG ECAR X 20 TABLETAS",
+      "precio": "",
+      "costo": "5950",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antihistamínico. Alergias y vías respiratorias. Sirve para aliviar síntomas alérgicos como estornudos, secreción nasal, picazón y urticaria. Posología usual en adultos: 4 mg cada 4 a 6 horas, con máximo de 24 mg al día. Puede causar somnolencia; evitar conducir, consumir alcohol o combinarla con otros sedantes.",
+      "registro_txt_completo": "CLORFENIRAMINA 4 MG ECAR X 20 TABLETAS\n\nPrecio:  Costo: 5.950. Stock:  Referencia externa: Cruz Verde. Antihistamínico. Alergias y vías respiratorias. Sirve para aliviar síntomas alérgicos como estornudos, secreción nasal, picazón y urticaria. Posología usual en adultos: 4 mg cada 4 a 6 horas, con máximo de 24 mg al día. Puede causar somnolencia; evitar conducir, consumir alcohol o combinarla con otros sedantes."
+    },
+    "0105": {
+      "codigo": "0105",
+      "nombre": "CLOTRIMAZOL COLMED 100 MG X 10 ÓVULOS VAGINALES",
+      "precio": "",
+      "costo": "19820",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antifúngico vaginal. Sistema reproductor. Sirve para tratar candidiasis vaginal. Posología usual con óvulos de 100 mg: 1 óvulo por la noche durante 6 a 10 días, de acuerdo con el inserto y la indicación profesional. Consultar si es el primer episodio, hay embarazo, fiebre, dolor pélvico o recurrencias frecuentes.",
+      "registro_txt_completo": "CLOTRIMAZOL COLMED 100 MG X 10 ÓVULOS VAGINALES\n\nPrecio:  Costo: 19.820. Stock:  Referencia externa: Farmatodo. Antifúngico vaginal. Sistema reproductor. Sirve para tratar candidiasis vaginal. Posología usual con óvulos de 100 mg: 1 óvulo por la noche durante 6 a 10 días, de acuerdo con el inserto y la indicación profesional. Consultar si es el primer episodio, hay embarazo, fiebre, dolor pélvico o recurrencias frecuentes."
+    },
+    "0106": {
+      "codigo": "0106",
+      "nombre": "CONDILOM® PODOFILINA 20 %, SUSPENSIÓN TÓPICA X 5 ML, BUSSIÉ",
+      "precio": "",
+      "costo": "76950",
+      "stock": "",
+      "referencia_externa": "iVademecum",
+      "descripcion": "Tratamiento de verrugas. Piel y zona genital. Sirve para el tratamiento de verrugas genitales externas seleccionadas. La podofilina al 20 % debe ser aplicada por personal de salud sobre cada lesión y retirada después del tiempo indicado, usualmente entre 1 y 4 horas; la frecuencia suele ser semanal. Es tóxica si se usa en áreas extensas, mucosas, embarazo o piel lesionada y no debe aplicarse por cuenta propia.",
+      "registro_txt_completo": "CONDILOM® PODOFILINA 20 %, SUSPENSIÓN TÓPICA X 5 ML, BUSSIÉ\n\nPrecio:  Costo: 76.950. Stock:  Referencia externa: iVademecum. Tratamiento de verrugas. Piel y zona genital. Sirve para el tratamiento de verrugas genitales externas seleccionadas. La podofilina al 20 % debe ser aplicada por personal de salud sobre cada lesión y retirada después del tiempo indicado, usualmente entre 1 y 4 horas; la frecuencia suele ser semanal. Es tóxica si se usa en áreas extensas, mucosas, embarazo o piel lesionada y no debe aplicarse por cuenta propia."
+    },
+    "0107": {
+      "codigo": "0107",
+      "nombre": "DAYAMINERAL® FE MULTIVITAMÍNICO CON HIERRO Y MINERALES, JARABE X 240 ML",
+      "precio": "",
+      "costo": "77662",
+      "stock": "",
+      "referencia_externa": "PLM",
+      "descripcion": "Multivitamínico. General. Sirve como suplemento multivitamínico con hierro y minerales cuando la alimentación no cubre los requerimientos o existe indicación profesional. Posología: seguir la medida indicada en el inserto; como referencia en adultos suele utilizarse una toma diaria con alimentos. No combinar con otros productos con hierro sin revisar la dosis total.",
+      "registro_txt_completo": "DAYAMINERAL® FE MULTIVITAMÍNICO CON HIERRO Y MINERALES, JARABE X 240 ML\n\nPrecio:  Costo: 77.662. Stock:  Referencia externa: PLM. Multivitamínico. General. Sirve como suplemento multivitamínico con hierro y minerales cuando la alimentación no cubre los requerimientos o existe indicación profesional. Posología: seguir la medida indicada en el inserto; como referencia en adultos suele utilizarse una toma diaria con alimentos. No combinar con otros productos con hierro sin revisar la dosis total."
+    },
+    "0108": {
+      "codigo": "0108",
+      "nombre": "DESLORATADINA MK 5 MG X 10 TABLETAS",
+      "precio": "",
+      "costo": "50950",
+      "stock": "",
+      "referencia_externa": "MK",
+      "descripcion": "Antihistamínico. Alergias. Sirve para aliviar síntomas de rinitis alérgica y urticaria. Posología usual en adultos: 5 mg una vez al día. No se dosifica habitualmente por kilogramo en adultos y puede requerir ajuste en enfermedad renal o hepática.",
+      "registro_txt_completo": "DESLORATADINA MK 5 MG X 10 TABLETAS\n\nPrecio:  Costo: 50.950. Stock:  Referencia externa: MK. Antihistamínico. Alergias. Sirve para aliviar síntomas de rinitis alérgica y urticaria. Posología usual en adultos: 5 mg una vez al día. No se dosifica habitualmente por kilogramo en adultos y puede requerir ajuste en enfermedad renal o hepática."
+    },
+    "0109": {
+      "codigo": "0109",
+      "nombre": "DICLOFENACO SÓDICO 50 MG X 30 TABLETAS RECUBIERTAS",
+      "precio": "",
+      "costo": "7837",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Analgésico antiinflamatorio. Sistema musculoesquelético. Sirve para el tratamiento corto del dolor y la inflamación. Posología usual de referencia en adultos: 50 mg cada 8 a 12 horas después de comer, con máximo de 150 mg al día. Requiere precaución en enfermedad gastrointestinal, renal, cardiovascular o tratamiento anticoagulante.",
+      "registro_txt_completo": "DICLOFENACO SÓDICO 50 MG X 30 TABLETAS RECUBIERTAS\n\nPrecio:  Costo: 7.837. Stock:  Referencia externa: Cruz Verde. Analgésico antiinflamatorio. Sistema musculoesquelético. Sirve para el tratamiento corto del dolor y la inflamación. Posología usual de referencia en adultos: 50 mg cada 8 a 12 horas después de comer, con máximo de 150 mg al día. Requiere precaución en enfermedad gastrointestinal, renal, cardiovascular o tratamiento anticoagulante."
+    },
+    "0110": {
+      "codigo": "0110",
+      "nombre": "DIFENHIDRAMINA CLORHIDRATO 50 MG X 30 CÁPSULAS",
+      "precio": "",
+      "costo": "16646",
+      "stock": "",
+      "referencia_externa": "Farmaexpress",
+      "descripcion": "Antihistamínico. Alergias y sistema nervioso. Sirve para reacciones alérgicas y picazón; también produce sedación. Posología usual en adultos: 25 a 50 mg cada 4 a 6 horas, con máximo de 300 mg al día. Cuando se calcula por peso, la referencia es aproximadamente 1 mg/kg por toma, sin exceder 50 mg por dosis; puede causar somnolencia intensa.",
+      "registro_txt_completo": "DIFENHIDRAMINA CLORHIDRATO 50 MG X 30 CÁPSULAS\n\nPrecio:  Costo: 16.646. Stock:  Referencia externa: Farmaexpress. Antihistamínico. Alergias y sistema nervioso. Sirve para reacciones alérgicas y picazón; también produce sedación. Posología usual en adultos: 25 a 50 mg cada 4 a 6 horas, con máximo de 300 mg al día. Cuando se calcula por peso, la referencia es aproximadamente 1 mg/kg por toma, sin exceder 50 mg por dosis; puede causar somnolencia intensa."
+    },
+    "0111": {
+      "codigo": "0111",
+      "nombre": "DOLEX® AVANZADO ACETAMINOFÉN 500 MG X 24 TABLETAS",
+      "precio": "",
+      "costo": "32100",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y reducir la fiebre. Posología usual de referencia en adultos: 500 a 1.000 mg cada 6 a 8 horas según necesidad; no exceder 3.000 mg al día sin supervisión médica. Cuando se calcula por peso, la referencia es de 10 a 15 mg/kg por toma cada 4 a 6 horas, con máximo de 75 mg/kg al día y sin superar el límite diario del adulto.",
+      "registro_txt_completo": "DOLEX® AVANZADO ACETAMINOFÉN 500 MG X 24 TABLETAS\n\nPrecio:  Costo: 32.100. Stock:  Referencia externa: Cruz Verde. Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y reducir la fiebre. Posología usual de referencia en adultos: 500 a 1.000 mg cada 6 a 8 horas según necesidad; no exceder 3.000 mg al día sin supervisión médica. Cuando se calcula por peso, la referencia es de 10 a 15 mg/kg por toma cada 4 a 6 horas, con máximo de 75 mg/kg al día y sin superar el límite diario del adulto."
+    },
+    "0112": {
+      "codigo": "0112",
+      "nombre": "DOLEX® FORTE ACETAMINOFÉN 500 MG + CAFEÍNA 65 MG X 10 TABLETAS",
+      "precio": "",
+      "costo": "19950",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y fiebre, especialmente cuando se busca el efecto adicional de la cafeína. Posología usual de referencia en adultos: 1 tableta cada 6 a 8 horas; no exceder 6 tabletas en 24 horas ni combinar con otros productos que contengan acetaminofén o cafeína. La dosis de acetaminofén por peso es de 10 a 15 mg/kg por toma cada 4 a 6 horas, sin superar 75 mg/kg al día ni el límite diario del adulto.",
+      "registro_txt_completo": "DOLEX® FORTE ACETAMINOFÉN 500 MG + CAFEÍNA 65 MG X 10 TABLETAS\n\nPrecio:  Costo: 19.950. Stock:  Referencia externa: Cruz Verde. Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y fiebre, especialmente cuando se busca el efecto adicional de la cafeína. Posología usual de referencia en adultos: 1 tableta cada 6 a 8 horas; no exceder 6 tabletas en 24 horas ni combinar con otros productos que contengan acetaminofén o cafeína. La dosis de acetaminofén por peso es de 10 a 15 mg/kg por toma cada 4 a 6 horas, sin superar 75 mg/kg al día ni el límite diario del adulto."
+    },
+    "0113": {
+      "codigo": "0113",
+      "nombre": "EMULSIÓN DE SCOTT® SABOR CEREZA X 180 ML",
+      "precio": "",
+      "costo": "14895",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Suplemento nutricional. General. Sirve como suplemento de vitaminas A y D y otros nutrientes cuando existe indicación dietaria. Posología: seguir la medida del envase; como referencia en adultos suele tomarse 15 mL al día con alimentos. No combinar con otros suplementos de vitaminas A o D para evitar exceso.",
+      "registro_txt_completo": "EMULSIÓN DE SCOTT® SABOR CEREZA X 180 ML\n\nPrecio:  Costo: 14.895. Stock:  Referencia externa: Farmatodo. Suplemento nutricional. General. Sirve como suplemento de vitaminas A y D y otros nutrientes cuando existe indicación dietaria. Posología: seguir la medida del envase; como referencia en adultos suele tomarse 15 mL al día con alimentos. No combinar con otros suplementos de vitaminas A o D para evitar exceso."
+    },
+    "0114": {
+      "codigo": "0114",
+      "nombre": "EMULSIÓN DE SCOTT® SABOR FRUTAS TROPICALES X 360 ML",
+      "precio": "",
+      "costo": "26050",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Suplemento nutricional. General. Sirve como suplemento de vitaminas A y D y otros nutrientes cuando existe indicación dietaria. Posología: seguir la medida del envase; como referencia en adultos suele tomarse 15 mL al día con alimentos. No combinar con otros suplementos de vitaminas A o D para evitar exceso.",
+      "registro_txt_completo": "EMULSIÓN DE SCOTT® SABOR FRUTAS TROPICALES X 360 ML\n\nPrecio:  Costo: 26.050. Stock:  Referencia externa: Farmatodo. Suplemento nutricional. General. Sirve como suplemento de vitaminas A y D y otros nutrientes cuando existe indicación dietaria. Posología: seguir la medida del envase; como referencia en adultos suele tomarse 15 mL al día con alimentos. No combinar con otros suplementos de vitaminas A o D para evitar exceso."
+    },
+    "0115": {
+      "codigo": "0115",
+      "nombre": "ENTEROGERMINA® BACILLUS CLAUSII 2.000 MILLONES DE ESPORAS/5 ML X 10 VIALES BEBIBLES",
+      "precio": "",
+      "costo": "87450",
+      "stock": "",
+      "referencia_externa": "Enterogermina",
+      "descripcion": "Probiótico. Sistema digestivo. Sirve como probiótico para ayudar a restablecer la microbiota intestinal. Posología usual en adultos: 2 a 3 viales al día, distribuidos durante la jornada. Agitar antes de usar y consultar si la diarrea es intensa, contiene sangre o produce deshidratación.",
+      "registro_txt_completo": "ENTEROGERMINA® BACILLUS CLAUSII 2.000 MILLONES DE ESPORAS/5 ML X 10 VIALES BEBIBLES\n\nPrecio:  Costo: 87.450. Stock:  Referencia externa: Enterogermina. Probiótico. Sistema digestivo. Sirve como probiótico para ayudar a restablecer la microbiota intestinal. Posología usual en adultos: 2 a 3 viales al día, distribuidos durante la jornada. Agitar antes de usar y consultar si la diarrea es intensa, contiene sangre o produce deshidratación."
+    },
+    "0116": {
+      "codigo": "0116",
+      "nombre": "ENTEROGERMINA PLUS® BACILLUS CLAUSII 4.000 MILLONES DE ESPORAS/5 ML X 5 VIALES BEBIBLES",
+      "precio": "",
+      "costo": "88850",
+      "stock": "",
+      "referencia_externa": "Enterogermina",
+      "descripcion": "Probiótico. Sistema digestivo. Sirve como probiótico para restaurar la microbiota intestinal, especialmente durante o después de diarrea o antibióticos. Posología usual en adultos: 1 vial al día, o según el inserto. Agitar antes de usar y separar de la toma del antibiótico cuando sea posible.",
+      "registro_txt_completo": "ENTEROGERMINA PLUS® BACILLUS CLAUSII 4.000 MILLONES DE ESPORAS/5 ML X 5 VIALES BEBIBLES\n\nPrecio:  Costo: 88.850. Stock:  Referencia externa: Enterogermina. Probiótico. Sistema digestivo. Sirve como probiótico para restaurar la microbiota intestinal, especialmente durante o después de diarrea o antibióticos. Posología usual en adultos: 1 vial al día, o según el inserto. Agitar antes de usar y separar de la toma del antibiótico cuando sea posible."
+    },
+    "0117": {
+      "codigo": "0117",
+      "nombre": "ESPASMO SILIGAS® DIMETILPOLISILOXANO 66 MG/ML + PAPAVERINA 10 MG/ML, GOTAS X 30 ML",
+      "precio": "",
+      "costo": "43213",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiespasmódico y antiflatulento. Sistema digestivo. Sirve para aliviar espasmos intestinales y molestias por acumulación de gases. Posología: por contener papaverina, debe seguirse la cantidad indicada en el inserto o en la fórmula médica; no es apropiado improvisar la dosis por gotas. No se recomienda cálculo por kilogramo en adultos sin supervisión profesional.",
+      "registro_txt_completo": "ESPASMO SILIGAS® DIMETILPOLISILOXANO 66 MG/ML + PAPAVERINA 10 MG/ML, GOTAS X 30 ML\n\nPrecio:  Costo: 43.213. Stock:  Referencia externa: Farmatodo. Antiespasmódico y antiflatulento. Sistema digestivo. Sirve para aliviar espasmos intestinales y molestias por acumulación de gases. Posología: por contener papaverina, debe seguirse la cantidad indicada en el inserto o en la fórmula médica; no es apropiado improvisar la dosis por gotas. No se recomienda cálculo por kilogramo en adultos sin supervisión profesional."
+    },
+    "0118": {
+      "codigo": "0118",
+      "nombre": "FITOSTIMOLINE® CREMA TÓPICA X 32 G",
+      "precio": "",
+      "costo": "90450",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Cicatrizante tópico. Piel. Sirve como apoyo tópico en la cicatrización de lesiones superficiales, quemaduras leves y heridas seleccionadas. Modo de uso usual: limpiar la zona y aplicar una capa fina 1 o 2 veces al día, según indicación. Las heridas profundas, infectadas o extensas requieren valoración profesional.",
+      "registro_txt_completo": "FITOSTIMOLINE® CREMA TÓPICA X 32 G\n\nPrecio:  Costo: 90.450. Stock:  Referencia externa: Cruz Verde. Cicatrizante tópico. Piel. Sirve como apoyo tópico en la cicatrización de lesiones superficiales, quemaduras leves y heridas seleccionadas. Modo de uso usual: limpiar la zona y aplicar una capa fina 1 o 2 veces al día, según indicación. Las heridas profundas, infectadas o extensas requieren valoración profesional."
+    },
+    "0119": {
+      "codigo": "0119",
+      "nombre": "FLUIMUCIL® N ACETILCISTEÍNA 600 MG X 10 SOBRES",
+      "precio": "",
+      "costo": "32950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Mucolítico. Vías respiratorias. Sirve como mucolítico para hacer menos espesas las secreciones respiratorias. Posología usual en adultos: disolver 1 sobre de 600 mg en agua y tomar una vez al día. No combinar con antitusivos sin valoración y separar al menos 2 horas de algunos antibióticos orales.",
+      "registro_txt_completo": "FLUIMUCIL® N ACETILCISTEÍNA 600 MG X 10 SOBRES\n\nPrecio:  Costo: 32.950. Stock:  Referencia externa: Farmatodo. Mucolítico. Vías respiratorias. Sirve como mucolítico para hacer menos espesas las secreciones respiratorias. Posología usual en adultos: disolver 1 sobre de 600 mg en agua y tomar una vez al día. No combinar con antitusivos sin valoración y separar al menos 2 horas de algunos antibióticos orales."
+    },
+    "0120": {
+      "codigo": "0120",
+      "nombre": "SULZINC® SULFATO DE ZINC 20 MG X 30 TABLETAS",
+      "precio": "",
+      "costo": "41350",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Suplemento de zinc. Sistema digestivo y metabolismo. Sirve para prevenir o corregir deficiencia de zinc y apoyar funciones inmunológicas y de cicatrización. Posología usual en adultos: 20 mg de zinc una vez al día después de comer, durante el tiempo indicado. El uso prolongado puede alterar el cobre y debe revisarse con un profesional.",
+      "registro_txt_completo": "SULZINC® SULFATO DE ZINC 20 MG X 30 TABLETAS\n\nPrecio:  Costo: 41.350. Stock:  Referencia externa: Farmatodo. Suplemento de zinc. Sistema digestivo y metabolismo. Sirve para prevenir o corregir deficiencia de zinc y apoyar funciones inmunológicas y de cicatrización. Posología usual en adultos: 20 mg de zinc una vez al día después de comer, durante el tiempo indicado. El uso prolongado puede alterar el cobre y debe revisarse con un profesional."
+    },
+    "0121": {
+      "codigo": "0121",
+      "nombre": "GASA ESTÉRIL NO TEJIDA ALFASAFE X 24 UNIDADES",
+      "precio": "",
+      "costo": "8600",
+      "stock": "",
+      "referencia_externa": "Droguerías Cafam",
+      "descripcion": "Material de curación. Piel. Sirve para cubrir, limpiar o proteger heridas y absorber exudados. Modo de uso: lavar las manos, limpiar la herida, colocar una gasa nueva sin tocar la superficie que estará en contacto con la lesión y fijarla sin comprimir. Cambiarla cuando esté húmeda, sucia o según la indicación profesional.",
+      "registro_txt_completo": "GASA ESTÉRIL NO TEJIDA ALFASAFE X 24 UNIDADES\n\nPrecio:  Costo: 8.600. Stock:  Referencia externa: Droguerías Cafam. Material de curación. Piel. Sirve para cubrir, limpiar o proteger heridas y absorber exudados. Modo de uso: lavar las manos, limpiar la herida, colocar una gasa nueva sin tocar la superficie que estará en contacto con la lesión y fijarla sin comprimir. Cambiarla cuando esté húmeda, sucia o según la indicación profesional."
+    },
+    "0122": {
+      "codigo": "0122",
+      "nombre": "GENTAMICINA 80 MG/2 ML VITALIS X 1 AMPOLLA",
+      "precio": "",
+      "costo": "5950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico inyectable. Uso sistémico. Sirve para infecciones bacterianas graves y debe ser administrada por personal de salud. Posología de referencia: 5 a 7 mg/kg al día por vía intravenosa o intramuscular, en una dosis diaria o fraccionada según el caso. Requiere ajuste por función renal y vigilancia de toxicidad renal y auditiva; no es un medicamento para automedicación.",
+      "registro_txt_completo": "GENTAMICINA 80 MG/2 ML VITALIS X 1 AMPOLLA\n\nPrecio:  Costo: 5.950. Stock:  Referencia externa: Farmatodo. Antibiótico inyectable. Uso sistémico. Sirve para infecciones bacterianas graves y debe ser administrada por personal de salud. Posología de referencia: 5 a 7 mg/kg al día por vía intravenosa o intramuscular, en una dosis diaria o fraccionada según el caso. Requiere ajuste por función renal y vigilancia de toxicidad renal y auditiva; no es un medicamento para automedicación."
+    },
+    "0123": {
+      "codigo": "0123",
+      "nombre": "DECAFLUSAN® FLUBENDAZOL 500 MG X 1 TABLETA",
+      "precio": "",
+      "costo": "23485",
+      "stock": "",
+      "referencia_externa": "Coaspharma",
+      "descripcion": "Antiparasitario. Sistema digestivo. Sirve para el tratamiento de helmintos intestinales sensibles. Posología usual en adultos para varias parasitosis: 500 mg en dosis única; la pauta puede variar según el parásito. No repetir ni prolongar el tratamiento sin valoración médica.",
+      "registro_txt_completo": "DECAFLUSAN® FLUBENDAZOL 500 MG X 1 TABLETA\n\nPrecio:  Costo: 23.485. Stock:  Referencia externa: Coaspharma. Antiparasitario. Sistema digestivo. Sirve para el tratamiento de helmintos intestinales sensibles. Posología usual en adultos para varias parasitosis: 500 mg en dosis única; la pauta puede variar según el parásito. No repetir ni prolongar el tratamiento sin valoración médica."
+    },
+    "0124": {
+      "codigo": "0124",
+      "nombre": "HIDRAPLUS® CON ZINC 75 MEQ, SABOR UVA, SOLUCIÓN ORAL X 400 ML",
+      "precio": "",
+      "costo": "11250",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Rehidratación oral. Sistema digestivo y general. Sirve para prevenir o corregir la deshidratación causada por diarrea o vómito. Posología orientativa en adultos: 200 a 400 mL después de cada deposición líquida, en sorbos pequeños y frecuentes; reponer adicionalmente las pérdidas por vómito. La cantidad depende de las pérdidas y del estado clínico, no de una dosis fija por kilogramo en el adulto estable.",
+      "registro_txt_completo": "HIDRAPLUS® CON ZINC 75 MEQ, SABOR UVA, SOLUCIÓN ORAL X 400 ML\n\nPrecio:  Costo: 11.250. Stock:  Referencia externa: Farmatodo. Rehidratación oral. Sistema digestivo y general. Sirve para prevenir o corregir la deshidratación causada por diarrea o vómito. Posología orientativa en adultos: 200 a 400 mL después de cada deposición líquida, en sorbos pequeños y frecuentes; reponer adicionalmente las pérdidas por vómito. La cantidad depende de las pérdidas y del estado clínico, no de una dosis fija por kilogramo en el adulto estable."
+    },
+    "0125": {
+      "codigo": "0125",
+      "nombre": "HIDROCORTISONA 1 %, CREMA TÓPICA X 15 G",
+      "precio": "",
+      "costo": "6600",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Corticosteroide tópico. Piel. Sirve para aliviar inflamación y picazón leves por dermatitis, picaduras o reacciones irritativas. Posología usual: aplicar una capa fina 1 o 2 veces al día durante un máximo de 7 días sin valoración médica. No aplicar sobre heridas, infecciones, ojos ni áreas extensas.",
+      "registro_txt_completo": "HIDROCORTISONA 1 %, CREMA TÓPICA X 15 G\n\nPrecio:  Costo: 6.600. Stock:  Referencia externa: Farmatodo. Corticosteroide tópico. Piel. Sirve para aliviar inflamación y picazón leves por dermatitis, picaduras o reacciones irritativas. Posología usual: aplicar una capa fina 1 o 2 veces al día durante un máximo de 7 días sin valoración médica. No aplicar sobre heridas, infecciones, ojos ni áreas extensas."
+    },
+    "0126": {
+      "codigo": "0126",
+      "nombre": "HISTOTAL® COLECALCIFEROL 25.000 UI/ML X 4 AMPOLLAS BEBIBLES DE 1 ML",
+      "precio": "",
+      "costo": "72950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Vitamina. Huesos y metabolismo. Sirve para tratar o prevenir deficiencia de vitamina D en esquemas de alta dosis. Posología: la frecuencia de ampollas de 25.000 UI debe definirla el médico según niveles de vitamina D, calcio y condición clínica; no es un producto para uso diario automático. No se calcula por kilogramo de forma rutinaria en adultos.",
+      "registro_txt_completo": "HISTOTAL® COLECALCIFEROL 25.000 UI/ML X 4 AMPOLLAS BEBIBLES DE 1 ML\n\nPrecio:  Costo: 72.950. Stock:  Referencia externa: Farmatodo. Vitamina. Huesos y metabolismo. Sirve para tratar o prevenir deficiencia de vitamina D en esquemas de alta dosis. Posología: la frecuencia de ampollas de 25.000 UI debe definirla el médico según niveles de vitamina D, calcio y condición clínica; no es un producto para uso diario automático. No se calcula por kilogramo de forma rutinaria en adultos."
+    },
+    "0127": {
+      "codigo": "0127",
+      "nombre": "HUMENAS® SOLUCIÓN NASAL 0,65 % X 30 ML",
+      "precio": "",
+      "costo": "40000",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Solución nasal. Nariz. Sirve para humectar y limpiar las fosas nasales y ayudar a fluidificar secreciones. Modo de uso: aplicar 1 o 2 atomizaciones en cada fosa nasal varias veces al día según necesidad. No requiere cálculo por peso.",
+      "registro_txt_completo": "HUMENAS® SOLUCIÓN NASAL 0,65 % X 30 ML\n\nPrecio:  Costo: 40.000. Stock:  Referencia externa: Cruz Verde. Solución nasal. Nariz. Sirve para humectar y limpiar las fosas nasales y ayudar a fluidificar secreciones. Modo de uso: aplicar 1 o 2 atomizaciones en cada fosa nasal varias veces al día según necesidad. No requiere cálculo por peso."
+    },
+    "0128": {
+      "codigo": "0128",
+      "nombre": "ISOCONAZOL GENFAR 1 %, CREMA X 20 G",
+      "precio": "",
+      "costo": "20700",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antifúngico tópico. Piel y zona genital. Sirve para tratar infecciones superficiales por hongos en la piel. Posología usual: aplicar una capa fina una vez al día durante 2 a 4 semanas, manteniendo la zona limpia y seca. Continuar algunos días después de desaparecer los síntomas según indicación.",
+      "registro_txt_completo": "ISOCONAZOL GENFAR 1 %, CREMA X 20 G\n\nPrecio:  Costo: 20.700. Stock:  Referencia externa: Farmatodo. Antifúngico tópico. Piel y zona genital. Sirve para tratar infecciones superficiales por hongos en la piel. Posología usual: aplicar una capa fina una vez al día durante 2 a 4 semanas, manteniendo la zona limpia y seca. Continuar algunos días después de desaparecer los síntomas según indicación."
+    },
+    "0129": {
+      "codigo": "0129",
+      "nombre": "IVERMECTINA MK 0,6 %, SOLUCIÓN ORAL EN GOTAS X 5 ML",
+      "precio": "",
+      "costo": "22400",
+      "stock": "",
+      "referencia_externa": "MK",
+      "descripcion": "Antiparasitario. Piel y sistema digestivo. Sirve para tratar parasitosis sensibles como estrongiloidiasis, escabiosis u otras, según diagnóstico. Posología usual de referencia: 150 a 200 microgramos/kg en dosis única, con repetición solo si la indicación lo requiere. En esta solución de 6 mg/mL equivale aproximadamente a 0,025 a 0,033 mL/kg; la dosis debe calcularla un profesional.",
+      "registro_txt_completo": "IVERMECTINA MK 0,6 %, SOLUCIÓN ORAL EN GOTAS X 5 ML\n\nPrecio:  Costo: 22.400. Stock:  Referencia externa: MK. Antiparasitario. Piel y sistema digestivo. Sirve para tratar parasitosis sensibles como estrongiloidiasis, escabiosis u otras, según diagnóstico. Posología usual de referencia: 150 a 200 microgramos/kg en dosis única, con repetición solo si la indicación lo requiere. En esta solución de 6 mg/mL equivale aproximadamente a 0,025 a 0,033 mL/kg; la dosis debe calcularla un profesional."
+    },
+    "0130": {
+      "codigo": "0130",
+      "nombre": "LABINPINA® HIOSCINA N-BUTILBROMURO 10 MG X 20 GRAGEAS, LABINCO",
+      "precio": "",
+      "costo": "26030",
+      "stock": "",
+      "referencia_externa": "Ecofarma",
+      "descripcion": "Antiespasmódico. Sistema digestivo. Sirve para aliviar espasmos y cólicos del tracto gastrointestinal o genitourinario. Posología usual en adultos: 10 a 20 mg, 3 a 5 veces al día según necesidad, sin exceder 100 mg al día. Puede causar boca seca, visión borrosa o retención urinaria.",
+      "registro_txt_completo": "LABINPINA® HIOSCINA N-BUTILBROMURO 10 MG X 20 GRAGEAS, LABINCO\n\nPrecio:  Costo: 26.030. Stock:  Referencia externa: Ecofarma. Antiespasmódico. Sistema digestivo. Sirve para aliviar espasmos y cólicos del tracto gastrointestinal o genitourinario. Posología usual en adultos: 10 a 20 mg, 3 a 5 veces al día según necesidad, sin exceder 100 mg al día. Puede causar boca seca, visión borrosa o retención urinaria."
+    },
+    "0131": {
+      "codigo": "0131",
+      "nombre": "LIDAL® METRONIDAZOL 500 MG + CLOTRIMAZOL 100 MG X 10 ÓVULOS VAGINALES",
+      "precio": "",
+      "costo": "64800",
+      "stock": "",
+      "referencia_externa": "Tu Droguería Virtual",
+      "descripcion": "Antiinfeccioso vaginal. Sistema reproductor. Sirve para el tratamiento vaginal de infecciones mixtas por hongos y microorganismos sensibles, según diagnóstico. Posología usual: introducir 1 óvulo profundamente en la vagina por la noche durante 10 días, o según fórmula médica. Evitar relaciones sexuales y alcohol durante el tratamiento con metronidazol, y consultar si hay embarazo.",
+      "registro_txt_completo": "LIDAL® METRONIDAZOL 500 MG + CLOTRIMAZOL 100 MG X 10 ÓVULOS VAGINALES\n\nPrecio:  Costo: 64.800. Stock:  Referencia externa: Tu Droguería Virtual. Antiinfeccioso vaginal. Sistema reproductor. Sirve para el tratamiento vaginal de infecciones mixtas por hongos y microorganismos sensibles, según diagnóstico. Posología usual: introducir 1 óvulo profundamente en la vagina por la noche durante 10 días, o según fórmula médica. Evitar relaciones sexuales y alcohol durante el tratamiento con metronidazol, y consultar si hay embarazo."
+    },
+    "0132": {
+      "codigo": "0132",
+      "nombre": "LOMOTIL® DIFENOXILATO + ATROPINA 2,5 MG/0,025 MG X 48 TABLETAS",
+      "precio": "",
+      "costo": "104900",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antidiarreico. Sistema digestivo. Sirve para el control sintomático de diarrea aguda no invasiva. Posología inicial usual en adultos: 2 tabletas 4 veces al día; al mejorar, reducir la dosis y suspender si no hay respuesta en 48 horas. No usar si hay fiebre alta, sangre en las heces, sospecha de infección invasiva o deshidratación sin valoración.",
+      "registro_txt_completo": "LOMOTIL® DIFENOXILATO + ATROPINA 2,5 MG/0,025 MG X 48 TABLETAS\n\nPrecio:  Costo: 104.900. Stock:  Referencia externa: Farmatodo. Antidiarreico. Sistema digestivo. Sirve para el control sintomático de diarrea aguda no invasiva. Posología inicial usual en adultos: 2 tabletas 4 veces al día; al mejorar, reducir la dosis y suspender si no hay respuesta en 48 horas. No usar si hay fiebre alta, sangre en las heces, sospecha de infección invasiva o deshidratación sin valoración."
+    },
+    "0133": {
+      "codigo": "0133",
+      "nombre": "LORATADINA 10 MG LA SANTÉ X 10 TABLETAS",
+      "precio": "",
+      "costo": "4950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antihistamínico. Alergias. Sirve para aliviar estornudos, picazón, secreción nasal y urticaria de origen alérgico. Posología usual en adultos: 10 mg una vez al día. No duplicar con otros antihistamínicos.",
+      "registro_txt_completo": "LORATADINA 10 MG LA SANTÉ X 10 TABLETAS\n\nPrecio:  Costo: 4.950. Stock:  Referencia externa: Farmatodo. Antihistamínico. Alergias. Sirve para aliviar estornudos, picazón, secreción nasal y urticaria de origen alérgico. Posología usual en adultos: 10 mg una vez al día. No duplicar con otros antihistamínicos."
+    },
+    "0134": {
+      "codigo": "0134",
+      "nombre": "MAREOL® DIMENHIDRINATO 50 MG X 12 TABLETAS",
+      "precio": "",
+      "costo": "9950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiemético y antivertiginoso. Sistema nervioso y oído. Sirve para prevenir y tratar mareo por movimiento, náuseas y vértigo. Posología usual en adultos: 50 a 100 mg cada 4 a 6 horas, con máximo de 400 mg al día. Puede causar somnolencia; evitar alcohol, conducir o manejar maquinaria.",
+      "registro_txt_completo": "MAREOL® DIMENHIDRINATO 50 MG X 12 TABLETAS\n\nPrecio:  Costo: 9.950. Stock:  Referencia externa: Farmatodo. Antiemético y antivertiginoso. Sistema nervioso y oído. Sirve para prevenir y tratar mareo por movimiento, náuseas y vértigo. Posología usual en adultos: 50 a 100 mg cada 4 a 6 horas, con máximo de 400 mg al día. Puede causar somnolencia; evitar alcohol, conducir o manejar maquinaria."
+    },
+    "0135": {
+      "codigo": "0135",
+      "nombre": "MEDIPRIM F® TRIMETOPRIM 160 MG + SULFAMETOXAZOL 800 MG X 10 TABLETAS",
+      "precio": "",
+      "costo": "55700",
+      "stock": "",
+      "referencia_externa": "Farmalium",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones urinarias, respiratorias, gastrointestinales o de piel causadas por microorganismos sensibles. Posología usual de referencia en adultos: 1 tableta de 160/800 mg cada 12 horas, con duración definida por el médico. En tratamientos calculados por peso, la dosis se expresa por trimetoprim y suele ser de 8 mg/kg al día divididos cada 12 horas.",
+      "registro_txt_completo": "MEDIPRIM F® TRIMETOPRIM 160 MG + SULFAMETOXAZOL 800 MG X 10 TABLETAS\n\nPrecio:  Costo: 55.700. Stock:  Referencia externa: Farmalium. Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones urinarias, respiratorias, gastrointestinales o de piel causadas por microorganismos sensibles. Posología usual de referencia en adultos: 1 tableta de 160/800 mg cada 12 horas, con duración definida por el médico. En tratamientos calculados por peso, la dosis se expresa por trimetoprim y suele ser de 8 mg/kg al día divididos cada 12 horas."
+    },
+    "0136": {
+      "codigo": "0136",
+      "nombre": "MEDROL® METILPREDNISOLONA 16 MG X 14 TABLETAS, PFIZER",
+      "precio": "",
+      "costo": "133850",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Corticosteroide sistémico. Sistema inmunitario y general. Sirve para controlar inflamación y reacciones inmunológicas en múltiples enfermedades. Posología: es individual y puede variar aproximadamente entre 4 y 48 mg al día; en algunas indicaciones se calcula alrededor de 0,5 a 1 mg/kg al día. Debe usarse bajo fórmula médica y no suspenderse bruscamente después de tratamientos prolongados.",
+      "registro_txt_completo": "MEDROL® METILPREDNISOLONA 16 MG X 14 TABLETAS, PFIZER\n\nPrecio:  Costo: 133.850. Stock:  Referencia externa: Farmatodo. Corticosteroide sistémico. Sistema inmunitario y general. Sirve para controlar inflamación y reacciones inmunológicas en múltiples enfermedades. Posología: es individual y puede variar aproximadamente entre 4 y 48 mg al día; en algunas indicaciones se calcula alrededor de 0,5 a 1 mg/kg al día. Debe usarse bajo fórmula médica y no suspenderse bruscamente después de tratamientos prolongados."
+    },
+    "0137": {
+      "codigo": "0137",
+      "nombre": "METILPREDNISOLONA MK 16 MG X 10 TABLETAS",
+      "precio": "",
+      "costo": "71650",
+      "stock": "",
+      "referencia_externa": "MK",
+      "descripcion": "Corticosteroide sistémico. Sistema inmunitario y general. Sirve para controlar inflamación y reacciones inmunológicas en múltiples enfermedades. Posología: es individual y puede variar aproximadamente entre 4 y 48 mg al día; en algunas indicaciones se calcula alrededor de 0,5 a 1 mg/kg al día. Debe usarse bajo fórmula médica y no suspenderse bruscamente después de tratamientos prolongados.",
+      "registro_txt_completo": "METILPREDNISOLONA MK 16 MG X 10 TABLETAS\n\nPrecio:  Costo: 71.650. Stock:  Referencia externa: MK. Corticosteroide sistémico. Sistema inmunitario y general. Sirve para controlar inflamación y reacciones inmunológicas en múltiples enfermedades. Posología: es individual y puede variar aproximadamente entre 4 y 48 mg al día; en algunas indicaciones se calcula alrededor de 0,5 a 1 mg/kg al día. Debe usarse bajo fórmula médica y no suspenderse bruscamente después de tratamientos prolongados."
+    },
+    "0138": {
+      "codigo": "0138",
+      "nombre": "METRONIDAZOL LA SANTÉ 500 MG X 10 TABLETAS",
+      "precio": "",
+      "costo": "3600",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antibacteriano y antiprotozoario. Uso sistémico. Sirve para infecciones por bacterias anaerobias y algunos protozoos. Posología usual de referencia en adultos: 500 mg cada 8 o 12 horas, según la indicación y durante el tiempo prescrito. No consumir alcohol durante el tratamiento ni durante al menos 48 horas después de terminarlo.",
+      "registro_txt_completo": "METRONIDAZOL LA SANTÉ 500 MG X 10 TABLETAS\n\nPrecio:  Costo: 3.600. Stock:  Referencia externa: Cruz Verde. Antibacteriano y antiprotozoario. Uso sistémico. Sirve para infecciones por bacterias anaerobias y algunos protozoos. Posología usual de referencia en adultos: 500 mg cada 8 o 12 horas, según la indicación y durante el tiempo prescrito. No consumir alcohol durante el tratamiento ni durante al menos 48 horas después de terminarlo."
+    },
+    "0139": {
+      "codigo": "0139",
+      "nombre": "MIELTERTOS® JARABE NATURAL X 240 ML",
+      "precio": "",
+      "costo": "34050",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antitusivo y expectorante. Vías respiratorias. Sirve como jarabe de apoyo para suavizar la garganta y aliviar temporalmente la tos. Posología: seguir la medida indicada en el envase; como referencia en adultos suele utilizarse 10 mL, 3 veces al día. Consultar si la tos dura más de una semana, hay fiebre, falta de aire o flema con sangre.",
+      "registro_txt_completo": "MIELTERTOS® JARABE NATURAL X 240 ML\n\nPrecio:  Costo: 34.050. Stock:  Referencia externa: Farmatodo. Antitusivo y expectorante. Vías respiratorias. Sirve como jarabe de apoyo para suavizar la garganta y aliviar temporalmente la tos. Posología: seguir la medida indicada en el envase; como referencia en adultos suele utilizarse 10 mL, 3 veces al día. Consultar si la tos dura más de una semana, hay fiebre, falta de aire o flema con sangre."
+    },
+    "0140": {
+      "codigo": "0140",
+      "nombre": "MULTIFLORA PLUS® PROBIÓTICOS X 10 CÁPSULAS",
+      "precio": "",
+      "costo": "88200",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Probiótico. Sistema digestivo. Sirve como complemento probiótico para apoyar el equilibrio de la microbiota intestinal. Posología usual: 1 cápsula al día, salvo indicación diferente del fabricante o del profesional. No sustituye la rehidratación en caso de diarrea.",
+      "registro_txt_completo": "MULTIFLORA PLUS® PROBIÓTICOS X 10 CÁPSULAS\n\nPrecio:  Costo: 88.200. Stock:  Referencia externa: Farmatodo. Probiótico. Sistema digestivo. Sirve como complemento probiótico para apoyar el equilibrio de la microbiota intestinal. Posología usual: 1 cápsula al día, salvo indicación diferente del fabricante o del profesional. No sustituye la rehidratación en caso de diarrea."
+    },
+    "0141": {
+      "codigo": "0141",
+      "nombre": "NAPROXENO 500 MG GENFAR X 10 TABLETAS",
+      "precio": "",
+      "costo": "28950",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Analgésico antiinflamatorio. Sistema musculoesquelético y reproductor. Sirve para aliviar dolor e inflamación musculoesquelética, dental o menstrual. Posología usual de referencia en adultos: 500 mg cada 12 horas con alimentos, usando la menor dosis eficaz durante el menor tiempo posible; no exceder 1.000 mg al día sin valoración médica. No se dosifica habitualmente por kilogramo en adultos.",
+      "registro_txt_completo": "NAPROXENO 500 MG GENFAR X 10 TABLETAS\n\nPrecio:  Costo: 28.950. Stock:  Referencia externa: Cruz Verde. Analgésico antiinflamatorio. Sistema musculoesquelético y reproductor. Sirve para aliviar dolor e inflamación musculoesquelética, dental o menstrual. Posología usual de referencia en adultos: 500 mg cada 12 horas con alimentos, usando la menor dosis eficaz durante el menor tiempo posible; no exceder 1.000 mg al día sin valoración médica. No se dosifica habitualmente por kilogramo en adultos."
+    },
+    "0142": {
+      "codigo": "0142",
+      "nombre": "HIDRAPLUS® 75 CON ZINC SABOR MANZANA X 400 ML",
+      "precio": "",
+      "costo": "11200",
+      "stock": "",
+      "referencia_externa": "Farmacias Pasteur",
+      "descripcion": "Rehidratación oral. Sistema digestivo y general. Sirve para prevenir o corregir la deshidratación causada por diarrea o vómito. Posología orientativa en adultos: 200 a 400 mL después de cada deposición líquida, en sorbos pequeños y frecuentes; reponer adicionalmente las pérdidas por vómito. La cantidad depende de las pérdidas y del estado clínico, no de una dosis fija por kilogramo en el adulto estable.",
+      "registro_txt_completo": "HIDRAPLUS® 75 CON ZINC SABOR MANZANA X 400 ML\n\nPrecio:  Costo: 11.200. Stock:  Referencia externa: Farmacias Pasteur. Rehidratación oral. Sistema digestivo y general. Sirve para prevenir o corregir la deshidratación causada por diarrea o vómito. Posología orientativa en adultos: 200 a 400 mL después de cada deposición líquida, en sorbos pequeños y frecuentes; reponer adicionalmente las pérdidas por vómito. La cantidad depende de las pérdidas y del estado clínico, no de una dosis fija por kilogramo en el adulto estable."
+    },
+    "0143": {
+      "codigo": "0143",
+      "nombre": "NISTATINA 100.000 UI/ML, SUSPENSIÓN ORAL X 60 ML",
+      "precio": "",
+      "costo": "13250",
+      "stock": "",
+      "referencia_externa": "PreviPharma",
+      "descripcion": "Antifúngico oral. Boca y mucosas. Sirve para tratar candidiasis de la boca y la garganta. Posología usual en adultos: 4 a 6 mL, 4 veces al día; mantener la suspensión en la boca el mayor tiempo posible antes de tragar. Continuar al menos 48 horas después de desaparecer los síntomas, según indicación.",
+      "registro_txt_completo": "NISTATINA 100.000 UI/ML, SUSPENSIÓN ORAL X 60 ML\n\nPrecio:  Costo: 13.250. Stock:  Referencia externa: PreviPharma. Antifúngico oral. Boca y mucosas. Sirve para tratar candidiasis de la boca y la garganta. Posología usual en adultos: 4 a 6 mL, 4 veces al día; mantener la suspensión en la boca el mayor tiempo posible antes de tragar. Continuar al menos 48 horas después de desaparecer los síntomas, según indicación."
+    },
+    "0144": {
+      "codigo": "0144",
+      "nombre": "NITAZOXANIDA 500 MG X 6 TABLETAS, MK",
+      "precio": "",
+      "costo": "45100",
+      "stock": "",
+      "referencia_externa": "MK",
+      "descripcion": "Antiparasitario. Sistema digestivo. Sirve para tratar algunas parasitosis intestinales, incluidas giardiasis y criptosporidiosis, según diagnóstico. Posología usual en adultos: 500 mg cada 12 horas con alimentos durante 3 días. En adultos se utiliza dosis fija; los esquemas pediátricos dependen de la edad y no deben extrapolarse sin valoración.",
+      "registro_txt_completo": "NITAZOXANIDA 500 MG X 6 TABLETAS, MK\n\nPrecio:  Costo: 45.100. Stock:  Referencia externa: MK. Antiparasitario. Sistema digestivo. Sirve para tratar algunas parasitosis intestinales, incluidas giardiasis y criptosporidiosis, según diagnóstico. Posología usual en adultos: 500 mg cada 12 horas con alimentos durante 3 días. En adultos se utiliza dosis fija; los esquemas pediátricos dependen de la edad y no deben extrapolarse sin valoración."
+    },
+    "0145": {
+      "codigo": "0145",
+      "nombre": "NITROFURANTOÍNA 100 MG X 40 CÁPSULAS",
+      "precio": "",
+      "costo": "38050",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antibiótico urinario. Sistema urinario. Sirve principalmente para tratar infección urinaria baja no complicada causada por bacterias sensibles. Posología usual de referencia en adultos: 100 mg cada 12 horas con alimentos durante 5 a 7 días, según fórmula médica. No es adecuada para pielonefritis y requiere valoración de la función renal.",
+      "registro_txt_completo": "NITROFURANTOÍNA 100 MG X 40 CÁPSULAS\n\nPrecio:  Costo: 38.050. Stock:  Referencia externa: Cruz Verde. Antibiótico urinario. Sistema urinario. Sirve principalmente para tratar infección urinaria baja no complicada causada por bacterias sensibles. Posología usual de referencia en adultos: 100 mg cada 12 horas con alimentos durante 5 a 7 días, según fórmula médica. No es adecuada para pielonefritis y requiere valoración de la función renal."
+    },
+    "0146": {
+      "codigo": "0146",
+      "nombre": "NORAVER® GRIPA Y TOS FAST TOTAL: IBUPROFENO 400 MG + DEXTROMETORFANO 15 MG + FENILEFRINA 10 MG + LEVOCETIRIZINA 2,5 MG X 6 CÁPSULAS",
+      "precio": "",
+      "costo": "17450",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antigripal combinado. Vías respiratorias. Sirve para aliviar temporalmente dolor, fiebre, congestión nasal, estornudos y tos seca asociados con resfriado o gripa. Posología: seguir el inserto del producto; como referencia, suele utilizarse 1 cápsula cada 12 horas en adultos. No combinar con otros antiinflamatorios, descongestionantes, antialérgicos o antitusivos y evitarlo en hipertensión no controlada.",
+      "registro_txt_completo": "NORAVER® GRIPA Y TOS FAST TOTAL: IBUPROFENO 400 MG + DEXTROMETORFANO 15 MG + FENILEFRINA 10 MG + LEVOCETIRIZINA 2,5 MG X 6 CÁPSULAS\n\nPrecio:  Costo: 17.450. Stock:  Referencia externa: Cruz Verde. Antigripal combinado. Vías respiratorias. Sirve para aliviar temporalmente dolor, fiebre, congestión nasal, estornudos y tos seca asociados con resfriado o gripa. Posología: seguir el inserto del producto; como referencia, suele utilizarse 1 cápsula cada 12 horas en adultos. No combinar con otros antiinflamatorios, descongestionantes, antialérgicos o antitusivos y evitarlo en hipertensión no controlada."
+    },
+    "0147": {
+      "codigo": "0147",
+      "nombre": "NORAVER GARGANTA® DOBLE BENEFICIO SABOR CEREZA X 6 TABLETAS MASTICABLES",
+      "precio": "",
+      "costo": "12350",
+      "stock": "",
+      "referencia_externa": "Noraver",
+      "descripcion": "Antiséptico y anestésico bucofaríngeo. Boca y garganta. Sirve para aliviar de forma temporal irritación y dolor leve de garganta. Modo de uso: dejar disolver lentamente 1 tableta en la boca cada 2 a 3 horas, sin masticarla, respetando el máximo indicado en el empaque. Consultar si hay fiebre alta, dificultad para tragar o síntomas por más de 3 días.",
+      "registro_txt_completo": "NORAVER GARGANTA® DOBLE BENEFICIO SABOR CEREZA X 6 TABLETAS MASTICABLES\n\nPrecio:  Costo: 12.350. Stock:  Referencia externa: Noraver. Antiséptico y anestésico bucofaríngeo. Boca y garganta. Sirve para aliviar de forma temporal irritación y dolor leve de garganta. Modo de uso: dejar disolver lentamente 1 tableta en la boca cada 2 a 3 horas, sin masticarla, respetando el máximo indicado en el empaque. Consultar si hay fiebre alta, dificultad para tragar o síntomas por más de 3 días."
+    },
+    "0148": {
+      "codigo": "0148",
+      "nombre": "NYTAX® NITAZOXANIDA 500 MG X 6 CÁPSULAS BLANDAS",
+      "precio": "",
+      "costo": "92950",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antiparasitario. Sistema digestivo. Sirve para tratar algunas parasitosis intestinales, incluidas giardiasis y criptosporidiosis, según diagnóstico. Posología usual en adultos: 500 mg cada 12 horas con alimentos durante 3 días. En adultos se utiliza dosis fija; los esquemas pediátricos dependen de la edad y no deben extrapolarse sin valoración.",
+      "registro_txt_completo": "NYTAX® NITAZOXANIDA 500 MG X 6 CÁPSULAS BLANDAS\n\nPrecio:  Costo: 92.950. Stock:  Referencia externa: Cruz Verde. Antiparasitario. Sistema digestivo. Sirve para tratar algunas parasitosis intestinales, incluidas giardiasis y criptosporidiosis, según diagnóstico. Posología usual en adultos: 500 mg cada 12 horas con alimentos durante 3 días. En adultos se utiliza dosis fija; los esquemas pediátricos dependen de la edad y no deben extrapolarse sin valoración."
+    },
+    "0149": {
+      "codigo": "0149",
+      "nombre": "PANGETAN NF® LOPERAMIDA 2 MG X 4 TABLETAS",
+      "precio": "",
+      "costo": "9072",
+      "stock": "",
+      "referencia_externa": "Coopidrogas",
+      "descripcion": "Antidiarreico. Sistema digestivo. Sirve para disminuir la frecuencia de deposiciones en diarrea aguda no complicada. Posología usual en adultos: 4 mg al inicio y luego 2 mg después de cada deposición líquida; sin supervisión médica no exceder 8 mg al día. No usar si hay fiebre alta, sangre en las heces, distensión marcada o sospecha de infección invasiva.",
+      "registro_txt_completo": "PANGETAN NF® LOPERAMIDA 2 MG X 4 TABLETAS\n\nPrecio:  Costo: 9.072. Stock:  Referencia externa: Coopidrogas. Antidiarreico. Sistema digestivo. Sirve para disminuir la frecuencia de deposiciones en diarrea aguda no complicada. Posología usual en adultos: 4 mg al inicio y luego 2 mg después de cada deposición líquida; sin supervisión médica no exceder 8 mg al día. No usar si hay fiebre alta, sangre en las heces, distensión marcada o sospecha de infección invasiva."
+    },
+    "0150": {
+      "codigo": "0150",
+      "nombre": "PRANOSINA® INOSINA PRANOBEX 50 MG/ML, JARABE X 120 ML",
+      "precio": "",
+      "costo": "50650",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antiviral e inmunomodulador. Uso sistémico. Sirve como antiviral e inmunomodulador en indicaciones específicas, como algunos cuadros por herpes, bajo fórmula médica. Posología de referencia en adultos: 50 mg/kg al día divididos en 3 o 4 tomas; esta concentración de 50 mg/mL equivale a 1 mL/kg al día, sin exceder 4 g diarios. Puede elevar el ácido úrico y requiere precaución en gota o enfermedad renal.",
+      "registro_txt_completo": "PRANOSINA® INOSINA PRANOBEX 50 MG/ML, JARABE X 120 ML\n\nPrecio:  Costo: 50.650. Stock:  Referencia externa: Cruz Verde. Antiviral e inmunomodulador. Uso sistémico. Sirve como antiviral e inmunomodulador en indicaciones específicas, como algunos cuadros por herpes, bajo fórmula médica. Posología de referencia en adultos: 50 mg/kg al día divididos en 3 o 4 tomas; esta concentración de 50 mg/mL equivale a 1 mL/kg al día, sin exceder 4 g diarios. Puede elevar el ácido úrico y requiere precaución en gota o enfermedad renal."
+    },
+    "0151": {
+      "codigo": "0151",
+      "nombre": "PRANOSINA® METISOPRINOL 500 MG X 20 TABLETAS",
+      "precio": "",
+      "costo": "71950",
+      "stock": "",
+      "referencia_externa": "Locatel",
+      "descripcion": "Antiviral e inmunomodulador. Uso sistémico. Sirve como antiviral e inmunomodulador en indicaciones específicas, como algunos cuadros por herpes, bajo fórmula médica. Posología de referencia en adultos: 1 g cada 6 horas, con máximo de 4 g al día; el médico puede reducirla a 500 mg cada 6 horas según evolución. La referencia por peso es de 50 mg/kg al día divididos en 3 o 4 tomas.",
+      "registro_txt_completo": "PRANOSINA® METISOPRINOL 500 MG X 20 TABLETAS\n\nPrecio:  Costo: 71.950. Stock:  Referencia externa: Locatel. Antiviral e inmunomodulador. Uso sistémico. Sirve como antiviral e inmunomodulador en indicaciones específicas, como algunos cuadros por herpes, bajo fórmula médica. Posología de referencia en adultos: 1 g cada 6 horas, con máximo de 4 g al día; el médico puede reducirla a 500 mg cada 6 horas según evolución. La referencia por peso es de 50 mg/kg al día divididos en 3 o 4 tomas."
+    },
+    "0152": {
+      "codigo": "0152",
+      "nombre": "PROLARDII® SACCHAROMYCES BOULARDII X 10 SOBRES",
+      "precio": "",
+      "costo": "56100",
+      "stock": "",
+      "referencia_externa": "Coopidrogas",
+      "descripcion": "Probiótico. Sistema digestivo. Sirve como probiótico con Saccharomyces boulardii para apoyar el manejo de diarrea asociada con antibióticos u otras causas. Posología usual en adultos: 1 sobre una o dos veces al día, disuelto en líquido a temperatura ambiente. No mezclar con bebidas muy calientes y evitar en pacientes gravemente inmunosuprimidos sin valoración.",
+      "registro_txt_completo": "PROLARDII® SACCHAROMYCES BOULARDII X 10 SOBRES\n\nPrecio:  Costo: 56.100. Stock:  Referencia externa: Coopidrogas. Probiótico. Sistema digestivo. Sirve como probiótico con Saccharomyces boulardii para apoyar el manejo de diarrea asociada con antibióticos u otras causas. Posología usual en adultos: 1 sobre una o dos veces al día, disuelto en líquido a temperatura ambiente. No mezclar con bebidas muy calientes y evitar en pacientes gravemente inmunosuprimidos sin valoración."
+    },
+    "0153": {
+      "codigo": "0153",
+      "nombre": "GASTRUM® FAMOTIDINA 10 MG ABBOTT X 12 TABLETAS",
+      "precio": "",
+      "costo": "20350",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiulceroso y antiácido. Estómago. Sirve para reducir la producción de ácido y aliviar acidez o agruras ocasionales. Posología usual en adultos para esta concentración: 10 mg una o dos veces al día; sin valoración médica no exceder 20 mg al día ni usar por más de 14 días. Consultar si hay dificultad para tragar, pérdida de peso, vómito con sangre o heces negras.",
+      "registro_txt_completo": "GASTRUM® FAMOTIDINA 10 MG ABBOTT X 12 TABLETAS\n\nPrecio:  Costo: 20.350. Stock:  Referencia externa: Farmatodo. Antiulceroso y antiácido. Estómago. Sirve para reducir la producción de ácido y aliviar acidez o agruras ocasionales. Posología usual en adultos para esta concentración: 10 mg una o dos veces al día; sin valoración médica no exceder 20 mg al día ni usar por más de 14 días. Consultar si hay dificultad para tragar, pérdida de peso, vómito con sangre o heces negras."
+    },
+    "0154": {
+      "codigo": "0154",
+      "nombre": "REPARIL GEL N® ESCINA 1 % + SALICILATO DE DIETILAMINA 5 % X 30 G",
+      "precio": "",
+      "costo": "59550",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiinflamatorio tópico. Sistema musculoesquelético. Sirve para aliviar inflamación, dolor y hematomas superficiales asociados con golpes, esguinces o trastornos venosos leves. Modo de uso: aplicar una capa fina sobre la zona afectada 2 o 3 veces al día, sin frotar con fuerza. No aplicar sobre heridas abiertas, mucosas ni piel infectada.",
+      "registro_txt_completo": "REPARIL GEL N® ESCINA 1 % + SALICILATO DE DIETILAMINA 5 % X 30 G\n\nPrecio:  Costo: 59.550. Stock:  Referencia externa: Farmatodo. Antiinflamatorio tópico. Sistema musculoesquelético. Sirve para aliviar inflamación, dolor y hematomas superficiales asociados con golpes, esguinces o trastornos venosos leves. Modo de uso: aplicar una capa fina sobre la zona afectada 2 o 3 veces al día, sin frotar con fuerza. No aplicar sobre heridas abiertas, mucosas ni piel infectada."
+    },
+    "0155": {
+      "codigo": "0155",
+      "nombre": "RETIBLAN® VITAMINA A 50.000 UI X 50 CÁPSULAS BLANDAS",
+      "precio": "",
+      "costo": "36950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Vitamina. Ojos, piel y crecimiento. Sirve para tratar deficiencia de vitamina A bajo supervisión médica. La presentación de 50.000 UI es de alta dosis; la posología debe ser individualizada y no debe usarse como suplemento diario rutinario. Está contraindicada en embarazo salvo indicación especializada por riesgo de toxicidad.",
+      "registro_txt_completo": "RETIBLAN® VITAMINA A 50.000 UI X 50 CÁPSULAS BLANDAS\n\nPrecio:  Costo: 36.950. Stock:  Referencia externa: Farmatodo. Vitamina. Ojos, piel y crecimiento. Sirve para tratar deficiencia de vitamina A bajo supervisión médica. La presentación de 50.000 UI es de alta dosis; la posología debe ser individualizada y no debe usarse como suplemento diario rutinario. Está contraindicada en embarazo salvo indicación especializada por riesgo de toxicidad."
+    },
+    "0156": {
+      "codigo": "0156",
+      "nombre": "RHIFISOL® SOLUCIÓN SALINA FISIOLÓGICA 0,9 % X 30 ML",
+      "precio": "",
+      "costo": "7550",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Solución salina. Nariz, ojos y piel. Sirve para limpiar y humectar la nariz y facilitar la eliminación de secreciones. Modo de uso: aplicar 1 o 2 gotas en cada fosa nasal varias veces al día según necesidad. Mantener limpio el gotero y no compartir el frasco.",
+      "registro_txt_completo": "RHIFISOL® SOLUCIÓN SALINA FISIOLÓGICA 0,9 % X 30 ML\n\nPrecio:  Costo: 7.550. Stock:  Referencia externa: Farmatodo. Solución salina. Nariz, ojos y piel. Sirve para limpiar y humectar la nariz y facilitar la eliminación de secreciones. Modo de uso: aplicar 1 o 2 gotas en cada fosa nasal varias veces al día según necesidad. Mantener limpio el gotero y no compartir el frasco."
+    },
+    "0157": {
+      "codigo": "0157",
+      "nombre": "RIFOCINA® RIFAMICINA SÓDICA 1 %, SOLUCIÓN TÓPICA EN ATOMIZADOR X 20 ML",
+      "precio": "",
+      "costo": "59000",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico tópico. Piel. Sirve para infecciones bacterianas superficiales de la piel y heridas seleccionadas. Modo de uso usual: limpiar la zona y aplicar el atomizador 2 a 4 veces al día, según indicación médica. No usar de forma prolongada ni en heridas profundas sin valoración profesional.",
+      "registro_txt_completo": "RIFOCINA® RIFAMICINA SÓDICA 1 %, SOLUCIÓN TÓPICA EN ATOMIZADOR X 20 ML\n\nPrecio:  Costo: 59.000. Stock:  Referencia externa: Farmatodo. Antibiótico tópico. Piel. Sirve para infecciones bacterianas superficiales de la piel y heridas seleccionadas. Modo de uso usual: limpiar la zona y aplicar el atomizador 2 a 4 veces al día, según indicación médica. No usar de forma prolongada ni en heridas profundas sin valoración profesional."
+    },
+    "0158": {
+      "codigo": "0158",
+      "nombre": "SALBUTAMOL MK 100 MCG/DOSIS X 200 DOSIS",
+      "precio": "",
+      "costo": "30950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Broncodilatador. Sistema respiratorio. Sirve para aliviar broncoespasmo, sibilancias y sensación de falta de aire. Posología usual de rescate en adultos: 1 o 2 inhalaciones cada 4 a 6 horas según necesidad y técnica correcta. Necesitarlo con frecuencia, no obtener alivio o presentar dificultad respiratoria intensa requiere atención médica.",
+      "registro_txt_completo": "SALBUTAMOL MK 100 MCG/DOSIS X 200 DOSIS\n\nPrecio:  Costo: 30.950. Stock:  Referencia externa: Farmatodo. Broncodilatador. Sistema respiratorio. Sirve para aliviar broncoespasmo, sibilancias y sensación de falta de aire. Posología usual de rescate en adultos: 1 o 2 inhalaciones cada 4 a 6 horas según necesidad y técnica correcta. Necesitarlo con frecuencia, no obtener alivio o presentar dificultad respiratoria intensa requiere atención médica."
+    },
+    "0159": {
+      "codigo": "0159",
+      "nombre": "SEVEDOL EXTRAFUERTE® ACETAMINOFÉN + IBUPROFENO + CAFEÍNA X 16 TABLETAS",
+      "precio": "",
+      "costo": "37150",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Analgésico combinado. Sistema nervioso. Sirve para aliviar dolor de cabeza, muscular, dental o menstrual y reducir la fiebre. Posología: seguir la dosis indicada en el inserto; como referencia, suele administrarse 1 tableta cada 8 horas. No combinar con otros productos que contengan acetaminofén, ibuprofeno, aspirina u otros antiinflamatorios.",
+      "registro_txt_completo": "SEVEDOL EXTRAFUERTE® ACETAMINOFÉN + IBUPROFENO + CAFEÍNA X 16 TABLETAS\n\nPrecio:  Costo: 37.150. Stock:  Referencia externa: Farmatodo. Analgésico combinado. Sistema nervioso. Sirve para aliviar dolor de cabeza, muscular, dental o menstrual y reducir la fiebre. Posología: seguir la dosis indicada en el inserto; como referencia, suele administrarse 1 tableta cada 8 horas. No combinar con otros productos que contengan acetaminofén, ibuprofeno, aspirina u otros antiinflamatorios."
+    },
+    "0160": {
+      "codigo": "0160",
+      "nombre": "SMECTA® DIOSMECTITA 3 G X 10 SOBRES PARA SUSPENSIÓN ORAL",
+      "precio": "",
+      "costo": "80450",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antidiarreico adsorbente. Sistema digestivo. Sirve como adsorbente intestinal para el manejo sintomático de diarrea. Posología usual en adultos: 3 sobres al día disueltos en agua; en diarrea aguda el médico puede indicar una dosis inicial mayor. Debe acompañarse de hidratación y separarse al menos 2 horas de otros medicamentos orales.",
+      "registro_txt_completo": "SMECTA® DIOSMECTITA 3 G X 10 SOBRES PARA SUSPENSIÓN ORAL\n\nPrecio:  Costo: 80.450. Stock:  Referencia externa: Farmatodo. Antidiarreico adsorbente. Sistema digestivo. Sirve como adsorbente intestinal para el manejo sintomático de diarrea. Posología usual en adultos: 3 sobres al día disueltos en agua; en diarrea aguda el médico puede indicar una dosis inicial mayor. Debe acompañarse de hidratación y separarse al menos 2 horas de otros medicamentos orales."
+    },
+    "0161": {
+      "codigo": "0161",
+      "nombre": "SULFATO FERROSO 300 MG X 100 TABLETAS ECAR",
+      "precio": "",
+      "costo": "16400",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Suplemento de hierro. Sangre. Sirve para prevenir o tratar anemia por deficiencia de hierro. Posología usual: 1 tableta una a tres veces al día según el contenido de hierro elemental y la severidad de la deficiencia; la pauta debe basarse en hemograma y ferritina. Tomarlo separado de antiácidos, calcio, café y té; puede oscurecer las heces y causar estreñimiento.",
+      "registro_txt_completo": "SULFATO FERROSO 300 MG X 100 TABLETAS ECAR\n\nPrecio:  Costo: 16.400. Stock:  Referencia externa: Farmatodo. Suplemento de hierro. Sangre. Sirve para prevenir o tratar anemia por deficiencia de hierro. Posología usual: 1 tableta una a tres veces al día según el contenido de hierro elemental y la severidad de la deficiencia; la pauta debe basarse en hemograma y ferritina. Tomarlo separado de antiácidos, calcio, café y té; puede oscurecer las heces y causar estreñimiento."
+    },
+    "0162": {
+      "codigo": "0162",
+      "nombre": "TERBINAFINA 250 MG HUMAX X 14 TABLETAS",
+      "precio": "",
+      "costo": "54050",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antifúngico sistémico. Piel y uñas. Sirve para tratar infecciones por hongos de piel y uñas. Posología usual en adultos: 250 mg una vez al día; la duración suele ser de 2 a 6 semanas en piel y de 6 a 12 semanas o más en uñas. Requiere fórmula médica y evaluación de función hepática cuando el tratamiento es prolongado.",
+      "registro_txt_completo": "TERBINAFINA 250 MG HUMAX X 14 TABLETAS\n\nPrecio:  Costo: 54.050. Stock:  Referencia externa: Cruz Verde. Antifúngico sistémico. Piel y uñas. Sirve para tratar infecciones por hongos de piel y uñas. Posología usual en adultos: 250 mg una vez al día; la duración suele ser de 2 a 6 semanas en piel y de 6 a 12 semanas o más en uñas. Requiere fórmula médica y evaluación de función hepática cuando el tratamiento es prolongado."
+    },
+    "0163": {
+      "codigo": "0163",
+      "nombre": "TERRAMICINA® OXITETRACICLINA + POLIMIXINA B, UNGÜENTO OFTÁLMICO X 10 G",
+      "precio": "",
+      "costo": "35950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico oftálmico. Ojos. Sirve para infecciones bacterianas superficiales del ojo cuando el microorganismo es sensible. Posología usual: aplicar una tira aproximada de 1 cm dentro del saco conjuntival 2 a 4 veces al día, según prescripción. No compartir el tubo ni tocar el ojo con la punta.",
+      "registro_txt_completo": "TERRAMICINA® OXITETRACICLINA + POLIMIXINA B, UNGÜENTO OFTÁLMICO X 10 G\n\nPrecio:  Costo: 35.950. Stock:  Referencia externa: Farmatodo. Antibiótico oftálmico. Ojos. Sirve para infecciones bacterianas superficiales del ojo cuando el microorganismo es sensible. Posología usual: aplicar una tira aproximada de 1 cm dentro del saco conjuntival 2 a 4 veces al día, según prescripción. No compartir el tubo ni tocar el ojo con la punta."
+    },
+    "0164": {
+      "codigo": "0164",
+      "nombre": "TIAMINA (VITAMINA B1) 300 MG ECAR X 30 TABLETAS",
+      "precio": "",
+      "costo": "15950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Vitamina. Sistema nervioso y metabolismo. Sirve para prevenir o tratar deficiencia de vitamina B1 y algunas neuropatías asociadas. Posología usual en adultos: 300 mg una vez al día durante el tiempo indicado. La causa de la deficiencia debe ser evaluada para definir la duración.",
+      "registro_txt_completo": "TIAMINA (VITAMINA B1) 300 MG ECAR X 30 TABLETAS\n\nPrecio:  Costo: 15.950. Stock:  Referencia externa: Farmatodo. Vitamina. Sistema nervioso y metabolismo. Sirve para prevenir o tratar deficiencia de vitamina B1 y algunas neuropatías asociadas. Posología usual en adultos: 300 mg una vez al día durante el tiempo indicado. La causa de la deficiencia debe ser evaluada para definir la duración."
+    },
+    "0165": {
+      "codigo": "0165",
+      "nombre": "TRIMEBUTINA 200 MG COASPHARMA X 20 TABLETAS",
+      "precio": "",
+      "costo": "11743",
+      "stock": "",
+      "referencia_externa": "Drogas Sys",
+      "descripcion": "Regulador de motilidad intestinal. Sistema digestivo. Sirve para aliviar dolor, distensión y alteraciones de motilidad asociadas con trastornos funcionales intestinales. Posología usual en adultos: 200 mg 3 veces al día, preferiblemente antes de las comidas. No prolongar el uso si persisten dolor intenso, pérdida de peso, sangrado o fiebre.",
+      "registro_txt_completo": "TRIMEBUTINA 200 MG COASPHARMA X 20 TABLETAS\n\nPrecio:  Costo: 11.743. Stock:  Referencia externa: Drogas Sys. Regulador de motilidad intestinal. Sistema digestivo. Sirve para aliviar dolor, distensión y alteraciones de motilidad asociadas con trastornos funcionales intestinales. Posología usual en adultos: 200 mg 3 veces al día, preferiblemente antes de las comidas. No prolongar el uso si persisten dolor intenso, pérdida de peso, sangrado o fiebre."
+    },
+    "0166": {
+      "codigo": "0166",
+      "nombre": "TRIMETOPRIM 160 MG + SULFAMETOXAZOL 800 MG GENFAR X 10 TABLETAS",
+      "precio": "",
+      "costo": "5600",
+      "stock": "",
+      "referencia_externa": "Drogas Sys",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones urinarias, respiratorias, gastrointestinales o de piel causadas por microorganismos sensibles. Posología usual de referencia en adultos: 1 tableta de 160/800 mg cada 12 horas, con duración definida por el médico. En tratamientos calculados por peso, la dosis se expresa por trimetoprim y suele ser de 8 mg/kg al día divididos cada 12 horas.",
+      "registro_txt_completo": "TRIMETOPRIM 160 MG + SULFAMETOXAZOL 800 MG GENFAR X 10 TABLETAS\n\nPrecio:  Costo: 5.600. Stock:  Referencia externa: Drogas Sys. Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones urinarias, respiratorias, gastrointestinales o de piel causadas por microorganismos sensibles. Posología usual de referencia en adultos: 1 tableta de 160/800 mg cada 12 horas, con duración definida por el médico. En tratamientos calculados por peso, la dosis se expresa por trimetoprim y suele ser de 8 mg/kg al día divididos cada 12 horas."
+    },
+    "0167": {
+      "codigo": "0167",
+      "nombre": "TOBRADEX® TOBRAMICINA 0,3 % + DEXAMETASONA 0,1 %, SUSPENSIÓN OFTÁLMICA X 5 ML",
+      "precio": "",
+      "costo": "105900",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Antibiótico y corticosteroide oftálmico. Ojos. Sirve para procesos inflamatorios oculares con infección bacteriana o riesgo de ella. Posología usual de referencia: 1 o 2 gotas en el ojo afectado cada 4 a 6 horas; en cuadros intensos el médico puede indicar una frecuencia inicial mayor. Debe usarse solo bajo control oftalmológico por contener antibiótico y corticoide.",
+      "registro_txt_completo": "TOBRADEX® TOBRAMICINA 0,3 % + DEXAMETASONA 0,1 %, SUSPENSIÓN OFTÁLMICA X 5 ML\n\nPrecio:  Costo: 105.900. Stock:  Referencia externa: Cruz Verde. Antibiótico y corticosteroide oftálmico. Ojos. Sirve para procesos inflamatorios oculares con infección bacteriana o riesgo de ella. Posología usual de referencia: 1 o 2 gotas en el ojo afectado cada 4 a 6 horas; en cuadros intensos el médico puede indicar una frecuencia inicial mayor. Debe usarse solo bajo control oftalmológico por contener antibiótico y corticoide."
+    },
+    "0168": {
+      "codigo": "0168",
+      "nombre": "VITAMINA A 10.000 UI NOW FOODS X 100 CÁPSULAS BLANDAS",
+      "precio": "",
+      "costo": "103235",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Vitamina. Ojos, piel y crecimiento. Sirve como suplemento de vitamina A cuando existe deficiencia confirmada o indicación profesional. Posología: no exceder 1 cápsula al día y evitar el uso prolongado sin control, pues 10.000 UI corresponde al límite superior habitual para adultos. No usar durante el embarazo sin indicación médica.",
+      "registro_txt_completo": "VITAMINA A 10.000 UI NOW FOODS X 100 CÁPSULAS BLANDAS\n\nPrecio:  Costo: 103.235. Stock:  Referencia externa: Cruz Verde. Vitamina. Ojos, piel y crecimiento. Sirve como suplemento de vitamina A cuando existe deficiencia confirmada o indicación profesional. Posología: no exceder 1 cápsula al día y evitar el uso prolongado sin control, pues 10.000 UI corresponde al límite superior habitual para adultos. No usar durante el embarazo sin indicación médica."
+    },
+    "0169": {
+      "codigo": "0169",
+      "nombre": "VITA C + ZINC MK 500 MG/7,5 MG SABOR NARANJA X 12 TABLETAS MASTICABLES",
+      "precio": "",
+      "costo": "13050",
+      "stock": "",
+      "referencia_externa": "NOW Foods",
+      "descripcion": "Suplemento vitamínico y mineral. General. Sirve como suplemento de vitamina C y zinc cuando existe ingesta insuficiente o requerimiento aumentado. Posología usual en adultos: 1 tableta masticable al día, salvo indicación distinta del fabricante. No duplicar con otros suplementos que contengan zinc o vitamina C.",
+      "registro_txt_completo": "VITA C + ZINC MK 500 MG/7,5 MG SABOR NARANJA X 12 TABLETAS MASTICABLES\n\nPrecio:  Costo: 13.050. Stock:  Referencia externa: NOW Foods. Suplemento vitamínico y mineral. General. Sirve como suplemento de vitamina C y zinc cuando existe ingesta insuficiente o requerimiento aumentado. Posología usual en adultos: 1 tableta masticable al día, salvo indicación distinta del fabricante. No duplicar con otros suplementos que contengan zinc o vitamina C."
+    },
+    "0170": {
+      "codigo": "0170",
+      "nombre": "VICAL® VITAMINA C + ZINC 500 MG SABOR NARANJA X 100 TABLETAS MASTICABLES",
+      "precio": "",
+      "costo": "67500",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Suplemento vitamínico y mineral. General. Sirve como suplemento de vitamina C y zinc cuando existe ingesta insuficiente o requerimiento aumentado. Posología usual en adultos: 1 tableta masticable al día, salvo indicación distinta del fabricante. No duplicar con otros suplementos que contengan zinc o vitamina C.",
+      "registro_txt_completo": "VICAL® VITAMINA C + ZINC 500 MG SABOR NARANJA X 100 TABLETAS MASTICABLES\n\nPrecio:  Costo: 67.500. Stock:  Referencia externa: Farmatodo. Suplemento vitamínico y mineral. General. Sirve como suplemento de vitamina C y zinc cuando existe ingesta insuficiente o requerimiento aumentado. Posología usual en adultos: 1 tableta masticable al día, salvo indicación distinta del fabricante. No duplicar con otros suplementos que contengan zinc o vitamina C."
+    },
+    "0171": {
+      "codigo": "0171",
+      "nombre": "FARMA D® COLECALCIFEROL 5.000 UI X 30 CÁPSULAS BLANDAS",
+      "precio": "",
+      "costo": "85950",
+      "stock": "",
+      "referencia_externa": "ECAR",
+      "descripcion": "Vitamina. Huesos y metabolismo. Sirve como suplemento de vitamina D en personas con deficiencia o riesgo aumentado. Posología usual de referencia: 1 cápsula de 5.000 UI al día solo durante el periodo indicado y con seguimiento cuando el uso es prolongado. No combinar con otras dosis altas de vitamina D sin control de calcio.",
+      "registro_txt_completo": "FARMA D® COLECALCIFEROL 5.000 UI X 30 CÁPSULAS BLANDAS\n\nPrecio:  Costo: 85.950. Stock:  Referencia externa: ECAR. Vitamina. Huesos y metabolismo. Sirve como suplemento de vitamina D en personas con deficiencia o riesgo aumentado. Posología usual de referencia: 1 cápsula de 5.000 UI al día solo durante el periodo indicado y con seguimiento cuando el uso es prolongado. No combinar con otras dosis altas de vitamina D sin control de calcio."
+    },
+    "0172": {
+      "codigo": "0172",
+      "nombre": "ZENTEL® ALBENDAZOL 4 % (400 MG/10 ML), SUSPENSIÓN ORAL X 10 ML",
+      "precio": "",
+      "costo": "22050",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiparasitario. Sistema digestivo. Sirve para tratar varias parasitosis intestinales. Posología usual en adultos para helmintos intestinales comunes: 400 mg en dosis única; en oxiuriasis puede repetirse a los 14 días. Las infecciones tisulares requieren esquemas médicos calculados por peso, frecuentemente alrededor de 15 mg/kg al día, con máximo habitual de 800 mg al día.",
+      "registro_txt_completo": "ZENTEL® ALBENDAZOL 4 % (400 MG/10 ML), SUSPENSIÓN ORAL X 10 ML\n\nPrecio:  Costo: 22.050. Stock:  Referencia externa: Farmatodo. Antiparasitario. Sistema digestivo. Sirve para tratar varias parasitosis intestinales. Posología usual en adultos para helmintos intestinales comunes: 400 mg en dosis única; en oxiuriasis puede repetirse a los 14 días. Las infecciones tisulares requieren esquemas médicos calculados por peso, frecuentemente alrededor de 15 mg/kg al día, con máximo habitual de 800 mg al día."
+    },
+    "0173": {
+      "codigo": "0173",
+      "nombre": "ZITHROMAX® AZITROMICINA 500 MG X 3 TABLETAS, PFIZER",
+      "precio": "",
+      "costo": "136950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones bacterianas respiratorias, de piel o de transmisión sexual, según diagnóstico. Posología usual de referencia en adultos para varias infecciones: 500 mg una vez al día durante 3 días; existen otros esquemas que deben ser prescritos. Cuando se calcula por peso, la referencia frecuente es 10 mg/kg el primer día y 5 mg/kg al día del segundo al quinto día, sin superar la dosis adulta.",
+      "registro_txt_completo": "ZITHROMAX® AZITROMICINA 500 MG X 3 TABLETAS, PFIZER\n\nPrecio:  Costo: 136.950. Stock:  Referencia externa: Farmatodo. Antibiótico. Uso sistémico. Sirve para tratar determinadas infecciones bacterianas respiratorias, de piel o de transmisión sexual, según diagnóstico. Posología usual de referencia en adultos para varias infecciones: 500 mg una vez al día durante 3 días; existen otros esquemas que deben ser prescritos. Cuando se calcula por peso, la referencia frecuente es 10 mg/kg el primer día y 5 mg/kg al día del segundo al quinto día, sin superar la dosis adulta."
+    },
+    "0174": {
+      "codigo": "0174",
+      "nombre": "ADOREM® ACETAMINOFÉN 500 MG X 10 TABLETAS",
+      "precio": "",
+      "costo": "10950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y reducir la fiebre. Posología usual de referencia en adultos: 500 a 1.000 mg cada 6 a 8 horas según necesidad; no exceder 3.000 mg al día sin supervisión médica. Cuando se calcula por peso, la referencia es de 10 a 15 mg/kg por toma cada 4 a 6 horas, con máximo de 75 mg/kg al día y sin superar el límite diario del adulto.",
+      "registro_txt_completo": "ADOREM® ACETAMINOFÉN 500 MG X 10 TABLETAS\n\nPrecio:  Costo: 10.950. Stock:  Referencia externa: Farmatodo. Analgésico y antipirético. General. Sirve para aliviar dolor leve o moderado y reducir la fiebre. Posología usual de referencia en adultos: 500 a 1.000 mg cada 6 a 8 horas según necesidad; no exceder 3.000 mg al día sin supervisión médica. Cuando se calcula por peso, la referencia es de 10 a 15 mg/kg por toma cada 4 a 6 horas, con máximo de 75 mg/kg al día y sin superar el límite diario del adulto."
+    },
+    "0175": {
+      "codigo": "0175",
+      "nombre": "PEPSAMAR® HIDRÓXIDO DE ALUMINIO 6 %, SUSPENSIÓN ORAL X 150 ML",
+      "precio": "",
+      "costo": "21450",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiácido. Estómago. Sirve como antiácido para aliviar acidez, ardor y molestias por exceso de ácido gástrico. Posología usual en adultos: 10 a 20 mL entre comidas y al acostarse, según necesidad. Separar 2 a 4 horas de otros medicamentos y evitar uso prolongado en enfermedad renal.",
+      "registro_txt_completo": "PEPSAMAR® HIDRÓXIDO DE ALUMINIO 6 %, SUSPENSIÓN ORAL X 150 ML\n\nPrecio:  Costo: 21.450. Stock:  Referencia externa: Farmatodo. Antiácido. Estómago. Sirve como antiácido para aliviar acidez, ardor y molestias por exceso de ácido gástrico. Posología usual en adultos: 10 a 20 mL entre comidas y al acostarse, según necesidad. Separar 2 a 4 horas de otros medicamentos y evitar uso prolongado en enfermedad renal."
+    },
+    "0176": {
+      "codigo": "0176",
+      "nombre": "METOCLOPRAMIDA 10 MG X 30 TABLETAS",
+      "precio": "",
+      "costo": "12950",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Antiemético y procinético. Sistema digestivo. Sirve para náuseas y vómito de causas seleccionadas y para trastornos de vaciamiento gástrico. Posología usual en adultos: 10 mg hasta 3 veces al día, con intervalo mínimo de 6 horas, máximo 30 mg al día y generalmente por no más de 5 días. La dosis por peso es de 0,1 a 0,15 mg/kg por toma; puede causar movimientos involuntarios y requiere fórmula médica.",
+      "registro_txt_completo": "METOCLOPRAMIDA 10 MG X 30 TABLETAS\n\nPrecio:  Costo: 12.950. Stock:  Referencia externa: Farmatodo. Antiemético y procinético. Sistema digestivo. Sirve para náuseas y vómito de causas seleccionadas y para trastornos de vaciamiento gástrico. Posología usual en adultos: 10 mg hasta 3 veces al día, con intervalo mínimo de 6 horas, máximo 30 mg al día y generalmente por no más de 5 días. La dosis por peso es de 0,1 a 0,15 mg/kg por toma; puede causar movimientos involuntarios y requiere fórmula médica."
+    },
+    "0177": {
+      "codigo": "0177",
+      "nombre": "METAMUCIL® PSYLLIUM 58,6 %, POLVO PARA SOLUCIÓN ORAL X 174 G",
+      "precio": "",
+      "costo": "71995",
+      "stock": "",
+      "referencia_externa": "Farmatodo",
+      "descripcion": "Fibra y laxante formador de masa. Sistema digestivo. Sirve como fibra soluble para estreñimiento y apoyo al control del colesterol y la glucosa dentro de un plan integral. Posología usual: mezclar una porción indicada en el envase en al menos 240 mL de agua y tomar de inmediato, 1 a 3 veces al día. Debe acompañarse de abundante líquido y separarse 2 horas de otros medicamentos.",
+      "registro_txt_completo": "METAMUCIL® PSYLLIUM 58,6 %, POLVO PARA SOLUCIÓN ORAL X 174 G\n\nPrecio:  Costo: 71.995. Stock:  Referencia externa: Farmatodo. Fibra y laxante formador de masa. Sistema digestivo. Sirve como fibra soluble para estreñimiento y apoyo al control del colesterol y la glucosa dentro de un plan integral. Posología usual: mezclar una porción indicada en el envase en al menos 240 mL de agua y tomar de inmediato, 1 a 3 veces al día. Debe acompañarse de abundante líquido y separarse 2 horas de otros medicamentos."
+    },
+    "0178": {
+      "codigo": "0178",
+      "nombre": "DULCOLAX® BISACODILO 5 MG X 20 GRAGEAS",
+      "precio": "",
+      "costo": "36450",
+      "stock": "",
+      "referencia_externa": "Cruz Verde",
+      "descripcion": "Laxante estimulante. Sistema digestivo. Sirve para el alivio ocasional del estreñimiento. Posología usual en adultos: 1 o 2 grageas de 5 mg por la noche, con máximo de 10 mg al día. Tragar enteras; no tomar junto con leche o antiácidos y no usar de forma continua sin valoración.",
+      "registro_txt_completo": "DULCOLAX® BISACODILO 5 MG X 20 GRAGEAS\n\nPrecio:  Costo: 36.450. Stock:  Referencia externa: Cruz Verde. Laxante estimulante. Sistema digestivo. Sirve para el alivio ocasional del estreñimiento. Posología usual en adultos: 1 o 2 grageas de 5 mg por la noche, con máximo de 10 mg al día. Tragar enteras; no tomar junto con leche o antiácidos y no usar de forma continua sin valoración."
+    }
+  }
+}

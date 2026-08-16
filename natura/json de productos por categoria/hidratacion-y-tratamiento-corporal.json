@@ -1,0 +1,506 @@
+{
+  "categoria": "hidratación y tratamiento corporal",
+  "total_productos": 50,
+  "productos": {
+    "0444": {
+      "codigo": "0444",
+      "nombre": "NATURA TODODIA FRUTAS ROJAS CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA FRUTAS ROJAS CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0445": {
+      "codigo": "0445",
+      "nombre": "NATURA TODODIA HOJAS DE LIMON Y GUANABANA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA HOJAS DE LIMON Y GUANABANA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0446": {
+      "codigo": "0446",
+      "nombre": "NATURA TODODIA FLOR DE JENGIBRE Y MANDARINA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA FLOR DE JENGIBRE Y MANDARINA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0447": {
+      "codigo": "0447",
+      "nombre": "NATURA TODODIA CIRUELA Y FLOR DE VAINILLA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA CIRUELA Y FLOR DE VAINILLA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0448": {
+      "codigo": "0448",
+      "nombre": "NATURA TODODIA FLOR DE PERA Y MELISA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA FLOR DE PERA Y MELISA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0449": {
+      "codigo": "0449",
+      "nombre": "NATURA TODODIA MANGO ROSA Y AGUA DE COCO CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Repuesto de hidratante corporal de textura fresca y rápida absorción con nutrición prebiótica. Ayuda a hidratar y calmar la piel y posee una fragancia frutal de mango rosa y agua de coco. Código Natura: 103382.",
+      "registro_txt_completo": "NATURA TODODIA MANGO ROSA Y AGUA DE COCO CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Repuesto de hidratante corporal de textura fresca y rápida absorción con nutrición prebiótica. Ayuda a hidratar y calmar la piel y posee una fragancia frutal de mango rosa y agua de coco. Código Natura: 103382."
+    },
+    "0450": {
+      "codigo": "0450",
+      "nombre": "NATURA TODODIA HOJAS DE LIMON Y GUANABANA CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA HOJAS DE LIMON Y GUANABANA CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0451": {
+      "codigo": "0451",
+      "nombre": "NATURA TODODIA AVELLANAS Y CASIS CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA AVELLANAS Y CASIS CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0452": {
+      "codigo": "0452",
+      "nombre": "NATURA TODODIA NUEZ PECAN Y CACAO CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA NUEZ PECAN Y CACAO CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0453": {
+      "codigo": "0453",
+      "nombre": "NATURA TODODIA CIRUELA Y FLOR DE VAINILLA CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA CIRUELA Y FLOR DE VAINILLA CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0454": {
+      "codigo": "0454",
+      "nombre": "NATURA TODODIA NUEZ PECAN Y CACAO CREMA CORPORAL 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Hidratante corporal de la línea Tododia con fragancia floral de nuez pecán y cacao, formulado para nutrir e hidratar la piel y dejar una sensación suave y perfumada.",
+      "registro_txt_completo": "NATURA TODODIA NUEZ PECAN Y CACAO CREMA CORPORAL 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Hidratante corporal de la línea Tododia con fragancia floral de nuez pecán y cacao, formulado para nutrir e hidratar la piel y dejar una sensación suave y perfumada."
+    },
+    "0475": {
+      "codigo": "0475",
+      "nombre": "NATURA EKOS CASTAÑA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA EKOS CASTAÑA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0476": {
+      "codigo": "0476",
+      "nombre": "NATURA EKOS MARACUYA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA EKOS MARACUYA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0477": {
+      "codigo": "0477",
+      "nombre": "NATURA EKOS ANDIROBA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA EKOS ANDIROBA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0478": {
+      "codigo": "0478",
+      "nombre": "NATURA EKOS UCUUBA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA EKOS UCUUBA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0479": {
+      "codigo": "0479",
+      "nombre": "NATURA EKOS MARACUYA CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Repuesto de hidratante corporal con aceite bruto de maracuyá rico en ácidos grasos esenciales, de textura ligera y rápida absorción, diseñado para hidratar, calmar y reequilibrar la piel. Código Natura: 203386.",
+      "registro_txt_completo": "NATURA EKOS MARACUYA CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Repuesto de hidratante corporal con aceite bruto de maracuyá rico en ácidos grasos esenciales, de textura ligera y rápida absorción, diseñado para hidratar, calmar y reequilibrar la piel. Código Natura: 203386."
+    },
+    "0480": {
+      "codigo": "0480",
+      "nombre": "NATURA EKOS UCUUBA CREMA CORPORAL REPUESTO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Repuesto de hidratante corporal con manteca de ucuuba, formulado para hidratar, retonificar y favorecer la firmeza y elasticidad de la piel mediante el estímulo natural de colágeno y elastina.",
+      "registro_txt_completo": "NATURA EKOS UCUUBA CREMA CORPORAL REPUESTO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Repuesto de hidratante corporal con manteca de ucuuba, formulado para hidratar, retonificar y favorecer la firmeza y elasticidad de la piel mediante el estímulo natural de colágeno y elastina."
+    },
+    "0481": {
+      "codigo": "0481",
+      "nombre": "NATURA ANDIROBA FLUIDO DE MASAJES 100 G ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Fluido corporal para masaje que facilita el deslizamiento sobre la piel y proporciona una experiencia de cuidado y bienestar, con la propuesta aromática de andiroba.",
+      "registro_txt_completo": "NATURA ANDIROBA FLUIDO DE MASAJES 100 G ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Fluido corporal para masaje que facilita el deslizamiento sobre la piel y proporciona una experiencia de cuidado y bienestar, con la propuesta aromática de andiroba."
+    },
+    "0482": {
+      "codigo": "0482",
+      "nombre": "AVON CARE ACEITE DE COCO CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE ACEITE DE COCO CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0483": {
+      "codigo": "0483",
+      "nombre": "AVON CARE AVENA Y EXTRACTO DE VAINILLA CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE AVENA Y EXTRACTO DE VAINILLA CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0484": {
+      "codigo": "0484",
+      "nombre": "AVON CARE EXTRACTO DE ALMENDRAS CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal con extracto de almendras para piel seca a extra seca, formulada para brindar hasta 48 horas de humectación, nutrición intensiva y rápida absorción sin sensación grasosa.",
+      "registro_txt_completo": "AVON CARE EXTRACTO DE ALMENDRAS CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal con extracto de almendras para piel seca a extra seca, formulada para brindar hasta 48 horas de humectación, nutrición intensiva y rápida absorción sin sensación grasosa."
+    },
+    "0485": {
+      "codigo": "0485",
+      "nombre": "AVON CARE GLICERINA Y ACEITE DE ALMENDRA CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE GLICERINA Y ACEITE DE ALMENDRA CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0486": {
+      "codigo": "0486",
+      "nombre": "AVON CARE ACEITE DE ARGAN Y NARANJA CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE ACEITE DE ARGAN Y NARANJA CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0487": {
+      "codigo": "0487",
+      "nombre": "AVON CARE SANDIA CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE SANDIA CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0488": {
+      "codigo": "0488",
+      "nombre": "AVON CARE ACEITE DE COCO CREMA CORPORAL 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal con aceite de coco para hidratación restauradora, formulada para aportar hasta 48 horas de humectación, nutrición y suavidad con rápida absorción y sin sensación grasosa.",
+      "registro_txt_completo": "AVON CARE ACEITE DE COCO CREMA CORPORAL 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal con aceite de coco para hidratación restauradora, formulada para aportar hasta 48 horas de humectación, nutrición y suavidad con rápida absorción y sin sensación grasosa."
+    },
+    "0489": {
+      "codigo": "0489",
+      "nombre": "AVON CARE ACEITE DE ARGAN Y NARANJA CREMA CORPORAL 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Hidratante corporal con aceite de argán y naranja, de rápida absorción y acabado no graso, formulado para nutrir, humectar y mantener la piel con apariencia saludable.",
+      "registro_txt_completo": "AVON CARE ACEITE DE ARGAN Y NARANJA CREMA CORPORAL 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Hidratante corporal con aceite de argán y naranja, de rápida absorción y acabado no graso, formulado para nutrir, humectar y mantener la piel con apariencia saludable."
+    },
+    "0490": {
+      "codigo": "0490",
+      "nombre": "AVON CARE FRUTO ROJOS CREMA CORPORAL 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE FRUTO ROJOS CREMA CORPORAL 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0491": {
+      "codigo": "0491",
+      "nombre": "AVON CARE AGUACATE CREMA CORPORAL 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Hidratante corporal de uso diario con aguacate, formulado para nutrir y suavizar la piel con una textura de rápida absorción.",
+      "registro_txt_completo": "AVON CARE AGUACATE CREMA CORPORAL 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Hidratante corporal de uso diario con aguacate, formulado para nutrir y suavizar la piel con una textura de rápida absorción."
+    },
+    "0492": {
+      "codigo": "0492",
+      "nombre": "AVON CARE DERMA CREMA CORPORAL REAFIRMANTE 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal para todo tipo de piel con péptidos y aceite de café, diseñada para aportar hidratación intensa hasta por 72 horas y complementar el cuidado de la firmeza de la piel.",
+      "registro_txt_completo": "AVON CARE DERMA CREMA CORPORAL REAFIRMANTE 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal para todo tipo de piel con péptidos y aceite de café, diseñada para aportar hidratación intensa hasta por 72 horas y complementar el cuidado de la firmeza de la piel."
+    },
+    "0493": {
+      "codigo": "0493",
+      "nombre": "AVON CARE DERMA CREMA CORPORAL REAFIRMANTE 750 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE DERMA CREMA CORPORAL REAFIRMANTE 750 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0494": {
+      "codigo": "0494",
+      "nombre": "NATURA CARE DERMA CREMA CORPORAL ILUMINADORA 750 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA CARE DERMA CREMA CORPORAL ILUMINADORA 750 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0495": {
+      "codigo": "0495",
+      "nombre": "NATURA KAIAK CLASICO FEMENINO CREMA CORPORAL GEL ACQUA POS SOLAR PERFUMADA 390 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Hidratante corporal refrescante y perfumado de la línea Kaiak Clásico femenino, formulado para suavizar la piel y prolongar la sensación de frescura y perfumación después del baño o de la exposición al sol.",
+      "registro_txt_completo": "NATURA KAIAK CLASICO FEMENINO CREMA CORPORAL GEL ACQUA POS SOLAR PERFUMADA 390 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Hidratante corporal refrescante y perfumado de la línea Kaiak Clásico femenino, formulado para suavizar la piel y prolongar la sensación de frescura y perfumación después del baño o de la exposición al sol."
+    },
+    "0496": {
+      "codigo": "0496",
+      "nombre": "NATURA KAIAK CLASICO FEMENINO CREMA HIDRATANTE CORPORAL REFRESCANTE BAÑO PERFUMADA 100 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA KAIAK CLASICO FEMENINO CREMA HIDRATANTE CORPORAL REFRESCANTE BAÑO PERFUMADA 100 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0497": {
+      "codigo": "0497",
+      "nombre": "NATURA HUMOR PRIMEIRO CREMA CORPORAL GEL ILUMINADORA PERFUMADA 75 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA HUMOR PRIMEIRO CREMA CORPORAL GEL ILUMINADORA PERFUMADA 75 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0498": {
+      "codigo": "0498",
+      "nombre": "NATURA HOMEM CORAGIO MASCULINO CREMA CORPORAL PERFUMADA 125 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA HOMEM CORAGIO MASCULINO CREMA CORPORAL PERFUMADA 125 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0520": {
+      "codigo": "0520",
+      "nombre": "NATURA SEVE ALMENDRAS DULCE ACEITE CORPORAL 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Aceite corporal para uso durante el baño, formulado con aceites vegetales para nutrir e hidratar la piel y dejarla suave, luminosa y delicadamente perfumada con una nota cálida de almendras.",
+      "registro_txt_completo": "NATURA SEVE ALMENDRAS DULCE ACEITE CORPORAL 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Aceite corporal para uso durante el baño, formulado con aceites vegetales para nutrir e hidratar la piel y dejarla suave, luminosa y delicadamente perfumada con una nota cálida de almendras."
+    },
+    "0521": {
+      "codigo": "0521",
+      "nombre": "NATURA EKOS MARACUYA CREMA CORPORAL 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Hidratante corporal ligero y de rápida absorción con aceite bruto de maracuyá rico en ácidos grasos esenciales. Ayuda a hidratar, calmar y reequilibrar la piel y a mejorar su textura. Código Natura: 203404.",
+      "registro_txt_completo": "NATURA EKOS MARACUYA CREMA CORPORAL 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Hidratante corporal ligero y de rápida absorción con aceite bruto de maracuyá rico en ácidos grasos esenciales. Ayuda a hidratar, calmar y reequilibrar la piel y a mejorar su textura. Código Natura: 203404."
+    },
+    "0522": {
+      "codigo": "0522",
+      "nombre": "NATURA EKOS CASTAÑA CREMA CORPORAL 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Hidratante corporal con aceite bruto de castaña rico en omegas 6 y 9, formulado para combatir la resequedad intensa, reparar la barrera de la piel y mantenerla nutrida e hidratada hasta por 72 horas. Código Natura: 203406.",
+      "registro_txt_completo": "NATURA EKOS CASTAÑA CREMA CORPORAL 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Hidratante corporal con aceite bruto de castaña rico en omegas 6 y 9, formulado para combatir la resequedad intensa, reparar la barrera de la piel y mantenerla nutrida e hidratada hasta por 72 horas. Código Natura: 203406."
+    },
+    "0523": {
+      "codigo": "0523",
+      "nombre": "NATURA EKOS CACAO CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA EKOS CACAO CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0524": {
+      "codigo": "0524",
+      "nombre": "NATURA EKOS ACAI CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Hidratante corporal de la línea Ekos Açaí con acción antioxidante, formulado para hidratar la piel y ayudar a mantener una apariencia luminosa y revitalizada.",
+      "registro_txt_completo": "NATURA EKOS ACAI CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Hidratante corporal de la línea Ekos Açaí con acción antioxidante, formulado para hidratar la piel y ayudar a mantener una apariencia luminosa y revitalizada."
+    },
+    "0526": {
+      "codigo": "0526",
+      "nombre": "NATURA TODODIA TE DE MANZANILLA Y LAVANDA CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA TE DE MANZANILLA Y LAVANDA CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0527": {
+      "codigo": "0527",
+      "nombre": "NATURA TODODIA TE DE MANZANILLA Y LAVANDA CREMA CORPORAL 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de textura ligera tipo nube para el ritual previo al descanso. Su fórmula con nutrición prebiótica y vitamina B5 ayuda a reparar y proteger la piel mientras su fragancia de té de manzanilla y lavanda acompaña el automasaje nocturno. Código Natura: 121958.",
+      "registro_txt_completo": "NATURA TODODIA TE DE MANZANILLA Y LAVANDA CREMA CORPORAL 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de textura ligera tipo nube para el ritual previo al descanso. Su fórmula con nutrición prebiótica y vitamina B5 ayuda a reparar y proteger la piel mientras su fragancia de té de manzanilla y lavanda acompaña el automasaje nocturno. Código Natura: 121958."
+    },
+    "0528": {
+      "codigo": "0528",
+      "nombre": "NATURA TODODIA TE DE MANZANILLA Y LAVANDA CREMA NUBE RELAJANTE CORPORAL 200 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de textura ligera tipo nube para el ritual previo al descanso. Su fórmula con nutrición prebiótica y vitamina B5 ayuda a reparar y proteger la piel mientras su fragancia de té de manzanilla y lavanda acompaña el automasaje nocturno. Código Natura: 121958.",
+      "registro_txt_completo": "NATURA TODODIA TE DE MANZANILLA Y LAVANDA CREMA NUBE RELAJANTE CORPORAL 200 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de textura ligera tipo nube para el ritual previo al descanso. Su fórmula con nutrición prebiótica y vitamina B5 ayuda a reparar y proteger la piel mientras su fragancia de té de manzanilla y lavanda acompaña el automasaje nocturno. Código Natura: 121958."
+    },
+    "0532": {
+      "codigo": "0532",
+      "nombre": "NATURA EKOS CASTAÑA CREMA CORPORAL 400 ML REPUESTO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA EKOS CASTAÑA CREMA CORPORAL 400 ML REPUESTO\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0535": {
+      "codigo": "0535",
+      "nombre": "AVON CARE AGUACATE CREMA CORPORAL LITRO",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Avon",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "AVON CARE AGUACATE CREMA CORPORAL LITRO\n\nPrecio:  Costo:  Stock:  Referencia externa: Avon. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0538": {
+      "codigo": "0538",
+      "nombre": "NATURA TODODIA NUEZ PECAN Y CACAO CREMA CORPORAL ENVASE 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA NUEZ PECAN Y CACAO CREMA CORPORAL ENVASE 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0540": {
+      "codigo": "0540",
+      "nombre": "NATURA TODODIA MANGO ROSA Y AGUA DE COCO CREMA CORPORAL 400 ML ENVASE",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Hidratante corporal de rápida absorción y textura refrescante, con nutrición prebiótica y fragancia frutal de mango rosa y agua de coco. Ayuda a mantener la piel hidratada, firme y suave y a aliviar la sensación de calor. Código Natura: 103380.",
+      "registro_txt_completo": "NATURA TODODIA MANGO ROSA Y AGUA DE COCO CREMA CORPORAL 400 ML ENVASE\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Hidratante corporal de rápida absorción y textura refrescante, con nutrición prebiótica y fragancia frutal de mango rosa y agua de coco. Ayuda a mantener la piel hidratada, firme y suave y a aliviar la sensación de calor. Código Natura: 103380."
+    },
+    "0543": {
+      "codigo": "0543",
+      "nombre": "NATURA TODODIA MANZANA CARAMELIZADA Y VAINILLA CREMA CORPORAL 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada.",
+      "registro_txt_completo": "NATURA TODODIA MANZANA CARAMELIZADA Y VAINILLA CREMA CORPORAL 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal de uso diario que ayuda a hidratar y suavizar la piel, contribuyendo a mantener una sensación confortable y una perfumación acorde con la variante indicada."
+    },
+    "0563": {
+      "codigo": "0563",
+      "nombre": "NATURA COMBO TODODIA AVELLANA Y CASIS ACEITE BIFASICO CREMA 120 ML 100 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Producto de cuidado personal en la presentación indicada, destinado a integrarse en la rutina correspondiente de acuerdo con su tipo y beneficio principal.",
+      "registro_txt_completo": "NATURA COMBO TODODIA AVELLANA Y CASIS ACEITE BIFASICO CREMA 120 ML 100 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Producto de cuidado personal en la presentación indicada, destinado a integrarse en la rutina correspondiente de acuerdo con su tipo y beneficio principal."
+    },
+    "0566": {
+      "codigo": "0566",
+      "nombre": "NATURA EKOS CUPUAÇU CREMA HIDRATANTE PARA EL CUERPO 400 ML",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Crema corporal reafirmante para todo tipo de piel que promueve una mejora visible de la firmeza y las estrías en dos semanas. Ofrece tres veces más hidratación reafirmante para la piel, ayuda a mejorar visiblemente la apariencia de la celulitis en 30 días y deja la piel más firme y tonificada. Está probada dermatológicamente, es vegana, cruelty free y cuenta con repuesto. Código Natura: NATCOL-203478.",
+      "registro_txt_completo": "NATURA EKOS CUPUAÇU CREMA HIDRATANTE PARA EL CUERPO 400 ML\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia. Crema corporal reafirmante para todo tipo de piel que promueve una mejora visible de la firmeza y las estrías en dos semanas. Ofrece tres veces más hidratación reafirmante para la piel, ayuda a mejorar visiblemente la apariencia de la celulitis en 30 días y deja la piel más firme y tonificada. Está probada dermatológicamente, es vegana, cruelty free y cuenta con repuesto. Código Natura: NATCOL-203478."
+    }
+  }
+}

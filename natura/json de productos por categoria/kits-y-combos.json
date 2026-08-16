@@ -1,0 +1,76 @@
+{
+  "categoria": "kits y combos",
+  "total_productos": 7,
+  "productos": {
+    "0550": {
+      "codigo": "0550",
+      "nombre": "NATURA COMBO AGUAS VIOLETA 150 ML JABON EN BARRA 90 G",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Brasil",
+      "descripcion": "Jabón en barra para la limpieza diaria de la piel; la presentación reúne las unidades y el gramaje indicados en el nombre del producto.",
+      "registro_txt_completo": "NATURA COMBO AGUAS VIOLETA 150 ML JABON EN BARRA 90 G\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Brasil.  Jabón en barra para la limpieza diaria de la piel; la presentación reúne las unidades y el gramaje indicados en el nombre del producto."
+    },
+    "0552": {
+      "codigo": "0552",
+      "nombre": "NATURA COMBO TODODIA MANZANA CARAMELIZADA Y VAINILLA X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Brasil",
+      "descripcion": "Body splash de perfumación ligera con perfil dulce de manzana caramelizada y vainilla, pensado para el uso diario.",
+      "registro_txt_completo": "NATURA COMBO TODODIA MANZANA CARAMELIZADA Y VAINILLA X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Brasil.  Body splash de perfumación ligera con perfil dulce de manzana caramelizada y vainilla, pensado para el uso diario."
+    },
+    "0553": {
+      "codigo": "0553",
+      "nombre": "NATURA COMBO TODODIA CEREZA Y AVELLANA X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Brasil",
+      "descripcion": "Desodorante roll-on de secado rápido con complejo hidratante y vitamina E, formulado para proteger las axilas, evitar la resequedad y ofrecer una fragancia dulce de cereza y avellana. Código Natura: 189406.",
+      "registro_txt_completo": "NATURA COMBO TODODIA CEREZA Y AVELLANA X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Brasil.  Desodorante roll-on de secado rápido con complejo hidratante y vitamina E, formulado para proteger las axilas, evitar la resequedad y ofrecer una fragancia dulce de cereza y avellana. Código Natura: 189406."
+    },
+    "0554": {
+      "codigo": "0554",
+      "nombre": "NATURA COMBO TODODIA CEREZA NEGRA Y PRALINE X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Brasil",
+      "descripcion": "Producto de cuidado corporal para uso cotidiano, correspondiente exactamente a la variante, presentación y contenido indicados en el nombre.",
+      "registro_txt_completo": "NATURA COMBO TODODIA CEREZA NEGRA Y PRALINE X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Brasil.  Producto de cuidado corporal para uso cotidiano, correspondiente exactamente a la variante, presentación y contenido indicados en el nombre."
+    },
+    "0555": {
+      "codigo": "0555",
+      "nombre": "NATURA COMBO TODODIA CIRUELA Y FLOR DE VAINILLA X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Body splash de perfumación ligera con perfil frutal dulce y cremoso de ciruela y flor de vainilla. Código Natura: 100679.",
+      "registro_txt_completo": "NATURA COMBO TODODIA CIRUELA Y FLOR DE VAINILLA X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia.  Body splash de perfumación ligera con perfil frutal dulce y cremoso de ciruela y flor de vainilla. Código Natura: 100679."
+    },
+    "0560": {
+      "codigo": "0560",
+      "nombre": "NATURA COMBO EKOS PITANGA PRETA FEMENINO FRESCOR 150 ML CAJA DE JABONES DE 6 UNIDADES DE 25 G CDU",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Colombia",
+      "descripcion": "Fragancia floral y frutal ligera con pitanga negra, hojas de pitanga y rosas, de uso diario y formulación vegana. Código Natura: 73575.",
+      "registro_txt_completo": "NATURA COMBO EKOS PITANGA PRETA FEMENINO FRESCOR 150 ML CAJA DE JABONES DE 6 UNIDADES DE 25 G CDU\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Colombia.  Fragancia floral y frutal ligera con pitanga negra, hojas de pitanga y rosas, de uso diario y formulación vegana. Código Natura: 73575."
+    },
+    "0565": {
+      "codigo": "0565",
+      "nombre": "NATURA COMBO TODODIA FRESA Y VAINILLA DORADA X3",
+      "precio": "",
+      "costo": "",
+      "stock": "",
+      "referencia_externa": "Natura Brasil",
+      "descripcion": "Kit de cuidado corporal con hidratante de 400 ml, body splash de 200 ml y una caja con 5 jabones vegetales de 90 g cada uno. Ofrece una fragancia floral dulce con notas jugosas de fresa y fondo gourmand de vainilla dorada; el hidratante aporta nutrición prebiótica y los jabones limpian sin resecar. Producto vegano, cruelty free y dermatológicamente probado. Código Natura: NATBRA-258119.",
+      "registro_txt_completo": "NATURA COMBO TODODIA FRESA Y VAINILLA DORADA X3\n\nPrecio:  Costo:  Stock:  Referencia externa: Natura Brasil. Kit de cuidado corporal con hidratante de 400 ml, body splash de 200 ml y una caja con 5 jabones vegetales de 90 g cada uno. Ofrece una fragancia floral dulce con notas jugosas de fresa y fondo gourmand de vainilla dorada; el hidratante aporta nutrición prebiótica y los jabones limpian sin resecar. Producto vegano, cruelty free y dermatológicamente probado. Código Natura: NATBRA-258119."
+    }
+  }
+}

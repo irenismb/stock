@@ -1,0 +1,36 @@
+{
+  "categoria": "papelería de segunda mano",
+  "total_productos": 3,
+  "productos": {
+    "0006": {
+      "codigo": "0006",
+      "nombre": "BOLSILLOS PARA LAMINAR NHITAN NHI-1405 X 100 UNIDADES",
+      "precio": "",
+      "costo": "236615",
+      "stock": "",
+      "referencia_externa": "Panamericana",
+      "descripcion": "Fundas transparentes para proteger documentos mediante laminación térmica. Incorporan pegante termoactivo de alta adherencia y cohesión entre las caras internas, y están elaboradas en PVC resistente para producir un acabado sellado, firme y transparente. Son adecuadas para certificados, avisos, fotografías, fichas y otros documentos en formato carta, utilizando una laminadora compatible con calibre 5 o 125 micras. Código de barras: 4905860414058.",
+      "registro_txt_completo": "BOLSILLOS PARA LAMINAR NHITAN NHI-1405 X 100 UNIDADES\n\nPrecio:  Costo: 236.615. Stock:  Referencia externa: Panamericana. Fundas transparentes para proteger documentos mediante laminación térmica. Incorporan pegante termoactivo de alta adherencia y cohesión entre las caras internas, y están elaboradas en PVC resistente para producir un acabado sellado, firme y transparente. Son adecuadas para certificados, avisos, fotografías, fichas y otros documentos en formato carta, utilizando una laminadora compatible con calibre 5 o 125 micras. Código de barras: 4905860414058."
+    },
+    "0007": {
+      "codigo": "0007",
+      "nombre": "LAMINADORA COMIX F9061 A4",
+      "precio": "",
+      "costo": "379900",
+      "stock": "",
+      "referencia_externa": "Panamericana",
+      "descripcion": "Equipo compacto para plastificar y proteger documentos, fotografías, certificados, menús y otros materiales de hasta tamaño A4 mediante laminación en caliente o en frío. Incorpora dos rodillos de presión, sistema antiatascos con liberación ABS, indicadores luminosos de encendido y preparación, y selector para fundas de 80 y 125 micras. Admite un ancho máximo de laminación de 230 mm, grosor máximo de 2 x 125 micras, calentamiento aproximado de 3 a 5 minutos y velocidad de laminado de hasta 300 mm por minuto. Funciona con alimentación de 110 V CA, 60 Hz y 3 A, con consumo nominal de 300 W. Mide aproximadamente 35,8 cm de ancho, 14,8 cm de profundidad y 6,6 cm de alto. Código de barras: 6926032390619.",
+      "registro_txt_completo": "LAMINADORA COMIX F9061 A4\n\nPrecio:  Costo: 379.900. Stock:  Referencia externa: Panamericana. Equipo compacto para plastificar y proteger documentos, fotografías, certificados, menús y otros materiales de hasta tamaño A4 mediante laminación en caliente o en frío. Incorpora dos rodillos de presión, sistema antiatascos con liberación ABS, indicadores luminosos de encendido y preparación, y selector para fundas de 80 y 125 micras. Admite un ancho máximo de laminación de 230 mm, grosor máximo de 2 x 125 micras, calentamiento aproximado de 3 a 5 minutos y velocidad de laminado de hasta 300 mm por minuto. Funciona con alimentación de 110 V CA, 60 Hz y 3 A, con consumo nominal de 300 W. Mide aproximadamente 35,8 cm de ancho, 14,8 cm de profundidad y 6,6 cm de alto. Código de barras: 6926032390619."
+    },
+    "0008": {
+      "codigo": "0008",
+      "nombre": "NUMERADOR AUTOMÁTICO PENMAX NP-206 DE 6 DÍGITOS",
+      "precio": "",
+      "costo": "55955",
+      "stock": "",
+      "referencia_externa": "Mercado Libre",
+      "descripcion": "Herramienta de oficina para marcar documentos, formularios, recibos, facturas y otros registros con numeración consecutiva. Incorpora seis ruedas numéricas, caracteres de aproximadamente 4 mm, cuerpo metálico, mango de presión y mecanismo de avance automático configurable para repetir una numeración hasta cinco veces. No es autotintable, por lo que requiere almohadilla y tinta apropiada para numeradores metálicos. El artículo presenta señales visibles de uso, rayones superficiales y residuos de tinta en el mecanismo.",
+      "registro_txt_completo": "NUMERADOR AUTOMÁTICO PENMAX NP-206 DE 6 DÍGITOS\n\nPrecio:  Costo: 55.955. Stock:  Referencia externa: Mercado Libre. Herramienta de oficina para marcar documentos, formularios, recibos, facturas y otros registros con numeración consecutiva. Incorpora seis ruedas numéricas, caracteres de aproximadamente 4 mm, cuerpo metálico, mango de presión y mecanismo de avance automático configurable para repetir una numeración hasta cinco veces. No es autotintable, por lo que requiere almohadilla y tinta apropiada para numeradores metálicos. El artículo presenta señales visibles de uso, rayones superficiales y residuos de tinta en el mecanismo."
+    }
+  }
+}

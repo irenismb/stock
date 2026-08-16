@@ -4344,13 +4344,13 @@
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
     // Fuente de productos: JSON estático.
-    // Las imágenes se localizan en GitHub/Productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    // Las imágenes se localizan en GitHub/imagenes y txt de productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
       branch: "main",
       catalogDir: "natura",
-      productsFolder: "Productos"
+      productsFolder: "imagenes y txt de productos"
     };
 
 	const INTERRUPTORES = {
@@ -4711,7 +4711,7 @@
       };
     }
 
-    const ALL_PRODUCTS_JSON_URL = "datos-json/productos.json";
+    const ALL_PRODUCTS_JSON_URL = encodeURI("json de productos completo.json");
 
     async function loadJsonCatalog(){
       const [payload, imageIndex] = await Promise.all([
@@ -6980,7 +6980,7 @@
         render();
       }catch(err){
         console.error(err);
-        updateCountTextError("No se pudo cargar el JSON único. Reintenta más tarde.");
+        updateCountTextError("No se pudo cargar json de productos completo.json. Reintenta más tarde.");
       }
     }
 

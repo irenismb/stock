@@ -7,7 +7,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta http-equiv="x-dns-prefetch-control" content="on" />
-  <title>Irenismb Stock Natura | Catálogo prueba JSON por categoría</title>
+  <title>Irenismb Stock Natura | Catálogo prueba JSON único</title>
   <meta name="description" content="Catálogo oficial Natura y AVON en Santa Marta: perfumes, cuidado de la piel, maquillaje y más. Asesoría personalizada y compra fácil por WhatsApp. Envíos a toda Colombia." />
   <meta name="robots" content="noindex,nofollow" />
   <meta name="theme-color" content="#0b0f14" />
@@ -4344,13 +4344,13 @@
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
     // Fuente de productos: JSON estático.
-    // Las imágenes se localizan en GitHub/imagenes y txt de productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    // Las imágenes se localizan en GitHub/Productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
       branch: "main",
       catalogDir: "natura",
-      productsFolder: "imagenes y txt de productos"
+      productsFolder: "Productos"
     };
 
 	const INTERRUPTORES = {
@@ -4711,28 +4711,23 @@
       };
     }
 
-    const CATEGORY_JSON_FILES = ["cuidado-capilar.json", "cuidado-de-manos-y-pies.json", "cuidado-facial.json", "desodorantes.json", "electrodomesticos-de-segunda-mano-a-la-venta.json", "electrodomesticos-de-segunda-mano-no-a-la-venta.json", "hidratacion-y-tratamiento-corporal.json", "higiene-intima.json", "higiene-y-exfoliacion-corporal.json", "juguetes-de-segunda-mano.json", "kits-y-combos.json", "maquillaje.json", "medicamentos.json", "papeleria-de-segunda-mano.json", "perfumeria-femenina.json", "perfumeria-masculina.json", "proteccion-solar.json"];
-    const CATEGORY_JSON_BASE = encodeURI("json de productos por categoria");
+    const ALL_PRODUCTS_JSON_URL = "datos-json/productos.json";
 
     async function loadJsonCatalog(){
-      const imagePromise = loadGitHubImageIndex();
-      const categoryPayloads = await Promise.all(
-        CATEGORY_JSON_FILES.map(async filename => {
-          const url = `${CATEGORY_JSON_BASE}/${encodeURIComponent(filename)}`;
-          const payload = await fetchJsonStatic(url);
-          if(!payload || typeof payload !== "object" || !payload.productos || typeof payload.productos !== "object"){
-            throw new Error(`JSON de categoría inválido: ${filename}`);
-          }
-          return { filename, url, payload };
-        })
-      );
+      const [payload, imageIndex] = await Promise.all([
+        fetchJsonStatic(ALL_PRODUCTS_JSON_URL),
+        loadGitHubImageIndex()
+      ]);
 
-      const imageIndex = await imagePromise;
+      if(!payload || typeof payload !== "object" || !payload.categorias || typeof payload.categorias !== "object"){
+        throw new Error("El JSON único no contiene la estructura esperada de categorías.");
+      }
+
       const products = [];
-      for(const entry of categoryPayloads){
-        const category = String(entry.payload.categoria || entry.filename.replace(/\.json$/i, "")).trim();
-        for(const [code, item] of Object.entries(entry.payload.productos)){
-          const product = normalizeJsonProductEntry(category, code, item, entry.url, imageIndex);
+      for(const [category, categoryProducts] of Object.entries(payload.categorias)){
+        if(!categoryProducts || typeof categoryProducts !== "object") continue;
+        for(const [code, item] of Object.entries(categoryProducts)){
+          const product = normalizeJsonProductEntry(category, code, item, ALL_PRODUCTS_JSON_URL, imageIndex);
           if(product) products.push(product);
         }
       }
@@ -6985,7 +6980,7 @@
         render();
       }catch(err){
         console.error(err);
-        updateCountTextError("No se pudieron cargar los JSON por categoría. Reintenta más tarde.");
+        updateCountTextError("No se pudo cargar el JSON único. Reintenta más tarde.");
       }
     }
 

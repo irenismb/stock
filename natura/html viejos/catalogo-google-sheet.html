@@ -7,7 +7,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta http-equiv="x-dns-prefetch-control" content="on" />
-  <title>Irenismb Stock Natura | Catálogo prueba JSON por categoría</title>
+  <title>Irenismb Stock Natura | Catálogo prueba Google Sheet</title>
   <meta name="description" content="Catálogo oficial Natura y AVON en Santa Marta: perfumes, cuidado de la piel, maquillaje y más. Asesoría personalizada y compra fácil por WhatsApp. Envíos a toda Colombia." />
   <meta name="robots" content="noindex,nofollow" />
   <meta name="theme-color" content="#0b0f14" />
@@ -4343,14 +4343,21 @@
     // 2) CATEGORÍAS OCULTAS EN TODO EL CATÁLOGO
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
-    // Fuente de productos: JSON estático.
-    // Las imágenes se localizan en GitHub/imagenes y txt de productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    // Fuente principal de información: Google Sheet.
+    // Hoja: Productos (A:I). La página consulta el Sheet en cada carga.
+    // Las imágenes se localizan en GitHub/Productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    const GOOGLE_SHEET_SOURCE = {
+      spreadsheetId: "1hrgI-Ag8-Pc8tlZiTWYwzUebn_TdQHWgkjX8G48hCZU",
+      sheetName: "Productos",
+      gid: "1053052677"
+    };
+
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
       branch: "main",
       catalogDir: "natura",
-      productsFolder: "imagenes y txt de productos"
+      productsFolder: "Productos"
     };
 
 	const INTERRUPTORES = {
@@ -4570,26 +4577,99 @@
 
 
 
+    const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
     const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
     const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}/${encodeURIComponent(GITHUB_CATALOG_SOURCE.branch)}`;
-    const JSON_REQUEST_TIMEOUT_MS = 25000;
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
 
-    async function fetchJsonStatic(url){
-      const controller = new AbortController();
-      const timer = setTimeout(()=>controller.abort(), JSON_REQUEST_TIMEOUT_MS);
-      try{
-        const response = await fetch(url, { cache:"no-store", signal:controller.signal });
-        if(!response.ok) throw new Error(`No se pudo cargar ${url} (${response.status}).`);
-        return await response.json();
-      } finally {
-        clearTimeout(timer);
-      }
+    function googleSheetQueryUrl(callbackName){
+      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
+      const query = new URLSearchParams({
+        sheet: GOOGLE_SHEET_SOURCE.sheetName,
+        headers: "1",
+        range: "A:I",
+        tq: "select A,B,C,D,E,F,G,H,I",
+        tqx: `out:json;responseHandler:${callbackName}`
+      });
+      return `${base}?${query.toString()}`;
+    }
+
+    function loadGoogleSheetRows(){
+      return new Promise((resolve, reject)=>{
+        const callbackName = "__googleSheetCatalog_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        const script = document.createElement("script");
+        let settled = false;
+
+        const cleanup = ()=>{
+          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
+          if(script.parentNode) script.parentNode.removeChild(script);
+        };
+
+        const timer = window.setTimeout(()=>{
+          if(settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error("Tiempo de espera agotado al consultar el Google Sheet."));
+        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
+
+        window[callbackName] = (payload)=>{
+          if(settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          cleanup();
+
+          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
+            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
+            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
+            reject(new Error(detail || "Google Sheets devolvió una respuesta no válida. Verifica que el archivo permita lectura pública."));
+            return;
+          }
+
+          const cellValue = (cell)=>{
+            if(!cell) return "";
+            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
+            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
+            return "";
+          };
+
+          const rows = payload.table.rows.map(row=>{
+            const c = Array.isArray(row && row.c) ? row.c : [];
+            let code = cellValue(c[0]).trim();
+            if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
+
+            return {
+              code,
+              category: cellValue(c[1]).trim(),
+              name: cellValue(c[2]).trim(),
+              priceText: cellValue(c[3]).trim(),
+              costText: cellValue(c[4]).trim(),
+              stockText: cellValue(c[5]).trim(),
+              referenceExternal: cellValue(c[6]).trim(),
+              description: cellValue(c[7]).trim(),
+              fullTxtRecord: cellValue(c[8])
+            };
+          }).filter(row => /^\d{4}$/.test(row.code) && row.name);
+
+          resolve(rows);
+        };
+
+        script.onerror = ()=>{
+          if(settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          cleanup();
+          reject(new Error("No se pudo conectar con Google Sheets."));
+        };
+
+        script.src = googleSheetQueryUrl(callbackName);
+        script.async = true;
+        document.head.appendChild(script);
+      });
     }
 
     async function fetchGitHubJson(url){
       const controller = new AbortController();
-      const timer = setTimeout(()=>controller.abort(), JSON_REQUEST_TIMEOUT_MS);
+      const timer = setTimeout(()=>controller.abort(), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
       try{
         const response = await fetch(url, {
           cache:"no-store",
@@ -4670,75 +4750,15 @@
       }
     }
 
-    function normalizeJsonProductEntry(category, code, item, sourceUrl, imageIndex){
-      const normalizedCode = String(code || (item && item.codigo) || "").trim();
-      const name = String((item && item.nombre) || "").trim();
-      const normalizedCategory = String(category || "General").trim() || "General";
-      if(!/^\d{4}$/.test(normalizedCode) || !name) return null;
+    async function loadGoogleSheetCatalog(){
+      const [rows, imageIndex] = await Promise.all([
+        loadGoogleSheetRows(),
+        loadGitHubImageIndex()
+      ]);
 
-      const imageEntry = imageIndex && imageIndex.get(normalizedCode);
-      const imageRelativePath = String(imageEntry && imageEntry.path || "");
-      const fullImagePath = imageRelativePath
-        ? `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`
-        : "";
-      const docsImageUrl = fullImagePath ? rawGitHubUrl(fullImagePath) : "";
-
-      const priceText = String((item && item.precio) ?? "").trim();
-      const stockText = String((item && item.stock) ?? "").trim();
-      const description = String((item && item.descripcion) || "").trim();
-      const syntheticFilename = imageRelativePath || `${normalizedCategory}/${normalizedCode}.webp`;
-
-      return {
-        id: normalizedCode,
-        name,
-        category: normalizedCategory,
-        brand: "",
-        price: parseOptionalWholeNumber(priceText) ?? 0,
-        hasPrice: Boolean(priceText),
-        stock: parseOptionalWholeNumber(stockText),
-        referenceExternal: String((item && item.referencia_externa) || "").trim(),
-        isUnstructured: false,
-        originalFilename: "",
-        srcFilename: syntheticFilename,
-        imgFilename: syntheticFilename,
-        fileExt: extensionOfFilename(syntheticFilename) || "webp",
-        hasImage: Boolean(docsImageUrl),
-        isDocumentFirst: false,
-        description,
-        docsImageUrl,
-        docsDocumentUrl: String(sourceUrl || ""),
-        searchKey: normalizeText([name, normalizedCategory, description].filter(Boolean).join(" "))
-      };
+      return rows.map(row => ({ row, imageIndex }));
     }
 
-    const CATEGORY_JSON_FILES = ["cuidado-capilar.json", "cuidado-de-manos-y-pies.json", "cuidado-facial.json", "desodorantes.json", "electrodomesticos-de-segunda-mano-a-la-venta.json", "electrodomesticos-de-segunda-mano-no-a-la-venta.json", "hidratacion-y-tratamiento-corporal.json", "higiene-intima.json", "higiene-y-exfoliacion-corporal.json", "juguetes-de-segunda-mano.json", "kits-y-combos.json", "maquillaje.json", "medicamentos.json", "papeleria-de-segunda-mano.json", "perfumeria-femenina.json", "perfumeria-masculina.json", "proteccion-solar.json"];
-    const CATEGORY_JSON_BASE = encodeURI("json de productos por categoria");
-
-    async function loadJsonCatalog(){
-      const imagePromise = loadGitHubImageIndex();
-      const categoryPayloads = await Promise.all(
-        CATEGORY_JSON_FILES.map(async filename => {
-          const url = `${CATEGORY_JSON_BASE}/${encodeURIComponent(filename)}`;
-          const payload = await fetchJsonStatic(url);
-          if(!payload || typeof payload !== "object" || !payload.productos || typeof payload.productos !== "object"){
-            throw new Error(`JSON de categoría inválido: ${filename}`);
-          }
-          return { filename, url, payload };
-        })
-      );
-
-      const imageIndex = await imagePromise;
-      const products = [];
-      for(const entry of categoryPayloads){
-        const category = String(entry.payload.categoria || entry.filename.replace(/\.json$/i, "")).trim();
-        for(const [code, item] of Object.entries(entry.payload.productos)){
-          const product = normalizeJsonProductEntry(category, code, item, entry.url, imageIndex);
-          if(product) products.push(product);
-        }
-      }
-      products.sort((a,b)=>a.id.localeCompare(b.id, "es", { numeric:true }));
-      return products;
-    }
 
 
     function parseOptionalWholeNumber(value){
@@ -4808,8 +4828,51 @@
       };
     }
 
-    function makeProductFromJson(item){
-      return item && item.id ? item : null;
+    function makeProductFromGoogleSheet(entry){
+      const row = entry && entry.row;
+      const imageIndex = entry && entry.imageIndex;
+      if(!row) return null;
+
+      const code = String(row.code || "").trim();
+      const name = String(row.name || "").trim();
+      const category = String(row.category || "General").trim() || "General";
+      if(!/^\d{4}$/.test(code) || !name) return null;
+
+      const imageEntry = imageIndex && imageIndex.get(code);
+      const imageRelativePath = String(imageEntry && imageEntry.path || "");
+      const fullImagePath = imageRelativePath
+        ? `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`
+        : "";
+      const docsImageUrl = fullImagePath ? rawGitHubUrl(fullImagePath) : "";
+      const syntheticFilename = imageRelativePath || `${category}/${code}.webp`;
+
+      const priceText = String(row.priceText || "").trim();
+      const stockText = String(row.stockText || "").trim();
+
+      return {
+        id: code,
+        name,
+        category,
+        brand: "",
+        price: parseOptionalWholeNumber(priceText) ?? 0,
+        hasPrice: Boolean(priceText),
+        cost: parseOptionalWholeNumber(row.costText),
+        costText: String(row.costText || ""),
+        stock: parseOptionalWholeNumber(stockText),
+        referenceExternal: String(row.referenceExternal || "").trim(),
+        isUnstructured: false,
+        originalFilename: "",
+        srcFilename: syntheticFilename,
+        imgFilename: syntheticFilename,
+        fileExt: extensionOfFilename(syntheticFilename) || "webp",
+        hasImage: Boolean(docsImageUrl),
+        isDocumentFirst: false,
+        description: String(row.description || "").trim(),
+        fullTxtRecord: String(row.fullTxtRecord || ""),
+        docsImageUrl,
+        docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
+        searchKey: normalizeText([name, category, row.description, row.referenceExternal].filter(Boolean).join(" "))
+      };
     }
 
     function clearLegacyProductCaches(){
@@ -6958,13 +7021,13 @@
       await warmupPlaceholderOnce();
 
       try{
-        const jsonProducts = await loadJsonCatalog();
-        const products = jsonProducts
-          .map(makeProductFromJson)
+        const googleSheetEntries = await loadGoogleSheetCatalog();
+        const products = googleSheetEntries
+          .map(makeProductFromGoogleSheet)
           .filter(Boolean);
 
         if(!products.length){
-          throw new Error("Los archivos JSON no devolvieron productos válidos.");
+          throw new Error("Google Sheets no devolvió productos válidos.");
         }
 
         updateCatalogFooterProducts(products);
@@ -6985,7 +7048,7 @@
         render();
       }catch(err){
         console.error(err);
-        updateCountTextError("No se pudieron cargar los JSON por categoría. Reintenta más tarde.");
+        updateCountTextError("No se pudieron cargar los productos desde Google Sheets. Verifica que el Sheet permita lectura pública y reintenta.");
       }
     }
 

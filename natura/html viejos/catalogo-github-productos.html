@@ -7,9 +7,9 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta http-equiv="x-dns-prefetch-control" content="on" />
-  <title>Irenismb Stock Natura | Catálogo prueba JSON por categoría</title>
+  <title>Irenismb Stock Natura | Catálogo Natura & AVON en Santa Marta | Compra por WhatsApp</title>
   <meta name="description" content="Catálogo oficial Natura y AVON en Santa Marta: perfumes, cuidado de la piel, maquillaje y más. Asesoría personalizada y compra fácil por WhatsApp. Envíos a toda Colombia." />
-  <meta name="robots" content="noindex,nofollow" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet=-1,max-video-preview=-1" />
   <meta name="theme-color" content="#0b0f14" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
@@ -4343,14 +4343,15 @@
     // 2) CATEGORÍAS OCULTAS EN TODO EL CATÁLOGO
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
-    // Fuente de productos: JSON estático.
-    // Las imágenes se localizan en GitHub/imagenes y txt de productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    // Fuente de productos: GitHub.
+    // Estructura esperada: natura/Productos/<categoria>/<codigo>_nombre.ext
+    // El TXT y la imagen se emparejan EXCLUSIVAMENTE por el codigo global de cuatro digitos.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
       branch: "main",
       catalogDir: "natura",
-      productsFolder: "imagenes y txt de productos"
+      productsFolder: "Productos"
     };
 
 	const INTERRUPTORES = {
@@ -4569,37 +4570,26 @@
     }
 
 
-
     const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
     const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}/${encodeURIComponent(GITHUB_CATALOG_SOURCE.branch)}`;
-    const JSON_REQUEST_TIMEOUT_MS = 25000;
+    const GITHUB_REQUEST_TIMEOUT_MS = 25000;
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
 
-    async function fetchJsonStatic(url){
-      const controller = new AbortController();
-      const timer = setTimeout(()=>controller.abort(), JSON_REQUEST_TIMEOUT_MS);
-      try{
-        const response = await fetch(url, { cache:"no-store", signal:controller.signal });
-        if(!response.ok) throw new Error(`No se pudo cargar ${url} (${response.status}).`);
-        return await response.json();
-      } finally {
-        clearTimeout(timer);
-      }
-    }
-
     async function fetchGitHubJson(url){
-      const controller = new AbortController();
-      const timer = setTimeout(()=>controller.abort(), JSON_REQUEST_TIMEOUT_MS);
+      const controlador = new AbortController();
+      const temporizador = setTimeout(()=>controlador.abort(), GITHUB_REQUEST_TIMEOUT_MS);
       try{
-        const response = await fetch(url, {
-          cache:"no-store",
-          signal:controller.signal,
-          headers:{ "Accept":"application/vnd.github+json" }
+        const respuesta = await fetch(url, {
+          cache: "no-store",
+          signal: controlador.signal,
+          headers: { "Accept": "application/vnd.github+json" }
         });
-        if(!response.ok) throw new Error(`GitHub respondió ${response.status} al consultar las imágenes.`);
-        return await response.json();
+        if(!respuesta.ok){
+          throw new Error(`GitHub respondio ${respuesta.status} al consultar la estructura de Productos.`);
+        }
+        return await respuesta.json();
       } finally {
-        clearTimeout(timer);
+        clearTimeout(temporizador);
       }
     }
 
@@ -4607,7 +4597,7 @@
       return String(path || "")
         .split("/")
         .filter(Boolean)
-        .map(segment => encodeURIComponent(segment))
+        .map(segmento => encodeURIComponent(segmento))
         .join("/");
     }
 
@@ -4616,128 +4606,106 @@
     }
 
     function extractGlobalProductCode(filename){
-      const name = String(filename || "").trim();
-      const match = name.match(/^(\d{4})(?=$|[_.\s-])/);
+      const nombre = String(filename || "").trim();
+      const match = nombre.match(/^(\d{4})(?=$|[_.\s-])/);
       return match ? match[1] : "";
     }
 
     function extensionOfFilename(filename){
-      const name = String(filename || "");
-      const dot = name.lastIndexOf(".");
-      return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
+      const nombre = String(filename || "");
+      const punto = nombre.lastIndexOf(".");
+      return punto >= 0 ? nombre.slice(punto + 1).toLowerCase() : "";
+    }
+
+    function categoryFromProductPath(relativePath){
+      const partes = String(relativePath || "").split("/").filter(Boolean);
+      return partes.length > 1 ? partes[0] : "General";
     }
 
     function choosePreferredImage(currentEntry, candidateEntry){
       if(!currentEntry) return candidateEntry;
       const ranking = { webp:1, png:2, jpg:3, jpeg:4, avif:5, gif:6 };
-      const currentRank = ranking[extensionOfFilename(currentEntry.path)] || 99;
-      const candidateRank = ranking[extensionOfFilename(candidateEntry.path)] || 99;
-      return candidateRank < currentRank ? candidateEntry : currentEntry;
+      const actual = ranking[extensionOfFilename(currentEntry.path)] || 99;
+      const candidata = ranking[extensionOfFilename(candidateEntry.path)] || 99;
+      return candidata < actual ? candidateEntry : currentEntry;
     }
 
-    async function loadGitHubImageIndex(){
-      try{
-        const ref = encodeURIComponent(GITHUB_CATALOG_SOURCE.branch);
-        const catalogDir = encodeRepoPath(GITHUB_CATALOG_SOURCE.catalogDir);
-        const parentUrl = `${GITHUB_API_BASE}/contents/${catalogDir}?ref=${ref}`;
-        const parentEntries = await fetchGitHubJson(parentUrl);
-        if(!Array.isArray(parentEntries)) return new Map();
-
-        const productsEntry = parentEntries.find(entry =>
-          entry && entry.type === "dir" &&
-          String(entry.name || "").toLowerCase() === GITHUB_CATALOG_SOURCE.productsFolder.toLowerCase()
-        );
-        if(!productsEntry || !productsEntry.sha) return new Map();
-
-        const treeUrl = `${GITHUB_API_BASE}/git/trees/${encodeURIComponent(productsEntry.sha)}?recursive=1`;
-        const treePayload = await fetchGitHubJson(treeUrl);
-        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated) return new Map();
-
-        const imagesByCode = new Map();
-        for(const entry of treePayload.tree){
-          if(!entry || entry.type !== "blob") continue;
-          const relativePath = String(entry.path || "");
-          const filename = relativePath.split("/").pop() || "";
-          const code = extractGlobalProductCode(filename);
-          const ext = extensionOfFilename(filename);
-          if(!code || !PRODUCT_IMAGE_EXTENSIONS.has(ext)) continue;
-          imagesByCode.set(code, choosePreferredImage(imagesByCode.get(code), entry));
-        }
-        return imagesByCode;
-      }catch(err){
-        console.warn("No se pudo construir el índice de imágenes de GitHub; se usarán imágenes suplentes.", err);
-        return new Map();
+    async function loadGitHubProductFileIndex(){
+      const ref = encodeURIComponent(GITHUB_CATALOG_SOURCE.branch);
+      const catalogDir = encodeRepoPath(GITHUB_CATALOG_SOURCE.catalogDir);
+      const parentUrl = `${GITHUB_API_BASE}/contents/${catalogDir}?ref=${ref}`;
+      const parentEntries = await fetchGitHubJson(parentUrl);
+      if(!Array.isArray(parentEntries)){
+        throw new Error("GitHub no devolvio la carpeta del catalogo en el formato esperado.");
       }
-    }
 
-    function normalizeJsonProductEntry(category, code, item, sourceUrl, imageIndex){
-      const normalizedCode = String(code || (item && item.codigo) || "").trim();
-      const name = String((item && item.nombre) || "").trim();
-      const normalizedCategory = String(category || "General").trim() || "General";
-      if(!/^\d{4}$/.test(normalizedCode) || !name) return null;
-
-      const imageEntry = imageIndex && imageIndex.get(normalizedCode);
-      const imageRelativePath = String(imageEntry && imageEntry.path || "");
-      const fullImagePath = imageRelativePath
-        ? `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`
-        : "";
-      const docsImageUrl = fullImagePath ? rawGitHubUrl(fullImagePath) : "";
-
-      const priceText = String((item && item.precio) ?? "").trim();
-      const stockText = String((item && item.stock) ?? "").trim();
-      const description = String((item && item.descripcion) || "").trim();
-      const syntheticFilename = imageRelativePath || `${normalizedCategory}/${normalizedCode}.webp`;
-
-      return {
-        id: normalizedCode,
-        name,
-        category: normalizedCategory,
-        brand: "",
-        price: parseOptionalWholeNumber(priceText) ?? 0,
-        hasPrice: Boolean(priceText),
-        stock: parseOptionalWholeNumber(stockText),
-        referenceExternal: String((item && item.referencia_externa) || "").trim(),
-        isUnstructured: false,
-        originalFilename: "",
-        srcFilename: syntheticFilename,
-        imgFilename: syntheticFilename,
-        fileExt: extensionOfFilename(syntheticFilename) || "webp",
-        hasImage: Boolean(docsImageUrl),
-        isDocumentFirst: false,
-        description,
-        docsImageUrl,
-        docsDocumentUrl: String(sourceUrl || ""),
-        searchKey: normalizeText([name, normalizedCategory, description].filter(Boolean).join(" "))
-      };
-    }
-
-    const CATEGORY_JSON_FILES = ["cuidado-capilar.json", "cuidado-de-manos-y-pies.json", "cuidado-facial.json", "desodorantes.json", "electrodomesticos-de-segunda-mano-a-la-venta.json", "electrodomesticos-de-segunda-mano-no-a-la-venta.json", "hidratacion-y-tratamiento-corporal.json", "higiene-intima.json", "higiene-y-exfoliacion-corporal.json", "juguetes-de-segunda-mano.json", "kits-y-combos.json", "maquillaje.json", "medicamentos.json", "papeleria-de-segunda-mano.json", "perfumeria-femenina.json", "perfumeria-masculina.json", "proteccion-solar.json"];
-    const CATEGORY_JSON_BASE = encodeURI("json de productos por categoria");
-
-    async function loadJsonCatalog(){
-      const imagePromise = loadGitHubImageIndex();
-      const categoryPayloads = await Promise.all(
-        CATEGORY_JSON_FILES.map(async filename => {
-          const url = `${CATEGORY_JSON_BASE}/${encodeURIComponent(filename)}`;
-          const payload = await fetchJsonStatic(url);
-          if(!payload || typeof payload !== "object" || !payload.productos || typeof payload.productos !== "object"){
-            throw new Error(`JSON de categoría inválido: ${filename}`);
-          }
-          return { filename, url, payload };
-        })
+      const productsEntry = parentEntries.find(entry =>
+        entry && entry.type === "dir" &&
+        String(entry.name || "").localeCompare(GITHUB_CATALOG_SOURCE.productsFolder, "es", { sensitivity:"accent" }) === 0
+      ) || parentEntries.find(entry =>
+        entry && entry.type === "dir" &&
+        String(entry.name || "").toLowerCase() === GITHUB_CATALOG_SOURCE.productsFolder.toLowerCase()
       );
 
-      const imageIndex = await imagePromise;
-      const products = [];
-      for(const entry of categoryPayloads){
-        const category = String(entry.payload.categoria || entry.filename.replace(/\.json$/i, "")).trim();
-        for(const [code, item] of Object.entries(entry.payload.productos)){
-          const product = normalizeJsonProductEntry(category, code, item, entry.url, imageIndex);
-          if(product) products.push(product);
-        }
+      if(!productsEntry || !productsEntry.sha){
+        throw new Error(`No existe la carpeta ${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder} en GitHub.`);
       }
-      products.sort((a,b)=>a.id.localeCompare(b.id, "es", { numeric:true }));
-      return products;
+
+      const treeUrl = `${GITHUB_API_BASE}/git/trees/${encodeURIComponent(productsEntry.sha)}?recursive=1`;
+      const treePayload = await fetchGitHubJson(treeUrl);
+      if(!treePayload || !Array.isArray(treePayload.tree)){
+        throw new Error("GitHub no devolvio el arbol de Productos en el formato esperado.");
+      }
+      if(treePayload.truncated){
+        throw new Error("La carpeta Productos es demasiado grande para enumerarla de forma segura en una sola consulta.");
+      }
+
+      const byCode = new Map();
+      for(const entry of treePayload.tree){
+        if(!entry || entry.type !== "blob") continue;
+        const relativePath = String(entry.path || "");
+        const filename = relativePath.split("/").pop() || "";
+        const code = extractGlobalProductCode(filename);
+        if(!code) continue;
+
+        const ext = extensionOfFilename(filename);
+        const record = byCode.get(code) || { code, txt:null, image:null };
+        if(ext === "txt"){
+          // El nombre NO participa en el emparejamiento: solo importa el codigo.
+          if(!record.txt) record.txt = entry;
+        }else if(PRODUCT_IMAGE_EXTENSIONS.has(ext)){
+          record.image = choosePreferredImage(record.image, entry);
+        }
+        byCode.set(code, record);
+      }
+
+      return Array.from(byCode.values())
+        .filter(record => record.txt)
+        .sort((a,b)=>a.code.localeCompare(b.code, "es", { numeric:true }));
+    }
+
+    async function fetchProductTxt(record){
+      const relativeTxtPath = String(record && record.txt && record.txt.path || "");
+      const fullTxtPath = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${relativeTxtPath}`;
+      const respuesta = await fetch(rawGitHubUrl(fullTxtPath), { cache:"no-store" });
+      if(!respuesta.ok){
+        throw new Error(`No se pudo leer el TXT del producto ${record.code}.`);
+      }
+      return await respuesta.text();
+    }
+
+    function splitProductTxt(text){
+      const clean = String(text || "")
+        .replace(/^\uFEFF/, "")
+        .replace(/\r\n?/g, "\n")
+        .trim();
+      if(!clean) return { name:"", body:"" };
+
+      const lines = clean.split("\n");
+      const firstLine = String(lines.shift() || "").trim();
+      const name = firstLine.replace(/^\d{4}\s*-\s*/, "").trim();
+      const body = lines.join("\n").trim();
+      return { name, body };
     }
 
 
@@ -4808,9 +4776,54 @@
       };
     }
 
-    function makeProductFromJson(item){
-      return item && item.id ? item : null;
+    async function makeProductFromGitHubFiles(record){
+      const code = String((record && record.code) || "").trim();
+      if(!/^\d{4}$/.test(code) || !record || !record.txt) return null;
+
+      const txtText = await fetchProductTxt(record);
+      const txt = splitProductTxt(txtText);
+      if(!txt.name) return null;
+
+      // Recompone temporalmente el esquema oficial para reutilizar el parser existente.
+      const completeRecord = `${txt.name.replace(/\s+$/g, "").replace(/\.$/, "")}. ${txt.body}`.trim();
+      const parsedRecord = parseOfficialInventoryRecord({
+        name: txt.name,
+        description: completeRecord
+      });
+
+      const txtRelativePath = String(record.txt.path || "");
+      const imageRelativePath = String(record.image && record.image.path || "");
+      const category = categoryFromProductPath(txtRelativePath || imageRelativePath);
+      const fullTxtPath = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${txtRelativePath}`;
+      const fullImagePath = imageRelativePath
+        ? `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`
+        : "";
+      const docsImageUrl = fullImagePath ? rawGitHubUrl(fullImagePath) : "";
+      const imageFilename = imageRelativePath || `${category}/${code}`;
+
+      return {
+        id: code,
+        name: parsedRecord.name || txt.name,
+        category,
+        brand: "",
+        price: parsedRecord.price,
+        hasPrice: parsedRecord.hasPrice,
+        stock: parsedRecord.stock,
+        referenceExternal: parsedRecord.referenceExternal,
+        isUnstructured: false,
+        originalFilename: txtRelativePath.split("/").pop() || "",
+        srcFilename: imageFilename,
+        imgFilename: imageFilename,
+        fileExt: extensionOfFilename(imageFilename),
+        hasImage: Boolean(docsImageUrl),
+        isDocumentFirst: false,
+        description: parsedRecord.description,
+        docsImageUrl,
+        docsDocumentUrl: rawGitHubUrl(fullTxtPath),
+        searchKey: normalizeText([parsedRecord.name || txt.name, category, parsedRecord.description].filter(Boolean).join(" "))
+      };
     }
+
 
     function clearLegacyProductCaches(){
       const keys = [
@@ -6958,13 +6971,12 @@
       await warmupPlaceholderOnce();
 
       try{
-        const jsonProducts = await loadJsonCatalog();
-        const products = jsonProducts
-          .map(makeProductFromJson)
-          .filter(Boolean);
+        const githubRecords = await loadGitHubProductFileIndex();
+        const loadedProducts = await Promise.all(githubRecords.map(makeProductFromGitHubFiles));
+        const products = loadedProducts.filter(Boolean);
 
         if(!products.length){
-          throw new Error("Los archivos JSON no devolvieron productos válidos.");
+          throw new Error("GitHub no devolvio productos validos desde la carpeta Productos.");
         }
 
         updateCatalogFooterProducts(products);
@@ -6985,7 +6997,7 @@
         render();
       }catch(err){
         console.error(err);
-        updateCountTextError("No se pudieron cargar los JSON por categoría. Reintenta más tarde.");
+        updateCountTextError("No se pudieron cargar los productos desde GitHub/Productos. Reintenta más tarde.");
       }
     }
 

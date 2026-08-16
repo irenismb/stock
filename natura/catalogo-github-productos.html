@@ -4351,7 +4351,7 @@
       repo: "stock",
       branch: "main",
       catalogDir: "natura",
-      productsFolder: "Productos"
+      productsFolder: "imagenes y txt de productos"
     };
 
 	const INTERRUPTORES = {
@@ -4654,10 +4654,10 @@
       const treeUrl = `${GITHUB_API_BASE}/git/trees/${encodeURIComponent(productsEntry.sha)}?recursive=1`;
       const treePayload = await fetchGitHubJson(treeUrl);
       if(!treePayload || !Array.isArray(treePayload.tree)){
-        throw new Error("GitHub no devolvio el arbol de Productos en el formato esperado.");
+        throw new Error("GitHub no devolvio el arbol de imagenes y txt de productos en el formato esperado.");
       }
       if(treePayload.truncated){
-        throw new Error("La carpeta Productos es demasiado grande para enumerarla de forma segura en una sola consulta.");
+        throw new Error("La carpeta de imágenes y TXT es demasiado grande para enumerarla de forma segura en una sola consulta.");
       }
 
       const byCode = new Map();
@@ -6976,7 +6976,7 @@
         const products = loadedProducts.filter(Boolean);
 
         if(!products.length){
-          throw new Error("GitHub no devolvio productos validos desde la carpeta Productos.");
+          throw new Error("GitHub no devolvio productos validos desde la carpeta imagenes y txt de productos.");
         }
 
         updateCatalogFooterProducts(products);
@@ -6997,7 +6997,7 @@
         render();
       }catch(err){
         console.error(err);
-        updateCountTextError("No se pudieron cargar los productos desde GitHub/Productos. Reintenta más tarde.");
+        updateCountTextError("No se pudieron cargar los productos desde GitHub/imagenes y txt de productos. Reintenta más tarde.");
       }
     }
 

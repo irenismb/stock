@@ -4344,13 +4344,13 @@
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
     // Fuente de productos: JSON estático.
-    // Las imágenes se localizan en GitHub/imagenes y txt de productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    // Las imágenes se localizan en GitHub/Productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
       branch: "main",
       catalogDir: "natura",
-      productsFolder: "imagenes y txt de productos"
+      productsFolder: "Productos"
     };
 
 	const INTERRUPTORES = {
@@ -4712,7 +4712,7 @@
     }
 
     const CATEGORY_JSON_FILES = ["cuidado-capilar.json", "cuidado-de-manos-y-pies.json", "cuidado-facial.json", "desodorantes.json", "electrodomesticos-de-segunda-mano-a-la-venta.json", "electrodomesticos-de-segunda-mano-no-a-la-venta.json", "hidratacion-y-tratamiento-corporal.json", "higiene-intima.json", "higiene-y-exfoliacion-corporal.json", "juguetes-de-segunda-mano.json", "kits-y-combos.json", "maquillaje.json", "medicamentos.json", "papeleria-de-segunda-mano.json", "perfumeria-femenina.json", "perfumeria-masculina.json", "proteccion-solar.json"];
-    const CATEGORY_JSON_BASE = encodeURI("json de productos por categoria");
+    const CATEGORY_JSON_BASE = "datos-json/categorias";
 
     async function loadJsonCatalog(){
       const imagePromise = loadGitHubImageIndex();

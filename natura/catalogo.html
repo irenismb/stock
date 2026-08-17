@@ -4875,7 +4875,7 @@
         fullTxtRecord: String(row.fullTxtRecord || ""),
         docsImageUrl,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([name, category, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, category, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 

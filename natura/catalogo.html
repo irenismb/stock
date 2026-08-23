@@ -1,15 +1,15 @@
 <!doctype html>
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
-<!-- v: 2026-08-07 10:27:13 p. m. -->
+<!-- v: 2026-08-23 · fuente de datos: Google Sheet oficial A:I -->
 <!-- La primera imagen de cada documento se usa como portada unica de su categoria. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
   <meta http-equiv="x-dns-prefetch-control" content="on" />
-  <title>Irenismb Stock Natura | Catálogo prueba Google Sheet</title>
+  <title>Irenismb Stock Natura | Catálogo Natura & AVON en Santa Marta | Compra por WhatsApp</title>
   <meta name="description" content="Catálogo oficial Natura y AVON en Santa Marta: perfumes, cuidado de la piel, maquillaje y más. Asesoría personalizada y compra fácil por WhatsApp. Envíos a toda Colombia." />
-  <meta name="robots" content="noindex,nofollow" />
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet=-1,max-video-preview=-1" />
   <meta name="theme-color" content="#0b0f14" />
   <meta name="format-detection" content="telephone=no" />
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
@@ -638,56 +638,6 @@
       object-fit:contain;
       display:block;
       cursor:zoom-in;
-    }
-
-    .product-gallery-btn{
-      position:absolute;
-      top:50%;
-      transform:translateY(-50%);
-      z-index:3;
-      width:34px;
-      height:34px;
-      padding:0;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.22);
-      background:rgba(11,18,32,.72);
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size:24px;
-      line-height:1;
-      font-weight:900;
-      box-shadow:0 3px 12px rgba(0,0,0,.28);
-      backdrop-filter:blur(3px);
-    }
-    .product-gallery-btn:hover{
-      background:rgba(18,24,38,.92);
-      border-color:rgba(34,211,168,.72);
-    }
-    .product-gallery-prev{ left:8px; }
-    .product-gallery-next{ right:8px; }
-    .product-gallery-counter{
-      position:absolute;
-      right:9px;
-      bottom:9px;
-      z-index:3;
-      min-width:42px;
-      padding:4px 8px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.16);
-      background:rgba(11,18,32,.76);
-      color:#fff;
-      font-size:11px;
-      line-height:1;
-      font-weight:850;
-      text-align:center;
-      box-shadow:0 2px 10px rgba(0,0,0,.25);
-      pointer-events:none;
-    }
-    .product-gallery-btn[hidden],
-    .product-gallery-counter[hidden]{
-      display:none !important;
     }
 
     .pad{
@@ -1455,63 +1405,6 @@
       background: rgba(239,68,68,.22);
       border-color: rgba(239,68,68,.6);
       transform: rotate(90deg);
-    }
-
-    .img-modal-nav{
-      position:absolute;
-      z-index:3;
-      top:50%;
-      transform:translateY(-50%);
-      width:48px;
-      height:48px;
-      padding:0;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.22);
-      background:rgba(11,18,32,.70);
-      color:#fff;
-      font-size:32px;
-      line-height:1;
-      font-weight:900;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      box-shadow:0 8px 28px rgba(0,0,0,.38);
-      backdrop-filter:blur(4px);
-    }
-    .img-modal-nav:hover{
-      background:rgba(18,24,38,.92);
-      border-color:rgba(34,211,168,.72);
-    }
-    .img-modal-prev{ left:14px; }
-    .img-modal-next{ right:14px; }
-    .img-modal-counter{
-      position:absolute;
-      z-index:3;
-      left:50%;
-      bottom:16px;
-      transform:translateX(-50%);
-      min-width:58px;
-      padding:7px 12px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.18);
-      background:rgba(11,18,32,.78);
-      color:#fff;
-      font-size:12px;
-      font-weight:900;
-      text-align:center;
-      box-shadow:0 5px 20px rgba(0,0,0,.32);
-      pointer-events:none;
-    }
-    .img-modal-nav[hidden],
-    .img-modal-counter[hidden]{
-      display:none !important;
-    }
-
-    @media (max-width:560px){
-      .img-modal-nav{ width:40px; height:40px; font-size:28px; }
-      .img-modal-prev{ left:8px; }
-      .img-modal-next{ right:8px; }
-      .img-modal-counter{ bottom:10px; }
     }
 
     #btn-cart .btn-cart-label-short{ display:none; }
@@ -4436,9 +4329,6 @@
   <div class="img-modal" id="imgModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Imagen ampliada">
     <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
     <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Cerrar">✕</button>
-    <button class="img-modal-nav img-modal-prev" id="imgModalPrev" type="button" aria-label="Imagen anterior" hidden>‹</button>
-    <button class="img-modal-nav img-modal-next" id="imgModalNext" type="button" aria-label="Imagen siguiente" hidden>›</button>
-    <div class="img-modal-counter" id="imgModalCounter" aria-live="polite" hidden></div>
     <div class="img-modal-content" role="document">
       <img id="imgModalImg" alt="Imagen ampliada del producto" />
     </div>
@@ -4453,15 +4343,15 @@
     // 2) CATEGORÍAS OCULTAS EN TODO EL CATÁLOGO
     // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
 
-    // Fuente principal de información: Google Sheet.
-    // Hoja: Productos (A:H). La página consulta el Google Sheet nativo en cada carga.
-    // Las imágenes se localizan en GitHub/productos EXCLUSIVAMENTE por el código global de cuatro dígitos.
+    // Fuente principal y única de datos comerciales del catálogo: Google Sheet oficial.
+    // Hoja Productos, estructura A:I. La columna I (Código Natura) es técnica y no se muestra.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
       gid: "893686273"
     };
 
+    // Las imágenes publicadas se localizan en GitHub exclusivamente por el código interno global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
@@ -4686,7 +4576,6 @@
     }
 
 
-
     const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
     const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
     const GITHUB_RAW_BASE = `https://raw.githubusercontent.com/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}/${encodeURIComponent(GITHUB_CATALOG_SOURCE.branch)}`;
@@ -4697,8 +4586,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:H",
-        tq: "select A,B,C,D,E,F,G,H",
+        range: "A:I",
+        tq: "select A,B,C,D,E,F,G,H,I",
         tqx: `out:json;responseHandler:${callbackName}`
       });
       return `${base}?${query.toString()}`;
@@ -4756,6 +4645,7 @@
               stockText: cellValue(c[5]).trim(),
               referenceExternal: cellValue(c[6]).trim(),
               description: cellValue(c[7]).trim(),
+              codeNatura: cellValue(c[8]).trim(),
               fullTxtRecord: [
                 cellValue(c[2]).trim(),
                 "",
@@ -4821,8 +4711,6 @@
       return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
     }
 
-    // Convención de galería: 0383_01_nombre.webp, 0383_02_nombre.webp, etc.
-    // Si existe _01_, siempre queda como imagen principal.
     function extractProductImageSequence(filename){
       const name = String(filename || "").trim();
       const match = name.match(/^\d{4}_(\d{2,})(?=$|[_.\s-])/);
@@ -4864,7 +4752,6 @@
       const legacyEntries = [...legacyByStem.values()]
         .sort((a,b)=>String(a.path || "").localeCompare(String(b.path || ""), "es", { numeric:true, sensitivity:"base" }));
 
-      // Las imágenes numeradas mandan: 01, 02, 03... Luego se conservan las antiguas sin numeración.
       return numberedEntries.length ? [...numberedEntries, ...legacyEntries] : legacyEntries;
     }
 
@@ -4913,10 +4800,8 @@
         loadGoogleSheetRows(),
         loadGitHubImageIndex()
       ]);
-
       return rows.map(row => ({ row, imageIndex }));
     }
-
 
 
     function parseOptionalWholeNumber(value){
@@ -5025,6 +4910,7 @@
         costText: String(row.costText || ""),
         stock: parseOptionalWholeNumber(stockText),
         referenceExternal: String(row.referenceExternal || "").trim(),
+        codeNatura: String(row.codeNatura || "").trim(),
         isUnstructured: false,
         originalFilename: "",
         srcFilename: syntheticFilename,
@@ -5040,6 +4926,7 @@
         searchKey: normalizeText([code, name, category, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
+
 
     function clearLegacyProductCaches(){
       const keys = [
@@ -5146,9 +5033,6 @@
     const imgModalImg = document.getElementById("imgModalImg");
     const imgModalClose = document.getElementById("imgModalClose");
     const imgModalBackdrop = document.getElementById("imgModalBackdrop");
-    const imgModalPrev = document.getElementById("imgModalPrev");
-    const imgModalNext = document.getElementById("imgModalNext");
-    const imgModalCounter = document.getElementById("imgModalCounter");
 
     let _modalLockCount = 0;
     function lockBodyScroll(){
@@ -5208,58 +5092,12 @@
       }
     }
 
-    let imgModalGallery = [];
-    let imgModalGalleryIndex = 0;
-    let imgModalBaseAlt = "Imagen ampliada del producto";
-
-    function uniqueHttpUrls(values){
-      return [...new Set((Array.isArray(values) ? values : [values])
-        .map(value => String(value || "").trim())
-        .filter(value => /^https?:\/\//i.test(value)))];
-    }
-
-    function syncImgModalGallery(){
-      if(!imgModalImg) return;
-      const total = imgModalGallery.length;
-      if(total){
-        imgModalGalleryIndex = ((imgModalGalleryIndex % total) + total) % total;
-        imgModalImg.src = imgModalGallery[imgModalGalleryIndex];
-        imgModalImg.alt = total > 1
-          ? `${imgModalBaseAlt} (${imgModalGalleryIndex + 1} de ${total})`
-          : imgModalBaseAlt;
-      }
-      const multi = total > 1;
-      if(imgModalPrev) imgModalPrev.hidden = !multi;
-      if(imgModalNext) imgModalNext.hidden = !multi;
-      if(imgModalCounter){
-        imgModalCounter.hidden = !multi;
-        imgModalCounter.textContent = multi ? `${imgModalGalleryIndex + 1}/${total}` : "";
-      }
-    }
-
-    function stepImgModalGallery(delta){
-      if(imgModalGallery.length <= 1) return;
-      imgModalGalleryIndex += delta;
-      syncImgModalGallery();
-    }
-
-    function openImgModal(src, alt, galleryUrls=[], startIndex=0){
+    function openImgModal(src, alt){
       if(!imgModal || !imgModalImg || !src) return;
       if(imgModal.classList.contains("open")) return;
       rememberModalTrigger(imgModal);
-
-      const requested = uniqueHttpUrls(galleryUrls);
-      const currentSrc = String(src || "").trim();
-      imgModalGallery = requested.length ? requested : uniqueHttpUrls([currentSrc]);
-      if(currentSrc && !imgModalGallery.includes(currentSrc)) imgModalGallery.unshift(currentSrc);
-
-      const matchingIndex = imgModalGallery.indexOf(currentSrc);
-      imgModalGalleryIndex = matchingIndex >= 0
-        ? matchingIndex
-        : Math.max(0, Math.min(Number(startIndex) || 0, imgModalGallery.length - 1));
-      imgModalBaseAlt = alt || "Imagen ampliada del producto";
-      syncImgModalGallery();
-
+      imgModalImg.src = src;
+      imgModalImg.alt = alt || "Imagen ampliada del producto";
       imgModal.classList.add("open");
       imgModal.setAttribute("aria-hidden","false");
       lockBodyScroll();
@@ -5271,54 +5109,34 @@
       imgModal.classList.remove("open");
       imgModal.setAttribute("aria-hidden","true");
       imgModalImg.src = "";
-      imgModalGallery = [];
-      imgModalGalleryIndex = 0;
-      if(imgModalPrev) imgModalPrev.hidden = true;
-      if(imgModalNext) imgModalNext.hidden = true;
-      if(imgModalCounter){ imgModalCounter.hidden = true; imgModalCounter.textContent = ""; }
       unlockBodyScroll();
       restoreModalTrigger(imgModal);
     }
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
-    if(imgModalPrev) imgModalPrev.addEventListener("click", ()=>stepImgModalGallery(-1));
-    if(imgModalNext) imgModalNext.addEventListener("click", ()=>stepImgModalGallery(1));
 
-    function makeImgFromFilename(filename, name, docsImageUrl="", imageUrls=[]){
+    function makeImgFromFilename(filename, name, docsImageUrl=""){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
       img.decoding = "async";
 
-      const preferredUrl = String(docsImageUrl || "").trim();
-      const gallery = uniqueHttpUrls((Array.isArray(imageUrls) && imageUrls.length) ? imageUrls : [preferredUrl]);
-      let currentIndex = Math.max(0, gallery.indexOf(preferredUrl));
       let zoomable = false;
-
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
       }
 
-      function applyGalleryIndex(index){
-        if(!shouldShowProductImages() || !gallery.length){
-          currentIndex = 0;
-          img.src = productPlaceholderAbsoluteUrl();
-          setNonZoom();
-          return currentIndex;
-        }
-        currentIndex = ((Number(index) || 0) % gallery.length + gallery.length) % gallery.length;
-        delete img.dataset.fallbackTried;
-        zoomable = true;
-        img.style.cursor = "zoom-in";
-        img.src = gallery[currentIndex];
-        return currentIndex;
-      }
+      const preferredUrl = String(docsImageUrl || "").trim();
+      const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
 
-      img.__galleryUrls = gallery;
-      img.__getGalleryIndex = ()=>currentIndex;
-      img.__setGalleryIndex = applyGalleryIndex;
-      applyGalleryIndex(currentIndex);
+      if(!allowReal){
+        img.src = productPlaceholderAbsoluteUrl();
+        setNonZoom();
+      }else{
+        zoomable = true;
+        img.src = preferredUrl;
+      }
 
       img.onerror = ()=>{
         if(img.dataset.fallbackTried === "1"){
@@ -5334,72 +5152,35 @@
 
       img.addEventListener("click", ()=>{
         if(!zoomable) return;
-        const src = gallery[currentIndex] || img.currentSrc || img.src;
-        if(src) openImgModal(src, img.alt, gallery, currentIndex);
+        const src = img.currentSrc || img.src;
+        if(src) openImgModal(src, img.alt);
       });
 
       return img;
     }
 
-    function attachProductGalleryControls(container, img){
-      if(!container || !img) return;
-      const gallery = Array.isArray(img.__galleryUrls) ? img.__galleryUrls : [];
-      if(gallery.length <= 1) return;
-
-      const prev = document.createElement("button");
-      prev.type = "button";
-      prev.className = "product-gallery-btn product-gallery-prev";
-      prev.setAttribute("aria-label", "Foto anterior");
-      prev.textContent = "‹";
-
-      const next = document.createElement("button");
-      next.type = "button";
-      next.className = "product-gallery-btn product-gallery-next";
-      next.setAttribute("aria-label", "Foto siguiente");
-      next.textContent = "›";
-
-      const counter = document.createElement("span");
-      counter.className = "product-gallery-counter";
-      counter.setAttribute("aria-live", "polite");
-
-      function setIndex(index){
-        const current = typeof img.__setGalleryIndex === "function" ? img.__setGalleryIndex(index) : 0;
-        counter.textContent = `${current + 1}/${gallery.length}`;
-      }
-      function step(delta){
-        const current = typeof img.__getGalleryIndex === "function" ? img.__getGalleryIndex() : 0;
-        setIndex(current + delta);
-      }
-
-      prev.addEventListener("click", (event)=>{ event.preventDefault(); event.stopPropagation(); step(-1); });
-      next.addEventListener("click", (event)=>{ event.preventDefault(); event.stopPropagation(); step(1); });
-
-      container.append(prev, next, counter);
-      setIndex(typeof img.__getGalleryIndex === "function" ? img.__getGalleryIndex() : 0);
-    }
-
-    function makeCartThumbFromFilename(filename, name, docsImageUrl="", imageUrls=[]){
+    function makeCartThumbFromFilename(filename, name, docsImageUrl=""){
       const img = document.createElement("img");
       img.className = "cart-thumb";
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
       img.decoding = "async";
 
-      const preferredUrl = String(docsImageUrl || "").trim();
-      const gallery = uniqueHttpUrls((Array.isArray(imageUrls) && imageUrls.length) ? imageUrls : [preferredUrl]);
       let zoomable = false;
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
       }
 
-      const allowReal = shouldShowProductImages() && gallery.length > 0;
+      const preferredUrl = String(docsImageUrl || "").trim();
+      const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
+
       if(!allowReal){
         img.src = productPlaceholderAbsoluteUrl();
         setNonZoom();
       }else{
         zoomable = true;
-        img.src = gallery[0];
+        img.src = preferredUrl;
       }
 
       img.onerror = ()=>{
@@ -5416,8 +5197,8 @@
 
       img.addEventListener("click", ()=>{
         if(!zoomable) return;
-        const src = gallery[0] || img.currentSrc || img.src;
-        if(src) openImgModal(src, img.alt, gallery, 0);
+        const src = img.currentSrc || img.src;
+        if(src) openImgModal(src, img.alt);
       });
 
       return img;
@@ -5940,7 +5721,7 @@
         const p = productById.get(String(it.id));
         const imgFilename = (p && p.imgFilename) ? p.imgFilename : it.imgFilename;
 
-        left.appendChild(makeCartThumbFromFilename(imgFilename, it.name, p && p.docsImageUrl, p && p.imageUrls));
+        left.appendChild(makeCartThumbFromFilename(imgFilename, it.name, p && p.docsImageUrl));
 
         const main = document.createElement("div");
         main.className = "cart-item-main";
@@ -6259,10 +6040,6 @@
         trapFocusInModal(activeModal, e);
         return;
       }
-      if(imgModal && imgModal.classList.contains("open")){
-        if(e.key === "ArrowLeft"){ e.preventDefault(); stepImgModalGallery(-1); return; }
-        if(e.key === "ArrowRight"){ e.preventDefault(); stepImgModalGallery(1); return; }
-      }
       if(e.key === "Escape"){
         if(imgModal && imgModal.classList.contains("open")){ closeImgModal(); return; }
         if(addressModal && addressModal.classList.contains("open")){ closeAddressModal(); return; }
@@ -6283,7 +6060,6 @@
           "itemListElement": validList.slice(0, 500).map((p, i) => {
             const productUrl = baseUrl + "#p-" + encodeURIComponent(p.id);
             const imgUrl = String(p.docsImageUrl || productPlaceholderAbsoluteUrl());
-            const productImages = Array.isArray(p.imageUrls) && p.imageUrls.length ? p.imageUrls : [imgUrl];
             const desc = String(p.description || `Producto: ${p.name}. Categoría: ${p.category || "catálogo"}. Compra por WhatsApp.`);
             const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
             const availability = hasKnownStock
@@ -6304,7 +6080,7 @@
                 "@type":"Product",
                 "name": p.name,
                 "description": desc,
-                "image": productImages,
+                "image": [imgUrl],
                 "category": p.category || undefined,
                 "brand": p.brand ? { "@type":"Brand", "name": p.brand } : undefined,
                 "sku": String(p.id),
@@ -6431,9 +6207,7 @@
       card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
 
       const imgBox = card.querySelector(".img");
-      const productImg = makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl, p.imageUrls);
-      imgBox.appendChild(productImg);
-      attachProductGalleryControls(imgBox, productImg);
+      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl));
 
 	  const rawFileName = String(p.name || baseOf(p.originalFilename || "") || "");
 
@@ -7300,8 +7074,8 @@
       await warmupPlaceholderOnce();
 
       try{
-        const googleSheetEntries = await loadGoogleSheetCatalog();
-        const products = googleSheetEntries
+        const sheetCatalog = await loadGoogleSheetCatalog();
+        const products = sheetCatalog
           .map(makeProductFromGoogleSheet)
           .filter(Boolean);
 
@@ -7327,7 +7101,7 @@
         render();
       }catch(err){
         console.error(err);
-        updateCountTextError("No se pudieron cargar los productos desde Google Sheets. Verifica que el Sheet permita lectura pública y reintenta.");
+        updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
       }
     }
 

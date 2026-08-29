@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://irenismb.github.io/sitemap.xml

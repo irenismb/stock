@@ -1,0 +1,33 @@
+la estructura actual de mi repositorio para este proyecto hasta dos niveles de profundidad es:
+
+natura/
+├── 2026-08-23_modelo de factura de venta oficial.png
+├── apuntes.txt
+├── catalogo.html
+├── coordenadas visitantes ventas natura apps script.url
+├── eliminar/
+├── google8559800fc0ba033d.html
+├── logos/
+├── productos/
+│   ├── cuidado capilar/
+│   ├── cuidado de manos y pies/
+│   ├── cuidado facial/
+│   ├── desodorantes/
+│   ├── electrodomésticos de segunda mano a la venta/
+│   ├── electrodomésticos de segunda mano no a la venta/
+│   ├── hidratación y tratamiento corporal/
+│   ├── higiene y exfoliación corporal/
+│   ├── higiene íntima/
+│   ├── juguetes de segunda mano/
+│   ├── kits y combos/
+│   ├── maquillaje/
+│   ├── medicamentos/
+│   ├── papelería de segunda mano/
+│   ├── perfumeria femenina/
+│   ├── perfumería masculina/
+│   └── proteccion solar/
+├── robots.txt
+├── sitemap.xml
+├── sobre nosotros/
+├── ventas natura apps script.url
+└── visitantes-globales.js

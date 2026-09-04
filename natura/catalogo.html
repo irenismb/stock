@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Versión: 6 -->
+<!-- Versión: 7 -->
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
 <!-- Fuente de datos: Google Sheet oficial A:I. -->
 <!-- La primera imagen de cada documento se usa como portada única de su categoría. -->
@@ -4477,6 +4477,33 @@
         .trim();
     }
 
+    function categoryDisplayLabel(value){
+      const raw = String(value || "").trim();
+      if(!raw) return "";
+      const key = normalizeText(raw).replace(/\s+/g, " ");
+      const labels = {
+        "cuidado capilar": "Cuidado capilar",
+        "cuidado de manos y pies": "Cuidado de manos y pies",
+        "cuidado facial": "Cuidado facial",
+        "desodorantes": "Desodorantes",
+        "electrodomesticos de segunda mano a la venta": "Electrodomésticos de segunda mano a la venta",
+        "electrodomesticos de segunda mano no a la venta": "Electrodomésticos de segunda mano no a la venta",
+        "hidratacion y tratamiento corporal": "Hidratación y tratamiento corporal",
+        "higiene intima": "Higiene íntima",
+        "higiene y exfoliacion corporal": "Higiene y exfoliación corporal",
+        "juguetes de segunda mano": "Juguetes de segunda mano",
+        "kits y combos": "Kits y combos",
+        "maquillaje": "Maquillaje",
+        "medicamentos": "Medicamentos",
+        "papeleria de segunda mano": "Papelería de segunda mano",
+        "perfumeria femenina": "Perfumería femenina",
+        "perfumeria masculina": "Perfumería masculina",
+        "proteccion solar": "Protección solar"
+      };
+      if(labels[key]) return labels[key];
+      return raw.charAt(0).toLocaleUpperCase("es-CO") + raw.slice(1);
+    }
+
     function shouldApplyHiddenAlbums(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_ALBUMES_OCULTOS === true);
     }
@@ -5435,14 +5462,19 @@
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
 
     function getProductAlbumKey(p){
+      if(p && !p.isUnstructured){
+        const categoryKey = normalizeText(p.category).replace(/\s+/g, " ");
+        if(categoryKey) return categoryKey;
+      }
       const rel = String((p && (p.imgFilename || p.srcFilename)) || "").trim();
       const parts = rel.split("/").filter(Boolean);
-      return parts.length > 1 ? parts[0] : ROOT_ALBUM_KEY;
+      if(parts.length <= 1) return ROOT_ALBUM_KEY;
+      return normalizeText(parts[0]).replace(/\s+/g, " ") || ROOT_ALBUM_KEY;
     }
 
     function albumLabelFromKey(key){
       if(key === ROOT_ALBUM_KEY) return "General";
-      return String(key || "").trim();
+      return categoryDisplayLabel(key);
     }
 
     function isAlbumHiddenByKey(key){
@@ -5481,7 +5513,7 @@
         const key = getProductAlbumKey(p);
         const found = byKey.get(key) || {
           key,
-          label: albumLabelFromKey(key),
+          label: categoryDisplayLabel((p && p.category) || albumLabelFromKey(key)),
           products: [],
           cover: null,
           previewImages: [],
@@ -6961,7 +6993,7 @@
 
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
-      if(album) selectedAlbumKey = album;
+      if(album) selectedAlbumKey = normalizeText(album).replace(/\s+/g, " ");
       if(sort && sortSel) sortSel.value = sort;
     }
 

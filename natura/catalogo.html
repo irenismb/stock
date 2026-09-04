@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Versión: 9 -->
+<!-- Versión: 10 -->
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
 <!-- Fuente de datos: Google Sheet oficial A:I. -->
 <!-- La primera imagen de cada documento se usa como portada única de su categoría. -->
@@ -520,7 +520,7 @@
       display:block;
     }
 
-    main{max-width:1100px;margin:0 auto;padding:0 16px 16px;flex:1 0 auto;width:100%}
+    main{max-width:1100px;margin:0 auto;padding:0 16px 8px;flex:1 0 auto;width:100%;display:flex;flex-direction:column}
     .topline{
       display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:space-between;
       padding:12px 0 6px;
@@ -8649,7 +8649,7 @@
 
     .visitor-shell{
       width:calc(100% + 36px);
-      margin:8px -18px 0;
+      margin:auto -18px 0;
     }
     .visitor-details,
     .beauty-products-details{overflow:hidden}
@@ -8819,7 +8819,7 @@
       .grid:not(.album-grid-mode) > .card:not(.album-card){border-radius:18px}
       .grid:not(.album-grid-mode) > .card:not(.album-card) .img{min-height:280px;padding:22px 16px 12px}
       .grid:not(.album-grid-mode) > .card:not(.album-card) .pad{padding:6px 20px 24px}
-      .visitor-shell{width:100%;margin:8px 0 0}
+      .visitor-shell{width:100%;margin:auto 0 0}
     }
     @media(max-width:480px){
       .site-header-inner{min-height:68px}
@@ -11721,7 +11721,7 @@
         meta.className = "beauty-product-meta";
         const metaParts = [String(product?.category || "").trim()];
         if(product?.id) metaParts.push(`Código ${product.id}`);
-        if(product?.hasPrice !== false && Number(product?.price) >= 0) metaParts.push(money(Number(product.price)));
+        if(product?.hasPrice !== false && Number(product?.price) >= 0) metaParts.push(fmtCOP.format(Number(product.price)));
         if(Number.isInteger(product?.stock) && product.stock >= 0) metaParts.push(product.stock > 0 ? "Disponible" : "Sin stock");
         meta.textContent = metaParts.filter(Boolean).join(" · ");
 

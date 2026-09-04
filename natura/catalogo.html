@@ -1,7 +1,8 @@
 <!doctype html>
+<!-- Versión: 3 -->
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
-<!-- v: 2026-08-23 · fuente de datos: Google Sheet oficial A:I -->
-<!-- La primera imagen de cada documento se usa como portada unica de su categoria. -->
+<!-- Fuente de datos: Google Sheet oficial A:I. -->
+<!-- La primera imagen de cada documento se usa como portada única de su categoría. -->
 <html lang="es-CO">
 <head>
   <meta charset="utf-8" />
@@ -2203,6 +2204,84 @@
       .beauty-products-list{columns:1;max-height:360px}
     }
 
+    /* Acceso protegido a categorías que permanecen ocultas por defecto. */
+    .restricted-categories-details .beauty-products-content{
+      padding-top:14px;
+    }
+    .restricted-categories-panel{
+      display:grid;
+      gap:12px;
+    }
+    .restricted-categories-copy{
+      margin:0;
+      color:var(--mut);
+      font-size:12.5px;
+      line-height:1.5;
+    }
+    .restricted-categories-copy strong{
+      color:var(--txt);
+      font-weight:800;
+    }
+    .restricted-category-names{
+      margin:0;
+      padding-left:20px;
+      display:grid;
+      gap:6px;
+      color:var(--txt);
+      font-size:12.5px;
+      line-height:1.4;
+    }
+    .restricted-access-form{
+      display:grid;
+      grid-template-columns:minmax(0,1fr) auto;
+      gap:8px;
+      align-items:stretch;
+      margin:0;
+    }
+    .restricted-access-form input{
+      width:100%;
+      min-width:0;
+      height:var(--control-height);
+    }
+    .restricted-access-form button{
+      min-height:var(--control-height);
+      white-space:nowrap;
+    }
+    .restricted-access-actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      align-items:center;
+    }
+    .restricted-access-status{
+      min-height:18px;
+      margin:0;
+      color:var(--mut);
+      font-size:12px;
+      line-height:1.45;
+    }
+    .restricted-access-status.is-error{
+      color:#fecaca;
+    }
+    .restricted-access-status.is-ok{
+      color:#d1fae5;
+    }
+    .restricted-categories-details.is-unlocked{
+      border-color:rgba(34,211,168,.6);
+      box-shadow:var(--shadow-sm),0 0 0 1px rgba(34,211,168,.08) inset;
+    }
+    .restricted-categories-details.is-unlocked .beauty-products-summary{
+      background:linear-gradient(135deg,rgba(34,211,168,.24),rgba(45,212,191,.12));
+    }
+    @media(max-width:560px){
+      .restricted-access-form{
+        grid-template-columns:1fr;
+      }
+      .restricted-access-form button{
+        width:100%;
+      }
+    }
+
     /* Selector de municipios disponible después del listado de productos. */
     .municipality-shipping{
       margin:0 0 12px;
@@ -4194,6 +4273,41 @@
         </div>
       </details>
 
+      <details class="beauty-products-details restricted-categories-details" id="restrictedCategoriesDetails">
+        <summary class="beauty-products-summary">
+          <span>Categorías restringidas</span>
+          <span class="beauty-products-count" id="restrictedCategoriesSummaryStatus">2 categorías · Ocultas</span>
+        </summary>
+        <div class="beauty-products-content">
+          <div class="restricted-categories-panel">
+            <p class="restricted-categories-copy">
+              Estas categorías permanecen ocultas de forma predeterminada. Para mostrarlas en el catálogo, ingresa la contraseña de acceso.
+            </p>
+            <ul class="restricted-category-names" aria-label="Categorías restringidas">
+              <li>Medicamentos</li>
+              <li>Electrodomésticos de segunda mano no a la venta</li>
+            </ul>
+            <form class="restricted-access-form" id="restrictedCategoriesForm" novalidate>
+              <input
+                id="restrictedCategoriesPassword"
+                type="password"
+                inputmode="text"
+                autocomplete="off"
+                autocapitalize="none"
+                spellcheck="false"
+                aria-label="Contraseña para mostrar las categorías restringidas"
+                placeholder="Contraseña"
+              />
+              <button class="btn-acc" id="restrictedCategoriesUnlockBtn" type="submit">Mostrar categorías</button>
+            </form>
+            <div class="restricted-access-actions">
+              <button class="btn-ghost" id="restrictedCategoriesLockBtn" type="button" hidden>Ocultar categorías</button>
+            </div>
+            <p class="restricted-access-status" id="restrictedCategoriesStatus" role="status" aria-live="polite"></p>
+          </div>
+        </div>
+      </details>
+
       <section class="footer-card" aria-label="Información de la tienda">
         <p>
           Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
@@ -4402,6 +4516,12 @@
     ];
     window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = ALBUMES_EXCLUIDOS_EN_BUSQUEDA;
 
+    const CATEGORIAS_RESTRINGIDAS = [
+      "Medicamentos",
+      "Electrodomésticos de segunda mano no a la venta"
+    ];
+    let restrictedCategoriesUnlocked = false;
+
     function shouldEnforceStockLimits(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_LIMITES_STOCK === true);
     }
@@ -4461,6 +4581,20 @@
         .replace(/[\u0300-\u036f]/g, "")
         .trim();
     }
+
+    async function isRestrictedAccessPasswordValid(value){
+      return String(value ?? "").trim() === "wrj";
+    }
+
+    function getRestrictedCategoryNameSet(){
+      return new Set(CATEGORIAS_RESTRINGIDAS.map(item => normalizeText(item)).filter(Boolean));
+    }
+
+    function isRestrictedCategoryName(value){
+      if(restrictedCategoriesUnlocked) return false;
+      return getRestrictedCategoryNameSet().has(normalizeText(value));
+    }
+
     function shouldApplyHiddenAlbums(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_ALBUMES_OCULTOS === true);
     }
@@ -5204,6 +5338,7 @@
       return img;
     }
 
+    let allLoadedProducts = [];
     let all = [];
     let productById = new Map();
 
@@ -5232,7 +5367,10 @@
 
     function albumLabelFromKey(key){
       if(key === ROOT_ALBUM_KEY) return "General";
-      return String(key || "").trim();
+      const raw = String(key || "").trim();
+      const normalized = normalizeText(raw);
+      const canonical = CATEGORIAS_RESTRINGIDAS.find(name => normalizeText(name) === normalized);
+      return canonical || raw;
     }
 
     function isAlbumHiddenByKey(key){
@@ -5252,7 +5390,13 @@
       const manualFiltered = shouldShowFilesWithoutParameters()
         ? baseList.slice()
         : baseList.filter(p => !(p && p.isUnstructured));
-      return manualFiltered.filter(p => !isAlbumHiddenByKey(getProductAlbumKey(p)));
+      return manualFiltered.filter(p => {
+        const albumKey = getProductAlbumKey(p);
+        if(isAlbumHiddenByKey(albumKey)) return false;
+        if(isRestrictedCategoryName(p && p.category)) return false;
+        if(isRestrictedCategoryName(albumLabelFromKey(albumKey))) return false;
+        return true;
+      });
     }
 
     function filterSearchExcludedProducts(list){
@@ -7067,6 +7211,116 @@
       };
     }
 
+    function rebuildCatalogVisibility(){
+      hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
+      searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
+
+      all = filterVisibleProducts(allLoadedProducts);
+      productById = new Map(all.map(p => [String(p.id), p]));
+      albums = buildAlbums(all);
+      albumByKey = new Map(albums.map(album => [album.key, album]));
+
+      if(selectedAlbumKey && !albumByKey.has(selectedAlbumKey)){
+        selectedAlbumKey = "";
+      }
+
+      updateCatalogFooterProducts(all);
+      refreshFilterOptionsForScope();
+      sanitizeCartWithStock();
+      render();
+    }
+
+    function syncRestrictedCategoriesAccessUI(){
+      const details = document.getElementById("restrictedCategoriesDetails");
+      const summaryStatus = document.getElementById("restrictedCategoriesSummaryStatus");
+      const form = document.getElementById("restrictedCategoriesForm");
+      const passwordInput = document.getElementById("restrictedCategoriesPassword");
+      const lockBtn = document.getElementById("restrictedCategoriesLockBtn");
+      const status = document.getElementById("restrictedCategoriesStatus");
+
+      if(details) details.classList.toggle("is-unlocked", restrictedCategoriesUnlocked);
+      if(summaryStatus){
+        summaryStatus.textContent = restrictedCategoriesUnlocked
+          ? "2 categorías · Visibles"
+          : "2 categorías · Ocultas";
+      }
+      if(form) form.hidden = restrictedCategoriesUnlocked;
+      if(lockBtn) lockBtn.hidden = !restrictedCategoriesUnlocked;
+      if(passwordInput && restrictedCategoriesUnlocked) passwordInput.value = "";
+      if(status){
+        status.classList.remove("is-error", "is-ok");
+        if(restrictedCategoriesUnlocked){
+          status.textContent = "Las categorías restringidas están visibles en el catálogo durante esta visita.";
+          status.classList.add("is-ok");
+        }else{
+          status.textContent = "Las categorías restringidas están ocultas.";
+        }
+      }
+    }
+
+    function initRestrictedCategoriesAccess(){
+      const form = document.getElementById("restrictedCategoriesForm");
+      const passwordInput = document.getElementById("restrictedCategoriesPassword");
+      const unlockBtn = document.getElementById("restrictedCategoriesUnlockBtn");
+      const lockBtn = document.getElementById("restrictedCategoriesLockBtn");
+      const status = document.getElementById("restrictedCategoriesStatus");
+
+      syncRestrictedCategoriesAccessUI();
+
+      if(form){
+        form.addEventListener("submit", async (event)=>{
+          event.preventDefault();
+          if(!passwordInput || !unlockBtn) return;
+
+          const password = passwordInput.value;
+          if(!password){
+            if(status){
+              status.textContent = "Ingresa la contraseña.";
+              status.classList.remove("is-ok");
+              status.classList.add("is-error");
+            }
+            passwordInput.focus();
+            return;
+          }
+
+          unlockBtn.disabled = true;
+          const previousText = unlockBtn.textContent;
+          unlockBtn.textContent = "Verificando…";
+
+          let valid = false;
+          try{
+            valid = await isRestrictedAccessPasswordValid(password);
+          }finally{
+            unlockBtn.disabled = false;
+            unlockBtn.textContent = previousText;
+          }
+
+          if(!valid){
+            if(status){
+              status.textContent = "Contraseña incorrecta.";
+              status.classList.remove("is-ok");
+              status.classList.add("is-error");
+            }
+            passwordInput.select();
+            return;
+          }
+
+          restrictedCategoriesUnlocked = true;
+          syncRestrictedCategoriesAccessUI();
+          rebuildCatalogVisibility();
+        });
+      }
+
+      if(lockBtn){
+        lockBtn.addEventListener("click", ()=>{
+          restrictedCategoriesUnlocked = false;
+          syncRestrictedCategoriesAccessUI();
+          rebuildCatalogVisibility();
+          if(passwordInput) passwordInput.focus();
+        });
+      }
+    }
+
     async function loadProducts(){
       updateCountTextLoading();
       clearLegacyProductCaches();
@@ -7083,10 +7337,11 @@
           throw new Error("Google Sheets no devolvió productos válidos.");
         }
 
-        updateCatalogFooterProducts(products);
+        allLoadedProducts = products.slice();
 
         hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
-        all = filterVisibleProducts(products);
+        searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
+        all = filterVisibleProducts(allLoadedProducts);
         productById = new Map(all.map(p => [String(p.id), p]));
         albums = buildAlbums(all);
         albumByKey = new Map(albums.map(album => [album.key, album]));
@@ -7096,6 +7351,7 @@
           selectedAlbumKey = "";
         }
 
+        updateCatalogFooterProducts(all);
         refreshFilterOptionsForScope();
         sanitizeCartWithStock();
         render();
@@ -7125,6 +7381,7 @@
       refreshCartCount();
       initCartButton();
       initShipping();
+      initRestrictedCategoriesAccess();
 
       bindFilters();
       bindGridActions();

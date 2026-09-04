@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Versión: 3 -->
+<!-- Versión: 4 -->
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
 <!-- Fuente de datos: Google Sheet oficial A:I. -->
 <!-- La primera imagen de cada documento se usa como portada única de su categoría. -->
@@ -4449,13 +4449,12 @@
   </div>
 
   <script>
-    // ==============================
-    // AJUSTES MANUALES DEL CATALOGO
-    // ==============================
-    // Todo lo que normalmente cambiarás a mano quedó reunido aquí:
-    // 1) INTERRUPTORES
-    // 2) CATEGORÍAS OCULTAS EN TODO EL CATÁLOGO
-    // 3) CATEGORÍAS EXCLUIDAS SOLO DE LAS BÚSQUEDAS
+    // ==========================================
+    // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
+    // ==========================================
+    // Los valores locales funcionan como respaldo.
+    // Si existen las hojas "Configuracion" y "Categorias" en el Google Sheet,
+    // sus valores se aplican globalmente a todos los visitantes.
 
     // Fuente principal y única de datos comerciales del catálogo: Google Sheet oficial.
     // Hoja Productos, estructura A:I. La columna I (Código Natura) es técnica y no se muestra.
@@ -4464,6 +4463,18 @@
       sheetName: "Productos",
       gid: "893686273"
     };
+
+    // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
+    // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
+    // Categorias: A=Categoría, B=Ocultar del catálogo, C=Excluir de búsquedas, D=Nota.
+    const REMOTE_CONTROL_SOURCE = {
+      enabled: true,
+      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
+      controlsSheetName: "Configuracion",
+      categoriesSheetName: "Categorias",
+      refreshMs: 60000
+    };
+    window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
     // Las imágenes publicadas se localizan en GitHub exclusivamente por el código interno global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
@@ -4499,6 +4510,9 @@
 	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
     };
     window.INTERRUPTORES = INTERRUPTORES;
+    const REMOTE_BOOLEAN_CONTROL_KEYS = new Set(
+      Object.keys(INTERRUPTORES).filter(key => typeof INTERRUPTORES[key] === "boolean")
+    );
 
     const ALBUMES_OCULTOS = [
       // Agrega aquí una categoría solamente cuando quieras ocultarla.
@@ -4803,6 +4817,198 @@
         script.async = true;
         document.head.appendChild(script);
       });
+    }
+
+
+    function googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName){
+      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(REMOTE_CONTROL_SOURCE.spreadsheetId)}/gviz/tq`;
+      const query = new URLSearchParams({
+        sheet: sheetName,
+        headers: "1",
+        range,
+        tq,
+        tqx: `out:json;responseHandler:${callbackName}`
+      });
+      return `${base}?${query.toString()}`;
+    }
+
+    function loadGoogleSheetRemoteMatrix(sheetName, range, tq, callbackPrefix){
+      return new Promise((resolve, reject)=>{
+        const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const script = document.createElement("script");
+        let settled = false;
+
+        const cleanup = ()=>{
+          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
+          if(script.parentNode) script.parentNode.removeChild(script);
+        };
+
+        const timer = window.setTimeout(()=>{
+          if(settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error(`Tiempo de espera agotado al consultar la hoja ${sheetName}.`));
+        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
+
+        window[callbackName] = (payload)=>{
+          if(settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          cleanup();
+
+          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
+            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
+            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
+            reject(new Error(detail || `No se pudo leer la hoja ${sheetName}.`));
+            return;
+          }
+
+          const cellValue = (cell)=>{
+            if(!cell) return "";
+            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
+            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
+            return "";
+          };
+
+          resolve(payload.table.rows.map(row=>{
+            const cells = Array.isArray(row && row.c) ? row.c : [];
+            return cells.map(cellValue);
+          }));
+        };
+
+        script.onerror = ()=>{
+          if(settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          cleanup();
+          reject(new Error(`No se pudo conectar con la hoja ${sheetName}.`));
+        };
+
+        script.src = googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName);
+        script.async = true;
+        document.head.appendChild(script);
+      });
+    }
+
+    function parseRemoteBoolean(value){
+      const normalized = normalizeText(value).replace(/\s+/g, " ");
+      if(["activado","activo","true","verdadero","si","sí","1","on"].includes(normalized)) return true;
+      if(["desactivado","inactivo","false","falso","no","0","off"].includes(normalized)) return false;
+      return null;
+    }
+
+    function applyRemoteControlRows(rows){
+      let changed = false;
+      for(const row of (Array.isArray(rows) ? rows : [])){
+        const state = parseRemoteBoolean(row?.[1]);
+        const key = String(row?.[4] || "").trim().toUpperCase();
+        if(state === null || !REMOTE_BOOLEAN_CONTROL_KEYS.has(key)) continue;
+        if(INTERRUPTORES[key] !== state){
+          INTERRUPTORES[key] = state;
+          changed = true;
+        }
+      }
+      return changed;
+    }
+
+    function applyRemoteCategoryRows(rows){
+      const hidden = [];
+      const excluded = [];
+
+      for(const row of (Array.isArray(rows) ? rows : [])){
+        const category = String(row?.[0] || "").trim();
+        if(!category) continue;
+        if(parseRemoteBoolean(row?.[1]) === true) hidden.push(category);
+        if(parseRemoteBoolean(row?.[2]) === true) excluded.push(category);
+      }
+
+      const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
+      const previousExcluded = JSON.stringify(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA || []);
+
+      window.ALBUMES_OCULTOS = hidden;
+      window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = excluded;
+
+      return previousHidden !== JSON.stringify(hidden) ||
+             previousExcluded !== JSON.stringify(excluded);
+    }
+
+    async function refreshRemoteCatalogConfiguration(options = {}){
+      const rebuild = options.rebuild !== false;
+      const initial = options.initial === true;
+
+      if(!REMOTE_CONTROL_SOURCE.enabled) return false;
+
+      const [controlsResult, categoriesResult] = await Promise.allSettled([
+        loadGoogleSheetRemoteMatrix(
+          REMOTE_CONTROL_SOURCE.controlsSheetName,
+          "A:E",
+          "select A,B,C,D,E",
+          "__remoteCatalogControls"
+        ),
+        loadGoogleSheetRemoteMatrix(
+          REMOTE_CONTROL_SOURCE.categoriesSheetName,
+          "A:D",
+          "select A,B,C,D",
+          "__remoteCatalogCategories"
+        )
+      ]);
+
+      let changed = false;
+
+      if(controlsResult.status === "fulfilled"){
+        changed = applyRemoteControlRows(controlsResult.value) || changed;
+      }else{
+        console.info("Configuración remota no disponible; se conservan los interruptores locales.", controlsResult.reason);
+      }
+
+      if(categoriesResult.status === "fulfilled"){
+        changed = applyRemoteCategoryRows(categoriesResult.value) || changed;
+      }else{
+        console.info("Categorías remotas no disponibles; se conservan las listas locales.", categoriesResult.reason);
+      }
+
+      if(initial){
+        wordSuggestionsVisible = shouldAllowSuggestionToggle() && shouldShowSuggestionsInitially();
+        syncWordToggleButton();
+      }
+
+      if(changed && rebuild && allLoadedProducts.length){
+        rebuildCatalogVisibility();
+        syncWordToggleButton();
+        rebuildSearchTicker();
+        updateTickerVisibility();
+        if(cartModal && cartModal.classList.contains("open")) renderCartModal();
+      }
+
+      return changed;
+    }
+
+    let remoteConfigPollingTimer = 0;
+    let remoteConfigReadyResolver = null;
+    window.REMOTE_CONFIG_READY = new Promise(resolve => {
+      remoteConfigReadyResolver = resolve;
+    });
+
+    async function initializeRemoteCatalogConfiguration(){
+      try{
+        await refreshRemoteCatalogConfiguration({ rebuild:false, initial:true });
+      }catch(error){
+        console.info("No se pudo inicializar la configuración global remota.", error);
+      }finally{
+        if(remoteConfigReadyResolver){
+          remoteConfigReadyResolver(true);
+          remoteConfigReadyResolver = null;
+        }
+      }
+
+      const interval = Math.max(30000, Number(REMOTE_CONTROL_SOURCE.refreshMs) || 60000);
+      if(REMOTE_CONTROL_SOURCE.enabled && !remoteConfigPollingTimer){
+        remoteConfigPollingTimer = window.setInterval(()=>{
+          refreshRemoteCatalogConfiguration({ rebuild:true }).catch(error=>{
+            console.info("No se pudo actualizar la configuración global remota.", error);
+          });
+        }, interval);
+      }
     }
 
     async function fetchGitHubJson(url){
@@ -7377,7 +7583,7 @@
       // Cierre de modales ya está en Escape
     }
 
-    function init(){
+    async function init(){
       refreshCartCount();
       initCartButton();
       initShipping();
@@ -7401,11 +7607,15 @@
       loadClientFromLS();     // precarga datos
       loadAddressFromLS();    // precarga datos (Santa Marta / Magdalena por defecto)
 
-      loadProducts();
+      await initializeRemoteCatalogConfiguration();
+      await loadProducts();
     }
 
     // Arranque
-    init();
+    init().catch(error=>{
+      console.error("No se pudo iniciar el catálogo.", error);
+      updateCountTextError("No se pudo iniciar el catálogo. Reintenta más tarde.");
+    });
   </script>
 
 
@@ -7456,6 +7666,10 @@
     iniciarContador();
 
     async function iniciarContador() {
+      try{
+        if(window.REMOTE_CONFIG_READY) await window.REMOTE_CONFIG_READY;
+      }catch(_){}
+
       let app = getApps().find(item => item.name === APP_NAME);
       if (!app) app = initializeApp(firebaseConfig, APP_NAME);
 
@@ -7618,6 +7832,10 @@
     }
 
     async function obtenerUbicacionPreferida() {
+      if(window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false){
+        return obtenerUbicacionPorIp();
+      }
+
       try {
         const coordenadas = await obtenerCoordenadasGps();
         const lugar = await obtenerCiudadDesdeGps(coordenadas);

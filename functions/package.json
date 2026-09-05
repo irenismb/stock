@@ -1,0 +1,13 @@
+{
+  "name": "natura-push-visitas",
+  "private": true,
+  "type": "module",
+  "main": "2026-09-05_envío push visitas catálogo firebase seguro_v1.js",
+  "engines": {
+    "node": "22"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.3.0",
+    "firebase-functions": "^7.3.0"
+  }
+}

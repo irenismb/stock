@@ -131,3 +131,15 @@ natura/ debe contener únicamente archivos necesarios para que catalogo.html fun
 SI ALGO FALLA
 Comparar main con la rama respaldo-natura-2026-09-04.
 No restaurar toda la carpeta a ciegas: identificar primero la dependencia faltante y reincorporar solo el recurso necesario.
+
+
+VALIDACIÓN FINAL DE LA REESTRUCTURACIÓN 2026-09-04
+Commit estructural base: 21158190b6e0531b1cccdefa42d0aaef6689b696
+GitHub Pages: ejecución 33936087364, estado completed, conclusión success.
+La URL pública respondió y el contenido indexable muestra 329 productos.
+La raíz natura/ quedó únicamente con: catalogo.html, apuntes.txt, robots.txt, sitemap.xml, google8559800fc0ba033d.html, css/, js/, logos/ y productos/.
+Se verificó en main que catalogo.html está en versión 19, no conserva bloques style incrustados ni JavaScript clásico incrustado, y referencia los archivos versionados nuevos.
+Se verificó que los seis bloques CSS no tienen URL relativas externas; moverlos a css/ no cambia la base de recursos.
+Se verificó que los 451 archivos del árbol productos/ fueron conservados sin modificación.
+Se conservaron únicamente 11 logos usados por la página.
+Limitación de la comprobación: no se ejecutó un navegador interactivo completo con acciones humanas; después de cambios futuros deben repetirse las pruebas obligatorias de carrito, WhatsApp, Firebase, ubicación y configuración remota descritas arriba.

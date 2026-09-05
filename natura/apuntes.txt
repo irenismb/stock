@@ -1,6 +1,133 @@
-no quitar de esta carpeta, los tres archivos que en ella estan:
-google8559800fc0ba033d
-robots
-sitemap
+BITÁCORA TÉCNICA DEL CATÁLOGO NATURA
+Actualizada: 2026-09-04
 
-sirven para que google indexe la las paginas, del sitio.
+OBJETIVO
+Este archivo es la referencia para continuar el trabajo en otro día sin instrucciones adicionales. Antes de modificar el sitio, leerlo completo y revisar la versión indicada en la segunda línea de cada archivo de código.
+
+REPOSITORIO Y RECUPERACIÓN
+Repositorio: https://github.com/irenismb/stock
+Rama pública: main
+Carpeta pública: natura/
+Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-09-04
+URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
+
+VERSIÓN ACTUAL
+Versión funcional: 19.
+catalogo.html conserva su nombre estable porque es la URL pública y canónica.
+Los archivos de código extraídos usan _v19 en el nombre.
+Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
+
+ESTRUCTURA PÚBLICA ESPERADA
+natura/
+  catalogo.html
+  apuntes.txt
+  robots.txt
+  sitemap.xml
+  google8559800fc0ba033d.html
+  css/
+    2026-09-04_estilos generales catálogo natura tienda web_v19.css
+  js/
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v19.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v19.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v19.js
+  logos/
+    logo_empresa.webp
+    logo_empresa.png
+    suplente.webp
+    suplente.png
+    facebook.webp
+    instagram.webp
+    tiktok.webp
+    youtube.webp
+    maps.webp
+    google_business.webp
+    whatsapp.webp
+  productos/
+    conservar todas las categorías e imágenes publicadas que usa la búsqueda dinámica por código.
+
+FUENTES Y DEPENDENCIAS
+Fuente comercial principal: Google Sheets.
+Spreadsheet ID: 1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs
+Hoja principal: Productos
+Rango principal esperado: A:I.
+Hojas remotas de control: Configuracion y Categorias.
+Repositorio de imágenes: irenismb/stock, rama main.
+El código localiza imágenes de productos en GitHub por código interno de cuatro dígitos.
+Registro de pedidos: https://script.google.com/macros/s/AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP/exec
+Registro de ubicación/visitantes: https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec
+Firebase y su configuración pública del cliente están en el archivo de estadísticas de visitantes.
+
+ARQUITECTURA
+catalogo.html:
+- estructura HTML pública;
+- metadatos, canonical, Open Graph y Twitter;
+- JSON-LD de tienda;
+- JSON-LD de productos;
+- listado HTML de respaldo/SEO;
+- referencias a CSS y JavaScript externos.
+
+CSS:
+- contiene los seis bloques de estilo que antes estaban incrustados;
+- su orden se preservó exactamente para no alterar la cascada.
+
+JavaScript principal:
+- Google Sheets y configuración remota;
+- consulta a GitHub para imágenes;
+- productos, categorías, álbumes, búsqueda y orden;
+- carrito, cantidades, envío, datos del cliente;
+- pedidos y WhatsApp;
+- persistencia local y modales.
+
+JavaScript de visitantes:
+- Firebase;
+- autenticación anónima;
+- contador y estadísticas;
+- ubicación y envío al endpoint GPS.
+
+JavaScript de navegación:
+- Inicio/Final;
+- compartir;
+- controles auxiliares aislados.
+
+ARCHIVOS RETIRADOS DE natura/
+No deben volver a publicarse salvo que exista una dependencia nueva demostrable:
+- 2026-08-23_modelo de factura de venta oficial.png
+- coordenadas visitantes ventas natura apps script.url
+- ventas natura apps script.url
+- copias de seguridad/
+- eliminar/
+- estructura a 2026-09-03  del repositorio en guithub.txt
+- sobre nosotros/
+- visitantes-globales.js
+- logos no referenciados por catalogo.html
+La información útil de las notas antiguas queda sustituida por esta bitácora.
+
+CORRECCIÓN REALIZADA
+catalogo.html apuntaba como respaldo a logos/youtube.png, archivo inexistente. Se corrigió para usar logos/youtube.webp.
+
+ARCHIVOS SEO
+robots.txt debe permitir el sitio y apuntar al sitemap de natura.
+sitemap.xml debe contener la URL canónica del catálogo y fecha de modificación válida.
+google8559800fc0ba033d.html se conserva para verificación de Google y no debe cambiarse salvo nueva verificación.
+
+PRUEBAS OBLIGATORIAS DESPUÉS DE CADA CAMBIO
+1. Abrir https://irenismb.github.io/stock/natura/catalogo.html
+2. Verificar que no haya errores de carga de CSS/JS en consola.
+3. Confirmar que Google Sheets carga productos.
+4. Confirmar búsqueda, orden, categorías y álbumes.
+5. Confirmar que las imágenes aparecen desde productos/.
+6. Probar carrito: agregar, quitar, cantidades, envío y total.
+7. Probar formulario del cliente y dirección.
+8. Probar creación de pedido y apertura de WhatsApp.
+9. Revisar registro de pedidos.
+10. Revisar contador/estadísticas de visitantes y ubicación.
+11. Probar modal de imágenes, compartir e Inicio/Final.
+12. Revisar robots.txt, sitemap.xml, canonical y ambos JSON-LD.
+13. Confirmar que no exista ninguna ruta 404 generada por el HTML.
+
+CRITERIO PARA AÑADIR ARCHIVOS
+natura/ debe contener únicamente archivos necesarios para que catalogo.html funcione, muestre recursos o sea indexado/verificado. Archivos administrativos, facturas, accesos .url, copias y material de trabajo deben permanecer fuera del sitio público.
+
+SI ALGO FALLA
+Comparar main con la rama respaldo-natura-2026-09-04.
+No restaurar toda la carpeta a ciegas: identificar primero la dependencia faltante y reincorporar solo el recurso necesario.

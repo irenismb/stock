@@ -2,7 +2,7 @@
   "name": "natura-push-visitas",
   "private": true,
   "type": "module",
-  "main": "2026-09-05_envío push visitas catálogo firebase seguro_v1.js",
+  "main": "2026-09-05_envío push visitas catálogo firebase seguro_v2.js",
   "engines": {
     "node": "22"
   },

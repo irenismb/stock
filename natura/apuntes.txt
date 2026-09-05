@@ -112,7 +112,8 @@ CORRECCIONES REALIZADAS
 - v21: el JSON-LD de productos se actualizó desde Google Sheets para representar el conjunto público completo vigente y dejó de modificarse por navegación, categorías, filtros o búsquedas.
 - v21: la interfaz gráfica no cambió; esta corrección fue exclusivamente técnica y de SEO.
 - v22: se justificaron visualmente los textos descriptivos del pie de página y las descripciones del listado de productos del final, manteniendo alineada a la izquierda la última línea de cada párrafo.
-- v23: se justificaron también los nombres de los productos del listado final que acompañan esas descripciones, manteniendo la última línea alineada a la izquierda.\n- v24: se reforzó el contraste del tema claro manteniendo la paleta y el aspecto general; se corrigieron visitantes, carrito, formularios, sugerencias, buscador, metadatos de álbumes y otros textos secundarios con contraste insuficiente.
+- v23: se justificaron también los nombres de los productos del listado final que acompañan esas descripciones, manteniendo la última línea alineada a la izquierda.
+- v24: se reforzó el contraste del tema claro manteniendo la paleta y el aspecto general; se corrigieron visitantes, carrito, formularios, sugerencias, buscador, metadatos de álbumes y otros textos secundarios con contraste insuficiente.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -189,4 +190,13 @@ VALIDACIÓN V23 2026-09-05
 - Las descripciones del listado final y los textos descriptivos del pie de página continúan justificados.
 - Los tres JavaScript v23 son idénticos a v22 salvo por su versión interna.
 - No se modificaron datos, JSON-LD, lógica funcional, colores, tamaños ni distribución por este cambio.
-\n\nVALIDACIÓN V24 2026-09-05\n- catalogo.html está en versión 24 y referencia únicamente los recursos coordinados v24.\n- El resumen de visitantes mantiene contraste alto tanto abierto como cerrado.\n- El carrito y formularios usan superficies claras y texto oscuro dentro de la misma paleta verde.\n- Placeholders, sugerencias, contadores de chips, texto auxiliar del buscador y metadatos de álbumes recibieron mayor contraste.\n- Las combinaciones de texto normal revisadas en los puntos corregidos alcanzan al menos aproximadamente 4.5:1.\n- Los tres JavaScript v24 son idénticos a v23 salvo por su versión interna y pasan node --check.\n- No se modificaron datos, JSON-LD ni lógica funcional.\n
+
+
+VALIDACIÓN V24 2026-09-05
+- catalogo.html está en versión 24 y referencia únicamente los recursos coordinados v24.
+- El resumen de visitantes mantiene contraste alto tanto abierto como cerrado.
+- El carrito y formularios usan superficies claras y texto oscuro dentro de la misma paleta verde.
+- Placeholders, sugerencias, contadores de chips, texto auxiliar del buscador y metadatos de álbumes recibieron mayor contraste.
+- Las combinaciones de texto normal revisadas en los puntos corregidos alcanzan al menos aproximadamente 4.5:1.
+- Los tres JavaScript v24 son idénticos a v23 salvo por su versión interna y pasan node --check.
+- No se modificaron datos, JSON-LD ni lógica funcional.

@@ -238,6 +238,6 @@ VALIDACIÓN V27 2026-09-05
 - Se añadió un receptor web de Firebase Cloud Messaging y una página no indexable para activar el celular receptor y obtener su FID.
 - Se añadió una Cloud Function de segunda generación que escucha únicamente la creación del registro diario de visita y construye el push compacto con ciudad/país, dirección, GPS y enlace exacto de Maps.
 - El FID receptor no se guarda en GitHub: la función exige el secreto PUSH_DESTINATION_FID de Secret Manager.
-- El código de Functions quedó preparado para Node.js 22, Firebase Admin 14.3.0 y Firebase Functions 7.3.0.
-- La función todavía requiere despliegue en el proyecto Firebase y la suscripción efectiva del celular antes de que puedan recibirse notificaciones reales.
+- El código de Functions quedó preparado para Node.js 22, Firebase Admin 14.3.0 y Firebase Functions 7.3.2.
+- El celular receptor ya fue registrado y su FID fue recibido y validado; el identificador no se guarda en archivos públicos. La función todavía requiere guardar ese FID como secreto privado PUSH_DESTINATION_FID y desplegarse en el proyecto Firebase antes de que puedan recibirse notificaciones reales.
 - No se actualizó el espejo de Google Drive porque esa operación solo se realiza cuando el usuario la solicita expresamente.

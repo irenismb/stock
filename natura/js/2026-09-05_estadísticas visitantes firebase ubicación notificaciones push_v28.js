@@ -352,6 +352,7 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
           user_id: userId,
           load_id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
           ts: String(Date.now()),
+          telegram_habilitado: (window.INTERRUPTORES?.HABILITAR_NOTIFICACIONES_TELEGRAM !== false) ? "1" : "0",
           cb: Math.random().toString(36).slice(2)
         });
         fetch(`${GPS_LOG_ENDPOINT}?${payload.toString()}`, {

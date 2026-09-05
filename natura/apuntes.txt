@@ -12,9 +12,9 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 24.
+Versión funcional: 25.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
-Los archivos de código activos coordinados usan _v24 en el nombre.
+Los archivos de código activos coordinados usan _v25 en el nombre.
 Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
 
 ESTRUCTURA PÚBLICA ESPERADA
@@ -25,11 +25,11 @@ natura/
   sitemap.xml
   google8559800fc0ba033d.html
   css/
-    2026-09-04_estilos generales catálogo natura tienda web_v24.css
+    2026-09-04_estilos generales catálogo natura tienda web_v25.css
   js/
-    2026-09-04_lógica principal catálogo productos carrito pedidos_v24.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v24.js
-    2026-09-04_navegación compartir controles interfaz catálogo web_v24.js
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v25.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v25.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v25.js
   logos/
     logo_empresa.webp
     logo_empresa.png
@@ -114,6 +114,7 @@ CORRECCIONES REALIZADAS
 - v22: se justificaron visualmente los textos descriptivos del pie de página y las descripciones del listado de productos del final, manteniendo alineada a la izquierda la última línea de cada párrafo.
 - v23: se justificaron también los nombres de los productos del listado final que acompañan esas descripciones, manteniendo la última línea alineada a la izquierda.
 - v24: se reforzó el contraste del tema claro manteniendo la paleta y el aspecto general; se corrigieron visitantes, carrito, formularios, sugerencias, buscador, metadatos de álbumes y otros textos secundarios con contraste insuficiente.
+- v25: se centró el bloque textual del encabezado respecto al recuadro completo, manteniendo el logo fijo a la izquierda mediante columnas laterales simétricas.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -200,3 +201,15 @@ VALIDACIÓN V24 2026-09-05
 - Las combinaciones de texto normal revisadas en los puntos corregidos alcanzan al menos aproximadamente 4.5:1.
 - Los tres JavaScript v24 son idénticos a v23 salvo por su versión interna y pasan node --check.
 - No se modificaron datos, JSON-LD ni lógica funcional.
+
+
+VALIDACIÓN V25 2026-09-05
+- catalogo.html está en versión 25 y referencia únicamente recursos coordinados v25.
+- El logo del encabezado conserva su posición a la izquierda y el bloque de título/subtítulo queda centrado respecto al recuadro completo.
+- Se verificaron las hojas Configuracion y Categorias del Google Sheet.
+- Las 14 claves técnicas actuales de Configuracion tienen correspondencia en el código y uso efectivo.
+- La configuración remota se carga antes de cargar productos y se vuelve a consultar periódicamente.
+- Categorias alimenta las listas de categorías ocultas y excluidas del buscador.
+- Estado verificado: precios, códigos, envío de códigos, GPS, imágenes, control de sugerencias, categorías ocultas y exclusión en búsquedas activados; cantidad de stock, texto de stock, límites de stock, archivos sin parámetros, nombres especiales y sugerencias visibles al iniciar desactivados.
+- Categorías marcadas actualmente para ocultarse y excluirse: Electrodomésticos de segunda mano no a la venta y Medicamentos.
+- No se modificaron datos de Google Sheets ni JSON-LD por este cambio.

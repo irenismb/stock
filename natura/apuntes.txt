@@ -12,7 +12,7 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 22.
+Versión funcional: 23.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
 Los archivos de código activos coordinados usan _v21 en el nombre.
 Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
@@ -25,11 +25,11 @@ natura/
   sitemap.xml
   google8559800fc0ba033d.html
   css/
-    2026-09-04_estilos generales catálogo natura tienda web_v22.css
+    2026-09-04_estilos generales catálogo natura tienda web_v23.css
   js/
-    2026-09-04_lógica principal catálogo productos carrito pedidos_v22.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v22.js
-    2026-09-04_navegación compartir controles interfaz catálogo web_v22.js
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v23.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v23.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v23.js
   logos/
     logo_empresa.webp
     logo_empresa.png
@@ -112,6 +112,7 @@ CORRECCIONES REALIZADAS
 - v21: el JSON-LD de productos se actualizó desde Google Sheets para representar el conjunto público completo vigente y dejó de modificarse por navegación, categorías, filtros o búsquedas.
 - v21: la interfaz gráfica no cambió; esta corrección fue exclusivamente técnica y de SEO.
 - v22: se justificaron visualmente los textos descriptivos del pie de página y las descripciones del listado de productos del final, manteniendo alineada a la izquierda la última línea de cada párrafo.
+- v23: se justificaron también los nombres de los productos del listado final que acompañan esas descripciones, manteniendo la última línea alineada a la izquierda.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -180,3 +181,11 @@ VALIDACIÓN V22 2026-09-05
 - El único cambio visual respecto de v21 es la justificación de los textos descriptivos del pie de página y de las descripciones del listado de productos del final.
 - Las descripciones principales de las tarjetas ya estaban justificadas y se conservaron.
 - No se modificaron colores, tamaños, distribución, contenido, datos, JSON-LD ni lógica funcional por este cambio.
+
+
+VALIDACIÓN V23 2026-09-05
+- catalogo.html está en versión 23 y referencia únicamente los recursos coordinados v23.
+- El único cambio visual respecto de v22 es la justificación de los nombres de producto del listado final.
+- Las descripciones del listado final y los textos descriptivos del pie de página continúan justificados.
+- Los tres JavaScript v23 son idénticos a v22 salvo por su versión interna.
+- No se modificaron datos, JSON-LD, lógica funcional, colores, tamaños ni distribución por este cambio.

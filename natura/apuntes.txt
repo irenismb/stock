@@ -12,10 +12,10 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 26.
+Versión funcional del catálogo: 27.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
-Los archivos de código activos coordinados usan _v26 en el nombre.
-Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
+catalogo.html y el módulo de estadísticas/ubicación están en v27 por el cambio funcional de notificaciones push. Los recursos que no cambiaron permanecen en v26; no se renombra ni reemplaza un archivo únicamente para igualar un número de versión.
+Cuando se modifique código, incrementa la versión del elemento realmente modificado, conserva los archivos no afectados y corrige únicamente las referencias necesarias.
 
 ESTRUCTURA PÚBLICA ESPERADA
 natura/
@@ -24,11 +24,13 @@ natura/
   robots.txt
   sitemap.xml
   google8559800fc0ba033d.html
+  2026-09-05_activar notificaciones push visitas catálogo firebase.html
+  2026-09-05_servicio push firebase notificaciones celular catálogo_v1.js
   css/
     2026-09-04_estilos generales catálogo natura tienda web_v26.css
   js/
     2026-09-04_lógica principal catálogo productos carrito pedidos_v26.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v26.js
+    2026-09-05_estadísticas visitantes firebase ubicación notificaciones push_v27.js
     2026-09-04_navegación compartir controles interfaz catálogo web_v26.js
   logos/
     logo_empresa.webp
@@ -56,6 +58,7 @@ El código localiza imágenes de productos en GitHub por código interno de cuat
 Registro de pedidos: https://script.google.com/macros/s/AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP/exec
 Registro de ubicación/visitantes: https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec
 Firebase y su configuración pública del cliente están en el archivo de estadísticas de visitantes.
+Notificaciones push: Firebase Cloud Messaging. El código de envío seguro está fuera de natura/, en functions/; el identificador FID del celular receptor debe mantenerse en Secret Manager como PUSH_DESTINATION_FID y nunca en el código público.
 
 ARQUITECTURA
 catalogo.html:
@@ -82,7 +85,8 @@ JavaScript de visitantes:
 - Firebase;
 - autenticación anónima;
 - contador y estadísticas;
-- ubicación y envío al endpoint GPS.
+- ubicación y envío al endpoint GPS;
+- registro de ciudad, país, dirección legible disponible, coordenadas GPS, precisión y enlace de Maps para alimentar la notificación push.
 
 JavaScript de navegación:
 - Inicio/Final;
@@ -108,7 +112,7 @@ CORRECCIONES REALIZADAS
 - v20: el resumen cerrado de visitantes ocultaba los acumulados; ahora el contador permanece visible aunque el detalle esté cerrado.
 - v20: Firebase intentaba abrir la lectura global antes de completar la autenticación anónima; ahora autentica primero y después conecta onValue().
 - v20: se corrigieron theme-color y las dimensiones Open Graph de los logos para reflejar los recursos reales.
-- GitHub main es la fuente de verdad del proyecto; la carpeta operativa de Google Drive debe mantenerse como espejo de natura/ y no debe imponerse sobre GitHub.
+- GitHub main es la fuente de verdad del proyecto. El espejo de Google Drive solo se comprueba o actualiza cuando el usuario lo solicita expresamente; no forma parte automática de auditorías, mejoras ni cambios.
 - v21: el JSON-LD de productos se actualizó desde Google Sheets para representar el conjunto público completo vigente y dejó de modificarse por navegación, categorías, filtros o búsquedas.
 - v21: la interfaz gráfica no cambió; esta corrección fue exclusivamente técnica y de SEO.
 - v22: se justificaron visualmente los textos descriptivos del pie de página y las descripciones del listado de productos del final, manteniendo alineada a la izquierda la última línea de cada párrafo.
@@ -133,9 +137,10 @@ PRUEBAS OBLIGATORIAS DESPUÉS DE CADA CAMBIO
 8. Probar creación de pedido y apertura de WhatsApp.
 9. Revisar registro de pedidos.
 10. Revisar contador/estadísticas de visitantes y ubicación.
-11. Probar modal de imágenes, compartir e Inicio/Final.
-12. Revisar robots.txt, sitemap.xml, canonical y ambos JSON-LD.
-13. Confirmar que no exista ninguna ruta 404 generada por el HTML.
+11. Cuando el push esté desplegado y el celular suscrito, comprobar que una visita nueva genere una sola notificación y que al tocarla abra las coordenadas exactas en Google Maps.
+12. Probar modal de imágenes, compartir e Inicio/Final.
+13. Revisar robots.txt, sitemap.xml, canonical y ambos JSON-LD.
+14. Confirmar que no exista ninguna ruta 404 generada por el HTML.
 
 CRITERIO PARA AÑADIR ARCHIVOS
 natura/ debe contener únicamente archivos necesarios para que catalogo.html funcione, muestre recursos o sea indexado/verificado. Archivos administrativos, facturas, accesos .url, copias y material de trabajo deben permanecer fuera del sitio público.
@@ -225,3 +230,14 @@ VALIDACIÓN V26 2026-09-05
 - Los chips de palabras seleccionadas ya tenían contraste correcto y se conservaron, reforzando únicamente su hover activo.
 - Los tres JavaScript v26 son idénticos a v25 salvo por la versión interna.
 - No se modificaron datos, Google Sheets, JSON-LD ni lógica funcional.
+
+
+VALIDACIÓN V27 2026-09-05
+- catalogo.html está en versión 27 y carga el módulo de estadísticas/ubicación v27.
+- El registro diario de visita en Realtime Database incorpora ciudad, país, dirección legible disponible, latitud, longitud, precisión y enlace de Google Maps cuando existe GPS.
+- Se añadió un receptor web de Firebase Cloud Messaging y una página no indexable para activar el celular receptor y obtener su FID.
+- Se añadió una Cloud Function de segunda generación que escucha únicamente la creación del registro diario de visita y construye el push compacto con ciudad/país, dirección, GPS y enlace exacto de Maps.
+- El FID receptor no se guarda en GitHub: la función exige el secreto PUSH_DESTINATION_FID de Secret Manager.
+- El código de Functions quedó preparado para Node.js 22, Firebase Admin 14.3.0 y Firebase Functions 7.3.0.
+- La función todavía requiere despliegue en el proyecto Firebase y la suscripción efectiva del celular antes de que puedan recibirse notificaciones reales.
+- No se actualizó el espejo de Google Drive porque esa operación solo se realiza cuando el usuario la solicita expresamente.

@@ -12,7 +12,7 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 21.
+Versión funcional: 22.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
 Los archivos de código activos coordinados usan _v21 en el nombre.
 Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
@@ -25,11 +25,11 @@ natura/
   sitemap.xml
   google8559800fc0ba033d.html
   css/
-    2026-09-04_estilos generales catálogo natura tienda web_v21.css
+    2026-09-04_estilos generales catálogo natura tienda web_v22.css
   js/
-    2026-09-04_lógica principal catálogo productos carrito pedidos_v21.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v21.js
-    2026-09-04_navegación compartir controles interfaz catálogo web_v21.js
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v22.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v22.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v22.js
   logos/
     logo_empresa.webp
     logo_empresa.png
@@ -111,6 +111,7 @@ CORRECCIONES REALIZADAS
 - GitHub main es la fuente de verdad del proyecto; la carpeta operativa de Google Drive debe mantenerse como espejo de natura/ y no debe imponerse sobre GitHub.
 - v21: el JSON-LD de productos se actualizó desde Google Sheets para representar el conjunto público completo vigente y dejó de modificarse por navegación, categorías, filtros o búsquedas.
 - v21: la interfaz gráfica no cambió; esta corrección fue exclusivamente técnica y de SEO.
+- v22: se justificaron visualmente los textos descriptivos del pie de página y las descripciones del listado de productos del final, manteniendo alineada a la izquierda la última línea de cada párrafo.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -172,3 +173,10 @@ VALIDACIÓN V21 2026-09-05
 - GitHub Pages: ejecución 33948593095, estado completed, conclusión success, sobre el commit 81e8b443451b7379fe8f21223ed16bfab45a179a.
 - El espejo operativo de Google Drive fue actualizado con catalogo.html y los recursos v21.
 - El listado HTML estático de respaldo sigue mostrando 329 productos; no se modificó en esta etapa porque la corrección autorizada fue únicamente la del JSON-LD.
+
+
+VALIDACIÓN V22 2026-09-05
+- catalogo.html está en versión 22 y referencia únicamente los recursos coordinados v22.
+- El único cambio visual respecto de v21 es la justificación de los textos descriptivos del pie de página y de las descripciones del listado de productos del final.
+- Las descripciones principales de las tarjetas ya estaban justificadas y se conservaron.
+- No se modificaron colores, tamaños, distribución, contenido, datos, JSON-LD ni lógica funcional por este cambio.

@@ -1,5 +1,5 @@
 BITÁCORA TÉCNICA DEL CATÁLOGO NATURA
-Actualizada: 2026-09-04
+Actualizada: 2026-09-05
 
 OBJETIVO
 Este archivo es la referencia para continuar el trabajo en otro día sin instrucciones adicionales. Antes de modificar el sitio, leerlo completo y revisar la versión indicada en la segunda línea de cada archivo de código.
@@ -12,9 +12,9 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 20.
+Versión funcional: 21.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
-Los archivos de código extraídos usan _v19 en el nombre.
+Los archivos de código activos coordinados usan _v21 en el nombre.
 Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
 
 ESTRUCTURA PÚBLICA ESPERADA
@@ -25,11 +25,11 @@ natura/
   sitemap.xml
   google8559800fc0ba033d.html
   css/
-    2026-09-04_estilos generales catálogo natura tienda web_v20.css
+    2026-09-04_estilos generales catálogo natura tienda web_v21.css
   js/
-    2026-09-04_lógica principal catálogo productos carrito pedidos_v20.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v20.js
-    2026-09-04_navegación compartir controles interfaz catálogo web_v20.js
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v21.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v21.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v21.js
   logos/
     logo_empresa.webp
     logo_empresa.png
@@ -109,6 +109,8 @@ CORRECCIONES REALIZADAS
 - v20: Firebase intentaba abrir la lectura global antes de completar la autenticación anónima; ahora autentica primero y después conecta onValue().
 - v20: se corrigieron theme-color y las dimensiones Open Graph de los logos para reflejar los recursos reales.
 - GitHub main es la fuente de verdad del proyecto; la carpeta operativa de Google Drive debe mantenerse como espejo de natura/ y no debe imponerse sobre GitHub.
+- v21: el JSON-LD de productos se actualizó desde Google Sheets para representar el conjunto público completo vigente y dejó de modificarse por navegación, categorías, filtros o búsquedas.
+- v21: la interfaz gráfica no cambió; esta corrección fue exclusivamente técnica y de SEO.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -159,3 +161,14 @@ VALIDACIÓN V20 2026-09-04
 - Los dos bloques JSON-LD son JSON válido.
 - El listado HTML y el ItemList JSON-LD contienen 329 productos y coinciden por nombre y código.
 - El contador visible cerrado y el orden autenticación -> lectura Firebase quedaron corregidos.
+
+
+VALIDACIÓN V21 2026-09-05
+- catalogo.html está en versión 21 y referencia únicamente los recursos coordinados v21.
+- El ItemList JSON-LD contiene 343 productos públicos según el estado de Google Sheets y los controles de categorías en esta validación.
+- La navegación, las categorías, los filtros y las búsquedas ya no reescriben el JSON-LD.
+- Los tres JavaScript v21 pasaron validación de sintaxis con node --check.
+- El JSON-LD de productos parsea correctamente y declara 343 elementos.
+- GitHub Pages: ejecución 33948593095, estado completed, conclusión success, sobre el commit 81e8b443451b7379fe8f21223ed16bfab45a179a.
+- El espejo operativo de Google Drive fue actualizado con catalogo.html y los recursos v21.
+- El listado HTML estático de respaldo sigue mostrando 329 productos; no se modificó en esta etapa porque la corrección autorizada fue únicamente la del JSON-LD.

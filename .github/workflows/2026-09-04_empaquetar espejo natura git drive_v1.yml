@@ -1,0 +1,34 @@
+name: Empaquetar espejo Natura Git Drive
+# Versión: 1
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/2026-09-04_empaquetar espejo natura git drive_v1.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  empaquetar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Obtener main actual
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Preparar espejo Natura
+        run: |
+          set -euo pipefail
+          mkdir -p espejo
+          cp -a natura espejo/natura
+
+      - name: Subir espejo
+        uses: actions/upload-artifact@v4
+        with:
+          name: natura-espejo-git-drive
+          path: espejo/natura
+          if-no-files-found: error
+          retention-days: 1

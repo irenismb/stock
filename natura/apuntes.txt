@@ -12,7 +12,7 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 19.
+Versión funcional: 20.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
 Los archivos de código extraídos usan _v19 en el nombre.
 Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
@@ -25,11 +25,11 @@ natura/
   sitemap.xml
   google8559800fc0ba033d.html
   css/
-    2026-09-04_estilos generales catálogo natura tienda web_v19.css
+    2026-09-04_estilos generales catálogo natura tienda web_v20.css
   js/
-    2026-09-04_lógica principal catálogo productos carrito pedidos_v19.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v19.js
-    2026-09-04_navegación compartir controles interfaz catálogo web_v19.js
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v20.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v20.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v20.js
   logos/
     logo_empresa.webp
     logo_empresa.png
@@ -102,8 +102,13 @@ No deben volver a publicarse salvo que exista una dependencia nueva demostrable:
 - logos no referenciados por catalogo.html
 La información útil de las notas antiguas queda sustituida por esta bitácora.
 
-CORRECCIÓN REALIZADA
-catalogo.html apuntaba como respaldo a logos/youtube.png, archivo inexistente. Se corrigió para usar logos/youtube.webp.
+CORRECCIONES REALIZADAS
+- catalogo.html apuntaba como respaldo a logos/youtube.png, archivo inexistente. Se corrigió para usar logos/youtube.webp.
+- v20: el listado SEO mostraba los nombres de productos en blanco sobre fondo blanco; .beauty-product-name ahora usa el color de texto activo.
+- v20: el resumen cerrado de visitantes ocultaba los acumulados; ahora el contador permanece visible aunque el detalle esté cerrado.
+- v20: Firebase intentaba abrir la lectura global antes de completar la autenticación anónima; ahora autentica primero y después conecta onValue().
+- v20: se corrigieron theme-color y las dimensiones Open Graph de los logos para reflejar los recursos reales.
+- GitHub main es la fuente de verdad del proyecto; la carpeta operativa de Google Drive debe mantenerse como espejo de natura/ y no debe imponerse sobre GitHub.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -138,8 +143,19 @@ Commit estructural base: 21158190b6e0531b1cccdefa42d0aaef6689b696
 GitHub Pages: ejecución 33936087364, estado completed, conclusión success.
 La URL pública respondió y el contenido indexable muestra 329 productos.
 La raíz natura/ quedó únicamente con: catalogo.html, apuntes.txt, robots.txt, sitemap.xml, google8559800fc0ba033d.html, css/, js/, logos/ y productos/.
-Se verificó en main que catalogo.html está en versión 19, no conserva bloques style incrustados ni JavaScript clásico incrustado, y referencia los archivos versionados nuevos.
+Se verificó en main que catalogo.html está en versión 20, no conserva bloques style incrustados ni JavaScript clásico incrustado, y referencia los archivos versionados nuevos.
 Se verificó que los seis bloques CSS no tienen URL relativas externas; moverlos a css/ no cambia la base de recursos.
 Se verificó que los 451 archivos del árbol productos/ fueron conservados sin modificación.
 Se conservaron únicamente 11 logos usados por la página.
 Limitación de la comprobación: no se ejecutó un navegador interactivo completo con acciones humanas; después de cambios futuros deben repetirse las pruebas obligatorias de carrito, WhatsApp, Firebase, ubicación y configuración remota descritas arriba.
+
+
+VALIDACIÓN V20 2026-09-04
+- catalogo.html: versión 20 y referencias únicamente a CSS/JS _v20.
+- Sintaxis validada de los tres archivos JavaScript con node --check.
+- CSS validado sin errores de parseo.
+- No hay IDs HTML duplicados ni IDs requeridos por JavaScript ausentes.
+- No hay referencias locales faltantes desde catalogo.html.
+- Los dos bloques JSON-LD son JSON válido.
+- El listado HTML y el ItemList JSON-LD contienen 329 productos y coinciden por nombre y código.
+- El contador visible cerrado y el orden autenticación -> lectura Firebase quedaron corregidos.

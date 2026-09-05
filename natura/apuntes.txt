@@ -12,9 +12,9 @@ Punto de recuperación previo a la reestructuración: rama respaldo-natura-2026-
 URL pública estable del catálogo: https://irenismb.github.io/stock/natura/catalogo.html
 
 VERSIÓN ACTUAL
-Versión funcional: 25.
+Versión funcional: 26.
 catalogo.html conserva su nombre estable porque es la URL pública y canónica.
-Los archivos de código activos coordinados usan _v25 en el nombre.
+Los archivos de código activos coordinados usan _v26 en el nombre.
 Cuando se modifique cualquier código del catálogo: incrementar toda la versión de forma coordinada, actualizar la segunda línea de cada archivo modificado, renombrar los archivos versionados nuevos y corregir sus referencias en catalogo.html.
 
 ESTRUCTURA PÚBLICA ESPERADA
@@ -25,11 +25,11 @@ natura/
   sitemap.xml
   google8559800fc0ba033d.html
   css/
-    2026-09-04_estilos generales catálogo natura tienda web_v25.css
+    2026-09-04_estilos generales catálogo natura tienda web_v26.css
   js/
-    2026-09-04_lógica principal catálogo productos carrito pedidos_v25.js
-    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v25.js
-    2026-09-04_navegación compartir controles interfaz catálogo web_v25.js
+    2026-09-04_lógica principal catálogo productos carrito pedidos_v26.js
+    2026-09-04_estadísticas visitantes firebase ubicación catálogo global_v26.js
+    2026-09-04_navegación compartir controles interfaz catálogo web_v26.js
   logos/
     logo_empresa.webp
     logo_empresa.png
@@ -115,6 +115,7 @@ CORRECCIONES REALIZADAS
 - v23: se justificaron también los nombres de los productos del listado final que acompañan esas descripciones, manteniendo la última línea alineada a la izquierda.
 - v24: se reforzó el contraste del tema claro manteniendo la paleta y el aspecto general; se corrigieron visitantes, carrito, formularios, sugerencias, buscador, metadatos de álbumes y otros textos secundarios con contraste insuficiente.
 - v25: se centró el bloque textual del encabezado respecto al recuadro completo, manteniendo el logo fijo a la izquierda mediante columnas laterales simétricas.
+- v26: se corrigió el contraste de estados interactivos del tema claro, en especial el botón de palabras al estar activo, los contadores de resultados durante búsquedas y los controles deshabilitados.
 
 ARCHIVOS SEO
 robots.txt debe permitir el sitio y apuntar al sitemap de natura.
@@ -213,3 +214,14 @@ VALIDACIÓN V25 2026-09-05
 - Estado verificado: precios, códigos, envío de códigos, GPS, imágenes, control de sugerencias, categorías ocultas y exclusión en búsquedas activados; cantidad de stock, texto de stock, límites de stock, archivos sin parámetros, nombres especiales y sugerencias visibles al iniciar desactivados.
 - Categorías marcadas actualmente para ocultarse y excluirse: Electrodomésticos de segunda mano no a la venta y Medicamentos.
 - No se modificaron datos de Google Sheets ni JSON-LD por este cambio.
+
+
+VALIDACIÓN V26 2026-09-05
+- catalogo.html está en versión 26 y referencia únicamente recursos coordinados v26.
+- El estado activo del control de palabras usa texto verde oscuro sobre verde claro y conserva contraste alto.
+- Los contadores de categorías/productos durante búsquedas usan ámbar oscuro sobre crema y ya no emplean amarillo claro sobre fondo claro.
+- Los estados hover y focus de los controles activos mantienen la misma jerarquía visual y contraste.
+- Los controles deshabilitados conservan apariencia atenuada sin depender de una opacidad global excesiva.
+- Los chips de palabras seleccionadas ya tenían contraste correcto y se conservaron, reforzando únicamente su hover activo.
+- Los tres JavaScript v26 son idénticos a v25 salvo por la versión interna.
+- No se modificaron datos, Google Sheets, JSON-LD ni lógica funcional.

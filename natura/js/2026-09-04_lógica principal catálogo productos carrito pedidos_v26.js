@@ -1,5 +1,4 @@
 // Lógica principal del catálogo público.
-// Versión: 26
 
 // ==========================================
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
@@ -1318,6 +1317,73 @@
       }catch(_){}
       refreshCartCount();
     }
+
+    function resumenDispositivoVisita(){
+      const ua = String(navigator.userAgent || "");
+      const tipo = /iPad|Tablet/i.test(ua)
+        ? "Tablet"
+        : (/Mobi|Android|iPhone/i.test(ua) ? "Móvil" : "Computador");
+
+      let sistema = "";
+      if(/Android/i.test(ua)) sistema = "Android";
+      else if(/iPhone|iPad|iPod/i.test(ua)) sistema = "iOS";
+      else if(/Windows/i.test(ua)) sistema = "Windows";
+      else if(/Mac OS X|Macintosh/i.test(ua)) sistema = "macOS";
+      else if(/Linux/i.test(ua)) sistema = "Linux";
+
+      let navegador = "";
+      if(/Edg\//i.test(ua)) navegador = "Edge";
+      else if(/Firefox\//i.test(ua)) navegador = "Firefox";
+      else if(/CriOS\//i.test(ua)) navegador = "Chrome";
+      else if(/Chrome\//i.test(ua)) navegador = "Chrome";
+      else if(/Safari\//i.test(ua)) navegador = "Safari";
+
+      return [tipo, sistema, navegador].filter(Boolean).join(" · ");
+    }
+
+    function resumenOrigenVisita(){
+      try{
+        const actual = new URL(window.location.href);
+        const utm = String(actual.searchParams.get("utm_source") || "").trim();
+        if(utm) return utm;
+
+        const ref = String(document.referrer || "").trim();
+        if(!ref) return "Directo";
+
+        const host = new URL(ref).hostname.replace(/^www\./i, "");
+        if(!host || host === window.location.hostname) return "Directo";
+        return host;
+      }catch(_){
+        return "Directo";
+      }
+    }
+
+    window.obtenerContextoVisitaCatalogo = function(){
+      try{
+        const album = getSelectedAlbum();
+        const items = cartItemsArray();
+        const primerProducto = items[0]?.name || "";
+        return {
+          dispositivo: resumenDispositivoVisita(),
+          origen: resumenOrigenVisita(),
+          categoria: String(album?.label || ""),
+          producto: String(primerProducto || ""),
+          carrito_productos: String(items.length),
+          carrito_unidades: String(cartTotalQty()),
+          carrito_total: String(Math.round(cartTotalValue()))
+        };
+      }catch(_){
+        return {
+          dispositivo: resumenDispositivoVisita(),
+          origen: resumenOrigenVisita(),
+          categoria: "",
+          producto: "",
+          carrito_productos: "0",
+          carrito_unidades: "0",
+          carrito_total: "0"
+        };
+      }
+    };
 
     function sanitizeCartWithStock(){
       const enforce = shouldEnforceStockLimits();

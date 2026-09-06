@@ -190,12 +190,75 @@
     }
   }
 
+  function esIpLocalNumerica(value) {
+    const ip = String(value || "").trim();
+    const match = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (!match) return false;
+
+    const partes = match.slice(1).map(Number);
+    if (partes.some(parte => parte < 0 || parte > 255)) return false;
+
+    if (partes[0] === 10) return true;
+    if (partes[0] === 192 && partes[1] === 168) return true;
+    if (partes[0] === 172 && partes[1] >= 16 && partes[1] <= 31) return true;
+    return false;
+  }
+
+  function obtenerIpLocalNumerica() {
+    return new Promise(resolve => {
+      const RTCPeer = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+      if (!RTCPeer) {
+        resolve("");
+        return;
+      }
+
+      let terminado = false;
+      let pc = null;
+      const finalizar = value => {
+        if (terminado) return;
+        terminado = true;
+        try { if (pc) pc.close(); } catch (_) {}
+        resolve(esIpLocalNumerica(value) ? String(value).trim() : "");
+      };
+
+      const temporizador = setTimeout(() => finalizar(""), 1300);
+
+      try {
+        pc = new RTCPeer({ iceServers: [] });
+        pc.createDataChannel("ip");
+
+        pc.onicecandidate = event => {
+          const candidate = String(event?.candidate?.candidate || "");
+          const ips = candidate.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || [];
+          const local = ips.find(esIpLocalNumerica);
+          if (local) {
+            clearTimeout(temporizador);
+            finalizar(local);
+          }
+        };
+
+        pc.createOffer()
+          .then(offer => pc.setLocalDescription(offer))
+          .catch(() => {
+            clearTimeout(temporizador);
+            finalizar("");
+          });
+      } catch (_) {
+        clearTimeout(temporizador);
+        finalizar("");
+      }
+    });
+  }
+
   async function enviarRegistroUbicacion(ubicacion) {
     try {
       const userId = obtenerIdLocal();
-      const contexto = typeof window.obtenerContextoVisitaCatalogo === "function"
-        ? await window.obtenerContextoVisitaCatalogo()
-        : {};
+      const [contexto, ipLocal] = await Promise.all([
+        typeof window.obtenerContextoVisitaCatalogo === "function"
+          ? window.obtenerContextoVisitaCatalogo()
+          : Promise.resolve({}),
+        obtenerIpLocalNumerica()
+      ]);
       const direccion = normalizarDireccion(
         ubicacion.direccion || [ubicacion.ciudad, ubicacion.departamento, ubicacion.pais].filter(Boolean).join(", ")
       );
@@ -217,6 +280,7 @@
         dispositivo: String(contexto.dispositivo || ""),
         marca: String(contexto.marca || ""),
         modelo: String(contexto.modelo || ""),
+        ip_local: String(ipLocal || ""),
         origen: String(contexto.origen || ""),
         categoria: String(contexto.categoria || ""),
         producto: String(contexto.producto || ""),

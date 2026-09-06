@@ -1388,11 +1388,54 @@
       { top:"#d6c3a6", base:"#c5ad88", tab:"#ceb796", shadow:"rgba(129, 100, 58, .24)" }
     ];
     const NAV_AUDIENCES = [
-      { label:"Para ella", section:"Belleza y cuidado", subtitle:"Belleza y cuidado" },
-      { label:"Para él", section:"Belleza y cuidado", subtitle:"Belleza y cuidado" },
-      { label:"Unisex", section:"Belleza y cuidado", subtitle:"Belleza y cuidado" },
-      { label:"Otros productos", section:"Otros productos", subtitle:"Hogar, regalos y más" }
+      {
+        label:"Para ella",
+        section:"Belleza y cuidado",
+        subtitle:"Belleza y cuidado seleccionados para ella.",
+        icon:"✨",
+        theme:"ella"
+      },
+      {
+        label:"Para él",
+        section:"Belleza y cuidado",
+        subtitle:"Perfumes, desodorantes y cuidado personal para él.",
+        icon:"◆",
+        theme:"el"
+      },
+      {
+        label:"Unisex",
+        section:"Belleza y cuidado",
+        subtitle:"Cuidado para todos, sin repetir etiquetas.",
+        icon:"🌿",
+        theme:"unisex"
+      },
+      {
+        label:"Otros productos",
+        section:"Otros productos",
+        subtitle:"Tecnología, hogar, juguetes, papelería, regalos y más.",
+        icon:"🎁",
+        theme:"otros"
+      }
     ];
+
+    const CATEGORY_VISUALS = {
+      "perfumes": { icon:"🌸" },
+      "desodorantes": { icon:"💧" },
+      "maquillaje": { icon:"💄" },
+      "cuidado facial": { icon:"✨" },
+      "cuidado corporal": { icon:"🧴" },
+      "cabello": { icon:"💇" },
+      "manos y pies": { icon:"🤲" },
+      "higiene corporal": { icon:"🫧" },
+      "higiene intima": { icon:"🌿" },
+      "proteccion solar": { icon:"☀️" },
+      "kits y combos": { icon:"🎁" },
+      "tecnologia y hogar": { icon:"🏠" },
+      "juguetes": { icon:"🧸" },
+      "papeleria": { icon:"✏️" },
+      "medicamentos": { icon:"💊" },
+      "regalos": { icon:"🎁" }
+    };
 
     let albums = [];
     let albumByKey = new Map();
@@ -1440,13 +1483,14 @@
       const out = [];
       for(const group of NAV_AUDIENCES){
         const products = (Array.isArray(list) ? list : []).filter(p => productMatchesAudience(p, group.label));
-        if(!products.length) continue;
         const album = {
           key:`audience::${cleanNavKey(group.label)}`,
           navType:"audience",
           navValue:group.label,
           label:group.label,
           subtitle:group.subtitle,
+          icon:group.icon || "",
+          theme:group.theme || "",
           products,
           cover:null,
           previewImages:[],
@@ -1469,6 +1513,7 @@
         if(!productMatchesAudience(p, audienceLabel)) continue;
         const category = String(p.category || "General").trim() || "General";
         const key = cleanNavKey(category);
+        const visual = CATEGORY_VISUALS[cleanNavKey(category)] || { icon:"•" };
         const found = byCategory.get(key) || {
           key:`category::${cleanNavKey(audienceLabel)}::${key}`,
           navType:"category",
@@ -1476,6 +1521,7 @@
           audience:audienceLabel,
           label:categoryDisplayLabel(category),
           subtitle:"",
+          icon:visual.icon || "•",
           products:[],
           cover:null,
           previewImages:[],
@@ -2483,8 +2529,14 @@
         <button type="button" class="album-folder" data-album-open="">
           <div class="album-preview"></div>
           <div class="album-pad">
-            <h3 class="album-label"></h3>
-            <p class="album-meta"></p>
+            <div class="album-card-top">
+              <span class="album-icon" aria-hidden="true"></span>
+              <span class="album-count-badge"></span>
+            </div>
+            <div class="album-copy">
+              <h3 class="album-label"></h3>
+              <p class="album-meta"></p>
+            </div>
           </div>
         </button>
       </article>
@@ -2660,24 +2712,28 @@
       const card = albumTemplate.content.firstElementChild.cloneNode(true);
       const btn = card.querySelector(".album-folder");
       const preview = card.querySelector(".album-preview");
+      const icon = card.querySelector(".album-icon");
+      const badge = card.querySelector(".album-count-badge");
       const label = card.querySelector(".album-label");
       const meta = card.querySelector(".album-meta");
       const unitLabel = album.count === 1 ? "producto" : "productos";
+      const isAudience = album.navType === "audience";
 
-      card.classList.toggle("album-root-card", album.navType === "audience");
+      card.classList.toggle("album-root-card", isAudience);
+      card.classList.toggle("album-category-card", !isAudience);
+      if(isAudience && album.theme) card.dataset.navTheme = album.theme;
+
       btn.dataset.albumOpen = album.key;
       btn.dataset.navType = album.navType || "category";
-      btn.setAttribute("aria-label", album.navType === "audience" ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
+      btn.setAttribute("aria-label", isAudience ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
       btn.title = `${album.label} · ${album.count} ${unitLabel}`;
 
-      const previewSource = album.previewImages && album.previewImages.length
-        ? album.previewImages
-        : "";
-
-      preview.appendChild(makeAlbumPreview(previewSource, album.label));
+      if(preview) preview.hidden = true;
+      if(icon) icon.textContent = album.icon || (isAudience ? "✨" : "•");
+      if(badge) badge.textContent = `${album.count} ${unitLabel}`;
       label.textContent = album.label;
-      meta.textContent = album.subtitle
-        ? `${album.subtitle} · ${album.count} ${unitLabel}`
+      meta.textContent = isAudience
+        ? (album.subtitle || "")
         : `${album.count} ${unitLabel}`;
 
       return card;
@@ -3261,11 +3317,16 @@
 
     function buildFilteredAlbums(){
       const terms = getCombinedWordTerms();
-      let filtered = albums.slice();
-
-      if(terms.length){
-        filtered = filtered.filter(album => terms.every(t => album.searchKey.includes(t)));
-      }
+      let filtered = albums.map(album => {
+        if(!terms.length) return album;
+        const searchableProducts = filterSearchExcludedProducts(album.products || []);
+        const matchingProducts = searchableProducts.filter(p => terms.every(t => p.searchKey.includes(t)));
+        return {
+          ...album,
+          count:matchingProducts.length,
+          matchingProducts
+        };
+      });
 
       filtered.sort((a,b)=>{
         if(!selectedAudience){
@@ -3296,9 +3357,21 @@
       if(shouldShowAlbumGrid()){
         const filteredAlbums = buildFilteredAlbums();
         if(countEl){
-          countEl.textContent = !selectedAudience
-            ? `${filteredAlbums.length} ${filteredAlbums.length === 1 ? "opción" : "opciones"}`
-            : `${filteredAlbums.length} categor${filteredAlbums.length === 1 ? "ía" : "ías"}`;
+          const totalProducts = filteredAlbums.reduce((sum,album)=>sum + (Number(album.count) || 0), 0);
+          const activeCards = filteredAlbums.filter(album => (Number(album.count) || 0) > 0).length;
+          if(qHas){
+            const productWord = totalProducts === 1 ? "producto encontrado" : "productos encontrados";
+            const groupWord = selectedAudience
+              ? (activeCards === 1 ? "categoría" : "categorías")
+              : (activeCards === 1 ? "sección" : "secciones");
+            countEl.textContent = `${totalProducts} ${productWord} en ${activeCards} ${groupWord}`;
+          }else{
+            const productWord = totalProducts === 1 ? "producto" : "productos";
+            const groupWord = selectedAudience
+              ? (filteredAlbums.length === 1 ? "categoría" : "categorías")
+              : (filteredAlbums.length === 1 ? "opción" : "opciones");
+            countEl.textContent = `${totalProducts} ${productWord} · ${filteredAlbums.length} ${groupWord}`;
+          }
           countEl.classList.toggle("search-active", qHas);
         }
 
@@ -3364,7 +3437,7 @@
         const albumBtn = e.target.closest("[data-album-open]");
         if(albumBtn){
           const key = albumBtn.getAttribute("data-album-open") || "";
-          if(key) openAlbum(key);
+          if(key) openAlbum(key, { keepFilters:getCombinedWordTerms().length > 0 });
           return;
         }
 
@@ -3586,7 +3659,7 @@
 
       if(albumBackBtn){
         albumBackBtn.addEventListener("click", ()=>{
-          closeAlbum();
+          closeAlbum({ keepFilters:getCombinedWordTerms().length > 0 });
         });
       }
 

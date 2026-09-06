@@ -7,7 +7,8 @@
     // Si existen las hojas "Configuracion" y "Categorias" en el Google Sheet,
     // sus valores se aplican globalmente a todos los visitantes.
 
-    // Fuente principal y única de datos comerciales del catálogo: Google Sheet oficial.
+    // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
+    // Los productos especiales pueden obtener su precio directamente del nombre de la imagen.
     // Hoja Productos, estructura A:I. La columna I (Código Natura) es técnica y no se muestra.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
@@ -27,7 +28,8 @@
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
-    // Las imágenes publicadas se localizan en GitHub exclusivamente por el código interno global de cuatro dígitos.
+    // Las imágenes normales se relacionan por el código interno global de cuatro dígitos.
+    // Las imágenes especiales se detectan por un precio válido al inicio del nombre del archivo.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
@@ -37,9 +39,10 @@
     };
 
     // Productos especiales que no existen en Google Sheets.
-    // Solo requieren la ruta de la imagen dentro de /productos y el precio en COP.
+    // Se descubren automáticamente cuando el nombre de la imagen empieza por el precio.
+    // Esta lista queda disponible solo como respaldo manual opcional.
     const PRODUCTOS_SOLO_IMAGEN_PRECIO = [
-      // { imagen: "perfumeria femenina/archivo.webp", precio: 65000 }
+      // { imagen: "regalos amor y amistad/65000_producto.webp", precio: 65000 }
     ];
     window.PRODUCTOS_SOLO_IMAGEN_PRECIO = PRODUCTOS_SOLO_IMAGEN_PRECIO;
 
@@ -139,6 +142,9 @@
     }
     function shouldShowFilesWithoutParameters(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_ARCHIVOS_SIN_PARAMETROS === true);
+    }
+    function isFileWithoutSheetParameters(product){
+      return !!(product && (product.isUnstructured || product.isImagePriceOnly));
     }
     function shouldAllowSuggestionToggle(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.PERMITIR_TOGGLE_PALABRAS_SUGERIDAS !== false);
@@ -660,6 +666,39 @@
       return match ? match[1] : "";
     }
 
+    function extractImagePriceFromFilename(filename){
+      const stem = String(filename || "").replace(/\.[^.]+$/, "").trim();
+      if(!stem) return null;
+
+      const explicit = stem.match(/^precio[\s._-]*\$?[\s]*((?:\d{1,3}(?:[.\s]\d{3})+)|\d{4,9})(?=$|[\s._-])/i);
+      if(explicit){
+        const value = Number(explicit[1].replace(/\D/g, ""));
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
+      }
+
+      const currency = stem.match(/^\$[\s]*((?:\d{1,3}(?:[.\s]\d{3})+)|\d{4,9})(?=$|[\s._-])/);
+      if(currency){
+        const value = Number(currency[1].replace(/\D/g, ""));
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
+      }
+
+      const grouped = stem.match(/^(\d{1,3}(?:[.]\d{3}){1,2})(?=$|[\s_-])/);
+      if(grouped){
+        const value = Number(grouped[1].replace(/\D/g, ""));
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
+      }
+
+      // Sin prefijo explícito se aceptan de 5 a 7 dígitos para no confundir
+      // códigos de producto de 4 dígitos ni fechas compactas de 8 dígitos.
+      const simple = stem.match(/^(\d{5,7})(?=$|[\s._-])/);
+      if(simple){
+        const value = Number(simple[1]);
+        return Number.isSafeInteger(value) && value > 0 ? value : null;
+      }
+
+      return null;
+    }
+
     function extensionOfFilename(filename){
       const name = String(filename || "");
       const dot = name.lastIndexOf(".");
@@ -716,48 +755,82 @@
         const catalogDir = encodeRepoPath(GITHUB_CATALOG_SOURCE.catalogDir);
         const parentUrl = `${GITHUB_API_BASE}/contents/${catalogDir}?ref=${ref}`;
         const parentEntries = await fetchGitHubJson(parentUrl);
-        if(!Array.isArray(parentEntries)) return new Map();
+        if(!Array.isArray(parentEntries)){
+          return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
+        }
 
         const productsEntry = parentEntries.find(entry =>
           entry && entry.type === "dir" &&
           String(entry.name || "").toLowerCase() === GITHUB_CATALOG_SOURCE.productsFolder.toLowerCase()
         );
-        if(!productsEntry || !productsEntry.sha) return new Map();
+        if(!productsEntry || !productsEntry.sha){
+          return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
+        }
 
         const treeUrl = `${GITHUB_API_BASE}/git/trees/${encodeURIComponent(productsEntry.sha)}?recursive=1`;
         const treePayload = await fetchGitHubJson(treeUrl);
-        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated) return new Map();
+        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated){
+          return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
+        }
 
         const imagesByCode = new Map();
+        const imagePriceOnlyItems = [];
+
         for(const entry of treePayload.tree){
           if(!entry || entry.type !== "blob") continue;
+
           const relativePath = String(entry.path || "");
           const filename = relativePath.split("/").pop() || "";
-          const code = extractGlobalProductCode(filename);
           const ext = extensionOfFilename(filename);
-          if(!code || !PRODUCT_IMAGE_EXTENSIONS.has(ext)) continue;
-          const list = imagesByCode.get(code) || [];
-          list.push(entry);
-          imagesByCode.set(code, list);
+          if(!PRODUCT_IMAGE_EXTENSIONS.has(ext)) continue;
+
+          const code = extractGlobalProductCode(filename);
+          if(code){
+            const list = imagesByCode.get(code) || [];
+            list.push(entry);
+            imagesByCode.set(code, list);
+            continue;
+          }
+
+          const price = extractImagePriceFromFilename(filename);
+          if(price !== null){
+            imagePriceOnlyItems.push({ imagen:relativePath, precio:price });
+          }
         }
+
         for(const [code, entries] of imagesByCode){
           imagesByCode.set(code, orderProductImageEntries(entries));
         }
-        return imagesByCode;
+
+        imagePriceOnlyItems.sort((a,b)=>
+          String(a.imagen || "").localeCompare(String(b.imagen || ""), "es", { numeric:true, sensitivity:"base" })
+        );
+
+        return { imagesByCode, imagePriceOnlyItems };
       }catch(err){
         console.warn("No se pudo construir el índice de imágenes de GitHub; se usarán imágenes suplentes.", err);
-        return new Map();
+        return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
       }
     }
 
     async function loadGoogleSheetCatalog(){
-      const [rows, imageIndex] = await Promise.all([
+      const [rows, imageData] = await Promise.all([
         loadGoogleSheetRows(),
         loadGitHubImageIndex()
       ]);
-      return rows.map(row => ({ row, imageIndex }));
-    }
 
+      const imagesByCode = imageData && imageData.imagesByCode instanceof Map
+        ? imageData.imagesByCode
+        : new Map();
+      const imagePriceOnlyItems = Array.isArray(imageData && imageData.imagePriceOnlyItems)
+        ? imageData.imagePriceOnlyItems
+        : [];
+
+      return {
+        sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode })),
+        imagePriceOnlyItems
+      };
+    }
 
     function parseOptionalWholeNumber(value){
       const raw = String(value ?? "").trim();
@@ -932,9 +1005,10 @@
       const list = document.getElementById("beautyProductsList");
       const count = document.querySelector(".beauty-products-count");
       const source = Array.isArray(products) ? products : [];
+      const namedProducts = source.filter(product => String(product && product.name || "").trim());
 
       if(count){
-        count.textContent = `${source.length} ${source.length === 1 ? "producto" : "productos"}`;
+        count.textContent = `${namedProducts.length} ${namedProducts.length === 1 ? "producto" : "productos"}`;
       }
       if(!list) return;
 
@@ -1269,7 +1343,7 @@
       const baseList = Array.isArray(list) ? list : [];
       const manualFiltered = shouldShowFilesWithoutParameters()
         ? baseList.slice()
-        : baseList.filter(p => !(p && p.isUnstructured));
+        : baseList.filter(p => !isFileWithoutSheetParameters(p));
       return manualFiltered.filter(p => {
         const albumKey = getProductAlbumKey(p);
         if(isAlbumHiddenByKey(albumKey)) return false;
@@ -1305,8 +1379,9 @@
           if(p.isDocumentFirst) found.previewImages.unshift(previewImage);
           else found.previewImages.push(previewImage);
         }
-        found.hasStructuredProducts = found.hasStructuredProducts || !Boolean(p && p.isUnstructured);
-        found.hasUnstructuredProducts = found.hasUnstructuredProducts || Boolean(p && p.isUnstructured);
+        const withoutSheetParameters = isFileWithoutSheetParameters(p);
+        found.hasStructuredProducts = found.hasStructuredProducts || !withoutSheetParameters;
+        found.hasUnstructuredProducts = found.hasUnstructuredProducts || withoutSheetParameters;
         byKey.set(key, found);
       }
 
@@ -2926,7 +3001,9 @@
       });
 
       filtered.sort((a,b)=>{
-        if(!!a.isUnstructured !== !!b.isUnstructured) return a.isUnstructured ? 1 : -1;
+        const aWithoutSheet = isFileWithoutSheetParameters(a);
+        const bWithoutSheet = isFileWithoutSheetParameters(b);
+        if(aWithoutSheet !== bWithoutSheet) return aWithoutSheet ? 1 : -1;
 
         if(sortMode === "price_asc"){
           if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
@@ -3012,7 +3089,7 @@
       const filtered = buildFilteredList();
 
       if(countEl){
-        const onlyUnstructured = filtered.length > 0 && filtered.every(p => p && p.isUnstructured);
+        const onlyUnstructured = filtered.length > 0 && filtered.every(isFileWithoutSheetParameters);
         countEl.textContent = `${filtered.length} ${onlyUnstructured ? (filtered.length === 1 ? "archivo" : "archivos") : (filtered.length === 1 ? "producto" : "productos")}`;
         countEl.classList.toggle("search-active", qHas);
       }
@@ -3206,11 +3283,22 @@
       await warmupPlaceholderOnce();
 
       try{
-        const sheetCatalog = await loadGoogleSheetCatalog();
-        const products = sheetCatalog
+        const catalogSource = await loadGoogleSheetCatalog();
+        const products = catalogSource.sheetEntries
           .map(makeProductFromGoogleSheet)
           .filter(Boolean);
-        const imagePriceOnlyProducts = PRODUCTOS_SOLO_IMAGEN_PRECIO
+
+        const imagePriceItemsByPath = new Map();
+        for(const item of (catalogSource.imagePriceOnlyItems || [])){
+          const path = String(item && item.imagen || "").trim().replace(/^\/+/, "");
+          if(path) imagePriceItemsByPath.set(normalizeText(path), item);
+        }
+        for(const item of PRODUCTOS_SOLO_IMAGEN_PRECIO){
+          const path = String(item && item.imagen || "").trim().replace(/^\/+/, "");
+          if(path) imagePriceItemsByPath.set(normalizeText(path), item);
+        }
+
+        const imagePriceOnlyProducts = Array.from(imagePriceItemsByPath.values())
           .map(makeImagePriceOnlyProduct)
           .filter(Boolean);
 

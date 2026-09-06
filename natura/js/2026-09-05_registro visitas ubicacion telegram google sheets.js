@@ -11,10 +11,10 @@
 
     try {
       const ubicacion = await obtenerUbicacionPreferida();
-      enviarRegistroUbicacion(ubicacion);
+      await enviarRegistroUbicacion(ubicacion);
     } catch (error) {
       console.info("Ubicación no disponible.", error);
-      enviarRegistroUbicacion(ubicacionNoDisponible());
+      await enviarRegistroUbicacion(ubicacionNoDisponible());
     }
   }
 
@@ -190,11 +190,11 @@
     }
   }
 
-  function enviarRegistroUbicacion(ubicacion) {
+  async function enviarRegistroUbicacion(ubicacion) {
     try {
       const userId = obtenerIdLocal();
       const contexto = typeof window.obtenerContextoVisitaCatalogo === "function"
-        ? window.obtenerContextoVisitaCatalogo()
+        ? await window.obtenerContextoVisitaCatalogo()
         : {};
       const direccion = normalizarDireccion(
         ubicacion.direccion || [ubicacion.ciudad, ubicacion.departamento, ubicacion.pais].filter(Boolean).join(", ")
@@ -215,6 +215,8 @@
         load_id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
         ts: String(Date.now()),
         dispositivo: String(contexto.dispositivo || ""),
+        marca: String(contexto.marca || ""),
+        modelo: String(contexto.modelo || ""),
         origen: String(contexto.origen || ""),
         categoria: String(contexto.categoria || ""),
         producto: String(contexto.producto || ""),

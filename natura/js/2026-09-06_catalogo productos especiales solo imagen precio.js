@@ -67,6 +67,10 @@
 	  // existe después del guion bajo en la estructura PRECIO_NOMBRE.
 	  MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS: false,
 
+	  // Control independiente para mostrar u ocultar el precio de archivos especiales.
+	  // No depende del control general de precios de los productos del Google Sheet.
+	  MOSTRAR_PRECIOS_ARCHIVOS_ESPECIALES: true,
+
 	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
 	  PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
 	  APLICAR_ALBUMES_OCULTOS: true,
@@ -164,7 +168,14 @@
 		window.INTERRUPTORES &&
 		window.INTERRUPTORES.MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS !== false
 	  );
-	}	
+	}
+
+    function shouldShowSpecialFilePrices(){
+      return !!(
+        window.INTERRUPTORES &&
+        window.INTERRUPTORES.MOSTRAR_PRECIOS_ARCHIVOS_ESPECIALES !== false
+      );
+    }
 
     const WHATSAPP_NUMBER = "573042088961";
 
@@ -1388,16 +1399,26 @@
       const manualFiltered = shouldShowFilesWithoutParameters()
         ? baseList.slice()
         : baseList.filter(p => !isFileWithoutSheetParameters(p));
+
       return manualFiltered.filter(p => {
+        // Los archivos especiales dependen únicamente de Configuracion.
+        // La pestaña Categorias no puede ocultarlos ni alterar su visibilidad.
+        if(isFileWithoutSheetParameters(p)) return true;
+
         const albumKey = getProductAlbumKey(p);
-        if(isAlbumHiddenByKey(albumKey)) return false;
-        return true;
+        return !isAlbumHiddenByKey(albumKey);
       });
     }
 
     function filterSearchExcludedProducts(list){
-      if(!shouldApplySearchAlbumExclusions()) return Array.isArray(list) ? list.slice() : [];
-      return (Array.isArray(list) ? list : []).filter(p => !isAlbumExcludedFromSearchByKey(getProductAlbumKey(p)));
+      const source = Array.isArray(list) ? list : [];
+      if(!shouldApplySearchAlbumExclusions()) return source.slice();
+
+      return source.filter(p => {
+        // Los archivos especiales tampoco dependen de las exclusiones de Categorias.
+        if(isFileWithoutSheetParameters(p)) return true;
+        return !isAlbumExcludedFromSearchByKey(getProductAlbumKey(p));
+      });
     }
 
     function buildAlbums(list){
@@ -2454,7 +2475,7 @@
       priceEl.textContent = (p && p.isUnstructured)
         ? ""
         : ((p && p.isImagePriceOnly)
-          ? (shouldShowProductPrices() && p.hasPrice !== false ? fmtCOP.format(p.price) : "")
+          ? (shouldShowSpecialFilePrices() && p.hasPrice !== false ? fmtCOP.format(p.price) : "")
           : (shouldShowProductPrices() ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price)) : ""));
 
       if(p && p.isImagePriceOnly){
@@ -2464,7 +2485,7 @@
         if(descriptionEl) descriptionEl.remove();
         const qtyPill = rowEl && rowEl.querySelector('[data-role="qty"]');
         if(qtyPill) qtyPill.remove();
-        if(rowEl && (!shouldShowProductPrices() || p.hasPrice === false)) rowEl.remove();
+        if(rowEl && (!shouldShowSpecialFilePrices() || p.hasPrice === false)) rowEl.remove();
       }
 
       if(p && p.isUnstructured){

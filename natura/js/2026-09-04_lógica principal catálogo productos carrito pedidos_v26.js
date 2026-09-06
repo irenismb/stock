@@ -66,20 +66,53 @@
       Object.keys(INTERRUPTORES).filter(key => typeof INTERRUPTORES[key] === "boolean")
     );
 
-    const ALBUMES_OCULTOS = [
-      // Agrega aquí una categoría solamente cuando quieras ocultarla.
+    const ALBUMES_OCULTOS_SEGUROS = [
+      "Medicamentos",
+      "Electrodomésticos de segunda mano no a la venta"
     ];
+    const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
+    const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_categories_cache";
+
+    function readRemoteCategoryCache(){
+      try{
+        const raw = localStorage.getItem(REMOTE_CATEGORIES_CACHE_KEY);
+        if(!raw) return null;
+        const parsed = JSON.parse(raw);
+        if(!parsed || typeof parsed !== "object") return null;
+
+        const cleanList = value => Array.isArray(value)
+          ? value.map(item => String(item || "").trim()).filter(Boolean)
+          : null;
+
+        const hidden = cleanList(parsed.hidden);
+        const excluded = cleanList(parsed.excluded);
+        if(!hidden || !excluded) return null;
+
+        return { hidden, excluded };
+      }catch(_){
+        return null;
+      }
+    }
+
+    function saveRemoteCategoryCache(hidden, excluded){
+      try{
+        localStorage.setItem(REMOTE_CATEGORIES_CACHE_KEY, JSON.stringify({
+          hidden: Array.isArray(hidden) ? hidden : [],
+          excluded: Array.isArray(excluded) ? excluded : []
+        }));
+      }catch(_){}
+    }
+
+    const cachedCategoryConfig = readRemoteCategoryCache();
+
+    const ALBUMES_OCULTOS = cachedCategoryConfig
+      ? cachedCategoryConfig.hidden.slice()
+      : ALBUMES_OCULTOS_SEGUROS.slice();
     window.ALBUMES_OCULTOS = ALBUMES_OCULTOS;
 
-    const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = [
-      // Escribe aquí los nombres EXACTOS de las carpetas/categorías
-      // cuyos productos NO quieres que salgan al usar el buscador.
-      // Sí se podrán seguir viendo al entrar manualmente a su categoría,
-      // siempre que no esté también incluida en ALBUMES_OCULTOS.
-      // Ejemplos:
-      // "Perfumes",
-      // "Combos"
-    ];
+    const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = cachedCategoryConfig
+      ? cachedCategoryConfig.excluded.slice()
+      : ALBUMES_EXCLUIDOS_SEGUROS.slice();
     window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = ALBUMES_EXCLUIDOS_EN_BUSQUEDA;
 
     function shouldEnforceStockLimits(){
@@ -474,12 +507,26 @@
     function applyRemoteCategoryRows(rows){
       const hidden = [];
       const excluded = [];
+      let validRows = 0;
 
       for(const row of (Array.isArray(rows) ? rows : [])){
         const category = String(row?.[0] || "").trim();
         if(!category) continue;
-        if(parseRemoteBoolean(row?.[1]) === true) hidden.push(category);
-        if(parseRemoteBoolean(row?.[2]) === true) excluded.push(category);
+
+        const hiddenState = parseRemoteBoolean(row?.[1]);
+        const excludedState = parseRemoteBoolean(row?.[2]);
+        if(hiddenState === null && excludedState === null) continue;
+
+        validRows++;
+        if(hiddenState === true) hidden.push(category);
+        if(excludedState === true) excluded.push(category);
+      }
+
+      // Si la hoja llega vacía, incompleta o con una respuesta inesperada,
+      // se conserva la última configuración válida ya cargada.
+      if(validRows === 0){
+        console.info("La hoja Categorias no devolvió filas válidas; se conserva la configuración anterior.");
+        return false;
       }
 
       const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
@@ -487,6 +534,7 @@
 
       window.ALBUMES_OCULTOS = hidden;
       window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = excluded;
+      saveRemoteCategoryCache(hidden, excluded);
 
       return previousHidden !== JSON.stringify(hidden) ||
              previousExcluded !== JSON.stringify(excluded);

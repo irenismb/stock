@@ -3133,3 +3133,73 @@
       outline:3px solid #08765a;
       outline-offset:2px;
     }
+
+/* Navegación comercial principal: Para ella / Para él / Unisex / Otros productos */
+.catalog-entry-intro{
+  width:min(820px,100%);
+  margin:22px auto 6px;
+  padding:18px 18px 8px;
+  text-align:center;
+}
+.catalog-entry-intro[hidden]{display:none !important}
+.catalog-entry-kicker{
+  margin:0 0 6px;
+  color:#71ebc9;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+}
+.catalog-entry-title{
+  margin:0;
+  color:#f5f8fb;
+  font-size:clamp(25px,4vw,40px);
+  line-height:1.08;
+  font-weight:950;
+  letter-spacing:-.025em;
+}
+.catalog-entry-text{
+  margin:9px auto 0;
+  max-width:680px;
+  color:#a9bcc9;
+  font-size:14px;
+  line-height:1.55;
+  font-weight:650;
+}
+.grid.album-grid-mode.root-nav-mode{
+  grid-template-columns:repeat(4,minmax(0,1fr));
+  gap:18px;
+}
+.album-root-card .album-folder{
+  border-color:rgba(113,235,201,.34);
+  background:linear-gradient(180deg,#182a43,#101b2c);
+}
+.album-root-card .album-pad{
+  min-height:126px;
+  padding:18px 58px 18px 18px;
+}
+.album-root-card .album-label{
+  font-size:clamp(18px,2vw,24px);
+  font-weight:950;
+  letter-spacing:-.015em;
+}
+.album-root-card .album-meta{
+  font-size:12px;
+  line-height:1.45;
+}
+.album-root-card .album-folder::after{
+  width:32px;
+  height:32px;
+  color:#71ebc9;
+  border-color:rgba(113,235,201,.38);
+  background:rgba(113,235,201,.09);
+}
+@media (max-width:900px){
+  .grid.album-grid-mode.root-nav-mode{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:520px){
+  .catalog-entry-intro{margin-top:14px;padding-inline:8px}
+  .grid.album-grid-mode.root-nav-mode{grid-template-columns:1fr;gap:14px}
+  .album-root-card .album-preview::before{padding-top:72%}
+  .album-root-card .album-pad{min-height:102px}
+}

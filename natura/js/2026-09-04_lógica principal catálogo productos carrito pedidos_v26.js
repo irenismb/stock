@@ -1318,7 +1318,27 @@
       refreshCartCount();
     }
 
-    function resumenDispositivoVisita(){
+    function detectarMarcaDispositivo(modelo, ua){
+      const texto = `${String(modelo || "")} ${String(ua || "")}`.toLowerCase();
+      if(/iphone|ipad|ipod/.test(texto)) return "Apple";
+      if(/\bsm-|\bgt-|\bsgh-|\bsch-|samsung/.test(texto)) return "Samsung";
+      if(/pixel/.test(texto)) return "Google";
+      if(/redmi|poco|xiaomi|\bmi\s/.test(texto)) return "Xiaomi";
+      if(/\bcph\d+/i.test(modelo || "") || /oppo/.test(texto)) return "OPPO";
+      if(/\brmx\d+/i.test(modelo || "") || /realme/.test(texto)) return "realme";
+      if(/oneplus/.test(texto)) return "OnePlus";
+      if(/\bv\d{4,}[a-z]?\b/i.test(modelo || "") || /vivo/.test(texto)) return "vivo";
+      if(/\bxt\d+/i.test(modelo || "") || /moto\s|motorola/.test(texto)) return "Motorola";
+      if(/huawei/.test(texto)) return "Huawei";
+      if(/honor/.test(texto)) return "HONOR";
+      if(/tecno/.test(texto)) return "TECNO";
+      if(/infinix/.test(texto)) return "Infinix";
+      if(/nokia|\bhmd\b/.test(texto)) return "Nokia";
+      if(/zte/.test(texto)) return "ZTE";
+      return "";
+    }
+
+    async function obtenerDetalleDispositivoVisita(){
       const ua = String(navigator.userAgent || "");
       const tipo = /iPad|Tablet/i.test(ua)
         ? "Tablet"
@@ -1338,7 +1358,34 @@
       else if(/Chrome\//i.test(ua)) navegador = "Chrome";
       else if(/Safari\//i.test(ua)) navegador = "Safari";
 
-      return [tipo, sistema, navegador].filter(Boolean).join(" · ");
+      let modelo = "";
+      try{
+        if(navigator.userAgentData && typeof navigator.userAgentData.getHighEntropyValues === "function"){
+          const datos = await navigator.userAgentData.getHighEntropyValues(["model"]);
+          modelo = String(datos && datos.model || "").trim();
+        }
+      }catch(_){}
+
+      if(!modelo && /Android/i.test(ua)){
+        const match = ua.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build\/|;|\))/i);
+        if(match) modelo = String(match[1] || "").trim();
+      }
+
+      if(!modelo && /iPhone/i.test(ua)) modelo = "iPhone";
+      if(!modelo && /iPad/i.test(ua)) modelo = "iPad";
+
+      modelo = modelo
+        .replace(/^wv$/i, "")
+        .replace(/\s+Build\/.*/i, "")
+        .trim();
+
+      const marca = detectarMarcaDispositivo(modelo, ua);
+
+      return {
+        marca,
+        modelo,
+        resumen: [tipo, sistema, navegador].filter(Boolean).join(" · ")
+      };
     }
 
     function resumenOrigenVisita(){
@@ -1358,13 +1405,16 @@
       }
     }
 
-    window.obtenerContextoVisitaCatalogo = function(){
+    window.obtenerContextoVisitaCatalogo = async function(){
+      const detalle = await obtenerDetalleDispositivoVisita();
       try{
         const album = getSelectedAlbum();
         const items = cartItemsArray();
         const primerProducto = items[0]?.name || "";
         return {
-          dispositivo: resumenDispositivoVisita(),
+          dispositivo: detalle.resumen,
+          marca: detalle.marca,
+          modelo: detalle.modelo,
           origen: resumenOrigenVisita(),
           categoria: String(album?.label || ""),
           producto: String(primerProducto || ""),
@@ -1374,7 +1424,9 @@
         };
       }catch(_){
         return {
-          dispositivo: resumenDispositivoVisita(),
+          dispositivo: detalle.resumen,
+          marca: detalle.marca,
+          modelo: detalle.modelo,
           origen: resumenOrigenVisita(),
           categoria: "",
           producto: "",

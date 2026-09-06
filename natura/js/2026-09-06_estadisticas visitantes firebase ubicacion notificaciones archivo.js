@@ -1,5 +1,4 @@
 // Estadísticas, Firebase y ubicación de visitantes.
-// Versión: 27
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js";

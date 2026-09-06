@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Los productos especiales pueden obtener su precio directamente del nombre de la imagen.
-    // Hoja Productos, estructura A:I. La columna I (Código Natura) es técnica y no se muestra.
+    // Hoja Productos, estructura A:M: Código, Sección, Público, Categoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -18,7 +18,7 @@
 
     // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
     // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Categoría, B=Ocultar del catálogo, C=Excluir de búsquedas, D=Nota.
+    // Categorias: A=Sección, B=Público, C=Categoría, D=Estado comercial, E=Ocultar del catálogo, F=Excluir de búsquedas, G=Nota.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
@@ -29,7 +29,7 @@
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
     // Las imágenes normales se relacionan por el código interno global de cuatro dígitos.
-    // En carpetas especiales, PRECIO_NOMBRE aporta precio y nombre; otros archivos se muestran solo como imagen.
+    // Todas las imágenes de producto viven directamente en la carpeta productos y se relacionan por el código global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
@@ -82,11 +82,11 @@
     );
 
     const ALBUMES_OCULTOS_SEGUROS = [
-      "Medicamentos",
-      "Electrodomésticos de segunda mano no a la venta"
+      "Otros productos||Medicamentos|A la venta",
+      "Otros productos||Tecnología y hogar|No a la venta"
     ];
     const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
-    const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_categories_cache";
+    const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
 
     function readRemoteCategoryCache(){
       try{
@@ -205,23 +205,26 @@
       if(!raw) return "";
       const key = normalizeText(raw).replace(/\s+/g, " ");
       const labels = {
-        "cuidado capilar": "Cuidado capilar",
-        "cuidado de manos y pies": "Cuidado de manos y pies",
-        "cuidado facial": "Cuidado facial",
+        "para ella": "Para ella",
+        "para el": "Para él",
+        "unisex": "Unisex",
+        "otros productos": "Otros productos",
+        "perfumes": "Perfumes",
         "desodorantes": "Desodorantes",
-        "electrodomesticos de segunda mano a la venta": "Electrodomésticos de segunda mano a la venta",
-        "electrodomesticos de segunda mano no a la venta": "Electrodomésticos de segunda mano no a la venta",
-        "hidratacion y tratamiento corporal": "Hidratación y tratamiento corporal",
-        "higiene intima": "Higiene íntima",
-        "higiene y exfoliacion corporal": "Higiene y exfoliación corporal",
-        "juguetes de segunda mano": "Juguetes de segunda mano",
-        "kits y combos": "Kits y combos",
         "maquillaje": "Maquillaje",
+        "cuidado facial": "Cuidado facial",
+        "cuidado corporal": "Cuidado corporal",
+        "cabello": "Cabello",
+        "manos y pies": "Manos y pies",
+        "higiene corporal": "Higiene corporal",
+        "higiene intima": "Higiene íntima",
+        "proteccion solar": "Protección solar",
+        "kits y combos": "Kits y combos",
+        "tecnologia y hogar": "Tecnología y hogar",
+        "juguetes": "Juguetes",
+        "papeleria": "Papelería",
         "medicamentos": "Medicamentos",
-        "papeleria de segunda mano": "Papelería de segunda mano",
-        "perfumeria femenina": "Perfumería femenina",
-        "perfumeria masculina": "Perfumería masculina",
-        "proteccion solar": "Protección solar"
+        "regalos": "Regalos"
       };
       if(labels[key]) return labels[key];
       return raw.charAt(0).toLocaleUpperCase("es-CO") + raw.slice(1);
@@ -352,8 +355,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:I",
-        tq: "select A,B,C,D,E,F,G,H,I",
+        range: "A:M",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M",
         tqx: `out:json;responseHandler:${callbackName}`
       });
       return `${base}?${query.toString()}`;
@@ -404,18 +407,22 @@
 
             return {
               code,
-              category: cellValue(c[1]).trim(),
-              name: cellValue(c[2]).trim(),
-              priceText: cellValue(c[3]).trim(),
-              costText: cellValue(c[4]).trim(),
-              stockText: cellValue(c[5]).trim(),
-              referenceExternal: cellValue(c[6]).trim(),
-              description: cellValue(c[7]).trim(),
-              codeNatura: cellValue(c[8]).trim(),
+              section: cellValue(c[1]).trim(),
+              audience: cellValue(c[2]).trim(),
+              category: cellValue(c[3]).trim(),
+              condition: cellValue(c[4]).trim(),
+              commercialState: cellValue(c[5]).trim(),
+              name: cellValue(c[6]).trim(),
+              priceText: cellValue(c[7]).trim(),
+              costText: cellValue(c[8]).trim(),
+              stockText: cellValue(c[9]).trim(),
+              referenceExternal: cellValue(c[10]).trim(),
+              description: cellValue(c[11]).trim(),
+              codeNatura: cellValue(c[12]).trim(),
               fullTxtRecord: [
-                cellValue(c[2]).trim(),
+                cellValue(c[6]).trim(),
                 "",
-                `Precio: ${cellValue(c[3]).trim()} Costo: ${cellValue(c[4]).trim()} Stock: ${cellValue(c[5]).trim()} Referencia externa: ${cellValue(c[6]).trim()}. ${cellValue(c[7]).trim()}`
+                `Precio: ${cellValue(c[7]).trim()} Costo: ${cellValue(c[8]).trim()} Stock: ${cellValue(c[9]).trim()} Referencia externa: ${cellValue(c[10]).trim()}. ${cellValue(c[11]).trim()}`
               ].join("\n")
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);
@@ -529,28 +536,36 @@
       return changed;
     }
 
+    function routeKeyFromParts(section, audience, category, commercialState){
+      return [section, audience, category, commercialState]
+        .map(value => normalizeText(value).replace(/\s+/g, " "))
+        .join("|");
+    }
+
     function applyRemoteCategoryRows(rows){
       const hidden = [];
       const excluded = [];
       let validRows = 0;
 
       for(const row of (Array.isArray(rows) ? rows : [])){
-        const category = String(row?.[0] || "").trim();
-        if(!category) continue;
+        const section = String(row?.[0] || "").trim();
+        const audience = String(row?.[1] || "").trim();
+        const category = String(row?.[2] || "").trim();
+        const commercialState = String(row?.[3] || "").trim();
+        if(!section || !category) continue;
 
-        const hiddenState = parseRemoteBoolean(row?.[1]);
-        const excludedState = parseRemoteBoolean(row?.[2]);
+        const hiddenState = parseRemoteBoolean(row?.[4]);
+        const excludedState = parseRemoteBoolean(row?.[5]);
         if(hiddenState === null && excludedState === null) continue;
 
         validRows++;
-        if(hiddenState === true) hidden.push(category);
-        if(excludedState === true) excluded.push(category);
+        const routeKey = routeKeyFromParts(section, audience, category, commercialState);
+        if(hiddenState === true) hidden.push(routeKey);
+        if(excludedState === true) excluded.push(routeKey);
       }
 
-      // Si la hoja llega vacía, incompleta o con una respuesta inesperada,
-      // se conserva la última configuración válida ya cargada.
       if(validRows === 0){
-        console.info("La hoja Categorias no devolvió filas válidas; se conserva la configuración anterior.");
+        console.info("La hoja Categorias no devolvió rutas válidas; se conserva la configuración anterior.");
         return false;
       }
 
@@ -580,8 +595,8 @@
         ),
         loadGoogleSheetRemoteMatrix(
           REMOTE_CONTROL_SOURCE.categoriesSheetName,
-          "A:D",
-          "select A,B,C,D",
+          "A:G",
+          "select A,B,C,D,E,F,G",
           "__remoteCatalogCategories"
         )
       ]);
@@ -946,7 +961,11 @@
 
       const code = String(row.code || "").trim();
       const name = String(row.name || "").trim();
+      const section = String(row.section || "").trim();
+      const audience = String(row.audience || "").trim();
       const category = String(row.category || "General").trim() || "General";
+      const condition = String(row.condition || "").trim();
+      const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
 
       const indexedImages = imageIndex && imageIndex.get(code);
@@ -962,7 +981,7 @@
       });
       const imageRelativePath = imageRelativePaths[0] || "";
       const docsImageUrl = imageUrls[0] || "";
-      const syntheticFilename = imageRelativePath || `${category}/${code}.webp`;
+      const syntheticFilename = imageRelativePath || `${code}.webp`;
 
       const priceText = String(row.priceText || "").trim();
       const stockText = String(row.stockText || "").trim();
@@ -970,7 +989,11 @@
       return {
         id: code,
         name,
+        section,
+        audience,
         category,
+        condition,
+        commercialState,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
         price: parseOptionalWholeNumber(priceText) ?? 0,
         hasPrice: Boolean(priceText),
@@ -991,7 +1014,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, category, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, audience, category, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -1067,6 +1090,8 @@
       if(!list) return;
 
       const sorted = source.slice().sort((a,b)=>
+        String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
+        String(a?.audience || "").localeCompare(String(b?.audience || ""), "es", { sensitivity:"base" }) ||
         String(a?.category || "").localeCompare(String(b?.category || ""), "es", { sensitivity:"base" }) ||
         String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" })
       );
@@ -1085,7 +1110,9 @@
 
         const meta = document.createElement("span");
         meta.className = "beauty-product-meta";
-        const metaParts = [String(product?.category || "").trim()];
+        const metaParts = [];
+        if(product?.section === "Belleza y cuidado" && product?.audience) metaParts.push(String(product.audience));
+        if(product?.category) metaParts.push(String(product.category));
         if(product?.id) metaParts.push(`Código ${product.id}`);
         if(product?.hasPrice !== false && Number(product?.price) >= 0) metaParts.push(fmtCOP.format(Number(product.price)));
         if(Number.isInteger(product?.stock) && product.stock >= 0) metaParts.push(product.stock > 0 ? "Disponible" : "Sin stock");
@@ -1093,7 +1120,7 @@
 
         const description = document.createElement("span");
         description.className = "beauty-product-description";
-        description.textContent = String(product?.description || `Producto disponible en el catálogo de ${product?.category || "Irenismb Stock Natura"}.`).trim();
+        description.textContent = String(product?.description || `Producto disponible en ${product?.category || "Irenismb Stock Natura"}.`).trim();
 
         item.append(title, meta, description);
         fragment.appendChild(item);
@@ -1360,38 +1387,141 @@
       { top:"#54d0c5", base:"#26b8ab", tab:"#3cc4b7", shadow:"rgba(21, 134, 126, .28)" },
       { top:"#d6c3a6", base:"#c5ad88", tab:"#ceb796", shadow:"rgba(129, 100, 58, .24)" }
     ];
+    const NAV_AUDIENCES = [
+      { label:"Para ella", section:"Belleza y cuidado", subtitle:"Belleza y cuidado" },
+      { label:"Para él", section:"Belleza y cuidado", subtitle:"Belleza y cuidado" },
+      { label:"Unisex", section:"Belleza y cuidado", subtitle:"Belleza y cuidado" },
+      { label:"Otros productos", section:"Otros productos", subtitle:"Hogar, regalos y más" }
+    ];
+
     let albums = [];
     let albumByKey = new Map();
+    let selectedAudience = "";
+    let selectedCategory = "";
     let selectedAlbumKey = "";
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
 
-    function getProductAlbumKey(p){
-      if(p && !p.isUnstructured){
-        const categoryKey = normalizeText(p.category).replace(/\s+/g, " ");
-        if(categoryKey) return categoryKey;
+    function cleanNavKey(value){
+      return normalizeText(value).replace(/\s+/g, " ");
+    }
+
+    function getProductRouteKey(p){
+      if(!p || p.isUnstructured || p.isImagePriceOnly) return "";
+      return routeKeyFromParts(p.section, p.audience, p.category, p.commercialState);
+    }
+
+    function isProductHiddenByRoute(p){
+      const key = getProductRouteKey(p);
+      return Boolean(key && hiddenAlbumNameSet.has(key));
+    }
+
+    function isProductExcludedFromSearchByRoute(p){
+      const key = getProductRouteKey(p);
+      return Boolean(key && searchExcludedAlbumNameSet.has(key));
+    }
+
+    function productMatchesAudience(p, audienceLabel){
+      if(!p || p.isUnstructured || p.isImagePriceOnly) return false;
+      if(audienceLabel === "Otros productos") return p.section === "Otros productos";
+      return p.section === "Belleza y cuidado" && p.audience === audienceLabel;
+    }
+
+    function collectAlbumPreview(found, p){
+      if(!found.cover) found.cover = p;
+      const previewImage = String((p && p.docsImageUrl) || (p && p.imgFilename) || "").trim();
+      if(p && (p.hasImage || p.docsImageUrl) && previewImage && !found.previewImages.includes(previewImage)){
+        if(p.isDocumentFirst) found.previewImages.unshift(previewImage);
+        else found.previewImages.push(previewImage);
       }
-      const rel = String((p && (p.imgFilename || p.srcFilename)) || "").trim();
-      const parts = rel.split("/").filter(Boolean);
-      if(parts.length <= 1) return ROOT_ALBUM_KEY;
-      return normalizeText(parts[0]).replace(/\s+/g, " ") || ROOT_ALBUM_KEY;
+    }
+
+    function buildRootAlbums(list){
+      const out = [];
+      for(const group of NAV_AUDIENCES){
+        const products = (Array.isArray(list) ? list : []).filter(p => productMatchesAudience(p, group.label));
+        if(!products.length) continue;
+        const album = {
+          key:`audience::${cleanNavKey(group.label)}`,
+          navType:"audience",
+          navValue:group.label,
+          label:group.label,
+          subtitle:group.subtitle,
+          products,
+          cover:null,
+          previewImages:[],
+          searchKey:normalizeText(`${group.label} ${group.subtitle}`),
+          hasStructuredProducts:true,
+          hasUnstructuredProducts:false,
+          onlyUnstructured:false,
+          count:products.length,
+          colorIndex:out.length % ALBUM_COLORS.length
+        };
+        for(const p of products) collectAlbumPreview(album,p);
+        out.push(album);
+      }
+      return out;
+    }
+
+    function buildCategoryAlbums(list, audienceLabel){
+      const byCategory = new Map();
+      for(const p of (Array.isArray(list) ? list : [])){
+        if(!productMatchesAudience(p, audienceLabel)) continue;
+        const category = String(p.category || "General").trim() || "General";
+        const key = cleanNavKey(category);
+        const found = byCategory.get(key) || {
+          key:`category::${cleanNavKey(audienceLabel)}::${key}`,
+          navType:"category",
+          navValue:category,
+          audience:audienceLabel,
+          label:categoryDisplayLabel(category),
+          subtitle:"",
+          products:[],
+          cover:null,
+          previewImages:[],
+          searchKey:normalizeText(`${category} ${audienceLabel}`),
+          hasStructuredProducts:true,
+          hasUnstructuredProducts:false
+        };
+        found.products.push(p);
+        collectAlbumPreview(found,p);
+        byCategory.set(key,found);
+      }
+      return Array.from(byCategory.values())
+        .sort((a,b)=>a.label.localeCompare(b.label,"es",{sensitivity:"base"}))
+        .map((album,index)=>({
+          ...album,
+          count:album.products.length,
+          onlyUnstructured:false,
+          colorIndex:index % ALBUM_COLORS.length
+        }));
+    }
+
+    function buildAlbums(list){
+      return selectedAudience ? buildCategoryAlbums(list, selectedAudience) : buildRootAlbums(list);
+    }
+
+    function refreshNavigationAlbums(){
+      if(selectedCategory){
+        albums = [];
+        albumByKey = new Map();
+        selectedAlbumKey = `category::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}`;
+        return;
+      }
+      albums = buildAlbums(all);
+      albumByKey = new Map(albums.map(album => [album.key, album]));
+      selectedAlbumKey = selectedAudience ? `audience::${cleanNavKey(selectedAudience)}` : "";
+    }
+
+    function getProductAlbumKey(p){
+      return cleanNavKey((p && p.category) || "General") || ROOT_ALBUM_KEY;
     }
 
     function albumLabelFromKey(key){
+      const found = albumByKey.get(String(key || ""));
+      if(found) return found.label;
       if(key === ROOT_ALBUM_KEY) return "General";
       return categoryDisplayLabel(key);
-    }
-
-    function isAlbumHiddenByKey(key){
-      const normalizedKey = normalizeText(key === ROOT_ALBUM_KEY ? "General" : key);
-      const normalizedLabel = normalizeText(albumLabelFromKey(key));
-      return hiddenAlbumNameSet.has(normalizedKey) || hiddenAlbumNameSet.has(normalizedLabel);
-    }
-
-    function isAlbumExcludedFromSearchByKey(key){
-      const normalizedKey = normalizeText(key === ROOT_ALBUM_KEY ? "General" : key);
-      const normalizedLabel = normalizeText(albumLabelFromKey(key));
-      return searchExcludedAlbumNameSet.has(normalizedKey) || searchExcludedAlbumNameSet.has(normalizedLabel);
     }
 
     function filterVisibleProducts(list){
@@ -1401,12 +1531,9 @@
         : baseList.filter(p => !isFileWithoutSheetParameters(p));
 
       return manualFiltered.filter(p => {
-        // Los archivos especiales dependen únicamente de Configuracion.
-        // La pestaña Categorias no puede ocultarlos ni alterar su visibilidad.
         if(isFileWithoutSheetParameters(p)) return true;
-
-        const albumKey = getProductAlbumKey(p);
-        return !isAlbumHiddenByKey(albumKey);
+        if(cleanNavKey(p.commercialState) === "no a la venta") return false;
+        return !isProductHiddenByRoute(p);
       });
     }
 
@@ -1415,60 +1542,13 @@
       if(!shouldApplySearchAlbumExclusions()) return source.slice();
 
       return source.filter(p => {
-        // Los archivos especiales tampoco dependen de las exclusiones de Categorias.
         if(isFileWithoutSheetParameters(p)) return true;
-        return !isAlbumExcludedFromSearchByKey(getProductAlbumKey(p));
+        return !isProductExcludedFromSearchByRoute(p);
       });
     }
 
-    function buildAlbums(list){
-      const byKey = new Map();
-
-      for(const p of (Array.isArray(list) ? list : [])){
-        const key = getProductAlbumKey(p);
-        const found = byKey.get(key) || {
-          key,
-          label: categoryDisplayLabel((p && p.category) || albumLabelFromKey(key)),
-          products: [],
-          cover: null,
-          previewImages: [],
-          searchKey: "",
-          hasStructuredProducts: false,
-          hasUnstructuredProducts: false
-        };
-
-        found.products.push(p);
-        if(!found.cover) found.cover = p;
-        const previewImage = String((p && p.docsImageUrl) || (p && p.imgFilename) || "").trim();
-        if(p && (p.hasImage || p.docsImageUrl) && previewImage && !found.previewImages.includes(previewImage)){
-          if(p.isDocumentFirst) found.previewImages.unshift(previewImage);
-          else found.previewImages.push(previewImage);
-        }
-        const withoutSheetParameters = isFileWithoutSheetParameters(p);
-        found.hasStructuredProducts = found.hasStructuredProducts || !withoutSheetParameters;
-        found.hasUnstructuredProducts = found.hasUnstructuredProducts || withoutSheetParameters;
-        byKey.set(key, found);
-      }
-
-      const out = Array.from(byKey.values())
-        .sort((a,b)=>{
-          const aOnlyUnstructured = a.hasUnstructuredProducts && !a.hasStructuredProducts;
-          const bOnlyUnstructured = b.hasUnstructuredProducts && !b.hasStructuredProducts;
-          if(aOnlyUnstructured !== bOnlyUnstructured) return aOnlyUnstructured ? 1 : -1;
-          return a.label.localeCompare(b.label, "es", { sensitivity:"base" });
-        });
-
-      return out.map((album, index)=> ({
-        ...album,
-        count: album.products.length,
-        onlyUnstructured: album.hasUnstructuredProducts && !album.hasStructuredProducts,
-        colorIndex: index % ALBUM_COLORS.length,
-        searchKey: normalizeText(album.label)
-      }));
-    }
-
     function hasAlbumFolders(){
-      return albums.some(album => album.key !== ROOT_ALBUM_KEY);
+      return all.length > 0;
     }
 
     function albumModeEnabled(){
@@ -1476,19 +1556,28 @@
     }
 
     function shouldShowAlbumGrid(){
-      return albumModeEnabled() && !selectedAlbumKey && getCombinedWordTerms().length === 0;
+      return albumModeEnabled() && !selectedCategory && getCombinedWordTerms().length === 0;
     }
 
     function getSelectedAlbum(){
-      return albumByKey.get(String(selectedAlbumKey || "")) || null;
+      if(selectedCategory){
+        return { label:selectedCategory, navType:"category", audience:selectedAudience };
+      }
+      if(selectedAudience){
+        return { label:selectedAudience, navType:"audience" };
+      }
+      return null;
     }
 
     function currentProductSourceList(){
-      const selected = getSelectedAlbum();
-      if(albumModeEnabled() && selected){
-        return selected.products.slice();
+      let source = all.slice();
+      if(selectedAudience){
+        source = source.filter(p => productMatchesAudience(p, selectedAudience));
       }
-      return all.slice();
+      if(selectedCategory){
+        source = source.filter(p => cleanNavKey(p.category) === cleanNavKey(selectedCategory));
+      }
+      return source;
     }
 
     function refreshFilterOptionsForScope(){
@@ -2329,10 +2418,43 @@
       }
     });
 
-    // El JSON-LD es SEO estable administrado desde el HTML durante auditorías.
-    // La navegación, las categorías, los filtros y las búsquedas no deben modificarlo.
+    // El JSON-LD se sincroniza con los productos visibles del inventario oficial.
+    let _jsonLdTimer = 0;
     function scheduleJsonLdUpdate(){
-      return;
+      clearTimeout(_jsonLdTimer);
+      _jsonLdTimer = setTimeout(()=>{
+        const node = document.getElementById("ld-products");
+        if(!node) return;
+        const source = (Array.isArray(all) ? all : []).filter(p => p && !p.isImagePriceOnly && !p.isUnstructured);
+        const itemListElement = source.map((p,index)=>{
+          const item = {
+            "@type":"Product",
+            "name":String(p.name || ""),
+            "description":String(p.description || ""),
+            "category":[p.audience, p.category].filter(Boolean).join(" > "),
+            "sku":String(p.id || "")
+          };
+          if(p.docsImageUrl) item.image = [p.docsImageUrl];
+          if(p.brand) item.brand = { "@type":"Brand", "name":p.brand };
+          if(p.codeNatura) item.mpn = p.codeNatura;
+          if(p.hasPrice !== false && Number(p.price) > 0){
+            item.offers = {
+              "@type":"Offer",
+              "priceCurrency":"COP",
+              "price":Number(p.price),
+              "url":location.href.split("?")[0]
+            };
+          }
+          return { "@type":"ListItem", "position":index+1, item };
+        });
+        node.textContent = JSON.stringify({
+          "@context":"https://schema.org",
+          "@type":"ItemList",
+          "name":"Catálogo de productos de Irenismb Stock Natura",
+          "numberOfItems":itemListElement.length,
+          itemListElement
+        });
+      }, 0);
     }
 
     const cardTemplate = document.createElement("template");
@@ -2382,10 +2504,11 @@
         stockPart = hasKnownStock
           ? ` · ${stockVal > 0 ? "Disponible" : "Sin stock"}`
           : " · Disponibilidad por confirmar";
-      } else {
-        stockPart = "";
       }
-      const parts = [p.category, p.brand];
+      const parts = [];
+      if(p.section === "Belleza y cuidado" && p.audience) parts.push(p.audience);
+      if(p.category) parts.push(p.category);
+      if(p.brand) parts.push(p.brand);
       if(shouldShowProductCodes()) parts.push(`Id: ${p.id}`);
       const base = parts.filter(Boolean).join(" · ");
       return `${base}${stockPart}`;
@@ -2539,10 +2662,12 @@
       const preview = card.querySelector(".album-preview");
       const label = card.querySelector(".album-label");
       const meta = card.querySelector(".album-meta");
-      const unitLabel = album && album.onlyUnstructured ? (album.count === 1 ? "archivo" : "archivos") : (album.count === 1 ? "producto" : "productos");
+      const unitLabel = album.count === 1 ? "producto" : "productos";
 
+      card.classList.toggle("album-root-card", album.navType === "audience");
       btn.dataset.albumOpen = album.key;
-      btn.setAttribute("aria-label", `Abrir categoría ${album.label}`);
+      btn.dataset.navType = album.navType || "category";
+      btn.setAttribute("aria-label", album.navType === "audience" ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
       btn.title = `${album.label} · ${album.count} ${unitLabel}`;
 
       const previewSource = album.previewImages && album.previewImages.length
@@ -2551,7 +2676,9 @@
 
       preview.appendChild(makeAlbumPreview(previewSource, album.label));
       label.textContent = album.label;
-      meta.textContent = `${album.count} ${unitLabel}`;
+      meta.textContent = album.subtitle
+        ? `${album.subtitle} · ${album.count} ${unitLabel}`
+        : `${album.count} ${unitLabel}`;
 
       return card;
     }
@@ -2573,6 +2700,9 @@
     const albumNavHost = document.getElementById("albumNavHost");
     const albumBackBtn = document.getElementById("albumBackBtn");
     const albumPath = document.getElementById("albumPath");
+    const catalogEntryIntro = document.getElementById("catalogEntryIntro");
+    const catalogEntryTitle = document.getElementById("catalogEntryTitle");
+    const catalogEntryText = document.getElementById("catalogEntryText");
 
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
@@ -2732,14 +2862,9 @@
       const blocked = new Set();
 
       for(const p of (Array.isArray(list) ? list : [])){
-        for(const token of parseSuggestionTokens(p && p.category ? p.category : "")){
-          blocked.add(token);
-        }
-
-        const albumLabel = albumLabelFromKey(getProductAlbumKey(p));
-        for(const token of parseSuggestionTokens(albumLabel)){
-          blocked.add(token);
-        }
+        for(const token of parseSuggestionTokens(p && p.category ? p.category : "")) blocked.add(token);
+        for(const token of parseSuggestionTokens(p && p.audience ? p.audience : "")) blocked.add(token);
+        for(const token of parseSuggestionTokens(p && p.section ? p.section : "")) blocked.add(token);
       }
 
       return blocked;
@@ -2978,20 +3103,40 @@
         sortSel.disabled = showAlbumGrid;
       }
       if(albumNav){
-        albumNav.hidden = !(albumModeEnabled() && !!selectedAlbumKey);
+        albumNav.hidden = !selectedAudience;
+      }
+      if(albumBackBtn){
+        albumBackBtn.textContent = selectedCategory ? `← Volver a ${selectedAudience}` : "← Volver al inicio";
       }
       placeResponsiveHeaderMeta();
       if(albumPath){
-        const current = getSelectedAlbum();
-        albumPath.textContent = current ? current.label : "";
+        albumPath.textContent = selectedAudience
+          ? (selectedCategory ? `${selectedAudience} › ${selectedCategory}` : selectedAudience)
+          : "";
       }
       if(qInp){
-        qInp.placeholder = "🔍 Busca aquí por nombre del producto...";
-        qInp.setAttribute("aria-label", "Buscar producto por nombre");
+        qInp.placeholder = selectedAudience
+          ? `🔍 Buscar dentro de ${selectedCategory || selectedAudience}...`
+          : "🔍 Busca aquí por nombre del producto...";
+        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${selectedCategory || selectedAudience}` : "Buscar producto por nombre");
       }
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
-        grid.setAttribute("aria-label", showAlbumGrid ? "Categorías" : "Productos");
+        grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
+        const label = !selectedAudience ? "Secciones principales" : (!selectedCategory ? "Categorías" : "Productos");
+        grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
+      }
+      if(catalogEntryIntro){
+        const hasTerms = getCombinedWordTerms().length > 0;
+        catalogEntryIntro.hidden = hasTerms || !!selectedCategory;
+        if(catalogEntryTitle){
+          catalogEntryTitle.textContent = selectedAudience || "¿Qué estás buscando?";
+        }
+        if(catalogEntryText){
+          catalogEntryText.textContent = selectedAudience
+            ? "Elige una categoría para ver los productos disponibles."
+            : "Elige Para ella, Para él, Unisex u Otros productos para comenzar.";
+        }
       }
 
       rebuildSearchTicker();
@@ -3002,12 +3147,15 @@
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
-      const album = (u.searchParams.get("album") || "").trim();
+      const audience = (u.searchParams.get("audience") || "").trim();
+      const category = (u.searchParams.get("category") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
-      if(album) selectedAlbumKey = normalizeText(album).replace(/\s+/g, " ");
+      const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
+      selectedAudience = validAudience ? validAudience.label : "";
+      selectedCategory = selectedAudience && category ? category : "";
       if(sort && sortSel) sortSel.value = sort;
     }
 
@@ -3018,14 +3166,15 @@
       const cat = catSel.value;
       const br = brandSel.value;
       const sort = sortSel ? sortSel.value : "";
-      const album = albumModeEnabled() ? String(selectedAlbumKey || "") : "";
       const tags = uniqueTerms(selectedSuggestionTerms || []).join(",");
 
       if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
       if (cat) u.searchParams.set("cat", cat); else u.searchParams.delete("cat");
       if (br) u.searchParams.set("brand", br); else u.searchParams.delete("brand");
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
-      if (album) u.searchParams.set("album", album); else u.searchParams.delete("album");
+      if (selectedAudience) u.searchParams.set("audience", selectedAudience); else u.searchParams.delete("audience");
+      if (selectedCategory) u.searchParams.set("category", selectedCategory); else u.searchParams.delete("category");
+      u.searchParams.delete("album");
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
       history.replaceState(null, "", u.toString());
@@ -3046,15 +3195,27 @@
     function openAlbum(key, opts={}){
       const target = albumByKey.get(String(key || ""));
       if(!target) return;
-      selectedAlbumKey = target.key;
+      if(target.navType === "audience"){
+        selectedAudience = target.navValue;
+        selectedCategory = "";
+      }else if(target.navType === "category"){
+        selectedAudience = target.audience || selectedAudience;
+        selectedCategory = target.navValue;
+      }
       if(!opts.keepFilters) resetDiscoveryFilters();
+      refreshNavigationAlbums();
       refreshFilterOptionsForScope();
       render();
     }
 
     function closeAlbum(opts={}){
-      selectedAlbumKey = "";
+      if(selectedCategory){
+        selectedCategory = "";
+      }else{
+        selectedAudience = "";
+      }
       if(!opts.keepFilters) resetDiscoveryFilters();
+      refreshNavigationAlbums();
       refreshFilterOptionsForScope();
       render();
     }
@@ -3107,7 +3268,10 @@
       }
 
       filtered.sort((a,b)=>{
-        if(!!a.onlyUnstructured !== !!b.onlyUnstructured) return a.onlyUnstructured ? 1 : -1;
+        if(!selectedAudience){
+          const order = new Map(NAV_AUDIENCES.map((item,index)=>[item.label,index]));
+          return (order.get(a.label) ?? 99) - (order.get(b.label) ?? 99);
+        }
         return a.label.localeCompare(b.label, "es", { sensitivity:"base" });
       });
       return filtered;
@@ -3119,10 +3283,6 @@
 
       hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
       searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
-
-      if(selectedAlbumKey && !albumByKey.has(selectedAlbumKey)){
-        selectedAlbumKey = "";
-      }
 
       syncFilterVisibility();
       syncWordToggleButton();
@@ -3136,7 +3296,9 @@
       if(shouldShowAlbumGrid()){
         const filteredAlbums = buildFilteredAlbums();
         if(countEl){
-          countEl.textContent = `${filteredAlbums.length} categor${filteredAlbums.length === 1 ? "ía" : "ías"}`;
+          countEl.textContent = !selectedAudience
+            ? `${filteredAlbums.length} ${filteredAlbums.length === 1 ? "opción" : "opciones"}`
+            : `${filteredAlbums.length} categor${filteredAlbums.length === 1 ? "ía" : "ías"}`;
           countEl.classList.toggle("search-active", qHas);
         }
 
@@ -3146,7 +3308,7 @@
 
         const frag = document.createDocumentFragment();
         if(!filteredAlbums.length){
-          frag.appendChild(makeEmptyState("No se encontraron categorías con ese nombre."));
+          frag.appendChild(makeEmptyState(!selectedAudience ? "No se encontraron secciones con ese nombre." : "No se encontraron categorías con ese nombre."));
         }else{
           for(const album of filteredAlbums){
             frag.appendChild(makeAlbumCard(album));
@@ -3335,14 +3497,10 @@
 
       all = filterVisibleProducts(allLoadedProducts);
       productById = new Map(all.map(p => [String(p.id), p]));
-      albums = buildAlbums(all);
-      albumByKey = new Map(albums.map(album => [album.key, album]));
-
-      if(selectedAlbumKey && !albumByKey.has(selectedAlbumKey)){
-        selectedAlbumKey = "";
-      }
+      refreshNavigationAlbums();
 
       updateCatalogFooterProducts(all);
+      scheduleJsonLdUpdate();
       refreshFilterOptionsForScope();
       sanitizeCartWithStock();
       render();
@@ -3384,15 +3542,15 @@
         searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
         all = filterVisibleProducts(allLoadedProducts);
         productById = new Map(all.map(p => [String(p.id), p]));
-        albums = buildAlbums(all);
-        albumByKey = new Map(albums.map(album => [album.key, album]));
-
         readStateFromUrl();
-        if(selectedAlbumKey && !albumByKey.has(selectedAlbumKey)){
-          selectedAlbumKey = "";
+        if(selectedCategory){
+          const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(p.category) === cleanNavKey(selectedCategory));
+          if(!hasCategory) selectedCategory = "";
         }
+        refreshNavigationAlbums();
 
         updateCatalogFooterProducts(all);
+        scheduleJsonLdUpdate();
         refreshFilterOptionsForScope();
         sanitizeCartWithStock();
         render();

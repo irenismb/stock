@@ -6547,42 +6547,6 @@
     </div>
 
     <section id="grid" class="grid" aria-label="Productos"></section>
-
-    <section class="visitor-shell" aria-label="Contador de visitantes">
-      <details id="visitorDetails" class="visitor-details">
-        <summary class="visitor-summary">
-          <span class="summary-data">
-            <span class="summary-item">Visitantes acumulados: <strong id="visitorTotal">--</strong></span>
-            <span class="summary-item">Hoy en el mundo: <strong id="visitorToday">--</strong></span>
-            <span class="summary-item">Ciudad principal global: <strong id="visitorTopCity">Cargando...</strong></span>
-          </span>
-          <span class="summary-action" aria-hidden="true"><span class="summary-show">Visitas</span><span class="summary-hide">Ocultar detalle</span></span>
-        </summary>
-        <div class="visitor-content">
-          <div class="visitor-grid">
-            <article class="visitor-card">
-              <h2>Los 3 días históricos con más visitas</h2>
-              <div class="visitor-table-wrap">
-                <table class="visitor-table">
-                  <thead><tr><th scope="col">Día</th><th scope="col">Cantidad</th></tr></thead>
-                  <tbody id="visitorDaysBody"><tr><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td></tr></tbody>
-                </table>
-              </div>
-            </article>
-            <article class="visitor-card">
-              <h2>Visitantes globales por ciudad</h2>
-              <div class="visitor-table-wrap">
-                <table class="visitor-table">
-                  <thead><tr><th scope="col">Ciudad / país</th><th scope="col">Total visitantes</th><th scope="col">Visitantes hoy</th></tr></thead>
-                  <tbody id="visitorCitiesBody"><tr><td>--</td><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td><td>--</td></tr><tr><td>--</td><td>--</td><td>--</td></tr></tbody>
-                </table>
-              </div>
-            </article>
-          </div>
-          <p id="visitorStatus" class="visitor-status" role="status" aria-live="polite">Cargando visitantes globales...</p>
-        </div>
-      </details>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -8454,16 +8418,7 @@
   </div>
 
   <script src="js/2026-09-04_lógica principal catálogo productos carrito pedidos_v26.js"></script>
-
-
-
-
-  <!-- Contador de visitantes: misma lógica que la página de reparación de computadores -->
-  
-
-  <script type="module" src="js/2026-09-05_estadísticas visitantes firebase ubicación notificaciones push_v28.js"></script>
-
-
+  <script src="js/2026-09-05_registro visitas ubicacion telegram google sheets.js"></script>
   <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>
     <span>Inicio</span>

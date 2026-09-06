@@ -266,7 +266,7 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
       const ciudad = normalizarTexto(datos.locality || datos.city || region || "");
       const pais = normalizarTexto(datos.countryName || datos.countryCode || "");
       if (!ciudad) throw new Error("Ciudad GPS no disponible");
-      return { ciudad, pais, direccion: "" };
+      return { ciudad, departamento:region, pais, direccion: "" };
     }
 
     async function obtenerDireccionExactaDesdeGps(coords) {
@@ -287,19 +287,20 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
         detalle.city || detalle.town || detalle.village
         || detalle.municipality || detalle.county || detalle.state || ""
       ).replace(/^Perímetro Urbano\s+/i, "");
+      const departamento = normalizarTexto(detalle.state || detalle.region || detalle.county || "");
       const pais = normalizarTexto(detalle.country || detalle.country_code || "");
       const direccion = via
         ? normalizarDireccion(`${via}${numero ? ` #${numero.replace(/^#\s*/, "")}` : ""}`)
         : "";
       if (!ciudad) throw new Error("Ciudad GPS no disponible");
-      return { ciudad, pais, direccion };
+      return { ciudad, departamento, pais, direccion };
     }
 
     async function obtenerUbicacionPorIp() {
       const servicios = [
-        { url:"https://ipapi.co/json/", ciudad:d=>d.city, pais:d=>d.country_name || d.country },
-        { url:"https://api.db-ip.com/v2/free/self", ciudad:d=>d.city, pais:d=>d.countryName || d.countryCode },
-        { url:"https://ipwho.is/", ciudad:d=>d.city, pais:d=>d.country || d.country_code, fallo:d=>d?.success === false }
+        { url:"https://ipapi.co/json/", ciudad:d=>d.city, departamento:d=>d.region || d.region_code, pais:d=>d.country_name || d.country },
+        { url:"https://api.db-ip.com/v2/free/self", ciudad:d=>d.city, departamento:d=>d.stateProv, pais:d=>d.countryName || d.countryCode },
+        { url:"https://ipwho.is/", ciudad:d=>d.city, departamento:d=>d.region, pais:d=>d.country || d.country_code, fallo:d=>d?.success === false }
       ];
       for (const servicio of servicios) {
         try {
@@ -308,10 +309,12 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
           const datos = await respuesta.json();
           if (servicio.fallo?.(datos)) continue;
           const ciudad = normalizarTexto(servicio.ciudad(datos) || "");
+          const departamento = normalizarTexto(servicio.departamento?.(datos) || "");
           const pais = normalizarTexto(servicio.pais(datos) || "");
           if (ciudad || pais) {
             return {
               ciudad: ciudad || "Ubicación no disponible",
+              departamento,
               pais,
               direccion: "",
               fuente: "IP",
@@ -340,6 +343,10 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
     function enviarRegistroUbicacion(ubicacion) {
       try {
         const userId = obtenerIdLocal();
+        const contexto = typeof window.obtenerContextoVisitaCatalogo === "function"
+          ? window.obtenerContextoVisitaCatalogo()
+          : {};
+
         const payload = new URLSearchParams({
           lat: String(ubicacion.lat ?? ""),
           lng: String(ubicacion.lng ?? ""),
@@ -347,12 +354,19 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
           fuente: String(ubicacion.fuente || "SIN_UBICACION"),
           src: String(ubicacion.fuente || "SIN_UBICACION"),
           ciudad: String(ubicacion.ciudad || ""),
+          departamento: String(ubicacion.departamento || ""),
           pais: String(ubicacion.pais || ""),
           navegador: userId,
           user_id: userId,
           load_id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
           ts: String(Date.now()),
-          telegram_habilitado: (window.INTERRUPTORES?.HABILITAR_NOTIFICACIONES_TELEGRAM !== false) ? "1" : "0",
+          dispositivo: String(contexto.dispositivo || ""),
+          origen: String(contexto.origen || ""),
+          categoria: String(contexto.categoria || ""),
+          producto: String(contexto.producto || ""),
+          carrito_productos: String(contexto.carrito_productos || "0"),
+          carrito_unidades: String(contexto.carrito_unidades || "0"),
+          carrito_total: String(contexto.carrito_total || "0"),
           cb: Math.random().toString(36).slice(2)
         });
         fetch(`${GPS_LOG_ENDPOINT}?${payload.toString()}`, {
@@ -439,6 +453,7 @@ import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12
     function ubicacionNoDisponible() {
       return {
         ciudad: "Ubicación no disponible",
+        departamento: "",
         pais: "",
         direccion: "",
         fuente: "SIN_UBICACION",

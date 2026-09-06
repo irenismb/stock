@@ -29,7 +29,7 @@
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
     // Las imágenes normales se relacionan por el código interno global de cuatro dígitos.
-    // Las imágenes especiales se detectan por un precio válido al inicio del nombre del archivo.
+    // En carpetas especiales, PRECIO_NOMBRE aporta precio y nombre; otros archivos se muestran solo como imagen.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
@@ -39,10 +39,11 @@
     };
 
     // Productos especiales que no existen en Google Sheets.
-    // Se descubren automáticamente cuando el nombre de la imagen empieza por el precio.
+    // PRECIO_NOMBRE.ext aporta precio y nombre en MAYÚSCULAS.
+    // Si no cumple la estructura, el archivo especial se muestra únicamente como imagen.
     // Esta lista queda disponible solo como respaldo manual opcional.
     const PRODUCTOS_SOLO_IMAGEN_PRECIO = [
-      // { imagen: "regalos amor y amistad/65000_producto.webp", precio: 65000 }
+      // { imagen: "regalos amor y amistad/65000_producto.webp", precio: 65000, nombre: "PRODUCTO" }
     ];
     window.PRODUCTOS_SOLO_IMAGEN_PRECIO = PRODUCTOS_SOLO_IMAGEN_PRECIO;
 
@@ -58,12 +59,12 @@
 	  MOSTRAR_IMAGENES_PRODUCTO: true,
 	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
-	  // Muestra u oculta los archivos cuyo nombre NO cumple el formato esperado
-	  // id_nombre_marca_categoria_precio_stock.
+	  // Muestra u oculta los archivos especiales que no tienen fila en Productos.
+	  // PRECIO_NOMBRE aporta datos; otros nombres se muestran únicamente como imagen.
 	  MOSTRAR_ARCHIVOS_SIN_PARAMETROS: false,
 
-	  // Si los archivos sin parámetros están visibles,
-	  // decide si se muestra su nombre real.
+	  // Si los archivos especiales están visibles, muestra el nombre solo cuando
+	  // existe después del guion bajo en la estructura PRECIO_NOMBRE.
 	  MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS: false,
 
 	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
@@ -666,37 +667,42 @@
       return match ? match[1] : "";
     }
 
-    function extractImagePriceFromFilename(filename){
+    function parseImagePriceProductFilename(filename){
       const stem = String(filename || "").replace(/\.[^.]+$/, "").trim();
       if(!stem) return null;
 
-      const explicit = stem.match(/^precio[\s._-]*\$?[\s]*((?:\d{1,3}(?:[.\s]\d{3})+)|\d{4,9})(?=$|[\s._-])/i);
-      if(explicit){
-        const value = Number(explicit[1].replace(/\D/g, ""));
-        return Number.isSafeInteger(value) && value > 0 ? value : null;
-      }
+      const separatorIndex = stem.indexOf("_");
+      if(separatorIndex <= 0 || separatorIndex >= stem.length - 1) return null;
 
-      const currency = stem.match(/^\$[\s]*((?:\d{1,3}(?:[.\s]\d{3})+)|\d{4,9})(?=$|[\s._-])/);
-      if(currency){
-        const value = Number(currency[1].replace(/\D/g, ""));
-        return Number.isSafeInteger(value) && value > 0 ? value : null;
-      }
+      const rawPrice = stem.slice(0, separatorIndex).trim();
+      const rawName = stem.slice(separatorIndex + 1).trim();
+      if(!rawName) return null;
 
-      const grouped = stem.match(/^(\d{1,3}(?:[.]\d{3}){1,2})(?=$|[\s_-])/);
-      if(grouped){
-        const value = Number(grouped[1].replace(/\D/g, ""));
-        return Number.isSafeInteger(value) && value > 0 ? value : null;
-      }
+      const normalizedPrice = rawPrice
+        .replace(/^\$\s*/, "")
+        .replace(/[.\s]/g, "");
 
-      // Sin prefijo explícito se aceptan de 5 a 7 dígitos para no confundir
-      // códigos de producto de 4 dígitos ni fechas compactas de 8 dígitos.
-      const simple = stem.match(/^(\d{5,7})(?=$|[\s._-])/);
-      if(simple){
-        const value = Number(simple[1]);
-        return Number.isSafeInteger(value) && value > 0 ? value : null;
-      }
+      if(!/^[1-9]\d{0,8}$/.test(normalizedPrice)) return null;
 
-      return null;
+      const price = Number(normalizedPrice);
+      if(!Number.isSafeInteger(price) || price <= 0 || price > 9999999) return null;
+
+      const name = rawName
+        .replace(/_+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLocaleUpperCase("es-CO");
+
+      if(!name) return null;
+      return { price, name };
+    }
+
+    function extractImagePriceFromFilename(filename){
+      return parseImagePriceProductFilename(filename)?.price ?? null;
+    }
+
+    function extractImageProductNameFromFilename(filename){
+      return parseImagePriceProductFilename(filename)?.name || "";
     }
 
     function extensionOfFilename(filename){
@@ -755,76 +761,99 @@
         const catalogDir = encodeRepoPath(GITHUB_CATALOG_SOURCE.catalogDir);
         const parentUrl = `${GITHUB_API_BASE}/contents/${catalogDir}?ref=${ref}`;
         const parentEntries = await fetchGitHubJson(parentUrl);
-        if(!Array.isArray(parentEntries)){
-          return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
-        }
+        if(!Array.isArray(parentEntries)) return [];
 
         const productsEntry = parentEntries.find(entry =>
           entry && entry.type === "dir" &&
           String(entry.name || "").toLowerCase() === GITHUB_CATALOG_SOURCE.productsFolder.toLowerCase()
         );
-        if(!productsEntry || !productsEntry.sha){
-          return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
-        }
+        if(!productsEntry || !productsEntry.sha) return [];
 
         const treeUrl = `${GITHUB_API_BASE}/git/trees/${encodeURIComponent(productsEntry.sha)}?recursive=1`;
         const treePayload = await fetchGitHubJson(treeUrl);
-        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated){
-          return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
-        }
+        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated) return [];
 
-        const imagesByCode = new Map();
-        const imagePriceOnlyItems = [];
-
-        for(const entry of treePayload.tree){
-          if(!entry || entry.type !== "blob") continue;
-
-          const relativePath = String(entry.path || "");
-          const filename = relativePath.split("/").pop() || "";
-          const ext = extensionOfFilename(filename);
-          if(!PRODUCT_IMAGE_EXTENSIONS.has(ext)) continue;
-
-          const code = extractGlobalProductCode(filename);
-          if(code){
-            const list = imagesByCode.get(code) || [];
-            list.push(entry);
-            imagesByCode.set(code, list);
-            continue;
-          }
-
-          const price = extractImagePriceFromFilename(filename);
-          if(price !== null){
-            imagePriceOnlyItems.push({ imagen:relativePath, precio:price });
-          }
-        }
-
-        for(const [code, entries] of imagesByCode){
-          imagesByCode.set(code, orderProductImageEntries(entries));
-        }
-
-        imagePriceOnlyItems.sort((a,b)=>
-          String(a.imagen || "").localeCompare(String(b.imagen || ""), "es", { numeric:true, sensitivity:"base" })
-        );
-
-        return { imagesByCode, imagePriceOnlyItems };
+        return treePayload.tree.filter(entry => {
+          if(!entry || entry.type !== "blob") return false;
+          const filename = String(entry.path || "").split("/").pop() || "";
+          return PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(filename));
+        });
       }catch(err){
         console.warn("No se pudo construir el índice de imágenes de GitHub; se usarán imágenes suplentes.", err);
-        return { imagesByCode:new Map(), imagePriceOnlyItems:[] };
+        return [];
       }
     }
 
     async function loadGoogleSheetCatalog(){
-      const [rows, imageData] = await Promise.all([
+      const [rows, imageEntries] = await Promise.all([
         loadGoogleSheetRows(),
         loadGitHubImageIndex()
       ]);
 
-      const imagesByCode = imageData && imageData.imagesByCode instanceof Map
-        ? imageData.imagesByCode
-        : new Map();
-      const imagePriceOnlyItems = Array.isArray(imageData && imageData.imagePriceOnlyItems)
-        ? imageData.imagePriceOnlyItems
-        : [];
+      const sheetCodes = new Set(
+        rows.map(row => String(row && row.code || "").trim()).filter(Boolean)
+      );
+      const imagesByCode = new Map();
+      const imagePriceOnlyItems = [];
+      const foldersWithSheetProducts = new Set();
+      const entries = Array.isArray(imageEntries) ? imageEntries : [];
+
+      for(const entry of entries){
+        const relativePath = String(entry && entry.path || "");
+        const filename = relativePath.split("/").pop() || "";
+        if(!relativePath || !filename) continue;
+
+        const code = extractGlobalProductCode(filename);
+        if(!code || !sheetCodes.has(code)) continue;
+
+        const list = imagesByCode.get(code) || [];
+        list.push(entry);
+        imagesByCode.set(code, list);
+
+        const folder = normalizeText(relativePath.split("/")[0] || "").replace(/\s+/g, " ");
+        if(folder) foldersWithSheetProducts.add(folder);
+      }
+
+      for(const entry of entries){
+        const relativePath = String(entry && entry.path || "");
+        const filename = relativePath.split("/").pop() || "";
+        if(!relativePath || !filename) continue;
+
+        const code = extractGlobalProductCode(filename);
+        if(code && sheetCodes.has(code)) continue;
+
+        const folder = normalizeText(relativePath.split("/")[0] || "").replace(/\s+/g, " ");
+        const parsed = parseImagePriceProductFilename(filename);
+
+        if(parsed){
+          imagePriceOnlyItems.push({
+            imagen: relativePath,
+            precio: parsed.price,
+            nombre: parsed.name,
+            tieneParametrosEspeciales: true
+          });
+          continue;
+        }
+
+        // En carpetas que no contienen productos vinculados al Sheet,
+        // un archivo sin PRECIO_NOMBRE sigue siendo publicable como imagen sola.
+        if(folder && !foldersWithSheetProducts.has(folder)){
+          imagePriceOnlyItems.push({
+            imagen: relativePath,
+            precio: null,
+            nombre: "",
+            tieneParametrosEspeciales: false
+          });
+        }
+      }
+
+      for(const [code, entries] of imagesByCode){
+        imagesByCode.set(code, orderProductImageEntries(entries));
+      }
+
+      imagePriceOnlyItems.sort((a,b)=>
+        String(a.imagen || "").localeCompare(String(b.imagen || ""), "es", { numeric:true, sensitivity:"base" })
+      );
 
       return {
         sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode })),
@@ -958,8 +987,19 @@
 
     function makeImagePriceOnlyProduct(item, index){
       const imageRelativePath = String(item && item.imagen || "").trim().replace(/^\/+/, "");
-      const price = parseOptionalWholeNumber(item && item.precio);
-      if(!imageRelativePath || price === null) return null;
+      if(!imageRelativePath) return null;
+
+      const filename = imageRelativePath.split("/").pop() || "";
+      const parsedFromFilename = parseImagePriceProductFilename(filename);
+      const configuredPrice = parseOptionalWholeNumber(item && item.precio);
+      const price = configuredPrice ?? parsedFromFilename?.price ?? null;
+      const configuredName = String(item && item.nombre || "").trim();
+      const name = (configuredName || parsedFromFilename?.name || "")
+        .replace(/_+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLocaleUpperCase("es-CO");
+      const hasSpecialParameters = Boolean(name) && price !== null;
 
       const pathParts = imageRelativePath.split("/").filter(Boolean);
       const category = categoryDisplayLabel(pathParts.length > 1 ? pathParts[0] : "General") || "General";
@@ -969,11 +1009,12 @@
 
       return {
         id: internalId,
-        name: "",
+        name,
         category,
         brand: "",
-        price,
-        hasPrice: true,
+        price: price ?? 0,
+        hasPrice: price !== null,
+        hasSpecialParameters,
         cost: null,
         costText: "",
         stock: null,
@@ -992,7 +1033,7 @@
         docsImageUrl: imageUrl,
         imageUrls: [imageUrl],
         docsDocumentUrl: "",
-        searchKey: normalizeText([category, imageRelativePath].join(" "))
+        searchKey: normalizeText([name, category, imageRelativePath].join(" "))
       };
     }
 
@@ -1005,7 +1046,9 @@
       const list = document.getElementById("beautyProductsList");
       const count = document.querySelector(".beauty-products-count");
       const source = Array.isArray(products) ? products : [];
-      const namedProducts = source.filter(product => String(product && product.name || "").trim());
+      const namedProducts = source.filter(product =>
+        product && !product.isImagePriceOnly && String(product.name || "").trim()
+      );
 
       if(count){
         count.textContent = `${namedProducts.length} ${namedProducts.length === 1 ? "producto" : "productos"}`;
@@ -1018,6 +1061,7 @@
       );
       const fragment = document.createDocumentFragment();
       for(const product of sorted){
+        if(product?.isImagePriceOnly) continue;
         const name = String(product?.name || "").trim();
         if(!name) continue;
 
@@ -2389,7 +2433,7 @@
 	  const rawFileName = String(p.name || baseOf(p.originalFilename || "") || "");
 
 	 const visibleName = (p && p.isImagePriceOnly)
-	   ? ""
+	   ? (shouldShowUnstructuredFileNames() ? String(p.name || "").toLocaleUpperCase("es-CO") : "")
 	   : ((p && p.isUnstructured)
 	      ? (shouldShowUnstructuredFileNames() ? rawFileName : "")
 	      : String(p.name || ""));
@@ -2409,15 +2453,18 @@
       card.classList.toggle("has-long-description", descriptionEl.textContent.length > 900);
       priceEl.textContent = (p && p.isUnstructured)
         ? ""
-        : (shouldShowProductPrices() ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price)) : "");
+        : ((p && p.isImagePriceOnly)
+          ? (shouldShowProductPrices() && p.hasPrice !== false ? fmtCOP.format(p.price) : "")
+          : (shouldShowProductPrices() ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price)) : ""));
 
       if(p && p.isImagePriceOnly){
-        if(nameEl) nameEl.remove();
+        if(nameEl && !visibleName) nameEl.remove();
         if(actionsEl) actionsEl.remove();
         if(metaEl) metaEl.remove();
         if(descriptionEl) descriptionEl.remove();
         const qtyPill = rowEl && rowEl.querySelector('[data-role="qty"]');
         if(qtyPill) qtyPill.remove();
+        if(rowEl && (!shouldShowProductPrices() || p.hasPrice === false)) rowEl.remove();
       }
 
       if(p && p.isUnstructured){

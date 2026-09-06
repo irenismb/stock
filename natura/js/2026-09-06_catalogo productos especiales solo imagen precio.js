@@ -36,6 +36,13 @@
       productsFolder: "productos"
     };
 
+    // Productos especiales que no existen en Google Sheets.
+    // Solo requieren la ruta de la imagen dentro de /productos y el precio en COP.
+    const PRODUCTOS_SOLO_IMAGEN_PRECIO = [
+      // { imagen: "perfumeria femenina/archivo.webp", precio: 65000 }
+    ];
+    window.PRODUCTOS_SOLO_IMAGEN_PRECIO = PRODUCTOS_SOLO_IMAGEN_PRECIO;
+
 	const INTERRUPTORES = {
 	  MOSTRAR_CANTIDAD_STOCK: false,
 	  MOSTRAR_TEXTO_ESTADO_STOCK: false,
@@ -876,17 +883,49 @@
     }
 
 
+    function makeImagePriceOnlyProduct(item, index){
+      const imageRelativePath = String(item && item.imagen || "").trim().replace(/^\/+/, "");
+      const price = parseOptionalWholeNumber(item && item.precio);
+      if(!imageRelativePath || price === null) return null;
+
+      const pathParts = imageRelativePath.split("/").filter(Boolean);
+      const category = categoryDisplayLabel(pathParts.length > 1 ? pathParts[0] : "General") || "General";
+      const fullImagePath = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`;
+      const imageUrl = rawGitHubUrl(fullImagePath);
+      const internalId = `imagen-precio-${index + 1}-${normalizeText(imageRelativePath).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
+
+      return {
+        id: internalId,
+        name: "",
+        category,
+        brand: "",
+        price,
+        hasPrice: true,
+        cost: null,
+        costText: "",
+        stock: null,
+        referenceExternal: "",
+        codeNatura: "",
+        isUnstructured: false,
+        isImagePriceOnly: true,
+        originalFilename: imageRelativePath.split("/").pop() || "",
+        srcFilename: imageRelativePath,
+        imgFilename: imageRelativePath,
+        fileExt: extensionOfFilename(imageRelativePath) || "webp",
+        hasImage: true,
+        isDocumentFirst: false,
+        description: "",
+        fullTxtRecord: "",
+        docsImageUrl: imageUrl,
+        imageUrls: [imageUrl],
+        docsDocumentUrl: "",
+        searchKey: normalizeText([category, imageRelativePath].join(" "))
+      };
+    }
+
+
     function clearLegacyProductCaches(){
-      const keys = [
-        "irenismb_products_cache_v7",
-        "irenismb_products_cache_v6",
-        "irenismb_products_cache_v5",
-        "irenismb_products_cache_v4",
-        "irenismb_products_cache_v3"
-      ];
-      for(const key of keys){
-        try{ localStorage.removeItem(key); }catch(_){}
-      }
+      return;
     }
 
     function updateCatalogFooterProducts(products){
@@ -947,8 +986,8 @@
     /* ==========================
        WhatsApp (la compra se envía al WhatsApp de la tienda)
        ========================== */
-    const LS_CLIENT_KEY = "irenismb_client_v2";
-    const LS_ADDRESS_KEY = "irenismb_address_v3";
+    const LS_CLIENT_KEY = "irenismb_client";
+    const LS_ADDRESS_KEY = "irenismb_address";
     const LS_SHIPPING_KEY = "irenismb_shipping_cop";
 
     function readJsonLS(key, fallbackObj){
@@ -1498,7 +1537,7 @@
         }
         const id = String(it.id);
         const p = productById.get(id);
-        if(!p || p.isUnstructured){
+        if(!p || p.isUnstructured || p.isImagePriceOnly){
           delete cart[key];
           changed = true;
           continue;
@@ -2190,7 +2229,7 @@
     `;
 
     function stockMetaText(p){
-      if(p && p.isUnstructured){
+      if(p && (p.isUnstructured || p.isImagePriceOnly)){
         return "";
       }
 
@@ -2221,6 +2260,15 @@
         if(meta) meta.hidden = true;
         if(row) row.hidden = true;
         if(actions) actions.hidden = true;
+        return;
+      }
+
+      if(p && p.isImagePriceOnly){
+        if(meta) meta.hidden = true;
+        if(row) row.hidden = false;
+        if(actions) actions.hidden = true;
+        const qtyPill = card.querySelector('[data-role="qty"]');
+        if(qtyPill) qtyPill.hidden = true;
         return;
       }
 
@@ -2258,15 +2306,18 @@
       card.id = "p-" + encodeURIComponent(String(p.id));
       card.dataset.id = String(p.id);
       card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
+      card.classList.toggle("is-image-price-only", !!(p && p.isImagePriceOnly));
 
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl));
 
 	  const rawFileName = String(p.name || baseOf(p.originalFilename || "") || "");
 
-	 const visibleName = (p && p.isUnstructured)
-	   ? (shouldShowUnstructuredFileNames() ? rawFileName : "")
-	   : String(p.name || "");
+	 const visibleName = (p && p.isImagePriceOnly)
+	   ? ""
+	   : ((p && p.isUnstructured)
+	      ? (shouldShowUnstructuredFileNames() ? rawFileName : "")
+	      : String(p.name || ""));
 	   
       const nameEl = card.querySelector(".name");
       const metaEl = card.querySelector(".meta");
@@ -2284,6 +2335,15 @@
       priceEl.textContent = (p && p.isUnstructured)
         ? ""
         : (shouldShowProductPrices() ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price)) : "");
+
+      if(p && p.isImagePriceOnly){
+        if(nameEl) nameEl.remove();
+        if(actionsEl) actionsEl.remove();
+        if(metaEl) metaEl.remove();
+        if(descriptionEl) descriptionEl.remove();
+        const qtyPill = rowEl && rowEl.querySelector('[data-role="qty"]');
+        if(qtyPill) qtyPill.remove();
+      }
 
       if(p && p.isUnstructured){
         if(actionsEl) actionsEl.remove();
@@ -3005,7 +3065,7 @@
         if(!id) return;
 
         const p = productById.get(String(id));
-        if(!p || p.isUnstructured) return;
+        if(!p || p.isUnstructured || p.isImagePriceOnly) return;
 
         const act = btn.getAttribute("data-act");
         const enforce = shouldEnforceStockLimits();
@@ -3150,12 +3210,15 @@
         const products = sheetCatalog
           .map(makeProductFromGoogleSheet)
           .filter(Boolean);
+        const imagePriceOnlyProducts = PRODUCTOS_SOLO_IMAGEN_PRECIO
+          .map(makeImagePriceOnlyProduct)
+          .filter(Boolean);
 
-        if(!products.length){
-          throw new Error("Google Sheets no devolvió productos válidos.");
+        if(!products.length && !imagePriceOnlyProducts.length){
+          throw new Error("No se encontraron productos válidos para mostrar.");
         }
 
-        allLoadedProducts = products.slice();
+        allLoadedProducts = [...products, ...imagePriceOnlyProducts];
 
         hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
         searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());

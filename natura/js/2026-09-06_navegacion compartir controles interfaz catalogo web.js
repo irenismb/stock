@@ -1,5 +1,4 @@
 // Navegación, compartir y controles auxiliares.
-// Versión: 26
 
 // Navegación auxiliar y compartir: módulo aislado que no altera la lógica del catálogo.
     (() => {

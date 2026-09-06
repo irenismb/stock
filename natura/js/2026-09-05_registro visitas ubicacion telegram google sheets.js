@@ -5,17 +5,29 @@
   iniciarRegistroVisita();
 
   async function iniciarRegistroVisita() {
-    try {
-      if (window.REMOTE_CONFIG_READY) await window.REMOTE_CONFIG_READY;
-    } catch (_) {}
+    await esperarConfiguracionSinBloquear();
 
     try {
       const ubicacion = await obtenerUbicacionPreferida();
       await enviarRegistroUbicacion(ubicacion);
     } catch (error) {
       console.info("Ubicación no disponible.", error);
-      await enviarRegistroUbicacion(ubicacionNoDisponible());
+      try {
+        await enviarRegistroUbicacion(ubicacionNoDisponible());
+      } catch (sendError) {
+        console.error("No se pudo enviar el registro de visita.", sendError);
+      }
     }
+  }
+
+  async function esperarConfiguracionSinBloquear() {
+    try {
+      if (!window.REMOTE_CONFIG_READY) return;
+      await Promise.race([
+        window.REMOTE_CONFIG_READY,
+        new Promise(resolve => setTimeout(resolve, 2200))
+      ]);
+    } catch (_) {}
   }
 
   async function obtenerUbicacionPreferida() {
@@ -253,10 +265,15 @@
   async function enviarRegistroUbicacion(ubicacion) {
     try {
       const userId = obtenerIdLocal();
+      const contextoPromise = typeof window.obtenerContextoVisitaCatalogo === "function"
+        ? Promise.race([
+            Promise.resolve(window.obtenerContextoVisitaCatalogo()).catch(() => ({})),
+            new Promise(resolve => setTimeout(() => resolve({}), 1600))
+          ])
+        : Promise.resolve({});
+
       const [contexto, ipLocal] = await Promise.all([
-        typeof window.obtenerContextoVisitaCatalogo === "function"
-          ? window.obtenerContextoVisitaCatalogo()
-          : Promise.resolve({}),
+        contextoPromise,
         obtenerIpLocalNumerica()
       ]);
       const direccion = normalizarDireccion(
@@ -290,12 +307,12 @@
         cb: Math.random().toString(36).slice(2)
       });
 
-      fetch(`${GPS_LOG_ENDPOINT}?${payload.toString()}`, {
+      await fetch(`${GPS_LOG_ENDPOINT}?${payload.toString()}`, {
         method: "GET",
         mode: "no-cors",
         cache: "no-store",
         keepalive: true
-      }).catch(() => {});
+      });
     } catch (_) {}
   }
 

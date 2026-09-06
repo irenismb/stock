@@ -2454,7 +2454,11 @@
 	  const rawFileName = String(p.name || baseOf(p.originalFilename || "") || "");
 
 	 const visibleName = (p && p.isImagePriceOnly)
-	   ? (shouldShowUnstructuredFileNames() ? String(p.name || "").toLocaleUpperCase("es-CO") : "")
+	   ? (shouldShowUnstructuredFileNames()
+	      ? (String(p.name || "").trim()
+	         ? String(p.name || "").toLocaleUpperCase("es-CO")
+	         : String(p.originalFilename || "").trim())
+	      : "")
 	   : ((p && p.isUnstructured)
 	      ? (shouldShowUnstructuredFileNames() ? rawFileName : "")
 	      : String(p.name || ""));

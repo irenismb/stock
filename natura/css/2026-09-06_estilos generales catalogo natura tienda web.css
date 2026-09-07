@@ -3402,16 +3402,15 @@
   background:#f3eee8;
 }
 .album-category-card .album-count-badge{
-  display:none;
+  display:inline-flex;
+  min-width:36px;
+  padding:0 12px;
 }
 .album-category-card .album-label{
   font-size:18px !important;
 }
 .album-category-card .album-meta{
-  margin-top:7px !important;
-  color:#8b6650 !important;
-  font-size:13px !important;
-  font-weight:650 !important;
+  display:none;
 }
 .album-category-card .album-folder::after{
   content:"→";

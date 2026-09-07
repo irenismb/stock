@@ -1602,7 +1602,9 @@
     }
 
     function shouldShowAlbumGrid(){
-      return albumModeEnabled() && !selectedCategory && getCombinedWordTerms().length === 0;
+      // Mientras no se haya abierto una categoría concreta, el buscador conserva
+      // la navegación por tarjetas y solo recalcula los contadores de cada grupo.
+      return albumModeEnabled() && !selectedCategory;
     }
 
     function getSelectedAlbum(){

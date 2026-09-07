@@ -3947,9 +3947,9 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
   font-size:13px !important;
   line-height:1.55 !important;
   font-weight:420 !important;
-  text-align:left !important;
-  text-align-last:auto !important;
-  hyphens:none !important;
+  text-align:justify !important;
+  text-align-last:left !important;
+  hyphens:auto !important;
 }
 .card .price{
   color:#8f5e69 !important;

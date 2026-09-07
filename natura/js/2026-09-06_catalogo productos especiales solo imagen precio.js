@@ -1933,8 +1933,116 @@
       }
     }
 
+    const ATTRIBUTION_FIRST_KEY = "irenismb_attribution_first";
+    const ATTRIBUTION_LAST_KEY = "irenismb_attribution_last";
+    const ATTRIBUTION_CONVERSION_KEY = "irenismb_attribution_conversion";
+
+    function leerAtribucionGuardada(storage, key){
+      try{
+        const raw = storage.getItem(key);
+        const value = raw ? JSON.parse(raw) : null;
+        return value && typeof value === "object" ? value : null;
+      }catch(_){
+        return null;
+      }
+    }
+
+    function guardarAtribucion(storage, key, value){
+      try{ storage.setItem(key, JSON.stringify(value)); }catch(_){}
+    }
+
+    function obtenerCampanaVisita(){
+      try{
+        const params = new URL(window.location.href).searchParams;
+        return String(
+          params.get("utm_campaign")
+          || params.get("campana")
+          || params.get("campaña")
+          || params.get("campaign")
+          || ""
+        ).trim();
+      }catch(_){
+        return "";
+      }
+    }
+
+    function obtenerMedioVisita(){
+      try{
+        const params = new URL(window.location.href).searchParams;
+        return String(params.get("utm_medium") || params.get("medio") || params.get("medium") || "").trim();
+      }catch(_){
+        return "";
+      }
+    }
+
+    function certezaOrigenVisita(){
+      try{
+        const params = new URL(window.location.href).searchParams;
+        if(["origen","fuente","source"].some(key => String(params.get(key) || "").trim())) return "Confirmado por enlace";
+        if(String(params.get("utm_source") || "").trim()) return "Confirmado por UTM";
+        if(["gclid","dclid","gbraid","wbraid","gad_source","msclkid","ttclid","li_fat_id","twclid","fbclid","igshid","sccid","mc_cid","mc_eid"].some(key => params.has(key))){
+          return "Confirmado por identificador publicitario";
+        }
+        if(String(document.referrer || "").trim()) return "Detectado por referente";
+      }catch(_){}
+      return "No detectable";
+    }
+
+    function contextoAtribucionVisita(){
+      const actual = {
+        origen: String(resumenOrigenVisita() || "Directo / no detectable"),
+        medio: obtenerMedioVisita(),
+        campana: obtenerCampanaVisita(),
+        certeza: certezaOrigenVisita(),
+        ts: Date.now()
+      };
+
+      let primero = leerAtribucionGuardada(localStorage, ATTRIBUTION_FIRST_KEY);
+      if(!primero){
+        primero = actual;
+        guardarAtribucion(localStorage, ATTRIBUTION_FIRST_KEY, primero);
+      }
+      guardarAtribucion(localStorage, ATTRIBUTION_LAST_KEY, actual);
+
+      const conversion = leerAtribucionGuardada(sessionStorage, ATTRIBUTION_CONVERSION_KEY) || null;
+
+      return { actual, primero, ultimo:actual, conversion };
+    }
+
+    function registrarConversionCatalogo(tipo, detalle){
+      const nombre = String(tipo || "").trim();
+      if(!nombre) return;
+
+      const prioridades = {
+        "Añadió al carrito": 10,
+        "Abrió WhatsApp": 20,
+        "Inició pedido por WhatsApp": 30,
+        "Pedido registrado": 40
+      };
+      const existente = leerAtribucionGuardada(sessionStorage, ATTRIBUTION_CONVERSION_KEY);
+      if((prioridades[nombre] || 1) < (prioridades[String(existente?.tipo || "")] || 0)) return;
+
+      const evento = {
+        tipo: nombre,
+        detalle: String(detalle || "").trim(),
+        origen: String(resumenOrigenVisita() || ""),
+        campana: obtenerCampanaVisita(),
+        ts: Date.now()
+      };
+      guardarAtribucion(sessionStorage, ATTRIBUTION_CONVERSION_KEY, evento);
+
+      try{
+        window.dispatchEvent(new CustomEvent("catalogo:conversion", { detail:evento }));
+      }catch(_){}
+    }
+    window.registrarConversionCatalogo = registrarConversionCatalogo;
+
+    try{ contextoAtribucionVisita(); }catch(_){}
+
     window.obtenerContextoVisitaCatalogo = async function(){
       const detalle = await obtenerDetalleDispositivoVisita();
+      const atribucion = contextoAtribucionVisita();
+      const conversion = atribucion.conversion || {};
       try{
         const album = getSelectedAlbum();
         const items = cartItemsArray();
@@ -1943,7 +2051,14 @@
           dispositivo: detalle.resumen,
           marca: detalle.marca,
           modelo: detalle.modelo,
-          origen: resumenOrigenVisita(),
+          origen: String(atribucion.actual.origen || ""),
+          primer_origen: String(atribucion.primero?.origen || ""),
+          ultimo_origen: String(atribucion.ultimo?.origen || ""),
+          medio: String(atribucion.actual.medio || ""),
+          campana: String(atribucion.actual.campana || ""),
+          certeza_origen: String(atribucion.actual.certeza || ""),
+          conversion: String(conversion.tipo || ""),
+          conversion_detalle: String(conversion.detalle || ""),
           categoria: String(album?.label || ""),
           producto: String(primerProducto || ""),
           carrito_productos: String(items.length),
@@ -1955,7 +2070,14 @@
           dispositivo: detalle.resumen,
           marca: detalle.marca,
           modelo: detalle.modelo,
-          origen: resumenOrigenVisita(),
+          origen: String(atribucion.actual.origen || ""),
+          primer_origen: String(atribucion.primero?.origen || ""),
+          ultimo_origen: String(atribucion.ultimo?.origen || ""),
+          medio: String(atribucion.actual.medio || ""),
+          campana: String(atribucion.actual.campana || ""),
+          certeza_origen: String(atribucion.actual.certeza || ""),
+          conversion: String(conversion.tipo || ""),
+          conversion_detalle: String(conversion.detalle || ""),
           categoria: "",
           producto: "",
           carrito_productos: "0",
@@ -2182,6 +2304,7 @@
     function buildOrderPayload(){
       const items = cartItemsArray();
       const client = getClientDataCurrent();
+      const atribucion = contextoAtribucionVisita();
       const addr = getAddressDataCurrent();
       const subtotal = cartTotalValue();
       const envio = getShippingCop();
@@ -2199,6 +2322,15 @@
           direccionBase: addr.addressLine || "",
           direccionMapa: addr.mapLink || "",
           barrio: addr.barrio || ""
+        },
+        atribucion: {
+          origenActual: String(atribucion.actual?.origen || ""),
+          primerOrigen: String(atribucion.primero?.origen || ""),
+          ultimoOrigen: String(atribucion.ultimo?.origen || ""),
+          medio: String(atribucion.actual?.medio || ""),
+          campana: String(atribucion.actual?.campana || ""),
+          certeza: String(atribucion.actual?.certeza || ""),
+          conversion: String(atribucion.conversion?.tipo || "")
         },
         items: items.map(it => {
           const p = productById.get(String(it.id)) || {};
@@ -2402,6 +2534,9 @@
       if(!newQty) delete cart[id];
       else cart[id].qty = newQty;
 
+      if(act === "inc" && newQty > safeInt(current.qty, 0)){
+        registrarConversionCatalogo("Añadió al carrito", String(current.name || ""));
+      }
       saveCart();
       renderCartModal();
     });
@@ -2409,6 +2544,13 @@
     function openWhatsAppTo(toDigits, text){
       const msg = String(text || "").trim() || "Hola, quiero información del catálogo.";
       window.open(waLinkTo(toDigits, msg), "_blank", "noopener");
+    }
+
+    const waTopTrackingLink = document.getElementById("waTopLink");
+    if(waTopTrackingLink){
+      waTopTrackingLink.addEventListener("click", ()=>{
+        registrarConversionCatalogo("Abrió WhatsApp", "Contacto superior");
+      });
     }
 
     // ÚNICO BOTÓN: Registrar pedido y luego abrir WhatsApp (se envía al número de la tienda)
@@ -2426,13 +2568,16 @@
           saveAddressToLS();
           saveShippingToLS();
 
+          registrarConversionCatalogo("Inició pedido por WhatsApp", String(cartTotalQty()));
           try{
             await registerOrderInSheet();
+            registrarConversionCatalogo("Pedido registrado", String(cartTotalQty()));
           }catch(err){
             console.error("No se pudo registrar el pedido en Google Sheets:", err);
           }
 
           // El mensaje SIEMPRE se envía al número de la tienda
+          registrarConversionCatalogo("Abrió WhatsApp", "Compra desde carrito");
           openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
         }finally{
           setTimeout(()=>{
@@ -3710,6 +3855,9 @@
           };
         }
 
+        if(act === "inc" && newQty > currentQty){
+          registrarConversionCatalogo("Añadió al carrito", String(p.name || ""));
+        }
         saveCart();
         refreshCardUI(card, p);
 

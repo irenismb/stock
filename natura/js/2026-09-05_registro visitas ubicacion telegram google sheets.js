@@ -318,6 +318,18 @@
       );
 
       const loadId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const origenActual = String(contexto.ultimo_origen || contexto.origen || "").trim();
+      const primerOrigen = String(contexto.primer_origen || "").trim();
+      const medio = String(contexto.medio || "").trim();
+      const campana = String(contexto.campana || "").trim();
+      const conversion = String(contexto.conversion || "").trim();
+      const partesOrigen = [origenActual || "Directo / no detectable"];
+      if(primerOrigen && primerOrigen !== origenActual) partesOrigen.push(`primero: ${primerOrigen}`);
+      if(medio) partesOrigen.push(`medio: ${medio}`);
+      if(campana) partesOrigen.push(`campaña: ${campana}`);
+      if(conversion) partesOrigen.push(`conversión: ${conversion}`);
+      const origenTelegram = partesOrigen.join(" · ");
+
       const payload = new URLSearchParams({
         lat: String(ubicacion.lat ?? ""),
         lng: String(ubicacion.lng ?? ""),
@@ -336,7 +348,15 @@
         marca: String(contexto.marca || ""),
         modelo: String(contexto.modelo || ""),
         ip_local: String(ipLocal || ""),
-        origen: String(contexto.origen || ""),
+        origen: origenTelegram,
+        origen_actual: origenActual,
+        primer_origen: primerOrigen,
+        ultimo_origen: String(contexto.ultimo_origen || origenActual),
+        medio,
+        campana,
+        certeza_origen: String(contexto.certeza_origen || ""),
+        conversion,
+        conversion_detalle: String(contexto.conversion_detalle || ""),
         categoria: String(contexto.categoria || ""),
         producto: String(contexto.producto || ""),
         carrito_productos: String(contexto.carrito_productos || "0"),

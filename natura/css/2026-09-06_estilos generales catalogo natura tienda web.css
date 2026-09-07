@@ -4125,3 +4125,28 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
     padding:8px 11px !important;
   }
 }
+
+/* Restauración de tamaño de productos en móvil pequeño. */
+@media(max-width:360px){
+  .grid:not(.album-grid-mode){
+    grid-template-columns:1fr !important;
+    gap:12px !important;
+  }
+  .card .pad{
+    padding:15px 16px 16px !important;
+  }
+  .card .name{
+    font-size:15px !important;
+  }
+  .card .description{
+    font-size:13px !important;
+    line-height:1.55 !important;
+  }
+  .card .price{
+    font-size:17px !important;
+  }
+  .actions{
+    grid-template-columns:1fr 1fr !important;
+    gap:7px !important;
+  }
+}

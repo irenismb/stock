@@ -1,0 +1,844 @@
+<!doctype html>
+<!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
+<!-- Fuente de datos: Google Sheet oficial A:M con Sección, Público, Categoría, Condición y Estado comercial. -->
+<!-- Las imágenes de productos se relacionan por código y se almacenan directamente en productos/. -->
+<html lang="es-CO">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <base href="https://irenismb.github.io/stock/natura/" />
+  <meta http-equiv="x-dns-prefetch-control" content="on" />
+  <title>CCC | Concepto editorial Irenismb Stock Natura</title>
+  <meta name="description" content="Catálogo Irenismb Stock Natura en Santa Marta: belleza y cuidado para ella, para él y unisex, además de hogar, juguetes, papelería y más. Compra fácil por WhatsApp y envíos a toda Colombia." />
+  <meta name="robots" content="noindex,nofollow" />
+  <meta name="theme-color" content="#fbf7f2" />
+  <meta name="format-detection" content="telephone=no" />
+
+  <link rel="icon" type="image/webp" href="logos/logo_empresa.webp" />
+  <link rel="icon" type="image/png" href="logos/logo_empresa.png" />
+  <link rel="apple-touch-icon" href="logos/logo_empresa.png" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html" />
+  <meta property="og:title" content="Irenismb Stock Natura | Catálogo con compra por WhatsApp" />
+  <meta property="og:description" content="Explora belleza y cuidado para ella, para él y unisex, además de otros productos. Compra fácil por WhatsApp." />
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
+  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="1332" />
+  <meta property="og:image:height" content="1316" />
+  <meta property="og:image:alt" content="Logo Irenismb Stock Natura" />
+  <meta property="og:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp" />
+  <meta property="og:image:secure_url" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.webp" />
+  <meta property="og:image:type" content="image/webp" />
+  <meta property="og:image:width" content="1024" />
+  <meta property="og:image:height" content="1024" />
+  <meta property="og:image:alt" content="Logo Irenismb Stock Natura" />
+  <meta property="og:site_name" content="Irenismb Stock Natura" />
+  <meta property="og:locale" content="es_CO" />
+
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo" />
+  <meta name="twitter:description" content="Belleza, cuidado y otros productos en Santa Marta. Compra fácil por WhatsApp." />
+  <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
+  <meta name="twitter:image:alt" content="Logo Irenismb Stock Natura" />
+
+  <link rel="dns-prefetch" href="//web.whatsapp.com" />
+  <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
+
+  <link rel="preload" as="image" href="logos/logo_empresa.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="logos/logo_empresa.png" type="image/png" fetchpriority="high" />
+  <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
+  <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
+
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+:root{
+  --paper:#fbf7f2;
+  --paper-2:#f5ede5;
+  --card:#fffdfa;
+  --ink:#241b18;
+  --muted:#786d68;
+  --line:rgba(57,39,31,.13);
+  --wine:#7e2949;
+  --wine-deep:#5c1c34;
+  --rose:#dca8b7;
+  --rose-soft:#f1dde3;
+  --gold:#b48a4b;
+  --gold-soft:#ead8b8;
+  --orange:#e7602d;
+  --shadow:0 18px 55px rgba(73,43,33,.10);
+  --shadow-soft:0 8px 25px rgba(73,43,33,.08);
+  --radius:28px;
+  --radius-sm:18px;
+  --serif:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+  --sans:"DM Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;background:var(--paper)}
+html,body{max-width:100%;overflow-x:hidden}
+body{
+  margin:0;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  color:var(--ink);
+  font-family:var(--sans);
+  background:
+    radial-gradient(circle at 8% 3%, rgba(220,168,183,.28), transparent 27rem),
+    radial-gradient(circle at 96% 6%, rgba(234,216,184,.38), transparent 30rem),
+    linear-gradient(180deg,#fffdfa 0%,var(--paper) 42%,#f7f0e9 100%);
+  -webkit-font-smoothing:antialiased;
+}
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  pointer-events:none;
+  opacity:.22;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.82' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.035'/%3E%3C/svg%3E");
+}
+a{color:inherit}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.wrap{width:min(1180px,calc(100% - 40px));margin-inline:auto}
+.visually-hidden{position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important}
+[hidden],.hidden{display:none!important}
+
+/* Encabezado editorial */
+.site-header{
+  position:relative;
+  padding:22px 0 0;
+  isolation:isolate;
+}
+.site-header::after{
+  content:"";
+  position:absolute;
+  left:0;right:0;top:0;height:4px;
+  background:linear-gradient(90deg,var(--wine),var(--rose),var(--gold),var(--orange));
+}
+.site-header-inner{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  min-height:88px;
+  border-bottom:1px solid var(--line);
+}
+.brand{display:flex;align-items:center;gap:15px;min-width:0}
+.brand picture{display:block;line-height:0;flex:0 0 auto}
+.brand img{
+  width:68px;height:68px;border-radius:50%;object-fit:cover;display:block;
+  border:5px solid rgba(255,255,255,.88);
+  box-shadow:0 8px 28px rgba(76,39,44,.14);
+}
+.brand h1{
+  margin:0;
+  font:600 clamp(19px,2.4vw,27px)/1 var(--serif);
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.brand .tagline{
+  margin:6px 0 0;
+  font-size:11.5px;
+  color:var(--muted);
+  letter-spacing:.075em;
+  text-transform:uppercase;
+}
+.brand .tagline .dot{display:none}
+
+.editorial-hero{
+  width:min(1180px,calc(100% - 40px));
+  margin:46px auto 26px;
+  display:grid;
+  grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr);
+  gap:40px;
+  align-items:end;
+}
+.editorial-hero-copy{max-width:780px}
+.editorial-eyebrow{
+  display:inline-flex;align-items:center;gap:10px;
+  font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--wine);
+}
+.editorial-eyebrow::before{content:"";width:34px;height:1px;background:var(--wine)}
+.editorial-title{
+  margin:14px 0 12px;
+  max-width:820px;
+  font:500 clamp(54px,8vw,112px)/.83 var(--serif);
+  letter-spacing:-.045em;
+}
+.editorial-title em{font-style:italic;color:var(--wine);font-weight:500}
+.editorial-lede{
+  max-width:610px;margin:0;
+  font-size:clamp(15px,1.8vw,19px);line-height:1.65;color:var(--muted)
+}
+.editorial-note{
+  justify-self:end;
+  max-width:320px;
+  padding:24px 24px 22px;
+  border:1px solid rgba(126,41,73,.18);
+  border-radius:999px 999px 28px 28px;
+  background:rgba(255,253,250,.62);
+  backdrop-filter:blur(10px);
+  box-shadow:var(--shadow-soft);
+  text-align:center;
+}
+.editorial-note strong{display:block;font:600 28px/1.1 var(--serif);color:var(--wine)}
+.editorial-note span{display:block;margin-top:7px;font-size:12px;line-height:1.45;color:var(--muted)}
+
+header .intro{padding-bottom:16px}
+.social-icons{
+  display:flex;align-items:center;justify-content:center;gap:8px;flex-wrap:wrap;
+  padding:10px 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(255,253,250,.68);
+  backdrop-filter:blur(16px);
+  box-shadow:var(--shadow-soft);
+}
+.social-row{display:contents}
+.social-icons a,.social-share-btn{
+  width:43px;height:43px;padding:0;border-radius:50%;
+  display:inline-flex;align-items:center;justify-content:center;
+  border:1px solid transparent;background:transparent;text-decoration:none;
+  transition:transform .2s ease,background .2s ease,border-color .2s ease;
+}
+.social-icons a:hover,.social-share-btn:hover{transform:translateY(-2px);background:#fff;border-color:var(--line)}
+.social-icons img{width:25px;height:25px;object-fit:contain;border-radius:50%;display:block}
+.social-icons svg{width:20px;height:20px;fill:var(--wine)}
+.social-share-btn svg{fill:none;stroke:var(--wine);stroke-width:1.7}
+
+/* Barra de compra: limpia, flotante */
+.bar{
+  display:grid;
+  grid-template-columns:minmax(280px,1fr) 170px 170px 205px;
+  gap:10px;
+  margin-top:14px;
+  padding:11px;
+  border:1px solid var(--line);
+  border-radius:24px;
+  background:rgba(255,253,250,.84);
+  backdrop-filter:blur(18px);
+  box-shadow:0 18px 45px rgba(88,48,39,.09);
+}
+.bar>*{min-width:0}
+.search-wrap{position:relative;height:48px;min-width:0;overflow:hidden;border-radius:16px}
+.search-wrap input,
+.bar select,
+.bar button{
+  width:100%;height:48px;min-height:48px;
+  border:1px solid var(--line);border-radius:16px;
+  background:#fffdfa;color:var(--ink);
+  padding:0 15px;font-size:13px;font-weight:600;
+  outline:none;
+  transition:border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease;
+}
+.search-wrap input{padding-left:46px;position:relative;z-index:1}
+.search-wrap::before{
+  content:"⌕";position:absolute;z-index:4;left:17px;top:50%;transform:translateY(-52%);
+  font:400 24px/1 var(--serif);color:var(--wine);pointer-events:none;
+}
+.search-wrap input:focus,
+.bar select:focus,.bar button:focus-visible{border-color:rgba(126,41,73,.48);box-shadow:0 0 0 4px rgba(126,41,73,.08)}
+.search-wrap input::placeholder{color:#a39791;font-weight:500}
+.search-ticker{
+  position:absolute;inset:0;z-index:3;display:flex;align-items:center;overflow:hidden;
+  padding:0 15px 0 46px;pointer-events:none;opacity:0;
+  color:#8c7f79;font-size:13px;font-weight:500;white-space:nowrap;
+}
+.search-wrap.show-ticker .search-ticker{opacity:1}
+.search-wrap.show-ticker input::placeholder{color:transparent!important;opacity:0!important}
+.search-wrap.show-ticker input{caret-color:transparent}
+.ticker-inner{display:flex;width:max-content;animation:marquee var(--marquee-duration,14s) linear infinite;transform:translate3d(0,0,0)}
+.ticker-seq{display:flex;width:max-content;align-items:center}
+.ticker-item{padding-right:46px;white-space:nowrap}
+@keyframes marquee{to{transform:translate3d(calc(-1 * var(--marquee-distance,0px)),0,0)}}
+#cat,#brand{display:none!important}
+.btn-ghost{background:#fffdfa!important;color:var(--ink)!important}
+.btn-ghost:hover{background:#f8f0eb!important}
+.btn-acc{
+  background:linear-gradient(135deg,var(--wine) 0%,#943b5d 100%)!important;
+  color:white!important;border-color:transparent!important;
+  box-shadow:0 10px 24px rgba(126,41,73,.20)!important;
+}
+.btn-acc:hover{transform:translateY(-1px);box-shadow:0 13px 30px rgba(126,41,73,.25)!important}
+.btn-danger{background:#fff!important;color:#7a3447!important;border-color:#e3c8d0!important}
+.btn-danger:hover{background:#fff4f6!important}
+#btn-cart{display:flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap}
+#cartCount{display:inline-grid;place-items:center;min-width:25px;height:25px;padding:0 7px;border-radius:999px;background:#fff;color:var(--wine);font-size:11px;font-weight:800}
+.count-slot{display:none;width:100%}
+
+/* Panel de palabras */
+.word-panel{
+  margin-top:12px;padding:19px;border:1px solid var(--line);border-radius:22px;
+  background:rgba(255,253,250,.90);box-shadow:var(--shadow-soft)
+}
+.word-panel-head{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}
+.word-panel-title{font:600 25px/1.05 var(--serif)}
+.word-panel-subtitle,.word-label{margin-top:4px;font-size:12px;color:var(--muted)}
+.word-chips,.word-active-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.term-chip{
+  border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);
+  padding:8px 12px;font-size:12px;font-weight:650;transition:.18s ease
+}
+.term-chip:hover,.term-chip.is-active{background:var(--rose-soft);border-color:rgba(126,41,73,.24);color:var(--wine)}
+.term-chip-count{opacity:.55;margin-left:5px}.term-chip-remove{margin-left:6px}
+.word-active{margin-top:15px;padding-top:14px;border-top:1px solid var(--line)}
+.word-empty{font-size:12px;color:var(--muted);margin-top:12px}
+
+/* Entrada al catálogo */
+main{flex:1 0 auto;padding:34px 0 20px}
+.catalog-entry-intro{
+  max-width:760px;margin:0 auto 18px;text-align:center;padding:14px 20px 8px
+}
+.catalog-entry-kicker{
+  margin:0 0 8px;color:var(--wine);font-size:11px;font-weight:800;letter-spacing:.18em;text-transform:uppercase
+}
+.catalog-entry-title{
+  margin:0;font:500 clamp(38px,5vw,66px)/.95 var(--serif);letter-spacing:-.03em
+}
+.catalog-entry-text{margin:13px auto 0;max-width:620px;color:var(--muted);line-height:1.6;font-size:14px}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0 4px}
+.topline.hidden{display:none}
+.count{
+  display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--line);border-radius:999px;
+  background:rgba(255,253,250,.72);font-size:11.5px;color:var(--muted);font-weight:650
+}
+.count.search-active{color:var(--wine);border-color:rgba(126,41,73,.22);background:var(--rose-soft);animation:none!important}
+.count.is-loading{opacity:.7}
+.album-nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 4px}
+.album-back{min-height:42px!important;height:42px!important;padding:0 16px!important;border-radius:999px!important;background:#fff!important;color:var(--wine)!important;font-weight:750!important;animation:none!important}
+.album-path{color:var(--muted);font-size:12px;font-weight:650}
+
+/* Categorías: portada de revista */
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px;margin-top:18px;align-items:stretch}
+.grid.album-grid-mode{grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.album-card{min-width:0;height:100%}
+.album-folder{
+  position:relative;width:100%;height:100%;min-height:330px;padding:0;
+  display:flex;flex-direction:column;overflow:hidden;text-align:left;
+  border:1px solid rgba(61,39,31,.09);border-radius:30px;
+  background:#fff;box-shadow:var(--shadow-soft);color:var(--ink);
+  transition:transform .28s cubic-bezier(.2,.8,.2,1),box-shadow .28s ease;
+}
+.album-folder:hover{transform:translateY(-6px);box-shadow:0 24px 58px rgba(73,43,33,.14)}
+.album-preview{position:relative;width:100%;aspect-ratio:1/1.05;background:linear-gradient(145deg,#f6eee7,#fff);overflow:hidden}
+.album-preview::after{content:"";position:absolute;inset:auto 0 0;height:48%;background:linear-gradient(180deg,transparent,rgba(42,24,20,.22));pointer-events:none}
+.album-preview img{width:100%;height:100%;object-fit:contain;padding:16px;display:block;transition:transform .35s ease}
+.album-folder:hover .album-preview img{transform:scale(1.035)}
+.album-pad{padding:16px 17px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
+.album-card-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.album-icon{font-size:18px;color:var(--wine)}
+.album-count-badge{font-size:10.5px;font-weight:800;color:var(--wine);background:var(--rose-soft);padding:5px 8px;border-radius:999px}
+.album-copy{margin-top:auto}
+.album-label{margin:0;font:600 25px/1.03 var(--serif);letter-spacing:-.02em}
+.album-meta{margin:7px 0 0;color:var(--muted);font-size:11.5px;line-height:1.4}
+.album-open{display:none!important}
+
+/* Productos */
+.card{
+  position:relative;display:flex;flex-direction:column;min-width:0;height:100%;overflow:hidden;
+  border:1px solid rgba(61,39,31,.09);border-radius:30px;background:var(--card);
+  box-shadow:0 8px 26px rgba(73,43,33,.075);
+  transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s ease,border-color .25s ease
+}
+.card:hover{transform:translateY(-5px);box-shadow:0 22px 55px rgba(73,43,33,.13);border-color:rgba(126,41,73,.18)}
+.img{position:relative;width:100%;aspect-ratio:1/1;background:linear-gradient(145deg,#f7f0e9,#fff);overflow:hidden;border-bottom:1px solid rgba(61,39,31,.07)}
+.img>img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;padding:16px;cursor:zoom-in;transition:transform .3s ease}
+.card:hover .img>img{transform:scale(1.03)}
+.pad{display:flex;flex-direction:column;gap:9px;padding:16px 16px 17px;flex:1}
+.name{margin:0;font:600 22px/1.04 var(--serif);letter-spacing:-.015em;color:var(--ink);word-break:break-word}
+.meta{margin:0;color:#93847d;font-size:10.5px;line-height:1.45;font-weight:650;text-transform:uppercase;letter-spacing:.045em}
+.description{margin:0;color:#6f625c;font-size:12.2px;line-height:1.58;text-align:left!important;hyphens:none!important}
+.row{display:flex;align-items:center;justify-content:space-between;gap:9px;flex-wrap:wrap;margin-top:auto;padding-top:2px}
+.price{font:700 24px/1 var(--serif);color:var(--wine);letter-spacing:-.02em}
+.pill{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:0 9px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);font-size:10.5px;font-weight:700}
+.actions{display:grid;grid-template-columns:.85fr 1.15fr;gap:8px;margin-top:3px}
+.actions button{min-height:42px;border-radius:14px;padding:0 10px;font-size:12px;font-weight:800}
+.card.search-hit{outline:2px solid rgba(126,41,73,.25);outline-offset:2px}
+.card.search-miss{opacity:.42}
+.empty-state{grid-column:1/-1;border:1px dashed rgba(126,41,73,.24);border-radius:26px;padding:48px 24px;text-align:center;background:rgba(255,253,250,.72);color:var(--muted)}
+
+/* Listado inferior */
+.site-footer{padding:34px 0 24px}
+.beauty-products-details{margin-bottom:16px;border:1px solid var(--line);border-radius:20px;background:rgba(255,253,250,.76);overflow:hidden}
+.beauty-products-summary{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:14px 16px;cursor:pointer;font-weight:700;font-size:12px}
+.beauty-products-count{color:var(--wine)}
+.beauty-products-content{padding:0 16px 16px;border-top:1px solid var(--line)}
+.beauty-products-list{margin:14px 0 0;padding-left:22px;columns:2;column-gap:30px}
+.beauty-products-list li{break-inside:avoid;margin:0 0 12px;color:var(--muted);font-size:11.5px;line-height:1.45}
+.beauty-product-name{color:var(--ink);font-weight:700}.beauty-product-meta{color:#9b8b83}.beauty-product-description{margin-top:3px}
+.footer-card{
+  padding:26px 28px;border-radius:28px;border:0;
+  background:linear-gradient(135deg,#251b1b 0%,#401d2b 62%,#6a2845 100%);
+  color:#f9eee8;box-shadow:0 20px 55px rgba(65,29,41,.18);font-size:12.5px;line-height:1.7
+}
+.footer-card p{margin:0}.footer-card strong{color:#fff}.footer-card a{color:#f4c9d4;text-decoration:none;border-bottom:1px solid rgba(244,201,212,.32)}
+
+/* Modales y formularios */
+.cart-modal,.form-modal,.img-modal{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:18px}
+.cart-modal.open,.form-modal.open,.img-modal.open{display:flex}
+.cart-modal-backdrop,.form-modal-backdrop,.img-modal-backdrop{position:absolute;inset:0;background:rgba(37,25,22,.58);backdrop-filter:blur(8px)}
+.cart-modal-content,.form-modal-content{
+  position:relative;z-index:1;width:min(680px,96vw);max-height:90vh;overflow:hidden;
+  display:flex;flex-direction:column;background:#fffdfa;border:1px solid rgba(255,255,255,.72);border-radius:28px;box-shadow:0 30px 90px rgba(38,22,20,.30)
+}
+.cart-modal-header,.form-modal-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid var(--line)}
+.cart-modal-title,.form-modal-title{margin:0;font:600 28px/1 var(--serif)}
+.cart-modal-close,.form-modal-close,.img-modal-close{display:grid;place-items:center;width:38px;height:38px;padding:0;border-radius:50%;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:16px}
+.cart-modal-body,.form-modal-body{padding:18px 20px;overflow:auto}
+.cart-modal-footer,.form-modal-footer{padding:16px 20px 20px;border-top:1px solid var(--line);background:#fbf6f1}
+.cart-shipping{display:grid;grid-template-columns:90px 1fr;align-items:center;gap:10px}.cart-shipping label{font-size:12px;font-weight:700}
+.cart-shipping input,.client-grid input,.client-grid select,.client-grid textarea{
+  width:100%;min-width:0;border:1px solid var(--line);border-radius:14px;background:white;color:var(--ink);padding:11px 12px;outline:none
+}
+.cart-total{margin:14px 0;font:700 27px/1 var(--serif);color:var(--wine);text-align:right}
+.cart-footer-actions,.addr-actions-top,.form-modal-footer{display:flex;gap:8px;flex-wrap:wrap}
+.cart-footer-actions button,.addr-actions-top button,.addr-actions-top a,.form-modal-footer button{min-height:42px;padding:0 14px;border-radius:14px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center}
+.cart-item{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;padding:14px 0;border-bottom:1px solid var(--line)}
+.cart-item-left{display:flex;gap:12px;min-width:0}.cart-thumb{width:72px;height:72px;border-radius:16px;object-fit:contain;background:#f7efe8;border:1px solid var(--line)}
+.cart-item-main{min-width:0}.cart-item-name{margin:0;font:600 18px/1.1 var(--serif)}.cart-item-sub{margin:6px 0 0;color:var(--muted);font-size:11px;line-height:1.4}
+.cart-controls{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.cart-qty-btn,.cart-remove{min-width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:#fff}.cart-qty{min-width:28px;text-align:center;font-weight:700}.cart-subtotal{width:100%;font-size:11px;color:var(--wine);font-weight:700;text-align:right}
+.cart-empty{padding:30px;text-align:center;color:var(--muted)}
+.client-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.field{display:flex;flex-direction:column;gap:6px}.field label{font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}.span-2{grid-column:span 2}
+.addr-actions-top{position:relative;z-index:2;padding:14px 20px 0}
+.img-modal-content{position:relative;z-index:1;max-width:92vw;max-height:90vh}.img-modal-content img{max-width:92vw;max-height:88vh;display:block;border-radius:24px;background:#fff;box-shadow:0 30px 90px rgba(38,22,20,.35)}
+.img-modal-close{position:fixed;z-index:3;right:22px;top:22px}
+
+/* Navegación flotante */
+.page-nav-btn{
+  position:fixed;z-index:8500;right:18px;display:inline-flex;align-items:center;gap:7px;
+  min-height:43px;padding:0 14px;border-radius:999px;border:1px solid rgba(126,41,73,.16);
+  background:rgba(255,253,250,.92);color:var(--wine);box-shadow:0 10px 28px rgba(72,36,42,.13);backdrop-filter:blur(12px);font-size:11px;font-weight:800
+}
+.page-nav-btn svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2}.go-to-start-btn{bottom:72px}.go-to-end-btn{bottom:20px}.page-nav-btn.is-hidden{opacity:0;pointer-events:none;transform:translateY(8px)}
+
+/* Casos especiales */
+.gift-gallery-card{border-radius:28px!important;overflow:hidden!important;background:#fff!important;border:1px solid var(--line)!important}
+.album-product-preview,.album-icon-image{max-width:100%;max-height:100%;object-fit:contain}
+.album-preview-is-search-match{outline:2px solid rgba(126,41,73,.24);outline-offset:-2px}
+
+@media (max-width:1024px){
+  .editorial-hero{grid-template-columns:1fr;gap:24px}.editorial-note{justify-self:start;max-width:270px}
+  .bar{grid-template-columns:minmax(0,1fr) 150px 190px}.bar #toggleWordPanelBtn{grid-column:2}.bar #btn-cart{grid-column:3}
+  .grid,.grid.album-grid-mode{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:760px){
+  .wrap,.editorial-hero{width:min(100% - 26px,1180px)}
+  .site-header{padding-top:14px}.site-header-inner{min-height:74px}
+  .brand img{width:54px;height:54px;border-width:4px}.brand h1{font-size:19px}.brand .tagline{font-size:9.5px;letter-spacing:.05em}
+  .editorial-hero{margin-top:28px}.editorial-title{font-size:clamp(50px,15vw,78px)}.editorial-note{display:none}.editorial-lede{font-size:14px}
+  .social-icons{justify-content:flex-start;border-radius:22px;overflow-x:auto;flex-wrap:nowrap}.social-icons a,.social-share-btn{flex:0 0 auto}
+  .bar{grid-template-columns:1fr 1fr;padding:9px;border-radius:20px}.search-wrap{grid-column:1/-1}.bar #sort{grid-column:1}.bar #toggleWordPanelBtn{grid-column:2}.bar #btn-cart{grid-column:1/-1}
+  main{padding-top:24px}.catalog-entry-title{font-size:46px}.catalog-entry-text{font-size:13px}
+  .grid,.grid.album-grid-mode{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .album-folder{min-height:260px;border-radius:22px}.album-pad{padding:12px}.album-label{font-size:20px}.album-count-badge{font-size:9px}
+  .card{border-radius:22px}.pad{padding:12px;gap:7px}.name{font-size:18px}.description{font-size:11.3px;line-height:1.45}.price{font-size:20px}.actions{grid-template-columns:1fr;gap:6px}.actions button{min-height:38px}
+  .beauty-products-list{columns:1}.footer-card{padding:22px 20px;border-radius:24px}
+  .client-grid{grid-template-columns:1fr}.span-2{grid-column:auto}
+  .cart-item{grid-template-columns:1fr}.cart-controls{justify-content:flex-start}.cart-subtotal{text-align:left}
+}
+@media (max-width:420px){
+  .brand .tagline{max-width:220px}.editorial-title{font-size:47px}.editorial-eyebrow{font-size:9.5px}.editorial-lede{font-size:13px}
+  .bar{grid-template-columns:1fr}.bar #sort,.bar #toggleWordPanelBtn,.bar #btn-cart{grid-column:1}
+  .grid,.grid.album-grid-mode{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+  .album-folder{min-height:220px}.album-label{font-size:17px}.album-meta{font-size:9.7px}.album-pad{padding:10px}
+  .name{font-size:16px}.meta{font-size:9px}.description{font-size:10.6px}.price{font-size:18px}.pad{padding:10px}.actions button{font-size:11px}.pill{font-size:9px}
+}
+@media (max-width:340px){.grid,.grid.album-grid-mode{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
+
+  </style>
+
+  <script type="application/ld+json">
+  {
+    "@context":"https://schema.org",
+    "@type":"Store",
+    "name":"Irenismb Stock Natura",
+    "url":"https://irenismb.github.io/stock/natura/catalogo.html",
+    "description":"Belleza, cuidado y otros productos en Santa Marta. Compra fácil por WhatsApp.",
+    "telephone":"+57 304 208 8961",
+    "address":{
+      "@type":"PostalAddress",
+      "streetAddress":"Calle 10A #20A-06 barrio Los Almendros",
+      "addressLocality":"Santa Marta",
+      "addressRegion":"Magdalena",
+      "addressCountry":"CO"
+    },
+    "geo":{
+      "@type":"GeoCoordinates",
+      "latitude":11.244833370782679,
+      "longitude":-74.19066001689564
+    },
+    "hasMap":"https://maps.google.com/?q=11.244833370782679,-74.19066001689564",
+    "areaServed":"Colombia",
+    "sameAs":[
+      "https://www.facebook.com/marketplace/profile/100084865295132",
+      "https://www.instagram.com/irenismb_stocknaturasm",
+      "https://www.tiktok.com/@irenismbstocknatura",
+      "https://www.youtube.com/@irenismendoza3615"
+    ]
+  }
+  </script>
+  <script type="application/ld+json" id="ld-products">
+{
+  "@context": "https://schema.org",
+  "@type": "ItemList",
+  "name": "Catálogo de productos de Irenismb Stock Natura",
+  "numberOfItems": 0,
+  "itemListElement": []
+}
+</script>
+
+  
+
+
+  
+
+  
+
+  
+
+  
+
+</head>
+
+<body>
+  <header class="site-header">
+    <div class="wrap site-header-inner">
+      <div class="brand">
+        <picture>
+          <source srcset="logos/logo_empresa.webp" type="image/webp">
+          <img src="logos/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52" />
+        </picture>
+        <div>
+          <h1>IRENISMB STOCK NATURA</h1>
+          <p class="tagline"><span class="dot" aria-hidden="true"></span>Natura &amp; AVON · Santa Marta · Envíos a toda Colombia</p>
+        </div>
+      </div>
+    </div>
+
+    <section class="editorial-hero" aria-label="Presentación del catálogo">
+      <div class="editorial-hero-copy">
+        <div class="editorial-eyebrow">Irenismb · selección de belleza</div>
+        <h2 class="editorial-title">Belleza que se siente <em>tuya.</em></h2>
+        <p class="editorial-lede">Una forma más serena, elegante y cercana de descubrir Natura y AVON. Menos ruido, más producto, más deseo y una compra sencilla por WhatsApp.</p>
+      </div>
+      <aside class="editorial-note" aria-label="Servicio de la tienda">
+        <strong>Santa Marta</strong>
+        <span>Asesoría personal · envíos a toda Colombia · compra directa por WhatsApp</span>
+      </aside>
+    </section>
+
+    <div class="wrap intro">
+      <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
+        <div class="social-row social-row-top">
+          <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <img src="logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
+          </a>
+          <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <img src="logos/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
+          </a>
+          <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+            <img src="logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
+          </a>
+
+          <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <picture>
+              <source srcset="logos/youtube.webp" type="image/webp">
+              <img src="logos/youtube.webp" alt="YouTube" loading="lazy" decoding="async" />
+            </picture>
+          </a>
+
+          <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
+            <img src="logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
+          </a>
+        </div>
+
+        <div class="social-row social-row-bottom">
+          <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
+             target="_blank" rel="noopener noreferrer" aria-label="Google Business">
+            <img src="logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
+          </a>
+
+          <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <img src="logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
+          </a>
+
+          <button id="shareCatalogBtn" class="social-share-btn" type="button" aria-label="Compartir catálogo" title="Compartir catálogo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="m8.6 10.7 6.8-4.4M8.6 13.3l6.8 4.4"></path>
+            </svg>
+          </button>
+          <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.02l-2.2 2.2z"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+
+      <div class="bar" role="search" aria-label="Buscar y filtrar productos">
+        <div class="search-wrap" id="searchWrap">
+          <div class="search-ticker" id="searchTicker" aria-hidden="true">
+            <div class="ticker-inner" id="tickerInner"></div>
+          </div>
+
+          <input id="q" type="search" inputmode="search"
+                 placeholder="🔍 Busca aquí por nombre del producto..."
+                 aria-label="Buscar producto por nombre" />
+        </div>
+
+        <div class="count-slot" id="countSlot"></div>
+
+        <select id="cat" aria-label="Filtrar por categoría" hidden disabled><option value="">Todas las categorías</option></select>
+        <select id="brand" aria-label="Filtrar por marca" hidden disabled><option value="">Todas las marcas</option></select>
+        <select id="sort" aria-label="Ordenar productos">
+          <option value="">Ordenar</option>
+          <option value="price_asc">Precio: menor a mayor</option>
+          <option value="price_desc">Precio: mayor a menor</option>
+          <option value="name_asc">Nombre: A → Z</option>
+        </select>
+
+        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar u ocultar palabras sugeridas" aria-controls="wordPanel" aria-pressed="false">
+          Mostrar palabras
+        </button>
+
+        <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
+          <span class="btn-cart-label">Ver carrito WhatsApp</span>
+          <span class="btn-cart-label-short" aria-hidden="true">Carrito</span>
+          <span id="cartCount" class="pill">0</span>
+        </button>
+      </div>
+
+      <section class="word-panel" id="wordPanel" aria-label="Palabras sugeridas del catálogo" hidden>
+        <div class="word-panel-head">
+          <div>
+            <div class="word-panel-title">Palabras sugeridas</div>
+            <div class="word-panel-subtitle">Toca una o varias para filtrar más rápido.</div>
+          </div>
+          <button class="btn-ghost word-clear" id="clearTermsBtn" type="button" hidden>Limpiar palabras</button>
+        </div>
+
+        <div class="word-active" id="activeTermsWrap" hidden>
+          <div class="word-label">Palabras activas</div>
+          <div class="word-active-list" id="activeTerms"></div>
+        </div>
+
+        <div class="word-chips" id="wordChips"></div>
+      </section>
+
+
+      <noscript>
+        <div style="margin-top:12px;border:1px solid #22304a;border-radius:14px;padding:12px;background:rgba(18,24,38,.55);">
+          <h2 style="margin:0 0 6px;font-size:16px;">Catálogo Natura en Santa Marta</h2>
+          <p style="margin:0 0 8px;color:#a9b4c2;line-height:1.45;">
+            Activa JavaScript para ver el catálogo completo.
+          </p>
+          <p style="margin:0;">
+            <a href="https://wa.me/573042088961"
+               rel="noopener noreferrer" target="_blank" style="font-weight:900;">
+              Comprar por WhatsApp
+            </a>
+          </p>
+        </div>
+      </noscript>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <h2 class="visually-hidden">Catálogo de productos Irenismb Stock Natura</h2>
+    <section class="catalog-entry-intro" id="catalogEntryIntro" aria-labelledby="catalogEntryTitle">
+      <p class="catalog-entry-kicker">Explora el catálogo</p>
+      <h2 class="catalog-entry-title" id="catalogEntryTitle">¿Qué estás buscando?</h2>
+      <p class="catalog-entry-text" id="catalogEntryText">Elige Para ella, Para él, Unisex, Regalos para toda ocasión u Otros productos para comenzar.</p>
+    </section>
+    <div class="topline" id="topline">
+      <div class="count" id="count" aria-live="polite">Cargando productos…</div>
+    </div>
+    <div id="albumNavHost">
+      <div class="album-nav" id="albumNav" hidden>
+        <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a la categoría</button>
+        <div class="album-path" id="albumPath" aria-live="polite"></div>
+      </div>
+    </div>
+
+    <section id="grid" class="grid" aria-label="Productos"></section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="wrap">
+      <details class="beauty-products-details">
+        <summary class="beauty-products-summary">
+          <span>Listado de productos del catálogo</span>
+          <span class="beauty-products-count">Cargando productos…</span>
+        </summary>
+        <div class="beauty-products-content">
+          <ol class="beauty-products-list" id="beautyProductsList" aria-label="Listado completo de productos del catálogo">
+          </ol>
+        </div>
+      </details>
+
+      <section class="footer-card" aria-label="Información de la tienda">
+        <p>
+          Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
+          Te asesoramos por <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">WhatsApp</a>, vía telefónica o de manera presencial en el barrio los Almendros.
+          <strong>Dirección:</strong> Calle 10A #20A-06.
+          <strong>Teléfono:</strong> <a href="tel:+573042088961" rel="nofollow">+57 304 208 8961</a>.
+          Realizamos envíos nacionales e internacionales.
+        </p>
+      </section>
+    </div>
+  </footer>
+
+  <div class="cart-modal" id="cartModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Carrito">
+    <div class="cart-modal-backdrop" id="cartModalBackdrop"></div>
+    <div class="cart-modal-content" role="document" aria-label="Contenido del carrito">
+      <div class="cart-modal-header">
+        <h3 class="cart-modal-title">🛒 Carrito</h3>
+        <button class="cart-modal-close" id="cartModalClose" type="button" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="cart-modal-body">
+        <div id="cartItems"></div>
+      </div>
+      <div class="cart-modal-footer">
+        <div class="cart-shipping">
+          <label for="shippingCop">Envío</label>
+          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Mínimo 6.000" aria-label="Envío en COP" />
+        </div>
+
+        <div class="cart-total" id="cartTotal">Total: $0</div>
+
+        <div class="cart-footer-actions">
+          <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
+          <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
+          <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
+          <button class="btn-acc" id="cartBuyBtn" type="button">Comprar por WhatsApp</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-modal" id="addressModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Dirección">
+    <div class="form-modal-backdrop" id="addressModalBackdrop"></div>
+    <div class="form-modal-content" role="document" aria-label="Contenido de dirección">
+      <div class="form-modal-header">
+        <h3 class="form-modal-title">📍 Dirección</h3>
+        <button class="form-modal-close" id="addressModalClose" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="addr-actions-top" aria-label="Acciones dirección">
+        <button class="btn-ghost" id="addrCancelBtn" type="button">Cancelar</button>
+        <button class="btn-acc" id="addrSaveBtn" type="button">Guardar</button>
+        <a class="btn-ghost" id="addrMapsLink" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true" tabindex="-1">Ver en mapa</a>
+      </div>
+
+      <div class="form-modal-body">
+        <div class="client-grid">
+          <div class="field">
+            <label for="addrCity">Ciudad</label>
+            <input id="addrCity" type="text" autocomplete="address-level2" placeholder="Ej: Santa Marta" />
+          </div>
+          <div class="field">
+            <label for="addrRegion">Departamento</label>
+            <input id="addrRegion" type="text" autocomplete="address-level1" placeholder="Ej: Magdalena" />
+          </div>
+
+          <div class="field">
+            <label for="addrViaTipo">Tipo de vía</label>
+            <select id="addrViaTipo">
+              <option value="">Ej: Calle / Carrera / Av</option>
+              <option value="Cl">Calle (Cl)</option>
+              <option value="Cra">Carrera (Cra)</option>
+              <option value="Av">Avenida (Av)</option>
+              <option value="Dg">Diagonal (Dg)</option>
+              <option value="Tv">Transversal (Tv)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="addrViaNum">Número</label>
+            <input id="addrViaNum" type="text" inputmode="text" placeholder="Ej: 10A" />
+          </div>
+
+          <div class="field">
+            <label for="addrPlaca">#/Placa</label>
+            <input id="addrPlaca" type="text" inputmode="text" placeholder="Ej: 20A-06" />
+          </div>
+          <div class="field">
+            <label for="addrBarrio">Barrio</label>
+            <input id="addrBarrio" type="text" autocomplete="address-line2" placeholder="Ej: Los Almendros" />
+          </div>
+
+          <div class="field span-2">
+            <label for="addrFinal">Dirección final</label>
+            <input id="addrFinal" type="text" readonly />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-modal" id="clientModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Otros datos">
+    <div class="form-modal-backdrop" id="clientModalBackdrop"></div>
+    <div class="form-modal-content" role="document" aria-label="Contenido de otros datos">
+      <div class="form-modal-header">
+        <h3 class="form-modal-title">🧾 Otros datos</h3>
+        <button class="form-modal-close" id="clientModalClose" type="button" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="form-modal-body">
+        <div class="client-grid">
+          <div class="field">
+            <label for="clientName">Nombre</label>
+            <input id="clientName" type="text" autocomplete="name" placeholder="Ej: Juan Pérez" />
+          </div>
+          <div class="field">
+            <label for="clientPhone">Teléfono (WhatsApp)</label>
+            <input id="clientPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 3111234567" />
+          </div>
+
+          <div class="field span-2">
+            <label for="clientObs">Observación</label>
+            <textarea id="clientObs" rows="1" placeholder="Ej: Dejar en portería, horario de entrega, pago por Nequi..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-modal-footer">
+        <button class="btn-ghost" id="clientCancelBtn" type="button">Cancelar</button>
+        <button class="btn-acc" id="clientSaveBtn" type="button">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="img-modal" id="imgModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Imagen ampliada">
+    <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
+    <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Cerrar">✕</button>
+    <div class="img-modal-content" role="document">
+      <img id="imgModalImg" alt="Imagen ampliada del producto" />
+    </div>
+  </div>
+
+  <script src="js/2026-09-06_catalogo productos especiales solo imagen precio.js"></script>
+  <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>
+    <span>Inicio</span>
+  </button>
+
+  <button id="goToEndBtn" class="page-nav-btn go-to-end-btn" type="button" aria-label="Ir al final de la página" title="Ir al final de la página">
+    <span>Final</span>
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
+  </button>
+
+  <script src="js/2026-09-06_navegacion compartir controles interfaz catalogo web.js"></script>
+
+</body>
+</html>

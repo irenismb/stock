@@ -1785,19 +1785,151 @@
     }
 
     function resumenOrigenVisita(){
+      const limpiar = value => String(value || "").trim();
+      const normalizar = value => limpiar(value).toLowerCase().replace(/[_.-]+/g, " ").replace(/\s+/g, " ");
+
+      const nombreFuente = value => {
+        const key = normalizar(value);
+        if(!key) return "";
+
+        const aliases = [
+          [/^(whatsapp|wa|wsp|whats app)$/, "WhatsApp"],
+          [/^(facebook|fb)$/, "Facebook"],
+          [/^(facebook marketplace|marketplace|fb marketplace)$/, "Facebook Marketplace"],
+          [/^(instagram|ig)$/, "Instagram"],
+          [/^(messenger|facebook messenger|fb messenger)$/, "Messenger"],
+          [/^(tiktok|tik tok)$/, "TikTok"],
+          [/^(telegram|tg)$/, "Telegram"],
+          [/^(google|google search|busqueda google|búsqueda google)$/, "Google"],
+          [/^(google ads|googleads|adwords)$/, "Google Ads"],
+          [/^(youtube|you tube)$/, "YouTube"],
+          [/^(bing|microsoft bing)$/, "Bing"],
+          [/^(microsoft ads|bing ads)$/, "Microsoft Ads"],
+          [/^(duckduckgo|duck duck go)$/, "DuckDuckGo"],
+          [/^(yahoo)$/, "Yahoo"],
+          [/^(linkedin|linked in)$/, "LinkedIn"],
+          [/^(x|twitter)$/, "X"],
+          [/^(threads|threads net)$/, "Threads"],
+          [/^(pinterest)$/, "Pinterest"],
+          [/^(reddit)$/, "Reddit"],
+          [/^(snapchat|snap)$/, "Snapchat"],
+          [/^(discord)$/, "Discord"],
+          [/^(signal)$/, "Signal"],
+          [/^(teams|microsoft teams)$/, "Microsoft Teams"],
+          [/^(gmail|google mail)$/, "Gmail"],
+          [/^(outlook|hotmail|live mail)$/, "Outlook"],
+          [/^(email|correo|correo electronico|correo electrónico|mail)$/, "Correo electrónico"],
+          [/^(sms|mensaje de texto)$/, "SMS"],
+          [/^(qr|codigo qr|código qr)$/, "Código QR"],
+          [/^(direct|directo)$/, "Directo / no detectable"]
+        ];
+
+        for(const [pattern, label] of aliases){
+          if(pattern.test(key)) return label;
+        }
+
+        return limpiar(value);
+      };
+
+      const origenUtm = (source, medium) => {
+        const fuente = nombreFuente(source);
+        const medio = normalizar(medium);
+        if(!fuente) return "";
+
+        const esPago = /(cpc|ppc|paid|paid social|paid_social|display|ads?|advertising)/i.test(medio);
+        if(esPago){
+          if(fuente === "Google") return "Google Ads";
+          if(fuente === "Bing") return "Microsoft Ads";
+          if(fuente === "Facebook") return "Facebook Ads";
+          if(fuente === "Instagram") return "Instagram Ads";
+          if(fuente === "TikTok") return "TikTok Ads";
+          if(fuente === "LinkedIn") return "LinkedIn Ads";
+          if(fuente === "X") return "X Ads";
+          return `${fuente} · publicidad`;
+        }
+
+        if(/(organic|seo)/i.test(medio)){
+          if(["Google", "Bing", "DuckDuckGo", "Yahoo"].includes(fuente)) return `${fuente} · búsqueda orgánica`;
+        }
+
+        if(/(email|mail|newsletter)/i.test(medio)) return fuente === "Correo electrónico" ? fuente : `${fuente} · correo`;
+        if(/(social|social media|social_media)/i.test(medio)) return fuente;
+        if(/(referral|referido)/i.test(medio)) return `${fuente} · referido`;
+
+        return fuente;
+      };
+
+      const origenClickId = params => {
+        if(params.has("gclid") || params.has("dclid") || params.has("gbraid") || params.has("wbraid") || params.has("gad_source")) return "Google Ads";
+        if(params.has("msclkid")) return "Microsoft Ads";
+        if(params.has("ttclid")) return "TikTok Ads";
+        if(params.has("li_fat_id")) return "LinkedIn Ads";
+        if(params.has("twclid")) return "X Ads";
+        if(params.has("fbclid")) return "Meta · Facebook/Instagram";
+        if(params.has("igshid")) return "Instagram";
+        if(params.has("sccid")) return "Snapchat Ads";
+        if(params.has("mc_cid") || params.has("mc_eid")) return "Correo electrónico · Mailchimp";
+        return "";
+      };
+
+      const origenReferrer = ref => {
+        if(!ref) return "";
+        let host = "";
+        try{ host = new URL(ref).hostname.toLowerCase().replace(/^www\./, ""); }catch(_){ return ""; }
+        if(!host || host === window.location.hostname.toLowerCase()) return "";
+
+        const reglas = [
+          [/(^|\.)web\.whatsapp\.com$/, "WhatsApp"],
+          [/(^|\.)(facebook\.com|fb\.com|l\.facebook\.com|lm\.facebook\.com)$/, "Facebook"],
+          [/(^|\.)instagram\.com$/, "Instagram"],
+          [/(^|\.)messenger\.com$/, "Messenger"],
+          [/(^|\.)tiktok\.com$/, "TikTok"],
+          [/(^|\.)(t\.me|telegram\.me|web\.telegram\.org)$/, "Telegram"],
+          [/(^|\.)mail\.google\.com$/, "Gmail"],
+          [/(^|\.)(outlook\.live\.com|outlook\.office\.com)$/, "Outlook"],
+          [/(^|\.)(google\.[a-z.]+|googleusercontent\.com)$/, "Google · búsqueda orgánica"],
+          [/(^|\.)bing\.com$/, "Bing · búsqueda orgánica"],
+          [/(^|\.)duckduckgo\.com$/, "DuckDuckGo · búsqueda orgánica"],
+          [/(^|\.)search\.yahoo\.com$/, "Yahoo · búsqueda orgánica"],
+          [/(^|\.)(youtube\.com|youtu\.be)$/, "YouTube"],
+          [/(^|\.)linkedin\.com$/, "LinkedIn"],
+          [/(^|\.)(x\.com|twitter\.com|t\.co)$/, "X"],
+          [/(^|\.)threads\.net$/, "Threads"],
+          [/(^|\.)pinterest\.[a-z.]+$/, "Pinterest"],
+          [/(^|\.)reddit\.com$/, "Reddit"],
+          [/(^|\.)snapchat\.com$/, "Snapchat"],
+          [/(^|\.)discord\.com$/, "Discord"],
+          [/(^|\.)teams\.microsoft\.com$/, "Microsoft Teams"]
+        ];
+
+        for(const [pattern, label] of reglas){
+          if(pattern.test(host)) return label;
+        }
+        return `Sitio web externo · ${host}`;
+      };
+
       try{
         const actual = new URL(window.location.href);
-        const utm = String(actual.searchParams.get("utm_source") || "").trim();
-        if(utm) return utm;
+        const params = actual.searchParams;
 
-        const ref = String(document.referrer || "").trim();
-        if(!ref) return "Directo";
+        for(const key of ["origen", "fuente", "source"]){
+          const explicit = limpiar(params.get(key));
+          if(explicit) return nombreFuente(explicit);
+        }
 
-        const host = new URL(ref).hostname.replace(/^www\./i, "");
-        if(!host || host === window.location.hostname) return "Directo";
-        return host;
+        const utmSource = limpiar(params.get("utm_source"));
+        const utmMedium = limpiar(params.get("utm_medium"));
+        if(utmSource) return origenUtm(utmSource, utmMedium);
+
+        const porClickId = origenClickId(params);
+        if(porClickId) return porClickId;
+
+        const porReferrer = origenReferrer(limpiar(document.referrer));
+        if(porReferrer) return porReferrer;
+
+        return "Directo / no detectable";
       }catch(_){
-        return "Directo";
+        return "Directo / no detectable";
       }
     }
 

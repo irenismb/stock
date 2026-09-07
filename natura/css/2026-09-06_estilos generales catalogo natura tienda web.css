@@ -4127,7 +4127,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 }
 
 /* Restauración de tamaño de productos en móvil pequeño. */
-@media(max-width:360px){
+@media(max-width:480px){
   .grid:not(.album-grid-mode){
     grid-template-columns:1fr !important;
     gap:12px !important;

@@ -626,6 +626,14 @@
     .description[hidden]{
       display:none !important;
     }
+    .card.is-unstructured .pad{
+      gap:0;
+      align-items:flex-start;
+    }
+    .card.is-unstructured .name{
+      font-size:13.5px;
+      font-weight:700;
+    }
     #cat,
     #brand{
       display:none !important;
@@ -735,6 +743,11 @@
     }
     @media (max-width:360px){
       .grid.album-grid-mode{ grid-template-columns:1fr; }
+    }
+    @media (min-width:561px){
+      .grid.album-grid-mode.album-three-column-layout{
+        grid-template-columns:repeat(3, minmax(0, 1fr));
+      }
     }
     .grid.album-grid-mode .album-card{
       content-visibility:auto;
@@ -3563,3 +3576,20 @@
   border-color:#dfcfc1;
   box-shadow:0 4px 12px rgba(95,72,57,.10),0 0 0 2px rgba(222,197,177,.12);
 }
+
+/* Galería de "Regalos para toda ocasión": imágenes sin nombres de archivo ni datos de producto. */
+.card.gift-gallery-card{
+  background:rgba(255,255,255,.96);
+}
+.card.gift-gallery-card .img{
+  border-bottom:0;
+  background:#fff;
+}
+.card.gift-gallery-card .img > img{
+  max-width:calc(100% - 10px);
+  max-height:calc(100% - 10px);
+}
+.card.gift-gallery-card .pad{
+  display:none !important;
+}
+

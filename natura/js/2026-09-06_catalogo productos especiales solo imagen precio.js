@@ -8,7 +8,7 @@
     // sus valores se aplican globalmente a todos los visitantes.
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
-    // Los productos especiales pueden obtener su precio directamente del nombre de la imagen.
+    // Las imágenes se relacionan por el código interno global de cuatro dígitos.
     // Hoja Productos, estructura A:M: Código, Sección, Público, Categoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
@@ -38,14 +38,6 @@
       productsFolder: "productos"
     };
 
-    // Productos especiales que no existen en Google Sheets.
-    // PRECIO_NOMBRE.ext aporta precio y nombre en MAYÚSCULAS.
-    // Si no cumple la estructura, el archivo especial se muestra únicamente como imagen.
-    // Esta lista queda disponible solo como respaldo manual opcional.
-    const PRODUCTOS_SOLO_IMAGEN_PRECIO = [
-      // { imagen: "regalos amor y amistad/65000_producto.webp", precio: 65000, nombre: "PRODUCTO" }
-    ];
-    window.PRODUCTOS_SOLO_IMAGEN_PRECIO = PRODUCTOS_SOLO_IMAGEN_PRECIO;
 
 	const INTERRUPTORES = {
 	  MOSTRAR_CANTIDAD_STOCK: false,
@@ -59,20 +51,10 @@
 	  MOSTRAR_IMAGENES_PRODUCTO: true,
 	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
-	  // Muestra u oculta los archivos especiales que no tienen fila en Productos.
-	  // PRECIO_NOMBRE aporta datos; otros nombres se muestran únicamente como imagen.
-	  MOSTRAR_ARCHIVOS_SIN_PARAMETROS: false,
-
-	  // Si los archivos especiales están visibles, muestra el nombre solo cuando
-	  // existe después del guion bajo en la estructura PRECIO_NOMBRE.
-	  MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS: false,
-
-	  // Control independiente para mostrar u ocultar el precio de archivos especiales.
-	  // No depende del control general de precios de los productos del Google Sheet.
-	  MOSTRAR_PRECIOS_ARCHIVOS_ESPECIALES: true,
-
 	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
 	  PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
+	  MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: true,
+	  MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS: true,
 	  APLICAR_ALBUMES_OCULTOS: true,
 	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
     };
@@ -146,36 +128,23 @@
     function shouldSendProductCodesByWhatsApp(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.ENVIAR_CODIGOS_PRODUCTO_WHATSAPP !== false);
     }
-    function shouldShowFilesWithoutParameters(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_ARCHIVOS_SIN_PARAMETROS === true);
-    }
-    function isFileWithoutSheetParameters(product){
-      return !!(product && (product.isUnstructured || product.isImagePriceOnly));
-    }
     function shouldAllowSuggestionToggle(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.PERMITIR_TOGGLE_PALABRAS_SUGERIDAS !== false);
     }
     function shouldShowSuggestionsInitially(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.PALABRAS_SUGERIDAS_INICIAN_VISIBLES === true);
     }
+
+    function shouldShowProductImageInNavigationPanels(){
+      return !!(
+        window.INTERRUPTORES &&
+        window.INTERRUPTORES.MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS === true
+      );
+    }
     const _hasIdle = ("requestIdleCallback" in window);
     function runIdle(fn, timeout=1200){
       if(_hasIdle) return requestIdleCallback(fn, { timeout });
       return setTimeout(fn, Math.min(250, timeout));
-    }
-	
-	function shouldShowUnstructuredFileNames(){
-	  return !!(
-		window.INTERRUPTORES &&
-		window.INTERRUPTORES.MOSTRAR_NOMBRES_ARCHIVOS_SIN_PARAMETROS !== false
-	  );
-	}
-
-    function shouldShowSpecialFilePrices(){
-      return !!(
-        window.INTERRUPTORES &&
-        window.INTERRUPTORES.MOSTRAR_PRECIOS_ARCHIVOS_ESPECIALES !== false
-      );
     }
 
     const WHATSAPP_NUMBER = "573042088961";
@@ -261,11 +230,6 @@
       const i = String(filename || "").lastIndexOf(".");
       if(i < 0) return "";
       return String(filename).slice(i+1).toLowerCase();
-    }
-    function baseOf(filename){
-      const s = String(filename || "");
-      const i = s.lastIndexOf(".");
-      return (i < 0) ? s : s.slice(0, i);
     }
     function encodePath(p){
       return String(p || "")
@@ -700,44 +664,6 @@
       return match ? match[1] : "";
     }
 
-    function parseImagePriceProductFilename(filename){
-      const stem = String(filename || "").replace(/\.[^.]+$/, "").trim();
-      if(!stem) return null;
-
-      const separatorIndex = stem.indexOf("_");
-      if(separatorIndex <= 0 || separatorIndex >= stem.length - 1) return null;
-
-      const rawPrice = stem.slice(0, separatorIndex).trim();
-      const rawName = stem.slice(separatorIndex + 1).trim();
-      if(!rawName) return null;
-
-      const normalizedPrice = rawPrice
-        .replace(/^\$\s*/, "")
-        .replace(/[.\s]/g, "");
-
-      if(!/^[1-9]\d{0,8}$/.test(normalizedPrice)) return null;
-
-      const price = Number(normalizedPrice);
-      if(!Number.isSafeInteger(price) || price <= 0 || price > 9999999) return null;
-
-      const name = rawName
-        .replace(/_+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLocaleUpperCase("es-CO");
-
-      if(!name) return null;
-      return { price, name };
-    }
-
-    function extractImagePriceFromFilename(filename){
-      return parseImagePriceProductFilename(filename)?.price ?? null;
-    }
-
-    function extractImageProductNameFromFilename(filename){
-      return parseImagePriceProductFilename(filename)?.name || "";
-    }
-
     function extensionOfFilename(filename){
       const name = String(filename || "");
       const dot = name.lastIndexOf(".");
@@ -827,8 +753,6 @@
         rows.map(row => String(row && row.code || "").trim()).filter(Boolean)
       );
       const imagesByCode = new Map();
-      const imagePriceOnlyItems = [];
-      const foldersWithSheetProducts = new Set();
       const entries = Array.isArray(imageEntries) ? imageEntries : [];
 
       for(const entry of entries){
@@ -842,55 +766,14 @@
         const list = imagesByCode.get(code) || [];
         list.push(entry);
         imagesByCode.set(code, list);
-
-        const folder = normalizeText(relativePath.split("/")[0] || "").replace(/\s+/g, " ");
-        if(folder) foldersWithSheetProducts.add(folder);
       }
 
-      for(const entry of entries){
-        const relativePath = String(entry && entry.path || "");
-        const filename = relativePath.split("/").pop() || "";
-        if(!relativePath || !filename) continue;
-
-        const code = extractGlobalProductCode(filename);
-        if(code && sheetCodes.has(code)) continue;
-
-        const folder = normalizeText(relativePath.split("/")[0] || "").replace(/\s+/g, " ");
-        const parsed = parseImagePriceProductFilename(filename);
-
-        if(parsed){
-          imagePriceOnlyItems.push({
-            imagen: relativePath,
-            precio: parsed.price,
-            nombre: parsed.name,
-            tieneParametrosEspeciales: true
-          });
-          continue;
-        }
-
-        // En carpetas que no contienen productos vinculados al Sheet,
-        // un archivo sin PRECIO_NOMBRE sigue siendo publicable como imagen sola.
-        if(folder && !foldersWithSheetProducts.has(folder)){
-          imagePriceOnlyItems.push({
-            imagen: relativePath,
-            precio: null,
-            nombre: "",
-            tieneParametrosEspeciales: false
-          });
-        }
+      for(const [code, entriesForCode] of imagesByCode){
+        imagesByCode.set(code, orderProductImageEntries(entriesForCode));
       }
-
-      for(const [code, entries] of imagesByCode){
-        imagesByCode.set(code, orderProductImageEntries(entries));
-      }
-
-      imagePriceOnlyItems.sort((a,b)=>
-        String(a.imagen || "").localeCompare(String(b.imagen || ""), "es", { numeric:true, sensitivity:"base" })
-      );
 
       return {
-        sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode })),
-        imagePriceOnlyItems
+        sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode }))
       };
     }
 
@@ -1010,8 +893,6 @@
         stock: parseOptionalWholeNumber(stockText),
         referenceExternal: String(row.referenceExternal || "").trim(),
         codeNatura: String(row.codeNatura || "").trim(),
-        isUnstructured: false,
-        originalFilename: "",
         srcFilename: syntheticFilename,
         imgFilename: syntheticFilename,
         fileExt: extensionOfFilename(syntheticFilename) || "webp",
@@ -1027,59 +908,6 @@
     }
 
 
-    function makeImagePriceOnlyProduct(item, index){
-      const imageRelativePath = String(item && item.imagen || "").trim().replace(/^\/+/, "");
-      if(!imageRelativePath) return null;
-
-      const filename = imageRelativePath.split("/").pop() || "";
-      const parsedFromFilename = parseImagePriceProductFilename(filename);
-      const configuredPrice = parseOptionalWholeNumber(item && item.precio);
-      const price = configuredPrice ?? parsedFromFilename?.price ?? null;
-      const configuredName = String(item && item.nombre || "").trim();
-      const name = (configuredName || parsedFromFilename?.name || "")
-        .replace(/_+/g, " ")
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLocaleUpperCase("es-CO");
-      const hasSpecialParameters = Boolean(name) && price !== null;
-
-      const pathParts = imageRelativePath.split("/").filter(Boolean);
-      const category = categoryDisplayLabel(pathParts.length > 1 ? pathParts[0] : "General") || "General";
-      const fullImagePath = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`;
-      const imageUrl = rawGitHubUrl(fullImagePath);
-      const internalId = `imagen-precio-${index + 1}-${normalizeText(imageRelativePath).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "")}`;
-
-      return {
-        id: internalId,
-        name,
-        category,
-        brand: "",
-        price: price ?? 0,
-        hasPrice: price !== null,
-        hasSpecialParameters,
-        cost: null,
-        costText: "",
-        stock: null,
-        referenceExternal: "",
-        codeNatura: "",
-        isUnstructured: false,
-        isImagePriceOnly: true,
-        originalFilename: imageRelativePath.split("/").pop() || "",
-        srcFilename: imageRelativePath,
-        imgFilename: imageRelativePath,
-        fileExt: extensionOfFilename(imageRelativePath) || "webp",
-        hasImage: true,
-        isDocumentFirst: false,
-        description: "",
-        fullTxtRecord: "",
-        docsImageUrl: imageUrl,
-        imageUrls: [imageUrl],
-        docsDocumentUrl: "",
-        searchKey: normalizeText([name, category, imageRelativePath].join(" "))
-      };
-    }
-
-
     function clearLegacyProductCaches(){
       return;
     }
@@ -1088,9 +916,7 @@
       const list = document.getElementById("beautyProductsList");
       const count = document.querySelector(".beauty-products-count");
       const source = Array.isArray(products) ? products : [];
-      const namedProducts = source.filter(product =>
-        product && !product.isImagePriceOnly && String(product.name || "").trim()
-      );
+      const namedProducts = source.filter(product => product && String(product.name || "").trim());
 
       if(count){
         count.textContent = `${namedProducts.length} ${namedProducts.length === 1 ? "producto" : "productos"}`;
@@ -1105,7 +931,6 @@
       );
       const fragment = document.createDocumentFragment();
       for(const product of sorted){
-        if(product?.isImagePriceOnly) continue;
         const name = String(product?.name || "").trim();
         if(!name) continue;
 
@@ -1501,7 +1326,7 @@
     }
 
     function getProductRouteKey(p){
-      if(!p || p.isUnstructured || p.isImagePriceOnly) return "";
+      if(!p) return "";
       return routeKeyFromParts(p.section, p.audience, p.category, p.commercialState);
     }
 
@@ -1516,7 +1341,7 @@
     }
 
     function productMatchesAudience(p, audienceLabel){
-      if(!p || p.isUnstructured || p.isImagePriceOnly) return false;
+      if(!p) return false;
       const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audienceLabel));
       if(!group) return false;
       if(group.section === "Belleza y cuidado"){
@@ -1638,13 +1463,8 @@
     }
 
     function filterVisibleProducts(list){
-      const baseList = Array.isArray(list) ? list : [];
-      const manualFiltered = shouldShowFilesWithoutParameters()
-        ? baseList.slice()
-        : baseList.filter(p => !isFileWithoutSheetParameters(p));
-
-      return manualFiltered.filter(p => {
-        if(isFileWithoutSheetParameters(p)) return true;
+      const source = Array.isArray(list) ? list : [];
+      return source.filter(p => {
         if(cleanNavKey(p.commercialState) === "no a la venta") return false;
         return !isProductHiddenByRoute(p);
       });
@@ -1653,11 +1473,7 @@
     function filterSearchExcludedProducts(list){
       const source = Array.isArray(list) ? list : [];
       if(!shouldApplySearchAlbumExclusions()) return source.slice();
-
-      return source.filter(p => {
-        if(isFileWithoutSheetParameters(p)) return true;
-        return !isProductExcludedFromSearchByRoute(p);
-      });
+      return source.filter(p => !isProductExcludedFromSearchByRoute(p));
     }
 
     function hasAlbumFolders(){
@@ -1669,11 +1485,17 @@
     }
 
     function shouldShowAlbumGrid(){
-      // Mientras no se haya abierto una categoría concreta, el buscador conserva
-      // la navegación por tarjetas y solo recalcula los contadores de cada grupo.
-      // Las secciones principales marcadas como directProducts muestran sus productos
-      // inmediatamente, sin crear un nivel adicional de subcategorías.
-      return albumModeEnabled() && !selectedCategory && !isDirectProductAudience(selectedAudience);
+      // La configuración remota puede hacer que, al escribir en el buscador,
+      // se muestren de inmediato las tarjetas de producto coincidentes.
+      // Con el control desactivado se conserva la navegación por categorías
+      // y sus contadores de coincidencias.
+      const searchActive = getCombinedWordTerms().length > 0;
+      const showDirectMatches = !!(
+        searchActive &&
+        window.INTERRUPTORES &&
+        window.INTERRUPTORES.MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR === true
+      );
+      return albumModeEnabled() && !selectedCategory && !isDirectProductAudience(selectedAudience) && !showDirectMatches;
     }
 
     function getSelectedAlbum(){
@@ -1883,7 +1705,7 @@
         }
         const id = String(it.id);
         const p = productById.get(id);
-        if(!p || p.isUnstructured || p.isImagePriceOnly){
+        if(!p){
           delete cart[key];
           changed = true;
           continue;
@@ -2542,7 +2364,7 @@
       _jsonLdTimer = setTimeout(()=>{
         const node = document.getElementById("ld-products");
         if(!node) return;
-        const source = (Array.isArray(all) ? all : []).filter(p => p && !p.isImagePriceOnly && !p.isUnstructured);
+        const source = (Array.isArray(all) ? all : []).filter(Boolean);
         const itemListElement = source.map((p,index)=>{
           const item = {
             "@type":"Product",
@@ -2616,10 +2438,6 @@
     `;
 
     function stockMetaText(p){
-      if(p && (p.isUnstructured || p.isImagePriceOnly)){
-        return "";
-      }
-
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
       const stockVal = hasKnownStock ? p.stock : 0;
       let stockPart = "";
@@ -2644,22 +2462,6 @@
       const row = card.querySelector(".row");
       const actions = card.querySelector(".actions");
       const meta = card.querySelector(".meta");
-
-      if(p && p.isUnstructured){
-        if(meta) meta.hidden = true;
-        if(row) row.hidden = true;
-        if(actions) actions.hidden = true;
-        return;
-      }
-
-      if(p && p.isImagePriceOnly){
-        if(meta) meta.hidden = true;
-        if(row) row.hidden = false;
-        if(actions) actions.hidden = true;
-        const qtyPill = card.querySelector('[data-role="qty"]');
-        if(qtyPill) qtyPill.hidden = true;
-        return;
-      }
 
       if(meta) meta.hidden = false;
       if(row) row.hidden = false;
@@ -2694,59 +2496,25 @@
       const card = cardTemplate.content.firstElementChild.cloneNode(true);
       card.id = "p-" + encodeURIComponent(String(p.id));
       card.dataset.id = String(p.id);
-      card.classList.toggle("is-unstructured", !!(p && p.isUnstructured));
-      card.classList.toggle("is-image-price-only", !!(p && p.isImagePriceOnly));
 
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl));
 
-	  const rawFileName = String(p.name || baseOf(p.originalFilename || "") || "");
-
-	 const visibleName = (p && p.isImagePriceOnly)
-	   ? (shouldShowUnstructuredFileNames()
-	      ? (String(p.name || "").trim()
-	         ? String(p.name || "").toLocaleUpperCase("es-CO")
-	         : String(p.originalFilename || "").trim())
-	      : "")
-	   : ((p && p.isUnstructured)
-	      ? (shouldShowUnstructuredFileNames() ? rawFileName : "")
-	      : String(p.name || ""));
-	   
       const nameEl = card.querySelector(".name");
       const metaEl = card.querySelector(".meta");
       const descriptionEl = card.querySelector(".description");
       const priceEl = card.querySelector(".price");
-      const rowEl = card.querySelector(".row");
-      const actionsEl = card.querySelector(".actions");
 
+      const visibleName = String(p.name || "");
       nameEl.textContent = visibleName;
       nameEl.title = visibleName;
       metaEl.textContent = stockMetaText(p);
       descriptionEl.textContent = String((p && p.description) || "").trim();
       descriptionEl.hidden = !descriptionEl.textContent;
       card.classList.toggle("has-long-description", descriptionEl.textContent.length > 900);
-      priceEl.textContent = (p && p.isUnstructured)
-        ? ""
-        : ((p && p.isImagePriceOnly)
-          ? (shouldShowSpecialFilePrices() && p.hasPrice !== false ? fmtCOP.format(p.price) : "")
-          : (shouldShowProductPrices() ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price)) : ""));
-
-      if(p && p.isImagePriceOnly){
-        if(nameEl && !visibleName) nameEl.remove();
-        if(actionsEl) actionsEl.remove();
-        if(metaEl) metaEl.remove();
-        if(descriptionEl) descriptionEl.remove();
-        const qtyPill = rowEl && rowEl.querySelector('[data-role="qty"]');
-        if(qtyPill) qtyPill.remove();
-        if(rowEl && (!shouldShowSpecialFilePrices() || p.hasPrice === false)) rowEl.remove();
-      }
-
-      if(p && p.isUnstructured){
-        if(actionsEl) actionsEl.remove();
-        if(rowEl) rowEl.remove();
-        if(metaEl) metaEl.remove();
-        if(descriptionEl) descriptionEl.remove();
-      }
+      priceEl.textContent = shouldShowProductPrices()
+        ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price))
+        : "";
 
       refreshCardUI(card, p);
       return card;
@@ -2803,6 +2571,9 @@
       card.classList.toggle("search-reactive", searchActive);
       card.classList.toggle("search-hit", searchActive && matchCount > 0);
       card.classList.toggle("search-miss", searchActive && matchCount === 0);
+      // Durante una búsqueda por categorías, los paneles sin coincidencias
+      // desaparecen progresivamente conforme el texto reduce los resultados.
+      card.hidden = searchActive && matchCount === 0;
       if(isAudience && album.theme) card.dataset.navTheme = album.theme;
 
       btn.dataset.albumOpen = album.key;
@@ -2842,7 +2613,31 @@
 
       if(preview) preview.hidden = true;
       if(icon){
-        if(album.iconImage){
+        const matchingPreviewSources = searchActive
+          ? matchingProducts
+              .map(product => String(product?.docsImageUrl || "").trim())
+              .filter(Boolean)
+          : [];
+        const normalPreviewSources = Array.isArray(album.previewImages)
+          ? album.previewImages
+          : [];
+        const productPreviewSources = matchingPreviewSources.length
+          ? matchingPreviewSources
+          : normalPreviewSources;
+        const useProductPreview =
+          shouldShowProductImageInNavigationPanels() &&
+          productPreviewSources.length > 0;
+
+        if(useProductPreview){
+          const img = makeAlbumPreview(productPreviewSources, album.label);
+          img.className = "album-icon-image album-product-preview";
+          img.alt = searchActive && matchingPreviewSources.length
+            ? `Producto coincidente en ${album.label}`
+            : `Producto representativo de ${album.label}`;
+          icon.replaceChildren(img);
+          card.classList.add("album-uses-product-preview");
+          card.classList.toggle("album-preview-is-search-match", searchActive && matchingPreviewSources.length > 0);
+        }else if(album.iconImage){
           const img = document.createElement("img");
           img.className = "album-icon-image";
           img.alt = "";
@@ -3413,9 +3208,6 @@
       });
 
       filtered.sort((a,b)=>{
-        const aWithoutSheet = isFileWithoutSheetParameters(a);
-        const bWithoutSheet = isFileWithoutSheetParameters(b);
-        if(aWithoutSheet !== bWithoutSheet) return aWithoutSheet ? 1 : -1;
 
         if(sortMode === "price_asc"){
           if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
@@ -3519,8 +3311,7 @@
       const filtered = buildFilteredList();
 
       if(countEl){
-        const onlyUnstructured = filtered.length > 0 && filtered.every(isFileWithoutSheetParameters);
-        countEl.textContent = `${filtered.length} ${onlyUnstructured ? (filtered.length === 1 ? "archivo" : "archivos") : (filtered.length === 1 ? "producto" : "productos")}`;
+        countEl.textContent = `${filtered.length} ${filtered.length === 1 ? "producto" : "productos"}`;
         countEl.classList.toggle("search-active", qHas);
       }
 
@@ -3572,7 +3363,7 @@
         if(!id) return;
 
         const p = productById.get(String(id));
-        if(!p || p.isUnstructured || p.isImagePriceOnly) return;
+        if(!p) return;
 
         const act = btn.getAttribute("data-act");
         const enforce = shouldEnforceStockLimits();
@@ -3714,25 +3505,11 @@
           .map(makeProductFromGoogleSheet)
           .filter(Boolean);
 
-        const imagePriceItemsByPath = new Map();
-        for(const item of (catalogSource.imagePriceOnlyItems || [])){
-          const path = String(item && item.imagen || "").trim().replace(/^\/+/, "");
-          if(path) imagePriceItemsByPath.set(normalizeText(path), item);
-        }
-        for(const item of PRODUCTOS_SOLO_IMAGEN_PRECIO){
-          const path = String(item && item.imagen || "").trim().replace(/^\/+/, "");
-          if(path) imagePriceItemsByPath.set(normalizeText(path), item);
-        }
-
-        const imagePriceOnlyProducts = Array.from(imagePriceItemsByPath.values())
-          .map(makeImagePriceOnlyProduct)
-          .filter(Boolean);
-
-        if(!products.length && !imagePriceOnlyProducts.length){
+        if(!products.length){
           throw new Error("No se encontraron productos válidos para mostrar.");
         }
 
-        allLoadedProducts = [...products, ...imagePriceOnlyProducts];
+        allLoadedProducts = products;
 
         hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
         searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());

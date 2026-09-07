@@ -755,10 +755,22 @@
     }
 
     async function loadGoogleSheetCatalog(){
-      const [rows, imageEntries] = await Promise.all([
-        loadGoogleSheetRows(),
-        loadGitHubImageIndex()
-      ]);
+      let rows = [];
+      try{
+        rows = await loadGoogleSheetRows();
+      }catch(error){
+        const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el Google Sheet."));
+        sheetError.catalogStage = "sheet";
+        throw sheetError;
+      }
+
+      let imageEntries = [];
+      try{
+        imageEntries = await loadGitHubImageIndex();
+      }catch(error){
+        console.warn("Los productos se cargaron desde el Google Sheet, pero no se pudo resolver el índice de imágenes. Se usarán imágenes suplentes.", error);
+        imageEntries = [];
+      }
 
       const sheetCodes = new Set(
         rows.map(row => String(row && row.code || "").trim()).filter(Boolean)
@@ -766,35 +778,46 @@
       const imagesByCode = new Map();
       const entries = Array.isArray(imageEntries) ? imageEntries : [];
 
-      for(const entry of entries){
-        const relativePath = String(entry && entry.path || "");
-        const filename = relativePath.split("/").pop() || "";
-        if(!relativePath || !filename) continue;
-
-        const code = extractGlobalProductCode(filename);
-        if(!code || !sheetCodes.has(code)) continue;
-
-        const list = imagesByCode.get(code) || [];
-        list.push(entry);
-        imagesByCode.set(code, list);
-      }
-
-      for(const [code, entriesForCode] of imagesByCode){
-        imagesByCode.set(code, orderProductImageEntries(entriesForCode));
-      }
-
-      const giftPrefix = `${String(GIFT_GITHUB_SOURCE.folder || "").toLowerCase()}/`;
-      const giftImageUrls = entries
-        .filter(entry => {
+      try{
+        for(const entry of entries){
           const relativePath = String(entry && entry.path || "");
-          return relativePath.toLowerCase().startsWith(giftPrefix) &&
-                 PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(relativePath));
-        })
-        .sort((a,b)=>String(a.path || "").localeCompare(String(b.path || ""), "es", { numeric:true, sensitivity:"base" }))
-        .map(entry => {
-          const fullImagePath = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${entry.path}`;
-          return rawGitHubUrl(fullImagePath);
-        });
+          const filename = relativePath.split("/").pop() || "";
+          if(!relativePath || !filename) continue;
+
+          const code = extractGlobalProductCode(filename);
+          if(!code || !sheetCodes.has(code)) continue;
+
+          const list = imagesByCode.get(code) || [];
+          list.push(entry);
+          imagesByCode.set(code, list);
+        }
+
+        for(const [code, entriesForCode] of imagesByCode){
+          imagesByCode.set(code, orderProductImageEntries(entriesForCode));
+        }
+      }catch(error){
+        console.warn("No se pudo asociar el índice de imágenes a los productos. El catálogo continuará con imágenes suplentes.", error);
+        imagesByCode.clear();
+      }
+
+      let giftImageUrls = [];
+      try{
+        const giftPrefix = `${String(GIFT_GITHUB_SOURCE.folder || "").toLowerCase()}/`;
+        giftImageUrls = entries
+          .filter(entry => {
+            const relativePath = String(entry && entry.path || "");
+            return relativePath.toLowerCase().startsWith(giftPrefix) &&
+                   PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(relativePath));
+          })
+          .sort((a,b)=>String(a.path || "").localeCompare(String(b.path || ""), "es", { numeric:true, sensitivity:"base" }))
+          .map(entry => {
+            const fullImagePath = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/${entry.path}`;
+            return rawGitHubUrl(fullImagePath);
+          });
+      }catch(error){
+        console.warn("No se pudo preparar la galería de regalos. Los productos del inventario continuarán cargando.", error);
+        giftImageUrls = [];
+      }
 
       return {
         sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode })),
@@ -3570,26 +3593,58 @@
       updateCountTextLoading();
       clearLegacyProductCaches();
 
-      await warmupPlaceholderOnce();
+      try{
+        await warmupPlaceholderOnce();
+      }catch(error){
+        console.warn("No se pudo preparar la imagen suplente. El catálogo continuará.", error);
+      }
+
+      let catalogSource;
+      try{
+        catalogSource = await loadGoogleSheetCatalog();
+      }catch(err){
+        console.error("Error al cargar el Google Sheet oficial.", err);
+        updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
+        return;
+      }
+
+      let sheetProducts = [];
+      try{
+        sheetProducts = (Array.isArray(catalogSource?.sheetEntries) ? catalogSource.sheetEntries : [])
+          .map(makeProductFromGoogleSheet)
+          .filter(Boolean);
+      }catch(err){
+        console.error("El Google Sheet respondió, pero ocurrió un error al procesar sus productos.", err);
+        updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
+        return;
+      }
+
+      if(!sheetProducts.length){
+        console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
+        updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
+        return;
+      }
+
+      let giftProducts = [];
+      try{
+        giftProducts = makeGiftGalleryProducts(catalogSource?.giftImageUrls);
+      }catch(err){
+        console.warn("No se pudo preparar la galería de regalos. El inventario continuará disponible.", err);
+        giftProducts = [];
+      }
+
+      allLoadedProducts = [...sheetProducts, ...giftProducts];
 
       try{
-        const catalogSource = await loadGoogleSheetCatalog();
-        const products = [
-          ...catalogSource.sheetEntries
-            .map(makeProductFromGoogleSheet)
-            .filter(Boolean),
-          ...makeGiftGalleryProducts(catalogSource.giftImageUrls)
-        ];
-
-        if(!products.length){
-          throw new Error("No se encontraron productos válidos para mostrar.");
-        }
-
-        allLoadedProducts = products;
-
         hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
         searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
         all = filterVisibleProducts(allLoadedProducts);
+      }catch(err){
+        console.warn("No se pudieron aplicar todos los controles de categorías. Se muestran los productos cargados para no dejar el catálogo vacío.", err);
+        all = allLoadedProducts.slice();
+      }
+
+      try{
         productById = new Map(all.map(p => [String(p.id), p]));
         readStateFromUrl();
         if(selectedCategory){
@@ -3597,15 +3652,26 @@
           if(!hasCategory) selectedCategory = "";
         }
         refreshNavigationAlbums();
+      }catch(err){
+        console.warn("Los productos se cargaron, pero no se pudo reconstruir toda la navegación. Se restablece la vista principal.", err);
+        selectedAudience = "";
+        selectedCategory = "";
+        selectedAlbumKey = "";
+        albums = [];
+        albumByKey = new Map();
+        productById = new Map(all.map(p => [String(p.id), p]));
+      }
 
-        updateCatalogFooterProducts(all);
-        scheduleJsonLdUpdate();
-        refreshFilterOptionsForScope();
-        sanitizeCartWithStock();
+      try{ updateCatalogFooterProducts(all); }catch(err){ console.warn("No se pudo actualizar el pie del catálogo.", err); }
+      try{ scheduleJsonLdUpdate(); }catch(err){ console.warn("No se pudo actualizar JSON-LD.", err); }
+      try{ refreshFilterOptionsForScope(); }catch(err){ console.warn("No se pudieron actualizar todos los filtros.", err); }
+      try{ sanitizeCartWithStock(); }catch(err){ console.warn("No se pudo validar el carrito contra el stock.", err); }
+
+      try{
         render();
       }catch(err){
-        console.error(err);
-        updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
+        console.error("Los productos se cargaron, pero ocurrió un error al renderizar el catálogo.", err);
+        updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
       }
     }
 

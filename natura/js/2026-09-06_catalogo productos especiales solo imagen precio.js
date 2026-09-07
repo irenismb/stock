@@ -1396,33 +1396,41 @@
       { top:"#54d0c5", base:"#26b8ab", tab:"#3cc4b7", shadow:"rgba(21, 134, 126, .28)" },
       { top:"#d6c3a6", base:"#c5ad88", tab:"#ceb796", shadow:"rgba(129, 100, 58, .24)" }
     ];
+    const ROOT_ICON_SVGS = {
+      ella: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="156" y="176" width="200" height="220" rx="52" fill="#F7E7EE" stroke="#4A352B" stroke-width="24"/><rect x="208" y="116" width="96" height="70" rx="18" fill="#E3B3C5" stroke="#4A352B" stroke-width="24"/><path d="M232 116V86h48v30" stroke="#4A352B" stroke-width="24"/><path d="M256 236c-37-37-89 5-62 45 19 29 62 45 62 45s43-16 62-45c27-40-25-82-62-45Z" fill="#D982A6" stroke="#D982A6" stroke-width="8"/><path d="M314 134c18-24 43-20 58-6-3 25-21 43-49 43" stroke="#D6A45E" stroke-width="18"/><path d="M324 171c24 4 38 19 41 40-20 12-44 8-58-12" stroke="#D6A45E" stroke-width="18"/></g></svg>`,
+      el: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="148" y="184" width="216" height="212" rx="44" fill="#E6EEF4" stroke="#3E4F5E" stroke-width="24"/><rect x="204" y="118" width="104" height="72" rx="16" fill="#B8CAD9" stroke="#3E4F5E" stroke-width="24"/><path d="M228 118V86h56v32" stroke="#3E4F5E" stroke-width="24"/><path d="M256 230l46 46-46 76-46-76 46-46Z" fill="#7094B2" stroke="#3E4F5E" stroke-width="18"/><path d="M211 184l45 46 45-46" stroke="#3E4F5E" stroke-width="18"/></g></svg>`,
+      unisex: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M257 385c-62-54-83-104-62-148 17-37 56-54 62-99 7 45 46 62 63 99 20 44-1 94-63 148Z" fill="#DDEEE4" stroke="#496B57" stroke-width="22"/><path d="M234 305c-66 5-110-26-125-78 50-19 100-4 127 40" fill="#EAB4C8" stroke="#7B4E60" stroke-width="20"/><path d="M280 305c66 5 110-26 125-78-50-19-100-4-127 40" fill="#B9D9C4" stroke="#496B57" stroke-width="20"/><circle cx="257" cy="173" r="28" fill="#F3C97A" stroke="#775C2C" stroke-width="16"/></g></svg>`,
+      regalos: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="112" y="214" width="288" height="196" rx="28" fill="#F4E4C6" stroke="#5B4334" stroke-width="24"/><rect x="96" y="176" width="320" height="78" rx="24" fill="#E6B45C" stroke="#5B4334" stroke-width="24"/><path d="M256 176v234" stroke="#D66C8D" stroke-width="34"/><path d="M256 176c-6-64-72-82-95-42-23 39 34 55 95 42Z" fill="#E7A2B8" stroke="#7D4A5A" stroke-width="18"/><path d="M256 176c6-64 72-82 95-42 23 39-34 55-95 42Z" fill="#E7A2B8" stroke="#7D4A5A" stroke-width="18"/></g></svg>`,
+      otros: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><g fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M112 192l144-74 144 74-144 74-144-74Z" fill="#F0E4CF" stroke="#544333" stroke-width="22"/><path d="M112 192v150l144 76 144-76V192" fill="#FAF3E7" stroke="#544333" stroke-width="22"/><path d="M256 266v152" stroke="#544333" stroke-width="22"/><circle cx="194" cy="278" r="28" fill="#D88AA9" stroke="#754B5A" stroke-width="14"/><rect x="294" y="252" width="56" height="56" rx="12" fill="#93B6D2" stroke="#465A6B" stroke-width="14"/><path d="M180 350h54M307 350l28 28M335 350l-28 28" stroke="#C4984A" stroke-width="18"/></g></svg>`
+    };
+
     const NAV_AUDIENCES = [
       {
         label:"Para ella",
         section:"Belleza y cuidado",
         subtitle:"Belleza y cuidado seleccionados para ella.",
-        icon:"✨",
+        iconSvg:ROOT_ICON_SVGS.ella,
         theme:"ella"
       },
       {
         label:"Para él",
         section:"Belleza y cuidado",
         subtitle:"Perfumes, desodorantes y cuidado personal para él.",
-        icon:"◆",
+        iconSvg:ROOT_ICON_SVGS.el,
         theme:"el"
       },
       {
         label:"Unisex",
         section:"Belleza y cuidado",
         subtitle:"Cuidado para todos, sin repetir etiquetas.",
-        icon:"🌿",
+        iconSvg:ROOT_ICON_SVGS.unisex,
         theme:"unisex"
       },
       {
         label:"Regalos para toda ocasión",
         section:"Regalos para toda ocasión",
         subtitle:"Detalles y arreglos listos para regalar en cualquier ocasión.",
-        icon:"🎁",
+        iconSvg:ROOT_ICON_SVGS.regalos,
         theme:"regalos",
         directProducts:true
       },
@@ -1430,7 +1438,7 @@
         label:"Otros productos",
         section:"Otros productos",
         subtitle:"Tecnología, hogar, juguetes, papelería y más.",
-        icon:"◇",
+        iconSvg:ROOT_ICON_SVGS.otros,
         theme:"otros"
       }
     ];
@@ -1520,6 +1528,7 @@
           label:group.label,
           subtitle:group.subtitle,
           icon:group.icon || "",
+          iconSvg:group.iconSvg || "",
           theme:group.theme || "",
           products,
           cover:null,
@@ -2804,7 +2813,13 @@
       }
 
       if(preview) preview.hidden = true;
-      if(icon) icon.textContent = album.icon || (isAudience ? "✨" : "•");
+      if(icon){
+        if(album.iconSvg){
+          icon.innerHTML = album.iconSvg;
+        }else{
+          icon.textContent = album.icon || "•";
+        }
+      }
       label.textContent = album.label;
 
       return card;

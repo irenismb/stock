@@ -1383,26 +1383,29 @@
 
       .count-slot{
         display:flex;
-        justify-content:space-between;
+        justify-content:flex-start;
         align-items:center;
         gap:8px;
-        flex-wrap:nowrap;
+        flex-wrap:wrap;
         margin-top:-1px;
       }
       .count-slot .album-nav{
         margin-top:0;
-        flex:0 0 auto;
+        flex:1 0 100%;
+        width:100%;
         gap:8px;
-        flex-wrap:nowrap;
+        flex-wrap:wrap;
       }
       .count-slot .album-path{
         display:none;
       }
       .count.count-mobile{
         display:block;
-        flex:1 1 auto;
-        width:auto;
-        min-width:0;
+        flex:0 0 auto;
+        width:max-content;
+        min-width:max-content;
+        max-width:100%;
+        white-space:nowrap;
         text-align:left;
         margin:0;
       }

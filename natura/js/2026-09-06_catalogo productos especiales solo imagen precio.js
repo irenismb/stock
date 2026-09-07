@@ -552,7 +552,8 @@
         const audience = String(row?.[1] || "").trim();
         const category = String(row?.[2] || "").trim();
         const commercialState = String(row?.[3] || "").trim();
-        if(!section || !category) continue;
+        if(!section) continue;
+        if(!category && !isDirectProductSection(section)) continue;
 
         const hiddenState = parseRemoteBoolean(row?.[4]);
         const excludedState = parseRemoteBoolean(row?.[5]);
@@ -963,7 +964,8 @@
       const name = String(row.name || "").trim();
       const section = String(row.section || "").trim();
       const audience = String(row.audience || "").trim();
-      const category = String(row.category || "General").trim() || "General";
+      const rawCategory = String(row.category || "").trim();
+      const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
@@ -1112,6 +1114,7 @@
         meta.className = "beauty-product-meta";
         const metaParts = [];
         if(product?.section === "Belleza y cuidado" && product?.audience) metaParts.push(String(product.audience));
+        if(product?.section === "Regalos para toda ocasión") metaParts.push(String(product.section));
         if(product?.category) metaParts.push(String(product.category));
         if(product?.id) metaParts.push(`Código ${product.id}`);
         if(product?.hasPrice !== false && Number(product?.price) >= 0) metaParts.push(fmtCOP.format(Number(product.price)));
@@ -1410,10 +1413,18 @@
         theme:"unisex"
       },
       {
+        label:"Regalos para toda ocasión",
+        section:"Regalos para toda ocasión",
+        subtitle:"Detalles y arreglos listos para regalar en cualquier ocasión.",
+        icon:"🎁",
+        theme:"regalos",
+        directProducts:true
+      },
+      {
         label:"Otros productos",
         section:"Otros productos",
-        subtitle:"Tecnología, hogar, juguetes, papelería, regalos y más.",
-        icon:"🎁",
+        subtitle:"Tecnología, hogar, juguetes, papelería y más.",
+        icon:"◇",
         theme:"otros"
       }
     ];
@@ -1466,8 +1477,21 @@
 
     function productMatchesAudience(p, audienceLabel){
       if(!p || p.isUnstructured || p.isImagePriceOnly) return false;
-      if(audienceLabel === "Otros productos") return p.section === "Otros productos";
-      return p.section === "Belleza y cuidado" && p.audience === audienceLabel;
+      const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audienceLabel));
+      if(!group) return false;
+      if(group.section === "Belleza y cuidado"){
+        return p.section === group.section && p.audience === group.label;
+      }
+      return p.section === group.section;
+    }
+
+    function isDirectProductAudience(audienceLabel){
+      const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audienceLabel));
+      return !!(group && group.directProducts === true);
+    }
+
+    function isDirectProductSection(sectionLabel){
+      return NAV_AUDIENCES.some(item => item.directProducts === true && cleanNavKey(item.section) === cleanNavKey(sectionLabel));
     }
 
     function collectAlbumPreview(found, p){
@@ -1604,7 +1628,9 @@
     function shouldShowAlbumGrid(){
       // Mientras no se haya abierto una categoría concreta, el buscador conserva
       // la navegación por tarjetas y solo recalcula los contadores de cada grupo.
-      return albumModeEnabled() && !selectedCategory;
+      // Las secciones principales marcadas como directProducts muestran sus productos
+      // inmediatamente, sin crear un nivel adicional de subcategorías.
+      return albumModeEnabled() && !selectedCategory && !isDirectProductAudience(selectedAudience);
     }
 
     function getSelectedAlbum(){
@@ -2479,7 +2505,9 @@
             "@type":"Product",
             "name":String(p.name || ""),
             "description":String(p.description || ""),
-            "category":[p.audience, p.category].filter(Boolean).join(" > "),
+            "category":p.section === "Regalos para toda ocasión"
+              ? p.section
+              : [p.audience, p.category].filter(Boolean).join(" > "),
             "sku":String(p.id || "")
           };
           if(p.docsImageUrl) item.image = [p.docsImageUrl];
@@ -2561,6 +2589,7 @@
       }
       const parts = [];
       if(p.section === "Belleza y cuidado" && p.audience) parts.push(p.audience);
+      if(p.section === "Regalos para toda ocasión") parts.push(p.section);
       if(p.category) parts.push(p.category);
       if(p.brand) parts.push(p.brand);
       if(shouldShowProductCodes()) parts.push(`Id: ${p.id}`);
@@ -3145,6 +3174,7 @@
 
     function syncFilterVisibility(){
       const showAlbumGrid = shouldShowAlbumGrid();
+      const directSelected = isDirectProductAudience(selectedAudience);
 
       if(catSel){
         catSel.hidden = true;
@@ -3181,19 +3211,19 @@
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
         grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
-        const label = !selectedAudience ? "Secciones principales" : (!selectedCategory ? "Categorías" : "Productos");
+        const label = !selectedAudience ? "Secciones principales" : (directSelected ? "Productos" : (!selectedCategory ? "Categorías" : "Productos"));
         grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
       }
       if(catalogEntryIntro){
         const hasTerms = getCombinedWordTerms().length > 0;
-        catalogEntryIntro.hidden = hasTerms || !!selectedCategory;
+        catalogEntryIntro.hidden = hasTerms || !!selectedCategory || directSelected;
         if(catalogEntryTitle){
           catalogEntryTitle.textContent = selectedAudience || "¿Qué estás buscando?";
         }
         if(catalogEntryText){
           catalogEntryText.textContent = selectedAudience
-            ? "Elige una categoría para ver los productos disponibles."
-            : "Elige Para ella, Para él, Unisex u Otros productos para comenzar.";
+            ? (directSelected ? "Explora los regalos disponibles." : "Elige una categoría para ver los productos disponibles.")
+            : "Elige Para ella, Para él, Unisex, Regalos para toda ocasión u Otros productos para comenzar.";
         }
       }
 
@@ -3213,7 +3243,7 @@
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
       const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
       selectedAudience = validAudience ? validAudience.label : "";
-      selectedCategory = selectedAudience && category ? category : "";
+      selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
       if(sort && sortSel) sortSel.value = sort;
     }
 

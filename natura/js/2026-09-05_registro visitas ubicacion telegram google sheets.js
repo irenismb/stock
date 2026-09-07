@@ -3,9 +3,11 @@
   const USER_ID_KEY = "irenismb_user_id";
   const VISITOR_SHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
   const VISITOR_ID_SHEET = "id_navegador";
+  const VISIT_LOG_SHEET = "Hoja 1";
   const VISIT_MODE_KEY = "MODO_REGISTRO_VISITAS";
   const OWN_VISITS_KEY = "REGISTRAR_VISITAS_PROPIAS";
-  const VISIT_DEVICE_MARKER = "irenismb_visit_registered_device";
+  const VISIT_BROWSER_MARKER = "irenismb_visit_registered_browser";
+  const LEGACY_VISIT_DEVICE_MARKER = "irenismb_visit_registered_device";
   const VISIT_DAY_MARKER_PREFIX = "irenismb_visit_registered_day_";
   const OWN_BROWSER_IDS_FALLBACK = new Set([
     "461e0283-5358-4400-a31e-d8d74866d660",
@@ -315,6 +317,7 @@
         ubicacion.direccion || [ubicacion.ciudad, ubicacion.departamento, ubicacion.pais].filter(Boolean).join(", ")
       );
 
+      const loadId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
       const payload = new URLSearchParams({
         lat: String(ubicacion.lat ?? ""),
         lng: String(ubicacion.lng ?? ""),
@@ -327,7 +330,7 @@
         direccion,
         navegador: userId,
         user_id: userId,
-        load_id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+        load_id: loadId,
         ts: String(Date.now()),
         dispositivo: String(contexto.dispositivo || ""),
         marca: String(contexto.marca || ""),
@@ -348,10 +351,76 @@
         cache: "no-store",
         keepalive: true
       });
-      return true;
+      return await confirmarRegistroVisita(loadId);
     } catch (_) {
       return false;
     }
+  }
+
+  function consultarIdVisita(loadId) {
+    return new Promise((resolve, reject) => {
+      const callbackName = `__irenismbVisitConfirm_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const script = document.createElement("script");
+      let settled = false;
+
+      const cleanup = () => {
+        try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+        try { script.remove(); } catch (_) {}
+      };
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error("Tiempo de espera agotado al confirmar el registro de visita."));
+      }, 3500);
+
+      window[callbackName] = payload => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+
+        const rows = payload && payload.status === "ok" && payload.table && Array.isArray(payload.table.rows)
+          ? payload.table.rows
+          : [];
+        const found = rows.some(row => {
+          const cells = Array.isArray(row && row.c) ? row.c : [];
+          return valorCelda(cells[0]).trim() === loadId;
+        });
+        resolve(found);
+      };
+
+      script.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error("No se pudo consultar la confirmación del registro de visita."));
+      };
+
+      const safeLoadId = String(loadId || "").replace(/'/g, "\\'");
+      const params = new URLSearchParams({
+        sheet: VISIT_LOG_SHEET,
+        range: "N:N",
+        tq: `select N where N = '${safeLoadId}' limit 1`,
+        tqx: `out:json;responseHandler:${callbackName}`
+      });
+      script.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(VISITOR_SHEET_ID)}/gviz/tq?${params.toString()}`;
+      script.async = true;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function confirmarRegistroVisita(loadId) {
+    const delays = [350, 700, 1200, 1800];
+    for (const delay of delays) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      try {
+        if (await consultarIdVisita(loadId)) return true;
+      } catch (_) {}
+    }
+    return false;
   }
 
   async function obtenerPoliticaRegistroVisitas(userId) {
@@ -367,7 +436,7 @@
       return { registrar: false, modo };
     }
 
-    if (modo === "UNA POR DISPOSITIVO" && tieneMarcaDispositivo()) {
+    if (modo === "UNA POR NAVEGADOR" && tieneMarcaNavegador()) {
       return { registrar: false, modo };
     }
 
@@ -380,7 +449,8 @@
 
   function normalizarModoRegistro(value) {
     const normalized = normalizarClave(value);
-    if (["TODAS", "UNA POR DIA", "UNA POR DISPOSITIVO", "NINGUNA"].includes(normalized)) return normalized;
+    if (normalized === "UNA POR DISPOSITIVO") return "UNA POR NAVEGADOR";
+    if (["TODAS", "UNA POR DIA", "UNA POR NAVEGADOR", "NINGUNA"].includes(normalized)) return normalized;
     return "TODAS";
   }
 
@@ -487,9 +557,10 @@
     }).format(new Date());
   }
 
-  function tieneMarcaDispositivo() {
+  function tieneMarcaNavegador() {
     try {
-      return localStorage.getItem(VISIT_DEVICE_MARKER) === "1";
+      return localStorage.getItem(VISIT_BROWSER_MARKER) === "1" ||
+             localStorage.getItem(LEGACY_VISIT_DEVICE_MARKER) === "1";
     } catch (_) {
       return false;
     }
@@ -505,8 +576,8 @@
 
   function marcarRegistroVisita(modo) {
     try {
-      if (modo === "UNA POR DISPOSITIVO") {
-        localStorage.setItem(VISIT_DEVICE_MARKER, "1");
+      if (modo === "UNA POR NAVEGADOR") {
+        localStorage.setItem(VISIT_BROWSER_MARKER, "1");
       } else if (modo === "UNA POR DIA") {
         localStorage.setItem(`${VISIT_DAY_MARKER_PREFIX}${fechaActualColombia()}`, "1");
       }

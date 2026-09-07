@@ -80,6 +80,7 @@
     const REMOTE_BOOLEAN_CONTROL_KEYS = new Set(
       Object.keys(INTERRUPTORES).filter(key => typeof INTERRUPTORES[key] === "boolean")
     );
+    window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
     const ALBUMES_OCULTOS_SEGUROS = [
       "Otros productos||Medicamentos|A la venta",
@@ -525,8 +526,13 @@
     function applyRemoteControlRows(rows){
       let changed = false;
       for(const row of (Array.isArray(rows) ? rows : [])){
-        const state = parseRemoteBoolean(row?.[1]);
         const key = String(row?.[4] || "").trim().toUpperCase();
+        if(!key) continue;
+
+        const rawState = String(row?.[1] || "").trim();
+        window.REMOTE_CONTROL_VALUES[key] = rawState;
+
+        const state = parseRemoteBoolean(rawState);
         if(state === null || !REMOTE_BOOLEAN_CONTROL_KEYS.has(key)) continue;
         if(INTERRUPTORES[key] !== state){
           INTERRUPTORES[key] = state;
@@ -2749,23 +2755,57 @@
       const meta = card.querySelector(".album-meta");
       const unitLabel = album.count === 1 ? "producto" : "productos";
       const isAudience = album.navType === "audience";
+      const searchActive = getCombinedWordTerms().length > 0;
+      const matchCount = Number(album.count) || 0;
+      const matchingProducts = searchActive && Array.isArray(album.matchingProducts)
+        ? album.matchingProducts
+        : [];
 
       card.classList.toggle("album-root-card", isAudience);
       card.classList.toggle("album-category-card", !isAudience);
+      card.classList.toggle("search-reactive", searchActive);
+      card.classList.toggle("search-hit", searchActive && matchCount > 0);
+      card.classList.toggle("search-miss", searchActive && matchCount === 0);
       if(isAudience && album.theme) card.dataset.navTheme = album.theme;
 
       btn.dataset.albumOpen = album.key;
       btn.dataset.navType = album.navType || "category";
-      btn.setAttribute("aria-label", isAudience ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
-      btn.title = `${album.label} · ${album.count} ${unitLabel}`;
+
+      if(searchActive){
+        const matchWord = matchCount === 1 ? "coincidencia" : "coincidencias";
+        const sampleNames = matchingProducts
+          .slice(0, 2)
+          .map(product => String(product?.name || "").trim())
+          .filter(Boolean);
+        const extraMatches = Math.max(0, matchCount - sampleNames.length);
+        const sampleText = sampleNames.join(" · ");
+        const moreText = extraMatches > 0 ? `${sampleText ? " · " : ""}+${extraMatches} más` : "";
+
+        btn.setAttribute(
+          "aria-label",
+          `${album.label}: ${matchCount} ${matchWord}${matchCount > 0 ? ". Abrir resultados" : ""}`
+        );
+        btn.title = `${album.label} · ${matchCount} ${matchWord}`;
+        if(badge) badge.textContent = `${matchCount} ${matchWord}`;
+        if(meta){
+          meta.textContent = matchCount > 0
+            ? `${sampleText}${moreText}`
+            : "Sin coincidencias con tu búsqueda.";
+        }
+      }else{
+        btn.setAttribute("aria-label", isAudience ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
+        btn.title = `${album.label} · ${album.count} ${unitLabel}`;
+        if(badge) badge.textContent = `${album.count} ${unitLabel}`;
+        if(meta){
+          meta.textContent = isAudience
+            ? (album.subtitle || "")
+            : `${album.count} ${unitLabel}`;
+        }
+      }
 
       if(preview) preview.hidden = true;
       if(icon) icon.textContent = album.icon || (isAudience ? "✨" : "•");
-      if(badge) badge.textContent = `${album.count} ${unitLabel}`;
       label.textContent = album.label;
-      meta.textContent = isAudience
-        ? (album.subtitle || "")
-        : `${album.count} ${unitLabel}`;
 
       return card;
     }

@@ -3274,8 +3274,10 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
+  flex:0 0 auto;
+  min-width:max-content;
   min-height:36px;
-  padding:0 14px;
+  padding:0 12px;
   border:1px solid #e7ddd2;
   border-radius:999px;
   background:rgba(255,255,255,.88);
@@ -3284,6 +3286,7 @@
   line-height:1;
   font-weight:800;
   white-space:nowrap;
+  box-sizing:border-box;
 }
 .album-copy{
   position:relative;
@@ -3321,16 +3324,28 @@
 }
 .album-root-card .album-card-top{
   position:absolute;
-  top:72px;
-  left:28px;
-  right:28px;
+  top:66px;
+  left:18px;
+  right:18px;
+  width:auto;
+  min-width:0;
+  gap:10px;
+  align-items:center;
 }
 .album-root-card .album-icon{
-  width:72px;
-  height:72px;
-  flex-basis:72px;
-  border-radius:22px;
-  font-size:34px;
+  width:64px;
+  height:64px;
+  flex-basis:64px;
+  border-radius:20px;
+  font-size:31px;
+}
+.album-root-card .album-count-badge{
+  min-height:34px;
+  max-width:calc(100% - 74px);
+  padding-inline:9px;
+  font-size:11.5px;
+  overflow:visible;
+  text-overflow:clip;
 }
 .album-root-card .album-label{
   font-size:clamp(27px,2.25vw,34px) !important;
@@ -3384,6 +3399,92 @@
 }
 .album-root-card[data-nav-theme="otros"] .album-icon{
   background:#f4ead7;
+}
+
+/* Búsqueda reactiva: las coincidencias aparecen dentro de las tarjetas sin reordenarlas. */
+@keyframes albumSearchEnter{
+  from{opacity:.72;transform:translateY(5px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.album-card.search-reactive{
+  animation:albumSearchEnter .18s ease-out both;
+}
+.album-card.search-reactive .album-folder{
+  transition:opacity .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease,background .18s ease;
+}
+.album-card.search-hit .album-folder{
+  border-color:#c9a98f;
+  box-shadow:0 20px 48px rgba(111,77,53,.15),0 0 0 2px rgba(203,169,140,.11) inset;
+}
+@keyframes albumMatchBlink{
+  0%,100%{
+    opacity:1;
+    background:#fffdf9;
+    border-color:#ff1493;
+    box-shadow:
+      0 0 0 1px rgba(255,20,147,.96),
+      0 0 8px rgba(255,20,147,.96),
+      0 0 18px rgba(255,20,147,.74),
+      0 0 30px rgba(255,20,147,.42);
+  }
+  50%{
+    opacity:1;
+    background:#fffdf9;
+    border-color:#ff4fd8;
+    box-shadow:
+      0 0 0 1px rgba(255,79,216,1),
+      0 0 10px rgba(255,79,216,.98),
+      0 0 22px rgba(255,79,216,.78),
+      0 0 34px rgba(255,79,216,.48);
+  }
+}
+.album-card.search-hit .album-count-badge{
+  border:2px solid #ff1493;
+  background:#fffdf9;
+  color:#6b4c38;
+  box-shadow:
+    0 0 0 1px rgba(255,20,147,.96),
+    0 0 8px rgba(255,20,147,.96),
+    0 0 18px rgba(255,20,147,.74);
+  animation:albumMatchBlink .78s ease-in-out infinite;
+}
+.album-card.search-hit .album-icon{
+  transform:scale(1.035);
+}
+.album-card.search-miss{
+  opacity:.46;
+}
+.album-card.search-miss .album-folder{
+  box-shadow:none;
+}
+.album-card.search-miss .album-count-badge{
+  background:#f7f4f1;
+  color:#9a8b80;
+  border-color:#e6ded7;
+}
+.album-card.search-reactive .album-meta{
+  display:-webkit-box !important;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+  max-width:100%;
+  min-height:2.9em;
+  color:#765846 !important;
+  font-size:12px !important;
+  line-height:1.45 !important;
+  font-weight:650 !important;
+}
+.album-category-card.search-reactive .album-meta{
+  margin-top:7px;
+  padding-right:38px;
+}
+.album-root-card.search-reactive .album-meta{
+  max-width:100%;
+}
+@media (prefers-reduced-motion:reduce){
+  .album-card.search-reactive{animation:none}
+  .album-card.search-hit .album-icon{transform:none}
+  .album-card.search-hit .album-count-badge{animation:none}
 }
 
 /* Segundo nivel: subcategorías limpias, conservando contador antes de entrar */
@@ -3449,9 +3550,9 @@
   .grid.album-grid-mode{grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
   .album-root-card .album-folder,
   .album-root-card .album-pad{min-height:290px}
-  .album-root-card .album-pad{padding:60px 22px 24px}
-  .album-root-card .album-card-top{top:60px;left:22px;right:22px}
-  .album-root-card .album-icon{width:62px;height:62px;flex-basis:62px;border-radius:20px;font-size:30px}
+  .album-root-card .album-pad{padding:60px 18px 24px}
+  .album-root-card .album-card-top{top:60px;left:18px;right:18px}
+  .album-root-card .album-icon{width:60px;height:60px;flex-basis:60px;border-radius:19px;font-size:29px}
 }
 @media (max-width:520px){
   .grid.album-grid-mode.root-nav-mode,

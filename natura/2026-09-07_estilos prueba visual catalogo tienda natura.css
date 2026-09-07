@@ -3602,6 +3602,8 @@
 .card.gift-gallery-card .pad{
   display:none !important;
 }
+
+
 /* Prototipo visual independiente: boutique cálida inspirada en la identidad gráfica. */
 :root{
   --prototype-ivory:#fbf8f5;
@@ -4078,4 +4080,23 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 }
 @media(prefers-reduced-motion:reduce){
   *{scroll-behavior:auto !important;animation:none !important;transition:none !important}
+}
+
+/* Corrección del buscador: el texto animado sustituye al placeholder, nunca se superponen. */
+.search-wrap.show-ticker input::placeholder{
+  color:transparent !important;
+  opacity:0 !important;
+}
+.search-wrap.show-ticker input{
+  caret-color:transparent;
+}
+.search-wrap.show-ticker .search-ticker{
+  opacity:1 !important;
+}
+.search-wrap:not(.show-ticker) .search-ticker{
+  opacity:0 !important;
+}
+.search-ticker{
+  overflow:hidden !important;
+  white-space:nowrap !important;
 }

@@ -63,14 +63,13 @@
 	  MOSTRAR_CODIGOS_PRODUCTO: true,
 	  ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
 	  HABILITAR_UBICACION_GPS: true,
-	  HABILITAR_NOTIFICACIONES_TELEGRAM: true,
 	  APLICAR_LIMITES_STOCK: false,
 	  MOSTRAR_IMAGENES_PRODUCTO: true,
 	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
 	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
 	  PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
-	  MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: true,
+	  MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: false,
 	  MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS: true,
 	  APLICAR_ALBUMES_OCULTOS: true,
 	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
@@ -154,6 +153,7 @@
 
     function shouldShowProductImageInNavigationPanels(){
       return !!(
+        shouldShowProductImages() &&
         window.INTERRUPTORES &&
         window.INTERRUPTORES.MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS === true
       );
@@ -1003,9 +1003,18 @@
         if(product?.section === "Belleza y cuidado" && product?.audience) metaParts.push(String(product.audience));
         if(product?.section === "Regalos para toda ocasión") metaParts.push(String(product.section));
         if(product?.category) metaParts.push(String(product.category));
-        if(product?.id) metaParts.push(`Código ${product.id}`);
-        if(product?.hasPrice !== false && Number(product?.price) >= 0) metaParts.push(fmtCOP.format(Number(product.price)));
-        if(Number.isInteger(product?.stock) && product.stock >= 0) metaParts.push(product.stock > 0 ? "Disponible" : "Sin stock");
+        if(product?.id && shouldShowProductCodes()) metaParts.push(`Código ${product.id}`);
+        if(shouldShowProductPrices() && product?.hasPrice !== false && Number(product?.price) >= 0){
+          metaParts.push(fmtCOP.format(Number(product.price)));
+        }
+        const hasKnownStock = Number.isInteger(product?.stock) && product.stock >= 0;
+        if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
+          metaParts.push(hasKnownStock ? `Stock: ${product.stock}` : "Stock: Por confirmar");
+        }else if(INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
+          metaParts.push(hasKnownStock
+            ? (product.stock > 0 ? "Disponible" : "Sin stock")
+            : "Disponibilidad por confirmar");
+        }
         meta.textContent = metaParts.filter(Boolean).join(" · ");
 
         const description = document.createElement("span");
@@ -1520,10 +1529,7 @@
 
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
-      return source.filter(p => {
-        if(cleanNavKey(p.commercialState) === "no a la venta") return false;
-        return !isProductHiddenByRoute(p);
-      });
+      return source.filter(p => !isProductHiddenByRoute(p));
     }
 
     function filterSearchExcludedProducts(list){
@@ -1767,11 +1773,12 @@
           continue;
         }
 
-        const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+        const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
+        const maxStock = hasKnownStock ? p.stock : null;
         const qty = Math.max(0, safeInt(it.qty, 0));
 
-        const newQty = enforce
-          ? ((maxStock > 0) ? Math.min(qty, maxStock) : 0)
+        const newQty = (enforce && hasKnownStock)
+          ? Math.min(qty, maxStock)
           : qty;
 
         const newObj = {
@@ -1833,9 +1840,10 @@
     function buildLineItems(){
       const items = cartItemsArray();
       const includeCode = shouldSendProductCodesByWhatsApp();
+      const showPrices = shouldShowProductPrices();
       return items.map(it => {
         const codePart = includeCode ? ` (Id: ${it.id})` : "";
-        if(it.hasPrice === false){
+        if(!showPrices || it.hasPrice === false){
           return `* ${it.name}${codePart} x${it.qty} = Precio por confirmar`;
         }
         return `* ${it.name}${codePart} x${it.qty} = ${fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0))}`;
@@ -1912,7 +1920,8 @@
 	  const subtotal = cartTotalValue();
 	  const envio = getShippingCop();
 	  const total = subtotal + envio;
-	  const hasUnpricedItems = cartHasUnpricedItems();
+	  const showPrices = shouldShowProductPrices();
+	  const hasUnpricedItems = !showPrices || cartHasUnpricedItems();
 
 	  const lines = [];
 
@@ -2066,8 +2075,11 @@
       const enforce = shouldEnforceStockLimits();
       const items = cartItemsArray();
       const total = cartTotalValue() + getShippingCop();
+      const showPrices = shouldShowProductPrices();
       const hasUnpricedItems = items.some(it => it && it.hasPrice === false);
-      cartTotalEl.textContent = hasUnpricedItems ? "Total: Por confirmar" : ("Total: " + fmtCOP.format(total));
+      cartTotalEl.textContent = (!showPrices || hasUnpricedItems)
+        ? "Total: Por confirmar"
+        : ("Total: " + fmtCOP.format(total));
 
       if(!items.length){
         cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío.</div>`;
@@ -2097,7 +2109,11 @@
         main.querySelector(".cart-item-name").textContent = it.name;
         const cartMetaParts = [];
         if(shouldShowProductCodes()) cartMetaParts.push(`Id: ${it.id}`);
-        cartMetaParts.push(it.hasPrice === false ? "Precio: Por confirmar" : `Precio: ${fmtCOP.format(Number(it.price)||0)}`);
+        if(shouldShowProductPrices()){
+          cartMetaParts.push(it.hasPrice === false ? "Precio: Por confirmar" : `Precio: ${fmtCOP.format(Number(it.price)||0)}`);
+        }else{
+          cartMetaParts.push("Precio: Por confirmar");
+        }
         main.querySelector(".cart-item-sub").textContent = cartMetaParts.join(" · ");
         left.appendChild(main);
 
@@ -2110,15 +2126,18 @@
         `;
 
         const incBtn = controls.querySelector('button[data-act="inc"]');
-        const maxStock = Number.isFinite(it.stock) ? it.stock : 0;
+        const hasKnownStock = Number.isFinite(it.stock) && it.stock >= 0;
+        const maxStock = hasKnownStock ? it.stock : null;
 
         if(incBtn){
-          incBtn.disabled = enforce ? (!(maxStock > 0) || (Number(it.qty)||0) >= maxStock) : false;
+          incBtn.disabled = (enforce && hasKnownStock)
+            ? (maxStock <= 0 || (Number(it.qty)||0) >= maxStock)
+            : false;
         }
 
         const subtotal = document.createElement("div");
         subtotal.className = "cart-subtotal";
-        subtotal.textContent = it.hasPrice === false
+        subtotal.textContent = (!shouldShowProductPrices() || it.hasPrice === false)
           ? "Por confirmar"
           : fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0));
 
@@ -2151,14 +2170,15 @@
       const act = btn.getAttribute("data-act");
       const current = cart[id];
 
-      const maxStock = Number.isFinite(current.stock) ? current.stock : 0;
+      const hasKnownStock = Number.isFinite(current.stock) && current.stock >= 0;
+      const maxStock = hasKnownStock ? current.stock : null;
       let newQty = safeInt(current.qty, 0);
 
       if(act === "inc"){
-        if(!enforce){
+        if(!enforce || !hasKnownStock){
           newQty += 1;
-        }else{
-          if(maxStock > 0 && newQty < maxStock) newQty += 1;
+        }else if(maxStock > 0 && newQty < maxStock){
+          newQty += 1;
         }
       }
       if(act === "dec"){
@@ -2429,13 +2449,13 @@
             "description":String(p.description || ""),
             "category":p.section === "Regalos para toda ocasión"
               ? p.section
-              : [p.audience, p.category].filter(Boolean).join(" > "),
-            "sku":String(p.id || "")
+              : [p.audience, p.category].filter(Boolean).join(" > ")
           };
-          if(p.docsImageUrl) item.image = [p.docsImageUrl];
+          if(shouldShowProductCodes()) item.sku = String(p.id || "");
+          if(shouldShowProductImages() && p.docsImageUrl) item.image = [p.docsImageUrl];
           if(p.brand) item.brand = { "@type":"Brand", "name":p.brand };
           if(p.codeNatura) item.mpn = p.codeNatura;
-          if(p.hasPrice !== false && Number(p.price) > 0){
+          if(shouldShowProductPrices() && p.hasPrice !== false && Number(p.price) > 0){
             item.offers = {
               "@type":"Offer",
               "priceCurrency":"COP",
@@ -2535,13 +2555,14 @@
       if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
       if(decBtn) decBtn.disabled = q <= 0;
 
-      const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
-      const canAdd = !enforce ? true : ((maxStock > 0) && (q < maxStock));
+      const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
+      const maxStock = hasKnownStock ? p.stock : null;
+      const canAdd = (!enforce || !hasKnownStock) ? true : ((maxStock > 0) && (q < maxStock));
 
       if(incBtn){
         incBtn.disabled = !canAdd;
         incBtn.classList.toggle("in-cart", q > 0);
-        if(enforce && maxStock <= 0){
+        if(enforce && hasKnownStock && maxStock <= 0){
           incBtn.textContent = INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK ? "Sin stock" : "Agregar";
         }else{
           incBtn.textContent = "Agregar";
@@ -3445,21 +3466,20 @@
 
         const act = btn.getAttribute("data-act");
         const enforce = shouldEnforceStockLimits();
-        const maxStock = Number.isFinite(p.stock) ? p.stock : 0;
+        const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
+        const maxStock = hasKnownStock ? p.stock : null;
 
         const currentQty = safeInt(cart[id]?.qty, 0);
 
         let newQty = currentQty;
 
         if(act === "inc"){
-          if(!enforce){
+          if(!enforce || !hasKnownStock){
+            newQty = currentQty + 1;
+          }else if(maxStock > 0 && currentQty < maxStock){
             newQty = currentQty + 1;
           }else{
-            if(maxStock > 0 && currentQty < maxStock){
-              newQty = currentQty + 1;
-            }else{
-              newQty = currentQty;
-            }
+            newQty = currentQty;
           }
         }else if(act === "dec"){
           newQty = Math.max(0, currentQty - 1);

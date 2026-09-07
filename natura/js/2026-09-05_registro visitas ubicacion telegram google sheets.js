@@ -20,7 +20,11 @@
   iniciarRegistroVisita();
 
   async function iniciarRegistroVisita() {
-    await esperarConfiguracionSinBloquear();
+    const configuracionDisponible = await esperarConfiguracionSegura();
+    if (!configuracionDisponible) {
+      console.info("No se registra la visita porque la configuración remota de privacidad no estuvo disponible.");
+      return;
+    }
 
     const userId = obtenerIdLocal();
     const politica = await obtenerPoliticaRegistroVisitas(userId);
@@ -41,14 +45,25 @@
     }
   }
 
-  async function esperarConfiguracionSinBloquear() {
+  async function esperarConfiguracionSegura() {
     try {
-      if (!window.REMOTE_CONFIG_READY) return;
-      await Promise.race([
-        window.REMOTE_CONFIG_READY,
-        new Promise(resolve => setTimeout(resolve, 2200))
-      ]);
-    } catch (_) {}
+      if (!window.REMOTE_CONFIG_READY) return false;
+      await window.REMOTE_CONFIG_READY;
+
+      const valores = window.REMOTE_CONTROL_VALUES || {};
+      const clavesRequeridas = [
+        VISIT_MODE_KEY,
+        OWN_VISITS_KEY,
+        "HABILITAR_UBICACION_GPS"
+      ];
+
+      return clavesRequeridas.every(clave =>
+        Object.prototype.hasOwnProperty.call(valores, clave) &&
+        String(valores[clave] ?? "").trim() !== ""
+      );
+    } catch (_) {
+      return false;
+    }
   }
 
   async function obtenerUbicacionPreferida() {

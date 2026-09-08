@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:M: Código, Sección, Público, Categoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
+    // Hoja Productos, estructura A:L: Código, Sección, Categoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -18,7 +18,7 @@
 
     // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
     // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Sección, B=Público, C=Categoría, D=Estado comercial, E=Ocultar del catálogo, F=Excluir de búsquedas, G=Nota.
+    // Categorias: A=Sección, B=Categoría, C=Estado comercial, D=Ocultar del catálogo, E=Excluir de búsquedas, F=Nota.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
@@ -72,8 +72,8 @@
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
     const ALBUMES_OCULTOS_SEGUROS = [
-      "Otros productos||Medicamentos|A la venta",
-      "Otros productos||Tecnología y hogar|No a la venta"
+      "Otros productos|Medicamentos|A la venta",
+      "Otros productos|Tecnología y hogar|No a la venta"
     ];
     const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
     const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
@@ -374,27 +374,41 @@
 
           const rows = payload.table.rows.map(row=>{
             const c = Array.isArray(row && row.c) ? row.c : [];
-            let code = cellValue(c[0]).trim();
+            const value = index => cellValue(c[index]).trim();
+            let code = value(0);
             if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
+
+            // Compatibilidad temporal: si C todavía contiene Público, se lee la estructura anterior.
+            const legacyAudience = ["para ella","para el","unisex"].includes(normalizeText(value(2)));
+            const offset = legacyAudience ? 1 : 0;
+            const categoryIndex = 2 + offset;
+            const conditionIndex = 3 + offset;
+            const stateIndex = 4 + offset;
+            const nameIndex = 5 + offset;
+            const priceIndex = 6 + offset;
+            const costIndex = 7 + offset;
+            const stockIndex = 8 + offset;
+            const referenceIndex = 9 + offset;
+            const descriptionIndex = 10 + offset;
+            const naturaIndex = 11 + offset;
 
             return {
               code,
-              section: cellValue(c[1]).trim(),
-              audience: cellValue(c[2]).trim(),
-              category: cellValue(c[3]).trim(),
-              condition: cellValue(c[4]).trim(),
-              commercialState: cellValue(c[5]).trim(),
-              name: cellValue(c[6]).trim(),
-              priceText: cellValue(c[7]).trim(),
-              costText: cellValue(c[8]).trim(),
-              stockText: cellValue(c[9]).trim(),
-              referenceExternal: cellValue(c[10]).trim(),
-              description: cellValue(c[11]).trim(),
-              codeNatura: cellValue(c[12]).trim(),
+              section: value(1),
+              category: value(categoryIndex),
+              condition: value(conditionIndex),
+              commercialState: value(stateIndex),
+              name: value(nameIndex),
+              priceText: value(priceIndex),
+              costText: value(costIndex),
+              stockText: value(stockIndex),
+              referenceExternal: value(referenceIndex),
+              description: value(descriptionIndex),
+              codeNatura: value(naturaIndex),
               fullTxtRecord: [
-                cellValue(c[6]).trim(),
+                value(nameIndex),
                 "",
-                `Precio: ${cellValue(c[7]).trim()} Costo: ${cellValue(c[8]).trim()} Stock: ${cellValue(c[9]).trim()} Referencia externa: ${cellValue(c[10]).trim()}. ${cellValue(c[11]).trim()}`
+                `Precio: ${value(priceIndex)} Costo: ${value(costIndex)} Stock: ${value(stockIndex)} Referencia externa: ${value(referenceIndex)}. ${value(descriptionIndex)}`
               ].join("\n")
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);
@@ -513,8 +527,8 @@
       return changed;
     }
 
-    function routeKeyFromParts(section, audience, category, commercialState){
-      return [section, audience, category, commercialState]
+    function routeKeyFromParts(section, category, commercialState){
+      return [section, category, commercialState]
         .map(value => normalizeText(value).replace(/\s+/g, " "))
         .join("|");
     }
@@ -527,17 +541,20 @@
 
       for(const row of (Array.isArray(rows) ? rows : [])){
         const section = String(row?.[0] || "").trim();
-        const audience = String(row?.[1] || "").trim();
-        const category = String(row?.[2] || "").trim();
-        const commercialState = String(row?.[3] || "").trim();
-        if(!section || !category) continue;
 
-        const hiddenState = parseRemoteBoolean(row?.[4]);
-        const excludedState = parseRemoteBoolean(row?.[5]);
+        // Estructura anterior: A Sección, B Público, C Categoría, D Estado, E Ocultar, F Excluir, G Nota.
+        // Estructura actual:   A Sección, B Categoría, C Estado, D Ocultar, E Excluir, F Nota.
+        const oldLayout = !["activado","desactivado"].includes(normalizeText(row?.[3]));
+        const category = String(oldLayout ? (row?.[2] || "") : (row?.[1] || "")).trim();
+        const commercialState = String(oldLayout ? (row?.[3] || "") : (row?.[2] || "")).trim();
+        if(!section || !category || !commercialState) continue;
+
+        const hiddenState = parseRemoteBoolean(oldLayout ? row?.[4] : row?.[3]);
+        const excludedState = parseRemoteBoolean(oldLayout ? row?.[5] : row?.[4]);
         if(hiddenState === null && excludedState === null) continue;
 
         validRows++;
-        const routeKey = routeKeyFromParts(section, audience, category, commercialState);
+        const routeKey = routeKeyFromParts(section, category, commercialState);
         allowed.push(routeKey);
         if(hiddenState === true) hidden.push(routeKey);
         if(excludedState === true) excluded.push(routeKey);
@@ -548,17 +565,21 @@
         return false;
       }
 
+      const uniqueHidden = [...new Set(hidden)];
+      const uniqueExcluded = [...new Set(excluded)];
+      const uniqueAllowed = [...new Set(allowed)];
+
       const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
       const previousExcluded = JSON.stringify(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA || []);
       const previousAllowed = JSON.stringify([...allowedProductRouteKeySet].sort());
 
-      window.ALBUMES_OCULTOS = hidden;
-      window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = excluded;
-      allowedProductRouteKeySet = new Set(allowed);
-      saveRemoteCategoryCache(hidden, excluded);
+      window.ALBUMES_OCULTOS = uniqueHidden;
+      window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = uniqueExcluded;
+      allowedProductRouteKeySet = new Set(uniqueAllowed);
+      saveRemoteCategoryCache(uniqueHidden, uniqueExcluded);
 
-      return previousHidden !== JSON.stringify(hidden) ||
-             previousExcluded !== JSON.stringify(excluded) ||
+      return previousHidden !== JSON.stringify(uniqueHidden) ||
+             previousExcluded !== JSON.stringify(uniqueExcluded) ||
              previousAllowed !== JSON.stringify([...allowedProductRouteKeySet].sort());
     }
 
@@ -942,7 +963,6 @@
       const code = String(row.code || "").trim();
       const name = String(row.name || "").trim();
       const section = String(row.section || "").trim();
-      const audience = String(row.audience || "").trim();
       const rawCategory = String(row.category || "").trim();
       const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
       const condition = String(row.condition || "").trim();
@@ -971,7 +991,6 @@
         id: code,
         name,
         section,
-        audience,
         category,
         condition,
         commercialState,
@@ -993,7 +1012,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, audience, category, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -1008,7 +1027,6 @@
             id: `regalo-galeria-${String(index + 1).padStart(2,"0")}`,
             name: "",
             section: GIFT_GITHUB_SOURCE.section,
-            audience: "",
             category: "",
             condition: "",
             commercialState: "A la venta",
@@ -1054,7 +1072,6 @@
 
       const sorted = source.slice().sort((a,b)=>
         String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
-        String(a?.audience || "").localeCompare(String(b?.audience || ""), "es", { sensitivity:"base" }) ||
         String(a?.category || "").localeCompare(String(b?.category || ""), "es", { sensitivity:"base" }) ||
         String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" })
       );
@@ -1073,9 +1090,10 @@
         const meta = document.createElement("span");
         meta.className = "beauty-product-meta";
         const metaParts = [];
-        if(product?.section === "Belleza y cuidado" && product?.audience) metaParts.push(String(product.audience));
-        if(product?.section === "Regalos para toda ocasión") metaParts.push(String(product.section));
-        if(product?.category) metaParts.push(String(product.category));
+        const mainGroup = mainNavigationGroupForProduct(product);
+        const subcategory = navigationCategoryForProduct(product, mainGroup);
+        if(mainGroup) metaParts.push(mainGroup);
+        if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) metaParts.push(subcategory);
         if(product?.id && shouldShowProductCodes()) metaParts.push(`Código ${product.id}`);
         if(shouldShowProductPrices() && product?.hasPrice !== false && Number(product?.price) >= 0){
           metaParts.push(fmtCOP.format(Number(product.price)));
@@ -1374,28 +1392,50 @@
 
     const NAV_AUDIENCES = [
       {
-        label:"Para ella",
+        label:"Perfumes y fragancias",
         section:"Belleza y cuidado",
-        subtitle:"Belleza y cuidado seleccionados para ella.",
-        iconImage:ROOT_ICON_IMAGES.ella,
-        theme:"ella"
+        subtitle:"Perfumes, frescores, colonias, body splash y miniaturas.",
+        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria perfumes fragancia floral rosa.webp"),
+        theme:"perfumes"
       },
       {
-        label:"Para él",
+        label:"Cabello",
         section:"Belleza y cuidado",
-        subtitle:"Perfumes, desodorantes y cuidado personal para él.",
-        iconImage:ROOT_ICON_IMAGES.el,
-        theme:"el"
+        subtitle:"Reparación, nutrición, hidratación, rizos, anticaída, color y protección.",
+        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cabello mechon brillante capilar.webp"),
+        theme:"cabello"
       },
       {
-        label:"Unisex",
+        label:"Cuidado facial",
         section:"Belleza y cuidado",
-        subtitle:"Cuidado para todos, sin repetir etiquetas.",
-        iconImage:ROOT_ICON_IMAGES.unisex,
-        theme:"unisex"
+        subtitle:"Limpieza, hidratación, sérums, tratamientos y cuidado del rostro.",
+        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cuidado facial crema rosa.webp"),
+        theme:"facial"
       },
       {
-        label:"Regalos para toda ocasión",
+        label:"Cuidado personal",
+        section:"Belleza y cuidado",
+        subtitle:"Cuidado corporal, higiene, desodorantes, manos, pies y protección solar.",
+        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cuidado corporal locion vegetal.webp"),
+        theme:"personal"
+      },
+      {
+        label:"Maquillaje",
+        section:"Belleza y cuidado",
+        subtitle:"Productos para rostro, labios y ojos.",
+        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria maquillaje brocha labial rosa.webp"),
+        theme:"maquillaje"
+      },
+      {
+        label:"Kits y combos",
+        section:"Belleza y cuidado",
+        subtitle:"Combinaciones de distintas familias de productos.",
+        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria kits combos regalo cosmeticos.webp"),
+        theme:"kits",
+        directProducts:true
+      },
+      {
+        label:"Regalos",
         section:"Regalos para toda ocasión",
         subtitle:"Detalles y arreglos listos para regalar en cualquier ocasión.",
         iconImage:ROOT_ICON_IMAGES.regalos,
@@ -1463,7 +1503,7 @@
 
     function getProductRouteKey(p){
       if(!p) return "";
-      return routeKeyFromParts(p.section, p.audience, p.category, p.commercialState);
+      return routeKeyFromParts(p.section, p.category, p.commercialState);
     }
 
     function isProductRouteAuthorized(p){
@@ -1484,14 +1524,78 @@
       return Boolean(key && searchExcludedAlbumNameSet.has(key));
     }
 
-    function productMatchesAudience(p, audienceLabel){
-      if(!p) return false;
-      const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audienceLabel));
-      if(!group) return false;
-      if(group.section === "Belleza y cuidado"){
-        return p.section === group.section && p.audience === group.label;
+    function mainNavigationGroupForProduct(p){
+      if(!p) return "";
+      if(p.section === "Regalos para toda ocasión") return "Regalos";
+      if(p.section === "Otros productos") return "Otros productos";
+      if(p.section !== "Belleza y cuidado") return "";
+
+      const category = cleanNavKey(p.category);
+      const name = normalizeText(p.name || "");
+      const isPerfumedDeodorant = category === "perfumes" && /desodorante corporal perfumado/.test(name);
+      const isFacialMist = category === "maquillaje" && /bruma facial/.test(name);
+
+      if(category === "kits y combos") return "Kits y combos";
+      if(category === "perfumes" && !isPerfumedDeodorant) return "Perfumes y fragancias";
+      if(category === "cabello") return "Cabello";
+      if(category === "cuidado facial" || isFacialMist) return "Cuidado facial";
+      if(category === "maquillaje" && !isFacialMist) return "Maquillaje";
+      if(["cuidado corporal","higiene corporal","desodorantes","manos y pies","proteccion solar","higiene intima"].includes(category) || isPerfumedDeodorant){
+        return "Cuidado personal";
       }
-      return p.section === group.section;
+      return "";
+    }
+
+    function productMatchesAudience(p, audienceLabel){
+      return cleanNavKey(mainNavigationGroupForProduct(p)) === cleanNavKey(audienceLabel);
+    }
+
+    function navigationCategoryForProduct(p, groupLabel){
+      if(!p) return "General";
+      const group = cleanNavKey(groupLabel || mainNavigationGroupForProduct(p));
+      const name = normalizeText(p.name || "");
+      const original = categoryDisplayLabel(p.category || "General");
+
+      if(group === "perfumes y fragancias"){
+        if(/mini|miniatura/.test(name)) return "Miniaturas";
+        if(/body splash|splash perfumado/.test(name)) return "Body splash";
+        if(/frescor|colonia|deo colonia/.test(name)) return "Frescores y colonias";
+        return "Perfumes";
+      }
+
+      if(group === "cabello"){
+        if(/anticaida|crecimiento|pataua/.test(name)) return "Anticaída y crecimiento";
+        if(/rizos|rizado|afros|definicion/.test(name)) return "Rizos y definición";
+        if(/color|matizador|liso/.test(name)) return "Color, matización y liso";
+        if(/anticaspa|shampoo cabello y cuerpo|shampoo refrescante/.test(name)) return "Limpieza y anticaspa";
+        if(/protector termico|finalizador|esencia para finalizacion|esencia para cabello|spray para peinar|crema para peinar/.test(name)) return "Peinado y protección";
+        if(/hidratacion|aloe vera/.test(name)) return "Hidratación";
+        return "Reparación y nutrición";
+      }
+
+      if(group === "cuidado facial"){
+        if(/combo/.test(name)) return "Combos faciales";
+        if(/ojos/.test(name)) return "Contorno de ojos";
+        if(/afeitar|post barba/.test(name)) return "Afeitado y post-afeitado";
+        if(/agua micelar|gel de limpieza|mousse de limpieza/.test(name)) return "Limpieza y desmaquillado";
+        if(/exfoliante|peeling/.test(name)) return "Exfoliación";
+        if(/serum|esencia de tratamiento/.test(name)) return "Sérums y tratamientos";
+        return "Hidratación y brumas";
+      }
+
+      if(group === "cuidado personal"){
+        const category = cleanNavKey(p.category);
+        if(category === "perfumes" && /desodorante corporal perfumado/.test(name)) return "Desodorantes";
+        return original;
+      }
+
+      if(group === "maquillaje"){
+        if(/gloss|labial|serum labial/.test(name)) return "Labios";
+        if(/mascara para pestana|pestanina|lapiz kajal/.test(name)) return "Ojos";
+        return "Rostro";
+      }
+
+      return original;
     }
 
     function isDirectProductAudience(audienceLabel){
@@ -1546,7 +1650,7 @@
       const byCategory = new Map();
       for(const p of (Array.isArray(list) ? list : [])){
         if(!productMatchesAudience(p, audienceLabel)) continue;
-        const category = String(p.category || "General").trim() || "General";
+        const category = navigationCategoryForProduct(p, audienceLabel);
         const key = cleanNavKey(category);
         const visual = CATEGORY_VISUALS[cleanNavKey(category)] || { icon:"•" };
         const found = byCategory.get(key) || {
@@ -1596,7 +1700,7 @@
     }
 
     function getProductAlbumKey(p){
-      return cleanNavKey((p && p.category) || "General") || ROOT_ALBUM_KEY;
+      return cleanNavKey(navigationCategoryForProduct(p, selectedAudience) || "General") || ROOT_ALBUM_KEY;
     }
 
     function albumLabelFromKey(key){
@@ -1655,7 +1759,7 @@
         source = source.filter(p => productMatchesAudience(p, selectedAudience));
       }
       if(selectedCategory){
-        source = source.filter(p => cleanNavKey(p.category) === cleanNavKey(selectedCategory));
+        source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p, selectedAudience)) === cleanNavKey(selectedCategory));
       }
       return source;
     }
@@ -2803,9 +2907,9 @@
             "@type":"Product",
             "name":String(p.name || ""),
             "description":String(p.description || ""),
-            "category":p.section === "Regalos para toda ocasión"
-              ? p.section
-              : [p.audience, p.category].filter(Boolean).join(" > ")
+            "category":[mainNavigationGroupForProduct(p), navigationCategoryForProduct(p, mainNavigationGroupForProduct(p))]
+              .filter((value,index,array)=>value && (index === 0 || cleanNavKey(value) !== cleanNavKey(array[0])))
+              .join(" > ")
           };
           if(shouldShowProductCodes()) item.sku = String(p.id || "");
           if(shouldShowProductImages() && p.docsImageUrl) item.image = [p.docsImageUrl];
@@ -2874,9 +2978,10 @@
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
       const stockVal = hasKnownStock ? p.stock : 0;
       const parts = [];
-      if(p.section === "Belleza y cuidado" && p.audience) parts.push(p.audience);
-      if(p.section === "Regalos para toda ocasión") parts.push(p.section);
-      if(p.category) parts.push(p.category);
+      const mainGroup = mainNavigationGroupForProduct(p);
+      const subcategory = navigationCategoryForProduct(p, mainGroup);
+      if(mainGroup) parts.push(mainGroup);
+      if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) parts.push(subcategory);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         parts.push(hasKnownStock ? `Stock: ${stockVal}` : "Stock: Por confirmar");
@@ -3281,7 +3386,6 @@
 
       for(const p of (Array.isArray(list) ? list : [])){
         for(const token of parseSuggestionTokens(p && p.category ? p.category : "")) blocked.add(token);
-        for(const token of parseSuggestionTokens(p && p.audience ? p.audience : "")) blocked.add(token);
         for(const token of parseSuggestionTokens(p && p.section ? p.section : "")) blocked.add(token);
       }
 
@@ -3554,7 +3658,7 @@
         if(catalogEntryText){
           catalogEntryText.textContent = selectedAudience
             ? (directSelected ? "Explora los regalos disponibles." : "Elige una categoría para ver los productos disponibles.")
-            : "Elige Para ella, Para él, Unisex, Regalos para toda ocasión u Otros productos para comenzar.";
+            : "Elige una categoría para comenzar.";
         }
       }
 
@@ -4009,7 +4113,7 @@
         productById = new Map(all.map(p => [String(p.id), p]));
         readStateFromUrl();
         if(selectedCategory){
-          const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(p.category) === cleanNavKey(selectedCategory));
+          const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p, selectedAudience)) === cleanNavKey(selectedCategory));
           if(!hasCategory) selectedCategory = "";
         }
         refreshNavigationAlbums();

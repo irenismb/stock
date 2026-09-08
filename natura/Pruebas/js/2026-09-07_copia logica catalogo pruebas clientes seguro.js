@@ -5,29 +5,24 @@
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
     // ==========================================
     // Los valores locales funcionan como respaldo.
-    // Si existen las hojas "Configuracion" y "Categorias" en el Google Sheet,
-    // sus valores se aplican globalmente a todos los visitantes.
+    // Los datos del catálogo y sus controles se leen desde un libro XLSX publicado en GitHub.
 
-
-    // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
-    // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:R: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, campos de auditoría, Tipo de fragancia y Línea.
-    const GOOGLE_SHEET_SOURCE = {
-      spreadsheetId: "19sf8MrzGftXVb4sp9i9FptZk5_TckzRhuJUL-3bUQyA",
-      sheetName: "Productos",
-      gid: "893686273"
-    };
-
-
-    // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
-    // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Sección, B=Categoría, C=Subcategoría, D=Familia olfativa, E=Estado comercial, F=Ocultar del catálogo, G=Excluir de búsquedas, H=Nota.
-    const REMOTE_CONTROL_SOURCE = {
-      enabled: true,
-      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
+    // Fuente principal de datos comerciales y controles del catálogo de pruebas.
+    // El libro conserva las hojas Productos, Configuracion y Categorias.
+    const GITHUB_WORKBOOK_SOURCE = {
+      folder: "Pruebas",
+      filename: "2026-09-08_copia productos catalogo pruebas lectura github.xlsx",
+      productsSheetName: "Productos",
       controlsSheetName: "Configuracion",
       categoriesSheetName: "Categorias",
       refreshMs: 60000
+    };
+
+    const REMOTE_CONTROL_SOURCE = {
+      enabled: true,
+      controlsSheetName: GITHUB_WORKBOOK_SOURCE.controlsSheetName,
+      categoriesSheetName: GITHUB_WORKBOOK_SOURCE.categoriesSheetName,
+      refreshMs: GITHUB_WORKBOOK_SOURCE.refreshMs
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
@@ -47,7 +42,7 @@
 
     // Galería visual exclusiva de "Regalos para toda ocasión".
     // La carpeta de trabajo está en Drive, pero la web solo consume su publicación en GitHub.
-    // Los regalos no forman parte del inventario del Google Sheet y sus nombres de archivo no se muestran.
+    // Los regalos no forman parte del inventario del archivo XLSX y sus nombres de archivo no se muestran.
     const GIFT_GITHUB_SOURCE = {
       section: "Regalos para toda ocasión",
       folder: "regalos"
@@ -358,7 +353,7 @@
 
 
 
-    const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
+    const CATALOG_REQUEST_TIMEOUT_MS = 25000;
     const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
     const GITHUB_IMAGE_INDEX_CACHE_KEY = "irenismb_github_image_index_cache";
@@ -838,201 +833,132 @@
 
 
 
-    function googleSheetQueryUrl(callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
-      const query = new URLSearchParams({
-        sheet: GOOGLE_SHEET_SOURCE.sheetName,
-        headers: "1",
-        range: "A:R",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R",
-        tqx: `out:json;responseHandler:${callbackName}`
-      });
-      return `${base}?${query.toString()}`;
+    const GITHUB_WORKBOOK_CACHE_MS = 30000;
+    let githubWorkbookCache = null;
+    let githubWorkbookLoadedAt = 0;
+    let xlsxLibraryPromise = null;
+
+    function githubWorkbookUrl(){
+      const path = `${GITHUB_WORKBOOK_SOURCE.folder}/${GITHUB_WORKBOOK_SOURCE.filename}`;
+      return `${SITE_BASE}${encodeRepoPath(path)}`;
     }
 
-
-    function loadGoogleSheetRows(){
-      const snapshot = window.TEST_CATALOG_SNAPSHOT;
-      if(snapshot && Array.isArray(snapshot.products)){
-        return Promise.resolve(snapshot.products.map(row => ({ ...row })));
+    function ensureXlsxLibrary(){
+      if(window.XLSX && typeof window.XLSX.read === "function" && window.XLSX.utils){
+        return Promise.resolve(window.XLSX);
       }
-      return new Promise((resolve, reject)=>{
-        const callbackName = "__googleSheetCatalog_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      if(xlsxLibraryPromise) return xlsxLibraryPromise;
+
+      xlsxLibraryPromise = new Promise((resolve, reject)=>{
         const script = document.createElement("script");
-        let settled = false;
-
-
-        const cleanup = ()=>{
-          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-        };
-
-
-        const timer = window.setTimeout(()=>{
-          if(settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error("Tiempo de espera agotado al consultar el Google Sheet."));
-        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
-
-
-        window[callbackName] = (payload)=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-
-
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
-            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
-            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || "Google Sheets devolvió una respuesta no válida. Verifica que el archivo permita lectura pública."));
-            return;
-          }
-
-
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-
-          const rows = payload.table.rows.map(row=>{
-            const c = Array.isArray(row && row.c) ? row.c : [];
-            const value = index => cellValue(c[index]).trim();
-            let code = value(0);
-            if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
-
-
-            return {
-              code,
-              section: value(1),
-              category: value(2),
-              subcategory: value(3),
-              fragranceFamily: value(4),
-              condition: value(5),
-              commercialState: value(6),
-              name: value(7),
-              priceText: value(8),
-              costText: value(9),
-              stockText: value(10),
-              referenceExternal: value(11),
-              description: value(12),
-              codeNatura: value(13),
-              fragranceType: value(16),
-              fragranceLine: value(17),
-              fullTxtRecord: [
-                value(7),
-                "",
-                `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
-              ].join("\n")
-            };
-          }).filter(row => /^\d{4}$/.test(row.code) && row.name);
-
-
-          resolve(rows);
-        };
-
-
-        script.onerror = ()=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          reject(new Error("No se pudo conectar con Google Sheets."));
-        };
-
-
-        script.src = googleSheetQueryUrl(callbackName);
+        script.src = "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js";
         script.async = true;
+        script.onload = ()=>{
+          if(window.XLSX && typeof window.XLSX.read === "function" && window.XLSX.utils){
+            resolve(window.XLSX);
+          }else{
+            xlsxLibraryPromise = null;
+            reject(new Error("El lector XLSX no quedó disponible."));
+          }
+        };
+        script.onerror = ()=>{
+          xlsxLibraryPromise = null;
+          reject(new Error("No se pudo cargar el lector XLSX."));
+        };
         document.head.appendChild(script);
       });
+
+      return xlsxLibraryPromise;
     }
 
+    async function loadGithubWorkbook(){
+      const now = Date.now();
+      if(githubWorkbookCache && (now - githubWorkbookLoadedAt) < GITHUB_WORKBOOK_CACHE_MS){
+        return githubWorkbookCache;
+      }
 
+      const XLSX = await ensureXlsxLibrary();
+      const controller = new AbortController();
+      const timer = window.setTimeout(()=>controller.abort(), CATALOG_REQUEST_TIMEOUT_MS);
+      try{
+        const response = await fetch(githubWorkbookUrl(), {
+          cache:"no-store",
+          signal:controller.signal
+        });
+        if(!response.ok){
+          throw new Error(`GitHub respondió ${response.status} al consultar el archivo XLSX.`);
+        }
 
-
-    function googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(REMOTE_CONTROL_SOURCE.spreadsheetId)}/gviz/tq`;
-      const query = new URLSearchParams({
-        sheet: sheetName,
-        headers: "1",
-        range,
-        tq,
-        tqx: `out:json;responseHandler:${callbackName}`
-      });
-      return `${base}?${query.toString()}`;
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type:"array", cellDates:false });
+        githubWorkbookCache = workbook;
+        githubWorkbookLoadedAt = Date.now();
+        return workbook;
+      }finally{
+        window.clearTimeout(timer);
+      }
     }
 
-
-    function loadGoogleSheetRemoteMatrix(sheetName, range, tq, callbackPrefix){
-      return new Promise((resolve, reject)=>{
-        const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        const script = document.createElement("script");
-        let settled = false;
-
-
-        const cleanup = ()=>{
-          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-        };
-
-
-        const timer = window.setTimeout(()=>{
-          if(settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error(`Tiempo de espera agotado al consultar la hoja ${sheetName}.`));
-        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
-
-
-        window[callbackName] = (payload)=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-
-
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
-            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
-            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || `No se pudo leer la hoja ${sheetName}.`));
-            return;
-          }
-
-
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-
-          resolve(payload.table.rows.map(row=>{
-            const cells = Array.isArray(row && row.c) ? row.c : [];
-            return cells.map(cellValue);
-          }));
-        };
-
-
-        script.onerror = ()=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          reject(new Error(`No se pudo conectar con la hoja ${sheetName}.`));
-        };
-
-
-        script.src = googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName);
-        script.async = true;
-        document.head.appendChild(script);
+    function githubWorkbookSheetMatrix(workbook, sheetName){
+      const sheet = workbook && workbook.Sheets ? workbook.Sheets[sheetName] : null;
+      if(!sheet) throw new Error(`El archivo XLSX no contiene la hoja ${sheetName}.`);
+      return window.XLSX.utils.sheet_to_json(sheet, {
+        header:1,
+        raw:false,
+        defval:"",
+        blankrows:false
       });
     }
 
+    function workbookCellText(value){
+      if(value === undefined || value === null) return "";
+      return String(value).trim();
+    }
+
+    async function loadGithubWorkbookRows(){
+      const workbook = await loadGithubWorkbook();
+      const matrix = githubWorkbookSheetMatrix(workbook, GITHUB_WORKBOOK_SOURCE.productsSheetName);
+      const rows = matrix.slice(1).map(c=>{
+        const value = index => workbookCellText(c[index]);
+        let code = value(0);
+        if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
+
+        return {
+          code,
+          section: value(1),
+          category: value(2),
+          subcategory: value(3),
+          fragranceFamily: value(4),
+          condition: value(5),
+          commercialState: value(6),
+          name: value(7),
+          priceText: value(8),
+          costText: value(9),
+          stockText: value(10),
+          referenceExternal: value(11),
+          description: value(12),
+          codeNatura: value(13),
+          fragranceType: value(16),
+          fragranceLine: value(17),
+          fullTxtRecord: [
+            value(7),
+            "",
+            `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
+          ].join("\n")
+        };
+      }).filter(row => /^\d{4}$/.test(row.code) && row.name);
+
+      if(!rows.length){
+        throw new Error("El archivo XLSX de GitHub no devolvió productos válidos.");
+      }
+      return rows;
+    }
+
+    async function loadGithubWorkbookMatrix(sheetName){
+      const workbook = await loadGithubWorkbook();
+      const matrix = githubWorkbookSheetMatrix(workbook, sheetName);
+      return matrix.slice(1).map(row => row.map(workbookCellText));
+    }
 
     function parseRemoteBoolean(value){
       const normalized = normalizeText(value).replace(/\s+/g, " ");
@@ -1134,42 +1060,14 @@
 
 
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
-
-
-      const snapshot = window.TEST_CATALOG_SNAPSHOT;
-      if(snapshot && Array.isArray(snapshot.controls) && Array.isArray(snapshot.categories)){
-        let changed = false;
-        changed = applyRemoteControlRows(snapshot.controls) || changed;
-        changed = applyRemoteCategoryRows(snapshot.categories) || changed;
-
-
-        if(initial){
-          wordSuggestionsVisible = shouldShowSuggestionsInitially();
-          syncWordToggleButton();
-        }
-
-
-        if(changed && rebuild && allLoadedProducts.length){
-          rebuildCatalogVisibility();
-          syncWordToggleButton();
-          rebuildSearchTicker();
-          updateTickerVisibility();
-          if(cartModal && cartModal.classList.contains("open")) renderCartModal();
-        }
-
-
-        return changed;
-      }
-
-
       const [controlsResult, categoriesResult] = await Promise.allSettled([
-        loadGoogleSheetRemoteMatrix(
+        loadGithubWorkbookMatrix(
           REMOTE_CONTROL_SOURCE.controlsSheetName,
           "A:E",
           "select A,B,C,D,E",
           "__remoteCatalogControls"
         ),
-        loadGoogleSheetRemoteMatrix(
+        loadGithubWorkbookMatrix(
           REMOTE_CONTROL_SOURCE.categoriesSheetName,
           "A:H",
           "select A,B,C,D,E,F,G,H",
@@ -1275,7 +1173,7 @@
 
     async function fetchGitHubJson(url){
       const controller = new AbortController();
-      const timer = window.setTimeout(()=>controller.abort(), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
+      const timer = window.setTimeout(()=>controller.abort(), CATALOG_REQUEST_TIMEOUT_MS);
       try{
         const response = await fetch(url, {
           cache:"no-store",
@@ -1427,12 +1325,12 @@
     }
 
 
-    async function loadGoogleSheetCatalog(){
+    async function loadGithubWorkbookCatalog(){
       let rows = [];
       try{
-        rows = await loadGoogleSheetRows();
+        rows = await loadGithubWorkbookRows();
       }catch(error){
-        const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el Google Sheet."));
+        const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el archivo XLSX de GitHub."));
         sheetError.catalogStage = "sheet";
         throw sheetError;
       }
@@ -1442,7 +1340,7 @@
       try{
         imageEntries = await loadGitHubImageIndex();
       }catch(error){
-        console.warn("Los productos se cargaron desde el Google Sheet, pero no se pudo actualizar el índice dinámico de imágenes publicadas. Se usarán imágenes suplentes.", error);
+        console.warn("Los productos se cargaron desde el archivo XLSX de GitHub, pero no se pudo actualizar el índice dinámico de imágenes publicadas. Se usarán imágenes suplentes.", error);
         imageEntries = [];
       }
 
@@ -1580,7 +1478,7 @@
     }
 
 
-    function makeProductFromGoogleSheet(entry){
+    function makeProductFromGithubWorkbook(entry){
       const row = entry && entry.row;
       const imageIndex = entry && entry.imageIndex;
       if(!row) return null;
@@ -1648,7 +1546,7 @@
         fullTxtRecord: String(row.fullTxtRecord || ""),
         docsImageUrl,
         imageUrls,
-        docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
+        docsDocumentUrl: githubWorkbookUrl(),
         searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, fragranceType, fragranceLine, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
@@ -5398,10 +5296,10 @@
 
       let catalogSource;
       try{
-        catalogSource = await loadGoogleSheetCatalog();
+        catalogSource = await loadGithubWorkbookCatalog();
       }catch(err){
-        console.error("Error al cargar el Google Sheet oficial.", err);
-        updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
+        console.error("Error al cargar el archivo XLSX de GitHub.", err);
+        updateCountTextError("No se pudieron cargar los productos desde el archivo XLSX de GitHub. Reintenta más tarde.");
         return;
       }
 
@@ -5409,18 +5307,18 @@
       let sheetProducts = [];
       try{
         sheetProducts = (Array.isArray(catalogSource?.sheetEntries) ? catalogSource.sheetEntries : [])
-          .map(makeProductFromGoogleSheet)
+          .map(makeProductFromGithubWorkbook)
           .filter(Boolean);
       }catch(err){
-        console.error("El Google Sheet respondió, pero ocurrió un error al procesar sus productos.", err);
-        updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
+        console.error("El archivo XLSX de GitHub se cargó, pero ocurrió un error al procesar sus productos.", err);
+        updateCountTextError("El archivo XLSX de GitHub se cargó, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
         return;
       }
 
 
       if(!sheetProducts.length){
-        console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
-        updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
+        console.error("El archivo XLSX de GitHub se cargó, pero no produjo productos válidos para mostrar.");
+        updateCountTextError("El archivo XLSX de GitHub se cargó, pero no se encontraron productos válidos para mostrar.");
         return;
       }
 

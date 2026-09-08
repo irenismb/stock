@@ -1746,6 +1746,33 @@
       }
     }
 
+    function pruneDynamicSelectionsKeeping(priorityKey){
+      if(!priorityKey || !selectedDynamicFilters.has(priorityKey)) return;
+      const rules = getDynamicFilterRulesForCategory(selectedAudience);
+      const base = dynamicBaseProducts();
+      const current = new Map(selectedDynamicFilters);
+      const kept = new Map([[priorityKey,current.get(priorityKey)]]);
+
+      const matchesSelections = selections => base.some(product => {
+        for(const [key,value] of selections.entries()){
+          if(cleanNavKey(getDynamicProductValue(product,key)) !== cleanNavKey(value)) return false;
+        }
+        return true;
+      });
+
+      for(const rule of rules){
+        if(rule.columnKey === priorityKey) continue;
+        const value = current.get(rule.columnKey);
+        if(!value) continue;
+        const candidate = new Map(kept);
+        candidate.set(rule.columnKey,value);
+        if(matchesSelections(candidate)) kept.set(rule.columnKey,value);
+      }
+
+      selectedDynamicFilters.clear();
+      for(const [key,value] of kept.entries()) selectedDynamicFilters.set(key,value);
+    }
+
     function isFragranceNavigationScope(){
       return cleanNavKey(selectedAudience) === cleanNavKey("Perfumes y fragancias") &&
              cleanNavKey(selectedCategory).startsWith("fragancias ") &&
@@ -3929,24 +3956,32 @@
       if(dynamicFilterClearBtn) dynamicFilterClearBtn.hidden = !hasDynamicFilterSelection();
       if(!visible) return;
 
-      if(dynamicFilterHeading) dynamicFilterHeading.textContent = `Filtrar ${selectedAudience}`;
+      if(dynamicFilterHeading) dynamicFilterHeading.textContent = `Filtros de ${selectedAudience}`;
 
       const base = dynamicBaseProducts();
-      let canShowNext = true;
       let renderedGroups = 0;
+      let secondaryTitleAdded = false;
 
       for(const rule of rules){
-        if(!canShowNext) break;
+        const categoryOptions = dynamicValueCounts(base,rule);
+        // Solo omitimos columnas que nunca ofrecen una decisión real dentro de la categoría.
+        if(categoryOptions.length < 2) continue;
 
-        const sourceBeforeRule = applyDynamicSelections(base, rules, rule.order);
-        const options = dynamicValueCounts(sourceBeforeRule, rule);
+        const sourceForRule = applyDynamicSelections(base,rules,Infinity,rule.columnKey);
+        const options = dynamicValueCounts(sourceForRule,rule);
+        const isSecondary = rule.columnKey === "commercialFormat";
 
-        // Si solo existe una opción, no obligamos al cliente a pasar por un filtro sin decisión real.
-        if(options.length < 2) continue;
+        if(isSecondary && !secondaryTitleAdded){
+          const secondaryTitle = document.createElement("div");
+          secondaryTitle.className = "dynamic-filter-secondary-title";
+          secondaryTitle.textContent = "Filtro adicional";
+          dynamicFilterGroups.appendChild(secondaryTitle);
+          secondaryTitleAdded = true;
+        }
 
         renderedGroups++;
         const group = document.createElement("div");
-        group.className = "fragrance-filter-group dynamic-filter-group";
+        group.className = "fragrance-filter-group dynamic-filter-group" + (isSecondary ? " is-secondary" : "");
 
         const label = document.createElement("span");
         label.className = "fragrance-filter-label";
@@ -3960,14 +3995,14 @@
         const selectedValue = selectedDynamicFilters.get(rule.columnKey) || "";
         const selectedKey = cleanNavKey(selectedValue);
 
-        const addButton = (value, textValue, count)=>{
+        const addButton = (value,textValue,count)=>{
           const button = document.createElement("button");
           button.type = "button";
           button.className = "fragrance-filter-chip dynamic-filter-chip" + (cleanNavKey(value) === selectedKey ? " is-active" : "");
           button.dataset.dynamicFilterKey = rule.columnKey;
           button.dataset.dynamicFilterValue = value;
           button.dataset.dynamicFilterOrder = String(rule.order);
-          button.setAttribute("aria-pressed", cleanNavKey(value) === selectedKey ? "true" : "false");
+          button.setAttribute("aria-pressed",cleanNavKey(value) === selectedKey ? "true" : "false");
 
           const text = document.createElement("span");
           text.className = "fragrance-filter-chip-label";
@@ -3981,13 +4016,11 @@
           host.appendChild(button);
         };
 
-        addButton("", "Todos", sourceBeforeRule.length);
-        for(const option of options) addButton(option.value, option.value, option.count);
+        addButton("","Todos",sourceForRule.length);
+        for(const option of options) addButton(option.value,option.value,option.count);
 
         group.append(label,host);
         dynamicFilterGroups.appendChild(group);
-
-        if(!selectedValue) canShowNext = false;
       }
 
       if(renderedGroups === 0){
@@ -4396,10 +4429,13 @@
           const order = Number(btn.dataset.dynamicFilterOrder);
           if(!key) return;
 
-          if(value) selectedDynamicFilters.set(key,value);
-          else selectedDynamicFilters.delete(key);
+          if(value){
+            selectedDynamicFilters.set(key,value);
+            pruneDynamicSelectionsKeeping(key);
+          }else{
+            selectedDynamicFilters.delete(key);
+          }
 
-          clearDynamicFiltersAfter(Number.isFinite(order) ? order : 999);
           if(sortSel) sortSel.value = "";
           render();
         });

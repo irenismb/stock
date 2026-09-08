@@ -1537,17 +1537,27 @@
 
       const category = cleanNavKey(p.category);
       const name = normalizeText(p.name || "");
-      const isPerfumedDeodorant = category === "perfumes" && /desodorante corporal perfumado/.test(name);
+      const fragranceCategories = ["perfumes","perfumeria femenina","perfumeria masculina"];
+      const personalCareCategories = [
+        "cuidado corporal",
+        "hidratacion y tratamiento corporal",
+        "higiene corporal",
+        "higiene y exfoliacion corporal",
+        "desodorantes",
+        "manos y pies",
+        "cuidado de manos y pies",
+        "proteccion solar",
+        "higiene intima"
+      ];
+      const isPerfumedDeodorant = fragranceCategories.includes(category) && /desodorante corporal perfumado/.test(name);
       const isFacialMist = category === "maquillaje" && /bruma facial/.test(name);
 
       if(category === "kits y combos") return "Kits y combos";
-      if(category === "perfumes" && !isPerfumedDeodorant) return "Perfumes y fragancias";
-      if(category === "cabello") return "Cabello";
+      if(fragranceCategories.includes(category) && !isPerfumedDeodorant) return "Perfumes y fragancias";
+      if(["cabello","cuidado capilar"].includes(category)) return "Cabello";
       if(category === "cuidado facial" || isFacialMist) return "Cuidado facial";
       if(category === "maquillaje" && !isFacialMist) return "Maquillaje";
-      if(["cuidado corporal","higiene corporal","desodorantes","manos y pies","proteccion solar","higiene intima"].includes(category) || isPerfumedDeodorant){
-        return "Cuidado personal";
-      }
+      if(personalCareCategories.includes(category) || isPerfumedDeodorant) return "Cuidado personal";
       return "";
     }
 
@@ -1559,6 +1569,7 @@
       if(!p) return "General";
       const group = cleanNavKey(groupLabel || mainNavigationGroupForProduct(p));
       const name = normalizeText(p.name || "");
+      const category = cleanNavKey(p.category);
       const original = categoryDisplayLabel(p.category || "General");
 
       if(group === "perfumes y fragancias"){
@@ -1589,8 +1600,11 @@
       }
 
       if(group === "cuidado personal"){
-        const category = cleanNavKey(p.category);
-        if(category === "perfumes" && /desodorante corporal perfumado/.test(name)) return "Desodorantes";
+        if(["perfumes","perfumeria femenina","perfumeria masculina"].includes(category) && /desodorante corporal perfumado/.test(name)) return "Desodorantes";
+        if(category === "hidratacion y tratamiento corporal") return "Cuidado corporal";
+        if(category === "higiene y exfoliacion corporal") return "Higiene corporal";
+        if(category === "cuidado de manos y pies") return "Manos y pies";
+        if(category === "proteccion solar") return "Protección solar";
         return original;
       }
 
@@ -1598,6 +1612,13 @@
         if(/gloss|labial|serum labial/.test(name)) return "Labios";
         if(/mascara para pestana|pestanina|lapiz kajal/.test(name)) return "Ojos";
         return "Rostro";
+      }
+
+      if(group === "otros productos"){
+        if(category === "electrodomesticos de segunda mano a la venta" || category === "electrodomesticos de segunda mano no a la venta") return "Tecnología y hogar";
+        if(category === "juguetes de segunda mano") return "Juguetes";
+        if(category === "papeleria de segunda mano") return "Papelería";
+        return original;
       }
 
       return original;

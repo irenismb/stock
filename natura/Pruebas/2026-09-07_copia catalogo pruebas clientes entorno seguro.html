@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
-<!-- Entorno de prueba aislado: usa una copia del Google Sheet y archivos de código separados. -->
+<!-- Entorno de pruebas alineado con producción; usa la copia de pruebas del Google Sheet A:N. -->
 <!-- Las imágenes de productos se relacionan por código y se almacenan directamente en productos/. -->
 <html lang="es-CO">
 <head>
@@ -52,7 +52,7 @@
   <link rel="preload" as="image" href="../logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="../logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="css/2026-09-07_copia estilos catalogo pruebas clientes seguro.css?carga=contraste-filtros" />
+  <link rel="stylesheet" href="css/2026-09-07_copia estilos catalogo pruebas clientes seguro.css?origen=produccion" />
 
   <script type="application/ld+json">
   {
@@ -112,7 +112,7 @@
     <div class="wrap site-header-inner">
       <div class="brand">
         <picture>
-          <source srcset="../logos/logo_empresa.webp" type="image/webp">
+          <source srcset="logos/logo_empresa.webp" type="image/webp">
           <img src="../logos/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52" />
         </picture>
         <div>
@@ -256,16 +256,6 @@
         <div class="album-path" id="albumPath" aria-live="polite"></div>
       </div>
     </div>
-
-    <section class="selected-root-category grid album-grid-mode root-nav-mode" id="selectedRootCategory" aria-label="Categoría seleccionada" hidden></section>
-
-    <section class="fragrance-filter-panel dynamic-filter-panel" id="dynamicFilterPanel" aria-label="Filtros dinámicos" hidden>
-      <h3 class="fragrance-filter-heading" id="dynamicFilterHeading">Filtrar productos</h3>
-      <div id="dynamicFilterGroups"></div>
-      <div class="dynamic-filter-actions">
-        <button class="btn-ghost dynamic-filter-clear" id="dynamicFilterClearBtn" type="button" hidden>Limpiar filtros</button>
-      </div>
-    </section>
 
     <section id="grid" class="grid" aria-label="Productos"></section>
   </main>
@@ -423,8 +413,7 @@
     </div>
   </div>
 
-  <script src="js/2026-09-07_copia datos catalogo pruebas clientes seguro.js?carga=contraste-filtros"></script>
-  <script src="js/2026-09-07_copia logica catalogo pruebas clientes seguro.js?carga=contraste-filtros"></script>
+  <script src="js/2026-09-07_copia logica catalogo pruebas clientes seguro.js?origen=produccion"></script>
   <script src="js/2026-09-07_copia registro catalogo pruebas clientes seguro.js"></script>
   <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>

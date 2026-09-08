@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:L: Código, Sección, Categoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
+    // Hoja Productos, estructura A:M: Código, Sección, Categoría, Subcategoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -18,7 +18,7 @@
 
     // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
     // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Sección, B=Categoría, C=Estado comercial, D=Ocultar del catálogo, E=Excluir de búsquedas, F=Nota.
+    // Categorias: A=Sección, B=Categoría, C=Subcategoría, D=Estado comercial, E=Ocultar del catálogo, F=Excluir de búsquedas, G=Nota.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
@@ -72,8 +72,8 @@
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
     const ALBUMES_OCULTOS_SEGUROS = [
-      "Otros productos|Medicamentos|A la venta",
-      "Otros productos|Tecnología y hogar|No a la venta"
+      "Otros productos|Otros productos|Medicamentos|A la venta",
+      "Otros productos|Otros productos|Electrodomésticos de segunda mano no a la venta|No a la venta"
     ];
     const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
     const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
@@ -89,12 +89,7 @@
           ? value
               .map(item => String(item || "").trim())
               .filter(Boolean)
-              .map(item => {
-                const parts = item.split("|");
-                // Migra automáticamente claves antiguas Sección|Público|Categoría|Estado.
-                if(parts.length === 4) return [parts[0],parts[2],parts[3]].join("|");
-                return item;
-              })
+              .filter(item => item.split("|").length === 4)
           : null;
 
         const hidden = cleanList(parsed.hidden);
@@ -383,37 +378,24 @@
             let code = value(0);
             if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
 
-            // Compatibilidad temporal: si C todavía contiene Público, se lee la estructura anterior.
-            const legacyAudience = ["para ella","para el","unisex"].includes(normalizeText(value(2)));
-            const offset = legacyAudience ? 1 : 0;
-            const categoryIndex = 2 + offset;
-            const conditionIndex = 3 + offset;
-            const stateIndex = 4 + offset;
-            const nameIndex = 5 + offset;
-            const priceIndex = 6 + offset;
-            const costIndex = 7 + offset;
-            const stockIndex = 8 + offset;
-            const referenceIndex = 9 + offset;
-            const descriptionIndex = 10 + offset;
-            const naturaIndex = 11 + offset;
-
             return {
               code,
               section: value(1),
-              category: value(categoryIndex),
-              condition: value(conditionIndex),
-              commercialState: value(stateIndex),
-              name: value(nameIndex),
-              priceText: value(priceIndex),
-              costText: value(costIndex),
-              stockText: value(stockIndex),
-              referenceExternal: value(referenceIndex),
-              description: value(descriptionIndex),
-              codeNatura: value(naturaIndex),
+              category: value(2),
+              subcategory: value(3),
+              condition: value(4),
+              commercialState: value(5),
+              name: value(6),
+              priceText: value(7),
+              costText: value(8),
+              stockText: value(9),
+              referenceExternal: value(10),
+              description: value(11),
+              codeNatura: value(12),
               fullTxtRecord: [
-                value(nameIndex),
+                value(6),
                 "",
-                `Precio: ${value(priceIndex)} Costo: ${value(costIndex)} Stock: ${value(stockIndex)} Referencia externa: ${value(referenceIndex)}. ${value(descriptionIndex)}`
+                `Precio: ${value(7)} Costo: ${value(8)} Stock: ${value(9)} Referencia externa: ${value(10)}. ${value(11)}`
               ].join("\n")
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);
@@ -532,8 +514,8 @@
       return changed;
     }
 
-    function routeKeyFromParts(section, category, commercialState){
-      return [section, category, commercialState]
+    function routeKeyFromParts(section, category, subcategory, commercialState){
+      return [section, category, subcategory, commercialState]
         .map(value => normalizeText(value).replace(/\s+/g, " "))
         .join("|");
     }
@@ -546,20 +528,17 @@
 
       for(const row of (Array.isArray(rows) ? rows : [])){
         const section = String(row?.[0] || "").trim();
-
-        // Estructura anterior: A Sección, B Público, C Categoría, D Estado, E Ocultar, F Excluir, G Nota.
-        // Estructura actual:   A Sección, B Categoría, C Estado, D Ocultar, E Excluir, F Nota.
-        const oldLayout = !["activado","desactivado"].includes(normalizeText(row?.[3]));
-        const category = String(oldLayout ? (row?.[2] || "") : (row?.[1] || "")).trim();
-        const commercialState = String(oldLayout ? (row?.[3] || "") : (row?.[2] || "")).trim();
+        const category = String(row?.[1] || "").trim();
+        const subcategory = String(row?.[2] || "").trim();
+        const commercialState = String(row?.[3] || "").trim();
         if(!section || !category || !commercialState) continue;
 
-        const hiddenState = parseRemoteBoolean(oldLayout ? row?.[4] : row?.[3]);
-        const excludedState = parseRemoteBoolean(oldLayout ? row?.[5] : row?.[4]);
+        const hiddenState = parseRemoteBoolean(row?.[4]);
+        const excludedState = parseRemoteBoolean(row?.[5]);
         if(hiddenState === null && excludedState === null) continue;
 
         validRows++;
-        const routeKey = routeKeyFromParts(section, category, commercialState);
+        const routeKey = routeKeyFromParts(section, category, subcategory, commercialState);
         allowed.push(routeKey);
         if(hiddenState === true) hidden.push(routeKey);
         if(excludedState === true) excluded.push(routeKey);
@@ -970,6 +949,7 @@
       const section = String(row.section || "").trim();
       const rawCategory = String(row.category || "").trim();
       const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
+      const subcategory = String(row.subcategory || "").trim();
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
@@ -997,6 +977,7 @@
         name,
         section,
         category,
+        subcategory,
         condition,
         commercialState,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
@@ -1017,7 +998,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -1032,7 +1013,8 @@
             id: `regalo-galeria-${String(index + 1).padStart(2,"0")}`,
             name: "",
             section: GIFT_GITHUB_SOURCE.section,
-            category: "",
+            category: "Regalos",
+            subcategory: "",
             condition: "",
             commercialState: "A la venta",
             brand: "",
@@ -1078,6 +1060,7 @@
       const sorted = source.slice().sort((a,b)=>
         String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
         String(a?.category || "").localeCompare(String(b?.category || ""), "es", { sensitivity:"base" }) ||
+        String(a?.subcategory || "").localeCompare(String(b?.subcategory || ""), "es", { sensitivity:"base" }) ||
         String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" })
       );
       const fragment = document.createDocumentFragment();
@@ -1096,7 +1079,7 @@
         meta.className = "beauty-product-meta";
         const metaParts = [];
         const mainGroup = mainNavigationGroupForProduct(product);
-        const subcategory = navigationCategoryForProduct(product, mainGroup);
+        const subcategory = navigationCategoryForProduct(product);
         if(mainGroup) metaParts.push(mainGroup);
         if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) metaParts.push(subcategory);
         if(product?.id && shouldShowProductCodes()) metaParts.push(`Código ${product.id}`);
@@ -1399,35 +1382,28 @@
       {
         label:"Perfumes y fragancias",
         section:"Belleza y cuidado",
-        subtitle:"Perfumes, frescores, colonias, body splash y miniaturas.",
+        subtitle:"Perfumería femenina, perfumería masculina y perfumes.",
         iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria perfumes fragancia floral rosa.webp"),
         theme:"perfumes"
       },
       {
         label:"Cabello",
         section:"Belleza y cuidado",
-        subtitle:"Reparación, nutrición, hidratación, rizos, anticaída, color y protección.",
+        subtitle:"Cuidado capilar y productos de cabello.",
         iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cabello mechon brillante capilar.webp"),
         theme:"cabello"
       },
       {
-        label:"Cuidado facial",
-        section:"Belleza y cuidado",
-        subtitle:"Limpieza, hidratación, sérums, tratamientos y cuidado del rostro.",
-        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cuidado facial crema rosa.webp"),
-        theme:"facial"
-      },
-      {
         label:"Cuidado personal",
         section:"Belleza y cuidado",
-        subtitle:"Cuidado corporal, higiene, desodorantes, manos, pies y protección solar.",
+        subtitle:"Cuidado facial y corporal, higiene, desodorantes, manos, pies y protección solar.",
         iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cuidado corporal locion vegetal.webp"),
         theme:"personal"
       },
       {
         label:"Maquillaje",
         section:"Belleza y cuidado",
-        subtitle:"Productos para rostro, labios y ojos.",
+        subtitle:"Productos de maquillaje.",
         iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria maquillaje brocha labial rosa.webp"),
         theme:"maquillaje"
       },
@@ -1450,7 +1426,7 @@
       {
         label:"Otros productos",
         section:"Otros productos",
-        subtitle:"Tecnología, hogar, juguetes, papelería y más.",
+        subtitle:"Electrodomésticos, juguetes, papelería, medicamentos y más.",
         iconImage:ROOT_ICON_IMAGES.otros,
         theme:"otros"
       }
@@ -1490,6 +1466,16 @@
       "juguetes": { iconImage:SUBCATEGORY_ICON_IMAGES["juguetes"] },
       "papeleria": { iconImage:SUBCATEGORY_ICON_IMAGES["papeleria"] },
       "medicamentos": { iconImage:SUBCATEGORY_ICON_IMAGES["medicamentos"] },
+      "perfumeria femenina": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "perfumeria masculina": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "cuidado capilar": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "hidratacion y tratamiento corporal": { iconImage:SUBCATEGORY_ICON_IMAGES["cuidado corporal"] },
+      "cuidado de manos y pies": { iconImage:SUBCATEGORY_ICON_IMAGES["manos y pies"] },
+      "higiene y exfoliacion corporal": { iconImage:SUBCATEGORY_ICON_IMAGES["higiene corporal"] },
+      "electrodomesticos de segunda mano a la venta": { iconImage:SUBCATEGORY_ICON_IMAGES["tecnologia y hogar"] },
+      "electrodomesticos de segunda mano no a la venta": { iconImage:SUBCATEGORY_ICON_IMAGES["tecnologia y hogar"] },
+      "juguetes de segunda mano": { iconImage:SUBCATEGORY_ICON_IMAGES["juguetes"] },
+      "papeleria de segunda mano": { iconImage:SUBCATEGORY_ICON_IMAGES["papeleria"] },
       "regalos": { icon:"🎁" }
     };
 
@@ -1508,7 +1494,7 @@
 
     function getProductRouteKey(p){
       if(!p) return "";
-      return routeKeyFromParts(p.section, p.category, p.commercialState);
+      return routeKeyFromParts(p.section, p.category, p.subcategory, p.commercialState);
     }
 
     function isProductRouteAuthorized(p){
@@ -1532,96 +1518,16 @@
     function mainNavigationGroupForProduct(p){
       if(!p) return "";
       if(p.section === "Regalos para toda ocasión") return "Regalos";
-      if(p.section === "Otros productos") return "Otros productos";
-      if(p.section !== "Belleza y cuidado") return "";
-
-      const category = cleanNavKey(p.category);
-      const name = normalizeText(p.name || "");
-      const fragranceCategories = ["perfumes","perfumeria femenina","perfumeria masculina"];
-      const personalCareCategories = [
-        "cuidado corporal",
-        "hidratacion y tratamiento corporal",
-        "higiene corporal",
-        "higiene y exfoliacion corporal",
-        "desodorantes",
-        "manos y pies",
-        "cuidado de manos y pies",
-        "proteccion solar",
-        "higiene intima"
-      ];
-      const isPerfumedDeodorant = fragranceCategories.includes(category) && /desodorante corporal perfumado/.test(name);
-      const isFacialMist = category === "maquillaje" && /bruma facial/.test(name);
-
-      if(category === "kits y combos") return "Kits y combos";
-      if(fragranceCategories.includes(category) && !isPerfumedDeodorant) return "Perfumes y fragancias";
-      if(["cabello","cuidado capilar"].includes(category)) return "Cabello";
-      if(category === "cuidado facial" || isFacialMist) return "Cuidado facial";
-      if(category === "maquillaje" && !isFacialMist) return "Maquillaje";
-      if(personalCareCategories.includes(category) || isPerfumedDeodorant) return "Cuidado personal";
-      return "";
+      return String(p.category || "").trim();
     }
 
     function productMatchesAudience(p, audienceLabel){
       return cleanNavKey(mainNavigationGroupForProduct(p)) === cleanNavKey(audienceLabel);
     }
 
-    function navigationCategoryForProduct(p, groupLabel){
+    function navigationCategoryForProduct(p){
       if(!p) return "General";
-      const group = cleanNavKey(groupLabel || mainNavigationGroupForProduct(p));
-      const name = normalizeText(p.name || "");
-      const category = cleanNavKey(p.category);
-      const original = categoryDisplayLabel(p.category || "General");
-
-      if(group === "perfumes y fragancias"){
-        if(/mini|miniatura/.test(name)) return "Miniaturas";
-        if(/body splash|splash perfumado/.test(name)) return "Body splash";
-        if(/frescor|colonia|deo colonia/.test(name)) return "Frescores y colonias";
-        return "Perfumes";
-      }
-
-      if(group === "cabello"){
-        if(/anticaida|crecimiento|pataua/.test(name)) return "Anticaída y crecimiento";
-        if(/rizos|rizado|afros|definicion/.test(name)) return "Rizos y definición";
-        if(/color|matizador|liso/.test(name)) return "Color, matización y liso";
-        if(/anticaspa|shampoo cabello y cuerpo|shampoo refrescante/.test(name)) return "Limpieza y anticaspa";
-        if(/protector termico|finalizador|esencia para finalizacion|esencia para cabello|spray para peinar|crema para peinar/.test(name)) return "Peinado y protección";
-        if(/hidratacion|aloe vera/.test(name)) return "Hidratación";
-        return "Reparación y nutrición";
-      }
-
-      if(group === "cuidado facial"){
-        if(/combo/.test(name)) return "Combos faciales";
-        if(/ojos/.test(name)) return "Contorno de ojos";
-        if(/afeitar|post barba/.test(name)) return "Afeitado y post-afeitado";
-        if(/agua micelar|gel de limpieza|mousse de limpieza/.test(name)) return "Limpieza y desmaquillado";
-        if(/exfoliante|peeling/.test(name)) return "Exfoliación";
-        if(/serum|esencia de tratamiento/.test(name)) return "Sérums y tratamientos";
-        return "Hidratación y brumas";
-      }
-
-      if(group === "cuidado personal"){
-        if(["perfumes","perfumeria femenina","perfumeria masculina"].includes(category) && /desodorante corporal perfumado/.test(name)) return "Desodorantes";
-        if(category === "hidratacion y tratamiento corporal") return "Cuidado corporal";
-        if(category === "higiene y exfoliacion corporal") return "Higiene corporal";
-        if(category === "cuidado de manos y pies") return "Manos y pies";
-        if(category === "proteccion solar") return "Protección solar";
-        return original;
-      }
-
-      if(group === "maquillaje"){
-        if(/gloss|labial|serum labial/.test(name)) return "Labios";
-        if(/mascara para pestana|pestanina|lapiz kajal/.test(name)) return "Ojos";
-        return "Rostro";
-      }
-
-      if(group === "otros productos"){
-        if(category === "electrodomesticos de segunda mano a la venta" || category === "electrodomesticos de segunda mano no a la venta") return "Tecnología y hogar";
-        if(category === "juguetes de segunda mano") return "Juguetes";
-        if(category === "papeleria de segunda mano") return "Papelería";
-        return original;
-      }
-
-      return original;
+      return String(p.subcategory || p.category || "General").trim() || "General";
     }
 
     function isDirectProductAudience(audienceLabel){
@@ -1676,7 +1582,7 @@
       const byCategory = new Map();
       for(const p of (Array.isArray(list) ? list : [])){
         if(!productMatchesAudience(p, audienceLabel)) continue;
-        const category = navigationCategoryForProduct(p, audienceLabel);
+        const category = navigationCategoryForProduct(p);
         const key = cleanNavKey(category);
         const visual = CATEGORY_VISUALS[cleanNavKey(category)] || { icon:"•" };
         const found = byCategory.get(key) || {
@@ -1726,7 +1632,7 @@
     }
 
     function getProductAlbumKey(p){
-      return cleanNavKey(navigationCategoryForProduct(p, selectedAudience) || "General") || ROOT_ALBUM_KEY;
+      return cleanNavKey(navigationCategoryForProduct(p) || "General") || ROOT_ALBUM_KEY;
     }
 
     function albumLabelFromKey(key){
@@ -1785,7 +1691,7 @@
         source = source.filter(p => productMatchesAudience(p, selectedAudience));
       }
       if(selectedCategory){
-        source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p, selectedAudience)) === cleanNavKey(selectedCategory));
+        source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
       }
       return source;
     }
@@ -2933,8 +2839,8 @@
             "@type":"Product",
             "name":String(p.name || ""),
             "description":String(p.description || ""),
-            "category":[mainNavigationGroupForProduct(p), navigationCategoryForProduct(p, mainNavigationGroupForProduct(p))]
-              .filter((value,index,array)=>value && (index === 0 || cleanNavKey(value) !== cleanNavKey(array[0])))
+            "category":[p.category, p.subcategory]
+              .filter(Boolean)
               .join(" > ")
           };
           if(shouldShowProductCodes()) item.sku = String(p.id || "");
@@ -3005,7 +2911,7 @@
       const stockVal = hasKnownStock ? p.stock : 0;
       const parts = [];
       const mainGroup = mainNavigationGroupForProduct(p);
-      const subcategory = navigationCategoryForProduct(p, mainGroup);
+      const subcategory = navigationCategoryForProduct(p);
       if(mainGroup) parts.push(mainGroup);
       if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) parts.push(subcategory);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
@@ -4139,7 +4045,7 @@
         productById = new Map(all.map(p => [String(p.id), p]));
         readStateFromUrl();
         if(selectedCategory){
-          const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p, selectedAudience)) === cleanNavKey(selectedCategory));
+          const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
           if(!hasCategory) selectedCategory = "";
         }
         refreshNavigationAlbums();

@@ -300,6 +300,13 @@
     </section>
 
     <section class="catalog-zone" id="catalogo">
+      <div class="audience-filter-bar" aria-label="Filtrar productos por público">
+        <span>Filtrar por público:</span>
+        <button type="button" data-audience-filter="">Todos</button>
+        <button type="button" data-audience-filter="Para ella">Para ella</button>
+        <button type="button" data-audience-filter="Para él">Para él</button>
+        <button type="button" data-audience-filter="Unisex">Unisex</button>
+      </div>
     <h2 class="visually-hidden">Catálogo de productos Irenismb Stock Natura</h2>
     <section class="catalog-entry-intro" id="catalogEntryIntro" aria-labelledby="catalogEntryTitle">
       <p class="catalog-entry-kicker">Explora el catálogo</p>
@@ -557,6 +564,16 @@
     (() => {
       const floatCart = document.getElementById("floatingCartBtn");
       if(floatCart) floatCart.addEventListener("click", () => document.getElementById("btn-cart")?.click());
+
+      document.querySelectorAll("[data-audience-filter]").forEach(button => {
+        button.addEventListener("click", () => {
+          const input = document.getElementById("q");
+          if(!input) return;
+          input.value = button.getAttribute("data-audience-filter") || "";
+          input.dispatchEvent(new Event("input", { bubbles:true }));
+          document.querySelectorAll("[data-audience-filter]").forEach(item => item.classList.toggle("is-active", item === button));
+        });
+      });
     })();
   </script>
 </body>

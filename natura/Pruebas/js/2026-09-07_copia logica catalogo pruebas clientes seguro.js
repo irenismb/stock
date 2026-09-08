@@ -4071,9 +4071,6 @@
           return;
         }
 
-        if(families.length === 1){
-          guidedAssistantState.family = families[0].navValue;
-        }
         applyGuidedAssistantResults();
         return;
       }

@@ -4339,3 +4339,16 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .dynamic-filter-group .dynamic-filter-chip.is-active{
   box-shadow:0 0 0 2px rgba(113,235,201,.22);
 }
+
+
+/* Mayor contraste visual para los nombres de todos los filtros. */
+.dynamic-filter-panel .fragrance-filter-label{
+  color:#ffd166;
+  font-weight:950;
+  letter-spacing:.025em;
+  text-shadow:0 1px 0 rgba(0,0,0,.55), 0 0 12px rgba(255,209,102,.16);
+}
+.dynamic-filter-group.is-secondary .fragrance-filter-label{
+  color:#ffd166;
+  opacity:1;
+}

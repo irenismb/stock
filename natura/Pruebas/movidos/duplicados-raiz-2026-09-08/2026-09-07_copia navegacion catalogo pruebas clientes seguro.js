@@ -1,0 +1,62 @@
+// Navegación, compartir y barra de herramientas fija del entorno de pruebas.
+(() => {
+  const backBtn=document.getElementById("catalogBackBtn");
+  const forwardBtn=document.getElementById("catalogForwardBtn");
+  const shareBtn=document.getElementById("shareCatalogBtn");
+  const toolbar=document.querySelector(".bar");
+  const filterPanel=document.getElementById("wordPanel");
+
+  function actualizarBotonesHistorial(detail){
+    const state=detail||window.CATALOG_NAV_HISTORY?.getState?.()||{canBack:false,canForward:false};
+    if(backBtn){backBtn.disabled=!state.canBack;backBtn.setAttribute("aria-disabled",state.canBack?"false":"true");}
+    if(forwardBtn){forwardBtn.disabled=!state.canForward;forwardBtn.setAttribute("aria-disabled",state.canForward?"false":"true");}
+  }
+
+  backBtn?.addEventListener("click",()=>window.CATALOG_NAV_HISTORY?.back?.());
+  forwardBtn?.addEventListener("click",()=>window.CATALOG_NAV_HISTORY?.forward?.());
+  window.addEventListener("catalog-navigation-history-change",event=>actualizarBotonesHistorial(event.detail));
+
+  shareBtn?.addEventListener("click",async()=>{
+    const url=window.location.href.split("#")[0];
+    const datos={title:document.title,text:"Catálogo Irenismb Stock Natura",url};
+    try{
+      if(typeof navigator.share==="function"){await navigator.share(datos);return;}
+      if(navigator.clipboard?.writeText){
+        await navigator.clipboard.writeText(url);
+        const tituloAnterior=shareBtn.title;
+        shareBtn.title="Enlace copiado";
+        shareBtn.setAttribute("aria-label","Enlace del catálogo copiado");
+        setTimeout(()=>{shareBtn.title=tituloAnterior||"Compartir catálogo";shareBtn.setAttribute("aria-label","Compartir catálogo");},1800);
+        return;
+      }
+      window.prompt("Copia el enlace del catálogo:",url);
+    }catch(error){if(error?.name!=="AbortError")console.error("No fue posible compartir el catálogo.",error);}
+  });
+
+  function prepararBarraFlotante(){
+    if(!toolbar||!toolbar.parentNode)return;
+    const sentinel=document.createElement("div");sentinel.className="catalog-toolbar-sentinel";sentinel.setAttribute("aria-hidden","true");
+    const placeholder=document.createElement("div");placeholder.className="catalog-toolbar-placeholder";placeholder.setAttribute("aria-hidden","true");
+    toolbar.parentNode.insertBefore(sentinel,toolbar);toolbar.parentNode.insertBefore(placeholder,toolbar);
+
+    function actualizar(){
+      const flota=sentinel.getBoundingClientRect().top<=8;
+      toolbar.classList.toggle("is-floating-toolbar",flota);
+      placeholder.style.height=flota?`${toolbar.offsetHeight}px`:"0px";
+      if(flota){
+        const bottom=Math.ceil(toolbar.getBoundingClientRect().bottom+8);
+        document.documentElement.style.setProperty("--floating-toolbar-bottom",`${bottom}px`);
+      }
+      filterPanel?.classList.toggle("is-floating-panel",flota&&!filterPanel.hidden);
+    }
+
+    const observer=filterPanel?new MutationObserver(actualizar):null;
+    observer?.observe(filterPanel,{attributes:true,attributeFilter:["hidden"]});
+    window.addEventListener("scroll",actualizar,{passive:true});
+    window.addEventListener("resize",actualizar,{passive:true});
+    actualizar();
+  }
+
+  prepararBarraFlotante();
+  actualizarBotonesHistorial();
+})();

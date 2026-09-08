@@ -86,7 +86,15 @@
         if(!parsed || typeof parsed !== "object") return null;
 
         const cleanList = value => Array.isArray(value)
-          ? value.map(item => String(item || "").trim()).filter(Boolean)
+          ? value
+              .map(item => String(item || "").trim())
+              .filter(Boolean)
+              .map(item => {
+                const parts = item.split("|");
+                // Migra automáticamente claves antiguas Sección|Público|Categoría|Estado.
+                if(parts.length === 4) return [parts[0],parts[2],parts[3]].join("|");
+                return item;
+              })
           : null;
 
         const hidden = cleanList(parsed.hidden);
@@ -183,9 +191,6 @@
       if(!raw) return "";
       const key = normalizeText(raw).replace(/\s+/g, " ");
       const labels = {
-        "para ella": "Para ella",
-        "para el": "Para él",
-        "unisex": "Unisex",
         "otros productos": "Otros productos",
         "perfumes": "Perfumes",
         "desodorantes": "Desodorantes",

@@ -2985,6 +2985,7 @@
             </div>
           </div>
         </button>
+        <div class="album-subdivision-links" aria-label="Subdivisiones disponibles"></div>
       </article>
     `;
 
@@ -3111,6 +3112,47 @@
       return img;
     }
 
+    function subdivisionTargetsForAlbum(album, sourceProducts){
+      if(!album) return [];
+      const source = Array.isArray(sourceProducts) ? sourceProducts : (Array.isArray(album.products) ? album.products : []);
+
+      if(album.navType === "audience"){
+        if(isDirectProductAudience(album.label)) return [];
+        return buildCategoryAlbums(source, album.label);
+      }
+
+      if(album.navType === "category"){
+        return buildFamilyAlbums(source, album.audience, album.navValue);
+      }
+
+      return [];
+    }
+
+    function openNavigationTarget(target, opts={}){
+      if(!target) return;
+
+      if(target.navType === "audience"){
+        selectedAudience = target.navValue;
+        selectedCategory = "";
+        selectedFamily = "";
+      }else if(target.navType === "category"){
+        selectedAudience = target.audience || selectedAudience;
+        selectedCategory = target.navValue;
+        selectedFamily = "";
+      }else if(target.navType === "family"){
+        selectedAudience = target.audience || selectedAudience;
+        selectedCategory = target.category || selectedCategory;
+        selectedFamily = target.navValue;
+      }else{
+        return;
+      }
+
+      if(!opts.keepFilters) resetDiscoveryFilters();
+      refreshNavigationAlbums();
+      refreshFilterOptionsForScope();
+      render();
+    }
+
     function makeAlbumCard(album){
       const card = albumTemplate.content.firstElementChild.cloneNode(true);
       const btn = card.querySelector(".album-folder");
@@ -3119,6 +3161,7 @@
       const badge = card.querySelector(".album-count-badge");
       const label = card.querySelector(".album-label");
       const meta = card.querySelector(".album-meta");
+      const subdivisionLinks = card.querySelector(".album-subdivision-links");
       const unitLabel = album.count === 1 ? "producto" : "productos";
       const isAudience = album.navType === "audience";
       const searchActive = getCombinedWordTerms().length > 0;
@@ -3217,6 +3260,40 @@
         }
       }
       label.textContent = album.label;
+
+      if(subdivisionLinks){
+        const subdivisionSource = searchActive && matchingProducts.length
+          ? matchingProducts
+          : (Array.isArray(album.products) ? album.products : []);
+        const targets = subdivisionTargetsForAlbum(album, subdivisionSource);
+
+        subdivisionLinks.innerHTML = "";
+        subdivisionLinks.hidden = targets.length === 0;
+        card.classList.toggle("has-subdivision-links", targets.length > 0);
+
+        for(const target of targets){
+          const directButton = document.createElement("button");
+          directButton.type = "button";
+          directButton.className = "album-subdivision-link";
+          directButton.dataset.subdivisionNavType = target.navType || "";
+          directButton.dataset.subdivisionNavValue = target.navValue || "";
+          directButton.dataset.subdivisionAudience = target.audience || (album.navType === "audience" ? album.label : "");
+          directButton.dataset.subdivisionCategory = target.category || (target.navType === "family" ? album.navValue : "");
+          directButton.setAttribute("aria-label", `Abrir directamente ${target.label}`);
+          directButton.title = `Abrir ${target.label}`;
+
+          const directLabel = document.createElement("span");
+          directLabel.className = "album-subdivision-link-label";
+          directLabel.textContent = target.label;
+
+          const directCount = document.createElement("span");
+          directCount.className = "album-subdivision-link-count";
+          directCount.textContent = String(target.count || 0);
+
+          directButton.append(directLabel,directCount);
+          subdivisionLinks.appendChild(directButton);
+        }
+      }
 
       return card;
     }
@@ -3745,23 +3822,7 @@
     function openAlbum(key, opts={}){
       const target = albumByKey.get(String(key || ""));
       if(!target) return;
-      if(target.navType === "audience"){
-        selectedAudience = target.navValue;
-        selectedCategory = "";
-        selectedFamily = "";
-      }else if(target.navType === "category"){
-        selectedAudience = target.audience || selectedAudience;
-        selectedCategory = target.navValue;
-        selectedFamily = "";
-      }else if(target.navType === "family"){
-        selectedAudience = target.audience || selectedAudience;
-        selectedCategory = target.category || selectedCategory;
-        selectedFamily = target.navValue;
-      }
-      if(!opts.keepFilters) resetDiscoveryFilters();
-      refreshNavigationAlbums();
-      refreshFilterOptionsForScope();
-      render();
+      openNavigationTarget(target, opts);
     }
 
     function closeAlbum(opts={}){
@@ -3942,6 +4003,18 @@
 
     function bindGridActions(){
       grid.addEventListener("click", (e)=>{
+        const subdivisionBtn = e.target.closest("[data-subdivision-nav-type]");
+        if(subdivisionBtn){
+          const target = {
+            navType:subdivisionBtn.dataset.subdivisionNavType || "",
+            navValue:subdivisionBtn.dataset.subdivisionNavValue || "",
+            audience:subdivisionBtn.dataset.subdivisionAudience || "",
+            category:subdivisionBtn.dataset.subdivisionCategory || ""
+          };
+          openNavigationTarget(target, { keepFilters:getCombinedWordTerms().length > 0 });
+          return;
+        }
+
         const albumBtn = e.target.closest("[data-album-open]");
         if(albumBtn){
           const key = albumBtn.getAttribute("data-album-open") || "";

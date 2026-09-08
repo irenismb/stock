@@ -52,7 +52,7 @@
   <link rel="preload" as="image" href="../logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="../logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="../css/2026-09-06_estilos generales catalogo natura tienda web.css" />
+  <link rel="stylesheet" href="css/2026-09-07_copia estilos catalogo pruebas clientes seguro.css?carga=asistente-guiado" />
 
   <script type="application/ld+json">
   {
@@ -246,7 +246,34 @@
       <p class="catalog-entry-kicker">Explora el catálogo</p>
       <h2 class="catalog-entry-title" id="catalogEntryTitle">¿Qué estás buscando?</h2>
       <p class="catalog-entry-text" id="catalogEntryText">Elige una categoría para comenzar.</p>
+      <div class="guided-assistant-entry">
+        <button class="guided-assistant-start" id="guidedAssistantStartBtn" type="button">✨ Ayúdame a elegir</button>
+        <span class="guided-assistant-entry-note">Responde unas preguntas y te mostramos opciones del catálogo.</span>
+      </div>
     </section>
+
+    <section class="guided-assistant" id="guidedAssistant" aria-labelledby="guidedAssistantQuestion" hidden>
+      <div class="guided-assistant-card">
+        <div class="guided-assistant-head">
+          <div>
+            <p class="guided-assistant-kicker">Asistente de compra</p>
+            <h3 class="guided-assistant-question" id="guidedAssistantQuestion">¿Qué necesitas hoy?</h3>
+            <p class="guided-assistant-help" id="guidedAssistantHelp">Elige la opción que más se acerque a lo que buscas.</p>
+          </div>
+          <button class="guided-assistant-close" id="guidedAssistantCloseBtn" type="button" aria-label="Cerrar asistente">✕</button>
+        </div>
+
+        <div class="guided-assistant-path" id="guidedAssistantPath" aria-live="polite"></div>
+        <div class="guided-assistant-options" id="guidedAssistantOptions" role="group" aria-label="Opciones del asistente"></div>
+
+        <div class="guided-assistant-actions">
+          <button class="btn-ghost" id="guidedAssistantBackBtn" type="button" hidden>← Atrás</button>
+          <button class="btn-ghost" id="guidedAssistantUnsureBtn" type="button" hidden>No estoy seguro</button>
+          <button class="btn-ghost" id="guidedAssistantRestartBtn" type="button" hidden>Empezar de nuevo</button>
+        </div>
+      </div>
+    </section>
+
     <div class="topline" id="topline">
       <div class="count" id="count" aria-live="polite">Cargando productos…</div>
     </div>
@@ -413,7 +440,7 @@
     </div>
   </div>
 
-  <script src="../js/2026-09-06_catalogo productos especiales solo imagen precio.js?actualizacion=familias-olfativas"></script>
+  <script src="js/2026-09-07_copia logica catalogo pruebas clientes seguro.js?carga=asistente-guiado"></script>
   <script src="../js/2026-09-05_registro visitas ubicacion telegram google sheets.js"></script>
   <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>

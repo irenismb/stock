@@ -1601,7 +1601,6 @@
     let allowedProductRouteKeySet = new Set();
     let dynamicFilterRules = [];
     let selectedDynamicFilters = new Map();
-    let expandedDynamicFilterKey = "";
     window.DYNAMIC_FILTER_RULES = dynamicFilterRules;
 
     function cleanNavKey(value){
@@ -1697,7 +1696,6 @@
 
     function clearDynamicFilters(){
       selectedDynamicFilters.clear();
-      expandedDynamicFilterKey = "";
     }
 
     function hasDynamicFilterSelection(){
@@ -3962,52 +3960,40 @@
 
       const base = dynamicBaseProducts();
       let renderedGroups = 0;
+      let secondaryTitleAdded = false;
 
       for(const rule of rules){
         const categoryOptions = dynamicValueCounts(base,rule);
+        // Solo omitimos columnas que nunca ofrecen una decisión real dentro de la categoría.
         if(categoryOptions.length < 2) continue;
 
         const sourceForRule = applyDynamicSelections(base,rules,Infinity,rule.columnKey);
         const options = dynamicValueCounts(sourceForRule,rule);
         const isSecondary = rule.columnKey === "commercialFormat";
-        const isExpanded = expandedDynamicFilterKey === rule.columnKey;
-        const selectedValue = selectedDynamicFilters.get(rule.columnKey) || "";
-        const selectedKey = cleanNavKey(selectedValue);
+
+        if(isSecondary && !secondaryTitleAdded){
+          const secondaryTitle = document.createElement("div");
+          secondaryTitle.className = "dynamic-filter-secondary-title";
+          secondaryTitle.textContent = "Filtro adicional";
+          dynamicFilterGroups.appendChild(secondaryTitle);
+          secondaryTitleAdded = true;
+        }
 
         renderedGroups++;
         const group = document.createElement("div");
-        group.className = "dynamic-filter-accordion" + (isSecondary ? " is-secondary" : "") + (isExpanded ? " is-open" : "");
+        group.className = "fragrance-filter-group dynamic-filter-group" + (isSecondary ? " is-secondary" : "");
 
-        const toggle = document.createElement("button");
-        toggle.type = "button";
-        toggle.className = "dynamic-filter-toggle" + (selectedValue ? " has-selection" : "");
-        toggle.dataset.dynamicFilterToggle = rule.columnKey;
-        toggle.setAttribute("aria-expanded",isExpanded ? "true" : "false");
-
-        const toggleMain = document.createElement("span");
-        toggleMain.className = "dynamic-filter-toggle-main";
-
-        const toggleLabel = document.createElement("span");
-        toggleLabel.className = "dynamic-filter-toggle-label";
-        toggleLabel.textContent = rule.label;
-
-        const toggleSelection = document.createElement("span");
-        toggleSelection.className = "dynamic-filter-toggle-selection";
-        toggleSelection.textContent = selectedValue || (isSecondary ? "Filtro adicional" : "Elegir");
-
-        const chevron = document.createElement("span");
-        chevron.className = "dynamic-filter-toggle-chevron";
-        chevron.setAttribute("aria-hidden","true");
-        chevron.textContent = "⌄";
-
-        toggleMain.append(toggleLabel,toggleSelection);
-        toggle.append(toggleMain,chevron);
+        const label = document.createElement("span");
+        label.className = "fragrance-filter-label";
+        label.textContent = rule.label;
 
         const host = document.createElement("div");
-        host.className = "fragrance-filter-options dynamic-filter-options";
-        host.hidden = !isExpanded;
+        host.className = "fragrance-filter-options";
         host.setAttribute("role","group");
-        host.setAttribute("aria-label",`Filtrar por ${rule.label}`);
+        host.setAttribute("aria-label", `Filtrar por ${rule.label}`);
+
+        const selectedValue = selectedDynamicFilters.get(rule.columnKey) || "";
+        const selectedKey = cleanNavKey(selectedValue);
 
         const addButton = (value,textValue,count)=>{
           const button = document.createElement("button");
@@ -4033,7 +4019,7 @@
         addButton("","Todos",sourceForRule.length);
         for(const option of options) addButton(option.value,option.value,option.count);
 
-        group.append(toggle,host);
+        group.append(label,host);
         dynamicFilterGroups.appendChild(group);
       }
 
@@ -4436,18 +4422,11 @@
     function bindFilters(){
       if(dynamicFilterGroups){
         dynamicFilterGroups.addEventListener("click", (e)=>{
-          const toggle = e.target.closest("[data-dynamic-filter-toggle]");
-          if(toggle){
-            const key = toggle.dataset.dynamicFilterToggle || "";
-            expandedDynamicFilterKey = expandedDynamicFilterKey === key ? "" : key;
-            render();
-            return;
-          }
-
           const btn = e.target.closest("[data-dynamic-filter-key]");
           if(!btn) return;
           const key = btn.dataset.dynamicFilterKey || "";
           const value = btn.dataset.dynamicFilterValue || "";
+          const order = Number(btn.dataset.dynamicFilterOrder);
           if(!key) return;
 
           if(value){
@@ -4457,7 +4436,6 @@
             selectedDynamicFilters.delete(key);
           }
 
-          expandedDynamicFilterKey = "";
           if(sortSel) sortSel.value = "";
           render();
         });

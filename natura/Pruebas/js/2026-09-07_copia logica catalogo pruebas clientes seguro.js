@@ -3242,6 +3242,17 @@
     const catalogEntryTitle = document.getElementById("catalogEntryTitle");
     const catalogEntryText = document.getElementById("catalogEntryText");
 
+    const guidedAssistant = document.getElementById("guidedAssistant");
+    const guidedAssistantStartBtn = document.getElementById("guidedAssistantStartBtn");
+    const guidedAssistantCloseBtn = document.getElementById("guidedAssistantCloseBtn");
+    const guidedAssistantQuestion = document.getElementById("guidedAssistantQuestion");
+    const guidedAssistantHelp = document.getElementById("guidedAssistantHelp");
+    const guidedAssistantPath = document.getElementById("guidedAssistantPath");
+    const guidedAssistantOptions = document.getElementById("guidedAssistantOptions");
+    const guidedAssistantBackBtn = document.getElementById("guidedAssistantBackBtn");
+    const guidedAssistantUnsureBtn = document.getElementById("guidedAssistantUnsureBtn");
+    const guidedAssistantRestartBtn = document.getElementById("guidedAssistantRestartBtn");
+
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
     const tickerInner = document.getElementById("tickerInner");
@@ -3837,6 +3848,278 @@
       return filtered;
     }
 
+    const guidedAssistantState = {
+      active:false,
+      step:"root",
+      audience:"",
+      category:"",
+      family:"",
+      history:[]
+    };
+
+    function guidedAssistantSnapshot(){
+      return {
+        step:guidedAssistantState.step,
+        audience:guidedAssistantState.audience,
+        category:guidedAssistantState.category,
+        family:guidedAssistantState.family
+      };
+    }
+
+    function restoreGuidedAssistantSnapshot(snapshot){
+      if(!snapshot) return;
+      guidedAssistantState.step = snapshot.step || "root";
+      guidedAssistantState.audience = snapshot.audience || "";
+      guidedAssistantState.category = snapshot.category || "";
+      guidedAssistantState.family = snapshot.family || "";
+    }
+
+    function guidedAssistantQuestionForAudience(audience){
+      const key = cleanNavKey(audience);
+      if(key === cleanNavKey("Perfumes y fragancias")) return "¿Qué tipo de fragancia estás buscando?";
+      if(key === cleanNavKey("Cabello")) return "¿Qué necesidad de cabello quieres atender?";
+      if(key === cleanNavKey("Cuidado personal")) return "¿Qué tipo de cuidado necesitas?";
+      if(key === cleanNavKey("Maquillaje")) return "¿Qué tipo de maquillaje buscas?";
+      if(key === cleanNavKey("Otros productos")) return "¿Qué tipo de producto buscas?";
+      return "¿Qué opción se acerca más a lo que necesitas?";
+    }
+
+    function guidedAssistantPathText(){
+      return [
+        guidedAssistantState.audience,
+        guidedAssistantState.category,
+        guidedAssistantState.family
+      ].filter(Boolean).join(" › ");
+    }
+
+    function guidedAssistantCurrentProducts(){
+      let source = all.slice();
+      if(guidedAssistantState.audience){
+        source = source.filter(p => productMatchesAudience(p,guidedAssistantState.audience));
+      }
+      if(guidedAssistantState.category){
+        source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(guidedAssistantState.category));
+      }
+      if(guidedAssistantState.family){
+        source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(guidedAssistantState.family));
+      }
+      return source;
+    }
+
+    function guidedAssistantRootOptions(){
+      return buildRootAlbums(all).filter(item => (Number(item.count) || 0) > 0);
+    }
+
+    function guidedAssistantCategoryOptions(){
+      if(!guidedAssistantState.audience) return [];
+      return buildCategoryAlbums(all,guidedAssistantState.audience)
+        .filter(item => (Number(item.count) || 0) > 0);
+    }
+
+    function guidedAssistantFamilyOptions(){
+      if(!guidedAssistantState.audience || !guidedAssistantState.category) return [];
+      return buildFamilyAlbums(all,guidedAssistantState.audience,guidedAssistantState.category)
+        .filter(item => (Number(item.count) || 0) > 0);
+    }
+
+    function makeGuidedAssistantOption(item,level){
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "guided-assistant-option";
+      button.dataset.guidedLevel = level;
+      button.dataset.guidedValue = item.navValue || item.label || "";
+
+      const label = document.createElement("span");
+      label.className = "guided-assistant-option-label";
+      label.textContent = item.label || item.navValue || "";
+
+      const count = document.createElement("span");
+      count.className = "guided-assistant-option-count";
+      count.textContent = `${Number(item.count) || 0} ${Number(item.count) === 1 ? "producto" : "productos"}`;
+
+      button.append(label,count);
+      return button;
+    }
+
+    function applyGuidedAssistantResults(){
+      selectedAudience = guidedAssistantState.audience || "";
+      selectedCategory = guidedAssistantState.category || "";
+      selectedFamily = guidedAssistantState.family || "";
+      resetDiscoveryFilters();
+      refreshNavigationAlbums();
+      refreshFilterOptionsForScope();
+      guidedAssistantState.step = "results";
+      render();
+      renderGuidedAssistant();
+    }
+
+    function renderGuidedAssistant(){
+      if(!guidedAssistant || !guidedAssistantOptions) return;
+      guidedAssistant.hidden = !guidedAssistantState.active;
+      if(!guidedAssistantState.active) return;
+
+      const pathText = guidedAssistantPathText();
+      if(guidedAssistantPath){
+        guidedAssistantPath.textContent = pathText;
+        guidedAssistantPath.hidden = !pathText;
+      }
+
+      guidedAssistantOptions.innerHTML = "";
+      if(guidedAssistantBackBtn) guidedAssistantBackBtn.hidden = guidedAssistantState.history.length === 0;
+      if(guidedAssistantRestartBtn) guidedAssistantRestartBtn.hidden = guidedAssistantState.step === "root" && !pathText;
+      if(guidedAssistantUnsureBtn) guidedAssistantUnsureBtn.hidden = guidedAssistantState.step === "root" || guidedAssistantState.step === "results";
+
+      if(guidedAssistantState.step === "root"){
+        guidedAssistantQuestion.textContent = "¿Qué necesitas hoy?";
+        guidedAssistantHelp.textContent = "Elige una categoría y te iré haciendo preguntas sencillas.";
+        for(const item of guidedAssistantRootOptions()){
+          guidedAssistantOptions.appendChild(makeGuidedAssistantOption(item,"audience"));
+        }
+        return;
+      }
+
+      if(guidedAssistantState.step === "category"){
+        guidedAssistantQuestion.textContent = guidedAssistantQuestionForAudience(guidedAssistantState.audience);
+        guidedAssistantHelp.textContent = "Elige una opción. Si no estás seguro, puedo mostrarte todo lo disponible en esta categoría.";
+        for(const item of guidedAssistantCategoryOptions()){
+          guidedAssistantOptions.appendChild(makeGuidedAssistantOption(item,"category"));
+        }
+        return;
+      }
+
+      if(guidedAssistantState.step === "family"){
+        guidedAssistantQuestion.textContent = "¿Qué familia olfativa prefieres?";
+        guidedAssistantHelp.textContent = "Si no conoces la familia olfativa, puedes ver todos los productos de la selección anterior.";
+        for(const item of guidedAssistantFamilyOptions()){
+          guidedAssistantOptions.appendChild(makeGuidedAssistantOption(item,"family"));
+        }
+        return;
+      }
+
+      const results = guidedAssistantCurrentProducts();
+      guidedAssistantQuestion.textContent = `Encontré ${results.length} ${results.length === 1 ? "producto" : "productos"} para tu selección`;
+      guidedAssistantHelp.textContent = "Los resultados aparecen debajo. Puedes volver atrás para cambiar una respuesta o empezar de nuevo.";
+    }
+
+    function startGuidedAssistant(){
+      guidedAssistantState.active = true;
+      guidedAssistantState.step = "root";
+      guidedAssistantState.audience = "";
+      guidedAssistantState.category = "";
+      guidedAssistantState.family = "";
+      guidedAssistantState.history = [];
+      renderGuidedAssistant();
+      guidedAssistant?.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+
+    function restartGuidedAssistant(){
+      guidedAssistantState.step = "root";
+      guidedAssistantState.audience = "";
+      guidedAssistantState.category = "";
+      guidedAssistantState.family = "";
+      guidedAssistantState.history = [];
+      selectedAudience = "";
+      selectedCategory = "";
+      selectedFamily = "";
+      resetDiscoveryFilters();
+      refreshNavigationAlbums();
+      refreshFilterOptionsForScope();
+      render();
+      renderGuidedAssistant();
+    }
+
+    function closeGuidedAssistant(){
+      guidedAssistantState.active = false;
+      if(guidedAssistant) guidedAssistant.hidden = true;
+    }
+
+    function guidedAssistantChoose(level,value){
+      const cleanValue = String(value || "").trim();
+      if(!cleanValue) return;
+
+      guidedAssistantState.history.push(guidedAssistantSnapshot());
+
+      if(level === "audience"){
+        guidedAssistantState.audience = cleanValue;
+        guidedAssistantState.category = "";
+        guidedAssistantState.family = "";
+
+        if(isDirectProductAudience(cleanValue)){
+          applyGuidedAssistantResults();
+          return;
+        }
+
+        const categories = buildCategoryAlbums(all,cleanValue).filter(item => (Number(item.count) || 0) > 0);
+        if(categories.length === 0){
+          applyGuidedAssistantResults();
+          return;
+        }
+        guidedAssistantState.step = "category";
+        renderGuidedAssistant();
+        return;
+      }
+
+      if(level === "category"){
+        guidedAssistantState.category = cleanValue;
+        guidedAssistantState.family = "";
+        const families = buildFamilyAlbums(all,guidedAssistantState.audience,cleanValue)
+          .filter(item => (Number(item.count) || 0) > 0);
+
+        if(families.length >= 2){
+          guidedAssistantState.step = "family";
+          renderGuidedAssistant();
+          return;
+        }
+
+        if(families.length === 1){
+          guidedAssistantState.family = families[0].navValue;
+        }
+        applyGuidedAssistantResults();
+        return;
+      }
+
+      if(level === "family"){
+        guidedAssistantState.family = cleanValue;
+        applyGuidedAssistantResults();
+      }
+    }
+
+    function bindGuidedAssistant(){
+      guidedAssistantStartBtn?.addEventListener("click",()=>{
+        if(!all.length){
+          guidedAssistantState.active = true;
+          guidedAssistantState.step = "root";
+          if(guidedAssistant) guidedAssistant.hidden = false;
+          if(guidedAssistantQuestion) guidedAssistantQuestion.textContent = "Cargando catálogo…";
+          if(guidedAssistantHelp) guidedAssistantHelp.textContent = "En cuanto termine la carga podrás comenzar.";
+          if(guidedAssistantOptions) guidedAssistantOptions.innerHTML = "";
+          return;
+        }
+        startGuidedAssistant();
+      });
+
+      guidedAssistantCloseBtn?.addEventListener("click",closeGuidedAssistant);
+      guidedAssistantRestartBtn?.addEventListener("click",restartGuidedAssistant);
+
+      guidedAssistantBackBtn?.addEventListener("click",()=>{
+        const previous = guidedAssistantState.history.pop();
+        if(!previous) return;
+        restoreGuidedAssistantSnapshot(previous);
+        renderGuidedAssistant();
+      });
+
+      guidedAssistantUnsureBtn?.addEventListener("click",()=>{
+        guidedAssistantState.history.push(guidedAssistantSnapshot());
+        applyGuidedAssistantResults();
+      });
+
+      guidedAssistantOptions?.addEventListener("click",(event)=>{
+        const button = event.target.closest("[data-guided-level]");
+        if(!button) return;
+        guidedAssistantChoose(button.dataset.guidedLevel || "",button.dataset.guidedValue || "");
+      });
+    }
+
     let _renderToken = 0;
     function render(){
       const token = ++_renderToken;
@@ -4181,6 +4464,7 @@
 
       try{
         render();
+        if(guidedAssistantState.active) renderGuidedAssistant();
       }catch(err){
         console.error("Los productos se cargaron, pero ocurrió un error al renderizar el catálogo.", err);
         updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
@@ -4209,6 +4493,7 @@
       initShipping();
       bindFilters();
       bindGridActions();
+      bindGuidedAssistant();
       initKeyboardAccessibility();
 
       if(albumBackBtn){

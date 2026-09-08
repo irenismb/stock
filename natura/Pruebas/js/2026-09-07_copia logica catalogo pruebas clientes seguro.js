@@ -11,7 +11,7 @@
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
     // Hoja Productos, estructura A:N: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
     const GOOGLE_SHEET_SOURCE = {
-      spreadsheetId: "19sf8MrzGftXVb4sp9i9FptZk5_TckzRhuJUL-3bUQyA",
+      spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
       gid: "893686273"
     };

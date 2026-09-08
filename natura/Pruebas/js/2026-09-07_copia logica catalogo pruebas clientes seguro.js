@@ -3471,6 +3471,7 @@
     const dynamicFilterHeading = document.getElementById("dynamicFilterHeading");
     const dynamicFilterGroups = document.getElementById("dynamicFilterGroups");
     const dynamicFilterClearBtn = document.getElementById("dynamicFilterClearBtn");
+    const selectedRootCategory = document.getElementById("selectedRootCategory");
 
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
@@ -3946,6 +3947,28 @@
       );
     }
 
+    function renderSelectedRootCategory(){
+      if(!selectedRootCategory) return;
+      selectedRootCategory.innerHTML = "";
+      selectedRootCategory.hidden = !selectedAudience;
+      if(!selectedAudience) return;
+
+      const rootAlbums = buildRootAlbums(all);
+      const album = rootAlbums.find(item => cleanNavKey(item.label) === cleanNavKey(selectedAudience));
+      if(!album) return;
+
+      const card = makeAlbumCard(album);
+      const button = card.querySelector("[data-album-open]");
+      if(button){
+        button.removeAttribute("data-album-open");
+        button.dataset.rootCategoryToggle = selectedAudience;
+        button.setAttribute("aria-label", "Deseleccionar " + selectedAudience + " y mostrar las demás categorías");
+        button.title = "Deseleccionar " + selectedAudience;
+      }
+      card.classList.add("is-selected-root-category");
+      selectedRootCategory.appendChild(card);
+    }
+
     function renderDynamicFilters(){
       if(!dynamicFilterPanel || !dynamicFilterGroups) return;
 
@@ -3964,7 +3987,6 @@
 
       for(const rule of rules){
         const categoryOptions = dynamicValueCounts(base,rule);
-        // Solo omitimos columnas que nunca ofrecen una decisión real dentro de la categoría.
         if(categoryOptions.length < 2) continue;
 
         const sourceForRule = applyDynamicSelections(base,rules,Infinity,rule.columnKey);
@@ -4016,8 +4038,15 @@
           host.appendChild(button);
         };
 
-        addButton("","Todos",sourceForRule.length);
-        for(const option of options) addButton(option.value,option.value,option.count);
+        if(selectedValue){
+          const selectedOption = options.find(option => cleanNavKey(option.value) === selectedKey);
+          const selectedCount = selectedOption ? selectedOption.count : sourceForRule.filter(
+            product => cleanNavKey(getDynamicProductValue(product,rule.columnKey)) === selectedKey
+          ).length;
+          addButton(selectedValue,selectedValue,selectedCount);
+        }else{
+          for(const option of options) addButton(option.value,option.value,option.count);
+        }
 
         group.append(label,host);
         dynamicFilterGroups.appendChild(group);
@@ -4050,11 +4079,12 @@
         sortSel.disabled = showAlbumGrid || !revealProducts;
       }
       if(albumNav){
-        albumNav.hidden = !selectedAudience;
+        albumNav.hidden = true;
       }
       if(albumBackBtn){
-        albumBackBtn.textContent = "← Volver a categorías";
+        albumBackBtn.hidden = true;
       }
+      renderSelectedRootCategory();
       placeResponsiveHeaderMeta();
       if(albumPath){
         const activeValues = [...selectedDynamicFilters.values()].filter(Boolean);
@@ -4354,6 +4384,22 @@
     }
 
     function bindGridActions(){
+      if(selectedRootCategory){
+        selectedRootCategory.addEventListener("click", (e)=>{
+          const button = e.target.closest("[data-root-category-toggle]");
+          if(!button) return;
+          selectedAudience = "";
+          selectedCategory = "";
+          selectedFamily = "";
+          clearFragranceFilters();
+          clearDynamicFilters();
+          resetDiscoveryFilters();
+          refreshNavigationAlbums();
+          refreshFilterOptionsForScope();
+          render();
+        });
+      }
+
       grid.addEventListener("click", (e)=>{
         const albumBtn = e.target.closest("[data-album-open]");
         if(albumBtn){
@@ -4429,7 +4475,10 @@
           const order = Number(btn.dataset.dynamicFilterOrder);
           if(!key) return;
 
-          if(value){
+          const currentValue = selectedDynamicFilters.get(key) || "";
+          if(value && cleanNavKey(currentValue) === cleanNavKey(value)){
+            selectedDynamicFilters.delete(key);
+          }else if(value){
             selectedDynamicFilters.set(key,value);
             pruneDynamicSelectionsKeeping(key);
           }else{

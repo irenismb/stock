@@ -3403,7 +3403,8 @@
   border-radius:50%;
   background:var(--root-orb,#f2e4d2);
   box-shadow:none;
-  opacity:.78;
+  color:var(--mut);
+  opacity:1;
   pointer-events:none;
   z-index:0;
 }
@@ -4155,10 +4156,10 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .fragrance-filter-panel{
   margin:12px 0 18px;
   padding:14px;
-  border:1px solid rgba(185,149,79,.24);
+  border:1px solid var(--line);
   border-radius:18px;
-  background:rgba(255,255,255,.78);
-  box-shadow:0 8px 24px rgba(102,67,72,.08);
+  background:rgba(18,24,38,.72);
+  box-shadow:var(--shadow-sm);
 }
 .fragrance-filter-panel[hidden]{display:none !important}
 .fragrance-filter-heading{
@@ -4182,10 +4183,10 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 }
 .fragrance-filter-chip{
   appearance:none;
-  border:1px solid rgba(102,67,72,.18);
+  border:1px solid #2a3b5c;
   border-radius:999px;
-  background:#fff;
-  color:inherit;
+  background:linear-gradient(180deg, var(--pill-2), var(--pill));
+  color:var(--txt);
   min-height:36px;
   padding:7px 10px;
   display:inline-flex;
@@ -4197,12 +4198,13 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
   cursor:pointer;
 }
 .fragrance-filter-chip:hover{
-  border-color:rgba(185,149,79,.55);
+  border-color:var(--acc);
   transform:translateY(-1px);
 }
 .fragrance-filter-chip.is-active{
-  border-color:rgba(185,149,79,.72);
-  box-shadow:0 0 0 2px rgba(185,149,79,.12);
+  border-color:var(--acc);
+  background:rgba(34,211,168,.12);
+  box-shadow:0 0 0 1px rgba(34,211,168,.18);
   font-weight:900;
 }
 .fragrance-filter-chip-count{
@@ -4213,12 +4215,12 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  background:rgba(102,67,72,.08);
+  background:rgba(255,255,255,.07);
   font-size:11px;
   line-height:1;
 }
 .fragrance-filter-chip.is-active .fragrance-filter-chip-count{
-  background:rgba(185,149,79,.16);
+  background:rgba(34,211,168,.18);
 }
 @media(max-width:760px){
   .fragrance-filter-panel{

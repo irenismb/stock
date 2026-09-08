@@ -4164,21 +4164,26 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .fragrance-filter-panel[hidden]{display:none !important}
 .fragrance-filter-heading{
   margin:0 0 12px;
-  font-size:14px;
-  font-weight:800;
+  color:#fff;
+  font-size:15px;
+  font-weight:900;
   letter-spacing:.02em;
+  text-align:center;
 }
 .fragrance-filter-group + .fragrance-filter-group{margin-top:12px}
 .fragrance-filter-label{
   display:block;
-  margin:0 0 7px;
-  font-size:12px;
-  font-weight:800;
-  opacity:.78;
+  margin:0 0 8px;
+  color:#fff;
+  font-size:13px;
+  font-weight:900;
+  opacity:1;
+  text-align:center;
 }
 .fragrance-filter-options{
   display:flex;
   flex-wrap:wrap;
+  justify-content:center;
   gap:7px;
 }
 .fragrance-filter-chip{
@@ -4229,14 +4234,18 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
     border-radius:16px;
   }
   .fragrance-filter-options{
-    flex-wrap:nowrap;
-    overflow-x:auto;
-    padding-bottom:4px;
-    scrollbar-width:thin;
+    flex-wrap:wrap;
+    justify-content:center;
+    overflow-x:visible;
+    padding-bottom:0;
   }
   .fragrance-filter-chip{
-    flex:0 0 auto;
+    flex:0 1 auto;
+    max-width:100%;
     min-height:34px;
+    white-space:normal;
+    text-align:center;
+    justify-content:center;
   }
 }
 

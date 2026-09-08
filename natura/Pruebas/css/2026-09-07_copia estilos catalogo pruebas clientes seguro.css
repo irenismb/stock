@@ -4293,3 +4293,26 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
     justify-content:center;
   }
 }
+
+
+/* Jerarquía visual de filtros: principales visibles y Formato como filtro secundario. */
+.dynamic-filter-secondary-title{
+  margin:16px 0 8px;
+  padding-top:12px;
+  border-top:1px solid var(--line);
+  color:var(--mut);
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:.08em;
+  text-align:center;
+  text-transform:uppercase;
+}
+.dynamic-filter-group.is-secondary{
+  opacity:.9;
+}
+.dynamic-filter-group.is-secondary .fragrance-filter-label{
+  font-size:12px;
+}
+.dynamic-filter-group.is-secondary .fragrance-filter-chip{
+  min-height:34px;
+}

@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:M: Código, Sección, Categoría, Subcategoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
+    // Hoja Productos, estructura A:N: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -18,7 +18,7 @@
 
     // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
     // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Sección, B=Categoría, C=Subcategoría, D=Estado comercial, E=Ocultar del catálogo, F=Excluir de búsquedas, G=Nota.
+    // Categorias: A=Sección, B=Categoría, C=Subcategoría, D=Familia olfativa, E=Estado comercial, F=Ocultar del catálogo, G=Excluir de búsquedas, H=Nota.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
@@ -72,8 +72,8 @@
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
     const ALBUMES_OCULTOS_SEGUROS = [
-      "Otros productos|Otros productos|Medicamentos|A la venta",
-      "Otros productos|Otros productos|Electrodomésticos de segunda mano no a la venta|No a la venta"
+      "Otros productos|Otros productos|Medicamentos||A la venta",
+      "Otros productos|Otros productos|Electrodomésticos de segunda mano no a la venta||No a la venta"
     ];
     const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
     const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
@@ -89,7 +89,7 @@
           ? value
               .map(item => String(item || "").trim())
               .filter(Boolean)
-              .filter(item => item.split("|").length === 4)
+              .filter(item => item.split("|").length === 5)
           : null;
 
         const hidden = cleanList(parsed.hidden);
@@ -327,8 +327,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:M",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M",
+        range: "A:N",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N",
         tqx: `out:json;responseHandler:${callbackName}`
       });
       return `${base}?${query.toString()}`;
@@ -383,19 +383,20 @@
               section: value(1),
               category: value(2),
               subcategory: value(3),
-              condition: value(4),
-              commercialState: value(5),
-              name: value(6),
-              priceText: value(7),
-              costText: value(8),
-              stockText: value(9),
-              referenceExternal: value(10),
-              description: value(11),
-              codeNatura: value(12),
+              fragranceFamily: value(4),
+              condition: value(5),
+              commercialState: value(6),
+              name: value(7),
+              priceText: value(8),
+              costText: value(9),
+              stockText: value(10),
+              referenceExternal: value(11),
+              description: value(12),
+              codeNatura: value(13),
               fullTxtRecord: [
-                value(6),
+                value(7),
                 "",
-                `Precio: ${value(7)} Costo: ${value(8)} Stock: ${value(9)} Referencia externa: ${value(10)}. ${value(11)}`
+                `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
               ].join("\n")
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);
@@ -514,8 +515,8 @@
       return changed;
     }
 
-    function routeKeyFromParts(section, category, subcategory, commercialState){
-      return [section, category, subcategory, commercialState]
+    function routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState){
+      return [section, category, subcategory, fragranceFamily, commercialState]
         .map(value => normalizeText(value).replace(/\s+/g, " "))
         .join("|");
     }
@@ -530,15 +531,16 @@
         const section = String(row?.[0] || "").trim();
         const category = String(row?.[1] || "").trim();
         const subcategory = String(row?.[2] || "").trim();
-        const commercialState = String(row?.[3] || "").trim();
+        const fragranceFamily = String(row?.[3] || "").trim();
+        const commercialState = String(row?.[4] || "").trim();
         if(!section || !category || !commercialState) continue;
 
-        const hiddenState = parseRemoteBoolean(row?.[4]);
-        const excludedState = parseRemoteBoolean(row?.[5]);
+        const hiddenState = parseRemoteBoolean(row?.[5]);
+        const excludedState = parseRemoteBoolean(row?.[6]);
         if(hiddenState === null && excludedState === null) continue;
 
         validRows++;
-        const routeKey = routeKeyFromParts(section, category, subcategory, commercialState);
+        const routeKey = routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState);
         allowed.push(routeKey);
         if(hiddenState === true) hidden.push(routeKey);
         if(excludedState === true) excluded.push(routeKey);
@@ -582,8 +584,8 @@
         ),
         loadGoogleSheetRemoteMatrix(
           REMOTE_CONTROL_SOURCE.categoriesSheetName,
-          "A:G",
-          "select A,B,C,D,E,F,G",
+          "A:H",
+          "select A,B,C,D,E,F,G,H",
           "__remoteCatalogCategories"
         )
       ]);
@@ -950,6 +952,7 @@
       const rawCategory = String(row.category || "").trim();
       const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
       const subcategory = String(row.subcategory || "").trim();
+      const fragranceFamily = String(row.fragranceFamily || "").trim();
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
@@ -978,6 +981,7 @@
         section,
         category,
         subcategory,
+        fragranceFamily,
         condition,
         commercialState,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
@@ -998,7 +1002,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -1015,6 +1019,7 @@
             section: GIFT_GITHUB_SOURCE.section,
             category: "Regalos",
             subcategory: "",
+            fragranceFamily: "",
             condition: "",
             commercialState: "A la venta",
             brand: "",
@@ -1061,6 +1066,7 @@
         String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
         String(a?.category || "").localeCompare(String(b?.category || ""), "es", { sensitivity:"base" }) ||
         String(a?.subcategory || "").localeCompare(String(b?.subcategory || ""), "es", { sensitivity:"base" }) ||
+        String(a?.fragranceFamily || "").localeCompare(String(b?.fragranceFamily || ""), "es", { sensitivity:"base" }) ||
         String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" })
       );
       const fragment = document.createDocumentFragment();
@@ -1082,6 +1088,7 @@
         const subcategory = navigationCategoryForProduct(product);
         if(mainGroup) metaParts.push(mainGroup);
         if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) metaParts.push(subcategory);
+        if(product?.fragranceFamily) metaParts.push(product.fragranceFamily);
         if(product?.id && shouldShowProductCodes()) metaParts.push(`Código ${product.id}`);
         if(shouldShowProductPrices() && product?.hasPrice !== false && Number(product?.price) >= 0){
           metaParts.push(fmtCOP.format(Number(product.price)));
@@ -1468,6 +1475,17 @@
       "medicamentos": { iconImage:SUBCATEGORY_ICON_IMAGES["medicamentos"] },
       "perfumeria femenina": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
       "perfumeria masculina": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "fragancias femeninas": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "fragancias masculinas": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "fragancias unisex": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "frescas, citricas y acuaticas": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "florales y frutales": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "dulces y orientales": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "amaderadas, chipre y especiadas": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "aromaticas y herbales": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "amaderadas y especiadas": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "intensas y ambaradas": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
+      "frescas, citricas y verdes": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
       "cuidado capilar": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
       "reparacion y nutricion": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
       "peinado y proteccion": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
@@ -1490,6 +1508,7 @@
     let albumByKey = new Map();
     let selectedAudience = "";
     let selectedCategory = "";
+    let selectedFamily = "";
     let selectedAlbumKey = "";
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
@@ -1501,7 +1520,7 @@
 
     function getProductRouteKey(p){
       if(!p) return "";
-      return routeKeyFromParts(p.section, p.category, p.subcategory, p.commercialState);
+      return routeKeyFromParts(p.section, p.category, p.subcategory, p.fragranceFamily, p.commercialState);
     }
 
     function isProductRouteAuthorized(p){
@@ -1535,6 +1554,11 @@
     function navigationCategoryForProduct(p){
       if(!p) return "General";
       return String(p.subcategory || p.category || "General").trim() || "General";
+    }
+
+    function navigationFamilyForProduct(p){
+      if(!p) return "";
+      return String(p.fragranceFamily || "").trim();
     }
 
     function isDirectProductAudience(audienceLabel){
@@ -1622,20 +1646,65 @@
         }));
     }
 
+    function buildFamilyAlbums(list, audienceLabel, categoryLabel){
+      const byFamily = new Map();
+      for(const p of (Array.isArray(list) ? list : [])){
+        if(!productMatchesAudience(p, audienceLabel)) continue;
+        if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(categoryLabel)) continue;
+        const family = navigationFamilyForProduct(p);
+        if(!family) continue;
+        const key = cleanNavKey(family);
+        const visual = CATEGORY_VISUALS[key] || { icon:"•" };
+        const found = byFamily.get(key) || {
+          key:`family::${cleanNavKey(audienceLabel)}::${cleanNavKey(categoryLabel)}::${key}`,
+          navType:"family",
+          navValue:family,
+          audience:audienceLabel,
+          category:categoryLabel,
+          label:categoryDisplayLabel(family),
+          subtitle:"",
+          icon:visual.icon || "•",
+          iconImage:visual.iconImage || "",
+          products:[],
+          cover:null,
+          previewImages:[],
+          searchKey:normalizeText(`${family} ${categoryLabel} ${audienceLabel}`),
+          hasStructuredProducts:true,
+          hasUnstructuredProducts:false
+        };
+        found.products.push(p);
+        collectAlbumPreview(found,p);
+        byFamily.set(key,found);
+      }
+      return Array.from(byFamily.values())
+        .sort((a,b)=>a.label.localeCompare(b.label,"es",{sensitivity:"base"}))
+        .map((album,index)=>({
+          ...album,
+          count:album.products.length,
+          onlyUnstructured:false,
+          colorIndex:index % ALBUM_COLORS.length
+        }));
+    }
+
     function buildAlbums(list){
+      if(selectedAudience && selectedCategory) return buildFamilyAlbums(list, selectedAudience, selectedCategory);
       return selectedAudience ? buildCategoryAlbums(list, selectedAudience) : buildRootAlbums(list);
     }
 
     function refreshNavigationAlbums(){
-      if(selectedCategory){
+      if(selectedFamily){
         albums = [];
         albumByKey = new Map();
-        selectedAlbumKey = `category::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}`;
+        selectedAlbumKey = `family::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedFamily)}`;
         return;
       }
       albums = buildAlbums(all);
       albumByKey = new Map(albums.map(album => [album.key, album]));
-      selectedAlbumKey = selectedAudience ? `audience::${cleanNavKey(selectedAudience)}` : "";
+      if(selectedCategory){
+        selectedAlbumKey = `category::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}`;
+      }else{
+        selectedAlbumKey = selectedAudience ? `audience::${cleanNavKey(selectedAudience)}` : "";
+      }
     }
 
     function getProductAlbumKey(p){
@@ -1679,10 +1748,13 @@
         window.INTERRUPTORES &&
         window.INTERRUPTORES.MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR === true
       );
-      return albumModeEnabled() && !selectedCategory && !isDirectProductAudience(selectedAudience) && !showDirectMatches;
+      return albumModeEnabled() && albums.length > 0 && !selectedFamily && !isDirectProductAudience(selectedAudience) && !showDirectMatches;
     }
 
     function getSelectedAlbum(){
+      if(selectedFamily){
+        return { label:selectedFamily, navType:"family", audience:selectedAudience, category:selectedCategory };
+      }
       if(selectedCategory){
         return { label:selectedCategory, navType:"category", audience:selectedAudience };
       }
@@ -1699,6 +1771,9 @@
       }
       if(selectedCategory){
         source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
+      }
+      if(selectedFamily){
+        source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily));
       }
       return source;
     }
@@ -2846,7 +2921,7 @@
             "@type":"Product",
             "name":String(p.name || ""),
             "description":String(p.description || ""),
-            "category":[p.category, p.subcategory]
+            "category":[p.category, p.subcategory, p.fragranceFamily]
               .filter(Boolean)
               .join(" > ")
           };
@@ -2921,6 +2996,7 @@
       const subcategory = navigationCategoryForProduct(p);
       if(mainGroup) parts.push(mainGroup);
       if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) parts.push(subcategory);
+      if(p.fragranceFamily) parts.push(p.fragranceFamily);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         parts.push(hasKnownStock ? `Stock: ${stockVal}` : "Stock: Por confirmar");
@@ -3568,24 +3644,33 @@
         albumNav.hidden = !selectedAudience;
       }
       if(albumBackBtn){
-        albumBackBtn.textContent = selectedCategory ? `← Volver a ${selectedAudience}` : "← Volver al inicio";
+        albumBackBtn.textContent = selectedFamily
+          ? `← Volver a ${selectedCategory}`
+          : (selectedCategory ? `← Volver a ${selectedAudience}` : "← Volver al inicio");
       }
       placeResponsiveHeaderMeta();
       if(albumPath){
         albumPath.textContent = selectedAudience
-          ? (selectedCategory ? `${selectedAudience} › ${selectedCategory}` : selectedAudience)
+          ? (selectedFamily
+              ? `${selectedAudience} › ${selectedCategory} › ${selectedFamily}`
+              : (selectedCategory ? `${selectedAudience} › ${selectedCategory}` : selectedAudience))
           : "";
       }
       if(qInp){
+        const searchScopeLabel = selectedFamily || selectedCategory || selectedAudience;
         qInp.placeholder = selectedAudience
-          ? `🔍 Buscar dentro de ${selectedCategory || selectedAudience}...`
+          ? `🔍 Buscar dentro de ${searchScopeLabel}...`
           : "🔍 Busca aquí por nombre del producto...";
-        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${selectedCategory || selectedAudience}` : "Buscar producto por nombre");
+        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto por nombre");
       }
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
         grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
-        const label = !selectedAudience ? "Secciones principales" : (directSelected ? "Productos" : (!selectedCategory ? "Categorías" : "Productos"));
+        const label = !selectedAudience
+          ? "Secciones principales"
+          : (directSelected
+              ? "Productos"
+              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Familias olfativas" : "Productos")));
         grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
       }
       if(catalogEntryIntro){
@@ -3611,6 +3696,7 @@
       const sort = (u.searchParams.get("sort") || "").trim();
       const audience = (u.searchParams.get("audience") || "").trim();
       const category = (u.searchParams.get("category") || "").trim();
+      const family = (u.searchParams.get("family") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
@@ -3618,6 +3704,7 @@
       const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
       selectedAudience = validAudience ? validAudience.label : "";
       selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
+      selectedFamily = selectedCategory && family ? family : "";
       if(sort && sortSel) sortSel.value = sort;
     }
 
@@ -3636,6 +3723,7 @@
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
       if (selectedAudience) u.searchParams.set("audience", selectedAudience); else u.searchParams.delete("audience");
       if (selectedCategory) u.searchParams.set("category", selectedCategory); else u.searchParams.delete("category");
+      if (selectedFamily) u.searchParams.set("family", selectedFamily); else u.searchParams.delete("family");
       u.searchParams.delete("album");
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
@@ -3660,9 +3748,15 @@
       if(target.navType === "audience"){
         selectedAudience = target.navValue;
         selectedCategory = "";
+        selectedFamily = "";
       }else if(target.navType === "category"){
         selectedAudience = target.audience || selectedAudience;
         selectedCategory = target.navValue;
+        selectedFamily = "";
+      }else if(target.navType === "family"){
+        selectedAudience = target.audience || selectedAudience;
+        selectedCategory = target.category || selectedCategory;
+        selectedFamily = target.navValue;
       }
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
@@ -3671,7 +3765,9 @@
     }
 
     function closeAlbum(opts={}){
-      if(selectedCategory){
+      if(selectedFamily){
+        selectedFamily = "";
+      }else if(selectedCategory){
         selectedCategory = "";
       }else{
         selectedAudience = "";
@@ -4053,13 +4149,25 @@
         readStateFromUrl();
         if(selectedCategory){
           const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
-          if(!hasCategory) selectedCategory = "";
+          if(!hasCategory){
+            selectedCategory = "";
+            selectedFamily = "";
+          }
+        }
+        if(selectedFamily){
+          const hasFamily = all.some(p =>
+            productMatchesAudience(p, selectedAudience) &&
+            cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
+            cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily)
+          );
+          if(!hasFamily) selectedFamily = "";
         }
         refreshNavigationAlbums();
       }catch(err){
         console.warn("Los productos se cargaron, pero no se pudo reconstruir toda la navegación. Se restablece la vista principal.", err);
         selectedAudience = "";
         selectedCategory = "";
+        selectedFamily = "";
         selectedAlbumKey = "";
         albums = [];
         albumByKey = new Map();

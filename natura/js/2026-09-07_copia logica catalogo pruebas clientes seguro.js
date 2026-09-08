@@ -335,6 +335,10 @@
     }
 
     function loadGoogleSheetRows(){
+      const snapshot = window.TEST_CATALOG_SNAPSHOT;
+      if(snapshot && Array.isArray(snapshot.products)){
+        return Promise.resolve(snapshot.products.map(row => ({ ...row })));
+      }
       return new Promise((resolve, reject)=>{
         const callbackName = "__googleSheetCatalog_" + Date.now() + "_" + Math.random().toString(36).slice(2);
         const script = document.createElement("script");
@@ -574,6 +578,28 @@
       const initial = options.initial === true;
 
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
+
+      const snapshot = window.TEST_CATALOG_SNAPSHOT;
+      if(snapshot && Array.isArray(snapshot.controls) && Array.isArray(snapshot.categories)){
+        let changed = false;
+        changed = applyRemoteControlRows(snapshot.controls) || changed;
+        changed = applyRemoteCategoryRows(snapshot.categories) || changed;
+
+        if(initial){
+          wordSuggestionsVisible = shouldShowSuggestionsInitially();
+          syncWordToggleButton();
+        }
+
+        if(changed && rebuild && allLoadedProducts.length){
+          rebuildCatalogVisibility();
+          syncWordToggleButton();
+          rebuildSearchTicker();
+          updateTickerVisibility();
+          if(cartModal && cartModal.classList.contains("open")) renderCartModal();
+        }
+
+        return changed;
+      }
 
       const [controlsResult, categoriesResult] = await Promise.allSettled([
         loadGoogleSheetRemoteMatrix(

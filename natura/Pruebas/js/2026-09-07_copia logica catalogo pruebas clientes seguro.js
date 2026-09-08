@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:R: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, campos de auditoría, Tipo de fragancia y Línea.
+    // Hoja Productos, estructura A:U: datos comerciales y clasificación dinámica, incluyendo Tipo de fragancia, Línea, Marca, Tipo de producto y Formato comercial.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "19sf8MrzGftXVb4sp9i9FptZk5_TckzRhuJUL-3bUQyA",
       sheetName: "Productos",
@@ -24,6 +24,7 @@
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
       controlsSheetName: "Configuracion",
       categoriesSheetName: "Categorias",
+      filtersSheetName: "Filtros",
       refreshMs: 60000
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -327,8 +328,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:R",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R",
+        range: "A:U",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R,S,T,U",
         tqx: `out:json;responseHandler:${callbackName}`
       });
       return `${base}?${query.toString()}`;
@@ -399,6 +400,9 @@
               codeNatura: value(13),
               fragranceType: value(16),
               fragranceLine: value(17),
+              brand: value(18),
+              productType: value(19),
+              commercialFormat: value(20),
               fullTxtRecord: [
                 value(7),
                 "",
@@ -575,6 +579,32 @@
              previousAllowed !== JSON.stringify([...allowedProductRouteKeySet].sort());
     }
 
+    function applyDynamicFilterRows(rows){
+      const parsed = [];
+      for(const row of (Array.isArray(rows) ? rows : [])){
+        const category = String(row?.[0] || "").trim();
+        const order = Number(row?.[1]);
+        const column = String(row?.[2] || "").trim();
+        const label = String(row?.[3] || column).trim() || column;
+        const state = parseRemoteBoolean(row?.[4]);
+        const ruleText = String(row?.[5] || "").trim();
+        if(!category || !column || state !== true) continue;
+        parsed.push({
+          category,
+          order:Number.isFinite(order) ? order : 999,
+          column,
+          label,
+          ruleText,
+          enabled:true
+        });
+      }
+      parsed.sort((a,b)=>a.order-b.order || a.label.localeCompare(b.label,"es",{sensitivity:"base"}));
+      const previous = JSON.stringify(dynamicFilterRules);
+      dynamicFilterRules = parsed;
+      window.DYNAMIC_FILTER_RULES = dynamicFilterRules;
+      return previous !== JSON.stringify(dynamicFilterRules);
+    }
+
     async function refreshRemoteCatalogConfiguration(options = {}){
       const rebuild = options.rebuild !== false;
       const initial = options.initial === true;
@@ -586,6 +616,7 @@
         let changed = false;
         changed = applyRemoteControlRows(snapshot.controls) || changed;
         changed = applyRemoteCategoryRows(snapshot.categories) || changed;
+        if(Array.isArray(snapshot.filters)) changed = applyDynamicFilterRows(snapshot.filters) || changed;
 
         if(initial){
           wordSuggestionsVisible = shouldShowSuggestionsInitially();
@@ -603,7 +634,7 @@
         return changed;
       }
 
-      const [controlsResult, categoriesResult] = await Promise.allSettled([
+      const [controlsResult, categoriesResult, filtersResult] = await Promise.allSettled([
         loadGoogleSheetRemoteMatrix(
           REMOTE_CONTROL_SOURCE.controlsSheetName,
           "A:E",
@@ -615,6 +646,12 @@
           "A:H",
           "select A,B,C,D,E,F,G,H",
           "__remoteCatalogCategories"
+        ),
+        loadGoogleSheetRemoteMatrix(
+          REMOTE_CONTROL_SOURCE.filtersSheetName,
+          "A:F",
+          "select A,B,C,D,E,F",
+          "__remoteCatalogFilters"
         )
       ]);
 
@@ -630,6 +667,12 @@
         changed = applyRemoteCategoryRows(categoriesResult.value) || changed;
       }else{
         console.info("Categorías remotas no disponibles; se conservan las listas locales.", categoriesResult.reason);
+      }
+
+      if(filtersResult.status === "fulfilled"){
+        changed = applyDynamicFilterRows(filtersResult.value) || changed;
+      }else{
+        console.info("Filtros remotos no disponibles; se conserva la última configuración válida.", filtersResult.reason);
       }
 
       if(initial){
@@ -983,6 +1026,9 @@
       const fragranceFamily = String(row.fragranceFamily || "").trim();
       const fragranceType = String(row.fragranceType || "").trim();
       const fragranceLine = String(row.fragranceLine || "").trim();
+      const brand = String(row.brand || "").trim() || (/\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "Avon" : ""));
+      const productType = String(row.productType || "").trim();
+      const commercialFormat = String(row.commercialFormat || "").trim();
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
@@ -1016,7 +1062,9 @@
         fragranceLine,
         condition,
         commercialState,
-        brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
+        brand,
+        productType,
+        commercialFormat,
         price: parseOptionalWholeNumber(priceText) ?? 0,
         hasPrice: Boolean(priceText),
         cost: parseOptionalWholeNumber(row.costText),
@@ -1034,7 +1082,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, fragranceType, fragranceLine, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, fragranceType, fragranceLine, brand, productType, commercialFormat, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -1054,6 +1102,8 @@
             fragranceFamily: "",
             fragranceType: "",
             fragranceLine: "",
+            productType: "Regalo",
+            commercialFormat: "Individual",
             condition: "",
             commercialState: "A la venta",
             brand: "",
@@ -1453,8 +1503,7 @@
         section:"Belleza y cuidado",
         subtitle:"Combinaciones de distintas familias de productos.",
         iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria kits combos regalo cosmeticos.webp"),
-        theme:"kits",
-        directProducts:true
+        theme:"kits"
       },
       {
         label:"Regalos",
@@ -1550,6 +1599,9 @@
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
     let allowedProductRouteKeySet = new Set();
+    let dynamicFilterRules = [];
+    let selectedDynamicFilters = new Map();
+    window.DYNAMIC_FILTER_RULES = dynamicFilterRules;
 
     function cleanNavKey(value){
       return normalizeText(value).replace(/\s+/g, " ");
@@ -1606,6 +1658,92 @@
     function clearFragranceFilters(){
       selectedFragranceFamilyFilter = "";
       selectedFragranceLineFilter = "";
+    }
+
+    function dynamicColumnKey(column){
+      const key = cleanNavKey(column);
+      if(key === "categoria") return "category";
+      if(key === "subcategoria") return "subcategory";
+      if(key === "linea") return "line";
+      if(key === "tipo de producto") return "productType";
+      if(key === "formato comercial") return "commercialFormat";
+      if(key === "marca") return "brand";
+      if(key === "familia olfativa") return "fragranceFamily";
+      if(key === "tipo de fragancia") return "fragranceType";
+      return "";
+    }
+
+    function getDynamicProductValue(product, columnKey){
+      if(!product) return "";
+      if(columnKey === "category") return String(product.category || "").trim();
+      if(columnKey === "subcategory") return String(product.subcategory || "").trim();
+      if(columnKey === "line") return String(product.fragranceLine || "").trim();
+      if(columnKey === "productType") return String(product.productType || "").trim();
+      if(columnKey === "commercialFormat") return String(product.commercialFormat || "").trim();
+      if(columnKey === "brand") return String(product.brand || "").trim();
+      if(columnKey === "fragranceFamily") return String(product.fragranceFamily || "").trim();
+      if(columnKey === "fragranceType") return String(product.fragranceType || "").trim();
+      return "";
+    }
+
+    function getDynamicFilterRulesForCategory(categoryLabel){
+      const categoryKey = cleanNavKey(categoryLabel);
+      return dynamicFilterRules
+        .map(rule => ({ ...rule, columnKey:dynamicColumnKey(rule.column) }))
+        .filter(rule => rule.enabled && rule.columnKey && rule.columnKey !== "category" && cleanNavKey(rule.category) === categoryKey)
+        .sort((a,b)=>a.order-b.order || a.label.localeCompare(b.label,"es",{sensitivity:"base"}));
+    }
+
+    function clearDynamicFilters(){
+      selectedDynamicFilters.clear();
+    }
+
+    function hasDynamicFilterSelection(){
+      return selectedDynamicFilters.size > 0;
+    }
+
+    function shouldRevealProducts(){
+      if(!selectedAudience) return false;
+      if(isDirectProductAudience(selectedAudience)) return true;
+      return hasDynamicFilterSelection();
+    }
+
+    function dynamicBaseProducts(){
+      if(!selectedAudience) return [];
+      return filterVisibleProducts(all.filter(p => productMatchesAudience(p, selectedAudience)));
+    }
+
+    function applyDynamicSelections(source, rules, maxOrder=Infinity, excludedKey=""){
+      let out = Array.isArray(source) ? source.slice() : [];
+      for(const rule of (Array.isArray(rules) ? rules : [])){
+        if(rule.order >= maxOrder) continue;
+        if(rule.columnKey === excludedKey) continue;
+        const selected = selectedDynamicFilters.get(rule.columnKey) || "";
+        if(!selected) continue;
+        const selectedKey = cleanNavKey(selected);
+        out = out.filter(product => cleanNavKey(getDynamicProductValue(product, rule.columnKey)) === selectedKey);
+      }
+      return out;
+    }
+
+    function dynamicValueCounts(source, rule){
+      const counts = new Map();
+      for(const product of (Array.isArray(source) ? source : [])){
+        const value = getDynamicProductValue(product, rule.columnKey);
+        if(!value) continue;
+        const key = cleanNavKey(value);
+        const current = counts.get(key) || { value, count:0 };
+        current.count++;
+        counts.set(key,current);
+      }
+      return [...counts.values()].sort((a,b)=>a.value.localeCompare(b.value,"es",{sensitivity:"base",numeric:true}));
+    }
+
+    function clearDynamicFiltersAfter(order){
+      const rules = getDynamicFilterRulesForCategory(selectedAudience);
+      for(const rule of rules){
+        if(rule.order > order) selectedDynamicFilters.delete(rule.columnKey);
+      }
     }
 
     function isFragranceNavigationScope(){
@@ -1745,19 +1883,15 @@
     }
 
     function refreshNavigationAlbums(){
-      if(selectedFamily){
+      if(selectedAudience){
         albums = [];
         albumByKey = new Map();
-        selectedAlbumKey = `family::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedFamily)}`;
+        selectedAlbumKey = `audience::${cleanNavKey(selectedAudience)}`;
         return;
       }
-      albums = buildAlbums(all);
+      albums = buildRootAlbums(all);
       albumByKey = new Map(albums.map(album => [album.key, album]));
-      if(selectedCategory){
-        selectedAlbumKey = `category::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}`;
-      }else{
-        selectedAlbumKey = selectedAudience ? `audience::${cleanNavKey(selectedAudience)}` : "";
-      }
+      selectedAlbumKey = "";
     }
 
     function getProductAlbumKey(p){
@@ -1791,17 +1925,13 @@
     }
 
     function shouldShowAlbumGrid(){
-      // La configuración remota puede hacer que, al escribir en el buscador,
-      // se muestren de inmediato las tarjetas de producto coincidentes.
-      // Con el control desactivado se conserva la navegación por categorías
-      // y sus contadores de coincidencias.
       const searchActive = getCombinedWordTerms().length > 0;
       const showDirectMatches = !!(
         searchActive &&
         window.INTERRUPTORES &&
         window.INTERRUPTORES.MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR === true
       );
-      return albumModeEnabled() && albums.length > 0 && !selectedFamily && !isDirectProductAudience(selectedAudience) && !showDirectMatches;
+      return albumModeEnabled() && albums.length > 0 && !selectedAudience && !showDirectMatches;
     }
 
     function getSelectedAlbum(){
@@ -1833,6 +1963,10 @@
       }
       if(selectedFragranceLineFilter){
         source = source.filter(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter));
+      }
+      for(const [columnKey, selectedValue] of selectedDynamicFilters.entries()){
+        if(!selectedValue) continue;
+        source = source.filter(p => cleanNavKey(getDynamicProductValue(p, columnKey)) === cleanNavKey(selectedValue));
       }
       return source;
     }
@@ -3251,6 +3385,7 @@
           ? matchingPreviewSources
           : normalPreviewSources;
         const useProductPreview =
+          Boolean(selectedAudience) &&
           shouldShowProductImageInNavigationPanels() &&
           productPreviewSources.length > 0;
 
@@ -3305,6 +3440,10 @@
     const fragranceFilterPanel = document.getElementById("fragranceFilterPanel");
     const fragranceFamilyFilters = document.getElementById("fragranceFamilyFilters");
     const fragranceLineFilters = document.getElementById("fragranceLineFilters");
+    const dynamicFilterPanel = document.getElementById("dynamicFilterPanel");
+    const dynamicFilterHeading = document.getElementById("dynamicFilterHeading");
+    const dynamicFilterGroups = document.getElementById("dynamicFilterGroups");
+    const dynamicFilterClearBtn = document.getElementById("dynamicFilterClearBtn");
 
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
@@ -3780,9 +3919,88 @@
       );
     }
 
+    function renderDynamicFilters(){
+      if(!dynamicFilterPanel || !dynamicFilterGroups) return;
+
+      const rules = getDynamicFilterRulesForCategory(selectedAudience);
+      const visible = Boolean(selectedAudience) && !isDirectProductAudience(selectedAudience) && rules.length > 0;
+      dynamicFilterPanel.hidden = !visible;
+      dynamicFilterGroups.innerHTML = "";
+      if(dynamicFilterClearBtn) dynamicFilterClearBtn.hidden = !hasDynamicFilterSelection();
+      if(!visible) return;
+
+      if(dynamicFilterHeading) dynamicFilterHeading.textContent = `Filtrar ${selectedAudience}`;
+
+      const base = dynamicBaseProducts();
+      let canShowNext = true;
+      let renderedGroups = 0;
+
+      for(const rule of rules){
+        if(!canShowNext) break;
+
+        const sourceBeforeRule = applyDynamicSelections(base, rules, rule.order);
+        const options = dynamicValueCounts(sourceBeforeRule, rule);
+
+        // Si solo existe una opción, no obligamos al cliente a pasar por un filtro sin decisión real.
+        if(options.length < 2) continue;
+
+        renderedGroups++;
+        const group = document.createElement("div");
+        group.className = "fragrance-filter-group dynamic-filter-group";
+
+        const label = document.createElement("span");
+        label.className = "fragrance-filter-label";
+        label.textContent = rule.label;
+
+        const host = document.createElement("div");
+        host.className = "fragrance-filter-options";
+        host.setAttribute("role","group");
+        host.setAttribute("aria-label", `Filtrar por ${rule.label}`);
+
+        const selectedValue = selectedDynamicFilters.get(rule.columnKey) || "";
+        const selectedKey = cleanNavKey(selectedValue);
+
+        const addButton = (value, textValue, count)=>{
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "fragrance-filter-chip dynamic-filter-chip" + (cleanNavKey(value) === selectedKey ? " is-active" : "");
+          button.dataset.dynamicFilterKey = rule.columnKey;
+          button.dataset.dynamicFilterValue = value;
+          button.dataset.dynamicFilterOrder = String(rule.order);
+          button.setAttribute("aria-pressed", cleanNavKey(value) === selectedKey ? "true" : "false");
+
+          const text = document.createElement("span");
+          text.className = "fragrance-filter-chip-label";
+          text.textContent = textValue;
+
+          const badge = document.createElement("span");
+          badge.className = "fragrance-filter-chip-count";
+          badge.textContent = String(count);
+
+          button.append(text,badge);
+          host.appendChild(button);
+        };
+
+        addButton("", "Todos", sourceBeforeRule.length);
+        for(const option of options) addButton(option.value, option.value, option.count);
+
+        group.append(label,host);
+        dynamicFilterGroups.appendChild(group);
+
+        if(!selectedValue) canShowNext = false;
+      }
+
+      if(renderedGroups === 0){
+        const message = document.createElement("p");
+        message.className = "dynamic-filter-empty";
+        message.textContent = "No hay filtros adicionales necesarios para esta categoría.";
+        dynamicFilterGroups.appendChild(message);
+      }
+    }
+
     function syncFilterVisibility(){
       const showAlbumGrid = shouldShowAlbumGrid();
-      const directSelected = isDirectProductAudience(selectedAudience);
+      const revealProducts = shouldRevealProducts();
 
       if(catSel){
         catSel.hidden = true;
@@ -3795,54 +4013,42 @@
         brandSel.value = "";
       }
       if(sortSel){
-        sortSel.hidden = showAlbumGrid;
-        sortSel.disabled = showAlbumGrid;
+        sortSel.hidden = showAlbumGrid || !revealProducts;
+        sortSel.disabled = showAlbumGrid || !revealProducts;
       }
       if(albumNav){
         albumNav.hidden = !selectedAudience;
       }
       if(albumBackBtn){
-        albumBackBtn.textContent = selectedFamily
-          ? `← Volver a ${selectedCategory}`
-          : (selectedCategory ? `← Volver a ${selectedAudience}` : "← Volver al inicio");
+        albumBackBtn.textContent = "← Volver a categorías";
       }
       placeResponsiveHeaderMeta();
       if(albumPath){
+        const activeValues = [...selectedDynamicFilters.values()].filter(Boolean);
         albumPath.textContent = selectedAudience
-          ? (selectedFamily
-              ? `${selectedAudience} › ${selectedCategory} › ${selectedFamily}`
-              : (selectedCategory ? `${selectedAudience} › ${selectedCategory}` : selectedAudience))
+          ? [selectedAudience, ...activeValues].join(" › ")
           : "";
       }
       if(qInp){
-        const searchScopeLabel = selectedFamily || selectedCategory || selectedAudience;
         qInp.placeholder = selectedAudience
-          ? `🔍 Buscar dentro de ${searchScopeLabel}...`
+          ? `🔍 Buscar dentro de ${selectedAudience}...`
           : "🔍 Busca aquí por nombre del producto...";
-        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto por nombre");
+        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${selectedAudience}` : "Buscar producto por nombre");
       }
+
       renderFragranceFilters();
+      renderDynamicFilters();
+
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
-        grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
-        const label = !selectedAudience
-          ? "Secciones principales"
-          : (directSelected
-              ? "Productos"
-              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Tipos de fragancia" : "Productos")));
-        grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
+        grid.classList.toggle("root-nav-mode", showAlbumGrid);
+        grid.setAttribute("aria-label", showAlbumGrid ? "Categorías principales" : (revealProducts ? "Productos" : "Selección de filtros"));
       }
       if(catalogEntryIntro){
         const hasTerms = getCombinedWordTerms().length > 0;
-        catalogEntryIntro.hidden = hasTerms || !!selectedCategory || directSelected;
-        if(catalogEntryTitle){
-          catalogEntryTitle.textContent = selectedAudience || "¿Qué estás buscando?";
-        }
-        if(catalogEntryText){
-          catalogEntryText.textContent = selectedAudience
-            ? (directSelected ? "Explora los regalos disponibles." : "Elige una categoría para ver los productos disponibles.")
-            : "Elige una categoría para comenzar.";
-        }
+        catalogEntryIntro.hidden = hasTerms || Boolean(selectedAudience);
+        if(catalogEntryTitle) catalogEntryTitle.textContent = "¿Qué estás buscando?";
+        if(catalogEntryText) catalogEntryText.textContent = "Elige una categoría para comenzar.";
       }
 
       rebuildSearchTicker();
@@ -3854,20 +4060,25 @@
       const q = (u.searchParams.get("q") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
       const audience = (u.searchParams.get("audience") || "").trim();
-      const category = (u.searchParams.get("category") || "").trim();
-      const fragranceType = (u.searchParams.get("type") || "").trim();
-      const fragranceFamilyFilter = (u.searchParams.get("olfativa") || "").trim();
-      const fragranceLineFilter = (u.searchParams.get("linea") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
+
       const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
       selectedAudience = validAudience ? validAudience.label : "";
-      selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
-      selectedFamily = selectedCategory && fragranceType ? fragranceType : "";
-      selectedFragranceFamilyFilter = selectedFamily ? fragranceFamilyFilter : "";
-      selectedFragranceLineFilter = selectedFamily ? fragranceLineFilter : "";
+      selectedCategory = "";
+      selectedFamily = "";
+      clearFragranceFilters();
+      clearDynamicFilters();
+
+      if(selectedAudience){
+        for(const rule of getDynamicFilterRulesForCategory(selectedAudience)){
+          const value = (u.searchParams.get(`f_${rule.columnKey}`) || "").trim();
+          if(value) selectedDynamicFilters.set(rule.columnKey,value);
+        }
+      }
+
       if(sort && sortSel) sortSel.value = sort;
     }
 
@@ -3875,25 +4086,21 @@
     function writeStateToUrl(){
       const u = new URL(location.href);
       const q = qInp.value.trim();
-      const cat = catSel.value;
-      const br = brandSel.value;
       const sort = sortSel ? sortSel.value : "";
       const tags = uniqueTerms(selectedSuggestionTerms || []).join(",");
 
-      if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
-      if (cat) u.searchParams.set("cat", cat); else u.searchParams.delete("cat");
-      if (br) u.searchParams.set("brand", br); else u.searchParams.delete("brand");
-      if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
-      if (selectedAudience) u.searchParams.set("audience", selectedAudience); else u.searchParams.delete("audience");
-      if (selectedCategory) u.searchParams.set("category", selectedCategory); else u.searchParams.delete("category");
-      if (selectedFamily) u.searchParams.set("type", selectedFamily); else u.searchParams.delete("type");
-      u.searchParams.delete("family");
-      if (selectedFragranceFamilyFilter) u.searchParams.set("olfativa", selectedFragranceFamilyFilter); else u.searchParams.delete("olfativa");
-      if (selectedFragranceLineFilter) u.searchParams.set("linea", selectedFragranceLineFilter); else u.searchParams.delete("linea");
-      u.searchParams.delete("album");
-      if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
+      if(q) u.searchParams.set("q",q); else u.searchParams.delete("q");
+      if(sort && shouldRevealProducts()) u.searchParams.set("sort",sort); else u.searchParams.delete("sort");
+      if(selectedAudience) u.searchParams.set("audience",selectedAudience); else u.searchParams.delete("audience");
+      if(tags) u.searchParams.set("tags",tags); else u.searchParams.delete("tags");
 
-      history.replaceState(null, "", u.toString());
+      ["cat","brand","category","type","family","olfativa","linea","album"].forEach(key=>u.searchParams.delete(key));
+      [...u.searchParams.keys()].filter(key=>key.startsWith("f_")).forEach(key=>u.searchParams.delete(key));
+      for(const [key,value] of selectedDynamicFilters.entries()){
+        if(value) u.searchParams.set(`f_${key}`,value);
+      }
+
+      history.replaceState(null,"",u.toString());
     }
     function scheduleWriteStateToUrl(){
       clearTimeout(_urlTimer);
@@ -3916,16 +4123,7 @@
         selectedCategory = "";
         selectedFamily = "";
         clearFragranceFilters();
-      }else if(target.navType === "category"){
-        selectedAudience = target.audience || selectedAudience;
-        selectedCategory = target.navValue;
-        selectedFamily = "";
-        clearFragranceFilters();
-      }else if(target.navType === "family"){
-        selectedAudience = target.audience || selectedAudience;
-        selectedCategory = target.category || selectedCategory;
-        selectedFamily = target.navValue;
-        clearFragranceFilters();
+        clearDynamicFilters();
       }
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
@@ -3934,16 +4132,11 @@
     }
 
     function closeAlbum(opts={}){
-      if(selectedFamily){
-        selectedFamily = "";
-        clearFragranceFilters();
-      }else if(selectedCategory){
-        selectedCategory = "";
-        clearFragranceFilters();
-      }else{
-        selectedAudience = "";
-        clearFragranceFilters();
-      }
+      selectedAudience = "";
+      selectedCategory = "";
+      selectedFamily = "";
+      clearFragranceFilters();
+      clearDynamicFilters();
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
       refreshFilterOptionsForScope();
@@ -4074,6 +4267,21 @@
         grid.classList.remove("album-three-column-layout");
       }
 
+      if(selectedAudience && !shouldRevealProducts()){
+        const available = dynamicBaseProducts().length;
+        if(countEl){
+          countEl.textContent = `${available} ${available === 1 ? "producto disponible" : "productos disponibles"} · selecciona un filtro`;
+          countEl.classList.remove("search-active");
+        }
+        scheduleJsonLdUpdate([]);
+        if(token !== _renderToken) return;
+        if(grid){
+          grid.innerHTML = "";
+          grid.appendChild(makeEmptyState("Selecciona una opción de los filtros para ver los productos."));
+        }
+        return;
+      }
+
       const filtered = buildFilteredList();
 
       if(countEl){
@@ -4179,6 +4387,32 @@
     }
 
     function bindFilters(){
+      if(dynamicFilterGroups){
+        dynamicFilterGroups.addEventListener("click", (e)=>{
+          const btn = e.target.closest("[data-dynamic-filter-key]");
+          if(!btn) return;
+          const key = btn.dataset.dynamicFilterKey || "";
+          const value = btn.dataset.dynamicFilterValue || "";
+          const order = Number(btn.dataset.dynamicFilterOrder);
+          if(!key) return;
+
+          if(value) selectedDynamicFilters.set(key,value);
+          else selectedDynamicFilters.delete(key);
+
+          clearDynamicFiltersAfter(Number.isFinite(order) ? order : 999);
+          if(sortSel) sortSel.value = "";
+          render();
+        });
+      }
+
+      if(dynamicFilterClearBtn){
+        dynamicFilterClearBtn.addEventListener("click", ()=>{
+          clearDynamicFilters();
+          if(sortSel) sortSel.value = "";
+          render();
+        });
+      }
+
       [fragranceFamilyFilters, fragranceLineFilters].forEach(host=>{
         if(!host) return;
         host.addEventListener("click", (e)=>{

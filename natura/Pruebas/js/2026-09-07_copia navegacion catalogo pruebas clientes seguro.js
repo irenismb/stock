@@ -1,31 +1,33 @@
 // Navegación, compartir y controles auxiliares.
 
-// Navegación auxiliar y compartir: módulo aislado que no altera la lógica del catálogo.
+// Navegación auxiliar y compartir: en pruebas, los controles flotantes recorren el historial interno del catálogo.
     (() => {
-      const startBtn = document.getElementById("goToStartBtn");
-      const finalBtn = document.getElementById("goToEndBtn");
-      const footer = document.querySelector(".site-footer");
+      const backBtn = document.getElementById("catalogBackBtn");
+      const forwardBtn = document.getElementById("catalogForwardBtn");
       const shareBtn = document.getElementById("shareCatalogBtn");
 
-      function actualizarBotonesNavegacion(){
-        const doc = document.documentElement;
-        const sinDesplazamiento = doc.scrollHeight <= window.innerHeight + 24;
-        const cercaDelInicio = window.scrollY <= 180;
-        const cercaDelFinal = window.scrollY + window.innerHeight >= doc.scrollHeight - 180;
-        startBtn?.classList.toggle("is-hidden", sinDesplazamiento || cercaDelInicio);
-        finalBtn?.classList.toggle("is-hidden", sinDesplazamiento || cercaDelFinal);
+      function actualizarBotonesHistorial(detail){
+        const state = detail || window.CATALOG_NAV_HISTORY?.getState?.() || {canBack:false,canForward:false};
+        if(backBtn){
+          backBtn.disabled = !state.canBack;
+          backBtn.setAttribute("aria-disabled",state.canBack ? "false" : "true");
+        }
+        if(forwardBtn){
+          forwardBtn.disabled = !state.canForward;
+          forwardBtn.setAttribute("aria-disabled",state.canForward ? "false" : "true");
+        }
       }
 
-      startBtn?.addEventListener("click", () => {
-        window.scrollTo({ top:0, left:0, behavior:"smooth" });
+      backBtn?.addEventListener("click", () => {
+        window.CATALOG_NAV_HISTORY?.back?.();
       });
 
-      finalBtn?.addEventListener("click", () => {
-        if(footer){
-          footer.scrollIntoView({ behavior:"smooth", block:"end" });
-        }else{
-          window.scrollTo({ top:document.documentElement.scrollHeight, behavior:"smooth" });
-        }
+      forwardBtn?.addEventListener("click", () => {
+        window.CATALOG_NAV_HISTORY?.forward?.();
+      });
+
+      window.addEventListener("catalog-navigation-history-change",(event)=>{
+        actualizarBotonesHistorial(event.detail);
       });
 
       shareBtn?.addEventListener("click", async () => {
@@ -58,7 +60,5 @@
         }
       });
 
-      window.addEventListener("scroll", actualizarBotonesNavegacion, { passive:true });
-      window.addEventListener("resize", actualizarBotonesNavegacion, { passive:true });
-      actualizarBotonesNavegacion();
+      actualizarBotonesHistorial();
     })();

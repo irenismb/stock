@@ -327,8 +327,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:N",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N",
+        range: "A:R",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R",
         tqx: `out:json;responseHandler:${callbackName}`
       });
       return `${base}?${query.toString()}`;
@@ -397,6 +397,8 @@
               referenceExternal: value(11),
               description: value(12),
               codeNatura: value(13),
+              fragranceType: value(16),
+              fragranceLine: value(17),
               fullTxtRecord: [
                 value(7),
                 "",
@@ -979,6 +981,8 @@
       const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
       const subcategory = String(row.subcategory || "").trim();
       const fragranceFamily = String(row.fragranceFamily || "").trim();
+      const fragranceType = String(row.fragranceType || "").trim();
+      const fragranceLine = String(row.fragranceLine || "").trim();
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
@@ -1008,6 +1012,8 @@
         category,
         subcategory,
         fragranceFamily,
+        fragranceType,
+        fragranceLine,
         condition,
         commercialState,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
@@ -1028,7 +1034,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, fragranceType, fragranceLine, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -1046,6 +1052,8 @@
             category: "Regalos",
             subcategory: "",
             fragranceFamily: "",
+            fragranceType: "",
+            fragranceLine: "",
             condition: "",
             commercialState: "A la venta",
             brand: "",
@@ -1534,7 +1542,10 @@
     let albumByKey = new Map();
     let selectedAudience = "";
     let selectedCategory = "";
+    // selectedFamily conserva el nombre interno histórico, pero ahora representa el tipo de fragancia.
     let selectedFamily = "";
+    let selectedFragranceFamilyFilter = "";
+    let selectedFragranceLineFilter = "";
     let selectedAlbumKey = "";
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
@@ -1584,7 +1595,23 @@
 
     function navigationFamilyForProduct(p){
       if(!p) return "";
-      return String(p.fragranceFamily || "").trim();
+      return String(p.fragranceType || "").trim();
+    }
+
+    function navigationFragranceLineForProduct(p){
+      if(!p) return "";
+      return String(p.fragranceLine || "").trim();
+    }
+
+    function clearFragranceFilters(){
+      selectedFragranceFamilyFilter = "";
+      selectedFragranceLineFilter = "";
+    }
+
+    function isFragranceNavigationScope(){
+      return cleanNavKey(selectedAudience) === cleanNavKey("Perfumes y fragancias") &&
+             cleanNavKey(selectedCategory).startsWith("fragancias ") &&
+             Boolean(selectedFamily);
     }
 
     function isDirectProductAudience(audienceLabel){
@@ -1800,6 +1827,12 @@
       }
       if(selectedFamily){
         source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily));
+      }
+      if(selectedFragranceFamilyFilter){
+        source = source.filter(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter));
+      }
+      if(selectedFragranceLineFilter){
+        source = source.filter(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter));
       }
       return source;
     }
@@ -3192,7 +3225,9 @@
             : "Sin coincidencias con tu búsqueda.";
         }
       }else{
-        btn.setAttribute("aria-label", isAudience ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
+        btn.setAttribute("aria-label", isAudience
+          ? `Abrir ${album.label}`
+          : (album.navType === "family" ? `Abrir tipo de fragancia ${album.label}` : `Abrir categoría ${album.label}`));
         btn.title = `${album.label} · ${album.count} ${unitLabel}`;
         if(badge) badge.textContent = `${album.count} ${unitLabel}`;
         if(meta){
@@ -3267,6 +3302,9 @@
     const catalogEntryIntro = document.getElementById("catalogEntryIntro");
     const catalogEntryTitle = document.getElementById("catalogEntryTitle");
     const catalogEntryText = document.getElementById("catalogEntryText");
+    const fragranceFilterPanel = document.getElementById("fragranceFilterPanel");
+    const fragranceFamilyFilters = document.getElementById("fragranceFamilyFilters");
+    const fragranceLineFilters = document.getElementById("fragranceLineFilters");
 
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
@@ -3648,6 +3686,100 @@
       }
     }
 
+    function fragranceFilterBaseProducts(){
+      if(!isFragranceNavigationScope()) return [];
+      return all.filter(p =>
+        productMatchesAudience(p, selectedAudience) &&
+        cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
+        cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily)
+      );
+    }
+
+    function uniqueSortedFilterValues(list, getter){
+      const map = new Map();
+      for(const p of (Array.isArray(list) ? list : [])){
+        const value = String(getter(p) || "").trim();
+        const key = cleanNavKey(value);
+        if(value && key && !map.has(key)) map.set(key, value);
+      }
+      return Array.from(map.values()).sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+    }
+
+    function renderFragranceFilterButtons(host, values, selectedValue, kind, countSource, getter){
+      if(!host) return;
+      host.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+      const selectedKey = cleanNavKey(selectedValue);
+
+      const addButton = (value, label, count)=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "fragrance-filter-chip" + (cleanNavKey(value) === selectedKey ? " is-active" : "");
+        btn.dataset.fragranceFilterKind = kind;
+        btn.dataset.fragranceFilterValue = value;
+        btn.setAttribute("aria-pressed", cleanNavKey(value) === selectedKey ? "true" : "false");
+
+        const text = document.createElement("span");
+        text.className = "fragrance-filter-chip-label";
+        text.textContent = label;
+
+        const badge = document.createElement("span");
+        badge.className = "fragrance-filter-chip-count";
+        badge.textContent = String(count);
+
+        btn.append(text, badge);
+        fragment.appendChild(btn);
+      };
+
+      addButton("", "Todas", countSource.length);
+      for(const value of values){
+        const count = countSource.filter(p => cleanNavKey(getter(p)) === cleanNavKey(value)).length;
+        if(count > 0 || cleanNavKey(value) === selectedKey){
+          addButton(value, value, count);
+        }
+      }
+      host.appendChild(fragment);
+    }
+
+    function renderFragranceFilters(){
+      if(!fragranceFilterPanel || !fragranceFamilyFilters || !fragranceLineFilters) return;
+      const visible = isFragranceNavigationScope();
+      fragranceFilterPanel.hidden = !visible;
+      if(!visible){
+        fragranceFamilyFilters.innerHTML = "";
+        fragranceLineFilters.innerHTML = "";
+        return;
+      }
+
+      const base = fragranceFilterBaseProducts();
+      const familyValues = uniqueSortedFilterValues(base, p => p.fragranceFamily);
+      const lineValues = uniqueSortedFilterValues(base, p => navigationFragranceLineForProduct(p));
+
+      const familyCountSource = selectedFragranceLineFilter
+        ? base.filter(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter))
+        : base;
+      const lineCountSource = selectedFragranceFamilyFilter
+        ? base.filter(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter))
+        : base;
+
+      renderFragranceFilterButtons(
+        fragranceFamilyFilters,
+        familyValues,
+        selectedFragranceFamilyFilter,
+        "family",
+        familyCountSource,
+        p => p.fragranceFamily
+      );
+      renderFragranceFilterButtons(
+        fragranceLineFilters,
+        lineValues,
+        selectedFragranceLineFilter,
+        "line",
+        lineCountSource,
+        p => navigationFragranceLineForProduct(p)
+      );
+    }
+
     function syncFilterVisibility(){
       const showAlbumGrid = shouldShowAlbumGrid();
       const directSelected = isDirectProductAudience(selectedAudience);
@@ -3689,6 +3821,7 @@
           : "🔍 Busca aquí por nombre del producto...";
         qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto por nombre");
       }
+      renderFragranceFilters();
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
         grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
@@ -3696,7 +3829,7 @@
           ? "Secciones principales"
           : (directSelected
               ? "Productos"
-              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Familias olfativas" : "Productos")));
+              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Tipos de fragancia" : "Productos")));
         grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
       }
       if(catalogEntryIntro){
@@ -3722,7 +3855,9 @@
       const sort = (u.searchParams.get("sort") || "").trim();
       const audience = (u.searchParams.get("audience") || "").trim();
       const category = (u.searchParams.get("category") || "").trim();
-      const family = (u.searchParams.get("family") || "").trim();
+      const fragranceType = (u.searchParams.get("type") || "").trim();
+      const fragranceFamilyFilter = (u.searchParams.get("olfativa") || "").trim();
+      const fragranceLineFilter = (u.searchParams.get("linea") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
@@ -3730,7 +3865,9 @@
       const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
       selectedAudience = validAudience ? validAudience.label : "";
       selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
-      selectedFamily = selectedCategory && family ? family : "";
+      selectedFamily = selectedCategory && fragranceType ? fragranceType : "";
+      selectedFragranceFamilyFilter = selectedFamily ? fragranceFamilyFilter : "";
+      selectedFragranceLineFilter = selectedFamily ? fragranceLineFilter : "";
       if(sort && sortSel) sortSel.value = sort;
     }
 
@@ -3749,7 +3886,10 @@
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
       if (selectedAudience) u.searchParams.set("audience", selectedAudience); else u.searchParams.delete("audience");
       if (selectedCategory) u.searchParams.set("category", selectedCategory); else u.searchParams.delete("category");
-      if (selectedFamily) u.searchParams.set("family", selectedFamily); else u.searchParams.delete("family");
+      if (selectedFamily) u.searchParams.set("type", selectedFamily); else u.searchParams.delete("type");
+      u.searchParams.delete("family");
+      if (selectedFragranceFamilyFilter) u.searchParams.set("olfativa", selectedFragranceFamilyFilter); else u.searchParams.delete("olfativa");
+      if (selectedFragranceLineFilter) u.searchParams.set("linea", selectedFragranceLineFilter); else u.searchParams.delete("linea");
       u.searchParams.delete("album");
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
@@ -3775,14 +3915,17 @@
         selectedAudience = target.navValue;
         selectedCategory = "";
         selectedFamily = "";
+        clearFragranceFilters();
       }else if(target.navType === "category"){
         selectedAudience = target.audience || selectedAudience;
         selectedCategory = target.navValue;
         selectedFamily = "";
+        clearFragranceFilters();
       }else if(target.navType === "family"){
         selectedAudience = target.audience || selectedAudience;
         selectedCategory = target.category || selectedCategory;
         selectedFamily = target.navValue;
+        clearFragranceFilters();
       }
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
@@ -3793,10 +3936,13 @@
     function closeAlbum(opts={}){
       if(selectedFamily){
         selectedFamily = "";
+        clearFragranceFilters();
       }else if(selectedCategory){
         selectedCategory = "";
+        clearFragranceFilters();
       }else{
         selectedAudience = "";
+        clearFragranceFilters();
       }
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
@@ -4033,6 +4179,19 @@
     }
 
     function bindFilters(){
+      [fragranceFamilyFilters, fragranceLineFilters].forEach(host=>{
+        if(!host) return;
+        host.addEventListener("click", (e)=>{
+          const btn = e.target.closest("[data-fragrance-filter-kind]");
+          if(!btn) return;
+          const kind = btn.dataset.fragranceFilterKind || "";
+          const value = btn.dataset.fragranceFilterValue || "";
+          if(kind === "family") selectedFragranceFamilyFilter = value;
+          if(kind === "line") selectedFragranceLineFilter = value;
+          render();
+        });
+      });
+
       [sortSel].forEach(sel=>{
         if(!sel) return;
         sel.addEventListener("change", ()=>{
@@ -4186,7 +4345,18 @@
             cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
             cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily)
           );
-          if(!hasFamily) selectedFamily = "";
+          if(!hasFamily){
+            selectedFamily = "";
+            clearFragranceFilters();
+          }else{
+            const filterBase = fragranceFilterBaseProducts();
+            if(selectedFragranceFamilyFilter && !filterBase.some(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter))){
+              selectedFragranceFamilyFilter = "";
+            }
+            if(selectedFragranceLineFilter && !filterBase.some(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter))){
+              selectedFragranceLineFilter = "";
+            }
+          }
         }
         refreshNavigationAlbums();
       }catch(err){
@@ -4194,6 +4364,7 @@
         selectedAudience = "";
         selectedCategory = "";
         selectedFamily = "";
+        clearFragranceFilters();
         selectedAlbumKey = "";
         albums = [];
         albumByKey = new Map();

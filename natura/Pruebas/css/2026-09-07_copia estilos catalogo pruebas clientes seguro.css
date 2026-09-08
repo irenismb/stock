@@ -4249,3 +4249,47 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
   }
 }
 
+
+
+/* Filtros dinámicos encadenados controlados desde la hoja Filtros. */
+.dynamic-filter-panel{
+  text-align:center;
+}
+.dynamic-filter-panel .fragrance-filter-group{
+  width:100%;
+}
+.dynamic-filter-actions{
+  display:flex;
+  justify-content:center;
+  margin-top:12px;
+}
+.dynamic-filter-clear{
+  min-height:36px;
+  height:auto !important;
+  padding:8px 14px !important;
+}
+.dynamic-filter-empty{
+  margin:4px 0 0;
+  color:var(--mut);
+  font-size:12px;
+  font-weight:700;
+  text-align:center;
+}
+.dynamic-filter-chip{
+  max-width:100%;
+}
+@media(max-width:760px){
+  .dynamic-filter-panel .fragrance-filter-options{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    overflow-x:visible;
+    width:100%;
+  }
+  .dynamic-filter-chip{
+    flex:0 1 auto;
+    white-space:normal;
+    text-align:center;
+    justify-content:center;
+  }
+}

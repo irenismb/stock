@@ -1,4 +1,5 @@
-// Lógica principal del catálogo público.
+﻿// Lógica principal del catálogo público.
+
 
 // ==========================================
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
@@ -7,14 +8,16 @@
     // Si existen las hojas "Configuracion" y "Categorias" en el Google Sheet,
     // sus valores se aplican globalmente a todos los visitantes.
 
+
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:N: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
+    // Hoja Productos, estructura A:R: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, campos de auditoría, Tipo de fragancia y Línea.
     const GOOGLE_SHEET_SOURCE = {
-      spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
+      spreadsheetId: "19sf8MrzGftXVb4sp9i9FptZk5_TckzRhuJUL-3bUQyA",
       sheetName: "Productos",
       gid: "893686273"
     };
+
 
     // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
     // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
@@ -28,6 +31,7 @@
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
+
     // Las imágenes normales se relacionan por el código interno global de cuatro dígitos.
     // Todas las imágenes de producto viven directamente en la carpeta productos y se relacionan por el código global de cuatro dígitos.
     const GITHUB_CATALOG_SOURCE = {
@@ -39,6 +43,8 @@
     };
 
 
+
+
     // Galería visual exclusiva de "Regalos para toda ocasión".
     // La carpeta de trabajo está en Drive, pero la web solo consume su publicación en GitHub.
     // Los regalos no forman parte del inventario del Google Sheet y sus nombres de archivo no se muestran.
@@ -47,27 +53,32 @@
       folder: "regalos"
     };
 
-	const INTERRUPTORES = {
-	  MOSTRAR_CANTIDAD_STOCK: false,
-	  MOSTRAR_TEXTO_ESTADO_STOCK: false,
-	  MOSTRAR_PRECIOS_PRODUCTO: true,
-	  MOSTRAR_CODIGOS_PRODUCTO: true,
-	  ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
-	  HABILITAR_UBICACION_GPS: true,
-	  APLICAR_LIMITES_STOCK: false,
-	  MOSTRAR_IMAGENES_PRODUCTO: true,
-	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
-	  MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: false,
-	  MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS: true,
-	  APLICAR_ALBUMES_OCULTOS: true,
-	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
+        const INTERRUPTORES = {
+          MOSTRAR_CANTIDAD_STOCK: false,
+          MOSTRAR_TEXTO_ESTADO_STOCK: false,
+          MOSTRAR_PRECIOS_PRODUCTO: true,
+          MOSTRAR_CODIGOS_PRODUCTO: true,
+          ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
+          HABILITAR_UBICACION_GPS: true,
+          APLICAR_LIMITES_STOCK: false,
+          MOSTRAR_IMAGENES_PRODUCTO: true,
+          IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
+
+
+          PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
+          PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
+          MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: false,
+          MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS: true,
+          APLICAR_ALBUMES_OCULTOS: true,
+          APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
     };
     window.INTERRUPTORES = INTERRUPTORES;
     const REMOTE_BOOLEAN_CONTROL_KEYS = new Set(
       Object.keys(INTERRUPTORES).filter(key => typeof INTERRUPTORES[key] === "boolean")
     );
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
+
 
     const ALBUMES_OCULTOS_SEGUROS = [
       "Otros productos|Otros productos|Medicamentos||A la venta",
@@ -76,12 +87,14 @@
     const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
     const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
 
+
     function readRemoteCategoryCache(){
       try{
         const raw = localStorage.getItem(REMOTE_CATEGORIES_CACHE_KEY);
         if(!raw) return null;
         const parsed = JSON.parse(raw);
         if(!parsed || typeof parsed !== "object") return null;
+
 
         const cleanList = value => Array.isArray(value)
           ? value
@@ -90,15 +103,18 @@
               .filter(item => item.split("|").length === 5)
           : null;
 
+
         const hidden = cleanList(parsed.hidden);
         const excluded = cleanList(parsed.excluded);
         if(!hidden || !excluded) return null;
+
 
         return { hidden, excluded };
       }catch(_){
         return null;
       }
     }
+
 
     function saveRemoteCategoryCache(hidden, excluded){
       try{
@@ -109,17 +125,21 @@
       }catch(_){}
     }
 
+
     const cachedCategoryConfig = readRemoteCategoryCache();
+
 
     const ALBUMES_OCULTOS = cachedCategoryConfig
       ? cachedCategoryConfig.hidden.slice()
       : ALBUMES_OCULTOS_SEGUROS.slice();
     window.ALBUMES_OCULTOS = ALBUMES_OCULTOS;
 
+
     const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = cachedCategoryConfig
       ? cachedCategoryConfig.excluded.slice()
       : ALBUMES_EXCLUIDOS_SEGUROS.slice();
     window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = ALBUMES_EXCLUIDOS_EN_BUSQUEDA;
+
 
     function shouldEnforceStockLimits(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_LIMITES_STOCK === true);
@@ -137,11 +157,12 @@
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.ENVIAR_CODIGOS_PRODUCTO_WHATSAPP !== false);
     }
     function shouldAllowSuggestionToggle(){
-      return true;
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PERMITIR_TOGGLE_PALABRAS_SUGERIDAS !== false);
     }
     function shouldShowSuggestionsInitially(){
-      return false;
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PALABRAS_SUGERIDAS_INICIAN_VISIBLES === true);
     }
+
 
     function shouldShowProductImageInNavigationPanels(){
       return !!(
@@ -156,19 +177,25 @@
       return setTimeout(fn, Math.min(250, timeout));
     }
 
+
     const WHATSAPP_NUMBER = "573042088961";
+
 
     const LOGOS_DIR = "logos";
 
+
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
+
     const SITE_BASE = `https://${GITHUB_CATALOG_SOURCE.owner}.github.io/${GITHUB_CATALOG_SOURCE.repo}/${GITHUB_CATALOG_SOURCE.catalogDir}/`;
+
 
     const COMPANY_LOGOS = [
       SITE_BASE + LOGOS_DIR + "/logo_empresa.webp",
       SITE_BASE + LOGOS_DIR + "/logo_empresa.png"
     ];
     const COMPANY_LOGO = COMPANY_LOGOS[0];
+
 
     function normalizeText(t){
       return (t || "")
@@ -178,6 +205,7 @@
         .replace(/[\u0300-\u036f]/g, "")
         .trim();
     }
+
 
     function categoryDisplayLabel(value){
       const raw = String(value || "").trim();
@@ -205,6 +233,7 @@
       return raw.charAt(0).toLocaleUpperCase("es-CO") + raw.slice(1);
     }
 
+
     function shouldApplyHiddenAlbums(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_ALBUMES_OCULTOS === true);
     }
@@ -223,6 +252,7 @@
         .map(item => normalizeText(item))
         .filter(Boolean);
     }
+
 
     function toNumberDigits(s){
       return Number(String(s ?? "").replace(/[^\d]/g,"")) || 0;
@@ -250,9 +280,11 @@
       return just.replace(/[^\w.\- ]+/g, "").trim();
     }
 
+
     function buildPlaceholderCandidates(){
       const list = [];
       const picked = sanitizeLogoFilename(window.INTERRUPTORES?.IMAGEN_SUPLENTE_PRODUCTO);
+
 
       if(picked){
         const e = extOf(picked);
@@ -264,27 +296,34 @@
         }
       }
 
+
       list.push(
         SITE_BASE + LOGOS_DIR + "/suplente.webp",
         SITE_BASE + LOGOS_DIR + "/suplente.png",
         ...COMPANY_LOGOS
       );
 
+
       return [...new Set(list)];
     }
 
+
     let PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
     let PRODUCT_PLACEHOLDER_IMAGE = (PRODUCT_PLACEHOLDERS[0] || COMPANY_LOGO);
+
 
     function productPlaceholderAbsoluteUrl(){
       return PRODUCT_PLACEHOLDER_IMAGE || COMPANY_LOGO;
     }
 
 
+
+
     function warmupPlaceholderOnce(){
       return new Promise((resolve)=>{
         try{
           PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
+
 
           let i = 0;
           const tryNext = ()=>{
@@ -293,6 +332,7 @@
               resolve();
               return;
             }
+
 
             const url = PRODUCT_PLACEHOLDERS[i++];
             const test = new Image();
@@ -306,6 +346,7 @@
             test.src = url;
           };
 
+
           tryNext();
         }catch(_){
           PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
@@ -315,33 +356,43 @@
     }
 
 
+
+
     const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
     const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
     const GITHUB_IMAGE_INDEX_CACHE_KEY = "irenismb_github_image_index_cache";
+
 
     function googleSheetQueryUrl(callbackName){
       const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:N",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N",
+        range: "A:R",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R",
         tqx: `out:json;responseHandler:${callbackName}`
       });
       return `${base}?${query.toString()}`;
     }
 
+
     function loadGoogleSheetRows(){
+      const snapshot = window.TEST_CATALOG_SNAPSHOT;
+      if(snapshot && Array.isArray(snapshot.products)){
+        return Promise.resolve(snapshot.products.map(row => ({ ...row })));
+      }
       return new Promise((resolve, reject)=>{
         const callbackName = "__googleSheetCatalog_" + Date.now() + "_" + Math.random().toString(36).slice(2);
         const script = document.createElement("script");
         let settled = false;
 
+
         const cleanup = ()=>{
           try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
           if(script.parentNode) script.parentNode.removeChild(script);
         };
+
 
         const timer = window.setTimeout(()=>{
           if(settled) return;
@@ -350,11 +401,13 @@
           reject(new Error("Tiempo de espera agotado al consultar el Google Sheet."));
         }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
 
+
         window[callbackName] = (payload)=>{
           if(settled) return;
           settled = true;
           window.clearTimeout(timer);
           cleanup();
+
 
           if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
             const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
@@ -363,6 +416,7 @@
             return;
           }
 
+
           const cellValue = (cell)=>{
             if(!cell) return "";
             if(cell.f !== undefined && cell.f !== null) return String(cell.f);
@@ -370,11 +424,13 @@
             return "";
           };
 
+
           const rows = payload.table.rows.map(row=>{
             const c = Array.isArray(row && row.c) ? row.c : [];
             const value = index => cellValue(c[index]).trim();
             let code = value(0);
             if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
+
 
             return {
               code,
@@ -391,6 +447,8 @@
               referenceExternal: value(11),
               description: value(12),
               codeNatura: value(13),
+              fragranceType: value(16),
+              fragranceLine: value(17),
               fullTxtRecord: [
                 value(7),
                 "",
@@ -399,8 +457,10 @@
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);
 
+
           resolve(rows);
         };
+
 
         script.onerror = ()=>{
           if(settled) return;
@@ -410,11 +470,14 @@
           reject(new Error("No se pudo conectar con Google Sheets."));
         };
 
+
         script.src = googleSheetQueryUrl(callbackName);
         script.async = true;
         document.head.appendChild(script);
       });
     }
+
+
 
 
     function googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName){
@@ -429,16 +492,19 @@
       return `${base}?${query.toString()}`;
     }
 
+
     function loadGoogleSheetRemoteMatrix(sheetName, range, tq, callbackPrefix){
       return new Promise((resolve, reject)=>{
         const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         const script = document.createElement("script");
         let settled = false;
 
+
         const cleanup = ()=>{
           try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
           if(script.parentNode) script.parentNode.removeChild(script);
         };
+
 
         const timer = window.setTimeout(()=>{
           if(settled) return;
@@ -447,11 +513,13 @@
           reject(new Error(`Tiempo de espera agotado al consultar la hoja ${sheetName}.`));
         }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
 
+
         window[callbackName] = (payload)=>{
           if(settled) return;
           settled = true;
           window.clearTimeout(timer);
           cleanup();
+
 
           if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
             const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
@@ -460,6 +528,7 @@
             return;
           }
 
+
           const cellValue = (cell)=>{
             if(!cell) return "";
             if(cell.f !== undefined && cell.f !== null) return String(cell.f);
@@ -467,11 +536,13 @@
             return "";
           };
 
+
           resolve(payload.table.rows.map(row=>{
             const cells = Array.isArray(row && row.c) ? row.c : [];
             return cells.map(cellValue);
           }));
         };
+
 
         script.onerror = ()=>{
           if(settled) return;
@@ -481,11 +552,13 @@
           reject(new Error(`No se pudo conectar con la hoja ${sheetName}.`));
         };
 
+
         script.src = googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName);
         script.async = true;
         document.head.appendChild(script);
       });
     }
+
 
     function parseRemoteBoolean(value){
       const normalized = normalizeText(value).replace(/\s+/g, " ");
@@ -494,14 +567,17 @@
       return null;
     }
 
+
     function applyRemoteControlRows(rows){
       let changed = false;
       for(const row of (Array.isArray(rows) ? rows : [])){
         const key = String(row?.[4] || "").trim().toUpperCase();
         if(!key) continue;
 
+
         const rawState = String(row?.[1] || "").trim();
         window.REMOTE_CONTROL_VALUES[key] = rawState;
+
 
         const state = parseRemoteBoolean(rawState);
         if(state === null || !REMOTE_BOOLEAN_CONTROL_KEYS.has(key)) continue;
@@ -513,17 +589,20 @@
       return changed;
     }
 
+
     function routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState){
       return [section, category, subcategory, fragranceFamily, commercialState]
         .map(value => normalizeText(value).replace(/\s+/g, " "))
         .join("|");
     }
 
+
     function applyRemoteCategoryRows(rows){
       const hidden = [];
       const excluded = [];
       const allowed = [];
       let validRows = 0;
+
 
       for(const row of (Array.isArray(rows) ? rows : [])){
         const section = String(row?.[0] || "").trim();
@@ -533,9 +612,11 @@
         const commercialState = String(row?.[4] || "").trim();
         if(!section || !category || !commercialState) continue;
 
+
         const hiddenState = parseRemoteBoolean(row?.[5]);
         const excludedState = parseRemoteBoolean(row?.[6]);
         if(hiddenState === null && excludedState === null) continue;
+
 
         validRows++;
         const routeKey = routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState);
@@ -544,34 +625,68 @@
         if(excludedState === true) excluded.push(routeKey);
       }
 
+
       if(validRows === 0){
         console.info("La hoja Categorias no devolvió rutas válidas; se conserva la configuración anterior.");
         return false;
       }
 
+
       const uniqueHidden = [...new Set(hidden)];
       const uniqueExcluded = [...new Set(excluded)];
       const uniqueAllowed = [...new Set(allowed)];
 
+
       const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
       const previousExcluded = JSON.stringify(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA || []);
       const previousAllowed = JSON.stringify([...allowedProductRouteKeySet].sort());
+
 
       window.ALBUMES_OCULTOS = uniqueHidden;
       window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = uniqueExcluded;
       allowedProductRouteKeySet = new Set(uniqueAllowed);
       saveRemoteCategoryCache(uniqueHidden, uniqueExcluded);
 
+
       return previousHidden !== JSON.stringify(uniqueHidden) ||
              previousExcluded !== JSON.stringify(uniqueExcluded) ||
              previousAllowed !== JSON.stringify([...allowedProductRouteKeySet].sort());
     }
 
+
     async function refreshRemoteCatalogConfiguration(options = {}){
       const rebuild = options.rebuild !== false;
       const initial = options.initial === true;
 
+
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
+
+
+      const snapshot = window.TEST_CATALOG_SNAPSHOT;
+      if(snapshot && Array.isArray(snapshot.controls) && Array.isArray(snapshot.categories)){
+        let changed = false;
+        changed = applyRemoteControlRows(snapshot.controls) || changed;
+        changed = applyRemoteCategoryRows(snapshot.categories) || changed;
+
+
+        if(initial){
+          wordSuggestionsVisible = shouldShowSuggestionsInitially();
+          syncWordToggleButton();
+        }
+
+
+        if(changed && rebuild && allLoadedProducts.length){
+          rebuildCatalogVisibility();
+          syncWordToggleButton();
+          rebuildSearchTicker();
+          updateTickerVisibility();
+          if(cartModal && cartModal.classList.contains("open")) renderCartModal();
+        }
+
+
+        return changed;
+      }
+
 
       const [controlsResult, categoriesResult] = await Promise.allSettled([
         loadGoogleSheetRemoteMatrix(
@@ -588,7 +703,9 @@
         )
       ]);
 
+
       let changed = false;
+
 
       if(controlsResult.status === "fulfilled"){
         changed = applyRemoteControlRows(controlsResult.value) || changed;
@@ -596,16 +713,19 @@
         console.info("Configuración remota no disponible; se conservan los interruptores locales.", controlsResult.reason);
       }
 
+
       if(categoriesResult.status === "fulfilled"){
         changed = applyRemoteCategoryRows(categoriesResult.value) || changed;
       }else{
         console.info("Categorías remotas no disponibles; se conservan las listas locales.", categoriesResult.reason);
       }
 
+
       if(initial){
         wordSuggestionsVisible = shouldShowSuggestionsInitially();
         syncWordToggleButton();
       }
+
 
       if(changed && rebuild && allLoadedProducts.length){
         rebuildCatalogVisibility();
@@ -615,14 +735,17 @@
         if(cartModal && cartModal.classList.contains("open")) renderCartModal();
       }
 
+
       return changed;
     }
+
 
     let remoteConfigPollingTimer = 0;
     let remoteConfigReadyResolver = null;
     window.REMOTE_CONFIG_READY = new Promise(resolve => {
       remoteConfigReadyResolver = resolve;
     });
+
 
     async function initializeRemoteCatalogConfiguration(){
       try{
@@ -636,6 +759,7 @@
         }
       }
 
+
       const interval = Math.max(30000, Number(REMOTE_CONTROL_SOURCE.refreshMs) || 60000);
       if(REMOTE_CONTROL_SOURCE.enabled && !remoteConfigPollingTimer){
         remoteConfigPollingTimer = window.setInterval(()=>{
@@ -645,6 +769,7 @@
         }, interval);
       }
     }
+
 
     function readGitHubImageIndexCache(){
       try{
@@ -660,6 +785,7 @@
       }
     }
 
+
     function saveGitHubImageIndexCache(entries){
       try{
         const paths = (Array.isArray(entries) ? entries : [])
@@ -671,6 +797,7 @@
         }));
       }catch(_){}
     }
+
 
     async function fetchGitHubJson(url){
       const controller = new AbortController();
@@ -692,6 +819,7 @@
       }
     }
 
+
     async function loadGitHubImageIndex(){
       try{
         const ref = encodeURIComponent(GITHUB_CATALOG_SOURCE.branch);
@@ -700,6 +828,7 @@
         if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated){
           throw new Error("La API de GitHub no devolvió un árbol completo del repositorio.");
         }
+
 
         const prefix = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/`;
         const entries = treePayload.tree
@@ -715,9 +844,11 @@
             path:String(entry.path || "").slice(prefix.length)
           }));
 
+
         if(!entries.length){
           throw new Error("La API de GitHub no encontró imágenes publicadas dentro de la carpeta productos.");
         }
+
 
         saveGitHubImageIndexCache(entries);
         return entries;
@@ -732,6 +863,7 @@
       }
     }
 
+
     function encodeRepoPath(path){
       return String(path || "")
         .split("/")
@@ -740,10 +872,12 @@
         .join("/");
     }
 
+
     function publishedGitHubAssetUrl(relativePath){
       const clean = String(relativePath || "").replace(/^\/+/, "");
       return `${SITE_BASE}${encodeRepoPath(clean)}`;
     }
+
 
     function extractGlobalProductCode(filename){
       const name = String(filename || "").trim();
@@ -751,11 +885,13 @@
       return match ? match[1] : "";
     }
 
+
     function extensionOfFilename(filename){
       const name = String(filename || "");
       const dot = name.lastIndexOf(".");
       return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
     }
+
 
     function extractProductImageSequence(filename){
       const name = String(filename || "").trim();
@@ -765,6 +901,7 @@
       return Number.isSafeInteger(value) ? value : null;
     }
 
+
     function choosePreferredImage(currentEntry, candidateEntry){
       if(!currentEntry) return candidateEntry;
       const ranking = { webp:1, png:2, jpg:3, jpeg:4, avif:5, gif:6 };
@@ -773,9 +910,11 @@
       return candidateRank < currentRank ? candidateEntry : currentEntry;
     }
 
+
     function orderProductImageEntries(entries){
       const numbered = new Map();
       const legacyByStem = new Map();
+
 
       for(const entry of (Array.isArray(entries) ? entries : [])){
         const path = String(entry && entry.path || "");
@@ -783,14 +922,17 @@
         const filename = path.split("/").pop() || "";
         const sequence = extractProductImageSequence(filename);
 
+
         if(sequence !== null){
           numbered.set(sequence, choosePreferredImage(numbered.get(sequence), entry));
           continue;
         }
 
+
         const stem = path.replace(/\.[^.\/]+$/, "").toLowerCase();
         legacyByStem.set(stem, choosePreferredImage(legacyByStem.get(stem), entry));
       }
+
 
       const numberedEntries = [...numbered.entries()]
         .sort((a,b)=>a[0]-b[0])
@@ -798,8 +940,10 @@
       const legacyEntries = [...legacyByStem.values()]
         .sort((a,b)=>String(a.path || "").localeCompare(String(b.path || ""), "es", { numeric:true, sensitivity:"base" }));
 
+
       return numberedEntries.length ? [...numberedEntries, ...legacyEntries] : legacyEntries;
     }
+
 
     async function loadGoogleSheetCatalog(){
       let rows = [];
@@ -811,6 +955,7 @@
         throw sheetError;
       }
 
+
       let imageEntries = [];
       try{
         imageEntries = await loadGitHubImageIndex();
@@ -819,11 +964,13 @@
         imageEntries = [];
       }
 
+
       const sheetCodes = new Set(
         rows.map(row => String(row && row.code || "").trim()).filter(Boolean)
       );
       const imagesByCode = new Map();
       const entries = Array.isArray(imageEntries) ? imageEntries : [];
+
 
       try{
         for(const entry of entries){
@@ -831,13 +978,16 @@
           const filename = relativePath.split("/").pop() || "";
           if(!relativePath || !filename) continue;
 
+
           const code = extractGlobalProductCode(filename);
           if(!code || !sheetCodes.has(code)) continue;
+
 
           const list = imagesByCode.get(code) || [];
           list.push(entry);
           imagesByCode.set(code, list);
         }
+
 
         for(const [code, entriesForCode] of imagesByCode){
           imagesByCode.set(code, orderProductImageEntries(entriesForCode));
@@ -846,6 +996,7 @@
         console.warn("No se pudo asociar el índice de imágenes a los productos. El catálogo continuará con imágenes suplentes.", error);
         imagesByCode.clear();
       }
+
 
       let giftImageUrls = [];
       try{
@@ -866,11 +1017,13 @@
         giftImageUrls = [];
       }
 
+
       return {
         sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode })),
         giftImageUrls
       };
     }
+
 
     function parseOptionalWholeNumber(value){
       const raw = String(value ?? "").trim();
@@ -881,16 +1034,19 @@
       return Number.isSafeInteger(parsed) ? parsed : null;
     }
 
+
     function parseOfficialInventoryRecord(item){
       const rawName = String((item && item.name) || "").trim();
       const rawDescription = String((item && item.description) || "").trim();
       const officialRecordPattern = /^([\s\S]+?)\.\s*Precio:\s*([\d.\s]*)\s*Costo:\s*([\d.\s]*)\s*Stock:\s*([\d\s]*)\s*Referencia externa:\s*([\s\S]*)$/i;
+
 
       let match = null;
       for(const candidate of [rawDescription, rawName]){
         match = candidate.match(officialRecordPattern);
         if(match) break;
       }
+
 
       if(!match){
         const fallbackPrice = parseOptionalWholeNumber(item && item.priceMineText);
@@ -906,6 +1062,7 @@
           referenceExternal: ""
         };
       }
+
 
       const priceText = match[2].trim();
       const stockText = match[4].trim();
@@ -928,6 +1085,7 @@
         }
       }
 
+
       return {
         matched: true,
         name: match[1].trim(),
@@ -939,10 +1097,12 @@
       };
     }
 
+
     function makeProductFromGoogleSheet(entry){
       const row = entry && entry.row;
       const imageIndex = entry && entry.imageIndex;
       if(!row) return null;
+
 
       const code = String(row.code || "").trim();
       const name = String(row.name || "").trim();
@@ -951,9 +1111,12 @@
       const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
       const subcategory = String(row.subcategory || "").trim();
       const fragranceFamily = String(row.fragranceFamily || "").trim();
+      const fragranceType = String(row.fragranceType || "").trim();
+      const fragranceLine = String(row.fragranceLine || "").trim();
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
+
 
       const indexedImages = imageIndex && imageIndex.get(code);
       const imageEntries = Array.isArray(indexedImages)
@@ -970,8 +1133,10 @@
       const docsImageUrl = imageUrls[0] || "";
       const syntheticFilename = imageRelativePath || `${code}.webp`;
 
+
       const priceText = String(row.priceText || "").trim();
       const stockText = String(row.stockText || "").trim();
+
 
       return {
         id: code,
@@ -980,6 +1145,8 @@
         category,
         subcategory,
         fragranceFamily,
+        fragranceType,
+        fragranceLine,
         condition,
         commercialState,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
@@ -1000,9 +1167,11 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, fragranceType, fragranceLine, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
+
+
 
 
     function makeGiftGalleryProducts(imageUrls){
@@ -1018,6 +1187,8 @@
             category: "Regalos",
             subcategory: "",
             fragranceFamily: "",
+            fragranceType: "",
+            fragranceLine: "",
             condition: "",
             commercialState: "A la venta",
             brand: "",
@@ -1045,9 +1216,11 @@
         .filter(Boolean);
     }
 
+
     function clearLegacyProductCaches(){
       return;
     }
+
 
     function updateCatalogFooterProducts(products){
       const list = document.getElementById("beautyProductsList");
@@ -1055,10 +1228,12 @@
       const source = Array.isArray(products) ? products : [];
       const namedProducts = source.filter(product => product && String(product.name || "").trim());
 
+
       if(count){
         count.textContent = `${namedProducts.length} ${namedProducts.length === 1 ? "producto" : "productos"}`;
       }
       if(!list) return;
+
 
       const sorted = source.slice().sort((a,b)=>
         String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
@@ -1072,12 +1247,15 @@
         const name = String(product?.name || "").trim();
         if(!name) continue;
 
+
         const item = document.createElement("li");
         item.dataset.productCode = String(product?.id || "").trim();
+
 
         const title = document.createElement("strong");
         title.className = "beauty-product-name";
         title.textContent = name;
+
 
         const meta = document.createElement("span");
         meta.className = "beauty-product-meta";
@@ -1102,15 +1280,18 @@
         }
         meta.textContent = metaParts.filter(Boolean).join(" · ");
 
+
         const description = document.createElement("span");
         description.className = "beauty-product-description";
         description.textContent = String(product?.description || `Producto disponible en ${product?.category || "Irenismb Stock Natura"}.`).trim();
+
 
         item.append(title, meta, description);
         fragment.appendChild(item);
       }
       list.replaceChildren(fragment);
     }
+
 
     function isMobileDevice(){
       try{
@@ -1123,12 +1304,14 @@
       }
     }
 
+
     /* ==========================
        WhatsApp (la compra se envía al WhatsApp de la tienda)
        ========================== */
     const LS_CLIENT_KEY = "irenismb_client";
     const LS_ADDRESS_KEY = "irenismb_address";
     const LS_SHIPPING_KEY = "irenismb_shipping_cop";
+
 
     function readJsonLS(key, fallbackObj){
       try{
@@ -1158,9 +1341,12 @@
     }
 
 
+
+
     function getWhatsAppTo(){
       return WHATSAPP_NUMBER;
     }
+
 
     function waLinkTo(toDigits, text){
       const msg = String(text || "");
@@ -1174,6 +1360,7 @@
       return waLinkTo(getWhatsAppTo(), text);
     }
 
+
     (function syncTopWhatsApp(){
       const a = document.getElementById("waTopLink");
       if (!a) return;
@@ -1181,10 +1368,12 @@
       a.setAttribute("aria-label", isMobileDevice() ? "WhatsApp" : "WhatsApp Web");
     })();
 
+
     const imgModal = document.getElementById("imgModal");
     const imgModalImg = document.getElementById("imgModalImg");
     const imgModalClose = document.getElementById("imgModalClose");
     const imgModalBackdrop = document.getElementById("imgModalBackdrop");
+
 
     let _modalLockCount = 0;
     function lockBodyScroll(){
@@ -1195,6 +1384,7 @@
       _modalLockCount = Math.max(0, _modalLockCount - 1);
       if(_modalLockCount === 0) document.body.style.overflow = "";
     }
+
 
     function rememberModalTrigger(modal){
       if(modal) modal.__lastFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -1244,6 +1434,7 @@
       }
     }
 
+
     function openImgModal(src, alt){
       if(!imgModal || !imgModalImg || !src) return;
       if(imgModal.classList.contains("open")) return;
@@ -1267,11 +1458,13 @@
     if(imgModalClose) imgModalClose.addEventListener("click", closeImgModal);
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
+
     function makeImgFromFilename(filename, name, docsImageUrl=""){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
       img.decoding = "async";
+
 
       let zoomable = false;
       function setNonZoom(){
@@ -1279,8 +1472,10 @@
         img.style.cursor = "default";
       }
 
+
       const preferredUrl = String(docsImageUrl || "").trim();
       const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
+
 
       if(!allowReal){
         img.src = productPlaceholderAbsoluteUrl();
@@ -1289,6 +1484,7 @@
         zoomable = true;
         img.src = preferredUrl;
       }
+
 
       img.onerror = ()=>{
         if(img.dataset.fallbackTried === "1"){
@@ -1302,14 +1498,17 @@
         setNonZoom();
       };
 
+
       img.addEventListener("click", ()=>{
         if(!zoomable) return;
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
 
+
       return img;
     }
+
 
     function makeCartThumbFromFilename(filename, name, docsImageUrl=""){
       const img = document.createElement("img");
@@ -1318,14 +1517,17 @@
       img.loading = "lazy";
       img.decoding = "async";
 
+
       let zoomable = false;
       function setNonZoom(){
         zoomable = false;
         img.style.cursor = "default";
       }
 
+
       const preferredUrl = String(docsImageUrl || "").trim();
       const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
+
 
       if(!allowReal){
         img.src = productPlaceholderAbsoluteUrl();
@@ -1334,6 +1536,7 @@
         zoomable = true;
         img.src = preferredUrl;
       }
+
 
       img.onerror = ()=>{
         if(img.dataset.fallbackTried === "1"){
@@ -1347,18 +1550,22 @@
         setNonZoom();
       };
 
+
       img.addEventListener("click", ()=>{
         if(!zoomable) return;
         const src = img.currentSrc || img.src;
         if(src) openImgModal(src, img.alt);
       });
 
+
       return img;
     }
+
 
     let allLoadedProducts = [];
     let all = [];
     let productById = new Map();
+
 
     const ROOT_ALBUM_KEY = "__root__";
     const ALBUM_COLORS = [
@@ -1375,6 +1582,7 @@
       return SITE_BASE + encodeRepoPath(relativePath);
     }
 
+
     const ROOT_ICON_IMAGES = {
       ella: githubPagesAssetUrl("iconos/2026-09-06_icono categoria para ella perfume floral.webp"),
       el: githubPagesAssetUrl("iconos/2026-09-06_icono categoria para el perfume azul.webp"),
@@ -1382,6 +1590,7 @@
       regalos: githubPagesAssetUrl("iconos/2026-09-06_icono categoria regalos caja lazo rosa.webp"),
       otros: githubPagesAssetUrl("iconos/2026-09-06_icono categoria otros productos hogar variedad.webp")
     };
+
 
     const NAV_AUDIENCES = [
       {
@@ -1437,6 +1646,7 @@
       }
     ];
 
+
     const SUBCATEGORY_ICON_IMAGES = {
       "perfumes": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria perfumes fragancia floral rosa.webp"),
       "desodorantes": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria desodorantes roll on vegetal.webp"),
@@ -1454,6 +1664,7 @@
       "papeleria": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria papeleria cuaderno lapiz corazon.webp"),
       "medicamentos": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria medicamentos frasco capsulas medicas.webp")
     };
+
 
     const CATEGORY_VISUALS = {
       "perfumes": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
@@ -1502,11 +1713,15 @@
       "regalos": { icon:"🎁" }
     };
 
+
     let albums = [];
     let albumByKey = new Map();
     let selectedAudience = "";
     let selectedCategory = "";
+    // selectedFamily conserva el nombre interno histórico, pero ahora representa el tipo de fragancia.
     let selectedFamily = "";
+    let selectedFragranceFamilyFilter = "";
+    let selectedFragranceLineFilter = "";
     let selectedAlbumKey = "";
 
     const catalogNavigationHistory = {
@@ -1523,7 +1738,9 @@
         wordsVisible:!!wordSuggestionsVisible,
         audience:selectedAudience || "",
         category:selectedCategory || "",
-        family:selectedFamily || ""
+        family:selectedFamily || "",
+        fragranceFamily:selectedFragranceFamilyFilter || "",
+        fragranceLine:selectedFragranceLineFilter || ""
       };
     }
 
@@ -1536,7 +1753,9 @@
         wordsVisible:!!s.wordsVisible,
         audience:s.audience || "",
         category:s.category || "",
-        family:s.family || ""
+        family:s.family || "",
+        fragranceFamily:s.fragranceFamily || "",
+        fragranceLine:s.fragranceLine || ""
       });
     }
 
@@ -1592,6 +1811,8 @@
         selectedAudience = snapshot.audience || "";
         selectedCategory = snapshot.category || "";
         selectedFamily = snapshot.family || "";
+        selectedFragranceFamilyFilter = snapshot.fragranceFamily || "";
+        selectedFragranceLineFilter = snapshot.fragranceLine || "";
         refreshNavigationAlbums();
         refreshFilterOptionsForScope();
         render();
@@ -1599,7 +1820,7 @@
         catalogNavigationHistory.restoring = false;
       }
       notifyCatalogNavigationHistory();
-      window.scrollTo({top:0,left:0,behavior:"smooth"});
+      uxScrollToCatalogStart();
     }
 
     function catalogHistoryBack(){
@@ -1623,19 +1844,21 @@
       forward:catalogHistoryForward,
       getState:()=>notifyCatalogNavigationHistory()
     };
-
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
     let allowedProductRouteKeySet = new Set();
+
 
     function cleanNavKey(value){
       return normalizeText(value).replace(/\s+/g, " ");
     }
 
+
     function getProductRouteKey(p){
       if(!p) return "";
       return routeKeyFromParts(p.section, p.category, p.subcategory, p.fragranceFamily, p.commercialState);
     }
+
 
     function isProductRouteAuthorized(p){
       if(!p) return false;
@@ -1645,15 +1868,18 @@
       return Boolean(key && allowedProductRouteKeySet.has(key));
     }
 
+
     function isProductHiddenByRoute(p){
       const key = getProductRouteKey(p);
       return Boolean(key && hiddenAlbumNameSet.has(key));
     }
 
+
     function isProductExcludedFromSearchByRoute(p){
       const key = getProductRouteKey(p);
       return Boolean(key && searchExcludedAlbumNameSet.has(key));
     }
+
 
     function mainNavigationGroupForProduct(p){
       if(!p) return "";
@@ -1661,18 +1887,37 @@
       return String(p.category || "").trim();
     }
 
+
     function productMatchesAudience(p, audienceLabel){
       return cleanNavKey(mainNavigationGroupForProduct(p)) === cleanNavKey(audienceLabel);
     }
+
 
     function navigationCategoryForProduct(p){
       if(!p) return "General";
       return String(p.subcategory || p.category || "General").trim() || "General";
     }
 
+
     function navigationFamilyForProduct(p){
       if(!p) return "";
-      return String(p.fragranceFamily || "").trim();
+      return String(p.fragranceType || "").trim();
+    }
+
+    function navigationFragranceLineForProduct(p){
+      if(!p) return "";
+      return String(p.fragranceLine || "").trim();
+    }
+
+    function clearFragranceFilters(){
+      selectedFragranceFamilyFilter = "";
+      selectedFragranceLineFilter = "";
+    }
+
+    function isFragranceNavigationScope(){
+      return cleanNavKey(selectedAudience) === cleanNavKey("Perfumes y fragancias") &&
+             cleanNavKey(selectedCategory).startsWith("fragancias ") &&
+             Boolean(selectedFamily);
     }
 
     function isDirectProductAudience(audienceLabel){
@@ -1680,9 +1925,11 @@
       return !!(group && group.directProducts === true);
     }
 
+
     function isDirectProductSection(sectionLabel){
       return NAV_AUDIENCES.some(item => item.directProducts === true && cleanNavKey(item.section) === cleanNavKey(sectionLabel));
     }
+
 
     function collectAlbumPreview(found, p){
       if(!found.cover) found.cover = p;
@@ -1692,6 +1939,7 @@
         else found.previewImages.push(previewImage);
       }
     }
+
 
     function buildRootAlbums(list){
       const out = [];
@@ -1722,6 +1970,7 @@
       }
       return out;
     }
+
 
     function buildCategoryAlbums(list, audienceLabel){
       const byCategory = new Map();
@@ -1759,6 +2008,7 @@
           colorIndex:index % ALBUM_COLORS.length
         }));
     }
+
 
     function buildFamilyAlbums(list, audienceLabel, categoryLabel){
       const byFamily = new Map();
@@ -1800,10 +2050,12 @@
         }));
     }
 
+
     function buildAlbums(list){
       if(selectedAudience && selectedCategory) return buildFamilyAlbums(list, selectedAudience, selectedCategory);
       return selectedAudience ? buildCategoryAlbums(list, selectedAudience) : buildRootAlbums(list);
     }
+
 
     function refreshNavigationAlbums(){
       if(selectedFamily){
@@ -1821,9 +2073,11 @@
       }
     }
 
+
     function getProductAlbumKey(p){
       return cleanNavKey(navigationCategoryForProduct(p) || "General") || ROOT_ALBUM_KEY;
     }
+
 
     function albumLabelFromKey(key){
       const found = albumByKey.get(String(key || ""));
@@ -1832,10 +2086,12 @@
       return categoryDisplayLabel(key);
     }
 
+
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
       return source.filter(p => isProductRouteAuthorized(p) && !isProductHiddenByRoute(p));
     }
+
 
     function filterSearchExcludedProducts(list){
       const source = Array.isArray(list) ? list : [];
@@ -1843,13 +2099,16 @@
       return source.filter(p => !isProductExcludedFromSearchByRoute(p));
     }
 
+
     function hasAlbumFolders(){
       return all.length > 0;
     }
 
+
     function albumModeEnabled(){
       return hasAlbumFolders();
     }
+
 
     function shouldShowAlbumGrid(){
       // La configuración remota puede hacer que, al escribir en el buscador,
@@ -1865,6 +2124,7 @@
       return albumModeEnabled() && albums.length > 0 && !selectedFamily && !isDirectProductAudience(selectedAudience) && !showDirectMatches;
     }
 
+
     function getSelectedAlbum(){
       if(selectedFamily){
         return { label:selectedFamily, navType:"family", audience:selectedAudience, category:selectedCategory };
@@ -1878,6 +2138,7 @@
       return null;
     }
 
+
     function currentProductSourceList(){
       let source = all.slice();
       if(selectedAudience){
@@ -1889,8 +2150,15 @@
       if(selectedFamily){
         source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily));
       }
+      if(selectedFragranceFamilyFilter){
+        source = source.filter(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter));
+      }
+      if(selectedFragranceLineFilter){
+        source = source.filter(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter));
+      }
       return source;
     }
+
 
     function refreshFilterOptionsForScope(){
       if(catSel){
@@ -1907,6 +2175,7 @@
       }
     }
 
+
     const cart = (() => {
       try{
         const rawCart = localStorage.getItem("cart");
@@ -1918,7 +2187,9 @@
       }
     })();
 
+
     const cartCountEl = document.getElementById("cartCount");
+
 
     function cartItemsArray(){
       return Object.values(cart)
@@ -1946,6 +2217,7 @@
       refreshCartCount();
     }
 
+
     function detectarMarcaDispositivo(modelo, ua){
       const texto = `${String(modelo || "")} ${String(ua || "")}`.toLowerCase();
       if(/iphone|ipad|ipod/.test(texto)) return "Apple";
@@ -1966,11 +2238,13 @@
       return "";
     }
 
+
     async function obtenerDetalleDispositivoVisita(){
       const ua = String(navigator.userAgent || "");
       const tipo = /iPad|Tablet/i.test(ua)
         ? "Tablet"
         : (/Mobi|Android|iPhone/i.test(ua) ? "Móvil" : "Computador");
+
 
       let sistema = "";
       if(/Android/i.test(ua)) sistema = "Android";
@@ -1979,12 +2253,14 @@
       else if(/Mac OS X|Macintosh/i.test(ua)) sistema = "macOS";
       else if(/Linux/i.test(ua)) sistema = "Linux";
 
+
       let navegador = "";
       if(/Edg\//i.test(ua)) navegador = "Edge";
       else if(/Firefox\//i.test(ua)) navegador = "Firefox";
       else if(/CriOS\//i.test(ua)) navegador = "Chrome";
       else if(/Chrome\//i.test(ua)) navegador = "Chrome";
       else if(/Safari\//i.test(ua)) navegador = "Safari";
+
 
       let modelo = "";
       try{
@@ -1994,20 +2270,25 @@
         }
       }catch(_){}
 
+
       if(!modelo && /Android/i.test(ua)){
         const match = ua.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build\/|;|\))/i);
         if(match) modelo = String(match[1] || "").trim();
       }
 
+
       if(!modelo && /iPhone/i.test(ua)) modelo = "iPhone";
       if(!modelo && /iPad/i.test(ua)) modelo = "iPad";
+
 
       modelo = modelo
         .replace(/^wv$/i, "")
         .replace(/\s+Build\/.*/i, "")
         .trim();
 
+
       const marca = detectarMarcaDispositivo(modelo, ua);
+
 
       return {
         marca,
@@ -2016,13 +2297,16 @@
       };
     }
 
+
     function resumenOrigenVisita(){
       const limpiar = value => String(value || "").trim();
       const normalizar = value => limpiar(value).toLowerCase().replace(/[_.-]+/g, " ").replace(/\s+/g, " ");
 
+
       const nombreFuente = value => {
         const key = normalizar(value);
         if(!key) return "";
+
 
         const aliases = [
           [/^(whatsapp|wa|wsp|whats app)$/, "WhatsApp"],
@@ -2056,17 +2340,21 @@
           [/^(direct|directo)$/, "Directo / no detectable"]
         ];
 
+
         for(const [pattern, label] of aliases){
           if(pattern.test(key)) return label;
         }
 
+
         return limpiar(value);
       };
+
 
       const origenUtm = (source, medium) => {
         const fuente = nombreFuente(source);
         const medio = normalizar(medium);
         if(!fuente) return "";
+
 
         const esPago = /(cpc|ppc|paid|paid social|paid_social|display|ads?|advertising)/i.test(medio);
         if(esPago){
@@ -2080,16 +2368,20 @@
           return `${fuente} · publicidad`;
         }
 
+
         if(/(organic|seo)/i.test(medio)){
           if(["Google", "Bing", "DuckDuckGo", "Yahoo"].includes(fuente)) return `${fuente} · búsqueda orgánica`;
         }
+
 
         if(/(email|mail|newsletter)/i.test(medio)) return fuente === "Correo electrónico" ? fuente : `${fuente} · correo`;
         if(/(social|social media|social_media)/i.test(medio)) return fuente;
         if(/(referral|referido)/i.test(medio)) return `${fuente} · referido`;
 
+
         return fuente;
       };
+
 
       const origenClickId = params => {
         if(params.has("gclid") || params.has("dclid") || params.has("gbraid") || params.has("wbraid") || params.has("gad_source")) return "Google Ads";
@@ -2104,11 +2396,13 @@
         return "";
       };
 
+
       const origenReferrer = ref => {
         if(!ref) return "";
         let host = "";
         try{ host = new URL(ref).hostname.toLowerCase().replace(/^www\./, ""); }catch(_){ return ""; }
         if(!host || host === window.location.hostname.toLowerCase()) return "";
+
 
         const reglas = [
           [/(^|\.)web\.whatsapp\.com$/, "WhatsApp"],
@@ -2134,30 +2428,37 @@
           [/(^|\.)teams\.microsoft\.com$/, "Microsoft Teams"]
         ];
 
+
         for(const [pattern, label] of reglas){
           if(pattern.test(host)) return label;
         }
         return `Sitio web externo · ${host}`;
       };
 
+
       try{
         const actual = new URL(window.location.href);
         const params = actual.searchParams;
+
 
         for(const key of ["origen", "fuente", "source"]){
           const explicit = limpiar(params.get(key));
           if(explicit) return nombreFuente(explicit);
         }
 
+
         const utmSource = limpiar(params.get("utm_source"));
         const utmMedium = limpiar(params.get("utm_medium"));
         if(utmSource) return origenUtm(utmSource, utmMedium);
 
+
         const porClickId = origenClickId(params);
         if(porClickId) return porClickId;
 
+
         const porReferrer = origenReferrer(limpiar(document.referrer));
         if(porReferrer) return porReferrer;
+
 
         return "Directo / no detectable";
       }catch(_){
@@ -2165,9 +2466,11 @@
       }
     }
 
+
     const ATTRIBUTION_FIRST_KEY = "irenismb_attribution_first";
     const ATTRIBUTION_LAST_KEY = "irenismb_attribution_last";
     const ATTRIBUTION_CONVERSION_KEY = "irenismb_attribution_conversion";
+
 
     function leerAtribucionGuardada(storage, key){
       try{
@@ -2179,9 +2482,11 @@
       }
     }
 
+
     function guardarAtribucion(storage, key, value){
       try{ storage.setItem(key, JSON.stringify(value)); }catch(_){}
     }
+
 
     function obtenerCampanaVisita(){
       try{
@@ -2198,6 +2503,7 @@
       }
     }
 
+
     function obtenerMedioVisita(){
       try{
         const params = new URL(window.location.href).searchParams;
@@ -2206,6 +2512,7 @@
         return "";
       }
     }
+
 
     function certezaOrigenVisita(){
       try{
@@ -2220,6 +2527,7 @@
       return "No detectable";
     }
 
+
     function contextoAtribucionVisita(){
       const actual = {
         origen: String(resumenOrigenVisita() || "Directo / no detectable"),
@@ -2229,6 +2537,7 @@
         ts: Date.now()
       };
 
+
       let primero = leerAtribucionGuardada(localStorage, ATTRIBUTION_FIRST_KEY);
       if(!primero){
         primero = actual;
@@ -2236,14 +2545,18 @@
       }
       guardarAtribucion(localStorage, ATTRIBUTION_LAST_KEY, actual);
 
+
       const conversion = leerAtribucionGuardada(sessionStorage, ATTRIBUTION_CONVERSION_KEY) || null;
+
 
       return { actual, primero, ultimo:actual, conversion };
     }
 
+
     function registrarConversionCatalogo(tipo, detalle){
       const nombre = String(tipo || "").trim();
       if(!nombre) return;
+
 
       const prioridades = {
         "Añadió al carrito": 10,
@@ -2254,6 +2567,7 @@
       const existente = leerAtribucionGuardada(sessionStorage, ATTRIBUTION_CONVERSION_KEY);
       if((prioridades[nombre] || 1) < (prioridades[String(existente?.tipo || "")] || 0)) return;
 
+
       const evento = {
         tipo: nombre,
         detalle: String(detalle || "").trim(),
@@ -2263,13 +2577,16 @@
       };
       guardarAtribucion(sessionStorage, ATTRIBUTION_CONVERSION_KEY, evento);
 
+
       try{
         window.dispatchEvent(new CustomEvent("catalogo:conversion", { detail:evento }));
       }catch(_){}
     }
     window.registrarConversionCatalogo = registrarConversionCatalogo;
 
+
     try{ contextoAtribucionVisita(); }catch(_){}
+
 
     window.obtenerContextoVisitaCatalogo = async function(){
       const detalle = await obtenerDetalleDispositivoVisita();
@@ -2319,9 +2636,11 @@
       }
     };
 
+
     function sanitizeCartWithStock(){
       const enforce = shouldEnforceStockLimits();
       let changed = false;
+
 
       for(const key of Object.keys(cart)){
         const it = cart[key];
@@ -2338,13 +2657,16 @@
           continue;
         }
 
+
         const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
         const maxStock = hasKnownStock ? p.stock : null;
         const qty = Math.max(0, safeInt(it.qty, 0));
 
+
         const newQty = enforce
           ? (hasKnownStock ? Math.min(qty, maxStock) : 0)
           : qty;
+
 
         const newObj = {
           id: p.id,
@@ -2356,14 +2678,18 @@
           imgFilename: p.imgFilename || null
         };
 
+
         cart[id] = newObj;
         if(id !== key) delete cart[key];
+
 
         if(newQty !== qty) changed = true;
       }
 
+
       if(changed) saveCart(); else refreshCartCount();
     }
+
 
     const shippingCopInp = document.getElementById("shippingCop");
     function getShippingCop(){
@@ -2373,10 +2699,13 @@
     function loadShippingFromLS(){
       if(!shippingCopInp) return;
 
+
       const MIN_SHIPPING = 6000;
+
 
       const raw = readStringLS(LS_SHIPPING_KEY, "");
       const v = toNumberDigits(raw);
+
 
       // Si no hay valor guardado, usar 6.000 por defecto (editable).
       shippingCopInp.value = (v ? String(v) : String(MIN_SHIPPING));
@@ -2386,6 +2715,7 @@
       const v = toNumberDigits(shippingCopInp.value);
       writeStringLS(LS_SHIPPING_KEY, v ? String(v) : "");
     }
+
 
     const STORE_INFO = {
       name: "IRENISMB STOCK NATURA",
@@ -2398,9 +2728,11 @@
       referencias: "Entre la tienda Surtifruver y la tienda 5Y6, por la panadería Madepan."
     };
 
+
     const ORDER_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP/exec";
-	
+        
     const ORDER_LOG_TIMEOUT_MS = 6500;
+
 
     function buildLineItems(){
       const items = cartItemsArray();
@@ -2415,6 +2747,7 @@
       });
     }
 
+
     function oneLineText(s){
       return String(s ?? "")
         .replace(/\r\n/g, "\n")
@@ -2423,11 +2756,13 @@
         .trim();
     }
 
+
     function viaTypeLabel(tipo){
       const t = String(tipo || "").trim();
       const map = { Cl:"Calle", Cra:"Carrera", Av:"Avenida", Dg:"Diagonal", Tv:"Transversal" };
       return map[t] || t;
     }
+
 
     function buildViaString(tipo, num, placa){
       const t = viaTypeLabel(tipo);
@@ -2437,21 +2772,26 @@
       return joinParts([t, n, p ? `#${p}` : ""], " ");
     }
 
+
     function getClientDataCurrent(){
       const nameInp = document.getElementById("clientName");
       const phoneInp = document.getElementById("clientPhone");
       const obsInp = document.getElementById("clientObs");
+
 
       const obj = readJsonLS(LS_CLIENT_KEY, {});
       const name = String((nameInp && nameInp.value) ?? (obj.clientName ?? "")).trim();
       const phone = String((phoneInp && phoneInp.value) ?? (obj.clientPhone ?? "")).trim();
       const obs = String((obsInp && obsInp.value) ?? (obj.clientObs ?? ""));
 
+
       return { name, phone, obs };
     }
 
+
     function getAddressDataCurrent(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
+
 
       const cityInp = document.getElementById("addrCity");
       const regionInp = document.getElementById("addrRegion");
@@ -2460,6 +2800,7 @@
       const placaInp = document.getElementById("addrPlaca");
       const barrioInp = document.getElementById("addrBarrio");
 
+
       const city = String((cityInp && cityInp.value) ?? (obj.addrCity ?? "")).trim();
       const region = String((regionInp && regionInp.value) ?? (obj.addrRegion ?? "")).trim();
       const tipo = String((tipoInp && tipoInp.value) ?? (obj.addrViaTipo ?? "")).trim();
@@ -2467,71 +2808,85 @@
       const placa = String((placaInp && placaInp.value) ?? (obj.addrPlaca ?? "")).trim();
       const barrio = String((barrioInp && barrioInp.value) ?? (obj.addrBarrio ?? "")).trim();
 
+
       const via = buildViaString(tipo, num, placa);
       const addressLine = joinParts([via, city, region], ", ");
+
 
       // IMPORTANTE: barrio NO se incluye en el enlace de Google Maps
       const mapLink = addressLine
         ? ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addressLine))
         : "";
 
+
       return { addressLine, barrio, mapLink };
     }
-	function buildBuyerMessage(){
-	  const items = cartItemsArray();
-	  const client = getClientDataCurrent();
-	  const addr = getAddressDataCurrent();
+        function buildBuyerMessage(){
+          const items = cartItemsArray();
+          const client = getClientDataCurrent();
+          const addr = getAddressDataCurrent();
 
-	  const subtotal = cartTotalValue();
-	  const envio = getShippingCop();
-	  const total = subtotal + envio;
-	  const showPrices = shouldShowProductPrices();
-	  const hasUnpricedItems = !showPrices || cartHasUnpricedItems();
 
-	  const lines = [];
+          const subtotal = cartTotalValue();
+          const envio = getShippingCop();
+          const total = subtotal + envio;
+          const showPrices = shouldShowProductPrices();
+          const hasUnpricedItems = !showPrices || cartHasUnpricedItems();
 
-	  lines.push("*INFORMACIÓN DEL CLIENTE*");
-	  lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
-	  lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
-	  lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
-	  lines.push(`*Barrio:* ${addr.barrio || ""}`.trimEnd());
-	  lines.push(`*Ubicación:* ${addr.mapLink || ""}`.trimEnd());
-	  lines.push(`*Observación:* ${oneLineText(client.obs || "")}`.trimEnd());
 
-	  lines.push("");
-	  lines.push("*PRODUCTOS SOLICITADOS*");
+          const lines = [];
 
-	  if(items.length){
-		lines.push(...buildLineItems());
-	  }
 
-	  lines.push("");
-	  lines.push(`*Subtotal:* ${hasUnpricedItems ? "Por confirmar" : fmtCOP.format(subtotal)}`);
-	  lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
-	  lines.push(`*Total:* ${hasUnpricedItems ? "Por confirmar" : fmtCOP.format(total)}`);
-	  if(hasUnpricedItems){
-		lines.push("*Nota:* Hay productos cuyo precio debe confirmarse antes de cerrar el pedido.");
-	  }
+          lines.push("*INFORMACIÓN DEL CLIENTE*");
+          lines.push(`*Nombre:* ${client.name || ""}`.trimEnd());
+          lines.push(`*Celular:* ${client.phone || ""}`.trimEnd());
+          lines.push(`*Dirección:* ${addr.addressLine || ""}`.trimEnd());
+          lines.push(`*Barrio:* ${addr.barrio || ""}`.trimEnd());
+          lines.push(`*Ubicación:* ${addr.mapLink || ""}`.trimEnd());
+          lines.push(`*Observación:* ${oneLineText(client.obs || "")}`.trimEnd());
 
-	  // ✅ Celular tienda sin +57 (solo para el mensaje)
-	  const storePhoneNo57 = String(STORE_INFO.whatsappDisplay || "")
-		.replace(/^\s*\+?\s*57\s*/i, "")
-		.trim();
 
-	  lines.push("");
-	  lines.push("*INFORMACIÓN DE LA TIENDA*");
-	  lines.push(STORE_INFO.name);
-	  lines.push(`*Celular:* ${storePhoneNo57}`);
-	  lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
-	  lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
+          lines.push("");
+          lines.push("*PRODUCTOS SOLICITADOS*");
 
-	  // Orden solicitado: primero punto de referencia y luego enlaces
-	  lines.push(`*Puntos de referencia:* ${STORE_INFO.referencias}`);
-	  lines.push(`*Ubicación:* ${STORE_INFO.mapa}`);
-	  lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
 
-	  return lines.join("\n");
-	}
+          if(items.length){
+                lines.push(...buildLineItems());
+          }
+
+
+          lines.push("");
+          lines.push(`*Subtotal:* ${hasUnpricedItems ? "Por confirmar" : fmtCOP.format(subtotal)}`);
+          lines.push(`*Envío:* ${fmtCOP.format(envio)}`);
+          lines.push(`*Total:* ${hasUnpricedItems ? "Por confirmar" : fmtCOP.format(total)}`);
+          if(hasUnpricedItems){
+                lines.push("*Nota:* Hay productos cuyo precio debe confirmarse antes de cerrar el pedido.");
+          }
+
+
+          // ✅ Celular tienda sin +57 (solo para el mensaje)
+          const storePhoneNo57 = String(STORE_INFO.whatsappDisplay || "")
+                .replace(/^\s*\+?\s*57\s*/i, "")
+                .trim();
+
+
+          lines.push("");
+          lines.push("*INFORMACIÓN DE LA TIENDA*");
+          lines.push(STORE_INFO.name);
+          lines.push(`*Celular:* ${storePhoneNo57}`);
+          lines.push(`*Dirección:* ${STORE_INFO.direccion}`);
+          lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
+
+
+          // Orden solicitado: primero punto de referencia y luego enlaces
+          lines.push(`*Puntos de referencia:* ${STORE_INFO.referencias}`);
+          lines.push(`*Ubicación:* ${STORE_INFO.mapa}`);
+          lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
+
+
+          return lines.join("\n");
+        }
+
 
     function buildOrderPayload(){
       const items = cartItemsArray();
@@ -2542,6 +2897,7 @@
       const envio = getShippingCop();
       const totalPedido = subtotal + envio;
       const direccionClienteVisible = joinParts([addr.addressLine || "", addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
+
 
       return {
         source: "catalogo-whatsapp",
@@ -2582,6 +2938,7 @@
       };
     }
 
+
     function fetchWithTimeout(url, options = {}, timeoutMs = 6500){
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error("Tiempo de espera agotado al registrar el pedido.")), timeoutMs);
@@ -2597,11 +2954,14 @@
       });
     }
 
+
     async function registerOrderInSheet(){
       const payload = buildOrderPayload();
       if(!Array.isArray(payload.items) || !payload.items.length) return { ok:false, skipped:true };
 
+
       const body = JSON.stringify(payload);
+
 
       await fetchWithTimeout(ORDER_LOG_ENDPOINT, {
         method: "POST",
@@ -2614,10 +2974,13 @@
         body
       }, ORDER_LOG_TIMEOUT_MS);
 
+
       return { ok:true, skipped:false };
     }
 
+
     let orderSending = false;
+
 
     const cartModal = document.getElementById("cartModal");
     const cartModalClose = document.getElementById("cartModalClose");
@@ -2628,6 +2991,7 @@
     const cartClearBtn = document.getElementById("cartClearBtn");
     const cartAddressBtn = document.getElementById("cartAddressBtn");
     const cartClientBtn = document.getElementById("cartClientBtn");
+
 
     function openCartModal(){
       if(cartModal.classList.contains("open")) return;
@@ -2646,6 +3010,7 @@
       restoreModalTrigger(cartModal);
     }
 
+
     function renderCartModal(){
       const enforce = shouldEnforceStockLimits();
       const items = cartItemsArray();
@@ -2656,10 +3021,12 @@
         ? "Total: Por confirmar"
         : ("Total: " + fmtCOP.format(total));
 
+
       if(!items.length){
         cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío.</div>`;
         return;
       }
+
 
       const frag = document.createDocumentFragment();
       items.forEach(it=>{
@@ -2667,13 +3034,17 @@
         row.className = "cart-item";
         row.setAttribute("data-id", it.id);
 
+
         const left = document.createElement("div");
         left.className = "cart-item-left";
+
 
         const p = productById.get(String(it.id));
         const imgFilename = (p && p.imgFilename) ? p.imgFilename : it.imgFilename;
 
+
         left.appendChild(makeCartThumbFromFilename(imgFilename, it.name, p && p.docsImageUrl));
+
 
         const main = document.createElement("div");
         main.className = "cart-item-main";
@@ -2692,6 +3063,7 @@
         main.querySelector(".cart-item-sub").textContent = cartMetaParts.join(" · ");
         left.appendChild(main);
 
+
         const controls = document.createElement("div");
         controls.className = "cart-controls";
         controls.innerHTML = `
@@ -2700,9 +3072,11 @@
           <button class="cart-qty-btn" type="button" data-act="inc" aria-label="Aumentar">+</button>
         `;
 
+
         const incBtn = controls.querySelector('button[data-act="inc"]');
         const hasKnownStock = Number.isFinite(it.stock) && it.stock >= 0;
         const maxStock = hasKnownStock ? it.stock : null;
+
 
         if(incBtn){
           incBtn.disabled = enforce
@@ -2710,17 +3084,20 @@
             : false;
         }
 
+
         const subtotal = document.createElement("div");
         subtotal.className = "cart-subtotal";
         subtotal.textContent = (!shouldShowProductPrices() || it.hasPrice === false)
           ? "Por confirmar"
           : fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0));
 
+
         const remove = document.createElement("button");
         remove.className = "cart-remove";
         remove.type = "button";
         remove.textContent = "Eliminar";
         remove.setAttribute("data-act", "remove");
+
 
         row.appendChild(left);
         row.appendChild(controls);
@@ -2729,9 +3106,11 @@
         frag.appendChild(row);
       });
 
+
       cartItemsEl.innerHTML = "";
       cartItemsEl.appendChild(frag);
     }
+
 
     cartItemsEl.addEventListener("click", (e)=>{
       const btn = e.target.closest("button");
@@ -2741,13 +3120,16 @@
       const id = itemRow.getAttribute("data-id");
       if(!id || !cart[id]) return;
 
+
       const enforce = shouldEnforceStockLimits();
       const act = btn.getAttribute("data-act");
       const current = cart[id];
 
+
       const hasKnownStock = Number.isFinite(current.stock) && current.stock >= 0;
       const maxStock = hasKnownStock ? current.stock : null;
       let newQty = safeInt(current.qty, 0);
+
 
       if(act === "inc"){
         if(!enforce){
@@ -2763,8 +3145,10 @@
         newQty = 0;
       }
 
+
       if(!newQty) delete cart[id];
       else cart[id].qty = newQty;
+
 
       if(act === "inc" && newQty > safeInt(current.qty, 0)){
         registrarConversionCatalogo("Añadió al carrito", String(current.name || ""));
@@ -2773,10 +3157,12 @@
       renderCartModal();
     });
 
+
     function openWhatsAppTo(toDigits, text){
       const msg = String(text || "").trim() || "Hola, quiero información del catálogo.";
       window.open(waLinkTo(toDigits, msg), "_blank", "noopener");
     }
+
 
     const waTopTrackingLink = document.getElementById("waTopLink");
     if(waTopTrackingLink){
@@ -2785,20 +3171,24 @@
       });
     }
 
+
     // ÚNICO BOTÓN: Registrar pedido y luego abrir WhatsApp (se envía al número de la tienda)
     if(cartBuyBtn){
       cartBuyBtn.addEventListener("click", async ()=>{
         if(orderSending) return;
+
 
         orderSending = true;
         const previousText = cartBuyBtn.textContent;
         cartBuyBtn.disabled = true;
         cartBuyBtn.textContent = "Registrando pedido...";
 
+
         try{
           saveClientToLS();
           saveAddressToLS();
           saveShippingToLS();
+
 
           registrarConversionCatalogo("Inició pedido por WhatsApp", String(cartTotalQty()));
           try{
@@ -2807,6 +3197,7 @@
           }catch(err){
             console.error("No se pudo registrar el pedido en Google Sheets:", err);
           }
+
 
           // El mensaje SIEMPRE se envía al número de la tienda
           registrarConversionCatalogo("Abrió WhatsApp", "Compra desde carrito");
@@ -2829,8 +3220,10 @@
       });
     }
 
+
     if(cartModalClose) cartModalClose.addEventListener("click", closeCartModal);
     if(cartModalBackdrop) cartModalBackdrop.addEventListener("click", closeCartModal);
+
 
     if(shippingCopInp){
       shippingCopInp.addEventListener("input", ()=>{
@@ -2838,6 +3231,7 @@
         if(cartModal.classList.contains("open")) renderCartModal();
       });
     }
+
 
     /* ==========================
        Modales Dirección / Otros datos
@@ -2849,6 +3243,7 @@
     const addrSaveBtn = document.getElementById("addrSaveBtn");
     const addrMapsLink = document.getElementById("addrMapsLink");
 
+
     const addrCity = document.getElementById("addrCity");
     const addrRegion = document.getElementById("addrRegion");
     const addrViaTipo = document.getElementById("addrViaTipo");
@@ -2857,8 +3252,10 @@
     const addrBarrio = document.getElementById("addrBarrio");
     const addrFinal = document.getElementById("addrFinal");
 
+
     const DEFAULT_CITY = "Santa Marta";
     const DEFAULT_REGION = "Magdalena";
+
 
     function openAddressModal(){
       if(addressModal.classList.contains("open")) return;
@@ -2877,9 +3274,11 @@
       restoreModalTrigger(addressModal);
     }
 
+
     function joinParts(parts, sep=" "){
       return parts.filter(Boolean).join(sep).replace(/\s+/g," ").trim();
     }
+
 
     function refreshAddressModalPreview(){
       const city = String(addrCity?.value || "").trim();
@@ -2888,11 +3287,14 @@
       const num = String(addrViaNum?.value || "").trim();
       const placa = String(addrPlaca?.value || "").trim();
 
+
       // Dirección final SOLO con vía + ciudad + departamento (sin barrio)
       const via = buildViaString(tipo, num, placa);
       const final = joinParts([via || "", city || "", region || ""], ", ");
 
+
       if(addrFinal) addrFinal.value = final;
+
 
       // El barrio NO se usa para el enlace de Google Maps
       const hasVia = !!(tipo && num && placa);
@@ -2909,14 +3311,18 @@
       }
     }
 
+
     function loadAddressFromLS(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
+
 
       const hasCity = Object.prototype.hasOwnProperty.call(obj, "addrCity");
       const hasRegion = Object.prototype.hasOwnProperty.call(obj, "addrRegion");
 
+
       const cityVal = hasCity ? String(obj.addrCity ?? "") : DEFAULT_CITY;
       const regionVal = hasRegion ? String(obj.addrRegion ?? "") : DEFAULT_REGION;
+
 
       if(addrCity) addrCity.value = cityVal;
       if(addrRegion) addrRegion.value = regionVal;
@@ -2926,6 +3332,7 @@
       if(addrBarrio) addrBarrio.value = String(obj.addrBarrio ?? "");
       refreshAddressModalPreview();
     }
+
 
     function saveAddressToLS(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
@@ -2939,11 +3346,13 @@
       writeJsonLS(LS_ADDRESS_KEY, obj);
     }
 
+
     [addrCity, addrRegion, addrViaTipo, addrViaNum, addrPlaca, addrBarrio].forEach(el=>{
       if(!el) return;
       el.addEventListener("input", refreshAddressModalPreview);
       el.addEventListener("change", refreshAddressModalPreview);
     });
+
 
     if(addressModalClose) addressModalClose.addEventListener("click", closeAddressModal);
     if(addressModalBackdrop) addressModalBackdrop.addEventListener("click", closeAddressModal);
@@ -2954,15 +3363,18 @@
       closeAddressModal();
     });
 
+
     const clientModal = document.getElementById("clientModal");
     const clientModalClose = document.getElementById("clientModalClose");
     const clientModalBackdrop = document.getElementById("clientModalBackdrop");
     const clientCancelBtn = document.getElementById("clientCancelBtn");
     const clientSaveBtn = document.getElementById("clientSaveBtn");
 
+
     const clientName = document.getElementById("clientName");
     const clientPhone = document.getElementById("clientPhone");
     const clientObs = document.getElementById("clientObs");
+
 
     function openClientModal(){
       if(clientModal.classList.contains("open")) return;
@@ -2981,12 +3393,14 @@
       restoreModalTrigger(clientModal);
     }
 
+
     function loadClientFromLS(){
       const obj = readJsonLS(LS_CLIENT_KEY, {});
       if(clientName) clientName.value = String(obj.clientName ?? "");
       if(clientPhone) clientPhone.value = String(obj.clientPhone ?? "");
       if(clientObs) clientObs.value = String(obj.clientObs ?? "");
     }
+
 
     function saveClientToLS(){
       const obj = readJsonLS(LS_CLIENT_KEY, {});
@@ -2996,6 +3410,7 @@
       writeJsonLS(LS_CLIENT_KEY, obj);
     }
 
+
     if(clientModalClose) clientModalClose.addEventListener("click", closeClientModal);
     if(clientModalBackdrop) clientModalBackdrop.addEventListener("click", closeClientModal);
     if(clientCancelBtn) clientCancelBtn.addEventListener("click", closeClientModal);
@@ -3004,8 +3419,10 @@
       closeClientModal();
     });
 
+
     if(cartAddressBtn) cartAddressBtn.addEventListener("click", openAddressModal);
     if(cartClientBtn) cartClientBtn.addEventListener("click", openClientModal);
+
 
     document.addEventListener("keydown", (e)=>{
       const activeModal = getOpenModal();
@@ -3020,6 +3437,7 @@
         if(cartModal && cartModal.classList.contains("open")){ closeCartModal(); return; }
       }
     });
+
 
     // El JSON-LD se sincroniza con los productos visibles del inventario oficial.
     let _jsonLdTimer = 0;
@@ -3063,6 +3481,7 @@
       }, 0);
     }
 
+
     const cardTemplate = document.createElement("template");
     cardTemplate.innerHTML = `
       <article class="card">
@@ -3083,6 +3502,7 @@
       </article>
     `;
 
+
     const albumTemplate = document.createElement("template");
     albumTemplate.innerHTML = `
       <article class="album-card">
@@ -3101,6 +3521,7 @@
         </button>
       </article>
     `;
+
 
     function stockMetaText(p){
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
@@ -3123,29 +3544,36 @@
       return parts.filter(Boolean).join(" · ");
     }
 
+
     function refreshCardUI(card, p){
       const row = card.querySelector(".row");
       const actions = card.querySelector(".actions");
       const meta = card.querySelector(".meta");
 
+
       if(meta) meta.hidden = false;
       if(row) row.hidden = false;
       if(actions) actions.hidden = false;
+
 
       const enforce = shouldEnforceStockLimits();
       const id = String(p.id);
       const q = (cart[id]?.qty || 0);
 
+
       const qtyPill = card.querySelector('[data-role="qty"]');
       const decBtn = card.querySelector('button[data-act="dec"]');
       const incBtn = card.querySelector('button[data-act="inc"]');
 
+
       if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
       if(decBtn) decBtn.disabled = q <= 0;
+
 
       const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
       const maxStock = hasKnownStock ? p.stock : null;
       const canAdd = !enforce || (hasKnownStock && maxStock > 0 && q < maxStock);
+
 
       if(incBtn){
         incBtn.disabled = !canAdd;
@@ -3160,18 +3588,22 @@
       }
     }
 
+
     function makeCard(p){
       const card = cardTemplate.content.firstElementChild.cloneNode(true);
       card.id = "p-" + encodeURIComponent(String(p.id));
       card.dataset.id = String(p.id);
 
+
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl));
+
 
       const nameEl = card.querySelector(".name");
       const metaEl = card.querySelector(".meta");
       const descriptionEl = card.querySelector(".description");
       const priceEl = card.querySelector(".price");
+
 
       const visibleName = String(p.name || "");
       nameEl.textContent = visibleName;
@@ -3184,6 +3616,7 @@
         ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price))
         : "";
 
+
       if(p && p.isGiftGalleryImage){
         card.classList.add("gift-gallery-card");
         const pad = card.querySelector(".pad");
@@ -3191,9 +3624,12 @@
         imgBox.setAttribute("aria-label", "Imagen de regalo para toda ocasión");
       }
 
+
       refreshCardUI(card, p);
       return card;
     }
+
+
 
 
     function makeAlbumPreview(sources, label){
@@ -3201,6 +3637,7 @@
       img.alt = label ? ("Vista previa " + label) : "Vista previa de la categoría";
       img.loading = "lazy";
       img.decoding = "async";
+
 
       const sourceList = (Array.isArray(sources) ? sources : [sources])
         .map(source => String(source || "").trim())
@@ -3210,6 +3647,7 @@
         productPlaceholderAbsoluteUrl(),
         COMPANY_LOGO
       ].filter(Boolean))];
+
 
       let index = 0;
       img.src = candidates[index] || COMPANY_LOGO;
@@ -3222,8 +3660,10 @@
         img.onerror = null;
       };
 
+
       return img;
     }
+
 
     function makeAlbumCard(album){
       const card = albumTemplate.content.firstElementChild.cloneNode(true);
@@ -3241,6 +3681,7 @@
         ? album.matchingProducts
         : [];
 
+
       card.classList.toggle("album-root-card", isAudience);
       card.classList.toggle("album-category-card", !isAudience);
       card.classList.toggle("search-reactive", searchActive);
@@ -3251,8 +3692,10 @@
       card.hidden = searchActive && matchCount === 0;
       if(isAudience && album.theme) card.dataset.navTheme = album.theme;
 
+
       btn.dataset.albumOpen = album.key;
       btn.dataset.navType = album.navType || "category";
+
 
       if(searchActive){
         const matchWord = matchCount === 1 ? "coincidencia" : "coincidencias";
@@ -3263,6 +3706,7 @@
         const extraMatches = Math.max(0, matchCount - sampleNames.length);
         const sampleText = sampleNames.join(" · ");
         const moreText = extraMatches > 0 ? `${sampleText ? " · " : ""}+${extraMatches} más` : "";
+
 
         btn.setAttribute(
           "aria-label",
@@ -3280,7 +3724,9 @@
             : "Sin coincidencias con tu búsqueda.";
         }
       }else{
-        btn.setAttribute("aria-label", isAudience ? `Abrir ${album.label}` : `Abrir categoría ${album.label}`);
+        btn.setAttribute("aria-label", isAudience
+          ? `Abrir ${album.label}`
+          : (album.navType === "family" ? `Abrir tipo de fragancia ${album.label}` : `Abrir categoría ${album.label}`));
         btn.title = `${album.label} · ${album.count} ${unitLabel}`;
         if(badge) badge.textContent = `${album.count} ${unitLabel}`;
         if(meta){
@@ -3289,6 +3735,7 @@
             : `${album.count} ${unitLabel}`;
         }
       }
+
 
       if(preview) preview.hidden = true;
       if(icon){
@@ -3306,6 +3753,7 @@
         const useProductPreview =
           shouldShowProductImageInNavigationPanels() &&
           productPreviewSources.length > 0;
+
 
         if(useProductPreview){
           const img = makeAlbumPreview(productPreviewSources, album.label);
@@ -3332,8 +3780,10 @@
       }
       label.textContent = album.label;
 
+
       return card;
     }
+
 
     function makeEmptyState(message){
       const div = document.createElement("div");
@@ -3341,6 +3791,7 @@
       div.textContent = message;
       return div;
     }
+
 
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
@@ -3355,14 +3806,19 @@
     const catalogEntryIntro = document.getElementById("catalogEntryIntro");
     const catalogEntryTitle = document.getElementById("catalogEntryTitle");
     const catalogEntryText = document.getElementById("catalogEntryText");
+    const fragranceFilterPanel = document.getElementById("fragranceFilterPanel");
+    const fragranceFamilyFilters = document.getElementById("fragranceFamilyFilters");
+    const fragranceLineFilters = document.getElementById("fragranceLineFilters");
 
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
     const tickerInner = document.getElementById("tickerInner");
 
+
     const countSlot = document.getElementById("countSlot");
     const topline = document.getElementById("topline");
     const mqCountMobile = window.matchMedia("(max-width:760px)");
+
 
     const wordPanel = document.getElementById("wordPanel");
     const wordChips = document.getElementById("wordChips");
@@ -3371,13 +3827,17 @@
     const clearTermsBtn = document.getElementById("clearTermsBtn");
     const toggleWordPanelBtn = document.getElementById("toggleWordPanelBtn");
 
+
     let wordSuggestionsVisible = shouldShowSuggestionsInitially();
+
 
     function syncWordToggleButton(){
       if(!toggleWordPanelBtn) return;
 
+
       const canToggle = shouldAllowSuggestionToggle();
       const isVisible = wordSuggestionsVisible;
+
 
       toggleWordPanelBtn.hidden = !canToggle;
       toggleWordPanelBtn.disabled = !canToggle;
@@ -3386,15 +3846,19 @@
       toggleWordPanelBtn.classList.toggle("is-active", isVisible);
     }
 
+
     function setWordSuggestionsVisible(nextValue){
       wordSuggestionsVisible = !!nextValue;
+
 
       if(!wordSuggestionsVisible){
         selectedSuggestionTerms = [];
       }
 
+
       syncWordToggleButton();
     }
+
 
     function toggleWordSuggestionsVisible(){
       if(!shouldAllowSuggestionToggle()) return;
@@ -3402,8 +3866,10 @@
       render();
     }
 
+
     function placeResponsiveHeaderMeta(){
       if(!countEl || !countSlot || !topline || !albumNav || !albumNavHost) return;
+
 
       if(mqCountMobile.matches){
         if(countEl.parentElement !== countSlot){
@@ -3425,8 +3891,10 @@
         topline.classList.remove("hidden");
       }
 
+
       countSlot.classList.toggle("has-album-nav", !albumNav.hidden);
     }
+
 
     if(typeof mqCountMobile.addEventListener === "function"){
       mqCountMobile.addEventListener("change", placeResponsiveHeaderMeta);
@@ -3435,6 +3903,7 @@
     }
     placeResponsiveHeaderMeta();
 
+
     function updateTickerVisibility(){
       if(!searchWrap || !qInp) return;
       const empty = !String(qInp.value || "").trim();
@@ -3442,11 +3911,13 @@
       searchWrap.classList.toggle("show-ticker", empty && !focused);
     }
 
+
     function updateCountAttention(){
       if(!countEl || !qInp) return;
       const hasQuery = getCombinedWordTerms().length > 0;
       countEl.classList.toggle("search-active", hasQuery);
     }
+
 
     const SUGGESTION_STOPWORDS = new Set([
       "a","al","algo","alguna","algunas","alguno","algunos","ante","bajo","cabe","con","contra",
@@ -3461,12 +3932,14 @@
     // Sin límite de cantidad: las sugerencias no se recortan por número.
     let selectedSuggestionTerms = [];
 
+
     function parseSearchTerms(text){
       return normalizeText(text)
         .split(/\s+/)
         .map(t => t.trim())
         .filter(Boolean);
     }
+
 
     function parseSuggestionTokens(text){
       return normalizeText(text)
@@ -3481,6 +3954,7 @@
         });
     }
 
+
     function uniqueTerms(list){
       const out = [];
       const seen = new Set();
@@ -3493,15 +3967,18 @@
       return out;
     }
 
+
     function getCombinedWordTerms(){
       const typed = parseSearchTerms(qInp ? qInp.value : "");
       return uniqueTerms([...(selectedSuggestionTerms || []), ...typed]);
     }
 
+
     function getSuggestionScopeProducts(){
       const source = currentProductSourceList();
       const cat = catSel ? catSel.value : "";
       const br = brandSel ? brandSel.value : "";
+
 
       return source.filter(p => {
         if(cat && p.category !== cat) return false;
@@ -3510,16 +3987,20 @@
       });
     }
 
+
     function getSuggestionBlockedTerms(list){
       const blocked = new Set();
+
 
       for(const p of (Array.isArray(list) ? list : [])){
         for(const token of parseSuggestionTokens(p && p.category ? p.category : "")) blocked.add(token);
         for(const token of parseSuggestionTokens(p && p.section ? p.section : "")) blocked.add(token);
       }
 
+
       return blocked;
     }
+
 
     function addSuggestionCountsFromText(counts, text, blockedTerms){
       const unique = new Set(parseSuggestionTokens(text));
@@ -3529,19 +4010,23 @@
       }
     }
 
+
     function getSuggestionMatchedProducts(){
       const scopeProducts = getSuggestionScopeProducts();
       const activeTerms = getCombinedWordTerms();
       if(!activeTerms.length) return scopeProducts;
 
+
       const eligibleProducts = filterSearchExcludedProducts(scopeProducts);
       return eligibleProducts.filter(p => activeTerms.every(term => p.searchKey.includes(term)));
     }
+
 
     function buildSuggestionEntries(){
       if(shouldShowAlbumGrid()){
         return [];
       }
+
 
       const scopeProducts = getSuggestionScopeProducts();
       const matchedProducts = getSuggestionMatchedProducts();
@@ -3552,6 +4037,7 @@
       const blockedTerms = getSuggestionBlockedTerms(sourceProducts);
       const totalVisibleProducts = sourceProducts.length;
 
+
       for(const term of typedTerms){
         blockedTerms.add(term);
       }
@@ -3559,9 +4045,11 @@
         blockedTerms.add(term);
       }
 
+
       selectedSuggestionTerms = uniqueTerms((selectedSuggestionTerms || []).filter(term => {
         return !getSuggestionBlockedTerms(sourceProducts).has(term);
       }));
+
 
       const counts = new Map();
       for(const p of sourceProducts){
@@ -3569,29 +4057,35 @@
         addSuggestionCountsFromText(counts, rawText, blockedTerms);
       }
 
-	return Array.from(counts.entries())
-	  .map(([term, count]) => ({
-		term,
-		count,
-		remaining: count,
-		reduction: Math.max(0, totalVisibleProducts - count)
-	  }))
-	  .sort((a,b)=> {
-		const aSelected = selectedSet.has(a.term) ? 1 : 0;
-		const bSelected = selectedSet.has(b.term) ? 1 : 0;
 
-		if(aSelected !== bSelected) return bSelected - aSelected;
+        return Array.from(counts.entries())
+          .map(([term, count]) => ({
+                term,
+                count,
+                remaining: count,
+                reduction: Math.max(0, totalVisibleProducts - count)
+          }))
+          .sort((a,b)=> {
+                const aSelected = selectedSet.has(a.term) ? 1 : 0;
+                const bSelected = selectedSet.has(b.term) ? 1 : 0;
 
-		// Primero las de más coincidencias
-		if(b.count !== a.count) return b.count - a.count;
 
-		return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
-	});		
+                if(aSelected !== bSelected) return bSelected - aSelected;
+
+
+                // Primero las de más coincidencias
+                if(b.count !== a.count) return b.count - a.count;
+
+
+                return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
+        });                
     }
+
 
     function toggleSuggestionTerm(term){
       const clean = normalizeText(term);
       if(!clean) return;
+
 
       if(selectedSuggestionTerms.includes(clean)){
         selectedSuggestionTerms = selectedSuggestionTerms.filter(t => t !== clean);
@@ -3601,6 +4095,7 @@
       render();
     }
 
+
     function removeSuggestionTerm(term){
       const clean = normalizeText(term);
       if(!clean) return;
@@ -3608,10 +4103,13 @@
       render();
     }
 
+
     function renderWordSuggestions(){
       if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
 
+
       syncWordToggleButton();
+
 
       const showAlbumGrid = shouldShowAlbumGrid();
       if(showAlbumGrid || !wordSuggestionsVisible){
@@ -3623,6 +4121,7 @@
         return;
       }
 
+
       const entries = buildSuggestionEntries();
       const activeTermsList = uniqueTerms(selectedSuggestionTerms || []);
       const rawQuery = qInp ? String(qInp.value || "") : "";
@@ -3630,13 +4129,16 @@
       const hasTypedCharacters = rawQuery.trim().length > 0;
       const hasWordFilter = activeTermsList.length > 0 || typedTerms.length > 0;
 
+
       wordPanel.hidden = !(entries.length || activeTermsList.length || typedTerms.length);
       clearTermsBtn.hidden = !(activeTermsList.length > 0 || hasTypedCharacters);
       clearTermsBtn.classList.toggle("search-active", hasTypedCharacters);
       activeTermsWrap.hidden = !activeTermsList.length;
 
+
       wordChips.innerHTML = "";
       activeTerms.innerHTML = "";
+
 
       if(activeTermsList.length){
         const activeFrag = document.createDocumentFragment();
@@ -3652,6 +4154,7 @@
         }
         activeTerms.appendChild(activeFrag);
       }
+
 
       if(!entries.length){
         const empty = document.createElement("div");
@@ -3674,8 +4177,10 @@
       }
     }
 
+
     function rebuildSearchTicker(){
       if(!searchWrap || !searchTicker || !tickerInner || !qInp) return;
+
 
       const text = String(qInp.getAttribute("placeholder") || "").trim();
       if(!text){
@@ -3684,14 +4189,18 @@
         return;
       }
 
+
       tickerInner.innerHTML = "";
+
 
       const seq = document.createElement("div");
       seq.className = "ticker-seq";
       tickerInner.appendChild(seq);
 
+
       const available = Math.max(1, searchTicker.clientWidth || searchWrap.clientWidth || 1);
       const target = Math.max(280, Math.floor(available * 1.7));
+
 
       let guard = 0;
       while(seq.scrollWidth < target && guard < 60){
@@ -3702,18 +4211,23 @@
         guard++;
       }
 
+
       const seqWidth = seq.scrollWidth || 0;
       if(seqWidth <= 0) return;
+
 
       const clone = seq.cloneNode(true);
       tickerInner.appendChild(clone);
 
+
       const SPEED_PX_PER_SEC = 60;
       const duration = Math.max(8, seqWidth / SPEED_PX_PER_SEC);
+
 
       searchWrap.style.setProperty("--marquee-distance", seqWidth + "px");
       searchWrap.style.setProperty("--marquee-duration", duration.toFixed(2) + "s");
     }
+
 
     function clearSelectButKeepFirst(sel){
       const first = sel.querySelector("option[value='']");
@@ -3727,6 +4241,7 @@
       }
     }
 
+
     function fillSelect(sel, values){
       clearSelectButKeepFirst(sel);
       for(const v of values){
@@ -3736,9 +4251,105 @@
       }
     }
 
+
+    function fragranceFilterBaseProducts(){
+      if(!isFragranceNavigationScope()) return [];
+      return all.filter(p =>
+        productMatchesAudience(p, selectedAudience) &&
+        cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
+        cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily)
+      );
+    }
+
+    function uniqueSortedFilterValues(list, getter){
+      const map = new Map();
+      for(const p of (Array.isArray(list) ? list : [])){
+        const value = String(getter(p) || "").trim();
+        const key = cleanNavKey(value);
+        if(value && key && !map.has(key)) map.set(key, value);
+      }
+      return Array.from(map.values()).sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
+    }
+
+    function renderFragranceFilterButtons(host, values, selectedValue, kind, countSource, getter){
+      if(!host) return;
+      host.innerHTML = "";
+      const fragment = document.createDocumentFragment();
+      const selectedKey = cleanNavKey(selectedValue);
+
+      const addButton = (value, label, count)=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "fragrance-filter-chip" + (cleanNavKey(value) === selectedKey ? " is-active" : "");
+        btn.dataset.fragranceFilterKind = kind;
+        btn.dataset.fragranceFilterValue = value;
+        btn.setAttribute("aria-pressed", cleanNavKey(value) === selectedKey ? "true" : "false");
+
+        const text = document.createElement("span");
+        text.className = "fragrance-filter-chip-label";
+        text.textContent = label;
+
+        const badge = document.createElement("span");
+        badge.className = "fragrance-filter-chip-count";
+        badge.textContent = String(count);
+
+        btn.append(text, badge);
+        fragment.appendChild(btn);
+      };
+
+      addButton("", "Todas", countSource.length);
+      for(const value of values){
+        const count = countSource.filter(p => cleanNavKey(getter(p)) === cleanNavKey(value)).length;
+        if(count > 0 || cleanNavKey(value) === selectedKey){
+          addButton(value, value, count);
+        }
+      }
+      host.appendChild(fragment);
+    }
+
+    function renderFragranceFilters(){
+      if(!fragranceFilterPanel || !fragranceFamilyFilters || !fragranceLineFilters) return;
+      const visible = isFragranceNavigationScope();
+      fragranceFilterPanel.hidden = !visible;
+      if(!visible){
+        fragranceFamilyFilters.innerHTML = "";
+        fragranceLineFilters.innerHTML = "";
+        return;
+      }
+
+      const base = fragranceFilterBaseProducts();
+      const familyValues = uniqueSortedFilterValues(base, p => p.fragranceFamily);
+      const lineValues = uniqueSortedFilterValues(base, p => navigationFragranceLineForProduct(p));
+
+      const familyCountSource = selectedFragranceLineFilter
+        ? base.filter(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter))
+        : base;
+      const lineCountSource = selectedFragranceFamilyFilter
+        ? base.filter(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter))
+        : base;
+
+      renderFragranceFilterButtons(
+        fragranceFamilyFilters,
+        familyValues,
+        selectedFragranceFamilyFilter,
+        "family",
+        familyCountSource,
+        p => p.fragranceFamily
+      );
+      renderFragranceFilterButtons(
+        fragranceLineFilters,
+        lineValues,
+        selectedFragranceLineFilter,
+        "line",
+        lineCountSource,
+        p => navigationFragranceLineForProduct(p)
+      );
+    }
+
     function syncFilterVisibility(){
       const showAlbumGrid = shouldShowAlbumGrid();
       const directSelected = isDirectProductAudience(selectedAudience);
+
 
       if(catSel){
         catSel.hidden = true;
@@ -3777,6 +4388,7 @@
           : "🔍 Busca aquí por nombre del producto...";
         qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto por nombre");
       }
+      renderFragranceFilters();
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
         grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
@@ -3784,7 +4396,7 @@
           ? "Secciones principales"
           : (directSelected
               ? "Productos"
-              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Familias olfativas" : "Productos")));
+              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Tipos de fragancia" : "Productos")));
         grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
       }
       if(catalogEntryIntro){
@@ -3800,9 +4412,11 @@
         }
       }
 
+
       rebuildSearchTicker();
       updateTickerVisibility();
     }
+
 
     function readStateFromUrl(){
       const u = new URL(location.href);
@@ -3810,17 +4424,23 @@
       const sort = (u.searchParams.get("sort") || "").trim();
       const audience = (u.searchParams.get("audience") || "").trim();
       const category = (u.searchParams.get("category") || "").trim();
-      const family = (u.searchParams.get("family") || "").trim();
+      const fragranceType = (u.searchParams.get("type") || "").trim();
+      const fragranceFamilyFilter = (u.searchParams.get("olfativa") || "").trim();
+      const fragranceLineFilter = (u.searchParams.get("linea") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
+
 
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
       const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
       selectedAudience = validAudience ? validAudience.label : "";
       selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
-      selectedFamily = selectedCategory && family ? family : "";
+      selectedFamily = selectedCategory && fragranceType ? fragranceType : "";
+      selectedFragranceFamilyFilter = selectedFamily ? fragranceFamilyFilter : "";
+      selectedFragranceLineFilter = selectedFamily ? fragranceLineFilter : "";
       if(sort && sortSel) sortSel.value = sort;
     }
+
 
     let _urlTimer = null;
     function writeStateToUrl(){
@@ -3831,15 +4451,20 @@
       const sort = sortSel ? sortSel.value : "";
       const tags = uniqueTerms(selectedSuggestionTerms || []).join(",");
 
+
       if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
       if (cat) u.searchParams.set("cat", cat); else u.searchParams.delete("cat");
       if (br) u.searchParams.set("brand", br); else u.searchParams.delete("brand");
       if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
       if (selectedAudience) u.searchParams.set("audience", selectedAudience); else u.searchParams.delete("audience");
       if (selectedCategory) u.searchParams.set("category", selectedCategory); else u.searchParams.delete("category");
-      if (selectedFamily) u.searchParams.set("family", selectedFamily); else u.searchParams.delete("family");
+      if (selectedFamily) u.searchParams.set("type", selectedFamily); else u.searchParams.delete("type");
+      u.searchParams.delete("family");
+      if (selectedFragranceFamilyFilter) u.searchParams.set("olfativa", selectedFragranceFamilyFilter); else u.searchParams.delete("olfativa");
+      if (selectedFragranceLineFilter) u.searchParams.set("linea", selectedFragranceLineFilter); else u.searchParams.delete("linea");
       u.searchParams.delete("album");
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
+
 
       history.replaceState(null, "", u.toString());
     }
@@ -3847,6 +4472,7 @@
       clearTimeout(_urlTimer);
       _urlTimer = setTimeout(writeStateToUrl, 180);
     }
+
 
     function resetDiscoveryFilters(){
       if(qInp) qInp.value = "";
@@ -3856,6 +4482,7 @@
       selectedSuggestionTerms = [];
     }
 
+
     function openAlbum(key, opts={}){
       const target = albumByKey.get(String(key || ""));
       if(!target) return;
@@ -3863,42 +4490,49 @@
         selectedAudience = target.navValue;
         selectedCategory = "";
         selectedFamily = "";
+        clearFragranceFilters();
       }else if(target.navType === "category"){
         selectedAudience = target.audience || selectedAudience;
         selectedCategory = target.navValue;
         selectedFamily = "";
+        clearFragranceFilters();
       }else if(target.navType === "family"){
         selectedAudience = target.audience || selectedAudience;
         selectedCategory = target.category || selectedCategory;
         selectedFamily = target.navValue;
+        clearFragranceFilters();
       }
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
       refreshFilterOptionsForScope();
-      pushCatalogNavigationHistory();
       render();
     }
+
 
     function closeAlbum(opts={}){
       if(selectedFamily){
         selectedFamily = "";
+        clearFragranceFilters();
       }else if(selectedCategory){
         selectedCategory = "";
+        clearFragranceFilters();
       }else{
         selectedAudience = "";
+        clearFragranceFilters();
       }
       if(!opts.keepFilters) resetDiscoveryFilters();
       refreshNavigationAlbums();
       refreshFilterOptionsForScope();
-      pushCatalogNavigationHistory();
       render();
     }
+
 
     function buildFilteredList(){
       const source = currentProductSourceList();
       const sortMode = sortSel ? sortSel.value : "";
       const terms = getCombinedWordTerms();
       const searchableSource = terms.length ? filterSearchExcludedProducts(source) : source;
+
 
       let filtered = searchableSource.filter(p=>{
         if(terms.length){
@@ -3907,7 +4541,9 @@
         return true;
       });
 
+
       filtered.sort((a,b)=>{
+
 
         if(sortMode === "price_asc"){
           if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
@@ -3916,6 +4552,7 @@
             || String(a.id).localeCompare(String(b.id));
         }
 
+
         if(sortMode === "price_desc"){
           if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
           return (b.price||0) - (a.price||0)
@@ -3923,12 +4560,15 @@
             || String(a.id).localeCompare(String(b.id));
         }
 
+
         return String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
           || String(a.id).localeCompare(String(b.id));
       });
 
+
       return filtered;
     }
+
 
     function buildFilteredAlbums(){
       const terms = getCombinedWordTerms();
@@ -3943,6 +4583,7 @@
         };
       });
 
+
       filtered.sort((a,b)=>{
         if(!selectedAudience){
           const order = new Map(NAV_AUDIENCES.map((item,index)=>[item.label,index]));
@@ -3953,12 +4594,15 @@
       return filtered;
     }
 
+
     let _renderToken = 0;
     function render(){
       const token = ++_renderToken;
 
+
       hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
       searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
+
 
       syncFilterVisibility();
       syncWordToggleButton();
@@ -3968,7 +4612,9 @@
       scheduleWriteStateToUrl();
       syncCatalogNavigationHistoryCurrent();
 
+
       const qHas = getCombinedWordTerms().length > 0;
+
 
       if(shouldShowAlbumGrid()){
         const filteredAlbums = buildFilteredAlbums();
@@ -3997,9 +4643,12 @@
           countEl.classList.toggle("search-active", qHas);
         }
 
+
         scheduleJsonLdUpdate([]);
 
+
         if(token !== _renderToken) return;
+
 
         const frag = document.createDocumentFragment();
         if(!filteredAlbums.length){
@@ -4010,25 +4659,32 @@
           }
         }
 
+
         grid.innerHTML = "";
         grid.appendChild(frag);
         return;
       }
 
+
       if(grid){
         grid.classList.remove("album-three-column-layout");
       }
 
+
       const filtered = buildFilteredList();
+
 
       if(countEl){
         countEl.textContent = `${filtered.length} ${filtered.length === 1 ? "producto" : "productos"}`;
         countEl.classList.toggle("search-active", qHas);
       }
 
+
       scheduleJsonLdUpdate(filtered);
 
+
       if(token !== _renderToken) return;
+
 
       const frag = document.createDocumentFragment();
       if(!filtered.length){
@@ -4039,8 +4695,10 @@
         }
       }
 
+
       grid.innerHTML = "";
       grid.appendChild(frag);
+
 
       for(const el of grid.querySelectorAll(".card")){
         const id = el.dataset.id;
@@ -4049,13 +4707,16 @@
       }
     }
 
+
     function updateCountTextLoading(){
       if(countEl) countEl.textContent = "Cargando productos…";
     }
 
+
     function updateCountTextError(msg){
       if(countEl) countEl.textContent = msg || "Error al cargar productos.";
     }
+
 
     function bindGridActions(){
       grid.addEventListener("click", (e)=>{
@@ -4066,6 +4727,7 @@
           return;
         }
 
+
         const btn = e.target.closest("button[data-act]");
         if(!btn) return;
         const card = e.target.closest(".card");
@@ -4073,17 +4735,22 @@
         const id = card.dataset.id;
         if(!id) return;
 
+
         const p = productById.get(String(id));
         if(!p) return;
+
 
         const act = btn.getAttribute("data-act");
         const enforce = shouldEnforceStockLimits();
         const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
         const maxStock = hasKnownStock ? p.stock : null;
 
+
         const currentQty = safeInt(cart[id]?.qty, 0);
 
+
         let newQty = currentQty;
+
 
         if(act === "inc"){
           if(!enforce){
@@ -4096,6 +4763,7 @@
         }else if(act === "dec"){
           newQty = Math.max(0, currentQty - 1);
         }
+
 
         if(newQty <= 0){
           delete cart[id];
@@ -4111,11 +4779,13 @@
           };
         }
 
+
         if(act === "inc" && newQty > currentQty){
           registrarConversionCatalogo("Añadió al carrito", String(p.name || ""));
         }
         saveCart();
         refreshCardUI(card, p);
+
 
         if(cartModal && cartModal.classList.contains("open")){
           renderCartModal();
@@ -4123,7 +4793,21 @@
       });
     }
 
+
     function bindFilters(){
+      [fragranceFamilyFilters, fragranceLineFilters].forEach(host=>{
+        if(!host) return;
+        host.addEventListener("click", (e)=>{
+          const btn = e.target.closest("[data-fragrance-filter-kind]");
+          if(!btn) return;
+          const kind = btn.dataset.fragranceFilterKind || "";
+          const value = btn.dataset.fragranceFilterValue || "";
+          if(kind === "family") selectedFragranceFamilyFilter = value;
+          if(kind === "line") selectedFragranceLineFilter = value;
+          render();
+        });
+      });
+
       [sortSel].forEach(sel=>{
         if(!sel) return;
         sel.addEventListener("change", ()=>{
@@ -4131,9 +4815,11 @@
         });
       });
 
+
       qInp.addEventListener("input", ()=>{
         render();
       });
+
 
       if(wordChips){
         wordChips.addEventListener("click", (e)=>{
@@ -4143,6 +4829,7 @@
         });
       }
 
+
       if(activeTerms){
         activeTerms.addEventListener("click", (e)=>{
           const btn = e.target.closest("[data-role='remove-active-term']");
@@ -4150,6 +4837,7 @@
           removeSuggestionTerm(btn.getAttribute("data-term") || "");
         });
       }
+
 
       if(clearTermsBtn){
         clearTermsBtn.addEventListener("click", ()=>{
@@ -4159,11 +4847,13 @@
         });
       }
 
+
       if(toggleWordPanelBtn){
         toggleWordPanelBtn.addEventListener("click", ()=>{
           toggleWordSuggestionsVisible();
         });
       }
+
 
       qInp.addEventListener("focus", ()=>{
         updateTickerVisibility();
@@ -4172,11 +4862,13 @@
         updateTickerVisibility();
       });
 
+
       window.addEventListener("resize", ()=>{
         rebuildSearchTicker();
         updateTickerVisibility();
       }, { passive:true });
     }
+
 
     function buildCategoriesAndBrands(list){
       const cats = new Set();
@@ -4191,13 +4883,16 @@
       };
     }
 
+
     function rebuildCatalogVisibility(){
       hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
       searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
 
+
       all = filterVisibleProducts(allLoadedProducts);
       productById = new Map(all.map(p => [String(p.id), p]));
       refreshNavigationAlbums();
+
 
       updateCatalogFooterProducts(all);
       scheduleJsonLdUpdate();
@@ -4206,15 +4901,18 @@
       render();
     }
 
+
     async function loadProducts(){
       updateCountTextLoading();
       clearLegacyProductCaches();
+
 
       try{
         await warmupPlaceholderOnce();
       }catch(error){
         console.warn("No se pudo preparar la imagen suplente. El catálogo continuará.", error);
       }
+
 
       let catalogSource;
       try{
@@ -4224,6 +4922,7 @@
         updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
         return;
       }
+
 
       let sheetProducts = [];
       try{
@@ -4236,11 +4935,13 @@
         return;
       }
 
+
       if(!sheetProducts.length){
         console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
         updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
         return;
       }
+
 
       let giftProducts = [];
       try{
@@ -4250,7 +4951,9 @@
         giftProducts = [];
       }
 
+
       allLoadedProducts = [...sheetProducts, ...giftProducts];
+
 
       try{
         hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
@@ -4260,6 +4963,7 @@
         console.warn("No se pudieron aplicar todos los controles de categorías. Se muestran los productos cargados para no dejar el catálogo vacío.", err);
         all = allLoadedProducts.slice();
       }
+
 
       try{
         productById = new Map(all.map(p => [String(p.id), p]));
@@ -4277,7 +4981,18 @@
             cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
             cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily)
           );
-          if(!hasFamily) selectedFamily = "";
+          if(!hasFamily){
+            selectedFamily = "";
+            clearFragranceFilters();
+          }else{
+            const filterBase = fragranceFilterBaseProducts();
+            if(selectedFragranceFamilyFilter && !filterBase.some(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter))){
+              selectedFragranceFamilyFilter = "";
+            }
+            if(selectedFragranceLineFilter && !filterBase.some(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter))){
+              selectedFragranceLineFilter = "";
+            }
+          }
         }
         refreshNavigationAlbums();
       }catch(err){
@@ -4285,16 +5000,19 @@
         selectedAudience = "";
         selectedCategory = "";
         selectedFamily = "";
+        clearFragranceFilters();
         selectedAlbumKey = "";
         albums = [];
         albumByKey = new Map();
         productById = new Map(all.map(p => [String(p.id), p]));
       }
 
+
       try{ updateCatalogFooterProducts(all); }catch(err){ console.warn("No se pudo actualizar el pie del catálogo.", err); }
       try{ scheduleJsonLdUpdate(); }catch(err){ console.warn("No se pudo actualizar JSON-LD.", err); }
       try{ refreshFilterOptionsForScope(); }catch(err){ console.warn("No se pudieron actualizar todos los filtros.", err); }
       try{ sanitizeCartWithStock(); }catch(err){ console.warn("No se pudo validar el carrito contra el stock.", err); }
+
 
       try{
         render();
@@ -4304,6 +5022,7 @@
       }
     }
 
+
     function initCartButton(){
       const btnCart = document.getElementById("btn-cart");
       if(!btnCart) return;
@@ -4312,13 +5031,16 @@
       });
     }
 
+
     function initShipping(){
       loadShippingFromLS();
     }
 
+
     function initKeyboardAccessibility(){
       // Cierre de modales ya está en Escape
     }
+
 
     async function init(){
       refreshCartCount();
@@ -4328,29 +5050,35 @@
       bindGridActions();
       initKeyboardAccessibility();
 
+
       if(albumBackBtn){
         albumBackBtn.addEventListener("click", ()=>{
           closeAlbum({ keepFilters:getCombinedWordTerms().length > 0 });
         });
       }
 
+
       syncWordToggleButton();
       rebuildSearchTicker();
       updateTickerVisibility();
       updateCountAttention();
 
+
       loadClientFromLS();     // precarga datos
       loadAddressFromLS();    // precarga datos (Santa Marta / Magdalena por defecto)
+
 
       await initializeRemoteCatalogConfiguration();
       await loadProducts();
     }
+
 
     // Arranque
     init().catch(error=>{
       console.error("No se pudo iniciar el catálogo.", error);
       updateCountTextError("No se pudo iniciar el catálogo. Reintenta más tarde.");
     });
+
 
 // Detalle auxiliar conservado del bloque clásico original.
 const visitorDetails = document.getElementById("visitorDetails");
@@ -4359,3 +5087,387 @@ const visitorDetails = document.getElementById("visitorDetails");
         requestAnimationFrame(() => visitorDetails.scrollIntoView({ block:"start" }));
       }
     });
+// Mejoras de experiencia de usuario del entorno de pruebas.
+function uxActiveFilterEntries(){
+  const entries=[];
+  const query=qInp?String(qInp.value||"").trim():"";
+  if(query) entries.push({key:"query",label:`Búsqueda: ${query}`});
+  for(const term of uniqueTerms(selectedSuggestionTerms||[])) entries.push({key:`term:${term}`,label:term});
+  if(selectedFragranceFamilyFilter) entries.push({key:"olfativa",label:`Familia: ${selectedFragranceFamilyFilter}`});
+  if(selectedFragranceLineFilter) entries.push({key:"linea",label:`Línea: ${selectedFragranceLineFilter}`});
+  return entries;
+}
+
+function uxRenderFilterSummary(){
+  const host=document.getElementById("filterSummary");
+  if(!host) return;
+  const entries=uxActiveFilterEntries();
+  host.hidden=entries.length===0;
+  host.innerHTML="";
+  if(!entries.length) return;
+  const label=document.createElement("span");
+  label.className="filter-summary-label";
+  label.textContent="Filtros activos";
+  host.appendChild(label);
+  for(const entry of entries){
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="filter-summary-chip";
+    btn.dataset.clearFilter=entry.key;
+    btn.setAttribute("aria-label",`Quitar ${entry.label}`);
+    btn.innerHTML=`<span>${entry.label}</span><span aria-hidden="true">×</span>`;
+    host.appendChild(btn);
+  }
+}
+
+function uxRenderBreadcrumb(){
+  if(!albumPath) return;
+  albumPath.innerHTML="";
+  if(!selectedAudience) return;
+  const crumbs=[{level:"root",label:"Inicio"},{level:"audience",label:selectedAudience}];
+  if(selectedCategory) crumbs.push({level:"category",label:selectedCategory});
+  if(selectedFamily) crumbs.push({level:"family",label:selectedFamily});
+  crumbs.forEach((crumb,index)=>{
+    if(index){
+      const sep=document.createElement("span");
+      sep.className="breadcrumb-separator";
+      sep.textContent="›";
+      sep.setAttribute("aria-hidden","true");
+      albumPath.appendChild(sep);
+    }
+    const current=index===crumbs.length-1;
+    if(current){
+      const span=document.createElement("span");
+      span.className="breadcrumb-current";
+      span.textContent=crumb.label;
+      span.setAttribute("aria-current","page");
+      albumPath.appendChild(span);
+    }else{
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="breadcrumb-link";
+      btn.dataset.breadcrumbLevel=crumb.level;
+      btn.textContent=crumb.label;
+      albumPath.appendChild(btn);
+    }
+  });
+}
+
+function uxClearOneFilter(key){
+  if(key==="query"&&qInp) qInp.value="";
+  else if(key==="olfativa") selectedFragranceFamilyFilter="";
+  else if(key==="linea") selectedFragranceLineFilter="";
+  else if(String(key||"").startsWith("term:")){
+    const term=String(key).slice(5);
+    selectedSuggestionTerms=selectedSuggestionTerms.filter(item=>normalizeText(item)!==normalizeText(term));
+  }
+  render();
+}
+
+function uxClearAllFilters(){
+  if(qInp) qInp.value="";
+  selectedSuggestionTerms=[];
+  clearFragranceFilters();
+  render();
+}
+
+function uxScrollStack(){
+  if(!Array.isArray(window.__catalogUxScrollStack)) window.__catalogUxScrollStack=[];
+  return window.__catalogUxScrollStack;
+}
+
+function uxScrollToCatalogStart(){
+  const target=document.querySelector("main")||grid;
+  if(!target) return;
+  const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-86);
+  requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"smooth"}));
+}
+
+function uxSaveScrollPosition(){
+  clearTimeout(window.__catalogUxScrollTimer);
+  window.__catalogUxScrollTimer=setTimeout(()=>{
+    try{sessionStorage.setItem("irenismb_catalog_scroll_position",String(Math.max(0,Math.round(window.scrollY||0))));}catch(_){}
+  },120);
+}
+
+function uxRestoreScrollPosition(){
+  let saved=0;
+  try{saved=Number(sessionStorage.getItem("irenismb_catalog_scroll_position")||0);}catch(_){}
+  if(saved>0) requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:saved,left:0,behavior:"auto"})));
+}
+
+function uxFlashAdded(card,p){
+  const btn=card&&card.querySelector('button[data-act="inc"]');
+  if(!btn) return;
+  btn.classList.add("just-added");
+  btn.textContent="✓ Agregado";
+  setTimeout(()=>{
+    btn.classList.remove("just-added");
+    if(card&&card.isConnected) refreshCardUI(card,p);
+  },850);
+}
+
+function rebuildSearchTicker(){
+  if(tickerInner) tickerInner.innerHTML="";
+  if(searchWrap) searchWrap.classList.remove("show-ticker");
+}
+
+function updateTickerVisibility(){
+  if(searchWrap) searchWrap.classList.remove("show-ticker");
+}
+
+function syncWordToggleButton(){
+  if(!toggleWordPanelBtn) return;
+  const canToggle=shouldAllowSuggestionToggle();
+  const activeCount=uxActiveFilterEntries().length;
+  toggleWordPanelBtn.hidden=!canToggle;
+  toggleWordPanelBtn.disabled=!canToggle;
+  toggleWordPanelBtn.textContent=activeCount?`Filtros (${activeCount})`:"Filtros";
+  toggleWordPanelBtn.title=wordSuggestionsVisible?"Ocultar filtros":"Mostrar filtros";
+  toggleWordPanelBtn.setAttribute("aria-label",toggleWordPanelBtn.title);
+  toggleWordPanelBtn.setAttribute("aria-pressed",wordSuggestionsVisible?"true":"false");
+  toggleWordPanelBtn.classList.toggle("is-active",wordSuggestionsVisible||activeCount>0);
+}
+
+function renderWordSuggestions(){
+  if(!wordPanel||!wordChips||!activeTerms||!activeTermsWrap||!clearTermsBtn) return;
+  syncWordToggleButton();
+  if(!wordSuggestionsVisible){
+    wordPanel.hidden=true;
+    clearTermsBtn.hidden=true;
+    activeTermsWrap.hidden=true;
+    wordChips.innerHTML="";
+    activeTerms.innerHTML="";
+    const summary=document.getElementById("filterSummary");
+    if(summary) summary.hidden=true;
+    return;
+  }
+  wordPanel.hidden=false;
+  const showAlbumGrid=shouldShowAlbumGrid();
+  const entries=showAlbumGrid?[]:buildSuggestionEntries();
+  const activeTermsList=uniqueTerms(selectedSuggestionTerms||[]);
+  const rawQuery=qInp?String(qInp.value||""):"";
+  const typedTerms=parseSearchTerms(rawQuery);
+  clearTermsBtn.hidden=uxActiveFilterEntries().length===0;
+  activeTermsWrap.hidden=!activeTermsList.length;
+  wordChips.innerHTML="";
+  activeTerms.innerHTML="";
+  uxRenderFilterSummary();
+
+  if(activeTermsList.length){
+    for(const term of activeTermsList){
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="term-chip is-active";
+      btn.dataset.term=term;
+      btn.dataset.role="remove-active-term";
+      btn.setAttribute("aria-label",`Quitar palabra ${term}`);
+      btn.innerHTML=`<span>${term}</span><span class="term-chip-remove" aria-hidden="true">×</span>`;
+      activeTerms.appendChild(btn);
+    }
+  }
+
+  if(showAlbumGrid){
+    const note=document.createElement("div");
+    note.className="word-empty";
+    note.textContent=typedTerms.length?"La búsqueda está filtrando las categorías visibles.":"Abre una categoría para ver filtros y palabras más específicas.";
+    wordChips.appendChild(note);
+  }else if(!entries.length){
+    const empty=document.createElement("div");
+    empty.className="word-empty";
+    empty.textContent="No hay palabras adicionales para esta vista.";
+    wordChips.appendChild(empty);
+  }else{
+    for(const entry of entries){
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="term-chip"+(activeTermsList.includes(entry.term)?" is-active":"");
+      btn.dataset.term=entry.term;
+      btn.dataset.role="toggle-term";
+      btn.setAttribute("aria-pressed",activeTermsList.includes(entry.term)?"true":"false");
+      btn.innerHTML=`<span>${entry.term}</span><span class="term-chip-count">${entry.count}</span>`;
+      wordChips.appendChild(btn);
+    }
+  }
+}
+
+function syncFilterVisibility(){
+  const showAlbumGrid=shouldShowAlbumGrid();
+  const directSelected=isDirectProductAudience(selectedAudience);
+  if(catSel){catSel.hidden=true;catSel.disabled=true;catSel.value="";}
+  if(brandSel){brandSel.hidden=true;brandSel.disabled=true;brandSel.value="";}
+  if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
+  if(albumNav) albumNav.hidden=!selectedAudience;
+  if(albumBackBtn){
+    albumBackBtn.textContent=selectedFamily?`← Volver a ${selectedCategory}`:(selectedCategory?`← Volver a ${selectedAudience}`:"← Volver al inicio");
+  }
+  uxRenderBreadcrumb();
+  placeResponsiveHeaderMeta();
+  if(qInp){
+    const scope=selectedFamily||selectedCategory||selectedAudience;
+    qInp.placeholder=selectedAudience?`Buscar en ${scope}`:"Buscar producto, línea o categoría";
+    qInp.setAttribute("aria-label",selectedAudience?`Buscar dentro de ${scope}`:"Buscar producto, línea o categoría");
+  }
+  renderFragranceFilters();
+  if(grid){
+    grid.classList.toggle("album-grid-mode",showAlbumGrid);
+    grid.classList.toggle("root-nav-mode",showAlbumGrid&&!selectedAudience);
+    const label=!selectedAudience?"Secciones principales":(directSelected?"Productos":(!selectedCategory?"Subcategorías":(albums.length>0&&!selectedFamily?"Tipos de fragancia":"Productos")));
+    grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
+  }
+  if(catalogEntryIntro){
+    const hasTerms=getCombinedWordTerms().length>0;
+    catalogEntryIntro.hidden=hasTerms||!!selectedCategory||directSelected;
+    if(catalogEntryTitle) catalogEntryTitle.textContent=selectedAudience||"¿Qué estás buscando?";
+    if(catalogEntryText) catalogEntryText.textContent=selectedAudience?(directSelected?"Explora los regalos disponibles.":"Elige una categoría para ver los productos disponibles."):"Elige una categoría para comenzar.";
+  }
+  rebuildSearchTicker();
+  updateTickerVisibility();
+  uxRenderFilterSummary();
+}
+
+function refreshCardUI(card,p){
+  const row=card.querySelector(".row");
+  const actions=card.querySelector(".actions");
+  const meta=card.querySelector(".meta");
+  if(meta) meta.hidden=false;if(row) row.hidden=false;if(actions) actions.hidden=false;
+  const enforce=shouldEnforceStockLimits();
+  const id=String(p.id);
+  const q=cart[id]?.qty||0;
+  const qtyPill=card.querySelector('[data-role="qty"]');
+  const decBtn=card.querySelector('button[data-act="dec"]');
+  const incBtn=card.querySelector('button[data-act="inc"]');
+  if(qtyPill){qtyPill.textContent=q>0?`${q} en carrito`:"Aún no agregado";qtyPill.classList.toggle("has-items",q>0);}
+  if(decBtn) decBtn.disabled=q<=0;
+  const hasKnownStock=Number.isFinite(p.stock)&&p.stock>=0;
+  const maxStock=hasKnownStock?p.stock:null;
+  const canAdd=!enforce||(hasKnownStock&&maxStock>0&&q<maxStock);
+  if(incBtn){
+    incBtn.disabled=!canAdd;
+    incBtn.classList.toggle("in-cart",q>0);
+    if(enforce&&!hasKnownStock) incBtn.textContent="Stock por confirmar";
+    else if(enforce&&maxStock<=0) incBtn.textContent="Sin stock";
+    else incBtn.textContent=q>0?"Agregar otro":"Agregar";
+  }
+}
+
+function makeCard(p){
+  const card=cardTemplate.content.firstElementChild.cloneNode(true);
+  card.id="p-"+encodeURIComponent(String(p.id));
+  card.dataset.id=String(p.id);
+  const imgBox=card.querySelector(".img");
+  imgBox.appendChild(makeImgFromFilename(p.imgFilename,p.name,p.docsImageUrl));
+  const nameEl=card.querySelector(".name");
+  const metaEl=card.querySelector(".meta");
+  const descriptionEl=card.querySelector(".description");
+  const priceEl=card.querySelector(".price");
+  nameEl.textContent=String(p.name||"");nameEl.title=String(p.name||"");
+  metaEl.textContent=stockMetaText(p);
+  const description=String(p?.description||"").trim();
+  descriptionEl.textContent=description;descriptionEl.hidden=!description;
+  if(description.length>230){
+    card.classList.add("description-collapsible");
+    const toggle=document.createElement("button");
+    toggle.type="button";toggle.className="description-toggle";toggle.dataset.descriptionToggle="";toggle.textContent="Ver detalles";toggle.setAttribute("aria-expanded","false");
+    descriptionEl.insertAdjacentElement("afterend",toggle);
+  }
+  priceEl.textContent=shouldShowProductPrices()?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"";
+  if(p?.isGiftGalleryImage){card.classList.add("gift-gallery-card");const pad=card.querySelector(".pad");if(pad) pad.hidden=true;imgBox.setAttribute("aria-label","Imagen de regalo para toda ocasión");}
+  refreshCardUI(card,p);
+  return card;
+}
+
+function makeEmptyState(message){
+  const div=document.createElement("div");div.className="empty-state";
+  const title=document.createElement("strong");title.className="empty-state-title";title.textContent=message;div.appendChild(title);
+  if(getCombinedWordTerms().length){
+    const help=document.createElement("p");help.className="empty-state-text";help.textContent="Prueba con menos palabras o limpia los filtros para volver a explorar el catálogo.";
+    const actions=document.createElement("div");actions.className="empty-state-actions";
+    const clear=document.createElement("button");clear.type="button";clear.className="btn-acc";clear.dataset.clearSearch="all";clear.textContent="Limpiar búsqueda y filtros";
+    actions.appendChild(clear);div.append(help,actions);
+  }
+  return div;
+}
+
+function openAlbum(key,opts={}){
+  const target=albumByKey.get(String(key||""));if(!target) return;
+  uxScrollStack().push({scrollY:window.scrollY||0});
+  if(target.navType==="audience"){selectedAudience=target.navValue;selectedCategory="";selectedFamily="";clearFragranceFilters();}
+  else if(target.navType==="category"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.navValue;selectedFamily="";clearFragranceFilters();}
+  else if(target.navType==="family"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedFamily=target.navValue;clearFragranceFilters();}
+  if(!opts.keepFilters) resetDiscoveryFilters();
+  refreshNavigationAlbums();refreshFilterOptionsForScope();pushCatalogNavigationHistory();render();uxScrollToCatalogStart();
+}
+
+function closeAlbum(opts={}){
+  const restore=uxScrollStack().pop();
+  if(selectedFamily){selectedFamily="";clearFragranceFilters();}
+  else if(selectedCategory){selectedCategory="";clearFragranceFilters();}
+  else{selectedAudience="";clearFragranceFilters();}
+  if(!opts.keepFilters) resetDiscoveryFilters();
+  refreshNavigationAlbums();refreshFilterOptionsForScope();pushCatalogNavigationHistory();render();
+  if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
+}
+
+function renderCartModal(){
+  const items=cartItemsArray();
+  const subtotalValue=cartTotalValue();
+  const shippingValue=getShippingCop();
+  const total=subtotalValue+shippingValue;
+  const showPrices=shouldShowProductPrices();
+  const hasUnpricedItems=items.some(it=>it&&it.hasPrice===false);
+  const subtotalEl=document.getElementById("cartSubtotal");
+  const shippingEl=document.getElementById("cartShippingTotal");
+  if(subtotalEl) subtotalEl.textContent=(!showPrices||hasUnpricedItems)?"Por confirmar":fmtCOP.format(subtotalValue);
+  if(shippingEl) shippingEl.textContent=fmtCOP.format(shippingValue);
+  cartTotalEl.textContent=(!showPrices||hasUnpricedItems)?"Total: Por confirmar":"Total: "+fmtCOP.format(total);
+  if(!items.length){cartItemsEl.innerHTML='<div class="cart-empty"><strong>Tu carrito está vacío.</strong><span>Agrega productos para preparar el pedido por WhatsApp.</span></div>';return;}
+  const frag=document.createDocumentFragment();
+  items.forEach(it=>{
+    const row=document.createElement("div");row.className="cart-item";row.dataset.id=it.id;
+    const left=document.createElement("div");left.className="cart-item-left";
+    const p=productById.get(String(it.id));const imgFilename=p?.imgFilename||it.imgFilename;
+    left.appendChild(makeCartThumbFromFilename(imgFilename,it.name,p&&p.docsImageUrl));
+    const main=document.createElement("div");main.className="cart-item-main";main.innerHTML='<p class="cart-item-name"></p><p class="cart-item-sub"></p>';
+    main.querySelector(".cart-item-name").textContent=it.name;
+    const meta=[];if(shouldShowProductCodes()) meta.push(`Código ${it.id}`);meta.push(shouldShowProductPrices()?(it.hasPrice===false?"Precio por confirmar":`${fmtCOP.format(Number(it.price)||0)} c/u`):"Precio por confirmar");
+    main.querySelector(".cart-item-sub").textContent=meta.join(" · ");left.appendChild(main);
+    const controls=document.createElement("div");controls.className="cart-controls";controls.innerHTML=`<button class="cart-qty-btn" type="button" data-act="dec" aria-label="Disminuir cantidad">−</button><span class="cart-qty" aria-label="Cantidad">${it.qty}</span><button class="cart-qty-btn" type="button" data-act="inc" aria-label="Aumentar cantidad">+</button>`;
+    const incBtn=controls.querySelector('button[data-act="inc"]');const enforce=shouldEnforceStockLimits();const known=Number.isFinite(it.stock)&&it.stock>=0;const max=known?it.stock:null;if(incBtn) incBtn.disabled=enforce?(!known||max<=0||(Number(it.qty)||0)>=max):false;
+    const subtotal=document.createElement("div");subtotal.className="cart-subtotal";subtotal.innerHTML=`<span>Subtotal</span><strong>${(!shouldShowProductPrices()||it.hasPrice===false)?"Por confirmar":fmtCOP.format((Number(it.price)||0)*(Number(it.qty)||0))}</strong>`;
+    const remove=document.createElement("button");remove.className="cart-remove";remove.type="button";remove.textContent="Eliminar";remove.dataset.act="remove";
+    row.append(left,controls,subtotal,remove);frag.appendChild(row);
+  });
+  cartItemsEl.innerHTML="";cartItemsEl.appendChild(frag);
+}
+
+function bindGridActions(){
+  grid.addEventListener("click",e=>{
+    const clear=e.target.closest("[data-clear-search]");if(clear){uxClearAllFilters();return;}
+    const desc=e.target.closest("[data-description-toggle]");if(desc){const card=desc.closest(".card");if(!card)return;const expanded=card.classList.toggle("description-expanded");desc.textContent=expanded?"Ocultar detalles":"Ver detalles";desc.setAttribute("aria-expanded",expanded?"true":"false");return;}
+    const albumBtn=e.target.closest("[data-album-open]");if(albumBtn){const key=albumBtn.getAttribute("data-album-open")||"";if(key)openAlbum(key,{keepFilters:getCombinedWordTerms().length>0});return;}
+    const btn=e.target.closest("button[data-act]");if(!btn)return;const card=e.target.closest(".card");if(!card)return;const id=card.dataset.id;if(!id)return;const p=productById.get(String(id));if(!p)return;
+    const act=btn.dataset.act;const enforce=shouldEnforceStockLimits();const known=Number.isFinite(p.stock)&&p.stock>=0;const max=known?p.stock:null;const current=safeInt(cart[id]?.qty,0);let next=current;
+    if(act==="inc"){if(!enforce)next=current+1;else if(known&&max>0&&current<max)next=current+1;}else if(act==="dec")next=Math.max(0,current-1);
+    if(next<=0)delete cart[id];else cart[id]={id:p.id,name:p.name,price:p.price,hasPrice:p.hasPrice!==false,qty:next,stock:p.stock,imgFilename:p.imgFilename||null};
+    if(act==="inc"&&next>current)registrarConversionCatalogo("Añadió al carrito",String(p.name||""));saveCart();refreshCardUI(card,p);if(act==="inc"&&next>current)uxFlashAdded(card,p);if(cartModal&&cartModal.classList.contains("open"))renderCartModal();
+  });
+}
+
+function bindFilters(){
+  [fragranceFamilyFilters,fragranceLineFilters].forEach(host=>{if(!host)return;host.addEventListener("click",e=>{const btn=e.target.closest("[data-fragrance-filter-kind]");if(!btn)return;const kind=btn.dataset.fragranceFilterKind||"";const value=btn.dataset.fragranceFilterValue||"";if(kind==="family")selectedFragranceFamilyFilter=value;if(kind==="line")selectedFragranceLineFilter=value;render();});});
+  if(sortSel)sortSel.addEventListener("change",render);qInp.addEventListener("input",render);
+  wordChips?.addEventListener("click",e=>{const btn=e.target.closest("[data-role='toggle-term']");if(btn)toggleSuggestionTerm(btn.dataset.term||"");});
+  activeTerms?.addEventListener("click",e=>{const btn=e.target.closest("[data-role='remove-active-term']");if(btn)removeSuggestionTerm(btn.dataset.term||"");});
+  document.getElementById("filterSummary")?.addEventListener("click",e=>{const btn=e.target.closest("[data-clear-filter]");if(btn)uxClearOneFilter(btn.dataset.clearFilter||"");});
+  clearTermsBtn?.addEventListener("click",uxClearAllFilters);toggleWordPanelBtn?.addEventListener("click",toggleWordSuggestionsVisible);
+  albumPath?.addEventListener("click",e=>{const btn=e.target.closest("[data-breadcrumb-level]");if(!btn)return;const level=btn.dataset.breadcrumbLevel;uxScrollStack().length=0;if(level==="root"){selectedAudience="";selectedCategory="";selectedFamily="";clearFragranceFilters();}else if(level==="audience"){selectedCategory="";selectedFamily="";clearFragranceFilters();}else if(level==="category"){selectedFamily="";clearFragranceFilters();}resetDiscoveryFilters();refreshNavigationAlbums();refreshFilterOptionsForScope();render();uxScrollToCatalogStart();});
+  qInp.addEventListener("focus",updateTickerVisibility);qInp.addEventListener("blur",updateTickerVisibility);window.addEventListener("resize",()=>{rebuildSearchTicker();updateTickerVisibility();},{passive:true});window.addEventListener("scroll",uxSaveScrollPosition,{passive:true});
+}
+
+async function init(){
+  refreshCartCount();initCartButton();initShipping();bindFilters();bindGridActions();initKeyboardAccessibility();
+  if(albumBackBtn)albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
+  syncWordToggleButton();rebuildSearchTicker();updateTickerVisibility();updateCountAttention();loadClientFromLS();loadAddressFromLS();
+  await initializeRemoteCatalogConfiguration();await loadProducts();uxRestoreScrollPosition();
+}

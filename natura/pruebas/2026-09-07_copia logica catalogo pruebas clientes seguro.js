@@ -1723,6 +1723,127 @@
     let selectedFragranceFamilyFilter = "";
     let selectedFragranceLineFilter = "";
     let selectedAlbumKey = "";
+
+    const catalogNavigationHistory = {
+      entries: [],
+      index: -1,
+      restoring: false
+    };
+
+    function getCatalogNavigationSnapshot(){
+      return {
+        q:qInp ? String(qInp.value || "") : "",
+        sort:sortSel ? String(sortSel.value || "") : "",
+        tags:uniqueTerms(selectedSuggestionTerms || []),
+        wordsVisible:!!wordSuggestionsVisible,
+        audience:selectedAudience || "",
+        category:selectedCategory || "",
+        family:selectedFamily || "",
+        fragranceFamily:selectedFragranceFamilyFilter || "",
+        fragranceLine:selectedFragranceLineFilter || ""
+      };
+    }
+
+    function catalogNavigationSignature(snapshot){
+      const s = snapshot || {};
+      return JSON.stringify({
+        q:s.q || "",
+        sort:s.sort || "",
+        tags:Array.isArray(s.tags) ? s.tags : [],
+        wordsVisible:!!s.wordsVisible,
+        audience:s.audience || "",
+        category:s.category || "",
+        family:s.family || "",
+        fragranceFamily:s.fragranceFamily || "",
+        fragranceLine:s.fragranceLine || ""
+      });
+    }
+
+    function notifyCatalogNavigationHistory(){
+      const detail = {
+        canBack:catalogNavigationHistory.index > 0,
+        canForward:catalogNavigationHistory.index >= 0 && catalogNavigationHistory.index < catalogNavigationHistory.entries.length - 1,
+        index:catalogNavigationHistory.index,
+        length:catalogNavigationHistory.entries.length
+      };
+      window.dispatchEvent(new CustomEvent("catalog-navigation-history-change",{detail}));
+      return detail;
+    }
+
+    function ensureCatalogNavigationHistory(){
+      if(catalogNavigationHistory.index >= 0) return;
+      catalogNavigationHistory.entries = [getCatalogNavigationSnapshot()];
+      catalogNavigationHistory.index = 0;
+      notifyCatalogNavigationHistory();
+    }
+
+    function syncCatalogNavigationHistoryCurrent(){
+      if(catalogNavigationHistory.restoring) return;
+      ensureCatalogNavigationHistory();
+      catalogNavigationHistory.entries[catalogNavigationHistory.index] = getCatalogNavigationSnapshot();
+      notifyCatalogNavigationHistory();
+    }
+
+    function pushCatalogNavigationHistory(){
+      if(catalogNavigationHistory.restoring) return;
+      ensureCatalogNavigationHistory();
+      const next = getCatalogNavigationSnapshot();
+      const current = catalogNavigationHistory.entries[catalogNavigationHistory.index];
+      if(catalogNavigationSignature(current) === catalogNavigationSignature(next)){
+        catalogNavigationHistory.entries[catalogNavigationHistory.index] = next;
+        notifyCatalogNavigationHistory();
+        return;
+      }
+      catalogNavigationHistory.entries = catalogNavigationHistory.entries.slice(0,catalogNavigationHistory.index + 1);
+      catalogNavigationHistory.entries.push(next);
+      catalogNavigationHistory.index = catalogNavigationHistory.entries.length - 1;
+      notifyCatalogNavigationHistory();
+    }
+
+    function restoreCatalogNavigationSnapshot(snapshot){
+      if(!snapshot) return;
+      catalogNavigationHistory.restoring = true;
+      try{
+        if(qInp) qInp.value = snapshot.q || "";
+        if(sortSel) sortSel.value = snapshot.sort || "";
+        selectedSuggestionTerms = uniqueTerms(Array.isArray(snapshot.tags) ? snapshot.tags : []);
+        wordSuggestionsVisible = !!snapshot.wordsVisible;
+        selectedAudience = snapshot.audience || "";
+        selectedCategory = snapshot.category || "";
+        selectedFamily = snapshot.family || "";
+        selectedFragranceFamilyFilter = snapshot.fragranceFamily || "";
+        selectedFragranceLineFilter = snapshot.fragranceLine || "";
+        refreshNavigationAlbums();
+        refreshFilterOptionsForScope();
+        render();
+      }finally{
+        catalogNavigationHistory.restoring = false;
+      }
+      notifyCatalogNavigationHistory();
+      uxScrollToCatalogStart();
+    }
+
+    function catalogHistoryBack(){
+      if(catalogNavigationHistory.index <= 0) return false;
+      syncCatalogNavigationHistoryCurrent();
+      catalogNavigationHistory.index -= 1;
+      restoreCatalogNavigationSnapshot(catalogNavigationHistory.entries[catalogNavigationHistory.index]);
+      return true;
+    }
+
+    function catalogHistoryForward(){
+      if(catalogNavigationHistory.index < 0 || catalogNavigationHistory.index >= catalogNavigationHistory.entries.length - 1) return false;
+      syncCatalogNavigationHistoryCurrent();
+      catalogNavigationHistory.index += 1;
+      restoreCatalogNavigationSnapshot(catalogNavigationHistory.entries[catalogNavigationHistory.index]);
+      return true;
+    }
+
+    window.CATALOG_NAV_HISTORY = {
+      back:catalogHistoryBack,
+      forward:catalogHistoryForward,
+      getState:()=>notifyCatalogNavigationHistory()
+    };
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
     let allowedProductRouteKeySet = new Set();
@@ -4489,6 +4610,7 @@
       renderWordSuggestions();
       updateCountAttention();
       scheduleWriteStateToUrl();
+      syncCatalogNavigationHistoryCurrent();
 
 
       const qHas = getCombinedWordTerms().length > 0;
@@ -5274,7 +5396,7 @@ function openAlbum(key,opts={}){
   else if(target.navType==="category"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.navValue;selectedFamily="";clearFragranceFilters();}
   else if(target.navType==="family"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedFamily=target.navValue;clearFragranceFilters();}
   if(!opts.keepFilters) resetDiscoveryFilters();
-  refreshNavigationAlbums();refreshFilterOptionsForScope();render();uxScrollToCatalogStart();
+  refreshNavigationAlbums();refreshFilterOptionsForScope();pushCatalogNavigationHistory();render();uxScrollToCatalogStart();
 }
 
 function closeAlbum(opts={}){
@@ -5283,7 +5405,7 @@ function closeAlbum(opts={}){
   else if(selectedCategory){selectedCategory="";clearFragranceFilters();}
   else{selectedAudience="";clearFragranceFilters();}
   if(!opts.keepFilters) resetDiscoveryFilters();
-  refreshNavigationAlbums();refreshFilterOptionsForScope();render();
+  refreshNavigationAlbums();refreshFilterOptionsForScope();pushCatalogNavigationHistory();render();
   if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
 }
 

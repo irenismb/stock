@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
-<!-- Página de pruebas alineada directamente con los archivos públicos de producción. -->
+<!-- Entorno de prueba aislado: usa el Google Sheet de pruebas y archivos de código separados. -->
 <!-- Las imágenes de productos se relacionan por código y se almacenan directamente en productos/. -->
 <html lang="es-CO">
 <head>
@@ -15,9 +15,11 @@
   <link rel="canonical" href="https://irenismb.github.io/stock/natura/catalogo.html" />
   <link rel="alternate" hreflang="es-CO" href="https://irenismb.github.io/stock/natura/catalogo.html" />
 
+
   <link rel="icon" type="image/webp" href="../logos/logo_empresa.webp" />
   <link rel="icon" type="image/png" href="../logos/logo_empresa.png" />
   <link rel="apple-touch-icon" href="../logos/logo_empresa.png" />
+
 
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://irenismb.github.io/stock/natura/catalogo.html" />
@@ -38,21 +40,26 @@
   <meta property="og:site_name" content="Irenismb Stock Natura" />
   <meta property="og:locale" content="es_CO" />
 
+
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:title" content="Irenismb Stock Natura | Catálogo" />
   <meta name="twitter:description" content="Belleza, cuidado y otros productos en Santa Marta. Compra fácil por WhatsApp." />
   <meta name="twitter:image" content="https://irenismb.github.io/stock/natura/logos/logo_empresa.png" />
   <meta name="twitter:image:alt" content="Logo Irenismb Stock Natura" />
 
+
   <link rel="dns-prefetch" href="//web.whatsapp.com" />
   <link rel="preconnect" href="https://web.whatsapp.com" crossorigin />
+
 
   <link rel="preload" as="image" href="../logos/logo_empresa.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="../logos/logo_empresa.png" type="image/png" fetchpriority="high" />
   <link rel="preload" as="image" href="../logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="../logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="../css/2026-09-06_estilos generales catalogo natura tienda web.css" />
+
+  <link rel="stylesheet" href="css/2026-09-07_copia estilos catalogo pruebas clientes seguro.css?carga=fragancias-filtros2-20260908" />
+
 
   <script type="application/ld+json">
   {
@@ -94,18 +101,26 @@
 }
 </script>
 
+
+  
+
+
+
+
   
 
 
   
 
-  
 
   
 
+
   
+
 
 </head>
+
 
 <body>
   <header class="site-header">
@@ -134,17 +149,20 @@
             <img src="../logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
           </a>
 
+
           <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
             <picture>
-              <source srcset="../logos/youtube.webp" type="image/webp">
+              <source srcset="logos/youtube.webp" type="image/webp">
               <img src="../logos/youtube.webp" alt="YouTube" loading="lazy" decoding="async" />
             </picture>
           </a>
+
 
           <a href="https://maps.google.com/?q=11.244833370782679,-74.19066001689564" target="_blank" rel="noopener noreferrer" aria-label="Ubicación en Google Maps">
             <img src="../logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
           </a>
         </div>
+
 
         <div class="social-row social-row-bottom">
           <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
@@ -152,9 +170,11 @@
             <img src="../logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
           </a>
 
+
           <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
             <img src="../logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
           </a>
+
 
           <button id="shareCatalogBtn" class="social-share-btn" type="button" aria-label="Compartir catálogo" title="Compartir catálogo">
             <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -172,18 +192,22 @@
         </div>
       </div>
 
+
       <div class="bar" role="search" aria-label="Buscar y filtrar productos">
         <div class="search-wrap" id="searchWrap">
           <div class="search-ticker" id="searchTicker" aria-hidden="true">
             <div class="ticker-inner" id="tickerInner"></div>
           </div>
 
+
           <input id="q" type="search" inputmode="search"
-                 placeholder="🔍 Busca aquí por nombre del producto..."
-                 aria-label="Buscar producto por nombre" />
+                 placeholder="Buscar producto, línea o categoría"
+                 aria-label="Buscar producto, línea o categoría" />
         </div>
 
+
         <div class="count-slot" id="countSlot"></div>
+
 
         <select id="cat" aria-label="Filtrar por categoría" hidden disabled><option value="">Todas las categorías</option></select>
         <select id="brand" aria-label="Filtrar por marca" hidden disabled><option value="">Todas las marcas</option></select>
@@ -194,9 +218,11 @@
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
-        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar u ocultar palabras sugeridas" aria-controls="wordPanel" aria-pressed="false">
-          Mostrar palabras
+
+        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar u ocultar filtros" aria-controls="wordPanel" aria-pressed="false">
+          Filtros
         </button>
+
 
         <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
           <span class="btn-cart-label">Ver carrito WhatsApp</span>
@@ -205,22 +231,40 @@
         </button>
       </div>
 
+
       <section class="word-panel" id="wordPanel" aria-label="Palabras sugeridas del catálogo" hidden>
         <div class="word-panel-head">
           <div>
-            <div class="word-panel-title">Palabras sugeridas</div>
-            <div class="word-panel-subtitle">Toca una o varias para filtrar más rápido.</div>
+            <div class="word-panel-title">Filtros del catálogo</div>
+            <div class="word-panel-subtitle">Combina filtros o palabras para encontrar productos más rápido.</div>
           </div>
-          <button class="btn-ghost word-clear" id="clearTermsBtn" type="button" hidden>Limpiar palabras</button>
+          <button class="btn-ghost word-clear" id="clearTermsBtn" type="button" hidden>Limpiar todo</button>
         </div>
+
+        <div class="filter-summary" id="filterSummary" aria-live="polite" hidden></div>
 
         <div class="word-active" id="activeTermsWrap" hidden>
           <div class="word-label">Palabras activas</div>
           <div class="word-active-list" id="activeTerms"></div>
         </div>
 
+
+        <section class="fragrance-filter-panel" id="fragranceFilterPanel" aria-label="Filtros de fragancias" hidden>
+          <h3 class="fragrance-filter-heading">Fragancias</h3>
+          <div class="fragrance-filter-group">
+            <span class="fragrance-filter-label">Familia olfativa</span>
+            <div class="fragrance-filter-options" id="fragranceFamilyFilters" role="group" aria-label="Filtrar por familia olfativa"></div>
+          </div>
+          <div class="fragrance-filter-group">
+            <span class="fragrance-filter-label">Línea</span>
+            <div class="fragrance-filter-options" id="fragranceLineFilters" role="group" aria-label="Filtrar por línea"></div>
+          </div>
+        </section>
+
         <div class="word-chips" id="wordChips"></div>
       </section>
+
+
 
 
       <noscript>
@@ -239,6 +283,7 @@
       </noscript>
     </div>
   </header>
+
 
   <main class="wrap">
     <h2 class="visually-hidden">Catálogo de productos Irenismb Stock Natura</h2>
@@ -260,6 +305,7 @@
     <section id="grid" class="grid" aria-label="Productos"></section>
   </main>
 
+
   <footer class="site-footer">
     <div class="wrap">
       <details class="beauty-products-details">
@@ -273,6 +319,7 @@
         </div>
       </details>
 
+
       <section class="footer-card" aria-label="Información de la tienda">
         <p>
           Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
@@ -284,6 +331,7 @@
       </section>
     </div>
   </footer>
+
 
   <div class="cart-modal" id="cartModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Carrito">
     <div class="cart-modal-backdrop" id="cartModalBackdrop"></div>
@@ -297,21 +345,29 @@
       </div>
       <div class="cart-modal-footer">
         <div class="cart-shipping">
-          <label for="shippingCop">Envío</label>
-          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Mínimo 6.000" aria-label="Envío en COP" />
+          <label for="shippingCop">Valor del envío</label>
+          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Ej: 6000" aria-label="Valor del envío en COP" />
+          <small class="cart-shipping-hint">Valor inicial sugerido: $6.000. Puedes ajustarlo.</small>
         </div>
 
-        <div class="cart-total" id="cartTotal">Total: $0</div>
+
+        <div class="cart-summary" aria-label="Resumen del pedido">
+          <div class="cart-summary-row"><span>Productos</span><strong id="cartSubtotal">$0</strong></div>
+          <div class="cart-summary-row"><span>Envío</span><strong id="cartShippingTotal">$0</strong></div>
+          <div class="cart-total" id="cartTotal">Total: $0</div>
+        </div>
+
 
         <div class="cart-footer-actions">
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
-          <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
-          <button class="btn-acc" id="cartBuyBtn" type="button">Comprar por WhatsApp</button>
+          <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Datos del pedido</button>
+          <button class="btn-acc" id="cartBuyBtn" type="button">Continuar pedido por WhatsApp</button>
         </div>
       </div>
     </div>
   </div>
+
 
   <div class="form-modal" id="addressModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Dirección">
     <div class="form-modal-backdrop" id="addressModalBackdrop"></div>
@@ -321,11 +377,13 @@
         <button class="form-modal-close" id="addressModalClose" type="button" aria-label="Cerrar">✕</button>
       </div>
 
+
       <div class="addr-actions-top" aria-label="Acciones dirección">
         <button class="btn-ghost" id="addrCancelBtn" type="button">Cancelar</button>
         <button class="btn-acc" id="addrSaveBtn" type="button">Guardar</button>
         <a class="btn-ghost" id="addrMapsLink" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true" tabindex="-1">Ver en mapa</a>
       </div>
+
 
       <div class="form-modal-body">
         <div class="client-grid">
@@ -337,6 +395,7 @@
             <label for="addrRegion">Departamento</label>
             <input id="addrRegion" type="text" autocomplete="address-level1" placeholder="Ej: Magdalena" />
           </div>
+
 
           <div class="field">
             <label for="addrViaTipo">Tipo de vía</label>
@@ -354,6 +413,7 @@
             <input id="addrViaNum" type="text" inputmode="text" placeholder="Ej: 10A" />
           </div>
 
+
           <div class="field">
             <label for="addrPlaca">#/Placa</label>
             <input id="addrPlaca" type="text" inputmode="text" placeholder="Ej: 20A-06" />
@@ -362,6 +422,7 @@
             <label for="addrBarrio">Barrio</label>
             <input id="addrBarrio" type="text" autocomplete="address-line2" placeholder="Ej: Los Almendros" />
           </div>
+
 
           <div class="field span-2">
             <label for="addrFinal">Dirección final</label>
@@ -372,13 +433,15 @@
     </div>
   </div>
 
-  <div class="form-modal" id="clientModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Otros datos">
+
+  <div class="form-modal" id="clientModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Datos del pedido">
     <div class="form-modal-backdrop" id="clientModalBackdrop"></div>
-    <div class="form-modal-content" role="document" aria-label="Contenido de otros datos">
+    <div class="form-modal-content" role="document" aria-label="Contenido de datos del pedido">
       <div class="form-modal-header">
-        <h3 class="form-modal-title">🧾 Otros datos</h3>
+        <h3 class="form-modal-title">🧾 Datos del pedido</h3>
         <button class="form-modal-close" id="clientModalClose" type="button" aria-label="Cerrar">✕</button>
       </div>
+
 
       <div class="form-modal-body">
         <div class="client-grid">
@@ -391,6 +454,7 @@
             <input id="clientPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 3111234567" />
           </div>
 
+
           <div class="field span-2">
             <label for="clientObs">Observación</label>
             <textarea id="clientObs" rows="1" placeholder="Ej: Dejar en portería, horario de entrega, pago por Nequi..."></textarea>
@@ -398,12 +462,14 @@
         </div>
       </div>
 
+
       <div class="form-modal-footer">
         <button class="btn-ghost" id="clientCancelBtn" type="button">Cancelar</button>
         <button class="btn-acc" id="clientSaveBtn" type="button">Guardar</button>
       </div>
     </div>
   </div>
+
 
   <div class="img-modal" id="imgModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Imagen ampliada">
     <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
@@ -413,19 +479,23 @@
     </div>
   </div>
 
-  <script src="js/2026-09-07_copia logica catalogo pruebas clientes seguro.js?carga=historial-atras-adelante"></script>
-  <script src="../js/2026-09-05_registro visitas ubicacion telegram google sheets.js"></script>
+
+  <script src="js/2026-09-07_copia logica catalogo pruebas clientes seguro.js"></script>
+  <script src="js/2026-09-07_copia registro catalogo pruebas clientes seguro.js"></script>
   <button id="catalogBackBtn" class="page-nav-btn go-to-start-btn" type="button" aria-label="Volver a la vista anterior del catálogo" title="Atrás" disabled aria-disabled="true">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"></path></svg>
     <span>Atrás</span>
   </button>
+
 
   <button id="catalogForwardBtn" class="page-nav-btn go-to-end-btn" type="button" aria-label="Ir a la vista siguiente del catálogo" title="Adelante" disabled aria-disabled="true">
     <span>Adelante</span>
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"></path></svg>
   </button>
 
-  <script src="js/2026-09-07_copia navegacion catalogo pruebas clientes seguro.js?carga=historial-atras-adelante"></script>
+
+  <script src="js/2026-09-07_copia navegacion catalogo pruebas clientes seguro.js"></script>
+
 
 </body>
 </html>

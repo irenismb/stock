@@ -4316,3 +4316,26 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .dynamic-filter-group.is-secondary .fragrance-filter-chip{
   min-height:34px;
 }
+
+
+/* Selección exclusiva: la categoría superior elegida permanece sola y puede deseleccionarse. */
+.selected-root-category{
+  width:min(760px,100%) !important;
+  margin:16px auto 18px !important;
+  grid-template-columns:1fr !important;
+}
+.selected-root-category[hidden]{
+  display:none !important;
+}
+.selected-root-category .album-card{
+  width:100%;
+}
+.selected-root-category .album-folder{
+  cursor:pointer;
+}
+.selected-root-category .album-folder::after{
+  content:"✓";
+}
+.dynamic-filter-group .dynamic-filter-chip.is-active{
+  box-shadow:0 0 0 2px rgba(113,235,201,.22);
+}

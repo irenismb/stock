@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:N: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
+    // Hoja Productos, estructura A:R: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, campos de auditoría, Tipo de fragancia y Línea.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "19sf8MrzGftXVb4sp9i9FptZk5_TckzRhuJUL-3bUQyA",
       sheetName: "Productos",

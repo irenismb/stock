@@ -1389,7 +1389,7 @@
       {
         label:"Cabello",
         section:"Belleza y cuidado",
-        subtitle:"Cuidado capilar y productos de cabello.",
+        subtitle:"Reparación, nutrición, hidratación, rizos, anticaída, color, limpieza y protección.",
         iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cabello mechon brillante capilar.webp"),
         theme:"cabello"
       },
@@ -1469,6 +1469,13 @@
       "perfumeria femenina": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
       "perfumeria masculina": { iconImage:SUBCATEGORY_ICON_IMAGES["perfumes"] },
       "cuidado capilar": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "reparacion y nutricion": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "peinado y proteccion": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "rizos y definicion": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "anticaida y crecimiento": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "hidratacion": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "color, matizacion y liso": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
+      "limpieza y anticaspa": { iconImage:SUBCATEGORY_ICON_IMAGES["cabello"] },
       "hidratacion y tratamiento corporal": { iconImage:SUBCATEGORY_ICON_IMAGES["cuidado corporal"] },
       "cuidado de manos y pies": { iconImage:SUBCATEGORY_ICON_IMAGES["manos y pies"] },
       "higiene y exfoliacion corporal": { iconImage:SUBCATEGORY_ICON_IMAGES["higiene corporal"] },

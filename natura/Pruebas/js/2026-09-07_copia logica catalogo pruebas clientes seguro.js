@@ -938,7 +938,7 @@
 
       xlsxLibraryPromise = new Promise((resolve, reject)=>{
         const script = document.createElement("script");
-        script.src = "https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js";
+        script.src = "js/xlsx.full.min.js";
         script.async = true;
         script.onload = ()=>{
           if(window.XLSX && typeof window.XLSX.read === "function" && window.XLSX.utils){

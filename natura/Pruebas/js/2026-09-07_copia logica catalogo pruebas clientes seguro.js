@@ -58,8 +58,6 @@
 	  MOSTRAR_IMAGENES_PRODUCTO: true,
 	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
 
-	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
-	  PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
 	  MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: false,
 	  MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS: true,
 	  APLICAR_ALBUMES_OCULTOS: true,
@@ -139,10 +137,10 @@
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.ENVIAR_CODIGOS_PRODUCTO_WHATSAPP !== false);
     }
     function shouldAllowSuggestionToggle(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PERMITIR_TOGGLE_PALABRAS_SUGERIDAS !== false);
+      return true;
     }
     function shouldShowSuggestionsInitially(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PALABRAS_SUGERIDAS_INICIAN_VISIBLES === true);
+      return false;
     }
 
     function shouldShowProductImageInNavigationPanels(){

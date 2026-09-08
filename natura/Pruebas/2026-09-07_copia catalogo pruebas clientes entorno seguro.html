@@ -1,6 +1,6 @@
 <!doctype html>
 <!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
-<!-- Entorno de pruebas alineado con producción; usa la copia de pruebas del Google Sheet A:N. -->
+<!-- Página de pruebas alineada directamente con los archivos públicos de producción. -->
 <!-- Las imágenes de productos se relacionan por código y se almacenan directamente en productos/. -->
 <html lang="es-CO">
 <head>
@@ -52,7 +52,7 @@
   <link rel="preload" as="image" href="../logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="../logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="css/2026-09-07_copia estilos catalogo pruebas clientes seguro.css?origen=produccion" />
+  <link rel="stylesheet" href="../css/2026-09-06_estilos generales catalogo natura tienda web.css" />
 
   <script type="application/ld+json">
   {
@@ -413,8 +413,8 @@
     </div>
   </div>
 
-  <script src="js/2026-09-07_copia logica catalogo pruebas clientes seguro.js?origen=produccion-publica"></script>
-  <script src="js/2026-09-07_copia registro catalogo pruebas clientes seguro.js"></script>
+  <script src="../js/2026-09-06_catalogo productos especiales solo imagen precio.js?actualizacion=familias-olfativas"></script>
+  <script src="../js/2026-09-05_registro visitas ubicacion telegram google sheets.js"></script>
   <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>
     <span>Inicio</span>
@@ -425,7 +425,7 @@
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg>
   </button>
 
-  <script src="js/2026-09-07_copia navegacion catalogo pruebas clientes seguro.js"></script>
+  <script src="../js/2026-09-06_navegacion compartir controles interfaz catalogo web.js"></script>
 
 </body>
 </html>

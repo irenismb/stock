@@ -1,35 +1,36 @@
 ﻿// Lógica principal del catálogo público.
 
 
+
+
 // ==========================================
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
     // ==========================================
     // Los valores locales funcionan como respaldo.
-    // Si existen las hojas "Configuracion" y "Categorias" en el Google Sheet,
-    // sus valores se aplican globalmente a todos los visitantes.
+    // Los datos del catálogo y sus controles se leen desde un libro XLSX publicado en GitHub.
 
 
-    // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
-    // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:R: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, campos de auditoría, Tipo de fragancia y Línea.
-    const GOOGLE_SHEET_SOURCE = {
-      spreadsheetId: "19sf8MrzGftXVb4sp9i9FptZk5_TckzRhuJUL-3bUQyA",
-      sheetName: "Productos",
-      gid: "893686273"
-    };
-
-
-    // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
-    // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Sección, B=Categoría, C=Subcategoría, D=Familia olfativa, E=Estado comercial, F=Ocultar del catálogo, G=Excluir de búsquedas, H=Nota.
-    const REMOTE_CONTROL_SOURCE = {
-      enabled: true,
-      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
+    // Fuente principal de datos comerciales y controles del catálogo de pruebas.
+    // El libro conserva las hojas Productos, Configuracion y Categorias.
+    const GITHUB_WORKBOOK_SOURCE = {
+      folder: "Pruebas",
+      filename: "2026-09-08_copia productos catalogo pruebas lectura github.xlsx",
+      productsSheetName: "Productos",
       controlsSheetName: "Configuracion",
       categoriesSheetName: "Categorias",
       refreshMs: 60000
     };
+
+
+    const REMOTE_CONTROL_SOURCE = {
+      enabled: true,
+      controlsSheetName: GITHUB_WORKBOOK_SOURCE.controlsSheetName,
+      categoriesSheetName: GITHUB_WORKBOOK_SOURCE.categoriesSheetName,
+      refreshMs: GITHUB_WORKBOOK_SOURCE.refreshMs
+    };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
+
+
 
 
     // Las imágenes normales se relacionan por el código interno global de cuatro dígitos.
@@ -45,13 +46,19 @@
 
 
 
+
+
+
+
     // Galería visual exclusiva de "Regalos para toda ocasión".
     // La carpeta de trabajo está en Drive, pero la web solo consume su publicación en GitHub.
-    // Los regalos no forman parte del inventario del Google Sheet y sus nombres de archivo no se muestran.
+    // Los regalos no forman parte del inventario del archivo XLSX y sus nombres de archivo no se muestran.
     const GIFT_GITHUB_SOURCE = {
       section: "Regalos para toda ocasión",
       folder: "regalos"
     };
+
+
 
 
         const INTERRUPTORES = {
@@ -64,6 +71,8 @@
           APLICAR_LIMITES_STOCK: false,
           MOSTRAR_IMAGENES_PRODUCTO: true,
           IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
+
+
 
 
           PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
@@ -80,12 +89,16 @@
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
 
+
+
     const ALBUMES_OCULTOS_SEGUROS = [
       "Otros productos|Otros productos|Medicamentos||A la venta",
       "Otros productos|Otros productos|Electrodomésticos de segunda mano no a la venta||No a la venta"
     ];
     const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
     const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
+
+
 
 
     function readRemoteCategoryCache(){
@@ -96,6 +109,8 @@
         if(!parsed || typeof parsed !== "object") return null;
 
 
+
+
         const cleanList = value => Array.isArray(value)
           ? value
               .map(item => String(item || "").trim())
@@ -104,9 +119,13 @@
           : null;
 
 
+
+
         const hidden = cleanList(parsed.hidden);
         const excluded = cleanList(parsed.excluded);
         if(!hidden || !excluded) return null;
+
+
 
 
         return { hidden, excluded };
@@ -114,6 +133,8 @@
         return null;
       }
     }
+
+
 
 
     function saveRemoteCategoryCache(hidden, excluded){
@@ -126,7 +147,11 @@
     }
 
 
+
+
     const cachedCategoryConfig = readRemoteCategoryCache();
+
+
 
 
     const ALBUMES_OCULTOS = cachedCategoryConfig
@@ -135,10 +160,14 @@
     window.ALBUMES_OCULTOS = ALBUMES_OCULTOS;
 
 
+
+
     const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = cachedCategoryConfig
       ? cachedCategoryConfig.excluded.slice()
       : ALBUMES_EXCLUIDOS_SEGUROS.slice();
     window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = ALBUMES_EXCLUIDOS_EN_BUSQUEDA;
+
+
 
 
     function shouldEnforceStockLimits(){
@@ -164,6 +193,8 @@
     }
 
 
+
+
     function shouldShowProductImageInNavigationPanels(){
       return !!(
         shouldShowProductImages() &&
@@ -178,16 +209,26 @@
     }
 
 
+
+
     const WHATSAPP_NUMBER = "573042088961";
+
+
 
 
     const LOGOS_DIR = "logos";
 
 
+
+
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
 
 
+
+
     const SITE_BASE = `https://${GITHUB_CATALOG_SOURCE.owner}.github.io/${GITHUB_CATALOG_SOURCE.repo}/${GITHUB_CATALOG_SOURCE.catalogDir}/`;
+
+
 
 
     const COMPANY_LOGOS = [
@@ -195,6 +236,8 @@
       SITE_BASE + LOGOS_DIR + "/logo_empresa.png"
     ];
     const COMPANY_LOGO = COMPANY_LOGOS[0];
+
+
 
 
     function normalizeText(t){
@@ -205,6 +248,8 @@
         .replace(/[\u0300-\u036f]/g, "")
         .trim();
     }
+
+
 
 
     function categoryDisplayLabel(value){
@@ -234,6 +279,8 @@
     }
 
 
+
+
     function shouldApplyHiddenAlbums(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_ALBUMES_OCULTOS === true);
     }
@@ -252,6 +299,8 @@
         .map(item => normalizeText(item))
         .filter(Boolean);
     }
+
+
 
 
     function toNumberDigits(s){
@@ -281,9 +330,13 @@
     }
 
 
+
+
     function buildPlaceholderCandidates(){
       const list = [];
       const picked = sanitizeLogoFilename(window.INTERRUPTORES?.IMAGEN_SUPLENTE_PRODUCTO);
+
+
 
 
       if(picked){
@@ -297,6 +350,8 @@
       }
 
 
+
+
       list.push(
         SITE_BASE + LOGOS_DIR + "/suplente.webp",
         SITE_BASE + LOGOS_DIR + "/suplente.png",
@@ -304,17 +359,27 @@
       );
 
 
+
+
       return [...new Set(list)];
     }
+
+
 
 
     let PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
     let PRODUCT_PLACEHOLDER_IMAGE = (PRODUCT_PLACEHOLDERS[0] || COMPANY_LOGO);
 
 
+
+
     function productPlaceholderAbsoluteUrl(){
       return PRODUCT_PLACEHOLDER_IMAGE || COMPANY_LOGO;
     }
+
+
+
+
 
 
 
@@ -325,6 +390,8 @@
           PRODUCT_PLACEHOLDERS = buildPlaceholderCandidates();
 
 
+
+
           let i = 0;
           const tryNext = ()=>{
             if(i >= PRODUCT_PLACEHOLDERS.length){
@@ -332,6 +399,8 @@
               resolve();
               return;
             }
+
+
 
 
             const url = PRODUCT_PLACEHOLDERS[i++];
@@ -347,6 +416,8 @@
           };
 
 
+
+
           tryNext();
         }catch(_){
           PRODUCT_PLACEHOLDER_IMAGE = COMPANY_LOGO;
@@ -358,205 +429,632 @@
 
 
 
-    const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
+
+
+
+
+    const CATALOG_REQUEST_TIMEOUT_MS = 25000;
     const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
     const GITHUB_IMAGE_INDEX_CACHE_KEY = "irenismb_github_image_index_cache";
+    const STATIC_GITHUB_IMAGE_PATHS = Object.freeze([
+      "0001_01_juego de cartas uno showdown mattel gkc04.webp",
+      "0002_01_lanzador nerf zombie strike hammershot a4325.webp",
+      "0003_01_lanzador de agua nerf super soaker scatterblast a5832.webp",
+      "0004_01_lanzador nerf n-strike elite triad ex-3 a1690.webp",
+      "0005_01_títere de mano tortuga folkmanis 2181.webp",
+      "0006_01_bolsillos para laminar nhitan nhi-1405 x 100 unidades.webp",
+      "0007_01_laminadora comix f9061 a4.webp",
+      "0008_01_numerador automático penmax np-206 de 6 dígitos.webp",
+      "0009_01_automóvil kia picanto ion ex automático 2016.webp",
+      "0010_01_cámara ip d-link dcs-5222l b2.webp",
+      "0011_01_enchufe inteligente tp-link kasa hs100 us 1.1.webp",
+      "0012_01_mouse trackball logitech m570 t-r0001.webp",
+      "0013_01_enchufe inteligente tp-link kasa hs110 us 1.0.webp",
+      "0014_01_control sony dualshock 4 cuh-zct2u rojo magma.webp",
+      "0015_01_control sony dualshock 4 cuh-zct2u azul medianoche.webp",
+      "0016_01_cámara ip d-link dcs-8010lh a1.webp",
+      "0017_01_cámara web logitech c920 hd pro.webp",
+      "0018_01_kit powerline tp-link tl-wpa4220kit us 1.0.webp",
+      "0019_01_extensor wi-fi tp-link re305 us 1.0.webp",
+      "0020_01_unidad wi-fi mesh tp-link deco m4r us 2.0.webp",
+      "0021_01_estación de acoplamiento acodot 13 en 1 usb 3.0.webp",
+      "0022_01_cargador inalámbrico samsung ep-n5105.webp",
+      "0023_01_parlantes hp dhe-6001.webp",
+      "0024_01_micrófono inalámbrico vta vta-82305.webp",
+      "0025_01_sistema de audio sony mhc-v42d.webp",
+      "0026_01_cámara ip clever dog dog-1w.webp",
+      "0027_01_cronómetro deportivo kalenji.webp",
+      "0028_01_balanza digital de bolsillo con tara y conteo.webp",
+      "0029_01_portátil lenovo ideapad 5 15alc05 82ln00allm.webp",
+      "0030_01_nevera samsung rt32k571js8 co 326 litros.webp",
+      "0031_01_altavoz inteligente google home h0me ga3a00417a14.webp",
+      "0032_01_perfume natura biografía clásico 100 ml.webp",
+      "0033_01_natura ekos ryo festa femenino eau de toilette 75 ml.webp",
+      "0034_01_natura ekos ryo vivo femenino eau de toilette 75 ml.webp",
+      "0035_01_perfume natura humor on-line femenino 75 ml.webp",
+      "0036_01_perfume natura essencial exclusivo 100 ml.webp",
+      "0037_01_perfume natura essencial sentir 50 ml.webp",
+      "0038_01_perfume natura essencial sentir 100 ml.webp",
+      "0039_01_perfume natura essencial oud 100 ml.webp",
+      "0040_01_natura humor envolve unisex eau de toilette 75 ml.webp",
+      "0041_01_perfume natura homem essence 100 ml.webp",
+      "0042_01_perfume natura kaiak aero masculino 100 ml.webp",
+      "0043_01_perfume natura kaiak aero femenino 100 ml.webp",
+      "0044_01_perfume natura humor on-line masculino 75 ml.webp",
+      "0045_01_natura humor transforma unisex eau de toilette 75 ml.webp",
+      "0046_01_perfume natura ilía clásico 50 ml.webp",
+      "0047_01_perfume natura ilía plena 50 ml.webp",
+      "0048_01_perfume natura ilía secreto 50 ml.webp",
+      "0049_01_perfume natura kaiak aventura femenino 100 ml.webp",
+      "0050_01_perfume natura kaiak aventura masculino 100 ml.webp",
+      "0051_01_perfume natura kaiak clásico femenino 100 ml.webp",
+      "0052_01_perfume natura kaiak clásico masculino 100 ml.webp",
+      "0053_01_perfume natura beijo de humor 75 ml.webp",
+      "0054_01_perfume natura kaiak k 100 ml.webp",
+      "0055_01_perfume natura kaiak océano 100 ml.webp",
+      "0056_01_perfume natura kaiak sonar femenino 100 ml.webp",
+      "0057_01_perfume natura kaiak sonar masculino 100 ml.webp",
+      "0058_01_perfume natura kaiak urbe 100 ml.webp",
+      "0059_01_perfume natura luna liberdade 75 ml.webp",
+      "0060_01_perfume natura luna radiante 75 ml.webp",
+      "0061_01_perfume natura luna viva 75 ml.webp",
+      "0062_01_natura ekos ryo chuva femenino eau de toilette 75 ml.webp",
+      "0063_01_perfume natura essencial clásico 100 ml.webp",
+      "0064_01_perfume natura essencial oud pimienta 100 ml.webp",
+      "0065_01_perfume natura homem nós 100 ml.webp",
+      "0066_01_natura humor conexión masculino deo colonia 75 ml.webp",
+      "0067_01_perfume natura humor galaxia 75 ml.webp",
+      "0068_01_natura kaiak o2 masculino deo colonia 100 ml.webp",
+      "0069_01_natura una brilho femenino deo parfum 75 ml.webp",
+      "0070_01_juego de mesa sábelo todo ronda clásico.webp",
+      "0071_01_juego educativo sopa de letras princesas disney toyng.webp",
+      "0072_01_juego de mesa disney princesa aventura en el bosque ronda 050370.webp",
+      "0073_01_lámpara usb flexible de 13 led.webp",
+      "0074_01_cubo rubik's 3×3 hasbro f0488.webp",
+      "0075_01_mini trípode de mesa con patas flexibles.webp",
+      "0076_01_ventilador de piso samurai ultra silence force touch control 18 pulgadas.webp",
+      "0077_01_televisor samsung un43mu6100kxzl 43 pulgadas.webp",
+      "0078_01_acetaminofén 500 mg ag x 20 tabletas.webp",
+      "0079_01_aciclovir 5 %, crema tópica mk x 10 g.webp",
+      "0080_01_acid mantle jabón en barra x 90 g x 3 unidades.webp",
+      "0081_01_ácido fólico 1 mg ecar x 100 tabletas.webp",
+      "0082_01_ácido fusídico 2 %, crema tópica x 15 g.webp",
+      "0083_01_aerovial budesonida 200 mcg + formoterol 6 mcg x 30 cápsulas con inhalador.webp",
+      "0084_01_botiquín de primeros auxilios 3m.webp",
+      "0085_01_zentel albendazol 400 mg x 1 tableta.webp",
+      "0086_01_alflorex adultos x 30 cápsulas.webp",
+      "0087_01_alka-seltzer original  ácido acetilsalicílico 324 mg + bicarbonato de sodio 1.916 mg + ácido cítrico 1.000 mg x 14 tabletas efervescentes.webp",
+      "0088_01_allpar nitazoxanida 500 mg gimed x 6 tabletas.webp",
+      "0089_01_amoxicilina 500 mg genfar x 50 cápsulas.webp",
+      "0090_01_ampicilina 500 mg last x 100 cápsulas.webp",
+      "0091_01_apronax naproxeno sódico 550 mg x 20 tabletas.webp",
+      "0092_01_aspirina ácido acetilsalicílico 100 mg bayer x 28 tabletas.webp",
+      "0093_01_avamys fluticasona furoato 27,5 mcg dosis, spray nasal x 120 dosis.webp",
+      "0094_01_azitromicina 500 mg la santé x 3 tabletas.webp",
+      "0095_01_azitromicina 500 mg x 3 tabletas, mk.webp",
+      "0096_01_benzac ac peróxido de benzoilo 2,5 %, gel tópico x 60 g.webp",
+      "0097_01_betametasona 0,05 %, crema tópica x 20 g.webp",
+      "0098_01_bisolvon adultos bromhexina 8 mg 5 ml, jarabe x 120 ml.webp",
+      "0099_01_caltrate 600 d, calcio 600 mg + vitamina d3 400 ui x 30 tabletas.webp",
+      "0100_01_calmidol compuesto  ibuprofeno 200 mg + cafeína 30 mg x 6 cápsulas.webp",
+      "0101_01_cebion vitamina c 500 mg sabor naranja x 12 tabletas masticables.webp",
+      "0102_01_cefalexina 500 mg la santé x 20 cápsulas.webp",
+      "0103_01_cefradina 500 mg recipe x 24 cápsulas.webp",
+      "0104_01_clorfeniramina 4 mg ecar x 20 tabletas.webp",
+      "0105_01_clotrimazol colmed 100 mg x 10 óvulos vaginales.webp",
+      "0106_01_condilom podofilina 20 %, suspensión tópica x 5 ml, bussié.webp",
+      "0107_01_dayamineral fe multivitamínico con hierro y minerales, jarabe x 240 ml.webp",
+      "0108_01_desloratadina mk 5 mg x 10 tabletas.webp",
+      "0109_01_diclofenaco sódico 50 mg x 30 tabletas recubiertas.webp",
+      "0110_01_difenhidramina clorhidrato 50 mg x 30 cápsulas.webp",
+      "0111_01_dolex avanzado acetaminofén 500 mg x 24 tabletas.webp",
+      "0112_01_dolex forte acetaminofén 500 mg + cafeína 65 mg x 10 tabletas.webp",
+      "0113_01_emulsión de scott sabor cereza x 180 ml.webp",
+      "0114_01_emulsión de scott sabor frutas tropicales x 360 ml.webp",
+      "0115_01_enterogermina bacillus clausii 2.000 millones de esporas 5 ml x 10 viales bebibles.webp",
+      "0116_01_enterogermina plus bacillus clausii 4.000 millones de esporas 5 ml x 5 viales bebibles.webp",
+      "0117_01_espasmo siligas dimetilpolisiloxano 66 mg ml + papaverina 10 mg ml, gotas x 30 ml.webp",
+      "0118_01_fitostimoline crema tópica x 32 g.webp",
+      "0119_01_fluimucil n acetilcisteína 600 mg x 10 sobres.webp",
+      "0120_01_sulzinc sulfato de zinc 20 mg x 30 tabletas.webp",
+      "0121_01_gasa estéril no tejida alfasafe x 24 unidades.webp",
+      "0122_01_gentamicina 80 mg 2 ml vitalis x 1 ampolla.webp",
+      "0123_01_decaflusan flubendazol 500 mg x 1 tableta.webp",
+      "0124_01_hidraplus con zinc 75 meq, sabor uva, solución oral x 400 ml.webp",
+      "0125_01_hidrocortisona 1 %, crema tópica x 15 g.webp",
+      "0126_01_histotal colecalciferol 25.000 ui ml x 4 ampollas bebibles de 1 ml.webp",
+      "0127_01_humenas solución nasal 0,65 % x 30 ml.webp",
+      "0128_01_isoconazol genfar 1 %, crema x 20 g.webp",
+      "0129_01_ivermectina mk 0,6 %, solución oral en gotas x 5 ml.webp",
+      "0130_01_labinpina hioscina n-butilbromuro 10 mg x 20 grageas, labinco.webp",
+      "0131_01_lidal metronidazol 500 mg + clotrimazol 100 mg x 10 óvulos vaginales.webp",
+      "0132_01_lomotil difenoxilato + atropina 2,5 mg 0,025 mg x 48 tabletas.webp",
+      "0133_01_loratadina 10 mg la santé x 10 tabletas.webp",
+      "0134_01_mareol dimenhidrinato 50 mg x 12 tabletas.webp",
+      "0135_01_mediprim f trimetoprim 160 mg + sulfametoxazol 800 mg x 10 tabletas.webp",
+      "0136_01_medrol metilprednisolona 16 mg x 14 tabletas, pfizer.webp",
+      "0137_01_metilprednisolona mk 16 mg x 10 tabletas.webp",
+      "0138_01_metronidazol la santé 500 mg x 10 tabletas.webp",
+      "0139_01_mieltertos jarabe natural x 240 ml.webp",
+      "0140_01_multiflora plus probióticos x 10 cápsulas.webp",
+      "0141_01_naproxeno 500 mg genfar x 10 tabletas.webp",
+      "0142_01_hidraplus 75 con zinc sabor manzana x 400 ml.webp",
+      "0143_01_nistatina 100.000 ui ml, suspensión oral x 60 ml.webp",
+      "0144_01_nitazoxanida 500 mg x 6 tabletas, mk.webp",
+      "0145_01_nitrofurantoína 100 mg x 40 cápsulas.webp",
+      "0146_01_noraver gripa y tos fast total  ibuprofeno 400 mg + dextrometorfano 15 mg + fenilefrina 10 mg + levocetirizina 2,5 mg x 6 cápsulas.webp",
+      "0147_01_noraver garganta doble beneficio sabor cereza x 6 tabletas masticables.webp",
+      "0148_01_nytax nitazoxanida 500 mg x 6 cápsulas blandas.webp",
+      "0149_01_pangetan nf loperamida 2 mg x 4 tabletas.webp",
+      "0150_01_pranosina inosina pranobex 50 mg ml, jarabe x 120 ml.webp",
+      "0151_01_pranosina metisoprinol 500 mg x 20 tabletas.webp",
+      "0152_01_prolardii saccharomyces boulardii x 10 sobres.webp",
+      "0153_01_gastrum famotidina 10 mg abbott x 12 tabletas.webp",
+      "0154_01_reparil gel n escina 1 % + salicilato de dietilamina 5 % x 30 g.webp",
+      "0155_01_retiblan vitamina a 50.000 ui x 50 cápsulas blandas.webp",
+      "0156_01_rhifisol solución salina fisiológica 0,9 % x 30 ml.webp",
+      "0157_01_rifocina rifamicina sódica 1 %, solución tópica en atomizador x 20 ml.webp",
+      "0158_01_salbutamol mk 100 mcg dosis x 200 dosis.webp",
+      "0159_01_sevedol extrafuerte acetaminofén + ibuprofeno + cafeína x 16 tabletas.webp",
+      "0160_01_smecta diosmectita 3 g x 10 sobres para suspensión oral.webp",
+      "0161_01_sulfato ferroso 300 mg x 100 tabletas ecar.webp",
+      "0162_01_terbinafina 250 mg humax x 14 tabletas.webp",
+      "0163_01_terramicina oxitetraciclina + polimixina b, ungüento oftálmico x 10 g.webp",
+      "0164_01_tiamina (vitamina b1) 300 mg ecar x 30 tabletas.webp",
+      "0165_01_trimebutina 200 mg coaspharma x 20 tabletas.webp",
+      "0166_01_trimetoprim 160 mg + sulfametoxazol 800 mg genfar x 10 tabletas.webp",
+      "0167_01_tobradex tobramicina 0,3 % + dexametasona 0,1 %, suspensión oftálmica x 5 ml.webp",
+      "0168_01_vitamina a 10.000 ui now foods x 100 cápsulas blandas.webp",
+      "0169_01_vita c + zinc mk 500 mg 7,5 mg sabor naranja x 12 tabletas masticables.webp",
+      "0170_01_vical vitamina c + zinc 500 mg sabor naranja x 100 tabletas masticables.webp",
+      "0171_01_farma d colecalciferol 5.000 ui x 30 cápsulas blandas.webp",
+      "0172_01_zentel albendazol 4 % (400 mg 10 ml), suspensión oral x 10 ml.webp",
+      "0173_01_zithromax azitromicina 500 mg x 3 tabletas, pfizer.webp",
+      "0174_01_adorem acetaminofén 500 mg x 10 tabletas.webp",
+      "0175_01_pepsamar hidróxido de aluminio 6 %, suspensión oral x 150 ml.webp",
+      "0176_01_metoclopramida 10 mg x 30 tabletas.webp",
+      "0177_01_metamucil psyllium 58,6 %, polvo para solución oral x 174 g.webp",
+      "0178_01_dulcolax bisacodilo 5 mg x 20 grageas.webp",
+      "0179_01_natura fotoequilibrio protector solar corporal fps 50 200 ml.webp",
+      "0180_01_natura fotoequilibrio protector solar niños rostro y cuerpo fps 50 200 ml.webp",
+      "0181_01_natura fotoequilibrio protector facial gel crema toque seco fps 50 50 g.webp",
+      "0182_01_natura solar protector solar facial hidratante fps 70 50 ml.webp",
+      "0183_01_natura fotoequilibrio protector solar facial gel crema hidratante fps 50 50 g.webp",
+      "0184_01_natura chronos protector solar facial antiseñales fps 50 50 ml.webp",
+      "0185_01_natura chronos protector solar facial antioleosidad reductor de poros fps 30 incoloro 50 ml.webp",
+      "0186_01_natura chronos derma protector aclarador fps 50 medio oscuro 50 ml.webp",
+      "0187_01_natura chronos derma protector aclarador fps 50 claro medio 50 ml.webp",
+      "0188_01_natura fotoequilibrio locion protectora facial fps 30 50 g.webp",
+      "0189_01_natura solar protector solar facial en barra fps 50 15 g.webp",
+      "0191_01_natura solar protector solar corporal fps 70 200 ml.webp",
+      "0192_01_natura humor meu primeiro humor desodorante corporal 100 ml.webp",
+      "0193_01_frescor natura ekos açaí mini 75 ml.webp",
+      "0194_01_splash perfumado natura kaiak clásico femenino 200 ml.webp",
+      "0195_01_miniatura natura kaiak clásico femenino 25 ml.webp",
+      "0196_01_fragancia avon today tomorrow always radiance 50 ml.webp",
+      "0197_01_frescor natura ekos açaí 150 ml.webp",
+      "0198_01_frescor natura ekos amazó 75 ml.webp",
+      "0199_01_frescor natura ekos pitanga preta 150 ml.webp",
+      "0200_01_colonia spray con destellos avon blossoming petals 120 ml.webp",
+      "0201_01_fragancia avon far away clásico femenino 50 ml.webp",
+      "0202_01_natura kaiak urbe masculino desodorante corporal perfumado 100 ml.webp",
+      "0203_01_natura homem potence masculino desodorante corporal 100 ml.webp",
+      "0204_01_natura homem essence masculino desodorante corporal 100 ml.webp",
+      "0205_01_body splash natura tododia manzana caramelizada y vainilla.webp",
+      "0206_01_body splash natura tododia flor de jengibre y mandarina 200 ml.webp",
+      "0207_01_body splash natura tododia hojas de limón y guanábana 200 ml.webp",
+      "0208_01_body splash natura tododia frutas rojas 200 ml.webp",
+      "0209_01_natura humor liberta unisex desodorante corporal 100 ml.webp",
+      "0210_01_body splash natura tododia mango rosa y agua de coco 200 ml.webp",
+      "0211_01_body splash natura tododia frambuesa y pimienta rosa 200 ml.webp",
+      "0212_01_body splash natura tododia acerola e hibisco 200 ml.webp",
+      "0213_01_colonia natura águas frambuesa 150 ml.webp",
+      "0214_01_natura homem potence masculino eau de parfum miniatura 25 ml.webp",
+      "0215_01_frescor natura ekos cacao 150 ml envase.webp",
+      "0216_01_frescor natura ekos castaña 150 ml repuesto.webp",
+      "0217_01_frescor natura ekos maracuyá 150 ml envase.webp",
+      "0218_01_frescor natura ekos ishpink 150 ml.webp",
+      "0219_01_frescor natura ekos castaña 150 ml envase.webp",
+      "0220_01_colonia natura águas lírio 150 ml.webp",
+      "0221_01_colonia natura águas jabuticaba 150 ml.webp",
+      "0222_01_colonia natura águas tropicales 150 ml.webp",
+      "0223_01_natura ekos estoraque femenino eau de toilette frescor 150 ml.webp",
+      "0224_01_frescor natura ekos pitanga 150 ml.webp",
+      "0225_01_natura águas cítricos femenino colonia 150 ml.webp",
+      "0226_01_natura ekos madeira em flor femenino desodorante colonia frescor 150 ml.webp",
+      "0227_01_splash perfumado natura humor próprio femenino 200 ml.webp",
+      "0228_01_body splash natura tododia ciruela y flor de vainilla 200 ml.webp",
+      "0229_01_body splash natura tododia té de manzanilla y lavanda 200 ml.webp",
+      "0230_01_avon 300 km h virtual adrenaline masculino deo colonia 100 ml.webp",
+      "0231_01_natura una primer facial fps 40 30 ml.webp",
+      "0232_01_natura una glos labial fps 15 8 ml.webp",
+      "0233_01_natura una corrector cobertura extrema 24h tono 10n 8 ml.webp",
+      "0234_01_natura una corrector cobertura extrema 24h tono 15n 8 ml.webp",
+      "0235_01_natura una corrector cobertura extrema 24h tono 19n 8 ml.webp",
+      "0236_01_natura una corrector cobertura extrema 24h tono 21n 8 ml.webp",
+      "0237_01_natura una corrector cobertura extrema 24h tono 24n 8 ml.webp",
+      "0238_01_natura una corrector cobertura extrema 24h tono 27n 8 ml.webp",
+      "0239_01_natura una corrector cobertura extrema 24h tono 30n 8 ml.webp",
+      "0240_01_natura una labial cc tono rose 4c 3 8 g.webp",
+      "0241_01_natura una serum labial 1 8 g.webp",
+      "0242_01_natura una rubor intense me tono bronce perlado 6 g.webp",
+      "0243_01_natura una mascara para pestaña volumen magnifico 8 ml.webp",
+      "0244_01_natura una corrector cobertura extrema 24h tono 32n 8 ml.webp",
+      "0245_01_avon power stay pestañina 5 en 1 genius 10 ml.webp",
+      "0246_01_natura ekos acai bruma facial hidratante 100 ml.webp",
+      "0247_01_natura una lapiz kajal ojos tono negro 1 14 g.webp",
+      "0248_01_natura primer blur 30 ml.webp",
+      "0249_01_natura chronos serum intensivo reductor oleosidad 30 ml repuesto.webp",
+      "0250_01_natura chronos serum intensivo reductor oleosidad 30 ml envase.webp",
+      "0251_01_natura solar protector solar facial control de oleosidad fps 50 50 ml.webp",
+      "0252_01_natura solar protector solar facial piel normal a seca fps 50 50 ml.webp",
+      "0253_01_natura hidratante facial piel mixta 50 ml faces.webp",
+      "0254_01_natura chronos super serum reductor de arrugas 30 ml repuesto.webp",
+      "0255_01_natura chronos agua micelar desmaquillante repuesto 150 ml.webp",
+      "0256_01_natura chronos agua micelar desmaquillante suave 150 ml.webp",
+      "0257_01_natura chronos derma esencia de tratamiento revitalización y luminosidad 100 ml.webp",
+      "0258_01_natura chronos gel crema antiseñales firmeza y luminosidad noche repuesto 45 40 g.webp",
+      "0259_01_avon care rosa mosqueta crema facial 3 en 1 75 g.webp",
+      "0260_01_natura homem balsamo post barba 75 ml.webp",
+      "0261_01_natura homem gel para afeitar 75 g.webp",
+      "0262_01_natura chronos serum intensivo multiaclarador de manchas repuesto 30 ml.webp",
+      "0263_01_natura chronos serum intensivo antioxidante 15 ml envase.webp",
+      "0264_01_natura chronos super serum reductor de arrugas y flacidez ojos repuesto 15 ml.webp",
+      "0265_01_natura chronos super serum reductor de arrugas y flacidez ojos 30 ml envase.webp",
+      "0266_01_natura chronos serum intensivo lifting y firmeza 30 ml envase.webp",
+      "0267_01_natura chronos serum intensivo rellenador biohidratante repuesto 30 ml.webp",
+      "0268_01_natura chronos serum intensivo rellenador biohidratante 30 ml envase.webp",
+      "0269_01_natura chronos gel de limpieza purificante antioleosidad 130 g.webp",
+      "0270_01_natura chronos mousse de limpieza intensiva 85 g.webp",
+      "0271_01_natura chronos gel crema antiseñales renovacion y prevencion dia repuesto 30+ 40 g.webp",
+      "0272_01_natura chronos acqua biohidratante renovador 40 g.webp",
+      "0273_01_natura chronos super serum reductor de arrugas 30 ml envase.webp",
+      "0274_01_natura chronos triple exfoliante peeling antiseñales 50 g.webp",
+      "0275_01_natura solar protector solar facial piel mixta a oleosa fps 70 50 ml.webp",
+      "0383_01_natura lumina anticaida y crecimiento shampu acondicionador y mascara en repuesto.webp",
+      "0384_01_natura combo tododia nutricion shampoo acondicionador repuestos x2.webp",
+      "0385_01_natura tododia reparacion shampoo 300 ml repuesto.webp",
+      "0386_01_natura combo tododia reparacion shampoo acondicionador repuestos x2.webp",
+      "0387_01_natura combo ekos murumuru shampoo acondicionador x2.webp",
+      "0388_01_natura combo kaiak clasico masculino perfume shampoo gel de afeitar 2 en 1.webp",
+      "0389_01_natura combo lumina fuerza y reparacion molecular shampoo acondicionador mascara envase x3.webp",
+      "0390_01_natura combo tododia hidratacion shampoo acondicionador repuesto x2.webp",
+      "0391_01_natura combo tododia hidratacion shampoo acondicionador mascara repuesto x3.webp",
+      "0392_01_natura tododia rizado y afros crema de peinar repuesto.webp",
+      "0393_01_natura combo tododia rizado y afros shampoo acondicionador crema de peinar repuesto x3.webp",
+      "0394_01_natura lumina brillo y proteccion de color shampoo repuesto 300 ml.webp",
+      "0395_01_natura lumina hidratacion y proteccion antipolucion shampoo repuesto 300 ml.webp",
+      "0396_01_natura lumina anticaspa shampoo repuesto 300 ml.webp",
+      "0397_01_natura combo tododia hidratacion shampoo acondicionador mascara x3.webp",
+      "0398_01_natura tododia durazno y almendras acondicionador repuesto 280 ml.webp",
+      "0399_01_natura tododia nutricion shampoo acondicionador crema de peinar.webp",
+      "0400_01_natura combo tododia reparacion shampoo acondicionador mascara x2.webp",
+      "0401_01_natura tododia flor de ciruela esencia para cabello 60 ml.webp",
+      "0402_01_natura tododia rizado spray reactivador de rizos 200 ml.webp",
+      "0403_01_natura combo ekos murumuru shampoo acondicionador mascara pre shampoo x4.webp",
+      "0404_01_natura combo ekos murumuru shampoo acondicionador mascara crema de peinar x4.webp",
+      "0405_01_natura lumina matizacion y restauracion envase.webp",
+      "0406_01_natura lumina hidratacion y proteccion antipolucion shampoo envase.webp",
+      "0407_01_natura combo lumina hidratacion y proteccion antipolucion shampoo acondicionador fluido envase x3.webp",
+      "0408_01_natura combo lumina rizado shampoo acondicionador mascara crema de peinar repuesto x4.webp",
+      "0409_01_natura lumina definición e hidratación acondicionador 300 ml.webp",
+      "0410_01_natura lumina definición e hidratación kit shampoo 300 ml acondicionador 300 ml x2.webp",
+      "0411_01_natura lumina definición e hidratación kit shampoo 300 ml acondicionador 300 ml máscara 250 ml crema para peinar 300 ml x4.webp",
+      "0412_01_natura lumina restauración y liso prolongado kit shampoo 300 ml acondicionador 300 ml x2.webp",
+      "0413_01_natura combo lumina restauracion y liso prolongado shampoo acondicionador mascara envase x3.webp",
+      "0414_01_natura combo lumina reconstruccion shampoo acondicionador repuesto x2.webp",
+      "0415_01_natura combo lumina reconstruccion shampoo acondicionador mascara repuesto x3.webp",
+      "0416_01_natura lumina reconstruccion acondicionador.webp",
+      "0417_01_natura combo lumina reconstruccion shampoo acondicionador mascara serum envase x4.webp",
+      "0418_01_natura lumina brillo y protección del color kit shampoo 300 ml acondicionador 300 ml x2.webp",
+      "0419_01_natura lumina anticaída y crecimiento kit intermedio shampoo 300 ml acondicionador 300 ml máscara antiquiebre 50 ml x3.webp",
+      "0420_01_natura k noite masculino shampoo cabello y cuerpo 125 ml.webp",
+      "0421_01_natura kaiak clásico masculino shampoo refrescante cabello y cuerpo 125 ml.webp",
+      "0422_01_natura ekos murumuru shampoo antidaños y reconstrucción 300 ml.webp",
+      "0423_01_natura lumina anticaida y crecimiento kit shampoo acondicionador mascara serum nocturno x4.webp",
+      "0424_01_natura tododia piel uniforme manteca uniformadora de tono pera y flor de loto 200 g.webp",
+      "0425_01_natura tododia piel uniforme balsamo ultra nutritivo regenerador pera y flor de loto 200 ml.webp",
+      "0426_01_natura ekos murumuru serum nocturno nutritivo 30 ml.webp",
+      "0427_01_natura ekos murumuru mascara pre shampoo antidanios y reconstruccion 100 g.webp",
+      "0429_01_natura ekos murumuru crema para peinar antidaños y reconstrucción 150 ml.webp",
+      "0430_01_natura ekos pataua kit shampoo 300 ml acondicionador 300 ml tonico nocturno 30 ml x3.webp",
+      "0431_01_natura ekos pataua kit repuesto shampoo 300 ml acondicionador 300 ml x2.webp",
+      "0432_01_natura tododia reparacion flor de cereza y aguacate kit repuesto shampoo 300 ml acondicionador 280 ml mascarilla 250 ml x3.webp",
+      "0433_01_natura lumina fuerza y reparacion molecular kit repuesto shampoo 300 ml acondicionador 300 ml mascara 250 ml x3.webp",
+      "0434_01_natura lumina anticaida y crecimiento kit repuesto shampoo 300 ml acondicionador 300 ml mascara 250 ml x3.webp",
+      "0435_01_natura tododia reparacion flor de cereza y aguacate kit shampoo 300 ml acondicionador 280 ml mascara 250 ml crema para peinar 180 ml x4.webp",
+      "0436_01_natura tododia nutricion durazno y almendras kit repuesto shampoo 300 ml acondicionador 280 ml mascara 250 ml x3.webp",
+      "0437_01_natura lumina esencia para finalizacion 30 ml.webp",
+      "0438_01_natura chronos derma multiprotector aclarador de manchas fps 50 color 2 50 ml.webp",
+      "0440_01_natura ekos jabon en barra cremoso exfoliante refrescante 4 un de 100 g.webp",
+      "0441_01_natura ekos jabon en barra puro vegetal cremoso y exfoliante 4 un de 100 g.webp",
+      "0442_01_natura ekos jabon en barra puro vegetal cremoso 4 un de 100 g.webp",
+      "0443_01_natura tododia leche de algodon desodorante antitranspirante roll on 70 ml.webp",
+      "0444_01_natura tododia frutas rojas crema corporal 400 ml envase.webp",
+      "0445_01_natura tododia hojas de limon y guanabana crema corporal 400 ml envase.webp",
+      "0446_01_natura tododia energia flor de jengibre y mandarina crema corporal energizante 2 en 1 400 ml.webp",
+      "0447_01_natura tododia ciruela y flor de vainilla crema nutritiva corporal 400 ml.webp",
+      "0448_01_natura tododia flor de pera y melisa crema corporal 400 ml envase.webp",
+      "0449_01_natura tododia mango rosa y agua de coco crema corporal repuesto 400 ml.webp",
+      "0450_01_natura tododia hojas de limon y guanabana repuesto crema nutritiva corporal 400 ml.webp",
+      "0451_01_natura tododia avellana y casis repuesto crema nutritiva corporal 400 ml.webp",
+      "0452_01_natura tododia nuez pecan y cacao repuesto crema nutritiva corporal 400 ml.webp",
+      "0453_01_natura tododia ciruela y flor de vainilla repuesto crema nutritiva corporal 400 ml.webp",
+      "0454_01_natura tododia nuez pecan y cacao crema nutritiva corporal 200 ml.webp",
+      "0455_01_natura tododia caja de jabones surtidos 5 unidades 90 g x5.webp",
+      "0456_01_natura tododia frutos rojos caja de jabones 5 unidades 90 g x5.webp",
+      "0457_01_natura tododia manzana caramelizada y vainilla caja de jabones 5 unidades 90 g x5.webp",
+      "0458_01_natura tododia frambuesa y pimienta rosa caja de jabones 5 unidades 90 g x5.webp",
+      "0459_01_natura tododia cereza negra y praline caja de jabones 5 unidades 90 g x5.webp",
+      "0460_01_natura tododia cereza y avellana caja de jabones 5 unidades 90 g x5.webp",
+      "0461_01_natura tododia todanoite te de manzanilla y lavanda caja de jabones 5 unidades 90 g x5.webp",
+      "0462_01_natura ekos caja de jabones cremosos exfoliantes y refrescantes 4 unidades 100 g x4.webp",
+      "0464_01_natura ekos maracuya jabon masajeador 100 g.webp",
+      "0465_01_natura ekos maracuya jabones cremosos y exfoliantes 4 unidades 100 g x4.webp",
+      "0467_01_natura homem caja de jabones masculinos x3 unidades 110 g x3.webp",
+      "0468_01_natura ekos maracuya jabon liquido exfoliante 185 ml.webp",
+      "0469_01_natura ekos tukuma jabon liquido exfoliante 185 ml.webp",
+      "0470_01_natura kaiak clasico femenino jabon liquido corporal perfumado 200 ml.webp",
+      "0471_01_natura luna radiante femenino jabon liquido corporal perfumado 100 ml.webp",
+      "0472_01_natura kriska flores femenino jabon liquido corporal perfumado 125 ml.webp",
+      "0473_01_natura ekos castaña jabon liquido corporal cremoso 100 ml.webp",
+      "0474_01_natura tododia frutas rojas exfoliante para el cuerpo 100 g.webp",
+      "0475_01_natura ekos castaña pulpa hidratante corporal 400 ml.webp",
+      "0476_01_natura ekos maracuya crema corporal 400 ml envase.webp",
+      "0477_01_natura ekos andiroba pulpa hidratante corporal 400 ml.webp",
+      "0478_01_natura ekos ucuuba crema corporal 400 ml envase.webp",
+      "0479_01_natura ekos maracuya crema corporal repuesto 400 ml.webp",
+      "0480_01_natura ekos ucuuba pulpa hidratante corporal repuesto 400 ml.webp",
+      "0481_01_natura andiroba fluido de masajes 100 g envase.webp",
+      "0482_01_avon care aceite de coco crema corporal 6 en 1 1 l.webp",
+      "0483_01_avon care avena y extracto de vainilla crema corporal 6 en 1 1 l.webp",
+      "0484_01_avon care extracto de almendras crema corporal litro.webp",
+      "0485_01_avon care glicerina y aceite de almendras crema corporal 6 en 1 1 l.webp",
+      "0486_01_avon care aceite de argán y naranja crema corporal 6 en 1 1 l.webp",
+      "0487_01_avon care sandía crema corporal 6 en 1 1 l.webp",
+      "0488_01_avon care aceite de coco crema corporal 6 en 1 400 ml.webp",
+      "0489_01_avon care aceite de argán y naranja crema corporal 6 en 1 400 ml.webp",
+      "0490_01_avon care frutos rojos crema corporal 6 en 1 400 ml.webp",
+      "0491_01_avon care aceite de aguacate locion corporal hidratante 400 ml.webp",
+      "0492_01_avon care derma extrafirme locion corporal reafirmante 400 ml.webp",
+      "0493_01_avon care derma extrafirme locion corporal reafirmante 750 ml.webp",
+      "0494_01_avon care derma tono uniforme locion corporal iluminadora 750 ml.webp",
+      "0495_01_natura kaiak clasico femenino desodorante hidratante corporal 390 ml.webp",
+      "0496_01_natura kaiak clasico femenino crema desodorante hidratante corporal refrescante para baño 100 ml.webp",
+      "0497_01_natura humor meu primeiro gel desodorante hidratante iluminador corporal 75 g.webp",
+      "0498_01_natura homem coragio masculino crema corporal perfumada 125 ml.webp",
+      "0499_01_avon works crema reparadora para pies con callosidades 100 g.webp",
+      "0500_01_natura erva doce unisex desodorante en crema 80 g.webp",
+      "0501_01_natura tododia sin perfume desodorante antitranspirante en crema 80 g.webp",
+      "0502_01_natura tododia leche de algodon desodorante antitranspirante en crema 80 g.webp",
+      "0503_01_natura tododia avellana y casis desodorante antitranspirante en crema 80 g.webp",
+      "0504_01_natura tododia aclarador femenino desodorante en roll on 70 ml.webp",
+      "0505_01_natura tododia avellana y casis desodorante antitranspirante roll on 70 ml.webp",
+      "0506_01_natura tododia mora roja y jabuticaba desodorante antitranspirante roll on 70 ml.webp",
+      "0507_01_natura tododia hojas de limon y guanabana desodorante antitranspirante roll on 70 ml.webp",
+      "0508_01_natura homem sin perfume masculino desodorante antitranspirante roll on 75 ml.webp",
+      "0509_01_natura homem masculino desodorante antitranspirante roll on 75 ml.webp",
+      "0510_01_avon simply delicate extracto de avena femenino gel de limpieza intima 250 ml.webp",
+      "0511_01_natura ekos cacao crema hidratante para manos 75 g.webp",
+      "0512_01_natura ekos pitanga nectar hidratante para manos 75 g.webp",
+      "0513_01_natura ekos maracuya nectar hidratante para manos 75 g.webp",
+      "0514_01_natura ekos maracuya naturaleza de los suenos crema hidratante para manos 75 g.webp",
+      "0515_01_natura ekos ucuuba crema hidratante para manos 75 g.webp",
+      "0516_01_natura ekos tukuma pulpa hidratante para manos 75 g.webp",
+      "0517_01_natura ekos castaña crema hidratante para manos 75 g.webp",
+      "0518_01_natura tododia frutas rojas crema nutritiva para manos 50 ml.webp",
+      "0519_01_natura caja de jabones para bebes x5 100 g x5.webp",
+      "0520_01_natura seve almendras dulce aceite corporal 200 ml.webp",
+      "0521_01_natura ekos maracuya crema corporal 200 ml.webp",
+      "0522_01_natura ekos castaña crema corporal 200 ml.webp",
+      "0523_01_natura ekos cacao crema corporal 400 ml envase.webp",
+      "0524_01_natura ekos acai crema corporal 400 ml envase.webp",
+      "0525_01_natura ekos acai crema hidratante para manos 75 g.webp",
+      "0526_01_natura tododia todanoite te de manzanilla y lavanda crema hidratante nocturna corporal 400 ml.webp",
+      "0527_01_natura tododia todanoite te de manzanilla y lavanda crema hidratante nocturna corporal 200 ml.webp",
+      "0528_01_natura tododia te de manzanilla y lavanda crema nube relajante corporal 200 ml.webp",
+      "0530_01_natura tododia nuez pecan y cacao caja de jabones 5 unidades 90 g x5.webp",
+      "0531_01_natura humor meu primeiro jabon liquido corporal iluminador 75 ml.webp",
+      "0532_01_natura ekos castaña repuesto crema hidratante para el cuerpo 400 ml.webp",
+      "0533_01_natura ekos castaña repuesto jabon liquido para manos 250 ml.webp",
+      "0534_01_natura ekos castaña jabon liquido corporal 195 ml repuesto.webp",
+      "0535_01_avon care aguacate crema corporal 6 en 1 1 l.webp",
+      "0537_01_natura ekos castaña crema exfoliante para manos y pies 60 g.webp",
+      "0538_01_natura tododia nuez pecan y cacao crema corporal envase 400 ml.webp",
+      "0539_01_natura tododia nuez pecan y cacao jabon liquido 300 ml.webp",
+      "0540_01_natura tododia mango rosa y agua de coco crema nutritiva para el cuerpo 400 ml.webp",
+      "0541_01_natura tododia cereza y avellana desodorante antitranspirante roll on 70 ml.webp",
+      "0542_01_natura tododia sin perfume desodorante antitranspirante roll on 70 ml.webp",
+      "0543_01_natura tododia manzana caramelizada y vainilla crema nutritiva para el cuerpo 400 ml.webp",
+      "0544_01_natura erva doce unisex desodorante antitranspirante roll on 70 ml.webp",
+      "0545_01_natura tododia ciruela y flor de vainilla caja de jabones 5 unidades 90 g x5.webp",
+      "0546_01_natura tododia nuez pecan y cacao caja de jabones 5 unidades 90 g x5.webp",
+      "0548_01_natura ekos tukuma jabones en barra 4 unidades 100 g x4.webp",
+      "0549_01_natura tododia piel uniforme exfoliante nutritivo para el cuerpo pera y flor de loto 190 g.webp",
+      "0550_01_natura combo aguas violeta 150 ml jabon en barra 90 g.webp",
+      "0552_01_natura combo tododia manzana caramelizada y vainilla x3.webp",
+      "0553_01_natura combo tododia cereza y avellana x3.webp",
+      "0554_01_natura combo tododia cereza negra y praline x3.webp",
+      "0555_01_natura combo tododia ciruela y flor de vainilla x3.webp",
+      "0556_01_natura chronos combo antiseñales relleno y revitalizacion 60+ dia noche repuestos 40 g.webp",
+      "0557_01_natura chronos combo antiseñales firmeza y luminosidad 45+ dia noche repuestos 40 g.webp",
+      "0558_01_natura chronos combo antiseñales firmeza y luminosidad 45+ dia noche 40 g.webp",
+      "0559_01_natura lumina nutricion y reparacion profunda kit repuesto shampoo 300 ml acondicionador 300 ml mascara 250 ml x3.webp",
+      "0560_01_natura ekos pitanga preta kit frescor femenino 150 ml jabones 6 x 25 g x2.webp",
+      "0561_01_natura tododia nutricion durazno y almendras kit shampoo 300 ml acondicionador 280 ml crema para peinar 180 ml mascara 250 ml x4.webp",
+      "0562_01_natura combo faces facial jabon de limpieza hidratante matificante 50 ml.webp",
+      "0563_01_natura combo tododia avellana y casis aceite bifasico crema 120 ml 100 ml.webp",
+      "0564_01_natura combo tododia cabello rizado cachos e crespos shampoo repuesto acondicionador repuesto crema para peinar repuesto x3.webp",
+      "0565_01_natura combo tododia fresa y vainilla dorada x3.webp",
+      "0566_01_natura ekos cupuaçu crema hidratante para el cuerpo 400 ml.webp",
+      "0567_01_perfume natura homem tato 100 ml.webp",
+      "0568_01_natura essencial unico femenino eau de parfum 90 ml.webp",
+      "0569_01_natura essencial unico masculino eau de parfum 90 ml.webp",
+      "0570_01_natura lumina protector termico finalizador 150 ml.webp",
+      "0571_01_natura lumina fuerza reparacion molecular protector termico 150 ml.webp",
+      "0572_01_natura ekos castaña crema hidratante manos 40 g.webp",
+      "0573_01_natura ekos tukuma pulpa hidratante manos 40 g.webp",
+      "0574_01_natura ekos maracuya pulpa hidratante manos 40 g.webp",
+      "0575_01_natura ekos pitanga crema hidratante manos 40 g.webp",
+      "0576_01_natura ekos ucuuba pulpa hidratante manos 40 g.webp",
+      "regalos/1.webp",
+      "regalos/2.webp",
+      "regalos/3.webp",
+      "regalos/4.webp",
+      "regalos/5.webp",
+      "regalos/6.webp",
+      "regalos/7.webp"
+]);
 
 
-    function googleSheetQueryUrl(callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
-      const query = new URLSearchParams({
-        sheet: GOOGLE_SHEET_SOURCE.sheetName,
-        headers: "1",
-        range: "A:R",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P,Q,R",
-        tqx: `out:json;responseHandler:${callbackName}`
-      });
-      return `${base}?${query.toString()}`;
+    function staticGitHubImageIndex(){
+      return STATIC_GITHUB_IMAGE_PATHS.map(path => ({ path, type:"blob" }));
     }
 
 
-    function loadGoogleSheetRows(){
-      const snapshot = window.TEST_CATALOG_SNAPSHOT;
-      if(snapshot && Array.isArray(snapshot.products)){
-        return Promise.resolve(snapshot.products.map(row => ({ ...row })));
+
+
+
+
+    const GITHUB_WORKBOOK_CACHE_MS = 30000;
+    let githubWorkbookCache = null;
+    let githubWorkbookLoadedAt = 0;
+    let xlsxLibraryPromise = null;
+
+
+    function githubWorkbookUrl(){
+      const path = `${GITHUB_WORKBOOK_SOURCE.folder}/${GITHUB_WORKBOOK_SOURCE.filename}`;
+      return `${SITE_BASE}${encodeRepoPath(path)}`;
+    }
+
+
+    function ensureXlsxLibrary(){
+      if(window.XLSX && typeof window.XLSX.read === "function" && window.XLSX.utils){
+        return Promise.resolve(window.XLSX);
       }
-      return new Promise((resolve, reject)=>{
-        const callbackName = "__googleSheetCatalog_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+      if(xlsxLibraryPromise) return xlsxLibraryPromise;
+
+
+      xlsxLibraryPromise = new Promise((resolve, reject)=>{
         const script = document.createElement("script");
-        let settled = false;
-
-
-        const cleanup = ()=>{
-          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-        };
-
-
-        const timer = window.setTimeout(()=>{
-          if(settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error("Tiempo de espera agotado al consultar el Google Sheet."));
-        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
-
-
-        window[callbackName] = (payload)=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-
-
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
-            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
-            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || "Google Sheets devolvió una respuesta no válida. Verifica que el archivo permita lectura pública."));
-            return;
-          }
-
-
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-
-          const rows = payload.table.rows.map(row=>{
-            const c = Array.isArray(row && row.c) ? row.c : [];
-            const value = index => cellValue(c[index]).trim();
-            let code = value(0);
-            if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
-
-
-            return {
-              code,
-              section: value(1),
-              category: value(2),
-              subcategory: value(3),
-              fragranceFamily: value(4),
-              condition: value(5),
-              commercialState: value(6),
-              name: value(7),
-              priceText: value(8),
-              costText: value(9),
-              stockText: value(10),
-              referenceExternal: value(11),
-              description: value(12),
-              codeNatura: value(13),
-              fragranceType: value(16),
-              fragranceLine: value(17),
-              fullTxtRecord: [
-                value(7),
-                "",
-                `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
-              ].join("\n")
-            };
-          }).filter(row => /^\d{4}$/.test(row.code) && row.name);
-
-
-          resolve(rows);
-        };
-
-
-        script.onerror = ()=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          reject(new Error("No se pudo conectar con Google Sheets."));
-        };
-
-
-        script.src = googleSheetQueryUrl(callbackName);
+        script.src = "js/xlsx.full.min.js";
         script.async = true;
+        script.onload = ()=>{
+          if(window.XLSX && typeof window.XLSX.read === "function" && window.XLSX.utils){
+            resolve(window.XLSX);
+          }else{
+            xlsxLibraryPromise = null;
+            reject(new Error("El lector XLSX no quedó disponible."));
+          }
+        };
+        script.onerror = ()=>{
+          xlsxLibraryPromise = null;
+          reject(new Error("No se pudo cargar el lector XLSX."));
+        };
         document.head.appendChild(script);
+      });
+
+
+      return xlsxLibraryPromise;
+    }
+
+
+    async function loadGithubWorkbook(){
+      const now = Date.now();
+      if(githubWorkbookCache && (now - githubWorkbookLoadedAt) < GITHUB_WORKBOOK_CACHE_MS){
+        return githubWorkbookCache;
+      }
+
+
+      const XLSX = await ensureXlsxLibrary();
+      const controller = new AbortController();
+      const timer = window.setTimeout(()=>controller.abort(), CATALOG_REQUEST_TIMEOUT_MS);
+      try{
+        const response = await fetch(githubWorkbookUrl(), {
+          cache:"no-store",
+          signal:controller.signal
+        });
+        if(!response.ok){
+          throw new Error(`GitHub respondió ${response.status} al consultar el archivo XLSX.`);
+        }
+
+
+        const buffer = await response.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type:"array", cellDates:false });
+        githubWorkbookCache = workbook;
+        githubWorkbookLoadedAt = Date.now();
+        return workbook;
+      }finally{
+        window.clearTimeout(timer);
+      }
+    }
+
+
+    function githubWorkbookSheetMatrix(workbook, sheetName){
+      const sheet = workbook && workbook.Sheets ? workbook.Sheets[sheetName] : null;
+      if(!sheet) throw new Error(`El archivo XLSX no contiene la hoja ${sheetName}.`);
+      return window.XLSX.utils.sheet_to_json(sheet, {
+        header:1,
+        raw:false,
+        defval:"",
+        blankrows:false
       });
     }
 
 
-
-
-    function googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(REMOTE_CONTROL_SOURCE.spreadsheetId)}/gviz/tq`;
-      const query = new URLSearchParams({
-        sheet: sheetName,
-        headers: "1",
-        range,
-        tq,
-        tqx: `out:json;responseHandler:${callbackName}`
-      });
-      return `${base}?${query.toString()}`;
+    function workbookCellText(value){
+      if(value === undefined || value === null) return "";
+      return String(value).trim();
     }
 
 
-    function loadGoogleSheetRemoteMatrix(sheetName, range, tq, callbackPrefix){
-      return new Promise((resolve, reject)=>{
-        const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        const script = document.createElement("script");
-        let settled = false;
+    async function loadGithubWorkbookRows(){
+      const workbook = await loadGithubWorkbook();
+      const matrix = githubWorkbookSheetMatrix(workbook, GITHUB_WORKBOOK_SOURCE.productsSheetName);
+      const rows = matrix.slice(1).map(c=>{
+        const value = index => workbookCellText(c[index]);
+        let code = value(0);
+        if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
 
 
-        const cleanup = ()=>{
-          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
+        return {
+          code,
+          section: value(1),
+          category: value(2),
+          subcategory: value(3),
+          fragranceFamily: value(4),
+          condition: value(5),
+          commercialState: value(6),
+          name: value(7),
+          priceText: value(8),
+          costText: value(9),
+          stockText: value(10),
+          referenceExternal: value(11),
+          description: value(12),
+          codeNatura: value(13),
+          fragranceType: value(16),
+          fragranceLine: value(17),
+          fullTxtRecord: [
+            value(7),
+            "",
+            `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
+          ].join("\n")
         };
+      }).filter(row => /^\d{4}$/.test(row.code) && row.name);
 
 
-        const timer = window.setTimeout(()=>{
-          if(settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error(`Tiempo de espera agotado al consultar la hoja ${sheetName}.`));
-        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
+      if(!rows.length){
+        throw new Error("El archivo XLSX de GitHub no devolvió productos válidos.");
+      }
+      return rows;
+    }
 
 
-        window[callbackName] = (payload)=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-
-
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
-            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
-            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || `No se pudo leer la hoja ${sheetName}.`));
-            return;
-          }
-
-
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-
-          resolve(payload.table.rows.map(row=>{
-            const cells = Array.isArray(row && row.c) ? row.c : [];
-            return cells.map(cellValue);
-          }));
-        };
-
-
-        script.onerror = ()=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          reject(new Error(`No se pudo conectar con la hoja ${sheetName}.`));
-        };
-
-
-        script.src = googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName);
-        script.async = true;
-        document.head.appendChild(script);
-      });
+    async function loadGithubWorkbookMatrix(sheetName){
+      const workbook = await loadGithubWorkbook();
+      const matrix = githubWorkbookSheetMatrix(workbook, sheetName);
+      return matrix.slice(1).map(row => row.map(workbookCellText));
     }
 
 
@@ -568,6 +1066,8 @@
     }
 
 
+
+
     function applyRemoteControlRows(rows){
       let changed = false;
       for(const row of (Array.isArray(rows) ? rows : [])){
@@ -575,8 +1075,12 @@
         if(!key) continue;
 
 
+
+
         const rawState = String(row?.[1] || "").trim();
         window.REMOTE_CONTROL_VALUES[key] = rawState;
+
+
 
 
         const state = parseRemoteBoolean(rawState);
@@ -590,6 +1094,8 @@
     }
 
 
+
+
     function routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState){
       return [section, category, subcategory, fragranceFamily, commercialState]
         .map(value => normalizeText(value).replace(/\s+/g, " "))
@@ -597,11 +1103,15 @@
     }
 
 
+
+
     function applyRemoteCategoryRows(rows){
       const hidden = [];
       const excluded = [];
       const allowed = [];
       let validRows = 0;
+
+
 
 
       for(const row of (Array.isArray(rows) ? rows : [])){
@@ -613,9 +1123,13 @@
         if(!section || !category || !commercialState) continue;
 
 
+
+
         const hiddenState = parseRemoteBoolean(row?.[5]);
         const excludedState = parseRemoteBoolean(row?.[6]);
         if(hiddenState === null && excludedState === null) continue;
+
+
 
 
         validRows++;
@@ -626,10 +1140,14 @@
       }
 
 
+
+
       if(validRows === 0){
         console.info("La hoja Categorias no devolvió rutas válidas; se conserva la configuración anterior.");
         return false;
       }
+
+
 
 
       const uniqueHidden = [...new Set(hidden)];
@@ -637,9 +1155,13 @@
       const uniqueAllowed = [...new Set(allowed)];
 
 
+
+
       const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
       const previousExcluded = JSON.stringify(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA || []);
       const previousAllowed = JSON.stringify([...allowedProductRouteKeySet].sort());
+
+
 
 
       window.ALBUMES_OCULTOS = uniqueHidden;
@@ -648,10 +1170,14 @@
       saveRemoteCategoryCache(uniqueHidden, uniqueExcluded);
 
 
+
+
       return previousHidden !== JSON.stringify(uniqueHidden) ||
              previousExcluded !== JSON.stringify(uniqueExcluded) ||
              previousAllowed !== JSON.stringify([...allowedProductRouteKeySet].sort());
     }
+
+
 
 
     async function refreshRemoteCatalogConfiguration(options = {}){
@@ -659,43 +1185,17 @@
       const initial = options.initial === true;
 
 
+
+
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
-
-
-      const snapshot = window.TEST_CATALOG_SNAPSHOT;
-      if(snapshot && Array.isArray(snapshot.controls) && Array.isArray(snapshot.categories)){
-        let changed = false;
-        changed = applyRemoteControlRows(snapshot.controls) || changed;
-        changed = applyRemoteCategoryRows(snapshot.categories) || changed;
-
-
-        if(initial){
-          wordSuggestionsVisible = shouldShowSuggestionsInitially();
-          syncWordToggleButton();
-        }
-
-
-        if(changed && rebuild && allLoadedProducts.length){
-          rebuildCatalogVisibility();
-          syncWordToggleButton();
-          rebuildSearchTicker();
-          updateTickerVisibility();
-          if(cartModal && cartModal.classList.contains("open")) renderCartModal();
-        }
-
-
-        return changed;
-      }
-
-
       const [controlsResult, categoriesResult] = await Promise.allSettled([
-        loadGoogleSheetRemoteMatrix(
+        loadGithubWorkbookMatrix(
           REMOTE_CONTROL_SOURCE.controlsSheetName,
           "A:E",
           "select A,B,C,D,E",
           "__remoteCatalogControls"
         ),
-        loadGoogleSheetRemoteMatrix(
+        loadGithubWorkbookMatrix(
           REMOTE_CONTROL_SOURCE.categoriesSheetName,
           "A:H",
           "select A,B,C,D,E,F,G,H",
@@ -704,7 +1204,11 @@
       ]);
 
 
+
+
       let changed = false;
+
+
 
 
       if(controlsResult.status === "fulfilled"){
@@ -714,6 +1218,8 @@
       }
 
 
+
+
       if(categoriesResult.status === "fulfilled"){
         changed = applyRemoteCategoryRows(categoriesResult.value) || changed;
       }else{
@@ -721,10 +1227,14 @@
       }
 
 
+
+
       if(initial){
         wordSuggestionsVisible = shouldShowSuggestionsInitially();
         syncWordToggleButton();
       }
+
+
 
 
       if(changed && rebuild && allLoadedProducts.length){
@@ -736,8 +1246,12 @@
       }
 
 
+
+
       return changed;
     }
+
+
 
 
     let remoteConfigPollingTimer = 0;
@@ -745,6 +1259,8 @@
     window.REMOTE_CONFIG_READY = new Promise(resolve => {
       remoteConfigReadyResolver = resolve;
     });
+
+
 
 
     async function initializeRemoteCatalogConfiguration(){
@@ -760,6 +1276,8 @@
       }
 
 
+
+
       const interval = Math.max(30000, Number(REMOTE_CONTROL_SOURCE.refreshMs) || 60000);
       if(REMOTE_CONTROL_SOURCE.enabled && !remoteConfigPollingTimer){
         remoteConfigPollingTimer = window.setInterval(()=>{
@@ -769,6 +1287,8 @@
         }, interval);
       }
     }
+
+
 
 
     function readGitHubImageIndexCache(){
@@ -786,6 +1306,8 @@
     }
 
 
+
+
     function saveGitHubImageIndexCache(entries){
       try{
         const paths = (Array.isArray(entries) ? entries : [])
@@ -799,9 +1321,11 @@
     }
 
 
+
+
     async function fetchGitHubJson(url){
       const controller = new AbortController();
-      const timer = window.setTimeout(()=>controller.abort(), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
+      const timer = window.setTimeout(()=>controller.abort(), CATALOG_REQUEST_TIMEOUT_MS);
       try{
         const response = await fetch(url, {
           cache:"no-store",
@@ -820,48 +1344,67 @@
     }
 
 
-    async function loadGitHubImageIndex(){
-      try{
-        const ref = encodeURIComponent(GITHUB_CATALOG_SOURCE.branch);
-        const treeUrl = `${GITHUB_API_BASE}/git/trees/${ref}?recursive=1`;
-        const treePayload = await fetchGitHubJson(treeUrl);
-        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated){
-          throw new Error("La API de GitHub no devolvió un árbol completo del repositorio.");
-        }
 
 
-        const prefix = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/`;
-        const entries = treePayload.tree
-          .filter(entry => {
-            if(!entry || entry.type !== "blob") return false;
-            const fullPath = String(entry.path || "");
-            if(!fullPath.startsWith(prefix)) return false;
-            const filename = fullPath.split("/").pop() || "";
-            return PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(filename));
-          })
-          .map(entry => ({
-            ...entry,
-            path:String(entry.path || "").slice(prefix.length)
-          }));
-
-
-        if(!entries.length){
-          throw new Error("La API de GitHub no encontró imágenes publicadas dentro de la carpeta productos.");
-        }
-
-
-        saveGitHubImageIndexCache(entries);
-        return entries;
-      }catch(error){
-        const cached = readGitHubImageIndexCache();
-        if(cached.length){
-          console.warn("No se pudo actualizar el índice dinámico de imágenes; se conserva el último índice válido guardado en el navegador.", error);
-          return cached;
-        }
-        console.warn("No se pudo construir el índice dinámico de imágenes desde la API de GitHub; se usarán imágenes suplentes.", error);
-        return [];
+    async function refreshGitHubImageIndexCache(){
+      const ref = encodeURIComponent(GITHUB_CATALOG_SOURCE.branch);
+      const treeUrl = `${GITHUB_API_BASE}/git/trees/${ref}?recursive=1`;
+      const treePayload = await fetchGitHubJson(treeUrl);
+      if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated){
+        throw new Error("La API de GitHub no devolvió un árbol completo del repositorio.");
       }
+
+
+      const prefix = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/`;
+      const entries = treePayload.tree
+        .filter(entry => {
+          if(!entry || entry.type !== "blob") return false;
+          const fullPath = String(entry.path || "");
+          if(!fullPath.startsWith(prefix)) return false;
+          const filename = fullPath.split("/").pop() || "";
+          return PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(filename));
+        })
+        .map(entry => ({
+          ...entry,
+          path:String(entry.path || "").slice(prefix.length)
+        }));
+
+
+      if(!entries.length){
+        throw new Error("La API de GitHub no encontró imágenes publicadas dentro de la carpeta productos.");
+      }
+
+
+      saveGitHubImageIndexCache(entries);
+      return entries;
     }
+
+
+    async function loadGitHubImageIndex(){
+      const staticEntries = staticGitHubImageIndex();
+      const cachedEntries = readGitHubImageIndexCache();
+      const merged = new Map();
+
+
+      for(const entry of staticEntries){
+        if(entry && entry.path) merged.set(String(entry.path), entry);
+      }
+      for(const entry of cachedEntries){
+        if(entry && entry.path) merged.set(String(entry.path), entry);
+      }
+
+
+      runIdle(()=>{
+        refreshGitHubImageIndexCache().catch(error=>{
+          console.info("No se pudo refrescar el índice de imágenes; se conserva el índice local disponible.", error);
+        });
+      }, 1800);
+
+
+      return [...merged.values()];
+    }
+
+
 
 
     function encodeRepoPath(path){
@@ -873,10 +1416,14 @@
     }
 
 
+
+
     function publishedGitHubAssetUrl(relativePath){
       const clean = String(relativePath || "").replace(/^\/+/, "");
       return `${SITE_BASE}${encodeRepoPath(clean)}`;
     }
+
+
 
 
     function extractGlobalProductCode(filename){
@@ -886,11 +1433,15 @@
     }
 
 
+
+
     function extensionOfFilename(filename){
       const name = String(filename || "");
       const dot = name.lastIndexOf(".");
       return dot >= 0 ? name.slice(dot + 1).toLowerCase() : "";
     }
+
+
 
 
     function extractProductImageSequence(filename){
@@ -902,6 +1453,8 @@
     }
 
 
+
+
     function choosePreferredImage(currentEntry, candidateEntry){
       if(!currentEntry) return candidateEntry;
       const ranking = { webp:1, png:2, jpg:3, jpeg:4, avif:5, gif:6 };
@@ -911,9 +1464,13 @@
     }
 
 
+
+
     function orderProductImageEntries(entries){
       const numbered = new Map();
       const legacyByStem = new Map();
+
+
 
 
       for(const entry of (Array.isArray(entries) ? entries : [])){
@@ -923,15 +1480,21 @@
         const sequence = extractProductImageSequence(filename);
 
 
+
+
         if(sequence !== null){
           numbered.set(sequence, choosePreferredImage(numbered.get(sequence), entry));
           continue;
         }
 
 
+
+
         const stem = path.replace(/\.[^.\/]+$/, "").toLowerCase();
         legacyByStem.set(stem, choosePreferredImage(legacyByStem.get(stem), entry));
       }
+
+
 
 
       const numberedEntries = [...numbered.entries()]
@@ -941,28 +1504,36 @@
         .sort((a,b)=>String(a.path || "").localeCompare(String(b.path || ""), "es", { numeric:true, sensitivity:"base" }));
 
 
+
+
       return numberedEntries.length ? [...numberedEntries, ...legacyEntries] : legacyEntries;
     }
 
 
-    async function loadGoogleSheetCatalog(){
+
+
+    async function loadGithubWorkbookCatalog(){
       let rows = [];
       try{
-        rows = await loadGoogleSheetRows();
+        rows = await loadGithubWorkbookRows();
       }catch(error){
-        const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el Google Sheet."));
+        const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el archivo XLSX de GitHub."));
         sheetError.catalogStage = "sheet";
         throw sheetError;
       }
+
+
 
 
       let imageEntries = [];
       try{
         imageEntries = await loadGitHubImageIndex();
       }catch(error){
-        console.warn("Los productos se cargaron desde el Google Sheet, pero no se pudo actualizar el índice dinámico de imágenes publicadas. Se usarán imágenes suplentes.", error);
+        console.warn("Los productos se cargaron desde el archivo XLSX de GitHub, pero no se pudo actualizar el índice dinámico de imágenes publicadas. Se usarán imágenes suplentes.", error);
         imageEntries = [];
       }
+
+
 
 
       const sheetCodes = new Set(
@@ -972,6 +1543,8 @@
       const entries = Array.isArray(imageEntries) ? imageEntries : [];
 
 
+
+
       try{
         for(const entry of entries){
           const relativePath = String(entry && entry.path || "");
@@ -979,14 +1552,20 @@
           if(!relativePath || !filename) continue;
 
 
+
+
           const code = extractGlobalProductCode(filename);
           if(!code || !sheetCodes.has(code)) continue;
+
+
 
 
           const list = imagesByCode.get(code) || [];
           list.push(entry);
           imagesByCode.set(code, list);
         }
+
+
 
 
         for(const [code, entriesForCode] of imagesByCode){
@@ -996,6 +1575,8 @@
         console.warn("No se pudo asociar el índice de imágenes a los productos. El catálogo continuará con imágenes suplentes.", error);
         imagesByCode.clear();
       }
+
+
 
 
       let giftImageUrls = [];
@@ -1018,11 +1599,15 @@
       }
 
 
+
+
       return {
         sheetEntries: rows.map(row => ({ row, imageIndex:imagesByCode })),
         giftImageUrls
       };
     }
+
+
 
 
     function parseOptionalWholeNumber(value){
@@ -1035,10 +1620,14 @@
     }
 
 
+
+
     function parseOfficialInventoryRecord(item){
       const rawName = String((item && item.name) || "").trim();
       const rawDescription = String((item && item.description) || "").trim();
       const officialRecordPattern = /^([\s\S]+?)\.\s*Precio:\s*([\d.\s]*)\s*Costo:\s*([\d.\s]*)\s*Stock:\s*([\d\s]*)\s*Referencia externa:\s*([\s\S]*)$/i;
+
+
 
 
       let match = null;
@@ -1046,6 +1635,8 @@
         match = candidate.match(officialRecordPattern);
         if(match) break;
       }
+
+
 
 
       if(!match){
@@ -1062,6 +1653,8 @@
           referenceExternal: ""
         };
       }
+
+
 
 
       const priceText = match[2].trim();
@@ -1086,6 +1679,8 @@
       }
 
 
+
+
       return {
         matched: true,
         name: match[1].trim(),
@@ -1098,10 +1693,14 @@
     }
 
 
-    function makeProductFromGoogleSheet(entry){
+
+
+    function makeProductFromGithubWorkbook(entry){
       const row = entry && entry.row;
       const imageIndex = entry && entry.imageIndex;
       if(!row) return null;
+
+
 
 
       const code = String(row.code || "").trim();
@@ -1116,6 +1715,8 @@
       const condition = String(row.condition || "").trim();
       const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
+
+
 
 
       const indexedImages = imageIndex && imageIndex.get(code);
@@ -1134,8 +1735,12 @@
       const syntheticFilename = imageRelativePath || `${code}.webp`;
 
 
+
+
       const priceText = String(row.priceText || "").trim();
       const stockText = String(row.stockText || "").trim();
+
+
 
 
       return {
@@ -1166,10 +1771,14 @@
         fullTxtRecord: String(row.fullTxtRecord || ""),
         docsImageUrl,
         imageUrls,
-        docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
+        docsDocumentUrl: githubWorkbookUrl(),
         searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, fragranceType, fragranceLine, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
+
+
+
+
 
 
 
@@ -1217,9 +1826,13 @@
     }
 
 
+
+
     function clearLegacyProductCaches(){
       return;
     }
+
+
 
 
     function updateCatalogFooterProducts(products){
@@ -1229,10 +1842,14 @@
       const namedProducts = source.filter(product => product && String(product.name || "").trim());
 
 
+
+
       if(count){
         count.textContent = `${namedProducts.length} ${namedProducts.length === 1 ? "producto" : "productos"}`;
       }
       if(!list) return;
+
+
 
 
       const sorted = source.slice().sort((a,b)=>
@@ -1248,13 +1865,19 @@
         if(!name) continue;
 
 
+
+
         const item = document.createElement("li");
         item.dataset.productCode = String(product?.id || "").trim();
+
+
 
 
         const title = document.createElement("strong");
         title.className = "beauty-product-name";
         title.textContent = name;
+
+
 
 
         const meta = document.createElement("span");
@@ -1281,9 +1904,13 @@
         meta.textContent = metaParts.filter(Boolean).join(" · ");
 
 
+
+
         const description = document.createElement("span");
         description.className = "beauty-product-description";
         description.textContent = String(product?.description || `Producto disponible en ${product?.category || "Irenismb Stock Natura"}.`).trim();
+
+
 
 
         item.append(title, meta, description);
@@ -1291,6 +1918,8 @@
       }
       list.replaceChildren(fragment);
     }
+
+
 
 
     function isMobileDevice(){
@@ -1305,12 +1934,16 @@
     }
 
 
+
+
     /* ==========================
        WhatsApp (la compra se envía al WhatsApp de la tienda)
        ========================== */
     const LS_CLIENT_KEY = "irenismb_client";
     const LS_ADDRESS_KEY = "irenismb_address";
     const LS_SHIPPING_KEY = "irenismb_shipping_cop";
+
+
 
 
     function readJsonLS(key, fallbackObj){
@@ -1343,9 +1976,15 @@
 
 
 
+
+
+
+
     function getWhatsAppTo(){
       return WHATSAPP_NUMBER;
     }
+
+
 
 
     function waLinkTo(toDigits, text){
@@ -1361,6 +2000,8 @@
     }
 
 
+
+
     (function syncTopWhatsApp(){
       const a = document.getElementById("waTopLink");
       if (!a) return;
@@ -1369,10 +2010,14 @@
     })();
 
 
+
+
     const imgModal = document.getElementById("imgModal");
     const imgModalImg = document.getElementById("imgModalImg");
     const imgModalClose = document.getElementById("imgModalClose");
     const imgModalBackdrop = document.getElementById("imgModalBackdrop");
+
+
 
 
     let _modalLockCount = 0;
@@ -1384,6 +2029,8 @@
       _modalLockCount = Math.max(0, _modalLockCount - 1);
       if(_modalLockCount === 0) document.body.style.overflow = "";
     }
+
+
 
 
     function rememberModalTrigger(modal){
@@ -1435,6 +2082,8 @@
     }
 
 
+
+
     function openImgModal(src, alt){
       if(!imgModal || !imgModalImg || !src) return;
       if(imgModal.classList.contains("open")) return;
@@ -1459,11 +2108,15 @@
     if(imgModalBackdrop) imgModalBackdrop.addEventListener("click", closeImgModal);
 
 
+
+
     function makeImgFromFilename(filename, name, docsImageUrl=""){
       const img = document.createElement("img");
       img.alt = name ? ("Foto " + name) : "Foto del producto";
       img.loading = "lazy";
       img.decoding = "async";
+
+
 
 
       let zoomable = false;
@@ -1473,8 +2126,12 @@
       }
 
 
+
+
       const preferredUrl = String(docsImageUrl || "").trim();
       const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
+
+
 
 
       if(!allowReal){
@@ -1484,6 +2141,8 @@
         zoomable = true;
         img.src = preferredUrl;
       }
+
+
 
 
       img.onerror = ()=>{
@@ -1499,6 +2158,8 @@
       };
 
 
+
+
       img.addEventListener("click", ()=>{
         if(!zoomable) return;
         const src = img.currentSrc || img.src;
@@ -1506,8 +2167,12 @@
       });
 
 
+
+
       return img;
     }
+
+
 
 
     function makeCartThumbFromFilename(filename, name, docsImageUrl=""){
@@ -1518,6 +2183,8 @@
       img.decoding = "async";
 
 
+
+
       let zoomable = false;
       function setNonZoom(){
         zoomable = false;
@@ -1525,8 +2192,12 @@
       }
 
 
+
+
       const preferredUrl = String(docsImageUrl || "").trim();
       const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
+
+
 
 
       if(!allowReal){
@@ -1536,6 +2207,8 @@
         zoomable = true;
         img.src = preferredUrl;
       }
+
+
 
 
       img.onerror = ()=>{
@@ -1551,6 +2224,8 @@
       };
 
 
+
+
       img.addEventListener("click", ()=>{
         if(!zoomable) return;
         const src = img.currentSrc || img.src;
@@ -1558,13 +2233,19 @@
       });
 
 
+
+
       return img;
     }
+
+
 
 
     let allLoadedProducts = [];
     let all = [];
     let productById = new Map();
+
+
 
 
     const ROOT_ALBUM_KEY = "__root__";
@@ -1583,6 +2264,8 @@
     }
 
 
+
+
     const ROOT_ICON_IMAGES = {
       ella: githubPagesAssetUrl("iconos/2026-09-06_icono categoria para ella perfume floral.webp"),
       el: githubPagesAssetUrl("iconos/2026-09-06_icono categoria para el perfume azul.webp"),
@@ -1590,6 +2273,8 @@
       regalos: githubPagesAssetUrl("iconos/2026-09-06_icono categoria regalos caja lazo rosa.webp"),
       otros: githubPagesAssetUrl("iconos/2026-09-06_icono categoria otros productos hogar variedad.webp")
     };
+
+
 
 
     const NAV_AUDIENCES = [
@@ -1647,6 +2332,8 @@
     ];
 
 
+
+
     const SUBCATEGORY_ICON_IMAGES = {
       "perfumes": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria perfumes fragancia floral rosa.webp"),
       "desodorantes": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria desodorantes roll on vegetal.webp"),
@@ -1664,6 +2351,8 @@
       "papeleria": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria papeleria cuaderno lapiz corazon.webp"),
       "medicamentos": githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria medicamentos frasco capsulas medicas.webp")
     };
+
+
 
 
     const CATEGORY_VISUALS = {
@@ -1714,6 +2403,8 @@
     };
 
 
+
+
     let albums = [];
     let albumByKey = new Map();
     let selectedAudience = "";
@@ -1724,11 +2415,13 @@
     let selectedFragranceLineFilter = "";
     let selectedAlbumKey = "";
 
+
     const catalogNavigationHistory = {
       entries: [],
       index: -1,
       restoring: false
     };
+
 
     function getCatalogNavigationSnapshot(){
       return {
@@ -1743,6 +2436,7 @@
         fragranceLine:selectedFragranceLineFilter || ""
       };
     }
+
 
     function catalogNavigationSignature(snapshot){
       const s = snapshot || {};
@@ -1759,6 +2453,7 @@
       });
     }
 
+
     function notifyCatalogNavigationHistory(){
       const detail = {
         canBack:catalogNavigationHistory.index > 0,
@@ -1770,6 +2465,7 @@
       return detail;
     }
 
+
     function ensureCatalogNavigationHistory(){
       if(catalogNavigationHistory.index >= 0) return;
       catalogNavigationHistory.entries = [getCatalogNavigationSnapshot()];
@@ -1777,12 +2473,14 @@
       notifyCatalogNavigationHistory();
     }
 
+
     function syncCatalogNavigationHistoryCurrent(){
       if(catalogNavigationHistory.restoring) return;
       ensureCatalogNavigationHistory();
       catalogNavigationHistory.entries[catalogNavigationHistory.index] = getCatalogNavigationSnapshot();
       notifyCatalogNavigationHistory();
     }
+
 
     function pushCatalogNavigationHistory(){
       if(catalogNavigationHistory.restoring) return;
@@ -1799,6 +2497,7 @@
       catalogNavigationHistory.index = catalogNavigationHistory.entries.length - 1;
       notifyCatalogNavigationHistory();
     }
+
 
     function restoreCatalogNavigationSnapshot(snapshot){
       if(!snapshot) return;
@@ -1823,6 +2522,7 @@
       uxScrollToCatalogStart();
     }
 
+
     function catalogHistoryBack(){
       if(catalogNavigationHistory.index <= 0) return false;
       syncCatalogNavigationHistoryCurrent();
@@ -1831,6 +2531,7 @@
       return true;
     }
 
+
     function catalogHistoryForward(){
       if(catalogNavigationHistory.index < 0 || catalogNavigationHistory.index >= catalogNavigationHistory.entries.length - 1) return false;
       syncCatalogNavigationHistoryCurrent();
@@ -1838,6 +2539,7 @@
       restoreCatalogNavigationSnapshot(catalogNavigationHistory.entries[catalogNavigationHistory.index]);
       return true;
     }
+
 
     window.CATALOG_NAV_HISTORY = {
       back:catalogHistoryBack,
@@ -1849,15 +2551,21 @@
     let allowedProductRouteKeySet = new Set();
 
 
+
+
     function cleanNavKey(value){
       return normalizeText(value).replace(/\s+/g, " ");
     }
+
+
 
 
     function getProductRouteKey(p){
       if(!p) return "";
       return routeKeyFromParts(p.section, p.category, p.subcategory, p.fragranceFamily, p.commercialState);
     }
+
+
 
 
     function isProductRouteAuthorized(p){
@@ -1869,16 +2577,22 @@
     }
 
 
+
+
     function isProductHiddenByRoute(p){
       const key = getProductRouteKey(p);
       return Boolean(key && hiddenAlbumNameSet.has(key));
     }
 
 
+
+
     function isProductExcludedFromSearchByRoute(p){
       const key = getProductRouteKey(p);
       return Boolean(key && searchExcludedAlbumNameSet.has(key));
     }
+
+
 
 
     function mainNavigationGroupForProduct(p){
@@ -1888,9 +2602,13 @@
     }
 
 
+
+
     function productMatchesAudience(p, audienceLabel){
       return cleanNavKey(mainNavigationGroupForProduct(p)) === cleanNavKey(audienceLabel);
     }
+
+
 
 
     function navigationCategoryForProduct(p){
@@ -1899,20 +2617,25 @@
     }
 
 
+
+
     function navigationFamilyForProduct(p){
       if(!p) return "";
       return String(p.fragranceType || "").trim();
     }
+
 
     function navigationFragranceLineForProduct(p){
       if(!p) return "";
       return String(p.fragranceLine || "").trim();
     }
 
+
     function clearFragranceFilters(){
       selectedFragranceFamilyFilter = "";
       selectedFragranceLineFilter = "";
     }
+
 
     function isFragranceNavigationScope(){
       return cleanNavKey(selectedAudience) === cleanNavKey("Perfumes y fragancias") &&
@@ -1920,15 +2643,20 @@
              Boolean(selectedFamily);
     }
 
+
     function isDirectProductAudience(audienceLabel){
       const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audienceLabel));
       return !!(group && group.directProducts === true);
     }
 
 
+
+
     function isDirectProductSection(sectionLabel){
       return NAV_AUDIENCES.some(item => item.directProducts === true && cleanNavKey(item.section) === cleanNavKey(sectionLabel));
     }
+
+
 
 
     function collectAlbumPreview(found, p){
@@ -1939,6 +2667,8 @@
         else found.previewImages.push(previewImage);
       }
     }
+
+
 
 
     function buildRootAlbums(list){
@@ -1970,6 +2700,8 @@
       }
       return out;
     }
+
+
 
 
     function buildCategoryAlbums(list, audienceLabel){
@@ -2008,6 +2740,8 @@
           colorIndex:index % ALBUM_COLORS.length
         }));
     }
+
+
 
 
     function buildFamilyAlbums(list, audienceLabel, categoryLabel){
@@ -2051,10 +2785,14 @@
     }
 
 
+
+
     function buildAlbums(list){
       if(selectedAudience && selectedCategory) return buildFamilyAlbums(list, selectedAudience, selectedCategory);
       return selectedAudience ? buildCategoryAlbums(list, selectedAudience) : buildRootAlbums(list);
     }
+
+
 
 
     function refreshNavigationAlbums(){
@@ -2074,9 +2812,13 @@
     }
 
 
+
+
     function getProductAlbumKey(p){
       return cleanNavKey(navigationCategoryForProduct(p) || "General") || ROOT_ALBUM_KEY;
     }
+
+
 
 
     function albumLabelFromKey(key){
@@ -2087,10 +2829,14 @@
     }
 
 
+
+
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
       return source.filter(p => isProductRouteAuthorized(p) && !isProductHiddenByRoute(p));
     }
+
+
 
 
     function filterSearchExcludedProducts(list){
@@ -2100,14 +2846,20 @@
     }
 
 
+
+
     function hasAlbumFolders(){
       return all.length > 0;
     }
 
 
+
+
     function albumModeEnabled(){
       return hasAlbumFolders();
     }
+
+
 
 
     function shouldShowAlbumGrid(){
@@ -2125,6 +2877,8 @@
     }
 
 
+
+
     function getSelectedAlbum(){
       if(selectedFamily){
         return { label:selectedFamily, navType:"family", audience:selectedAudience, category:selectedCategory };
@@ -2137,6 +2891,8 @@
       }
       return null;
     }
+
+
 
 
     function currentProductSourceList(){
@@ -2160,6 +2916,8 @@
     }
 
 
+
+
     function refreshFilterOptionsForScope(){
       if(catSel){
         catSel.value = "";
@@ -2176,6 +2934,8 @@
     }
 
 
+
+
     const cart = (() => {
       try{
         const rawCart = localStorage.getItem("cart");
@@ -2188,7 +2948,11 @@
     })();
 
 
+
+
     const cartCountEl = document.getElementById("cartCount");
+
+
 
 
     function cartItemsArray(){
@@ -2218,6 +2982,8 @@
     }
 
 
+
+
     function detectarMarcaDispositivo(modelo, ua){
       const texto = `${String(modelo || "")} ${String(ua || "")}`.toLowerCase();
       if(/iphone|ipad|ipod/.test(texto)) return "Apple";
@@ -2239,11 +3005,15 @@
     }
 
 
+
+
     async function obtenerDetalleDispositivoVisita(){
       const ua = String(navigator.userAgent || "");
       const tipo = /iPad|Tablet/i.test(ua)
         ? "Tablet"
         : (/Mobi|Android|iPhone/i.test(ua) ? "Móvil" : "Computador");
+
+
 
 
       let sistema = "";
@@ -2254,12 +3024,16 @@
       else if(/Linux/i.test(ua)) sistema = "Linux";
 
 
+
+
       let navegador = "";
       if(/Edg\//i.test(ua)) navegador = "Edge";
       else if(/Firefox\//i.test(ua)) navegador = "Firefox";
       else if(/CriOS\//i.test(ua)) navegador = "Chrome";
       else if(/Chrome\//i.test(ua)) navegador = "Chrome";
       else if(/Safari\//i.test(ua)) navegador = "Safari";
+
+
 
 
       let modelo = "";
@@ -2271,14 +3045,20 @@
       }catch(_){}
 
 
+
+
       if(!modelo && /Android/i.test(ua)){
         const match = ua.match(/Android[^;]*;\s*([^;)]+?)(?:\s+Build\/|;|\))/i);
         if(match) modelo = String(match[1] || "").trim();
       }
 
 
+
+
       if(!modelo && /iPhone/i.test(ua)) modelo = "iPhone";
       if(!modelo && /iPad/i.test(ua)) modelo = "iPad";
+
+
 
 
       modelo = modelo
@@ -2287,7 +3067,11 @@
         .trim();
 
 
+
+
       const marca = detectarMarcaDispositivo(modelo, ua);
+
+
 
 
       return {
@@ -2298,14 +3082,20 @@
     }
 
 
+
+
     function resumenOrigenVisita(){
       const limpiar = value => String(value || "").trim();
       const normalizar = value => limpiar(value).toLowerCase().replace(/[_.-]+/g, " ").replace(/\s+/g, " ");
 
 
+
+
       const nombreFuente = value => {
         const key = normalizar(value);
         if(!key) return "";
+
+
 
 
         const aliases = [
@@ -2341,19 +3131,27 @@
         ];
 
 
+
+
         for(const [pattern, label] of aliases){
           if(pattern.test(key)) return label;
         }
+
+
 
 
         return limpiar(value);
       };
 
 
+
+
       const origenUtm = (source, medium) => {
         const fuente = nombreFuente(source);
         const medio = normalizar(medium);
         if(!fuente) return "";
+
+
 
 
         const esPago = /(cpc|ppc|paid|paid social|paid_social|display|ads?|advertising)/i.test(medio);
@@ -2369,9 +3167,13 @@
         }
 
 
+
+
         if(/(organic|seo)/i.test(medio)){
           if(["Google", "Bing", "DuckDuckGo", "Yahoo"].includes(fuente)) return `${fuente} · búsqueda orgánica`;
         }
+
+
 
 
         if(/(email|mail|newsletter)/i.test(medio)) return fuente === "Correo electrónico" ? fuente : `${fuente} · correo`;
@@ -2379,8 +3181,12 @@
         if(/(referral|referido)/i.test(medio)) return `${fuente} · referido`;
 
 
+
+
         return fuente;
       };
+
+
 
 
       const origenClickId = params => {
@@ -2397,11 +3203,15 @@
       };
 
 
+
+
       const origenReferrer = ref => {
         if(!ref) return "";
         let host = "";
         try{ host = new URL(ref).hostname.toLowerCase().replace(/^www\./, ""); }catch(_){ return ""; }
         if(!host || host === window.location.hostname.toLowerCase()) return "";
+
+
 
 
         const reglas = [
@@ -2429,6 +3239,8 @@
         ];
 
 
+
+
         for(const [pattern, label] of reglas){
           if(pattern.test(host)) return label;
         }
@@ -2436,9 +3248,13 @@
       };
 
 
+
+
       try{
         const actual = new URL(window.location.href);
         const params = actual.searchParams;
+
+
 
 
         for(const key of ["origen", "fuente", "source"]){
@@ -2447,17 +3263,25 @@
         }
 
 
+
+
         const utmSource = limpiar(params.get("utm_source"));
         const utmMedium = limpiar(params.get("utm_medium"));
         if(utmSource) return origenUtm(utmSource, utmMedium);
+
+
 
 
         const porClickId = origenClickId(params);
         if(porClickId) return porClickId;
 
 
+
+
         const porReferrer = origenReferrer(limpiar(document.referrer));
         if(porReferrer) return porReferrer;
+
+
 
 
         return "Directo / no detectable";
@@ -2467,9 +3291,13 @@
     }
 
 
+
+
     const ATTRIBUTION_FIRST_KEY = "irenismb_attribution_first";
     const ATTRIBUTION_LAST_KEY = "irenismb_attribution_last";
     const ATTRIBUTION_CONVERSION_KEY = "irenismb_attribution_conversion";
+
+
 
 
     function leerAtribucionGuardada(storage, key){
@@ -2483,9 +3311,13 @@
     }
 
 
+
+
     function guardarAtribucion(storage, key, value){
       try{ storage.setItem(key, JSON.stringify(value)); }catch(_){}
     }
+
+
 
 
     function obtenerCampanaVisita(){
@@ -2504,6 +3336,8 @@
     }
 
 
+
+
     function obtenerMedioVisita(){
       try{
         const params = new URL(window.location.href).searchParams;
@@ -2512,6 +3346,8 @@
         return "";
       }
     }
+
+
 
 
     function certezaOrigenVisita(){
@@ -2528,6 +3364,8 @@
     }
 
 
+
+
     function contextoAtribucionVisita(){
       const actual = {
         origen: String(resumenOrigenVisita() || "Directo / no detectable"),
@@ -2538,6 +3376,8 @@
       };
 
 
+
+
       let primero = leerAtribucionGuardada(localStorage, ATTRIBUTION_FIRST_KEY);
       if(!primero){
         primero = actual;
@@ -2546,16 +3386,24 @@
       guardarAtribucion(localStorage, ATTRIBUTION_LAST_KEY, actual);
 
 
+
+
       const conversion = leerAtribucionGuardada(sessionStorage, ATTRIBUTION_CONVERSION_KEY) || null;
+
+
 
 
       return { actual, primero, ultimo:actual, conversion };
     }
 
 
+
+
     function registrarConversionCatalogo(tipo, detalle){
       const nombre = String(tipo || "").trim();
       if(!nombre) return;
+
+
 
 
       const prioridades = {
@@ -2568,6 +3416,8 @@
       if((prioridades[nombre] || 1) < (prioridades[String(existente?.tipo || "")] || 0)) return;
 
 
+
+
       const evento = {
         tipo: nombre,
         detalle: String(detalle || "").trim(),
@@ -2578,6 +3428,8 @@
       guardarAtribucion(sessionStorage, ATTRIBUTION_CONVERSION_KEY, evento);
 
 
+
+
       try{
         window.dispatchEvent(new CustomEvent("catalogo:conversion", { detail:evento }));
       }catch(_){}
@@ -2585,7 +3437,11 @@
     window.registrarConversionCatalogo = registrarConversionCatalogo;
 
 
+
+
     try{ contextoAtribucionVisita(); }catch(_){}
+
+
 
 
     window.obtenerContextoVisitaCatalogo = async function(){
@@ -2637,9 +3493,13 @@
     };
 
 
+
+
     function sanitizeCartWithStock(){
       const enforce = shouldEnforceStockLimits();
       let changed = false;
+
+
 
 
       for(const key of Object.keys(cart)){
@@ -2658,14 +3518,20 @@
         }
 
 
+
+
         const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
         const maxStock = hasKnownStock ? p.stock : null;
         const qty = Math.max(0, safeInt(it.qty, 0));
 
 
+
+
         const newQty = enforce
           ? (hasKnownStock ? Math.min(qty, maxStock) : 0)
           : qty;
+
+
 
 
         const newObj = {
@@ -2679,16 +3545,24 @@
         };
 
 
+
+
         cart[id] = newObj;
         if(id !== key) delete cart[key];
+
+
 
 
         if(newQty !== qty) changed = true;
       }
 
 
+
+
       if(changed) saveCart(); else refreshCartCount();
     }
+
+
 
 
     const shippingCopInp = document.getElementById("shippingCop");
@@ -2700,11 +3574,17 @@
       if(!shippingCopInp) return;
 
 
+
+
       const MIN_SHIPPING = 6000;
+
+
 
 
       const raw = readStringLS(LS_SHIPPING_KEY, "");
       const v = toNumberDigits(raw);
+
+
 
 
       // Si no hay valor guardado, usar 6.000 por defecto (editable).
@@ -2715,6 +3595,8 @@
       const v = toNumberDigits(shippingCopInp.value);
       writeStringLS(LS_SHIPPING_KEY, v ? String(v) : "");
     }
+
+
 
 
     const STORE_INFO = {
@@ -2729,9 +3611,13 @@
     };
 
 
+
+
     const ORDER_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP/exec";
         
     const ORDER_LOG_TIMEOUT_MS = 6500;
+
+
 
 
     function buildLineItems(){
@@ -2748,6 +3634,8 @@
     }
 
 
+
+
     function oneLineText(s){
       return String(s ?? "")
         .replace(/\r\n/g, "\n")
@@ -2757,11 +3645,15 @@
     }
 
 
+
+
     function viaTypeLabel(tipo){
       const t = String(tipo || "").trim();
       const map = { Cl:"Calle", Cra:"Carrera", Av:"Avenida", Dg:"Diagonal", Tv:"Transversal" };
       return map[t] || t;
     }
+
+
 
 
     function buildViaString(tipo, num, placa){
@@ -2773,10 +3665,14 @@
     }
 
 
+
+
     function getClientDataCurrent(){
       const nameInp = document.getElementById("clientName");
       const phoneInp = document.getElementById("clientPhone");
       const obsInp = document.getElementById("clientObs");
+
+
 
 
       const obj = readJsonLS(LS_CLIENT_KEY, {});
@@ -2785,12 +3681,18 @@
       const obs = String((obsInp && obsInp.value) ?? (obj.clientObs ?? ""));
 
 
+
+
       return { name, phone, obs };
     }
 
 
+
+
     function getAddressDataCurrent(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
+
+
 
 
       const cityInp = document.getElementById("addrCity");
@@ -2801,6 +3703,8 @@
       const barrioInp = document.getElementById("addrBarrio");
 
 
+
+
       const city = String((cityInp && cityInp.value) ?? (obj.addrCity ?? "")).trim();
       const region = String((regionInp && regionInp.value) ?? (obj.addrRegion ?? "")).trim();
       const tipo = String((tipoInp && tipoInp.value) ?? (obj.addrViaTipo ?? "")).trim();
@@ -2809,14 +3713,20 @@
       const barrio = String((barrioInp && barrioInp.value) ?? (obj.addrBarrio ?? "")).trim();
 
 
+
+
       const via = buildViaString(tipo, num, placa);
       const addressLine = joinParts([via, city, region], ", ");
+
+
 
 
       // IMPORTANTE: barrio NO se incluye en el enlace de Google Maps
       const mapLink = addressLine
         ? ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addressLine))
         : "";
+
+
 
 
       return { addressLine, barrio, mapLink };
@@ -2827,6 +3737,8 @@
           const addr = getAddressDataCurrent();
 
 
+
+
           const subtotal = cartTotalValue();
           const envio = getShippingCop();
           const total = subtotal + envio;
@@ -2834,7 +3746,11 @@
           const hasUnpricedItems = !showPrices || cartHasUnpricedItems();
 
 
+
+
           const lines = [];
+
+
 
 
           lines.push("*INFORMACIÓN DEL CLIENTE*");
@@ -2846,13 +3762,19 @@
           lines.push(`*Observación:* ${oneLineText(client.obs || "")}`.trimEnd());
 
 
+
+
           lines.push("");
           lines.push("*PRODUCTOS SOLICITADOS*");
+
+
 
 
           if(items.length){
                 lines.push(...buildLineItems());
           }
+
+
 
 
           lines.push("");
@@ -2864,10 +3786,14 @@
           }
 
 
+
+
           // ✅ Celular tienda sin +57 (solo para el mensaje)
           const storePhoneNo57 = String(STORE_INFO.whatsappDisplay || "")
                 .replace(/^\s*\+?\s*57\s*/i, "")
                 .trim();
+
+
 
 
           lines.push("");
@@ -2878,14 +3804,20 @@
           lines.push(`*Barrio:* ${STORE_INFO.barrio}`);
 
 
+
+
           // Orden solicitado: primero punto de referencia y luego enlaces
           lines.push(`*Puntos de referencia:* ${STORE_INFO.referencias}`);
           lines.push(`*Ubicación:* ${STORE_INFO.mapa}`);
           lines.push(`*Catálogo:* ${STORE_INFO.catalogo}`);
 
 
+
+
           return lines.join("\n");
         }
+
+
 
 
     function buildOrderPayload(){
@@ -2897,6 +3829,8 @@
       const envio = getShippingCop();
       const totalPedido = subtotal + envio;
       const direccionClienteVisible = joinParts([addr.addressLine || "", addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
+
+
 
 
       return {
@@ -2939,6 +3873,8 @@
     }
 
 
+
+
     function fetchWithTimeout(url, options = {}, timeoutMs = 6500){
       return new Promise((resolve, reject) => {
         const timer = setTimeout(() => reject(new Error("Tiempo de espera agotado al registrar el pedido.")), timeoutMs);
@@ -2955,12 +3891,18 @@
     }
 
 
+
+
     async function registerOrderInSheet(){
       const payload = buildOrderPayload();
       if(!Array.isArray(payload.items) || !payload.items.length) return { ok:false, skipped:true };
 
 
+
+
       const body = JSON.stringify(payload);
+
+
 
 
       await fetchWithTimeout(ORDER_LOG_ENDPOINT, {
@@ -2975,11 +3917,17 @@
       }, ORDER_LOG_TIMEOUT_MS);
 
 
+
+
       return { ok:true, skipped:false };
     }
 
 
+
+
     let orderSending = false;
+
+
 
 
     const cartModal = document.getElementById("cartModal");
@@ -2991,6 +3939,8 @@
     const cartClearBtn = document.getElementById("cartClearBtn");
     const cartAddressBtn = document.getElementById("cartAddressBtn");
     const cartClientBtn = document.getElementById("cartClientBtn");
+
+
 
 
     function openCartModal(){
@@ -3011,6 +3961,8 @@
     }
 
 
+
+
     function renderCartModal(){
       const enforce = shouldEnforceStockLimits();
       const items = cartItemsArray();
@@ -3022,10 +3974,14 @@
         : ("Total: " + fmtCOP.format(total));
 
 
+
+
       if(!items.length){
         cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío.</div>`;
         return;
       }
+
+
 
 
       const frag = document.createDocumentFragment();
@@ -3035,15 +3991,23 @@
         row.setAttribute("data-id", it.id);
 
 
+
+
         const left = document.createElement("div");
         left.className = "cart-item-left";
+
+
 
 
         const p = productById.get(String(it.id));
         const imgFilename = (p && p.imgFilename) ? p.imgFilename : it.imgFilename;
 
 
+
+
         left.appendChild(makeCartThumbFromFilename(imgFilename, it.name, p && p.docsImageUrl));
+
+
 
 
         const main = document.createElement("div");
@@ -3064,6 +4028,8 @@
         left.appendChild(main);
 
 
+
+
         const controls = document.createElement("div");
         controls.className = "cart-controls";
         controls.innerHTML = `
@@ -3073,9 +4039,13 @@
         `;
 
 
+
+
         const incBtn = controls.querySelector('button[data-act="inc"]');
         const hasKnownStock = Number.isFinite(it.stock) && it.stock >= 0;
         const maxStock = hasKnownStock ? it.stock : null;
+
+
 
 
         if(incBtn){
@@ -3085,6 +4055,8 @@
         }
 
 
+
+
         const subtotal = document.createElement("div");
         subtotal.className = "cart-subtotal";
         subtotal.textContent = (!shouldShowProductPrices() || it.hasPrice === false)
@@ -3092,11 +4064,15 @@
           : fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0));
 
 
+
+
         const remove = document.createElement("button");
         remove.className = "cart-remove";
         remove.type = "button";
         remove.textContent = "Eliminar";
         remove.setAttribute("data-act", "remove");
+
+
 
 
         row.appendChild(left);
@@ -3107,9 +4083,13 @@
       });
 
 
+
+
       cartItemsEl.innerHTML = "";
       cartItemsEl.appendChild(frag);
     }
+
+
 
 
     cartItemsEl.addEventListener("click", (e)=>{
@@ -3121,14 +4101,20 @@
       if(!id || !cart[id]) return;
 
 
+
+
       const enforce = shouldEnforceStockLimits();
       const act = btn.getAttribute("data-act");
       const current = cart[id];
 
 
+
+
       const hasKnownStock = Number.isFinite(current.stock) && current.stock >= 0;
       const maxStock = hasKnownStock ? current.stock : null;
       let newQty = safeInt(current.qty, 0);
+
+
 
 
       if(act === "inc"){
@@ -3146,8 +4132,12 @@
       }
 
 
+
+
       if(!newQty) delete cart[id];
       else cart[id].qty = newQty;
+
+
 
 
       if(act === "inc" && newQty > safeInt(current.qty, 0)){
@@ -3158,10 +4148,14 @@
     });
 
 
+
+
     function openWhatsAppTo(toDigits, text){
       const msg = String(text || "").trim() || "Hola, quiero información del catálogo.";
       window.open(waLinkTo(toDigits, msg), "_blank", "noopener");
     }
+
+
 
 
     const waTopTrackingLink = document.getElementById("waTopLink");
@@ -3172,10 +4166,14 @@
     }
 
 
+
+
     // ÚNICO BOTÓN: Registrar pedido y luego abrir WhatsApp (se envía al número de la tienda)
     if(cartBuyBtn){
       cartBuyBtn.addEventListener("click", async ()=>{
         if(orderSending) return;
+
+
 
 
         orderSending = true;
@@ -3184,10 +4182,14 @@
         cartBuyBtn.textContent = "Registrando pedido...";
 
 
+
+
         try{
           saveClientToLS();
           saveAddressToLS();
           saveShippingToLS();
+
+
 
 
           registrarConversionCatalogo("Inició pedido por WhatsApp", String(cartTotalQty()));
@@ -3197,6 +4199,8 @@
           }catch(err){
             console.error("No se pudo registrar el pedido en Google Sheets:", err);
           }
+
+
 
 
           // El mensaje SIEMPRE se envía al número de la tienda
@@ -3221,8 +4225,12 @@
     }
 
 
+
+
     if(cartModalClose) cartModalClose.addEventListener("click", closeCartModal);
     if(cartModalBackdrop) cartModalBackdrop.addEventListener("click", closeCartModal);
+
+
 
 
     if(shippingCopInp){
@@ -3231,6 +4239,8 @@
         if(cartModal.classList.contains("open")) renderCartModal();
       });
     }
+
+
 
 
     /* ==========================
@@ -3244,6 +4254,8 @@
     const addrMapsLink = document.getElementById("addrMapsLink");
 
 
+
+
     const addrCity = document.getElementById("addrCity");
     const addrRegion = document.getElementById("addrRegion");
     const addrViaTipo = document.getElementById("addrViaTipo");
@@ -3253,8 +4265,12 @@
     const addrFinal = document.getElementById("addrFinal");
 
 
+
+
     const DEFAULT_CITY = "Santa Marta";
     const DEFAULT_REGION = "Magdalena";
+
+
 
 
     function openAddressModal(){
@@ -3275,9 +4291,13 @@
     }
 
 
+
+
     function joinParts(parts, sep=" "){
       return parts.filter(Boolean).join(sep).replace(/\s+/g," ").trim();
     }
+
+
 
 
     function refreshAddressModalPreview(){
@@ -3288,12 +4308,18 @@
       const placa = String(addrPlaca?.value || "").trim();
 
 
+
+
       // Dirección final SOLO con vía + ciudad + departamento (sin barrio)
       const via = buildViaString(tipo, num, placa);
       const final = joinParts([via || "", city || "", region || ""], ", ");
 
 
+
+
       if(addrFinal) addrFinal.value = final;
+
+
 
 
       // El barrio NO se usa para el enlace de Google Maps
@@ -3312,16 +4338,24 @@
     }
 
 
+
+
     function loadAddressFromLS(){
       const obj = readJsonLS(LS_ADDRESS_KEY, {});
+
+
 
 
       const hasCity = Object.prototype.hasOwnProperty.call(obj, "addrCity");
       const hasRegion = Object.prototype.hasOwnProperty.call(obj, "addrRegion");
 
 
+
+
       const cityVal = hasCity ? String(obj.addrCity ?? "") : DEFAULT_CITY;
       const regionVal = hasRegion ? String(obj.addrRegion ?? "") : DEFAULT_REGION;
+
+
 
 
       if(addrCity) addrCity.value = cityVal;
@@ -3332,6 +4366,8 @@
       if(addrBarrio) addrBarrio.value = String(obj.addrBarrio ?? "");
       refreshAddressModalPreview();
     }
+
+
 
 
     function saveAddressToLS(){
@@ -3347,11 +4383,15 @@
     }
 
 
+
+
     [addrCity, addrRegion, addrViaTipo, addrViaNum, addrPlaca, addrBarrio].forEach(el=>{
       if(!el) return;
       el.addEventListener("input", refreshAddressModalPreview);
       el.addEventListener("change", refreshAddressModalPreview);
     });
+
+
 
 
     if(addressModalClose) addressModalClose.addEventListener("click", closeAddressModal);
@@ -3364,6 +4404,8 @@
     });
 
 
+
+
     const clientModal = document.getElementById("clientModal");
     const clientModalClose = document.getElementById("clientModalClose");
     const clientModalBackdrop = document.getElementById("clientModalBackdrop");
@@ -3371,9 +4413,13 @@
     const clientSaveBtn = document.getElementById("clientSaveBtn");
 
 
+
+
     const clientName = document.getElementById("clientName");
     const clientPhone = document.getElementById("clientPhone");
     const clientObs = document.getElementById("clientObs");
+
+
 
 
     function openClientModal(){
@@ -3394,12 +4440,16 @@
     }
 
 
+
+
     function loadClientFromLS(){
       const obj = readJsonLS(LS_CLIENT_KEY, {});
       if(clientName) clientName.value = String(obj.clientName ?? "");
       if(clientPhone) clientPhone.value = String(obj.clientPhone ?? "");
       if(clientObs) clientObs.value = String(obj.clientObs ?? "");
     }
+
+
 
 
     function saveClientToLS(){
@@ -3411,6 +4461,8 @@
     }
 
 
+
+
     if(clientModalClose) clientModalClose.addEventListener("click", closeClientModal);
     if(clientModalBackdrop) clientModalBackdrop.addEventListener("click", closeClientModal);
     if(clientCancelBtn) clientCancelBtn.addEventListener("click", closeClientModal);
@@ -3420,8 +4472,12 @@
     });
 
 
+
+
     if(cartAddressBtn) cartAddressBtn.addEventListener("click", openAddressModal);
     if(cartClientBtn) cartClientBtn.addEventListener("click", openClientModal);
+
+
 
 
     document.addEventListener("keydown", (e)=>{
@@ -3437,6 +4493,8 @@
         if(cartModal && cartModal.classList.contains("open")){ closeCartModal(); return; }
       }
     });
+
+
 
 
     // El JSON-LD se sincroniza con los productos visibles del inventario oficial.
@@ -3482,6 +4540,8 @@
     }
 
 
+
+
     const cardTemplate = document.createElement("template");
     cardTemplate.innerHTML = `
       <article class="card">
@@ -3503,6 +4563,8 @@
     `;
 
 
+
+
     const albumTemplate = document.createElement("template");
     albumTemplate.innerHTML = `
       <article class="album-card">
@@ -3521,6 +4583,8 @@
         </button>
       </article>
     `;
+
+
 
 
     function stockMetaText(p){
@@ -3545,10 +4609,14 @@
     }
 
 
+
+
     function refreshCardUI(card, p){
       const row = card.querySelector(".row");
       const actions = card.querySelector(".actions");
       const meta = card.querySelector(".meta");
+
+
 
 
       if(meta) meta.hidden = false;
@@ -3556,9 +4624,13 @@
       if(actions) actions.hidden = false;
 
 
+
+
       const enforce = shouldEnforceStockLimits();
       const id = String(p.id);
       const q = (cart[id]?.qty || 0);
+
+
 
 
       const qtyPill = card.querySelector('[data-role="qty"]');
@@ -3566,13 +4638,19 @@
       const incBtn = card.querySelector('button[data-act="inc"]');
 
 
+
+
       if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
       if(decBtn) decBtn.disabled = q <= 0;
+
+
 
 
       const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
       const maxStock = hasKnownStock ? p.stock : null;
       const canAdd = !enforce || (hasKnownStock && maxStock > 0 && q < maxStock);
+
+
 
 
       if(incBtn){
@@ -3589,20 +4667,28 @@
     }
 
 
+
+
     function makeCard(p){
       const card = cardTemplate.content.firstElementChild.cloneNode(true);
       card.id = "p-" + encodeURIComponent(String(p.id));
       card.dataset.id = String(p.id);
 
 
+
+
       const imgBox = card.querySelector(".img");
       imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl));
+
+
 
 
       const nameEl = card.querySelector(".name");
       const metaEl = card.querySelector(".meta");
       const descriptionEl = card.querySelector(".description");
       const priceEl = card.querySelector(".price");
+
+
 
 
       const visibleName = String(p.name || "");
@@ -3617,6 +4703,8 @@
         : "";
 
 
+
+
       if(p && p.isGiftGalleryImage){
         card.classList.add("gift-gallery-card");
         const pad = card.querySelector(".pad");
@@ -3625,9 +4713,15 @@
       }
 
 
+
+
       refreshCardUI(card, p);
       return card;
     }
+
+
+
+
 
 
 
@@ -3639,6 +4733,8 @@
       img.decoding = "async";
 
 
+
+
       const sourceList = (Array.isArray(sources) ? sources : [sources])
         .map(source => String(source || "").trim())
         .filter(source => /^https:\/\//i.test(source));
@@ -3647,6 +4743,8 @@
         productPlaceholderAbsoluteUrl(),
         COMPANY_LOGO
       ].filter(Boolean))];
+
+
 
 
       let index = 0;
@@ -3661,8 +4759,12 @@
       };
 
 
+
+
       return img;
     }
+
+
 
 
     function makeAlbumCard(album){
@@ -3682,6 +4784,8 @@
         : [];
 
 
+
+
       card.classList.toggle("album-root-card", isAudience);
       card.classList.toggle("album-category-card", !isAudience);
       card.classList.toggle("search-reactive", searchActive);
@@ -3693,8 +4797,12 @@
       if(isAudience && album.theme) card.dataset.navTheme = album.theme;
 
 
+
+
       btn.dataset.albumOpen = album.key;
       btn.dataset.navType = album.navType || "category";
+
+
 
 
       if(searchActive){
@@ -3706,6 +4814,8 @@
         const extraMatches = Math.max(0, matchCount - sampleNames.length);
         const sampleText = sampleNames.join(" · ");
         const moreText = extraMatches > 0 ? `${sampleText ? " · " : ""}+${extraMatches} más` : "";
+
+
 
 
         btn.setAttribute(
@@ -3737,6 +4847,8 @@
       }
 
 
+
+
       if(preview) preview.hidden = true;
       if(icon){
         const matchingPreviewSources = searchActive
@@ -3753,6 +4865,8 @@
         const useProductPreview =
           shouldShowProductImageInNavigationPanels() &&
           productPreviewSources.length > 0;
+
+
 
 
         if(useProductPreview){
@@ -3781,8 +4895,12 @@
       label.textContent = album.label;
 
 
+
+
       return card;
     }
+
+
 
 
     function makeEmptyState(message){
@@ -3791,6 +4909,8 @@
       div.textContent = message;
       return div;
     }
+
+
 
 
     const catSel = document.getElementById("cat");
@@ -3810,14 +4930,19 @@
     const fragranceFamilyFilters = document.getElementById("fragranceFamilyFilters");
     const fragranceLineFilters = document.getElementById("fragranceLineFilters");
 
+
     const searchWrap = document.getElementById("searchWrap");
     const searchTicker = document.getElementById("searchTicker");
     const tickerInner = document.getElementById("tickerInner");
 
 
+
+
     const countSlot = document.getElementById("countSlot");
     const topline = document.getElementById("topline");
     const mqCountMobile = window.matchMedia("(max-width:760px)");
+
+
 
 
     const wordPanel = document.getElementById("wordPanel");
@@ -3828,15 +4953,23 @@
     const toggleWordPanelBtn = document.getElementById("toggleWordPanelBtn");
 
 
+
+
     let wordSuggestionsVisible = shouldShowSuggestionsInitially();
+
+
 
 
     function syncWordToggleButton(){
       if(!toggleWordPanelBtn) return;
 
 
+
+
       const canToggle = shouldAllowSuggestionToggle();
       const isVisible = wordSuggestionsVisible;
+
+
 
 
       toggleWordPanelBtn.hidden = !canToggle;
@@ -3847,8 +4980,12 @@
     }
 
 
+
+
     function setWordSuggestionsVisible(nextValue){
       wordSuggestionsVisible = !!nextValue;
+
+
 
 
       if(!wordSuggestionsVisible){
@@ -3856,8 +4993,12 @@
       }
 
 
+
+
       syncWordToggleButton();
     }
+
+
 
 
     function toggleWordSuggestionsVisible(){
@@ -3867,8 +5008,12 @@
     }
 
 
+
+
     function placeResponsiveHeaderMeta(){
       if(!countEl || !countSlot || !topline || !albumNav || !albumNavHost) return;
+
+
 
 
       if(mqCountMobile.matches){
@@ -3892,8 +5037,12 @@
       }
 
 
+
+
       countSlot.classList.toggle("has-album-nav", !albumNav.hidden);
     }
+
+
 
 
     if(typeof mqCountMobile.addEventListener === "function"){
@@ -3904,6 +5053,8 @@
     placeResponsiveHeaderMeta();
 
 
+
+
     function updateTickerVisibility(){
       if(!searchWrap || !qInp) return;
       const empty = !String(qInp.value || "").trim();
@@ -3912,11 +5063,15 @@
     }
 
 
+
+
     function updateCountAttention(){
       if(!countEl || !qInp) return;
       const hasQuery = getCombinedWordTerms().length > 0;
       countEl.classList.toggle("search-active", hasQuery);
     }
+
+
 
 
     const SUGGESTION_STOPWORDS = new Set([
@@ -3933,12 +5088,16 @@
     let selectedSuggestionTerms = [];
 
 
+
+
     function parseSearchTerms(text){
       return normalizeText(text)
         .split(/\s+/)
         .map(t => t.trim())
         .filter(Boolean);
     }
+
+
 
 
     function parseSuggestionTokens(text){
@@ -3955,6 +5114,8 @@
     }
 
 
+
+
     function uniqueTerms(list){
       const out = [];
       const seen = new Set();
@@ -3968,16 +5129,22 @@
     }
 
 
+
+
     function getCombinedWordTerms(){
       const typed = parseSearchTerms(qInp ? qInp.value : "");
       return uniqueTerms([...(selectedSuggestionTerms || []), ...typed]);
     }
 
 
+
+
     function getSuggestionScopeProducts(){
       const source = currentProductSourceList();
       const cat = catSel ? catSel.value : "";
       const br = brandSel ? brandSel.value : "";
+
+
 
 
       return source.filter(p => {
@@ -3988,8 +5155,12 @@
     }
 
 
+
+
     function getSuggestionBlockedTerms(list){
       const blocked = new Set();
+
+
 
 
       for(const p of (Array.isArray(list) ? list : [])){
@@ -3998,8 +5169,12 @@
       }
 
 
+
+
       return blocked;
     }
+
+
 
 
     function addSuggestionCountsFromText(counts, text, blockedTerms){
@@ -4011,10 +5186,14 @@
     }
 
 
+
+
     function getSuggestionMatchedProducts(){
       const scopeProducts = getSuggestionScopeProducts();
       const activeTerms = getCombinedWordTerms();
       if(!activeTerms.length) return scopeProducts;
+
+
 
 
       const eligibleProducts = filterSearchExcludedProducts(scopeProducts);
@@ -4022,10 +5201,14 @@
     }
 
 
+
+
     function buildSuggestionEntries(){
       if(shouldShowAlbumGrid()){
         return [];
       }
+
+
 
 
       const scopeProducts = getSuggestionScopeProducts();
@@ -4038,6 +5221,8 @@
       const totalVisibleProducts = sourceProducts.length;
 
 
+
+
       for(const term of typedTerms){
         blockedTerms.add(term);
       }
@@ -4046,9 +5231,13 @@
       }
 
 
+
+
       selectedSuggestionTerms = uniqueTerms((selectedSuggestionTerms || []).filter(term => {
         return !getSuggestionBlockedTerms(sourceProducts).has(term);
       }));
+
+
 
 
       const counts = new Map();
@@ -4056,6 +5245,8 @@
         const rawText = `${p.name || ""}`;
         addSuggestionCountsFromText(counts, rawText, blockedTerms);
       }
+
+
 
 
         return Array.from(counts.entries())
@@ -4070,11 +5261,17 @@
                 const bSelected = selectedSet.has(b.term) ? 1 : 0;
 
 
+
+
                 if(aSelected !== bSelected) return bSelected - aSelected;
+
+
 
 
                 // Primero las de más coincidencias
                 if(b.count !== a.count) return b.count - a.count;
+
+
 
 
                 return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
@@ -4082,9 +5279,13 @@
     }
 
 
+
+
     function toggleSuggestionTerm(term){
       const clean = normalizeText(term);
       if(!clean) return;
+
+
 
 
       if(selectedSuggestionTerms.includes(clean)){
@@ -4096,6 +5297,8 @@
     }
 
 
+
+
     function removeSuggestionTerm(term){
       const clean = normalizeText(term);
       if(!clean) return;
@@ -4104,11 +5307,17 @@
     }
 
 
+
+
     function renderWordSuggestions(){
       if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
 
 
+
+
       syncWordToggleButton();
+
+
 
 
       const showAlbumGrid = shouldShowAlbumGrid();
@@ -4122,6 +5331,8 @@
       }
 
 
+
+
       const entries = buildSuggestionEntries();
       const activeTermsList = uniqueTerms(selectedSuggestionTerms || []);
       const rawQuery = qInp ? String(qInp.value || "") : "";
@@ -4130,14 +5341,20 @@
       const hasWordFilter = activeTermsList.length > 0 || typedTerms.length > 0;
 
 
+
+
       wordPanel.hidden = !(entries.length || activeTermsList.length || typedTerms.length);
       clearTermsBtn.hidden = !(activeTermsList.length > 0 || hasTypedCharacters);
       clearTermsBtn.classList.toggle("search-active", hasTypedCharacters);
       activeTermsWrap.hidden = !activeTermsList.length;
 
 
+
+
       wordChips.innerHTML = "";
       activeTerms.innerHTML = "";
+
+
 
 
       if(activeTermsList.length){
@@ -4154,6 +5371,8 @@
         }
         activeTerms.appendChild(activeFrag);
       }
+
+
 
 
       if(!entries.length){
@@ -4178,8 +5397,12 @@
     }
 
 
+
+
     function rebuildSearchTicker(){
       if(!searchWrap || !searchTicker || !tickerInner || !qInp) return;
+
+
 
 
       const text = String(qInp.getAttribute("placeholder") || "").trim();
@@ -4190,7 +5413,11 @@
       }
 
 
+
+
       tickerInner.innerHTML = "";
+
+
 
 
       const seq = document.createElement("div");
@@ -4198,8 +5425,12 @@
       tickerInner.appendChild(seq);
 
 
+
+
       const available = Math.max(1, searchTicker.clientWidth || searchWrap.clientWidth || 1);
       const target = Math.max(280, Math.floor(available * 1.7));
+
+
 
 
       let guard = 0;
@@ -4212,21 +5443,31 @@
       }
 
 
+
+
       const seqWidth = seq.scrollWidth || 0;
       if(seqWidth <= 0) return;
+
+
 
 
       const clone = seq.cloneNode(true);
       tickerInner.appendChild(clone);
 
 
+
+
       const SPEED_PX_PER_SEC = 60;
       const duration = Math.max(8, seqWidth / SPEED_PX_PER_SEC);
+
+
 
 
       searchWrap.style.setProperty("--marquee-distance", seqWidth + "px");
       searchWrap.style.setProperty("--marquee-duration", duration.toFixed(2) + "s");
     }
+
+
 
 
     function clearSelectButKeepFirst(sel){
@@ -4242,6 +5483,8 @@
     }
 
 
+
+
     function fillSelect(sel, values){
       clearSelectButKeepFirst(sel);
       for(const v of values){
@@ -4250,6 +5493,8 @@
         sel.appendChild(opt);
       }
     }
+
+
 
 
     function fragranceFilterBaseProducts(){
@@ -4261,6 +5506,7 @@
       );
     }
 
+
     function uniqueSortedFilterValues(list, getter){
       const map = new Map();
       for(const p of (Array.isArray(list) ? list : [])){
@@ -4271,11 +5517,13 @@
       return Array.from(map.values()).sort((a,b)=>a.localeCompare(b,"es",{sensitivity:"base"}));
     }
 
+
     function renderFragranceFilterButtons(host, values, selectedValue, kind, countSource, getter){
       if(!host) return;
       host.innerHTML = "";
       const fragment = document.createDocumentFragment();
       const selectedKey = cleanNavKey(selectedValue);
+
 
       const addButton = (value, label, count)=>{
         const btn = document.createElement("button");
@@ -4285,17 +5533,21 @@
         btn.dataset.fragranceFilterValue = value;
         btn.setAttribute("aria-pressed", cleanNavKey(value) === selectedKey ? "true" : "false");
 
+
         const text = document.createElement("span");
         text.className = "fragrance-filter-chip-label";
         text.textContent = label;
+
 
         const badge = document.createElement("span");
         badge.className = "fragrance-filter-chip-count";
         badge.textContent = String(count);
 
+
         btn.append(text, badge);
         fragment.appendChild(btn);
       };
+
 
       addButton("", "Todas", countSource.length);
       for(const value of values){
@@ -4307,6 +5559,7 @@
       host.appendChild(fragment);
     }
 
+
     function renderFragranceFilters(){
       if(!fragranceFilterPanel || !fragranceFamilyFilters || !fragranceLineFilters) return;
       const visible = isFragranceNavigationScope();
@@ -4317,9 +5570,11 @@
         return;
       }
 
+
       const base = fragranceFilterBaseProducts();
       const familyValues = uniqueSortedFilterValues(base, p => p.fragranceFamily);
       const lineValues = uniqueSortedFilterValues(base, p => navigationFragranceLineForProduct(p));
+
 
       const familyCountSource = selectedFragranceLineFilter
         ? base.filter(p => cleanNavKey(navigationFragranceLineForProduct(p)) === cleanNavKey(selectedFragranceLineFilter))
@@ -4327,6 +5582,7 @@
       const lineCountSource = selectedFragranceFamilyFilter
         ? base.filter(p => cleanNavKey(p.fragranceFamily) === cleanNavKey(selectedFragranceFamilyFilter))
         : base;
+
 
       renderFragranceFilterButtons(
         fragranceFamilyFilters,
@@ -4346,9 +5602,12 @@
       );
     }
 
+
     function syncFilterVisibility(){
       const showAlbumGrid = shouldShowAlbumGrid();
       const directSelected = isDirectProductAudience(selectedAudience);
+
+
 
 
       if(catSel){
@@ -4413,9 +5672,13 @@
       }
 
 
+
+
       rebuildSearchTicker();
       updateTickerVisibility();
     }
+
+
 
 
     function readStateFromUrl(){
@@ -4430,6 +5693,8 @@
       const tags = (u.searchParams.get("tags") || "").trim();
 
 
+
+
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
       const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
@@ -4442,6 +5707,8 @@
     }
 
 
+
+
     let _urlTimer = null;
     function writeStateToUrl(){
       const u = new URL(location.href);
@@ -4450,6 +5717,8 @@
       const br = brandSel.value;
       const sort = sortSel ? sortSel.value : "";
       const tags = uniqueTerms(selectedSuggestionTerms || []).join(",");
+
+
 
 
       if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
@@ -4466,12 +5735,16 @@
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
 
+
+
       history.replaceState(null, "", u.toString());
     }
     function scheduleWriteStateToUrl(){
       clearTimeout(_urlTimer);
       _urlTimer = setTimeout(writeStateToUrl, 180);
     }
+
+
 
 
     function resetDiscoveryFilters(){
@@ -4481,6 +5754,8 @@
       if(sortSel) sortSel.value = "";
       selectedSuggestionTerms = [];
     }
+
+
 
 
     function openAlbum(key, opts={}){
@@ -4509,6 +5784,8 @@
     }
 
 
+
+
     function closeAlbum(opts={}){
       if(selectedFamily){
         selectedFamily = "";
@@ -4527,11 +5804,15 @@
     }
 
 
+
+
     function buildFilteredList(){
       const source = currentProductSourceList();
       const sortMode = sortSel ? sortSel.value : "";
       const terms = getCombinedWordTerms();
       const searchableSource = terms.length ? filterSearchExcludedProducts(source) : source;
+
+
 
 
       let filtered = searchableSource.filter(p=>{
@@ -4542,7 +5823,11 @@
       });
 
 
+
+
       filtered.sort((a,b)=>{
+
+
 
 
         if(sortMode === "price_asc"){
@@ -4553,6 +5838,8 @@
         }
 
 
+
+
         if(sortMode === "price_desc"){
           if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
           return (b.price||0) - (a.price||0)
@@ -4561,13 +5848,19 @@
         }
 
 
+
+
         return String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
           || String(a.id).localeCompare(String(b.id));
       });
 
 
+
+
       return filtered;
     }
+
+
 
 
     function buildFilteredAlbums(){
@@ -4584,6 +5877,8 @@
       });
 
 
+
+
       filtered.sort((a,b)=>{
         if(!selectedAudience){
           const order = new Map(NAV_AUDIENCES.map((item,index)=>[item.label,index]));
@@ -4595,13 +5890,19 @@
     }
 
 
+
+
     let _renderToken = 0;
     function render(){
       const token = ++_renderToken;
 
 
+
+
       hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
       searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
+
+
 
 
       syncFilterVisibility();
@@ -4613,7 +5914,11 @@
       syncCatalogNavigationHistoryCurrent();
 
 
+
+
       const qHas = getCombinedWordTerms().length > 0;
+
+
 
 
       if(shouldShowAlbumGrid()){
@@ -4644,10 +5949,16 @@
         }
 
 
+
+
         scheduleJsonLdUpdate([]);
 
 
+
+
         if(token !== _renderToken) return;
+
+
 
 
         const frag = document.createDocumentFragment();
@@ -4660,10 +5971,14 @@
         }
 
 
+
+
         grid.innerHTML = "";
         grid.appendChild(frag);
         return;
       }
+
+
 
 
       if(grid){
@@ -4671,7 +5986,11 @@
       }
 
 
+
+
       const filtered = buildFilteredList();
+
+
 
 
       if(countEl){
@@ -4680,10 +5999,16 @@
       }
 
 
+
+
       scheduleJsonLdUpdate(filtered);
 
 
+
+
       if(token !== _renderToken) return;
+
+
 
 
       const frag = document.createDocumentFragment();
@@ -4696,8 +6021,12 @@
       }
 
 
+
+
       grid.innerHTML = "";
       grid.appendChild(frag);
+
+
 
 
       for(const el of grid.querySelectorAll(".card")){
@@ -4708,14 +6037,20 @@
     }
 
 
+
+
     function updateCountTextLoading(){
       if(countEl) countEl.textContent = "Cargando productos…";
     }
 
 
+
+
     function updateCountTextError(msg){
       if(countEl) countEl.textContent = msg || "Error al cargar productos.";
     }
+
+
 
 
     function bindGridActions(){
@@ -4728,6 +6063,8 @@
         }
 
 
+
+
         const btn = e.target.closest("button[data-act]");
         if(!btn) return;
         const card = e.target.closest(".card");
@@ -4736,8 +6073,12 @@
         if(!id) return;
 
 
+
+
         const p = productById.get(String(id));
         if(!p) return;
+
+
 
 
         const act = btn.getAttribute("data-act");
@@ -4746,10 +6087,16 @@
         const maxStock = hasKnownStock ? p.stock : null;
 
 
+
+
         const currentQty = safeInt(cart[id]?.qty, 0);
 
 
+
+
         let newQty = currentQty;
+
+
 
 
         if(act === "inc"){
@@ -4763,6 +6110,8 @@
         }else if(act === "dec"){
           newQty = Math.max(0, currentQty - 1);
         }
+
+
 
 
         if(newQty <= 0){
@@ -4780,6 +6129,8 @@
         }
 
 
+
+
         if(act === "inc" && newQty > currentQty){
           registrarConversionCatalogo("Añadió al carrito", String(p.name || ""));
         }
@@ -4787,11 +6138,15 @@
         refreshCardUI(card, p);
 
 
+
+
         if(cartModal && cartModal.classList.contains("open")){
           renderCartModal();
         }
       });
     }
+
+
 
 
     function bindFilters(){
@@ -4808,6 +6163,7 @@
         });
       });
 
+
       [sortSel].forEach(sel=>{
         if(!sel) return;
         sel.addEventListener("change", ()=>{
@@ -4816,9 +6172,13 @@
       });
 
 
+
+
       qInp.addEventListener("input", ()=>{
         render();
       });
+
+
 
 
       if(wordChips){
@@ -4830,6 +6190,8 @@
       }
 
 
+
+
       if(activeTerms){
         activeTerms.addEventListener("click", (e)=>{
           const btn = e.target.closest("[data-role='remove-active-term']");
@@ -4837,6 +6199,8 @@
           removeSuggestionTerm(btn.getAttribute("data-term") || "");
         });
       }
+
+
 
 
       if(clearTermsBtn){
@@ -4848,11 +6212,15 @@
       }
 
 
+
+
       if(toggleWordPanelBtn){
         toggleWordPanelBtn.addEventListener("click", ()=>{
           toggleWordSuggestionsVisible();
         });
       }
+
+
 
 
       qInp.addEventListener("focus", ()=>{
@@ -4863,11 +6231,15 @@
       });
 
 
+
+
       window.addEventListener("resize", ()=>{
         rebuildSearchTicker();
         updateTickerVisibility();
       }, { passive:true });
     }
+
+
 
 
     function buildCategoriesAndBrands(list){
@@ -4884,14 +6256,20 @@
     }
 
 
+
+
     function rebuildCatalogVisibility(){
       hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
       searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
 
 
+
+
       all = filterVisibleProducts(allLoadedProducts);
       productById = new Map(all.map(p => [String(p.id), p]));
       refreshNavigationAlbums();
+
+
 
 
       updateCatalogFooterProducts(all);
@@ -4902,9 +6280,13 @@
     }
 
 
+
+
     async function loadProducts(){
       updateCountTextLoading();
       clearLegacyProductCaches();
+
+
 
 
       try{
@@ -4914,33 +6296,41 @@
       }
 
 
+
+
       let catalogSource;
       try{
-        catalogSource = await loadGoogleSheetCatalog();
+        catalogSource = await loadGithubWorkbookCatalog();
       }catch(err){
-        console.error("Error al cargar el Google Sheet oficial.", err);
-        updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
+        console.error("Error al cargar el archivo XLSX de GitHub.", err);
+        updateCountTextError("No se pudieron cargar los productos desde el archivo XLSX de GitHub. Reintenta más tarde.");
         return;
       }
+
+
 
 
       let sheetProducts = [];
       try{
         sheetProducts = (Array.isArray(catalogSource?.sheetEntries) ? catalogSource.sheetEntries : [])
-          .map(makeProductFromGoogleSheet)
+          .map(makeProductFromGithubWorkbook)
           .filter(Boolean);
       }catch(err){
-        console.error("El Google Sheet respondió, pero ocurrió un error al procesar sus productos.", err);
-        updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
+        console.error("El archivo XLSX de GitHub se cargó, pero ocurrió un error al procesar sus productos.", err);
+        updateCountTextError("El archivo XLSX de GitHub se cargó, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
         return;
       }
+
+
 
 
       if(!sheetProducts.length){
-        console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
-        updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
+        console.error("El archivo XLSX de GitHub se cargó, pero no produjo productos válidos para mostrar.");
+        updateCountTextError("El archivo XLSX de GitHub se cargó, pero no se encontraron productos válidos para mostrar.");
         return;
       }
+
+
 
 
       let giftProducts = [];
@@ -4952,7 +6342,11 @@
       }
 
 
+
+
       allLoadedProducts = [...sheetProducts, ...giftProducts];
+
+
 
 
       try{
@@ -4963,6 +6357,8 @@
         console.warn("No se pudieron aplicar todos los controles de categorías. Se muestran los productos cargados para no dejar el catálogo vacío.", err);
         all = allLoadedProducts.slice();
       }
+
+
 
 
       try{
@@ -5008,10 +6404,14 @@
       }
 
 
+
+
       try{ updateCatalogFooterProducts(all); }catch(err){ console.warn("No se pudo actualizar el pie del catálogo.", err); }
       try{ scheduleJsonLdUpdate(); }catch(err){ console.warn("No se pudo actualizar JSON-LD.", err); }
       try{ refreshFilterOptionsForScope(); }catch(err){ console.warn("No se pudieron actualizar todos los filtros.", err); }
       try{ sanitizeCartWithStock(); }catch(err){ console.warn("No se pudo validar el carrito contra el stock.", err); }
+
+
 
 
       try{
@@ -5023,6 +6423,8 @@
     }
 
 
+
+
     function initCartButton(){
       const btnCart = document.getElementById("btn-cart");
       if(!btnCart) return;
@@ -5032,14 +6434,20 @@
     }
 
 
+
+
     function initShipping(){
       loadShippingFromLS();
     }
 
 
+
+
     function initKeyboardAccessibility(){
       // Cierre de modales ya está en Escape
     }
+
+
 
 
     async function init(){
@@ -5051,11 +6459,15 @@
       initKeyboardAccessibility();
 
 
+
+
       if(albumBackBtn){
         albumBackBtn.addEventListener("click", ()=>{
           closeAlbum({ keepFilters:getCombinedWordTerms().length > 0 });
         });
       }
+
+
 
 
       syncWordToggleButton();
@@ -5064,8 +6476,12 @@
       updateCountAttention();
 
 
+
+
       loadClientFromLS();     // precarga datos
       loadAddressFromLS();    // precarga datos (Santa Marta / Magdalena por defecto)
+
+
 
 
       await initializeRemoteCatalogConfiguration();
@@ -5073,11 +6489,15 @@
     }
 
 
+
+
     // Arranque
     init().catch(error=>{
       console.error("No se pudo iniciar el catálogo.", error);
       updateCountTextError("No se pudo iniciar el catálogo. Reintenta más tarde.");
     });
+
+
 
 
 // Detalle auxiliar conservado del bloque clásico original.
@@ -5097,6 +6517,7 @@ function uxActiveFilterEntries(){
   if(selectedFragranceLineFilter) entries.push({key:"linea",label:`Línea: ${selectedFragranceLineFilter}`});
   return entries;
 }
+
 
 function uxRenderFilterSummary(){
   const host=document.getElementById("filterSummary");
@@ -5119,6 +6540,7 @@ function uxRenderFilterSummary(){
     host.appendChild(btn);
   }
 }
+
 
 function uxRenderBreadcrumb(){
   if(!albumPath) return;
@@ -5153,6 +6575,7 @@ function uxRenderBreadcrumb(){
   });
 }
 
+
 function uxClearOneFilter(key){
   if(key==="query"&&qInp) qInp.value="";
   else if(key==="olfativa") selectedFragranceFamilyFilter="";
@@ -5164,6 +6587,7 @@ function uxClearOneFilter(key){
   render();
 }
 
+
 function uxClearAllFilters(){
   if(qInp) qInp.value="";
   selectedSuggestionTerms=[];
@@ -5171,10 +6595,12 @@ function uxClearAllFilters(){
   render();
 }
 
+
 function uxScrollStack(){
   if(!Array.isArray(window.__catalogUxScrollStack)) window.__catalogUxScrollStack=[];
   return window.__catalogUxScrollStack;
 }
+
 
 function uxScrollToCatalogStart(){
   const target=document.querySelector("main")||grid;
@@ -5183,6 +6609,7 @@ function uxScrollToCatalogStart(){
   requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"smooth"}));
 }
 
+
 function uxSaveScrollPosition(){
   clearTimeout(window.__catalogUxScrollTimer);
   window.__catalogUxScrollTimer=setTimeout(()=>{
@@ -5190,11 +6617,13 @@ function uxSaveScrollPosition(){
   },120);
 }
 
+
 function uxRestoreScrollPosition(){
   let saved=0;
   try{saved=Number(sessionStorage.getItem("irenismb_catalog_scroll_position")||0);}catch(_){}
   if(saved>0) requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:saved,left:0,behavior:"auto"})));
 }
+
 
 function uxFlashAdded(card,p){
   const btn=card&&card.querySelector('button[data-act="inc"]');
@@ -5207,14 +6636,17 @@ function uxFlashAdded(card,p){
   },850);
 }
 
+
 function rebuildSearchTicker(){
   if(tickerInner) tickerInner.innerHTML="";
   if(searchWrap) searchWrap.classList.remove("show-ticker");
 }
 
+
 function updateTickerVisibility(){
   if(searchWrap) searchWrap.classList.remove("show-ticker");
 }
+
 
 function syncWordToggleButton(){
   if(!toggleWordPanelBtn) return;
@@ -5228,6 +6660,7 @@ function syncWordToggleButton(){
   toggleWordPanelBtn.setAttribute("aria-pressed",wordSuggestionsVisible?"true":"false");
   toggleWordPanelBtn.classList.toggle("is-active",wordSuggestionsVisible||activeCount>0);
 }
+
 
 function renderWordSuggestions(){
   if(!wordPanel||!wordChips||!activeTerms||!activeTermsWrap||!clearTermsBtn) return;
@@ -5254,6 +6687,7 @@ function renderWordSuggestions(){
   activeTerms.innerHTML="";
   uxRenderFilterSummary();
 
+
   if(activeTermsList.length){
     for(const term of activeTermsList){
       const btn=document.createElement("button");
@@ -5266,6 +6700,7 @@ function renderWordSuggestions(){
       activeTerms.appendChild(btn);
     }
   }
+
 
   if(showAlbumGrid){
     const note=document.createElement("div");
@@ -5290,6 +6725,7 @@ function renderWordSuggestions(){
     }
   }
 }
+
 
 function syncFilterVisibility(){
   const showAlbumGrid=shouldShowAlbumGrid();
@@ -5326,6 +6762,7 @@ function syncFilterVisibility(){
   uxRenderFilterSummary();
 }
 
+
 function refreshCardUI(card,p){
   const row=card.querySelector(".row");
   const actions=card.querySelector(".actions");
@@ -5350,6 +6787,7 @@ function refreshCardUI(card,p){
     else incBtn.textContent=q>0?"Agregar otro":"Agregar";
   }
 }
+
 
 function makeCard(p){
   const card=cardTemplate.content.firstElementChild.cloneNode(true);
@@ -5377,6 +6815,7 @@ function makeCard(p){
   return card;
 }
 
+
 function makeEmptyState(message){
   const div=document.createElement("div");div.className="empty-state";
   const title=document.createElement("strong");title.className="empty-state-title";title.textContent=message;div.appendChild(title);
@@ -5389,6 +6828,7 @@ function makeEmptyState(message){
   return div;
 }
 
+
 function openAlbum(key,opts={}){
   const target=albumByKey.get(String(key||""));if(!target) return;
   uxScrollStack().push({scrollY:window.scrollY||0});
@@ -5399,6 +6839,7 @@ function openAlbum(key,opts={}){
   refreshNavigationAlbums();refreshFilterOptionsForScope();pushCatalogNavigationHistory();render();uxScrollToCatalogStart();
 }
 
+
 function closeAlbum(opts={}){
   const restore=uxScrollStack().pop();
   if(selectedFamily){selectedFamily="";clearFragranceFilters();}
@@ -5408,6 +6849,7 @@ function closeAlbum(opts={}){
   refreshNavigationAlbums();refreshFilterOptionsForScope();pushCatalogNavigationHistory();render();
   if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
 }
+
 
 function renderCartModal(){
   const items=cartItemsArray();
@@ -5441,6 +6883,7 @@ function renderCartModal(){
   cartItemsEl.innerHTML="";cartItemsEl.appendChild(frag);
 }
 
+
 function bindGridActions(){
   grid.addEventListener("click",e=>{
     const clear=e.target.closest("[data-clear-search]");if(clear){uxClearAllFilters();return;}
@@ -5454,6 +6897,7 @@ function bindGridActions(){
   });
 }
 
+
 function bindFilters(){
   [fragranceFamilyFilters,fragranceLineFilters].forEach(host=>{if(!host)return;host.addEventListener("click",e=>{const btn=e.target.closest("[data-fragrance-filter-kind]");if(!btn)return;const kind=btn.dataset.fragranceFilterKind||"";const value=btn.dataset.fragranceFilterValue||"";if(kind==="family")selectedFragranceFamilyFilter=value;if(kind==="line")selectedFragranceLineFilter=value;render();});});
   if(sortSel)sortSel.addEventListener("change",render);qInp.addEventListener("input",render);
@@ -5464,6 +6908,7 @@ function bindFilters(){
   albumPath?.addEventListener("click",e=>{const btn=e.target.closest("[data-breadcrumb-level]");if(!btn)return;const level=btn.dataset.breadcrumbLevel;uxScrollStack().length=0;if(level==="root"){selectedAudience="";selectedCategory="";selectedFamily="";clearFragranceFilters();}else if(level==="audience"){selectedCategory="";selectedFamily="";clearFragranceFilters();}else if(level==="category"){selectedFamily="";clearFragranceFilters();}resetDiscoveryFilters();refreshNavigationAlbums();refreshFilterOptionsForScope();render();uxScrollToCatalogStart();});
   qInp.addEventListener("focus",updateTickerVisibility);qInp.addEventListener("blur",updateTickerVisibility);window.addEventListener("resize",()=>{rebuildSearchTicker();updateTickerVisibility();},{passive:true});window.addEventListener("scroll",uxSaveScrollPosition,{passive:true});
 }
+
 
 async function init(){
   refreshCartCount();initCartButton();initShipping();bindFilters();bindGridActions();initKeyboardAccessibility();

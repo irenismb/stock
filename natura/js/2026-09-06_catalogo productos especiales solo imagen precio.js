@@ -3267,7 +3267,9 @@
 
       toggleWordPanelBtn.hidden = !canToggle;
       toggleWordPanelBtn.disabled = !canToggle;
-      toggleWordPanelBtn.textContent = isVisible ? "Ocultar palabras" : "Mostrar palabras";
+      toggleWordPanelBtn.textContent = "Filtros";
+      toggleWordPanelBtn.title = isVisible ? "Ocultar filtros" : "Mostrar filtros";
+      toggleWordPanelBtn.setAttribute("aria-label", toggleWordPanelBtn.title);
       toggleWordPanelBtn.setAttribute("aria-pressed", isVisible ? "true" : "false");
       toggleWordPanelBtn.classList.toggle("is-active", isVisible);
     }
@@ -3659,9 +3661,9 @@
       if(qInp){
         const searchScopeLabel = selectedFamily || selectedCategory || selectedAudience;
         qInp.placeholder = selectedAudience
-          ? `🔍 Buscar dentro de ${searchScopeLabel}...`
-          : "🔍 Busca aquí por nombre del producto...";
-        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto por nombre");
+          ? `Buscar en ${searchScopeLabel}`
+          : "Buscar producto, línea o categoría";
+        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto, línea o categoría");
       }
       if(grid){
         grid.classList.toggle("album-grid-mode", showAlbumGrid);
@@ -4242,3 +4244,512 @@ const visitorDetails = document.getElementById("visitorDetails");
         requestAnimationFrame(() => visitorDetails.scrollIntoView({ block:"start" }));
       }
     });
+
+
+// UX visual compatible con el catálogo de referencia (sin cambiar la fuente de datos).
+function uxActiveFilterEntries(){
+  const entries=[];
+  const query=qInp?String(qInp.value||"").trim():"";
+  if(query) entries.push({key:"query",label:`Búsqueda: ${query}`});
+  for(const term of uniqueTerms(selectedSuggestionTerms||[])) entries.push({key:`term:${term}`,label:term});
+  return entries;
+}
+
+function uxRenderFilterSummary(){
+  const host=document.getElementById("filterSummary");
+  if(!host) return;
+  const entries=uxActiveFilterEntries();
+  host.hidden=entries.length===0;
+  host.innerHTML="";
+  if(!entries.length) return;
+  const label=document.createElement("span");
+  label.className="filter-summary-label";
+  label.textContent="Filtros activos";
+  host.appendChild(label);
+  for(const entry of entries){
+    const btn=document.createElement("button");
+    btn.type="button";
+    btn.className="filter-summary-chip";
+    btn.dataset.clearFilter=entry.key;
+    btn.setAttribute("aria-label",`Quitar ${entry.label}`);
+    btn.innerHTML=`<span>${entry.label}</span><span aria-hidden="true">×</span>`;
+    host.appendChild(btn);
+  }
+}
+
+function uxRenderBreadcrumb(){
+  if(!albumPath) return;
+  albumPath.innerHTML="";
+  if(!selectedAudience) return;
+  const crumbs=[{level:"root",label:"Inicio"},{level:"audience",label:selectedAudience}];
+  if(selectedCategory) crumbs.push({level:"category",label:selectedCategory});
+  if(selectedFamily) crumbs.push({level:"family",label:selectedFamily});
+  crumbs.forEach((crumb,index)=>{
+    if(index){
+      const sep=document.createElement("span");
+      sep.className="breadcrumb-separator";
+      sep.textContent="›";
+      sep.setAttribute("aria-hidden","true");
+      albumPath.appendChild(sep);
+    }
+    const current=index===crumbs.length-1;
+    if(current){
+      const span=document.createElement("span");
+      span.className="breadcrumb-current";
+      span.textContent=crumb.label;
+      span.setAttribute("aria-current","page");
+      albumPath.appendChild(span);
+    }else{
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="breadcrumb-link";
+      btn.dataset.breadcrumbLevel=crumb.level;
+      btn.textContent=crumb.label;
+      albumPath.appendChild(btn);
+    }
+  });
+}
+
+function uxClearOneFilter(key){
+  if(key==="query"&&qInp) qInp.value="";
+  else if(String(key||"").startsWith("term:")){
+    const term=String(key).slice(5);
+    selectedSuggestionTerms=selectedSuggestionTerms.filter(item=>normalizeText(item)!==normalizeText(term));
+  }
+  render();
+}
+
+function uxClearAllFilters(){
+  if(qInp) qInp.value="";
+  selectedSuggestionTerms=[];
+  render();
+}
+
+function uxScrollStack(){
+  if(!Array.isArray(window.__catalogUxScrollStack)) window.__catalogUxScrollStack=[];
+  return window.__catalogUxScrollStack;
+}
+
+function uxScrollToCatalogStart(){
+  const target=document.querySelector("main")||grid;
+  if(!target) return;
+  const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-86);
+  requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"smooth"}));
+}
+
+function uxSaveScrollPosition(){
+  clearTimeout(window.__catalogUxScrollTimer);
+  window.__catalogUxScrollTimer=setTimeout(()=>{
+    try{sessionStorage.setItem("irenismb_catalog_scroll_position",String(Math.max(0,Math.round(window.scrollY||0))));}catch(_){ }
+  },120);
+}
+
+function uxRestoreScrollPosition(){
+  let saved=0;
+  try{saved=Number(sessionStorage.getItem("irenismb_catalog_scroll_position")||0);}catch(_){ }
+  if(saved>0) requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo({top:saved,left:0,behavior:"auto"})));
+}
+
+function uxFlashAdded(card,p){
+  const btn=card&&card.querySelector('button[data-act="inc"]');
+  if(!btn) return;
+  btn.classList.add("just-added");
+  btn.textContent="✓ Agregado";
+  setTimeout(()=>{
+    btn.classList.remove("just-added");
+    if(card&&card.isConnected) refreshCardUI(card,p);
+  },850);
+}
+
+function rebuildSearchTicker(){
+  if(tickerInner) tickerInner.innerHTML="";
+  if(searchWrap) searchWrap.classList.remove("show-ticker");
+}
+
+function updateTickerVisibility(){
+  if(searchWrap) searchWrap.classList.remove("show-ticker");
+}
+
+function syncWordToggleButton(){
+  if(!toggleWordPanelBtn) return;
+  const canToggle=shouldAllowSuggestionToggle();
+  const activeCount=uxActiveFilterEntries().length;
+  toggleWordPanelBtn.hidden=!canToggle;
+  toggleWordPanelBtn.disabled=!canToggle;
+  toggleWordPanelBtn.textContent=activeCount?`Filtros (${activeCount})`:"Filtros";
+  toggleWordPanelBtn.title=wordSuggestionsVisible?"Ocultar filtros":"Mostrar filtros";
+  toggleWordPanelBtn.setAttribute("aria-label",toggleWordPanelBtn.title);
+  toggleWordPanelBtn.setAttribute("aria-pressed",wordSuggestionsVisible?"true":"false");
+  toggleWordPanelBtn.classList.toggle("is-active",wordSuggestionsVisible||activeCount>0);
+}
+
+function renderWordSuggestions(){
+  if(!wordPanel||!wordChips||!activeTerms||!activeTermsWrap||!clearTermsBtn) return;
+  syncWordToggleButton();
+  if(!wordSuggestionsVisible){
+    wordPanel.hidden=true;
+    clearTermsBtn.hidden=true;
+    activeTermsWrap.hidden=true;
+    wordChips.innerHTML="";
+    activeTerms.innerHTML="";
+    const summary=document.getElementById("filterSummary");
+    if(summary) summary.hidden=true;
+    return;
+  }
+  wordPanel.hidden=false;
+  const showAlbumGrid=shouldShowAlbumGrid();
+  const entries=showAlbumGrid?[]:buildSuggestionEntries();
+  const activeTermsList=uniqueTerms(selectedSuggestionTerms||[]);
+  const rawQuery=qInp?String(qInp.value||""):"";
+  const typedTerms=parseSearchTerms(rawQuery);
+  clearTermsBtn.hidden=uxActiveFilterEntries().length===0;
+  activeTermsWrap.hidden=!activeTermsList.length;
+  wordChips.innerHTML="";
+  activeTerms.innerHTML="";
+  uxRenderFilterSummary();
+
+  if(activeTermsList.length){
+    for(const term of activeTermsList){
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="term-chip is-active";
+      btn.dataset.term=term;
+      btn.dataset.role="remove-active-term";
+      btn.setAttribute("aria-label",`Quitar palabra ${term}`);
+      btn.innerHTML=`<span>${term}</span><span class="term-chip-remove" aria-hidden="true">×</span>`;
+      activeTerms.appendChild(btn);
+    }
+  }
+
+  if(showAlbumGrid){
+    const note=document.createElement("div");
+    note.className="word-empty";
+    note.textContent=typedTerms.length?"La búsqueda está filtrando las categorías visibles.":"Abre una categoría para ver filtros y palabras más específicas.";
+    wordChips.appendChild(note);
+  }else if(!entries.length){
+    const empty=document.createElement("div");
+    empty.className="word-empty";
+    empty.textContent="No hay palabras adicionales para esta vista.";
+    wordChips.appendChild(empty);
+  }else{
+    for(const entry of entries){
+      const btn=document.createElement("button");
+      btn.type="button";
+      btn.className="term-chip"+(activeTermsList.includes(entry.term)?" is-active":"");
+      btn.dataset.term=entry.term;
+      btn.dataset.role="toggle-term";
+      btn.setAttribute("aria-pressed",activeTermsList.includes(entry.term)?"true":"false");
+      btn.innerHTML=`<span>${entry.term}</span><span class="term-chip-count">${entry.count}</span>`;
+      wordChips.appendChild(btn);
+    }
+  }
+}
+
+function syncFilterVisibility(){
+  const showAlbumGrid=shouldShowAlbumGrid();
+  const directSelected=isDirectProductAudience(selectedAudience);
+  if(catSel){catSel.hidden=true;catSel.disabled=true;catSel.value="";}
+  if(brandSel){brandSel.hidden=true;brandSel.disabled=true;brandSel.value="";}
+  if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
+  if(albumNav) albumNav.hidden=!selectedAudience;
+  if(albumBackBtn){
+    albumBackBtn.textContent=selectedFamily?`← Volver a ${selectedCategory}`:(selectedCategory?`← Volver a ${selectedAudience}`:"← Volver al inicio");
+  }
+  uxRenderBreadcrumb();
+  placeResponsiveHeaderMeta();
+  if(qInp){
+    const scope=selectedFamily||selectedCategory||selectedAudience;
+    qInp.placeholder=selectedAudience?`Buscar en ${scope}`:"Buscar producto, línea o categoría";
+    qInp.setAttribute("aria-label",selectedAudience?`Buscar dentro de ${scope}`:"Buscar producto, línea o categoría");
+  }
+  if(grid){
+    grid.classList.toggle("album-grid-mode",showAlbumGrid);
+    grid.classList.toggle("root-nav-mode",showAlbumGrid&&!selectedAudience);
+    const label=!selectedAudience?"Secciones principales":(directSelected?"Productos":(!selectedCategory?"Subcategorías":(albums.length>0&&!selectedFamily?"Familias olfativas":"Productos")));
+    grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
+  }
+  if(catalogEntryIntro){
+    const hasTerms=getCombinedWordTerms().length>0;
+    catalogEntryIntro.hidden=hasTerms||!!selectedCategory||directSelected;
+    if(catalogEntryTitle) catalogEntryTitle.textContent=selectedAudience||"¿Qué estás buscando?";
+    if(catalogEntryText) catalogEntryText.textContent=selectedAudience?(directSelected?"Explora los productos disponibles.":"Elige una categoría para ver los productos disponibles."):"Elige una categoría para comenzar.";
+  }
+  rebuildSearchTicker();
+  updateTickerVisibility();
+  uxRenderFilterSummary();
+}
+
+function refreshCardUI(card,p){
+  const row=card.querySelector(".row");
+  const actions=card.querySelector(".actions");
+  const meta=card.querySelector(".meta");
+  if(meta) meta.hidden=false;
+  if(row) row.hidden=false;
+  if(actions) actions.hidden=false;
+  const enforce=shouldEnforceStockLimits();
+  const id=String(p.id);
+  const q=cart[id]?.qty||0;
+  const qtyPill=card.querySelector('[data-role="qty"]');
+  const decBtn=card.querySelector('button[data-act="dec"]');
+  const incBtn=card.querySelector('button[data-act="inc"]');
+  if(qtyPill){qtyPill.textContent=q>0?`${q} en carrito`:"Aún no agregado";qtyPill.classList.toggle("has-items",q>0);}
+  if(decBtn) decBtn.disabled=q<=0;
+  const hasKnownStock=Number.isFinite(p.stock)&&p.stock>=0;
+  const maxStock=hasKnownStock?p.stock:null;
+  const canAdd=!enforce||(hasKnownStock&&maxStock>0&&q<maxStock);
+  if(incBtn){
+    incBtn.disabled=!canAdd;
+    incBtn.classList.toggle("in-cart",q>0);
+    if(enforce&&!hasKnownStock) incBtn.textContent="Stock por confirmar";
+    else if(enforce&&maxStock<=0) incBtn.textContent="Sin stock";
+    else incBtn.textContent=q>0?"Agregar otro":"Agregar";
+  }
+}
+
+function makeCard(p){
+  const card=cardTemplate.content.firstElementChild.cloneNode(true);
+  card.id="p-"+encodeURIComponent(String(p.id));
+  card.dataset.id=String(p.id);
+  const imgBox=card.querySelector(".img");
+  imgBox.appendChild(makeImgFromFilename(p.imgFilename,p.name,p.docsImageUrl));
+  const nameEl=card.querySelector(".name");
+  const metaEl=card.querySelector(".meta");
+  const descriptionEl=card.querySelector(".description");
+  const priceEl=card.querySelector(".price");
+  nameEl.textContent=String(p.name||"");
+  nameEl.title=String(p.name||"");
+  metaEl.textContent=stockMetaText(p);
+  const description=String(p?.description||"").trim();
+  descriptionEl.textContent=description;
+  descriptionEl.hidden=!description;
+  if(description.length>230){
+    card.classList.add("description-collapsible");
+    const toggle=document.createElement("button");
+    toggle.type="button";
+    toggle.className="description-toggle";
+    toggle.dataset.descriptionToggle="";
+    toggle.textContent="Ver detalles";
+    toggle.setAttribute("aria-expanded","false");
+    descriptionEl.insertAdjacentElement("afterend",toggle);
+  }
+  priceEl.textContent=shouldShowProductPrices()?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"";
+  if(p?.isGiftGalleryImage){
+    card.classList.add("gift-gallery-card");
+    const pad=card.querySelector(".pad");
+    if(pad) pad.hidden=true;
+    imgBox.setAttribute("aria-label","Imagen de regalo para toda ocasión");
+  }
+  refreshCardUI(card,p);
+  return card;
+}
+
+function makeEmptyState(message){
+  const div=document.createElement("div");
+  div.className="empty-state";
+  const title=document.createElement("strong");
+  title.className="empty-state-title";
+  title.textContent=message;
+  div.appendChild(title);
+  if(getCombinedWordTerms().length){
+    const help=document.createElement("p");
+    help.className="empty-state-text";
+    help.textContent="Prueba con menos palabras o limpia los filtros para volver a explorar el catálogo.";
+    const actions=document.createElement("div");
+    actions.className="empty-state-actions";
+    const clear=document.createElement("button");
+    clear.type="button";
+    clear.className="btn-acc";
+    clear.dataset.clearSearch="all";
+    clear.textContent="Limpiar búsqueda y filtros";
+    actions.appendChild(clear);
+    div.append(help,actions);
+  }
+  return div;
+}
+
+function openAlbum(key,opts={}){
+  const target=albumByKey.get(String(key||""));
+  if(!target) return;
+  uxScrollStack().push({scrollY:window.scrollY||0});
+  if(target.navType==="audience"){selectedAudience=target.navValue;selectedCategory="";selectedFamily="";}
+  else if(target.navType==="category"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.navValue;selectedFamily="";}
+  else if(target.navType==="family"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedFamily=target.navValue;}
+  if(!opts.keepFilters) resetDiscoveryFilters();
+  refreshNavigationAlbums();
+  refreshFilterOptionsForScope();
+  render();
+  uxScrollToCatalogStart();
+}
+
+function closeAlbum(opts={}){
+  const restore=uxScrollStack().pop();
+  if(selectedFamily) selectedFamily="";
+  else if(selectedCategory) selectedCategory="";
+  else selectedAudience="";
+  if(!opts.keepFilters) resetDiscoveryFilters();
+  refreshNavigationAlbums();
+  refreshFilterOptionsForScope();
+  render();
+  if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
+}
+
+function renderCartModal(){
+  const items=cartItemsArray();
+  const subtotalValue=cartTotalValue();
+  const shippingValue=getShippingCop();
+  const total=subtotalValue+shippingValue;
+  const showPrices=shouldShowProductPrices();
+  const hasUnpricedItems=items.some(it=>it&&it.hasPrice===false);
+  const subtotalEl=document.getElementById("cartSubtotal");
+  const shippingEl=document.getElementById("cartShippingTotal");
+  if(subtotalEl) subtotalEl.textContent=(!showPrices||hasUnpricedItems)?"Por confirmar":fmtCOP.format(subtotalValue);
+  if(shippingEl) shippingEl.textContent=fmtCOP.format(shippingValue);
+  cartTotalEl.textContent=(!showPrices||hasUnpricedItems)?"Total: Por confirmar":"Total: "+fmtCOP.format(total);
+  if(!items.length){
+    cartItemsEl.innerHTML='<div class="cart-empty"><strong>Tu carrito está vacío.</strong><span>Agrega productos para preparar el pedido por WhatsApp.</span></div>';
+    return;
+  }
+  const frag=document.createDocumentFragment();
+  items.forEach(it=>{
+    const row=document.createElement("div");
+    row.className="cart-item";
+    row.dataset.id=it.id;
+    const left=document.createElement("div");
+    left.className="cart-item-left";
+    const p=productById.get(String(it.id));
+    const imgFilename=p?.imgFilename||it.imgFilename;
+    left.appendChild(makeCartThumbFromFilename(imgFilename,it.name,p&&p.docsImageUrl));
+    const main=document.createElement("div");
+    main.className="cart-item-main";
+    main.innerHTML='<p class="cart-item-name"></p><p class="cart-item-sub"></p>';
+    main.querySelector(".cart-item-name").textContent=it.name;
+    const meta=[];
+    if(shouldShowProductCodes()) meta.push(`Código ${it.id}`);
+    meta.push(shouldShowProductPrices()?(it.hasPrice===false?"Precio por confirmar":`${fmtCOP.format(Number(it.price)||0)} c/u`):"Precio por confirmar");
+    main.querySelector(".cart-item-sub").textContent=meta.join(" · ");
+    left.appendChild(main);
+    const controls=document.createElement("div");
+    controls.className="cart-controls";
+    controls.innerHTML=`<button class="cart-qty-btn" type="button" data-act="dec" aria-label="Disminuir cantidad">−</button><span class="cart-qty" aria-label="Cantidad">${it.qty}</span><button class="cart-qty-btn" type="button" data-act="inc" aria-label="Aumentar cantidad">+</button>`;
+    const incBtn=controls.querySelector('button[data-act="inc"]');
+    const enforce=shouldEnforceStockLimits();
+    const known=Number.isFinite(it.stock)&&it.stock>=0;
+    const max=known?it.stock:null;
+    if(incBtn) incBtn.disabled=enforce?(!known||max<=0||(Number(it.qty)||0)>=max):false;
+    const subtotal=document.createElement("div");
+    subtotal.className="cart-subtotal";
+    subtotal.innerHTML=`<span>Subtotal</span><strong>${(!shouldShowProductPrices()||it.hasPrice===false)?"Por confirmar":fmtCOP.format((Number(it.price)||0)*(Number(it.qty)||0))}</strong>`;
+    const remove=document.createElement("button");
+    remove.className="cart-remove";
+    remove.type="button";
+    remove.textContent="Eliminar";
+    remove.dataset.act="remove";
+    row.append(left,controls,subtotal,remove);
+    frag.appendChild(row);
+  });
+  cartItemsEl.innerHTML="";
+  cartItemsEl.appendChild(frag);
+}
+
+function bindGridActions(){
+  grid.addEventListener("click",e=>{
+    const clear=e.target.closest("[data-clear-search]");
+    if(clear){uxClearAllFilters();return;}
+    const desc=e.target.closest("[data-description-toggle]");
+    if(desc){
+      const card=desc.closest(".card");
+      if(!card) return;
+      const expanded=card.classList.toggle("description-expanded");
+      desc.textContent=expanded?"Ocultar detalles":"Ver detalles";
+      desc.setAttribute("aria-expanded",expanded?"true":"false");
+      return;
+    }
+    const albumBtn=e.target.closest("[data-album-open]");
+    if(albumBtn){
+      const key=albumBtn.getAttribute("data-album-open")||"";
+      if(key) openAlbum(key,{keepFilters:getCombinedWordTerms().length>0});
+      return;
+    }
+    const btn=e.target.closest("button[data-act]");
+    if(!btn) return;
+    const card=e.target.closest(".card");
+    if(!card) return;
+    const id=card.dataset.id;
+    if(!id) return;
+    const p=productById.get(String(id));
+    if(!p) return;
+    const act=btn.dataset.act;
+    const enforce=shouldEnforceStockLimits();
+    const known=Number.isFinite(p.stock)&&p.stock>=0;
+    const max=known?p.stock:null;
+    const current=safeInt(cart[id]?.qty,0);
+    let next=current;
+    if(act==="inc"){
+      if(!enforce) next=current+1;
+      else if(known&&max>0&&current<max) next=current+1;
+    }else if(act==="dec") next=Math.max(0,current-1);
+    if(next<=0) delete cart[id];
+    else cart[id]={id:p.id,name:p.name,price:p.price,hasPrice:p.hasPrice!==false,qty:next,stock:p.stock,imgFilename:p.imgFilename||null};
+    if(act==="inc"&&next>current) registrarConversionCatalogo("Añadió al carrito",String(p.name||""));
+    saveCart();
+    refreshCardUI(card,p);
+    if(act==="inc"&&next>current) uxFlashAdded(card,p);
+    if(cartModal&&cartModal.classList.contains("open")) renderCartModal();
+  });
+}
+
+function bindFilters(){
+  if(sortSel) sortSel.addEventListener("change",render);
+  qInp.addEventListener("input",render);
+  wordChips?.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-role='toggle-term']");
+    if(btn) toggleSuggestionTerm(btn.dataset.term||"");
+  });
+  activeTerms?.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-role='remove-active-term']");
+    if(btn) removeSuggestionTerm(btn.dataset.term||"");
+  });
+  document.getElementById("filterSummary")?.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-clear-filter]");
+    if(btn) uxClearOneFilter(btn.dataset.clearFilter||"");
+  });
+  clearTermsBtn?.addEventListener("click",uxClearAllFilters);
+  toggleWordPanelBtn?.addEventListener("click",toggleWordSuggestionsVisible);
+  albumPath?.addEventListener("click",e=>{
+    const btn=e.target.closest("[data-breadcrumb-level]");
+    if(!btn) return;
+    const level=btn.dataset.breadcrumbLevel;
+    uxScrollStack().length=0;
+    if(level==="root"){selectedAudience="";selectedCategory="";selectedFamily="";}
+    else if(level==="audience"){selectedCategory="";selectedFamily="";}
+    else if(level==="category") selectedFamily="";
+    resetDiscoveryFilters();
+    refreshNavigationAlbums();
+    refreshFilterOptionsForScope();
+    render();
+    uxScrollToCatalogStart();
+  });
+  qInp.addEventListener("focus",updateTickerVisibility);
+  qInp.addEventListener("blur",updateTickerVisibility);
+  window.addEventListener("resize",()=>{rebuildSearchTicker();updateTickerVisibility();},{passive:true});
+  window.addEventListener("scroll",uxSaveScrollPosition,{passive:true});
+}
+
+async function init(){
+  refreshCartCount();
+  initCartButton();
+  initShipping();
+  bindFilters();
+  bindGridActions();
+  initKeyboardAccessibility();
+  if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
+  syncWordToggleButton();
+  rebuildSearchTicker();
+  updateTickerVisibility();
+  updateCountAttention();
+  loadClientFromLS();
+  loadAddressFromLS();
+  await initializeRemoteCatalogConfiguration();
+  await loadProducts();
+  uxRestoreScrollPosition();
+}

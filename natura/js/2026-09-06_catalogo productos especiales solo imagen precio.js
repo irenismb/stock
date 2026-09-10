@@ -4344,10 +4344,10 @@ function initCollageFeature(){
     .collage-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
     .collage-share:hover{background:#fff0cf;border-color:#b9954f}
     .collage-download:disabled,.collage-share:disabled{opacity:.6;cursor:wait}
-    .collage-ficha{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;border:1px solid #b9954f;background:#fffdfb;color:#8d5360;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(185,149,79,.14)}
-    .collage-ficha:hover:not(:disabled){background:#fff7ea;border-color:#a98032}
-    .collage-ficha:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
-    .collage-selection-hint{margin:-2px 0 2px;color:#cbd5e1;font-size:13px;line-height:1.35;font-weight:700;text-align:center}
+    .collage-ficha{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;border:1px solid #b9954f;background:#b9954f;color:#fff;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(185,149,79,.24)}
+    .collage-ficha:hover:not(:disabled){background:#a98032;border-color:#a98032;transform:translateY(-1px)}
+    .collage-ficha:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;background:#fffdfb;color:#8d5360}
+    .collage-selection-hint{margin:-2px 0 2px;color:#f3dfab;font-size:13px;line-height:1.35;font-weight:800;text-align:center;max-width:680px}
     .card .description{text-align:justify!important;text-align-last:left!important;text-justify:inter-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
     .marketplace-preview-modal{position:fixed;inset:0;z-index:2210;display:none;align-items:center;justify-content:center;padding:18px}
     .marketplace-preview-modal.open{display:flex}
@@ -4379,12 +4379,13 @@ function initCollageFeature(){
     .collage-depth-3>.collage-subtitle{font-size:15px;color:#c8d4e4}
     .collage-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:stretch}
     .collage-root-grid{margin-top:4px}
-    .collage-item{min-width:0;background:#151e2e;border:1px solid #28354a;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+    .collage-item{min-width:0;background:#151e2e;border:1px solid #28354a;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16);position:relative}
     .collage-item[data-ficha-selectable="true"]{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
     .collage-item[data-ficha-selectable="true"]:hover{transform:translateY(-1px);border-color:#b9954f}
     .collage-item[data-ficha-selectable="true"]:focus-visible{outline:none;border-color:#b9954f;box-shadow:0 0 0 3px rgba(185,149,79,.28)}
-    .collage-item.is-selected{border:2px solid #b9954f;box-shadow:0 0 0 3px rgba(185,149,79,.20),0 10px 28px rgba(0,0,0,.22)}
-    .collage-item.is-selected .collage-caption{background:rgba(185,149,79,.10)}
+    .collage-item.is-selected{border:3px solid #b9954f;box-shadow:0 0 0 3px rgba(185,149,79,.26),0 12px 30px rgba(0,0,0,.25)}
+    .collage-item.is-selected::after{content:"✓ Seleccionado";position:absolute;top:9px;right:9px;z-index:2;padding:6px 9px;border-radius:999px;background:#b9954f;color:#fff;font-size:11px;line-height:1;font-weight:950;box-shadow:0 4px 14px rgba(0,0,0,.20)}
+    .collage-item.is-selected .collage-caption{background:rgba(185,149,79,.13)}
     .collage-image{height:190px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:10px}
     .collage-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
     .collage-caption{padding:12px 12px 14px;text-align:center}
@@ -4447,7 +4448,7 @@ function initCollageFeature(){
           <button class="collage-format-option" type="button" data-collage-format="marketplace" aria-pressed="false">Marketplace · 1200 × 1200</button>
         </div>
         <button class="collage-ficha" id="collageFichaBtn" type="button" disabled>Ficha</button>
-        <p class="collage-selection-hint" id="collageSelectionHint">Selecciona un producto del collage para preparar su ficha.</p>
+        <p class="collage-selection-hint" id="collageSelectionHint">El primer producto queda seleccionado automáticamente; toca otro para cambiarlo.</p>
         <button class="collage-download" id="collageDownloadBtn" type="button">Descargar PNG</button>
         <button class="collage-share" id="collageShareBtn" type="button">Compartir PNG</button>
       </div>
@@ -4515,8 +4516,8 @@ function initCollageFeature(){
     if(fichaBtn) fichaBtn.disabled=!collageSelectedProduct;
     if(selectionHint){
       selectionHint.textContent=collageSelectedProduct
-        ? `Seleccionado: ${String(collageSelectedProduct.name||'Producto').trim()}`
-        : 'Selecciona un producto del collage para preparar su ficha.';
+        ? `Producto para Ficha: ${String(collageSelectedProduct.name||'Producto').trim()}`
+        : 'No hay un producto disponible para preparar Ficha.';
     }
   }
 
@@ -4536,6 +4537,7 @@ function initCollageFeature(){
     for(const p of products){
       const item=document.createElement("article");
       item.className="collage-item";
+      item._collageProduct=p;
       const fichaSelectable=!(p && p.isGiftGalleryImage);
       item.dataset.fichaSelectable=fichaSelectable?"true":"false";
       if(fichaSelectable){
@@ -5672,6 +5674,13 @@ function initCollageFeature(){
     }
 
     appendTreeChildren(collageTree,snapshot.tree,1);
+
+    const firstSelectable=collageTree.querySelector('.collage-item[data-ficha-selectable="true"]');
+    if(firstSelectable){
+      setCollageSelectedProduct(firstSelectable._collageProduct||null,firstSelectable);
+    }else{
+      setCollageSelectedProduct(null,null);
+    }
   }
 
   btn.addEventListener("click",()=>{

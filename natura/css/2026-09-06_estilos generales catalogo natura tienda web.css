@@ -152,6 +152,15 @@
       margin: 0 6px 1px 0;
       vertical-align: middle;
     }
+    .brand .experience-line{
+      margin:3px 0 0;
+      font-size:11.5px;
+      line-height:1.35;
+      font-weight:800;
+      color:var(--ux-rose-dark, #8d5360);
+      letter-spacing:.01em;
+      text-align:center;
+    }
 
     header .intro{ padding:10px 16px 6px; }
 
@@ -171,6 +180,11 @@
     }
     .footer-card p{
       margin:0;
+      text-align:justify;
+      text-align-last:left;
+      text-justify:inter-word;
+      hyphens:auto;
+      -webkit-hyphens:auto;
     }
     .footer-card strong{
       color:#ffffff;
@@ -1473,6 +1487,7 @@
       .brand{ min-width:0; gap:11px; }
       .brand h1{ font-size:17px; letter-spacing:.03em; }
       .brand .tagline{ font-size:11.5px; }
+      .brand .experience-line{ font-size:10.8px; }
       .brand img{ width:46px; height:46px; border-radius:14px; }
     }
     @media (max-width:420px){
@@ -1482,6 +1497,7 @@
       }
       .brand h1{ font-size:15.5px; }
       .brand .tagline{ font-size:11px; }
+      .brand .experience-line{ font-size:10.3px; }
       .name{ font-size:14px; }
       .meta{ font-size:11px; }
       .actions button{
@@ -3994,9 +4010,11 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
 .beauty-products-content{color:#6c5d5f !important;background:#fffdfb !important}
 .footer-card{color:#746668 !important}
 .footer-card p{
-  text-align:left !important;
-  text-align-last:auto !important;
-  hyphens:none !important;
+  text-align:justify !important;
+  text-align-last:left !important;
+  text-justify:inter-word !important;
+  hyphens:auto !important;
+  -webkit-hyphens:auto !important;
 }
 .footer-card strong{color:var(--prototype-ink) !important}
 .footer-card a{color:#9a6470 !important;border-bottom-color:#d6b8be !important}
@@ -4275,4 +4293,16 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
 @media (min-width:981px){
   #btn-cart{min-width:230px!important;}
   #sort[hidden] ~ #btn-cart{grid-column:4 / 6!important;}
+}
+
+/* Ajuste 2026-09-10: palabras escritas en el buscador, visibles en azul y negrita. */
+.card .name .search-match-highlight,
+.card .meta .search-match-highlight,
+.card .description .search-match-highlight,
+.album-label .search-match-highlight,
+.album-meta .search-match-highlight{
+  color:#0b57d0!important;
+  font-weight:900!important;
+  background:transparent!important;
+  padding:0!important;
 }

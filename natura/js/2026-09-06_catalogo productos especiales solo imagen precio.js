@@ -329,7 +329,10 @@
         headers: "1",
         range: "A:N",
         tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N",
-        tqx: `out:json;responseHandler:${callbackName}`
+        tqx: `out:json;responseHandler:${callbackName}`,
+        // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
+        // Cada apertura del catálogo consulta la versión más reciente de Productos.
+        _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
       });
       return `${base}?${query.toString()}`;
     }
@@ -426,7 +429,9 @@
         headers: "1",
         range,
         tq,
-        tqx: `out:json;responseHandler:${callbackName}`
+        tqx: `out:json;responseHandler:${callbackName}`,
+        // La configuración y las rutas también deben consultarse sin caché.
+        _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
       });
       return `${base}?${query.toString()}`;
     }
@@ -3218,7 +3223,8 @@
           icon.textContent = album.icon || "•";
         }
       }
-      label.textContent = album.label;
+      setSearchHighlightedText(label,album.label);
+      if(meta) setSearchHighlightedText(meta,meta.textContent || "");
 
       return card;
     }
@@ -3356,6 +3362,87 @@
         .split(/\s+/)
         .map(t => t.trim())
         .filter(Boolean);
+    }
+
+    // Resalta únicamente las palabras escritas en el buscador.
+    // La comparación ignora mayúsculas y tildes, igual que la búsqueda normal.
+    function typedSearchHighlightTerms(){
+      return uniqueTerms(parseSearchTerms(qInp ? qInp.value : ""));
+    }
+
+    function normalizeForHighlightPiece(text){
+      return String(text || "")
+        .toLocaleLowerCase("es-CO")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "");
+    }
+
+    function searchHighlightRanges(text,terms){
+      const source=String(text ?? "");
+      const wanted=(Array.isArray(terms)?terms:[]).map(normalizeText).filter(Boolean);
+      if(!source || !wanted.length) return [];
+
+      let normalized="";
+      const starts=[];
+      const ends=[];
+      for(let index=0;index<source.length;){
+        const codePoint=source.codePointAt(index);
+        const char=String.fromCodePoint(codePoint);
+        const start=index;
+        index+=char.length;
+        const piece=normalizeForHighlightPiece(char);
+        for(const unit of piece){
+          normalized+=unit;
+          starts.push(start);
+          ends.push(index);
+        }
+      }
+
+      const ranges=[];
+      for(const term of wanted){
+        let from=0;
+        while(from<=normalized.length-term.length){
+          const found=normalized.indexOf(term,from);
+          if(found<0) break;
+          const last=found+term.length-1;
+          if(starts[found]!==undefined && ends[last]!==undefined){
+            ranges.push([starts[found],ends[last]]);
+          }
+          from=found+Math.max(1,term.length);
+        }
+      }
+      ranges.sort((a,b)=>a[0]-b[0]||a[1]-b[1]);
+
+      const merged=[];
+      for(const range of ranges){
+        const previous=merged[merged.length-1];
+        if(previous && range[0]<=previous[1]) previous[1]=Math.max(previous[1],range[1]);
+        else merged.push(range.slice());
+      }
+      return merged;
+    }
+
+    function setSearchHighlightedText(element,text){
+      if(!element) return;
+      const source=String(text ?? "");
+      const ranges=searchHighlightRanges(source,typedSearchHighlightTerms());
+      if(!ranges.length){
+        element.textContent=source;
+        return;
+      }
+
+      const fragment=document.createDocumentFragment();
+      let cursor=0;
+      for(const [start,end] of ranges){
+        if(start>cursor) fragment.appendChild(document.createTextNode(source.slice(cursor,start)));
+        const mark=document.createElement("mark");
+        mark.className="search-match-highlight";
+        mark.textContent=source.slice(start,end);
+        fragment.appendChild(mark);
+        cursor=end;
+      }
+      if(cursor<source.length) fragment.appendChild(document.createTextNode(source.slice(cursor)));
+      element.replaceChildren(fragment);
     }
 
     function parseSuggestionTokens(text){
@@ -6157,11 +6244,13 @@ function makeCard(p){
   const metaEl=card.querySelector(".meta");
   const descriptionEl=card.querySelector(".description");
   const priceEl=card.querySelector(".price");
-  nameEl.textContent=String(p.name||"");
-  nameEl.title=String(p.name||"");
-  metaEl.textContent=stockMetaText(p);
+  const productName=String(p.name||"");
+  nameEl.title=productName;
+  setSearchHighlightedText(nameEl,productName);
+  const metaText=stockMetaText(p);
+  setSearchHighlightedText(metaEl,metaText);
   const description=String(p?.description||"").trim();
-  descriptionEl.textContent=description;
+  setSearchHighlightedText(descriptionEl,description);
   descriptionEl.hidden=!description;
   if(description.length>230){
     card.classList.add("description-collapsible");

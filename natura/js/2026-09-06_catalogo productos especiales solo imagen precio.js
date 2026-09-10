@@ -2956,6 +2956,7 @@
       <article class="card">
         <div class="img"></div>
         <div class="pad">
+          <button type="button" class="marketplace-sheet-trigger btn-ghost" aria-label="Descargar ficha Marketplace del producto">Ficha</button>
           <h3 class="name"></h3>
           <p class="meta"></p>
           <p class="description" lang="es-CO"></p>
@@ -3060,6 +3061,7 @@
       const metaEl = card.querySelector(".meta");
       const descriptionEl = card.querySelector(".description");
       const priceEl = card.querySelector(".price");
+      const presentationBtn = card.querySelector(".marketplace-sheet-trigger");
 
       const visibleName = String(p.name || "");
       nameEl.textContent = visibleName;
@@ -3071,6 +3073,14 @@
       priceEl.textContent = shouldShowProductPrices()
         ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price))
         : "";
+
+      if(presentationBtn){
+        if(p && p.isGiftGalleryImage){
+          presentationBtn.hidden = true;
+        }else{
+          presentationBtn.addEventListener("click",()=>downloadMarketplacePresentationCard(p,presentationBtn));
+        }
+      }
 
       if(p && p.isGiftGalleryImage){
         card.classList.add("gift-gallery-card");
@@ -4341,6 +4351,11 @@ function initCollageFeature(){
     .collage-download{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;border:1px solid #a55f70;background:#a55f70;color:#fff;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(165,95,112,.22)}
     .collage-download:hover{background:#8f4f60;border-color:#8f4f60}
     .collage-download:disabled{opacity:.6;cursor:wait}
+    .card .description{text-align:justify!important;text-align-last:left!important;text-justify:inter-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
+    .marketplace-sheet-trigger{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;width:100%;margin:0 0 12px;min-height:40px;padding:9px 14px;border-radius:12px;border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(141,83,96,.08);transition:background .16s ease,border-color .16s ease,transform .16s ease;position:relative;z-index:2}
+    .marketplace-sheet-trigger:hover{background:#fff2ee;border-color:#b9954f;transform:translateY(-1px)}
+    .marketplace-sheet-trigger:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,149,79,.22)}
+    .marketplace-sheet-trigger:disabled{opacity:.62;cursor:wait;transform:none}
     .collage-tree{clear:both}
     .collage-branch{margin-top:20px;border-left:2px solid rgba(125,211,252,.28);padding-left:14px}
     .collage-branch .collage-branch{margin-left:26px;margin-top:18px;border-left-color:rgba(34,211,168,.28)}
@@ -4597,6 +4612,406 @@ function initCollageFeature(){
       };
       tryNext();
     });
+  }
+
+  function marketplacePresentationSanitizeFilename(value){
+    const base=String(value||"")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g,"")
+      .toLowerCase();
+    return base.replace(/[^a-z0-9]+/g,"-").replace(/^-+|-+$/g,"") || "producto";
+  }
+
+  function marketplacePresentationTrimLine(ctx,text,maxWidth){
+    let value=String(text||"").trim();
+    if(!value) return "";
+    if(ctx.measureText(value).width<=maxWidth) return value;
+    while(value && ctx.measureText(`${value}…`).width>maxWidth){
+      value=value.slice(0,-1).trimEnd();
+    }
+    return `${value}…`;
+  }
+
+  function marketplacePresentationWrapLines(ctx,text,maxWidth,maxLines=999){
+    const words=String(text||"").trim().split(/\s+/).filter(Boolean);
+    if(!words.length) return [];
+    const lines=[];
+    let line="";
+    for(const word of words){
+      const test=line?`${line} ${word}`:word;
+      if(line && ctx.measureText(test).width>maxWidth){
+        lines.push(line);
+        line=word;
+      }else{
+        line=test;
+      }
+    }
+    if(line) lines.push(line);
+    if(lines.length<=maxLines) return lines;
+    const clipped=lines.slice(0,maxLines);
+    clipped[maxLines-1]=marketplacePresentationTrimLine(ctx,clipped[maxLines-1],maxWidth);
+    return clipped;
+  }
+
+  function marketplacePresentationDrawJustified(ctx,lines,x,y,maxWidth,lineHeight){
+    let currentY=y;
+    for(let i=0;i<lines.length;i++){
+      const line=String(lines[i]||"").trim();
+      const words=line.split(/\s+/).filter(Boolean);
+      const isLast=i===lines.length-1;
+      if(!line){
+        currentY+=lineHeight;
+        continue;
+      }
+      if(isLast || words.length<3){
+        ctx.fillText(line,x,currentY);
+        currentY+=lineHeight;
+        continue;
+      }
+      const widths=words.map(word=>ctx.measureText(word).width);
+      const wordsWidth=widths.reduce((sum,width)=>sum+width,0);
+      const gap=(maxWidth-wordsWidth)/(words.length-1);
+      let currentX=x;
+      for(let j=0;j<words.length;j++){
+        ctx.fillText(words[j],currentX,currentY);
+        currentX+=widths[j]+(j<words.length-1?gap:0);
+      }
+      currentY+=lineHeight;
+    }
+    return currentY;
+  }
+
+  function marketplacePresentationDrawContainedImage(ctx,img,x,y,w,h,padding=0){
+    if(!img || !img.naturalWidth || !img.naturalHeight) return;
+    const aw=Math.max(1,w-padding*2);
+    const ah=Math.max(1,h-padding*2);
+    const scale=Math.min(aw/img.naturalWidth,ah/img.naturalHeight);
+    const dw=img.naturalWidth*scale;
+    const dh=img.naturalHeight*scale;
+    ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
+  }
+
+  function marketplacePresentationLocalAssetUrl(relativePath){
+    if(String(location.protocol||"").toLowerCase()!=="file:") return "";
+    const clean=String(relativePath||"").replace(/^\/+/,"");
+    if(!clean) return "";
+    try{
+      return new URL(encodeRepoPath(clean),location.href).href;
+    }catch(_){
+      return "";
+    }
+  }
+
+  function marketplacePresentationProductCandidates(p){
+    const imgFilename=String(p?.imgFilename||"").trim();
+    const localProduct=imgFilename
+      ? marketplacePresentationLocalAssetUrl(`${GITHUB_CATALOG_SOURCE.productsFolder}/${imgFilename}`)
+      : "";
+    return [
+      localProduct,
+      collageExportImageUrl(p),
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.webp`),
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.png`),
+      productPlaceholderAbsoluteUrl(),
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.webp`),
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.png`),
+      ...COMPANY_LOGOS
+    ];
+  }
+
+  function marketplacePresentationLogoCandidates(){
+    return [
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.webp`),
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.png`),
+      ...COMPANY_LOGOS,
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.webp`),
+      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.png`),
+      productPlaceholderAbsoluteUrl()
+    ];
+  }
+
+  function marketplacePresentationSafeReadyDomImage(img){
+    if(!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return null;
+    try{
+      const src=img.currentSrc||img.src||"";
+      const parsed=new URL(src,location.href);
+      if(parsed.origin!==location.origin && img.crossOrigin!=="anonymous") return null;
+    }catch(_){}
+    return img;
+  }
+
+  function marketplacePresentationLoadImageCandidates(candidates,timeoutMs=6000){
+    const urls=[...new Set((Array.isArray(candidates)?candidates:[candidates])
+      .map(value=>String(value||"").trim())
+      .filter(Boolean))];
+    return new Promise(resolve=>{
+      let index=0;
+      let settled=false;
+      let activeImg=null;
+      const finish=value=>{
+        if(settled) return;
+        settled=true;
+        clearTimeout(timer);
+        if(activeImg){ activeImg.onload=null; activeImg.onerror=null; }
+        resolve(value||null);
+      };
+      const timer=setTimeout(()=>finish(null),Math.max(1500,Number(timeoutMs)||6000));
+      const tryNext=()=>{
+        if(settled) return;
+        if(index>=urls.length){ finish(null); return; }
+        const img=new Image();
+        activeImg=img;
+        const url=urls[index++];
+        try{
+          const parsed=new URL(url,location.href);
+          if(parsed.origin!==location.origin) img.crossOrigin="anonymous";
+        }catch(_){}
+        img.onload=()=>finish(img);
+        img.onerror=tryNext;
+        img.src=url;
+      };
+      tryNext();
+    });
+  }
+
+  function marketplacePresentationOpenDownloadWindow(){
+    try{
+      const popup=window.open("about:blank","irenismb_ficha_png");
+      if(!popup) return null;
+      try{ popup.opener=null; }catch(_){}
+      try{
+        popup.document.open();
+        popup.document.write('<!doctype html><meta charset="utf-8"><title>Generando ficha</title><body style="font-family:system-ui,Arial,sans-serif;padding:28px;color:#352b2c;background:#fffdfb"><p style="font-weight:800">Generando ficha PNG…</p><p>Esta pestaña se usa solo como respaldo de descarga.</p></body>');
+        popup.document.close();
+      }catch(_){}
+      return popup;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function marketplacePresentationTriggerDataDownload(dataUrl,fileName,targetDocument=document){
+    const a=targetDocument.createElement("a");
+    a.href=dataUrl;
+    a.download=fileName;
+    a.rel="noopener";
+    a.style.display="none";
+    targetDocument.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function downloadMarketplacePresentationCard(p,triggerBtn){
+    if(!p) return;
+    const originalText=triggerBtn?.textContent||"Ficha";
+    if(triggerBtn){
+      triggerBtn.disabled=true;
+      triggerBtn.textContent="Generando ficha…";
+    }
+
+    try{
+      const card=triggerBtn?.closest?.(".card")||null;
+      let productImage=marketplacePresentationSafeReadyDomImage(card?.querySelector?.(".img img"));
+      let logoImage=marketplacePresentationSafeReadyDomImage(document.querySelector(".site-header .brand img"));
+
+      // Cuando las imágenes visibles ya están listas y son seguras para canvas,
+      // la generación y la descarga permanecen dentro del clic original. Esto
+      // evita bloqueos de descarga en navegadores estrictos (especialmente móviles).
+      if(!productImage || !logoImage){
+        const pending=[];
+        pending.push(productImage
+          ? Promise.resolve(productImage)
+          : marketplacePresentationLoadImageCandidates(marketplacePresentationProductCandidates(p),6000));
+        pending.push(logoImage
+          ? Promise.resolve(logoImage)
+          : marketplacePresentationLoadImageCandidates(marketplacePresentationLogoCandidates(),6000));
+        [productImage,logoImage]=await Promise.all(pending);
+      }
+
+      const canvas=document.createElement("canvas");
+      canvas.width=1200;
+      canvas.height=1200;
+      const ctx=canvas.getContext("2d");
+      const W=canvas.width;
+      const H=canvas.height;
+
+      const cream="#fffdfb";
+      const dark="#352b2c";
+      const mauve="#a55f70";
+      const mauveDark="#8d5360";
+      const muted="#78696b";
+      const gold="#b9954f";
+      const border="#eadfda";
+      const divider="#e6d8d2";
+
+      const bg=ctx.createLinearGradient(0,0,0,H);
+      bg.addColorStop(0,"#fffdfa");
+      bg.addColorStop(.45,"#faf6f2");
+      bg.addColorStop(1,"#f3ece7");
+      ctx.fillStyle=bg;
+      ctx.fillRect(0,0,W,H);
+      ctx.textBaseline="top";
+
+      // Encabezado / membrete.
+      const headerX=46;
+      const headerY=34;
+      const headerW=W-92;
+      const headerH=126;
+      collageCanvasRoundRect(ctx,headerX,headerY,headerW,headerH,22);
+      ctx.fillStyle=cream;
+      ctx.fill();
+      ctx.strokeStyle=border;
+      ctx.lineWidth=1.2;
+      ctx.stroke();
+
+      marketplacePresentationDrawContainedImage(ctx,logoImage,64,52,78,78,2);
+      ctx.fillStyle=mauveDark;
+      ctx.font="900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("IRENISMB STOCK NATURA",164,61);
+      ctx.fillStyle=muted;
+      ctx.font="600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Natura & AVON · Santa Marta · Envíos a toda Colombia",164,96);
+      ctx.fillStyle=gold;
+      collageCanvasRoundRect(ctx,66,140,W-132,4,2);
+      ctx.fill();
+
+      // Imagen principal del producto.
+      const imageCard={x:58,y:194,w:470,h:438};
+      collageCanvasRoundRect(ctx,imageCard.x,imageCard.y,imageCard.w,imageCard.h,24);
+      ctx.fillStyle=cream;
+      ctx.fill();
+      ctx.strokeStyle=border;
+      ctx.lineWidth=1.2;
+      ctx.stroke();
+      marketplacePresentationDrawContainedImage(ctx,productImage,imageCard.x,imageCard.y,imageCard.w,imageCard.h,30);
+
+      // Identificación y precio.
+      const textX=566;
+      const textW=W-textX-58;
+      let y=205;
+      ctx.fillStyle=mauve;
+      ctx.font="900 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("PRESENTACIÓN DE PRODUCTO",textX,y);
+      y+=34;
+
+      ctx.fillStyle=dark;
+      ctx.font="900 31px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      let titleLines=marketplacePresentationWrapLines(ctx,String(p.name||"Producto"),textW,5);
+      for(const line of titleLines){
+        ctx.fillText(line,textX,y);
+        y+=38;
+      }
+
+      y+=6;
+      if(shouldShowProductPrices() && p.hasPrice!==false && Number(p.price)>0){
+        ctx.fillStyle=mauveDark;
+        ctx.font="950 34px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        ctx.fillText(fmtCOP.format(p.price),textX,y);
+        y+=50;
+      }
+
+      const metaParts=[];
+      if(p.id) metaParts.push(`Código ${p.id}`);
+      if(p.category) metaParts.push(String(p.category).trim());
+      if(p.subcategory) metaParts.push(String(p.subcategory).trim());
+      ctx.fillStyle=muted;
+      ctx.font="650 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const metaLines=marketplacePresentationWrapLines(ctx,metaParts.filter(Boolean).join(" · "),textW,3);
+      for(const line of metaLines){
+        ctx.fillText(line,textX,y);
+        y+=22;
+      }
+
+      // Descripción, justificada.
+      const descX=58;
+      const descY=672;
+      const descW=W-116;
+      const descH=370;
+      collageCanvasRoundRect(ctx,descX,descY,descW,descH,24);
+      ctx.fillStyle=cream;
+      ctx.fill();
+      ctx.strokeStyle=border;
+      ctx.lineWidth=1.2;
+      ctx.stroke();
+
+      ctx.fillStyle=mauve;
+      ctx.font="900 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("DESCRIPCIÓN",descX+24,descY+22);
+
+      const description=String(p.description||"").trim()||"Descripción no disponible.";
+      const descTextX=descX+24;
+      const descTextY=descY+58;
+      const descTextW=descW-48;
+      const lineHeight=28;
+      const maxLines=10;
+      ctx.fillStyle=dark;
+      ctx.font="500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const fullLines=marketplacePresentationWrapLines(ctx,description,descTextW,999);
+      let descLines=fullLines.slice(0,maxLines);
+      if(fullLines.length>maxLines){
+        descLines[maxLines-1]=marketplacePresentationTrimLine(ctx,descLines[maxLines-1],descTextW);
+      }
+      marketplacePresentationDrawJustified(ctx,descLines,descTextX,descTextY,descTextW,lineHeight);
+
+      // Pie de página.
+      const footerLineY=H-110;
+      ctx.strokeStyle=divider;
+      ctx.lineWidth=1;
+      ctx.beginPath();
+      ctx.moveTo(58,footerLineY);
+      ctx.lineTo(W-58,footerLineY);
+      ctx.stroke();
+      ctx.textAlign="center";
+      ctx.fillStyle=dark;
+      ctx.font="800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("IRENISMB STOCK NATURA",W/2,H-84);
+      ctx.fillStyle=muted;
+      ctx.font="600 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Santa Marta · WhatsApp +57 304 208 8961",W/2,H-60);
+      ctx.textAlign="left";
+
+      const code=String(p.id||"").trim();
+      const safeName=marketplacePresentationSanitizeFilename(String(p.name||"")).slice(0,72);
+      const fileName=`${code?`${code}_`:""}${safeName}_ficha_marketplace.png`;
+
+      const blob=await new Promise((resolve,reject)=>{
+        try{
+          canvas.toBlob(value=>value?resolve(value):reject(new Error("No se pudo crear el archivo PNG.")),"image/png",1);
+        }catch(error){
+          reject(error);
+        }
+      });
+
+      if(window.navigator && typeof window.navigator.msSaveOrOpenBlob==="function"){
+        window.navigator.msSaveOrOpenBlob(blob,fileName);
+      }else{
+        const objectUrl=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=objectUrl;
+        a.download=fileName;
+        a.rel="noopener";
+        a.style.display="none";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
+      }
+
+      if(triggerBtn){
+        triggerBtn.textContent="Descargada";
+        setTimeout(()=>{
+          if(triggerBtn && !triggerBtn.disabled) triggerBtn.textContent=originalText;
+        },1200);
+      }
+    }catch(error){
+      console.error("No se pudo generar la ficha Marketplace del producto.",error);
+      alert("No se pudo generar la ficha PNG. Recarga la página e intenta nuevamente.");
+    }finally{
+      if(triggerBtn){
+        triggerBtn.disabled=false;
+        if(triggerBtn.textContent!=="Descargada") triggerBtn.textContent=originalText;
+      }
+    }
   }
 
   async function downloadCollageImage(){

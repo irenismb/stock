@@ -2956,7 +2956,6 @@
       <article class="card">
         <div class="img"></div>
         <div class="pad">
-          <button type="button" class="marketplace-sheet-trigger btn-ghost" aria-label="Descargar ficha Marketplace del producto">Ficha</button>
           <h3 class="name"></h3>
           <p class="meta"></p>
           <p class="description" lang="es-CO"></p>
@@ -3061,7 +3060,6 @@
       const metaEl = card.querySelector(".meta");
       const descriptionEl = card.querySelector(".description");
       const priceEl = card.querySelector(".price");
-      const presentationBtn = card.querySelector(".marketplace-sheet-trigger");
 
       const visibleName = String(p.name || "");
       nameEl.textContent = visibleName;
@@ -3073,14 +3071,6 @@
       priceEl.textContent = shouldShowProductPrices()
         ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price))
         : "";
-
-      if(presentationBtn){
-        if(p && p.isGiftGalleryImage){
-          presentationBtn.hidden = true;
-        }else{
-          presentationBtn.addEventListener("click",()=>downloadMarketplacePresentationCard(p,presentationBtn));
-        }
-      }
 
       if(p && p.isGiftGalleryImage){
         card.classList.add("gift-gallery-card");
@@ -4354,11 +4344,11 @@ function initCollageFeature(){
     .collage-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
     .collage-share:hover{background:#fff0cf;border-color:#b9954f}
     .collage-download:disabled,.collage-share:disabled{opacity:.6;cursor:wait}
+    .collage-ficha{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;border:1px solid #b9954f;background:#fffdfb;color:#8d5360;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(185,149,79,.14)}
+    .collage-ficha:hover:not(:disabled){background:#fff7ea;border-color:#a98032}
+    .collage-ficha:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+    .collage-selection-hint{margin:-2px 0 2px;color:#cbd5e1;font-size:13px;line-height:1.35;font-weight:700;text-align:center}
     .card .description{text-align:justify!important;text-align-last:left!important;text-justify:inter-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
-    .marketplace-sheet-trigger{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;width:100%;margin:0 0 12px;min-height:40px;padding:9px 14px;border-radius:12px;border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(141,83,96,.08);transition:background .16s ease,border-color .16s ease,transform .16s ease;position:relative;z-index:2}
-    .marketplace-sheet-trigger:hover{background:#fff2ee;border-color:#b9954f;transform:translateY(-1px)}
-    .marketplace-sheet-trigger:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,149,79,.22)}
-    .marketplace-sheet-trigger:disabled{opacity:.62;cursor:wait;transform:none}
     .marketplace-preview-modal{position:fixed;inset:0;z-index:2210;display:none;align-items:center;justify-content:center;padding:18px}
     .marketplace-preview-modal.open{display:flex}
     .marketplace-preview-backdrop{position:absolute;inset:0;background:rgba(35,26,28,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
@@ -4390,6 +4380,11 @@ function initCollageFeature(){
     .collage-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:stretch}
     .collage-root-grid{margin-top:4px}
     .collage-item{min-width:0;background:#151e2e;border:1px solid #28354a;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+    .collage-item[data-ficha-selectable="true"]{cursor:pointer;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease}
+    .collage-item[data-ficha-selectable="true"]:hover{transform:translateY(-1px);border-color:#b9954f}
+    .collage-item[data-ficha-selectable="true"]:focus-visible{outline:none;border-color:#b9954f;box-shadow:0 0 0 3px rgba(185,149,79,.28)}
+    .collage-item.is-selected{border:2px solid #b9954f;box-shadow:0 0 0 3px rgba(185,149,79,.20),0 10px 28px rgba(0,0,0,.22)}
+    .collage-item.is-selected .collage-caption{background:rgba(185,149,79,.10)}
     .collage-image{height:190px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden;padding:10px}
     .collage-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
     .collage-caption{padding:12px 12px 14px;text-align:center}
@@ -4407,7 +4402,7 @@ function initCollageFeature(){
       .collage-price{font-size:14px}
       .collage-heading{padding-right:44px;padding-bottom:14px}
       .collage-format-choices{grid-template-columns:1fr;width:100%;max-width:320px}
-      .collage-format-option,.collage-download,.collage-share{width:100%;max-width:320px}
+      .collage-format-option,.collage-download,.collage-share,.collage-ficha{width:100%;max-width:320px}
       .marketplace-preview-modal{padding:10px}
       .marketplace-preview-shell{width:min(96vw,96vh);max-height:96vh;border-radius:18px;padding:14px}
       .marketplace-preview-heading{padding-right:44px}
@@ -4451,10 +4446,12 @@ function initCollageFeature(){
           <button class="collage-format-option is-active" type="button" data-collage-format="instagram" aria-pressed="true">Instagram · 1080 × 1350</button>
           <button class="collage-format-option" type="button" data-collage-format="marketplace" aria-pressed="false">Marketplace · 1200 × 1200</button>
         </div>
+        <button class="collage-ficha" id="collageFichaBtn" type="button" disabled>Ficha</button>
+        <p class="collage-selection-hint" id="collageSelectionHint">Selecciona un producto del collage para preparar su ficha.</p>
         <button class="collage-download" id="collageDownloadBtn" type="button">Descargar PNG</button>
         <button class="collage-share" id="collageShareBtn" type="button">Compartir PNG</button>
       </div>
-      <div class="collage-tree" id="collageTree"></div>
+      <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
     </section>
   `;
   document.body.appendChild(modal);
@@ -4462,9 +4459,12 @@ function initCollageFeature(){
   const routeEl=modal.querySelector("#collageRoute");
   const collageTree=modal.querySelector("#collageTree");
   const closeBtn=modal.querySelector(".collage-close");
+  const fichaBtn=modal.querySelector("#collageFichaBtn");
+  const selectionHint=modal.querySelector("#collageSelectionHint");
   const downloadBtn=modal.querySelector("#collageDownloadBtn");
   const shareBtn=modal.querySelector("#collageShareBtn");
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
+  let collageSelectedProduct=null;
 
   const COLLAGE_EXPORT_FORMATS={
     instagram:{
@@ -4502,6 +4502,24 @@ function initCollageFeature(){
     }
   }
 
+  function setCollageSelectedProduct(product,item){
+    collageSelectedProduct=product||null;
+    for(const card of collageTree.querySelectorAll('.collage-item.is-selected')){
+      card.classList.remove('is-selected');
+      card.setAttribute('aria-selected','false');
+    }
+    if(collageSelectedProduct && item){
+      item.classList.add('is-selected');
+      item.setAttribute('aria-selected','true');
+    }
+    if(fichaBtn) fichaBtn.disabled=!collageSelectedProduct;
+    if(selectionHint){
+      selectionHint.textContent=collageSelectedProduct
+        ? `Seleccionado: ${String(collageSelectedProduct.name||'Producto').trim()}`
+        : 'Selecciona un producto del collage para preparar su ficha.';
+    }
+  }
+
   function closeCollage(){
     if(!modal.classList.contains("open")) return;
     modal.classList.remove("open");
@@ -4518,6 +4536,22 @@ function initCollageFeature(){
     for(const p of products){
       const item=document.createElement("article");
       item.className="collage-item";
+      const fichaSelectable=!(p && p.isGiftGalleryImage);
+      item.dataset.fichaSelectable=fichaSelectable?"true":"false";
+      if(fichaSelectable){
+        item.tabIndex=0;
+        item.setAttribute("role","option");
+        item.setAttribute("aria-selected","false");
+        item.setAttribute("aria-label",`Seleccionar ${String(p?.name||"producto").trim()||"producto"} para crear ficha`);
+        const selectThis=()=>setCollageSelectedProduct(p,item);
+        item.addEventListener("click",selectThis);
+        item.addEventListener("keydown",event=>{
+          if(event.key==="Enter"||event.key===" "){
+            event.preventDefault();
+            selectThis();
+          }
+        });
+      }
 
       const imageBox=document.createElement("div");
       imageBox.className="collage-image";
@@ -4951,7 +4985,10 @@ function initCollageFeature(){
       if(!state.modal.classList.contains('open')) return;
       state.modal.classList.remove('open');
       state.modal.setAttribute('aria-hidden','true');
-      document.body.classList.remove('collage-open');
+      const collageModal=document.getElementById('collageModal');
+      if(!(collageModal && collageModal.classList.contains('open'))){
+        document.body.classList.remove('collage-open');
+      }
       if(state.opener && typeof state.opener.focus==='function'){
         try{ state.opener.focus({preventScroll:true}); }catch(_){ try{ state.opener.focus(); }catch(_e){} }
       }
@@ -5620,6 +5657,7 @@ function initCollageFeature(){
     const snapshot=collageCurrentSnapshot();
     routeEl.textContent=snapshot.title;
     collageTree.innerHTML="";
+    setCollageSelectedProduct(null,null);
 
     if(!snapshot.products.length){
       const empty=document.createElement("div");
@@ -5648,6 +5686,10 @@ function initCollageFeature(){
     button.addEventListener("click",()=>setCollageExportFormat(button.dataset.collageFormat));
   }
   setCollageExportFormat("instagram");
+  fichaBtn?.addEventListener("click",()=>{
+    if(!collageSelectedProduct) return;
+    downloadMarketplacePresentationCard(collageSelectedProduct,fichaBtn);
+  });
   downloadBtn?.addEventListener("click",()=>downloadCollageImage("download"));
   shareBtn?.addEventListener("click",()=>downloadCollageImage("share"));
 

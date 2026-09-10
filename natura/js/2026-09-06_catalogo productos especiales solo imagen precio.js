@@ -4262,7 +4262,9 @@ function collagePriceText(p){
 function initCollageFeature(){
   const toolbar=document.querySelector(".bar");
   const cartButton=document.getElementById("btn-cart");
-  if(!toolbar||document.getElementById("collageBtn")) return;
+  if(!toolbar) return;
+
+  let btn=document.getElementById("collageBtn");
 
   const style=document.createElement("style");
   style.id="collageFeatureStyles";
@@ -4295,16 +4297,18 @@ function initCollageFeature(){
       #collageBtn{padding-inline:12px}
     }
   `;
-  document.head.appendChild(style);
+  if(!document.getElementById("collageFeatureStyles")) document.head.appendChild(style);
 
-  const btn=document.createElement("button");
-  btn.className="btn-ghost";
-  btn.id="collageBtn";
-  btn.type="button";
-  btn.textContent="Collage";
-  btn.setAttribute("aria-label","Mostrar collage de los productos de la vista actual");
-  if(cartButton) toolbar.insertBefore(btn,cartButton);
-  else toolbar.appendChild(btn);
+  if(!btn){
+    btn=document.createElement("button");
+    btn.className="btn-ghost";
+    btn.id="collageBtn";
+    btn.type="button";
+    btn.textContent="Collage";
+    btn.setAttribute("aria-label","Mostrar collage de los productos de la vista actual");
+    if(cartButton) toolbar.insertBefore(btn,cartButton);
+    else toolbar.appendChild(btn);
+  }
 
   const modal=document.createElement("div");
   modal.className="collage-modal";

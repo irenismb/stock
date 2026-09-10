@@ -4450,7 +4450,7 @@ function initCollageFeature(){
         <button class="collage-ficha" id="collageFichaBtn" type="button" disabled>Ficha</button>
         <p class="collage-selection-hint" id="collageSelectionHint">El primer producto queda seleccionado automáticamente; toca otro para cambiarlo.</p>
         <button class="collage-download" id="collageDownloadBtn" type="button">Descargar PNG</button>
-        <button class="collage-share" id="collageShareBtn" type="button">Compartir PNG</button>
+        <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando PNG…</button>
       </div>
       <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
     </section>
@@ -4466,6 +4466,9 @@ function initCollageFeature(){
   const shareBtn=modal.querySelector("#collageShareBtn");
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
   let collageSelectedProduct=null;
+  let collagePreparedShareFile=null;
+  let collagePreparedShareKey="";
+  let collagePrepareSequence=0;
 
   const COLLAGE_EXPORT_FORMATS={
     instagram:{
@@ -4494,6 +4497,62 @@ function initCollageFeature(){
     return COLLAGE_EXPORT_FORMATS[selected]||COLLAGE_EXPORT_FORMATS.instagram;
   }
 
+  function collageShareCacheKey(snapshot,format){
+    const productKey=(snapshot?.products||[])
+      .map(product=>String(product?.id||product?.code||product?.name||""))
+      .join("|");
+    return `${format?.key||"instagram"}::${String(snapshot?.title||"")}::${productKey}`;
+  }
+
+  function invalidateCollageSharePreparation(){
+    collagePreparedShareFile=null;
+    collagePreparedShareKey="";
+    collagePrepareSequence++;
+    if(shareBtn){
+      shareBtn.disabled=true;
+      shareBtn.textContent="Preparando PNG…";
+      shareBtn.title="El PNG se está preparando para compartir.";
+    }
+  }
+
+  function queueCollageSharePreparation(){
+    const snapshot=collageCurrentSnapshot();
+    if(!snapshot.products.length){
+      collagePreparedShareFile=null;
+      collagePreparedShareKey="";
+      if(shareBtn){
+        shareBtn.disabled=true;
+        shareBtn.textContent="Compartir PNG";
+      }
+      return;
+    }
+    if(!(window.File && navigator && typeof navigator.share === "function")){
+      collagePreparedShareFile=null;
+      collagePreparedShareKey="";
+      if(shareBtn){
+        shareBtn.disabled=true;
+        shareBtn.textContent="Compartir no disponible";
+        shareBtn.title="Este navegador no permite compartir archivos PNG directamente.";
+      }
+      return;
+    }
+    const format=getCollageExportFormat();
+    const key=collageShareCacheKey(snapshot,format);
+    const token=++collagePrepareSequence;
+    collagePreparedShareFile=null;
+    collagePreparedShareKey="";
+    if(shareBtn){
+      shareBtn.disabled=true;
+      shareBtn.textContent="Preparando PNG…";
+      shareBtn.title="El PNG se está preparando para compartir.";
+    }
+    window.setTimeout(()=>{
+      downloadCollageImage("prepare",{token,key}).catch(error=>{
+        console.info("No se pudo preparar el PNG del collage para compartir.",error);
+      });
+    },0);
+  }
+
   function setCollageExportFormat(key){
     const selected=COLLAGE_EXPORT_FORMATS[key]?key:"instagram";
     for(const button of formatButtons){
@@ -4501,6 +4560,7 @@ function initCollageFeature(){
       button.classList.toggle("is-active",active);
       button.setAttribute("aria-pressed",active?"true":"false");
     }
+    if(modal.classList.contains("open")) queueCollageSharePreparation();
   }
 
   function setCollageSelectedProduct(product,item){
@@ -4915,21 +4975,31 @@ function initCollageFeature(){
     return true;
   }
 
-  async function shareCanvasAsPng(canvas,fileName){
-    if(!canvas) throw new Error("No hay contenido listo para compartir.");
-    const blob=await new Promise((resolve,reject)=>{
+  function sharePreparedPngFile(file){
+    if(!(window.File && navigator && typeof navigator.share === "function")){
+      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
+    }
+    if(!file || file.type!=="image/png" || !canNativeSharePng(file)){
+      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
+    }
+    // navigator.share debe ejecutarse inmediatamente dentro del clic del usuario.
+    // El PNG se prepara antes para conservar la activación necesaria en móviles.
+    return navigator.share({ files:[file] });
+  }
+
+  function canvasToPngBlob(canvas){
+    if(!canvas) return Promise.reject(new Error("No hay contenido listo para exportar."));
+    return new Promise((resolve,reject)=>{
       try{
         canvas.toBlob(value=>value?resolve(value):reject(new Error("No se pudo crear el archivo PNG.")),"image/png",1);
       }catch(error){ reject(error); }
     });
-    if(!(window.File && navigator && typeof navigator.share === "function")){
-      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
-    }
-    const file=new File([blob],fileName||"imagen.png",{type:"image/png"});
-    if(!canNativeSharePng(file)){
-      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
-    }
-    await navigator.share({ files:[file] });
+  }
+
+  async function prepareCanvasPngFile(canvas,fileName){
+    const blob=await canvasToPngBlob(canvas);
+    const file=window.File ? new File([blob],fileName||"imagen.png",{type:"image/png"}) : null;
+    return {blob,file};
   }
 
   let marketplacePreviewState=null;
@@ -4973,6 +5043,7 @@ function initCollageFeature(){
       downloadBtn:modal.querySelector('#marketplacePreviewDownloadBtn'),
       shareBtn:modal.querySelector('#marketplacePreviewShareBtn'),
       canvas:null,
+      shareFile:null,
       fileName:'',
       product:null,
       opener:null,
@@ -5044,35 +5115,33 @@ function initCollageFeature(){
     });
 
     state.shareBtn?.addEventListener('click',async ()=>{
-      if(!state.canvas || state.busy) return;
+      if(!state.shareFile || state.busy) return;
       const original=state.shareBtn.textContent;
       state.busy=true;
       state.shareBtn.disabled=true;
       state.downloadBtn.disabled=true;
       state.shareBtn.textContent='Compartiendo…';
       try{
-        await shareCanvasAsPng(
-          state.canvas,
-          state.fileName || 'ficha_marketplace.png'
-        );
-        state.statusEl.textContent='Ficha compartida correctamente.';
+        const sharePromise=sharePreparedPngFile(state.shareFile);
+        await sharePromise;
+        state.statusEl.textContent='';
         state.shareBtn.textContent='Compartida';
         setTimeout(()=>{
           if(state.shareBtn){
             state.shareBtn.textContent='Compartir PNG';
-            state.shareBtn.disabled=false;
+            state.shareBtn.disabled=!state.shareFile;
           }
-          if(state.downloadBtn) state.downloadBtn.disabled=false;
+          if(state.downloadBtn) state.downloadBtn.disabled=!state.canvas;
         },1100);
       }catch(error){
         if(error && error.name==='AbortError'){
-          state.statusEl.textContent='Compartir cancelado.';
+          state.statusEl.textContent='';
         }else{
           console.error('No se pudo compartir la ficha Marketplace.',error);
-          state.statusEl.textContent='Tu navegador no pudo compartir el PNG directamente. Puedes usar “Descargar PNG”.';
+          state.statusEl.textContent='Este navegador no permite compartir archivos PNG directamente.';
         }
         state.shareBtn.textContent=original;
-        state.shareBtn.disabled=!state.canvas;
+        state.shareBtn.disabled=!state.shareFile;
         state.downloadBtn.disabled=!state.canvas;
       }finally{
         state.busy=false;
@@ -5253,6 +5322,7 @@ function initCollageFeature(){
     state.downloadBtn.disabled=true;
     if(state.shareBtn) state.shareBtn.disabled=true;
     state.canvas=null;
+    state.shareFile=null;
     state.fileName='';
     state.product=p;
     state.imageEl.removeAttribute('src');
@@ -5264,12 +5334,18 @@ function initCollageFeature(){
 
     try{
       const {canvas,fileName}=await buildMarketplacePresentationCanvas(p);
+      const prepared=await prepareCanvasPngFile(canvas,fileName);
       state.canvas=canvas;
       state.fileName=fileName;
+      state.shareFile=(prepared.file && canNativeSharePng(prepared.file)) ? prepared.file : null;
       state.imageEl.src=canvas.toDataURL('image/png');
       state.statusEl.textContent='';
       state.downloadBtn.disabled=false;
-      if(state.shareBtn) state.shareBtn.disabled=false;
+      if(state.shareBtn){
+        state.shareBtn.disabled=!state.shareFile;
+        state.shareBtn.textContent=state.shareFile?'Compartir PNG':'Compartir no disponible';
+        state.shareBtn.title=state.shareFile?'':'Este navegador no permite compartir archivos PNG directamente.';
+      }
       if(triggerBtn){
         triggerBtn.textContent='Ficha';
       }
@@ -5290,21 +5366,58 @@ function initCollageFeature(){
   }
 
 
-  async function downloadCollageImage(action="download"){
+  async function downloadCollageImage(action="download",options={}){
     const snapshot=collageCurrentSnapshot();
     if(!snapshot.products.length){
-      alert("No hay productos para descargar con los filtros actuales.");
+      if(action!=="prepare") alert("No hay productos para descargar con los filtros actuales.");
       return;
     }
 
     const format=getCollageExportFormat();
+    const shareKey=collageShareCacheKey(snapshot,format);
     const isShareAction=action==="share";
-    const targetBtn=isShareAction ? shareBtn : downloadBtn;
-    const originalText=targetBtn?.textContent||(isShareAction?"Compartir PNG":"Descargar PNG");
-    if(downloadBtn) downloadBtn.disabled=true;
-    if(shareBtn) shareBtn.disabled=true;
-    if(targetBtn) targetBtn.textContent=isShareAction?"Preparando PNG…":"Generando PNG…";
-    for(const button of formatButtons) button.disabled=true;
+    const isPrepareAction=action==="prepare";
+
+    if(isShareAction){
+      if(!collagePreparedShareFile || collagePreparedShareKey!==shareKey){
+        queueCollageSharePreparation();
+        return;
+      }
+      const originalText=shareBtn?.textContent||"Compartir PNG";
+      if(shareBtn){
+        shareBtn.disabled=true;
+        shareBtn.textContent="Compartiendo…";
+      }
+      try{
+        const sharePromise=sharePreparedPngFile(collagePreparedShareFile);
+        await sharePromise;
+      }catch(shareError){
+        if(!(shareError && shareError.name==='AbortError')){
+          console.error(`No se pudo compartir el PNG del collage para ${format.label}.`,shareError);
+          alert('Este navegador no permite compartir archivos PNG directamente.');
+        }
+      }finally{
+        if(shareBtn){
+          shareBtn.disabled=false;
+          shareBtn.textContent=originalText==='Compartiendo…'?"Compartir PNG":originalText;
+        }
+      }
+      return;
+    }
+
+    const targetBtn=downloadBtn;
+    const originalText=targetBtn?.textContent||"Descargar PNG";
+    if(isPrepareAction){
+      if(shareBtn){
+        shareBtn.disabled=true;
+        shareBtn.textContent="Preparando PNG…";
+      }
+    }else{
+      if(downloadBtn) downloadBtn.disabled=true;
+      if(shareBtn) shareBtn.disabled=true;
+      if(targetBtn) targetBtn.textContent="Generando PNG…";
+      for(const button of formatButtons) button.disabled=true;
+    }
 
     try{
       const PAGE_W=format.pageW;
@@ -5606,18 +5719,26 @@ function initCollageFeature(){
         }
       });
 
-      if(isShareAction){
-        try{
-          await shareCanvasAsPng(
-            finalCanvas,
-            format.downloadName
-          );
-        }catch(shareError){
-          if(shareError && shareError.name==='AbortError'){
-            // Cancelado por el usuario.
+      if(isPrepareAction){
+        const file=window.File ? new File([blob],format.downloadName,{type:"image/png"}) : null;
+        const stillCurrent=options.token===collagePrepareSequence && options.key===shareKey;
+        if(stillCurrent){
+          if(file && canNativeSharePng(file)){
+            collagePreparedShareFile=file;
+            collagePreparedShareKey=shareKey;
+            if(shareBtn){
+              shareBtn.disabled=false;
+              shareBtn.textContent="Compartir PNG";
+              shareBtn.title="";
+            }
           }else{
-            console.error(`No se pudo compartir el PNG del collage para ${format.label}.`,shareError);
-            alert('Tu navegador no pudo compartir el PNG directamente. Puedes usar “Descargar PNG”.');
+            collagePreparedShareFile=null;
+            collagePreparedShareKey="";
+            if(shareBtn){
+              shareBtn.disabled=true;
+              shareBtn.textContent="Compartir no disponible";
+              shareBtn.title="Este navegador no permite compartir archivos PNG directamente.";
+            }
           }
         }
       }else{
@@ -5631,17 +5752,36 @@ function initCollageFeature(){
         setTimeout(()=>URL.revokeObjectURL(url),1500);
       }
     }catch(error){
-      console.error(`No se pudo generar el PNG del collage para ${format.label}.`,error);
-      alert("No se pudo generar la imagen del collage. Intenta nuevamente después de que terminen de cargar las imágenes.");
-    }finally{
-      for(const button of formatButtons) button.disabled=false;
-      if(downloadBtn){
-        downloadBtn.disabled=false;
-        downloadBtn.textContent="Descargar PNG";
+      if(isPrepareAction){
+        const stillCurrent=options.token===collagePrepareSequence;
+        if(stillCurrent){
+          collagePreparedShareFile=null;
+          collagePreparedShareKey="";
+          if(shareBtn){
+            shareBtn.disabled=true;
+            shareBtn.textContent="Compartir no disponible";
+            shareBtn.title="No se pudo preparar el PNG para compartir.";
+          }
+        }
+        console.info(`No se pudo preparar el PNG del collage para ${format.label}.`,error);
+      }else{
+        console.error(`No se pudo generar el PNG del collage para ${format.label}.`,error);
+        alert("No se pudo generar la imagen del collage. Intenta nuevamente después de que terminen de cargar las imágenes.");
       }
-      if(shareBtn){
-        shareBtn.disabled=false;
-        shareBtn.textContent="Compartir PNG";
+    }finally{
+      if(!isPrepareAction){
+        for(const button of formatButtons) button.disabled=false;
+        if(downloadBtn){
+          downloadBtn.disabled=false;
+          downloadBtn.textContent="Descargar PNG";
+        }
+        if(shareBtn){
+          const currentKey=collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat());
+          const ready=!!collagePreparedShareFile && collagePreparedShareKey===currentKey;
+          shareBtn.disabled=!ready;
+          shareBtn.textContent=ready?"Compartir PNG":"Preparando PNG…";
+          if(!ready) queueCollageSharePreparation();
+        }
       }
     }
   }
@@ -5651,6 +5791,7 @@ function initCollageFeature(){
     const snapshot=collageCurrentSnapshot();
     routeEl.textContent=snapshot.title;
     collageTree.innerHTML="";
+    invalidateCollageSharePreparation();
     setCollageSelectedProduct(null,null);
 
     if(!snapshot.products.length){
@@ -5680,6 +5821,7 @@ function initCollageFeature(){
     modal.classList.add("open");
     modal.setAttribute("aria-hidden","false");
     document.body.classList.add("collage-open");
+    queueCollageSharePreparation();
     requestAnimationFrame(()=>closeBtn?.focus({preventScroll:true}));
   });
 

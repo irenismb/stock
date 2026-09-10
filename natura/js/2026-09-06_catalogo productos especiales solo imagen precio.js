@@ -4915,7 +4915,7 @@ function initCollageFeature(){
     return true;
   }
 
-  async function shareCanvasAsPng(canvas,fileName,shareTitle,shareText){
+  async function shareCanvasAsPng(canvas,fileName){
     if(!canvas) throw new Error("No hay contenido listo para compartir.");
     const blob=await new Promise((resolve,reject)=>{
       try{
@@ -4929,11 +4929,7 @@ function initCollageFeature(){
     if(!canNativeSharePng(file)){
       throw new Error("Este navegador no permite compartir archivos PNG directamente.");
     }
-    await navigator.share({
-      files:[file],
-      title:shareTitle || "Imagen PNG",
-      text:shareText || ""
-    });
+    await navigator.share({ files:[file] });
   }
 
   let marketplacePreviewState=null;
@@ -4953,7 +4949,7 @@ function initCollageFeature(){
         <button class="marketplace-preview-close" type="button" aria-label="Cerrar" data-marketplace-preview-close>✕</button>
         <header class="marketplace-preview-heading">
           <h2 class="marketplace-preview-title" id="marketplacePreviewTitle">Ficha del producto</h2>
-          <p class="marketplace-preview-subtitle" id="marketplacePreviewSubtitle">Vista previa lista para Marketplace.</p>
+          <p class="marketplace-preview-subtitle" id="marketplacePreviewSubtitle" hidden></p>
         </header>
         <div class="marketplace-preview-stage">
           <img class="marketplace-preview-image" id="marketplacePreviewImage" alt="Vista previa de la ficha del producto" />
@@ -5057,9 +5053,7 @@ function initCollageFeature(){
       try{
         await shareCanvasAsPng(
           state.canvas,
-          state.fileName || 'ficha_marketplace.png',
-          state.product?.name || 'Ficha de producto',
-          'Ficha lista para Marketplace'
+          state.fileName || 'ficha_marketplace.png'
         );
         state.statusEl.textContent='Ficha compartida correctamente.';
         state.shareBtn.textContent='Compartida';
@@ -5254,7 +5248,7 @@ function initCollageFeature(){
     const state=openMarketplacePresentationModal(triggerBtn);
     const originalText=triggerBtn?.textContent||'Ficha';
     state.titleEl.textContent=String(p.name||'Ficha del producto').trim() || 'Ficha del producto';
-    state.subtitleEl.textContent='Vista previa lista para Marketplace.';
+    state.subtitleEl.textContent='';
     state.statusEl.textContent='Preparando la ficha…';
     state.downloadBtn.disabled=true;
     if(state.shareBtn) state.shareBtn.disabled=true;
@@ -5273,7 +5267,7 @@ function initCollageFeature(){
       state.canvas=canvas;
       state.fileName=fileName;
       state.imageEl.src=canvas.toDataURL('image/png');
-      state.statusEl.textContent='Vista previa lista. Si te gusta, puedes descargarla o compartirla.';
+      state.statusEl.textContent='';
       state.downloadBtn.disabled=false;
       if(state.shareBtn) state.shareBtn.disabled=false;
       if(triggerBtn){
@@ -5616,9 +5610,7 @@ function initCollageFeature(){
         try{
           await shareCanvasAsPng(
             finalCanvas,
-            format.downloadName,
-            `Collage ${format.label}`,
-            `Collage del catálogo en formato ${format.label}`
+            format.downloadName
           );
         }catch(shareError){
           if(shareError && shareError.name==='AbortError'){

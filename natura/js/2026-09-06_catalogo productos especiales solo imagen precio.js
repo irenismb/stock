@@ -4348,14 +4348,37 @@ function initCollageFeature(){
     .collage-format-option:hover{transform:translateY(-1px);border-color:#b9954f;box-shadow:0 7px 18px rgba(141,83,96,.14)}
     .collage-format-option.is-active{background:#a55f70;border-color:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.28)}
     .collage-format-option:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,149,79,.24)}
-    .collage-download{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;border:1px solid #a55f70;background:#a55f70;color:#fff;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(165,95,112,.22)}
+    .collage-download,.collage-share{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;font-weight:950;cursor:pointer}
+    .collage-download{border:1px solid #a55f70;background:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.22)}
     .collage-download:hover{background:#8f4f60;border-color:#8f4f60}
-    .collage-download:disabled{opacity:.6;cursor:wait}
+    .collage-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
+    .collage-share:hover{background:#fff0cf;border-color:#b9954f}
+    .collage-download:disabled,.collage-share:disabled{opacity:.6;cursor:wait}
     .card .description{text-align:justify!important;text-align-last:left!important;text-justify:inter-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
     .marketplace-sheet-trigger{display:flex!important;visibility:visible!important;opacity:1!important;align-items:center;justify-content:center;width:100%;margin:0 0 12px;min-height:40px;padding:9px 14px;border-radius:12px;border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(141,83,96,.08);transition:background .16s ease,border-color .16s ease,transform .16s ease;position:relative;z-index:2}
     .marketplace-sheet-trigger:hover{background:#fff2ee;border-color:#b9954f;transform:translateY(-1px)}
     .marketplace-sheet-trigger:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,149,79,.22)}
     .marketplace-sheet-trigger:disabled{opacity:.62;cursor:wait;transform:none}
+    .marketplace-preview-modal{position:fixed;inset:0;z-index:2210;display:none;align-items:center;justify-content:center;padding:18px}
+    .marketplace-preview-modal.open{display:flex}
+    .marketplace-preview-backdrop{position:absolute;inset:0;background:rgba(35,26,28,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+    .marketplace-preview-shell{position:relative;z-index:1;width:min(860px,94vw);max-height:92vh;overflow:auto;background:#fffdfb;border:1px solid #eadfda;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.28);padding:22px}
+    .marketplace-preview-close{position:sticky;top:0;float:right;z-index:3;width:42px;height:42px;border-radius:999px;border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360;font-size:22px;line-height:1;cursor:pointer}
+    .marketplace-preview-heading{padding:4px 56px 12px 2px;text-align:center}
+    .marketplace-preview-title{margin:0;color:#352b2c;font-size:clamp(23px,3vw,34px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
+    .marketplace-preview-subtitle{margin:8px 0 0;color:#78696b;font-size:14px;line-height:1.35;font-weight:700}
+    .marketplace-preview-stage{clear:both;display:flex;justify-content:center;padding:2px 0 8px}
+    .marketplace-preview-image{display:block;width:min(100%,720px);height:auto;border-radius:18px;border:1px solid #eadfda;background:linear-gradient(180deg,#fffdfa 0%,#f4eee9 100%);box-shadow:0 10px 24px rgba(141,83,96,.12)}
+    .marketplace-preview-status{margin:12px auto 2px;text-align:center;color:#78696b;font-size:14px;line-height:1.35;font-weight:700;max-width:680px}
+    .marketplace-preview-actions{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
+    .marketplace-preview-download,.marketplace-preview-share,.marketplace-preview-secondary{min-height:44px;min-width:200px;padding:10px 20px;border-radius:13px;font-weight:950;cursor:pointer}
+    .marketplace-preview-download{border:1px solid #a55f70;background:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.22)}
+    .marketplace-preview-download:hover{background:#8f4f60;border-color:#8f4f60}
+    .marketplace-preview-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
+    .marketplace-preview-share:hover{background:#fff0cf;border-color:#b9954f}
+    .marketplace-preview-secondary{border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360}
+    .marketplace-preview-secondary:hover{background:#fff2ee;border-color:#b9954f}
+    .marketplace-preview-download:disabled,.marketplace-preview-share:disabled,.marketplace-preview-secondary:disabled{opacity:.62;cursor:wait}
     .collage-tree{clear:both}
     .collage-branch{margin-top:20px;border-left:2px solid rgba(125,211,252,.28);padding-left:14px}
     .collage-branch .collage-branch{margin-left:26px;margin-top:18px;border-left-color:rgba(34,211,168,.28)}
@@ -4384,7 +4407,12 @@ function initCollageFeature(){
       .collage-price{font-size:14px}
       .collage-heading{padding-right:44px;padding-bottom:14px}
       .collage-format-choices{grid-template-columns:1fr;width:100%;max-width:320px}
-      .collage-format-option,.collage-download{width:100%;max-width:320px}
+      .collage-format-option,.collage-download,.collage-share{width:100%;max-width:320px}
+      .marketplace-preview-modal{padding:10px}
+      .marketplace-preview-shell{width:min(96vw,96vh);max-height:96vh;border-radius:18px;padding:14px}
+      .marketplace-preview-heading{padding-right:44px}
+      .marketplace-preview-actions{flex-direction:column}
+      .marketplace-preview-download,.marketplace-preview-share,.marketplace-preview-secondary{width:100%;max-width:320px}
       .collage-branch{padding-left:10px;margin-top:16px}
       .collage-branch .collage-branch{margin-left:14px;margin-top:14px}
       #collageBtn{padding-inline:12px}
@@ -4424,6 +4452,7 @@ function initCollageFeature(){
           <button class="collage-format-option" type="button" data-collage-format="marketplace" aria-pressed="false">Marketplace · 1200 × 1200</button>
         </div>
         <button class="collage-download" id="collageDownloadBtn" type="button">Descargar PNG</button>
+        <button class="collage-share" id="collageShareBtn" type="button">Compartir PNG</button>
       </div>
       <div class="collage-tree" id="collageTree"></div>
     </section>
@@ -4434,6 +4463,7 @@ function initCollageFeature(){
   const collageTree=modal.querySelector("#collageTree");
   const closeBtn=modal.querySelector(".collage-close");
   const downloadBtn=modal.querySelector("#collageDownloadBtn");
+  const shareBtn=modal.querySelector("#collageShareBtn");
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
 
   const COLLAGE_EXPORT_FORMATS={
@@ -4702,35 +4732,58 @@ function initCollageFeature(){
     }
   }
 
+  function marketplacePresentationRawGitHubUrl(relativePath){
+    const clean=String(relativePath||"").replace(/^\/+/,"");
+    if(!clean) return "";
+    const owner=encodeURIComponent(String(GITHUB_CATALOG_SOURCE.owner||""));
+    const repo=encodeURIComponent(String(GITHUB_CATALOG_SOURCE.repo||""));
+    const branch=encodeURIComponent(String(GITHUB_CATALOG_SOURCE.branch||"main"));
+    const basePath=encodeRepoPath(`${GITHUB_CATALOG_SOURCE.catalogDir}/${clean}`);
+    return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
+  }
+
   function marketplacePresentationProductCandidates(p){
     const imgFilename=String(p?.imgFilename||"").trim();
-    const localProduct=imgFilename
-      ? marketplacePresentationLocalAssetUrl(`${GITHUB_CATALOG_SOURCE.productsFolder}/${imgFilename}`)
-      : "";
+    const relativeProduct=imgFilename?`${GITHUB_CATALOG_SOURCE.productsFolder}/${imgFilename}`:"";
+    const rawProduct=relativeProduct?marketplacePresentationRawGitHubUrl(relativeProduct):"";
+    const publishedProduct=relativeProduct?publishedGitHubAssetUrl(relativeProduct):"";
+    const isLocalFile=String(location.protocol||"").toLowerCase()==="file:";
+
+    // En file:// Chromium trata muchos archivos locales como orígenes opacos.
+    // Dibujarlos en canvas puede contaminarlo e impedir exportar el PNG.
+    // Por eso, al probar en PC se priorizan copias HTTPS CORS-safe del mismo recurso.
     return [
-      localProduct,
+      rawProduct,
+      publishedProduct,
       collageExportImageUrl(p),
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.webp`),
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.png`),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.webp`),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.png`),
       productPlaceholderAbsoluteUrl(),
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.webp`),
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.png`),
+      ...(isLocalFile?[]:[marketplacePresentationLocalAssetUrl(relativeProduct)]),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.webp`),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.png`),
       ...COMPANY_LOGOS
     ];
   }
 
   function marketplacePresentationLogoCandidates(){
+    const isLocalFile=String(location.protocol||"").toLowerCase()==="file:";
     return [
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.webp`),
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.png`),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.webp`),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.png`),
       ...COMPANY_LOGOS,
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.webp`),
-      marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/suplente.png`),
+      ...(isLocalFile?[]:[
+        marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.webp`),
+        marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.png`)
+      ]),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.webp`),
+      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.png`),
       productPlaceholderAbsoluteUrl()
     ];
   }
 
   function marketplacePresentationSafeReadyDomImage(img){
+    if(String(location.protocol||"").toLowerCase()==="file:") return null;
     if(!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return null;
     try{
       const src=img.currentSrc||img.src||"";
@@ -4801,220 +4854,410 @@ function initCollageFeature(){
     a.remove();
   }
 
-  async function downloadMarketplacePresentationCard(p,triggerBtn){
-    if(!p) return;
-    const originalText=triggerBtn?.textContent||"Ficha";
-    if(triggerBtn){
-      triggerBtn.disabled=true;
-      triggerBtn.textContent="Generando ficha…";
-    }
-
+  function marketplacePresentationCanvasSafeImage(img,label="imagen"){
+    if(!img || !img.naturalWidth || !img.naturalHeight) return null;
     try{
-      const card=triggerBtn?.closest?.(".card")||null;
-      let productImage=marketplacePresentationSafeReadyDomImage(card?.querySelector?.(".img img"));
-      let logoImage=marketplacePresentationSafeReadyDomImage(document.querySelector(".site-header .brand img"));
+      const probe=document.createElement("canvas");
+      probe.width=2;
+      probe.height=2;
+      const pctx=probe.getContext("2d");
+      pctx.drawImage(img,0,0,2,2);
+      // Esta lectura falla inmediatamente si la imagen contaminaría el canvas.
+      pctx.getImageData(0,0,1,1);
+      return img;
+    }catch(error){
+      console.warn(`La ${label} no es segura para exportar en canvas; se omite en la ficha.`,error);
+      return null;
+    }
+  }
 
-      // Cuando las imágenes visibles ya están listas y son seguras para canvas,
-      // la generación y la descarga permanecen dentro del clic original. Esto
-      // evita bloqueos de descarga en navegadores estrictos (especialmente móviles).
-      if(!productImage || !logoImage){
-        const pending=[];
-        pending.push(productImage
-          ? Promise.resolve(productImage)
-          : marketplacePresentationLoadImageCandidates(marketplacePresentationProductCandidates(p),6000));
-        pending.push(logoImage
-          ? Promise.resolve(logoImage)
-          : marketplacePresentationLoadImageCandidates(marketplacePresentationLogoCandidates(),6000));
-        [productImage,logoImage]=await Promise.all(pending);
+  function canNativeSharePng(file){
+    if(!(navigator && typeof navigator.share === "function")) return false;
+    if(typeof navigator.canShare === "function"){
+      try{ return navigator.canShare({ files:[file] }); }catch(_){ return false; }
+    }
+    return true;
+  }
+
+  async function shareCanvasAsPng(canvas,fileName,shareTitle,shareText){
+    if(!canvas) throw new Error("No hay contenido listo para compartir.");
+    const blob=await new Promise((resolve,reject)=>{
+      try{
+        canvas.toBlob(value=>value?resolve(value):reject(new Error("No se pudo crear el archivo PNG.")),"image/png",1);
+      }catch(error){ reject(error); }
+    });
+    if(!(window.File && navigator && typeof navigator.share === "function")){
+      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
+    }
+    const file=new File([blob],fileName||"imagen.png",{type:"image/png"});
+    if(!canNativeSharePng(file)){
+      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
+    }
+    await navigator.share({
+      files:[file],
+      title:shareTitle || "Imagen PNG",
+      text:shareText || ""
+    });
+  }
+
+  let marketplacePreviewState=null;
+
+  function ensureMarketplacePresentationModal(){
+    if(marketplacePreviewState) return marketplacePreviewState;
+
+    const modal=document.createElement("div");
+    modal.className="marketplace-preview-modal";
+    modal.id="marketplacePresentationModal";
+    modal.setAttribute("aria-hidden","true");
+    modal.setAttribute("aria-modal","true");
+    modal.setAttribute("role","dialog");
+    modal.innerHTML=`
+      <div class="marketplace-preview-backdrop" data-marketplace-preview-close></div>
+      <section class="marketplace-preview-shell" role="document" aria-labelledby="marketplacePreviewTitle">
+        <button class="marketplace-preview-close" type="button" aria-label="Cerrar" data-marketplace-preview-close>✕</button>
+        <header class="marketplace-preview-heading">
+          <h2 class="marketplace-preview-title" id="marketplacePreviewTitle">Ficha del producto</h2>
+          <p class="marketplace-preview-subtitle" id="marketplacePreviewSubtitle">Vista previa lista para Marketplace.</p>
+        </header>
+        <div class="marketplace-preview-stage">
+          <img class="marketplace-preview-image" id="marketplacePreviewImage" alt="Vista previa de la ficha del producto" />
+        </div>
+        <p class="marketplace-preview-status" id="marketplacePreviewStatus">Pulsa Ficha para preparar la vista previa.</p>
+        <div class="marketplace-preview-actions">
+          <button class="marketplace-preview-download" id="marketplacePreviewDownloadBtn" type="button" disabled>Descargar PNG</button>
+          <button class="marketplace-preview-share" id="marketplacePreviewShareBtn" type="button" disabled>Compartir PNG</button>
+          <button class="marketplace-preview-secondary" id="marketplacePreviewCloseBtn" type="button" data-marketplace-preview-close>Cerrar</button>
+        </div>
+      </section>
+    `;
+    document.body.appendChild(modal);
+
+    const state={
+      modal,
+      titleEl:modal.querySelector('#marketplacePreviewTitle'),
+      subtitleEl:modal.querySelector('#marketplacePreviewSubtitle'),
+      imageEl:modal.querySelector('#marketplacePreviewImage'),
+      statusEl:modal.querySelector('#marketplacePreviewStatus'),
+      downloadBtn:modal.querySelector('#marketplacePreviewDownloadBtn'),
+      shareBtn:modal.querySelector('#marketplacePreviewShareBtn'),
+      canvas:null,
+      fileName:'',
+      product:null,
+      opener:null,
+      busy:false
+    };
+
+    const close=()=>{
+      if(!state.modal.classList.contains('open')) return;
+      state.modal.classList.remove('open');
+      state.modal.setAttribute('aria-hidden','true');
+      document.body.classList.remove('collage-open');
+      if(state.opener && typeof state.opener.focus==='function'){
+        try{ state.opener.focus({preventScroll:true}); }catch(_){ try{ state.opener.focus(); }catch(_e){} }
       }
+    };
 
-      const canvas=document.createElement("canvas");
-      canvas.width=1200;
-      canvas.height=1200;
-      const ctx=canvas.getContext("2d");
-      const W=canvas.width;
-      const H=canvas.height;
-
-      const cream="#fffdfb";
-      const dark="#352b2c";
-      const mauve="#a55f70";
-      const mauveDark="#8d5360";
-      const muted="#78696b";
-      const gold="#b9954f";
-      const border="#eadfda";
-      const divider="#e6d8d2";
-
-      const bg=ctx.createLinearGradient(0,0,0,H);
-      bg.addColorStop(0,"#fffdfa");
-      bg.addColorStop(.45,"#faf6f2");
-      bg.addColorStop(1,"#f3ece7");
-      ctx.fillStyle=bg;
-      ctx.fillRect(0,0,W,H);
-      ctx.textBaseline="top";
-
-      // Encabezado / membrete.
-      const headerX=46;
-      const headerY=34;
-      const headerW=W-92;
-      const headerH=126;
-      collageCanvasRoundRect(ctx,headerX,headerY,headerW,headerH,22);
-      ctx.fillStyle=cream;
-      ctx.fill();
-      ctx.strokeStyle=border;
-      ctx.lineWidth=1.2;
-      ctx.stroke();
-
-      marketplacePresentationDrawContainedImage(ctx,logoImage,64,52,78,78,2);
-      ctx.fillStyle=mauveDark;
-      ctx.font="900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("IRENISMB STOCK NATURA",164,61);
-      ctx.fillStyle=muted;
-      ctx.font="600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Natura & AVON · Santa Marta · Envíos a toda Colombia",164,96);
-      ctx.fillStyle=gold;
-      collageCanvasRoundRect(ctx,66,140,W-132,4,2);
-      ctx.fill();
-
-      // Imagen principal del producto.
-      const imageCard={x:58,y:194,w:470,h:438};
-      collageCanvasRoundRect(ctx,imageCard.x,imageCard.y,imageCard.w,imageCard.h,24);
-      ctx.fillStyle=cream;
-      ctx.fill();
-      ctx.strokeStyle=border;
-      ctx.lineWidth=1.2;
-      ctx.stroke();
-      marketplacePresentationDrawContainedImage(ctx,productImage,imageCard.x,imageCard.y,imageCard.w,imageCard.h,30);
-
-      // Identificación y precio.
-      const textX=566;
-      const textW=W-textX-58;
-      let y=205;
-      ctx.fillStyle=mauve;
-      ctx.font="900 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("PRESENTACIÓN DE PRODUCTO",textX,y);
-      y+=34;
-
-      ctx.fillStyle=dark;
-      ctx.font="900 31px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      let titleLines=marketplacePresentationWrapLines(ctx,String(p.name||"Producto"),textW,5);
-      for(const line of titleLines){
-        ctx.fillText(line,textX,y);
-        y+=38;
+    modal.addEventListener('click',event=>{
+      if(event.target && event.target.closest('[data-marketplace-preview-close]')) close();
+    });
+    modal.addEventListener('keydown',event=>{
+      if(event.key==='Escape'){
+        event.preventDefault();
+        close();
       }
+    });
 
-      y+=6;
-      if(shouldShowProductPrices() && p.hasPrice!==false && Number(p.price)>0){
-        ctx.fillStyle=mauveDark;
-        ctx.font="950 34px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-        ctx.fillText(fmtCOP.format(p.price),textX,y);
-        y+=50;
-      }
-
-      const metaParts=[];
-      if(p.id) metaParts.push(`Código ${p.id}`);
-      if(p.category) metaParts.push(String(p.category).trim());
-      if(p.subcategory) metaParts.push(String(p.subcategory).trim());
-      ctx.fillStyle=muted;
-      ctx.font="650 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      const metaLines=marketplacePresentationWrapLines(ctx,metaParts.filter(Boolean).join(" · "),textW,3);
-      for(const line of metaLines){
-        ctx.fillText(line,textX,y);
-        y+=22;
-      }
-
-      // Descripción, justificada.
-      const descX=58;
-      const descY=672;
-      const descW=W-116;
-      const descH=370;
-      collageCanvasRoundRect(ctx,descX,descY,descW,descH,24);
-      ctx.fillStyle=cream;
-      ctx.fill();
-      ctx.strokeStyle=border;
-      ctx.lineWidth=1.2;
-      ctx.stroke();
-
-      ctx.fillStyle=mauve;
-      ctx.font="900 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("DESCRIPCIÓN",descX+24,descY+22);
-
-      const description=String(p.description||"").trim()||"Descripción no disponible.";
-      const descTextX=descX+24;
-      const descTextY=descY+58;
-      const descTextW=descW-48;
-      const lineHeight=28;
-      const maxLines=10;
-      ctx.fillStyle=dark;
-      ctx.font="500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      const fullLines=marketplacePresentationWrapLines(ctx,description,descTextW,999);
-      let descLines=fullLines.slice(0,maxLines);
-      if(fullLines.length>maxLines){
-        descLines[maxLines-1]=marketplacePresentationTrimLine(ctx,descLines[maxLines-1],descTextW);
-      }
-      marketplacePresentationDrawJustified(ctx,descLines,descTextX,descTextY,descTextW,lineHeight);
-
-      // Pie de página.
-      const footerLineY=H-110;
-      ctx.strokeStyle=divider;
-      ctx.lineWidth=1;
-      ctx.beginPath();
-      ctx.moveTo(58,footerLineY);
-      ctx.lineTo(W-58,footerLineY);
-      ctx.stroke();
-      ctx.textAlign="center";
-      ctx.fillStyle=dark;
-      ctx.font="800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("IRENISMB STOCK NATURA",W/2,H-84);
-      ctx.fillStyle=muted;
-      ctx.font="600 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Santa Marta · WhatsApp +57 304 208 8961",W/2,H-60);
-      ctx.textAlign="left";
-
-      const code=String(p.id||"").trim();
-      const safeName=marketplacePresentationSanitizeFilename(String(p.name||"")).slice(0,72);
-      const fileName=`${code?`${code}_`:""}${safeName}_ficha_marketplace.png`;
-
-      const blob=await new Promise((resolve,reject)=>{
-        try{
-          canvas.toBlob(value=>value?resolve(value):reject(new Error("No se pudo crear el archivo PNG.")),"image/png",1);
-        }catch(error){
-          reject(error);
-        }
-      });
-
-      if(window.navigator && typeof window.navigator.msSaveOrOpenBlob==="function"){
-        window.navigator.msSaveOrOpenBlob(blob,fileName);
-      }else{
+    state.downloadBtn.addEventListener('click',async ()=>{
+      if(!state.canvas || state.busy) return;
+      const original=state.downloadBtn.textContent;
+      state.busy=true;
+      state.downloadBtn.disabled=true;
+      if(state.shareBtn) state.shareBtn.disabled=true;
+      state.downloadBtn.textContent='Generando PNG…';
+      try{
+        const blob=await new Promise((resolve,reject)=>{
+          try{
+            state.canvas.toBlob(value=>value?resolve(value):reject(new Error('No se pudo crear el archivo PNG.')),'image/png',1);
+          }catch(error){ reject(error); }
+        });
         const objectUrl=URL.createObjectURL(blob);
-        const a=document.createElement("a");
+        const a=document.createElement('a');
         a.href=objectUrl;
-        a.download=fileName;
-        a.rel="noopener";
-        a.style.display="none";
+        a.download=state.fileName || 'ficha_marketplace.png';
         document.body.appendChild(a);
         a.click();
         a.remove();
-        setTimeout(()=>URL.revokeObjectURL(objectUrl),30000);
-      }
-
-      if(triggerBtn){
-        triggerBtn.textContent="Descargada";
+        setTimeout(()=>URL.revokeObjectURL(objectUrl),1500);
+        state.statusEl.textContent='PNG listo. Si tu navegador no lo guardó automáticamente, revisa la carpeta Descargas.';
+        state.downloadBtn.textContent='Descargada';
         setTimeout(()=>{
-          if(triggerBtn && !triggerBtn.disabled) triggerBtn.textContent=originalText;
-        },1200);
+          if(state.downloadBtn){
+            state.downloadBtn.textContent='Descargar PNG';
+            state.downloadBtn.disabled=false;
+          }
+          if(state.shareBtn) state.shareBtn.disabled=!state.canvas;
+        },1100);
+      }catch(error){
+        console.error('No se pudo descargar la ficha Marketplace.',error);
+        state.statusEl.textContent='No se pudo descargar el PNG. Abre la consola del navegador (F12) para ver el error exacto.';
+        state.downloadBtn.textContent=original;
+        state.downloadBtn.disabled=false;
+        if(state.shareBtn) state.shareBtn.disabled=!state.canvas;
+      }finally{
+        state.busy=false;
+      }
+    });
+
+    state.shareBtn?.addEventListener('click',async ()=>{
+      if(!state.canvas || state.busy) return;
+      const original=state.shareBtn.textContent;
+      state.busy=true;
+      state.shareBtn.disabled=true;
+      state.downloadBtn.disabled=true;
+      state.shareBtn.textContent='Compartiendo…';
+      try{
+        await shareCanvasAsPng(
+          state.canvas,
+          state.fileName || 'ficha_marketplace.png',
+          state.product?.name || 'Ficha de producto',
+          'Ficha lista para Marketplace'
+        );
+        state.statusEl.textContent='Ficha compartida correctamente.';
+        state.shareBtn.textContent='Compartida';
+        setTimeout(()=>{
+          if(state.shareBtn){
+            state.shareBtn.textContent='Compartir PNG';
+            state.shareBtn.disabled=false;
+          }
+          if(state.downloadBtn) state.downloadBtn.disabled=false;
+        },1100);
+      }catch(error){
+        if(error && error.name==='AbortError'){
+          state.statusEl.textContent='Compartir cancelado.';
+        }else{
+          console.error('No se pudo compartir la ficha Marketplace.',error);
+          state.statusEl.textContent='Tu navegador no pudo compartir el PNG directamente. Puedes usar “Descargar PNG”.';
+        }
+        state.shareBtn.textContent=original;
+        state.shareBtn.disabled=!state.canvas;
+        state.downloadBtn.disabled=!state.canvas;
+      }finally{
+        state.busy=false;
+      }
+    });
+
+    marketplacePreviewState=state;
+    return state;
+  }
+
+  function openMarketplacePresentationModal(opener){
+    const state=ensureMarketplacePresentationModal();
+    state.opener=opener || null;
+    state.modal.classList.add('open');
+    state.modal.setAttribute('aria-hidden','false');
+    document.body.classList.add('collage-open');
+    return state;
+  }
+
+  async function buildMarketplacePresentationCanvas(p){
+    const [loadedProductImage,loadedLogoImage]=await Promise.all([
+      collageLoadCanvasImage(p),
+      collageLoadCanvasImage({ docsImageUrl:COMPANY_LOGO })
+    ]);
+    const productImage=marketplacePresentationCanvasSafeImage(loadedProductImage,'imagen del producto');
+    const logoImage=marketplacePresentationCanvasSafeImage(loadedLogoImage,'logo');
+
+    const canvas=document.createElement('canvas');
+    canvas.width=1200;
+    canvas.height=1200;
+    const ctx=canvas.getContext('2d');
+    const W=canvas.width;
+    const H=canvas.height;
+
+    const cream='#fffdfb';
+    const dark='#352b2c';
+    const mauve='#a55f70';
+    const mauveDark='#8d5360';
+    const muted='#78696b';
+    const gold='#b9954f';
+    const border='#eadfda';
+    const divider='#e6d8d2';
+
+    const bg=ctx.createLinearGradient(0,0,0,H);
+    bg.addColorStop(0,'#fffdfa');
+    bg.addColorStop(.45,'#faf6f2');
+    bg.addColorStop(1,'#f3ece7');
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,0,W,H);
+    ctx.textBaseline='top';
+
+    const headerX=46;
+    const headerY=34;
+    const headerW=W-92;
+    const headerH=126;
+    collageCanvasRoundRect(ctx,headerX,headerY,headerW,headerH,22);
+    ctx.fillStyle=cream;
+    ctx.fill();
+    ctx.strokeStyle=border;
+    ctx.lineWidth=1.2;
+    ctx.stroke();
+
+    marketplacePresentationDrawContainedImage(ctx,logoImage,64,52,78,78,2);
+    ctx.fillStyle=mauveDark;
+    ctx.font='900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.fillText('IRENISMB STOCK NATURA',164,61);
+    ctx.fillStyle=muted;
+    ctx.font='600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.fillText('Natura & AVON · Santa Marta · Envíos a toda Colombia',164,96);
+    ctx.fillStyle=gold;
+    collageCanvasRoundRect(ctx,66,140,W-132,4,2);
+    ctx.fill();
+
+    const imageCard={x:58,y:194,w:470,h:438};
+    collageCanvasRoundRect(ctx,imageCard.x,imageCard.y,imageCard.w,imageCard.h,24);
+    ctx.fillStyle=cream;
+    ctx.fill();
+    ctx.strokeStyle=border;
+    ctx.lineWidth=1.2;
+    ctx.stroke();
+    marketplacePresentationDrawContainedImage(ctx,productImage,imageCard.x,imageCard.y,imageCard.w,imageCard.h,30);
+
+    const textX=566;
+    const textW=W-textX-58;
+    let y=205;
+    ctx.fillStyle=mauve;
+    ctx.font='900 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.fillText('PRESENTACIÓN DE PRODUCTO',textX,y);
+    y+=34;
+
+    ctx.fillStyle=dark;
+    ctx.font='900 31px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    let titleLines=marketplacePresentationWrapLines(ctx,String(p.name||'Producto'),textW,5);
+    for(const line of titleLines){
+      ctx.fillText(line,textX,y);
+      y+=38;
+    }
+
+    y+=6;
+    if(shouldShowProductPrices() && p.hasPrice!==false && Number(p.price)>0){
+      ctx.fillStyle=mauveDark;
+      ctx.font='950 34px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+      ctx.fillText(fmtCOP.format(p.price),textX,y);
+      y+=50;
+    }
+
+    const metaParts=[];
+    if(p.id) metaParts.push(`Código ${p.id}`);
+    if(p.category) metaParts.push(String(p.category).trim());
+    if(p.subcategory) metaParts.push(String(p.subcategory).trim());
+    ctx.fillStyle=muted;
+    ctx.font='650 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    const metaLines=marketplacePresentationWrapLines(ctx,metaParts.filter(Boolean).join(' · '),textW,3);
+    for(const line of metaLines){
+      ctx.fillText(line,textX,y);
+      y+=22;
+    }
+
+    const descX=58;
+    const descY=672;
+    const descW=W-116;
+    const descH=370;
+    collageCanvasRoundRect(ctx,descX,descY,descW,descH,24);
+    ctx.fillStyle=cream;
+    ctx.fill();
+    ctx.strokeStyle=border;
+    ctx.lineWidth=1.2;
+    ctx.stroke();
+
+    ctx.fillStyle=mauve;
+    ctx.font='900 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.fillText('DESCRIPCIÓN',descX+24,descY+22);
+
+    const description=String(p.description||'').trim()||'Descripción no disponible.';
+    const descTextX=descX+24;
+    const descTextY=descY+58;
+    const descTextW=descW-48;
+    const lineHeight=28;
+    const maxLines=10;
+    ctx.fillStyle=dark;
+    ctx.font='500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    const fullLines=marketplacePresentationWrapLines(ctx,description,descTextW,999);
+    let descLines=fullLines.slice(0,maxLines);
+    if(fullLines.length>maxLines){
+      descLines[maxLines-1]=marketplacePresentationTrimLine(ctx,descLines[maxLines-1],descTextW);
+    }
+    marketplacePresentationDrawJustified(ctx,descLines,descTextX,descTextY,descTextW,lineHeight);
+
+    const footerLineY=H-110;
+    ctx.strokeStyle=divider;
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(58,footerLineY);
+    ctx.lineTo(W-58,footerLineY);
+    ctx.stroke();
+    ctx.textAlign='center';
+    ctx.fillStyle=dark;
+    ctx.font='800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.fillText('IRENISMB STOCK NATURA',W/2,H-84);
+    ctx.fillStyle=muted;
+    ctx.font='600 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.fillText('Santa Marta · WhatsApp +57 304 208 8961',W/2,H-60);
+    ctx.textAlign='left';
+
+    const code=String(p.id||'').trim();
+    const safeName=marketplacePresentationSanitizeFilename(String(p.name||'')).slice(0,72);
+    const fileName=`${code?`${code}_`:''}${safeName}_ficha_marketplace.png`;
+    return {canvas,fileName};
+  }
+
+  async function downloadMarketplacePresentationCard(p,triggerBtn){
+    if(!p) return;
+    const state=openMarketplacePresentationModal(triggerBtn);
+    const originalText=triggerBtn?.textContent||'Ficha';
+    state.titleEl.textContent=String(p.name||'Ficha del producto').trim() || 'Ficha del producto';
+    state.subtitleEl.textContent='Vista previa lista para Marketplace.';
+    state.statusEl.textContent='Preparando la ficha…';
+    state.downloadBtn.disabled=true;
+    if(state.shareBtn) state.shareBtn.disabled=true;
+    state.canvas=null;
+    state.fileName='';
+    state.product=p;
+    state.imageEl.removeAttribute('src');
+
+    if(triggerBtn){
+      triggerBtn.disabled=true;
+      triggerBtn.textContent='Preparando…';
+    }
+
+    try{
+      const {canvas,fileName}=await buildMarketplacePresentationCanvas(p);
+      state.canvas=canvas;
+      state.fileName=fileName;
+      state.imageEl.src=canvas.toDataURL('image/png');
+      state.statusEl.textContent='Vista previa lista. Si te gusta, puedes descargarla o compartirla.';
+      state.downloadBtn.disabled=false;
+      if(state.shareBtn) state.shareBtn.disabled=false;
+      if(triggerBtn){
+        triggerBtn.textContent='Ficha';
       }
     }catch(error){
-      console.error("No se pudo generar la ficha Marketplace del producto.",error);
-      alert("No se pudo generar la ficha PNG. Recarga la página e intenta nuevamente.");
+      console.error('No se pudo preparar la ficha Marketplace del producto.',error);
+      state.statusEl.textContent='No se pudo preparar la ficha. Abre la consola del navegador (F12) para ver el error exacto.';
+      state.downloadBtn.disabled=true;
+      if(state.shareBtn) state.shareBtn.disabled=true;
+      if(triggerBtn){
+        triggerBtn.textContent=originalText;
+      }
     }finally{
       if(triggerBtn){
         triggerBtn.disabled=false;
-        if(triggerBtn.textContent!=="Descargada") triggerBtn.textContent=originalText;
+        if(triggerBtn.textContent!=='Ficha') triggerBtn.textContent=originalText;
       }
     }
   }
 
-  async function downloadCollageImage(){
+
+  async function downloadCollageImage(action="download"){
     const snapshot=collageCurrentSnapshot();
     if(!snapshot.products.length){
       alert("No hay productos para descargar con los filtros actuales.");
@@ -5022,11 +5265,12 @@ function initCollageFeature(){
     }
 
     const format=getCollageExportFormat();
-    const originalText=downloadBtn?.textContent||"Descargar PNG";
-    if(downloadBtn){
-      downloadBtn.disabled=true;
-      downloadBtn.textContent="Generando PNG…";
-    }
+    const isShareAction=action==="share";
+    const targetBtn=isShareAction ? shareBtn : downloadBtn;
+    const originalText=targetBtn?.textContent||(isShareAction?"Compartir PNG":"Descargar PNG");
+    if(downloadBtn) downloadBtn.disabled=true;
+    if(shareBtn) shareBtn.disabled=true;
+    if(targetBtn) targetBtn.textContent=isShareAction?"Preparando PNG…":"Generando PNG…";
     for(const button of formatButtons) button.disabled=true;
 
     try{
@@ -5329,14 +5573,32 @@ function initCollageFeature(){
         }
       });
 
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement("a");
-      a.href=url;
-      a.download=format.downloadName;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),1500);
+      if(isShareAction){
+        try{
+          await shareCanvasAsPng(
+            finalCanvas,
+            format.downloadName,
+            `Collage ${format.label}`,
+            `Collage del catálogo en formato ${format.label}`
+          );
+        }catch(shareError){
+          if(shareError && shareError.name==='AbortError'){
+            // Cancelado por el usuario.
+          }else{
+            console.error(`No se pudo compartir el PNG del collage para ${format.label}.`,shareError);
+            alert('Tu navegador no pudo compartir el PNG directamente. Puedes usar “Descargar PNG”.');
+          }
+        }
+      }else{
+        const url=URL.createObjectURL(blob);
+        const a=document.createElement("a");
+        a.href=url;
+        a.download=format.downloadName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(url),1500);
+      }
     }catch(error){
       console.error(`No se pudo generar el PNG del collage para ${format.label}.`,error);
       alert("No se pudo generar la imagen del collage. Intenta nuevamente después de que terminen de cargar las imágenes.");
@@ -5345,6 +5607,10 @@ function initCollageFeature(){
       if(downloadBtn){
         downloadBtn.disabled=false;
         downloadBtn.textContent="Descargar PNG";
+      }
+      if(shareBtn){
+        shareBtn.disabled=false;
+        shareBtn.textContent="Compartir PNG";
       }
     }
   }
@@ -5382,7 +5648,8 @@ function initCollageFeature(){
     button.addEventListener("click",()=>setCollageExportFormat(button.dataset.collageFormat));
   }
   setCollageExportFormat("instagram");
-  downloadBtn?.addEventListener("click",downloadCollageImage);
+  downloadBtn?.addEventListener("click",()=>downloadCollageImage("download"));
+  shareBtn?.addEventListener("click",()=>downloadCollageImage("share"));
 
   modal.addEventListener("click",event=>{
     if(event.target.closest("[data-collage-close]")) closeCollage();

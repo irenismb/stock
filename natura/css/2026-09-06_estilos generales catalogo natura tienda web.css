@@ -4270,3 +4270,9 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
 @media(max-width:520px){.grid:not(.album-grid-mode)>.card:not(.album-card){grid-template-columns:1fr!important}.grid:not(.album-grid-mode)>.card:not(.album-card) .img{grid-column:1!important;grid-row:1!important;aspect-ratio:1/1!important;min-height:0!important;border-right:0!important;border-bottom:1px solid #f0e7e4!important}.grid:not(.album-grid-mode)>.card:not(.album-card) .pad{grid-column:1!important;grid-row:2!important}.cart-shipping{grid-template-columns:1fr!important}.cart-shipping-hint{grid-column:auto}}
 @media(max-width:350px){.grid.album-grid-mode.root-nav-mode{grid-template-columns:1fr!important}.bar{grid-template-columns:1fr!important}.search-wrap,#btn-cart{grid-column:auto!important}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
+
+/* Ajuste 2026-09-10: evita que el carrito se contraiga cuando Ordenar se oculta tras cargar la navegación. */
+@media (min-width:981px){
+  #btn-cart{min-width:230px!important;}
+  #sort[hidden] ~ #btn-cart{grid-column:4 / 6!important;}
+}

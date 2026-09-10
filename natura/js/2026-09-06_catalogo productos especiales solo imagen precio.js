@@ -4205,13 +4205,211 @@
       // Cierre de modales ya está en Escape
     }
 
-    async function init(){
+    
+// ==========================================
+// VISTA DE COLLAGE SEGÚN LA VISTA Y FILTROS ACTUALES
+// ==========================================
+function collageUniqueProducts(products){
+  const seen=new Set();
+  const out=[];
+  for(const p of (Array.isArray(products)?products:[])){
+    if(!p) continue;
+    const key=String(p.id||p.code||p.name||"").trim();
+    if(!key||seen.has(key)) continue;
+    seen.add(key);
+    out.push(p);
+  }
+  return out;
+}
+
+function collageCurrentSnapshot(){
+  const searchActive=getCombinedWordTerms().length>0;
+  let products=[];
+  let groupLabels=[];
+
+  if(shouldShowAlbumGrid()){
+    const filteredAlbums=buildFilteredAlbums();
+    const visibleAlbums=filteredAlbums.filter(album=>!searchActive||(Number(album.count)||0)>0);
+    groupLabels=visibleAlbums.map(album=>String(album.label||"").trim()).filter(Boolean);
+
+    for(const album of visibleAlbums){
+      const source=searchActive&&Array.isArray(album.matchingProducts)
+        ? album.matchingProducts
+        : (Array.isArray(album.products)?album.products:[]);
+      products.push(...source);
+    }
+    products=collageUniqueProducts(products);
+  }else{
+    products=collageUniqueProducts(buildFilteredList());
+  }
+
+  const route=[selectedAudience,selectedCategory,selectedFamily]
+    .map(value=>String(value||"").trim())
+    .filter(Boolean);
+
+  return {
+    title:route.length?route.join(" › "):"Catálogo",
+    groups:[...new Set(groupLabels)],
+    products
+  };
+}
+
+function collagePriceText(p){
+  if(!shouldShowProductPrices()) return "";
+  return p&&p.hasPrice===false ? "Consultar precio" : fmtCOP.format(Number(p?.price)||0);
+}
+
+function initCollageFeature(){
+  const toolbar=document.querySelector(".bar");
+  const cartButton=document.getElementById("btn-cart");
+  if(!toolbar||document.getElementById("collageBtn")) return;
+
+  const style=document.createElement("style");
+  style.id="collageFeatureStyles";
+  style.textContent=`
+    .collage-modal{position:fixed;inset:0;z-index:2200;display:none;align-items:center;justify-content:center;padding:18px}
+    .collage-modal.open{display:flex}
+    .collage-backdrop{position:absolute;inset:0;background:rgba(3,8,18,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
+    .collage-shell{position:relative;z-index:1;width:min(1180px,96vw);max-height:92vh;overflow:auto;background:#0f1726;border:1px solid #29354a;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:22px}
+    .collage-close{position:sticky;top:0;float:right;z-index:3;width:42px;height:42px;border-radius:999px;border:1px solid #334155;background:#172033;color:#fff;font-size:22px;line-height:1;cursor:pointer}
+    .collage-heading{padding:4px 56px 18px 2px;text-align:center}
+    .collage-route{margin:0;color:#f8fafc;font-size:clamp(23px,3vw,38px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
+    .collage-groups{margin:9px 0 0;color:#b7c2d3;font-size:clamp(14px,1.8vw,18px);line-height:1.45;font-weight:750}
+    .collage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:15px;clear:both}
+    .collage-item{min-width:0;background:#151e2e;border:1px solid #28354a;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16)}
+    .collage-image{aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+    .collage-image img{display:block;width:100%;height:100%;object-fit:contain}
+    .collage-caption{padding:12px 12px 14px;text-align:center}
+    .collage-name{margin:0;color:#f8fafc;font-size:14px;line-height:1.35;font-weight:850;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.7em}
+    .collage-price{margin:7px 0 0;color:#dce6f5;font-size:15px;line-height:1.2;font-weight:950}
+    .collage-empty{grid-column:1/-1;padding:38px 18px;text-align:center;color:#b7c2d3;border:1px dashed #344158;border-radius:18px;background:rgba(255,255,255,.025)}
+    body.collage-open{overflow:hidden}
+    @media(max-width:640px){
+      .collage-modal{padding:8px}
+      .collage-shell{width:100%;max-height:96vh;border-radius:18px;padding:14px}
+      .collage-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      .collage-caption{padding:9px 8px 11px}
+      .collage-name{font-size:12.5px}
+      .collage-price{font-size:14px}
+      .collage-heading{padding-right:44px;padding-bottom:14px}
+      #collageBtn{padding-inline:12px}
+    }
+  `;
+  document.head.appendChild(style);
+
+  const btn=document.createElement("button");
+  btn.className="btn-ghost";
+  btn.id="collageBtn";
+  btn.type="button";
+  btn.textContent="Collage";
+  btn.setAttribute("aria-label","Mostrar collage de los productos de la vista actual");
+  if(cartButton) toolbar.insertBefore(btn,cartButton);
+  else toolbar.appendChild(btn);
+
+  const modal=document.createElement("div");
+  modal.className="collage-modal";
+  modal.id="collageModal";
+  modal.setAttribute("aria-hidden","true");
+  modal.setAttribute("aria-modal","true");
+  modal.setAttribute("role","dialog");
+  modal.innerHTML=`
+    <div class="collage-backdrop" data-collage-close></div>
+    <section class="collage-shell" role="document" aria-labelledby="collageRoute">
+      <button class="collage-close" type="button" aria-label="Cerrar" data-collage-close>✕</button>
+      <header class="collage-heading">
+        <h2 class="collage-route" id="collageRoute"></h2>
+        <p class="collage-groups" id="collageGroups" hidden></p>
+      </header>
+      <div class="collage-grid" id="collageGrid"></div>
+    </section>
+  `;
+  document.body.appendChild(modal);
+
+  const routeEl=modal.querySelector("#collageRoute");
+  const groupsEl=modal.querySelector("#collageGroups");
+  const collageGrid=modal.querySelector("#collageGrid");
+  const closeBtn=modal.querySelector(".collage-close");
+
+  function closeCollage(){
+    if(!modal.classList.contains("open")) return;
+    modal.classList.remove("open");
+    modal.setAttribute("aria-hidden","true");
+    document.body.classList.remove("collage-open");
+    btn.focus({preventScroll:true});
+  }
+
+  function renderCollage(){
+    const snapshot=collageCurrentSnapshot();
+    routeEl.textContent=snapshot.title;
+    groupsEl.textContent=snapshot.groups.join(" · ");
+    groupsEl.hidden=snapshot.groups.length===0;
+    collageGrid.innerHTML="";
+
+    if(!snapshot.products.length){
+      const empty=document.createElement("div");
+      empty.className="collage-empty";
+      empty.textContent="No hay productos para mostrar con los filtros actuales.";
+      collageGrid.appendChild(empty);
+      return;
+    }
+
+    const frag=document.createDocumentFragment();
+    for(const p of snapshot.products){
+      const item=document.createElement("article");
+      item.className="collage-item";
+
+      const imageBox=document.createElement("div");
+      imageBox.className="collage-image";
+      imageBox.appendChild(makeImgFromFilename(p.imgFilename,p.name,p.docsImageUrl));
+
+      const caption=document.createElement("div");
+      caption.className="collage-caption";
+
+      const name=document.createElement("p");
+      name.className="collage-name";
+      name.textContent=String(p.name||"").trim()||"Producto";
+      name.title=name.textContent;
+      caption.appendChild(name);
+
+      const priceText=collagePriceText(p);
+      if(priceText){
+        const price=document.createElement("p");
+        price.className="collage-price";
+        price.textContent=priceText;
+        caption.appendChild(price);
+      }
+
+      item.append(imageBox,caption);
+      frag.appendChild(item);
+    }
+    collageGrid.appendChild(frag);
+  }
+
+  btn.addEventListener("click",()=>{
+    renderCollage();
+    modal.classList.add("open");
+    modal.setAttribute("aria-hidden","false");
+    document.body.classList.add("collage-open");
+    requestAnimationFrame(()=>closeBtn?.focus({preventScroll:true}));
+  });
+
+  modal.addEventListener("click",event=>{
+    if(event.target.closest("[data-collage-close]")) closeCollage();
+  });
+
+  document.addEventListener("keydown",event=>{
+    if(event.key==="Escape"&&modal.classList.contains("open")) closeCollage();
+  });
+}
+
+async function init(){
       refreshCartCount();
       initCartButton();
       initShipping();
       bindFilters();
       bindGridActions();
       initKeyboardAccessibility();
+  initCollageFeature();
 
       if(albumBackBtn){
         albumBackBtn.addEventListener("click", ()=>{

@@ -4289,10 +4289,23 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
 @media(max-width:350px){.grid.album-grid-mode.root-nav-mode{grid-template-columns:1fr!important}.bar{grid-template-columns:1fr!important}.search-wrap,#btn-cart{grid-column:auto!important}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
-/* Ajuste 2026-09-10: evita que el carrito se contraiga cuando Ordenar se oculta tras cargar la navegación. */
+/* Ajuste 2026-09-11: Filtros · SPRE · Folleto · WhatsApp permanecen en la misma fila en escritorio. */
 @media (min-width:981px){
-  #btn-cart{min-width:230px!important;}
-  #sort[hidden] ~ #btn-cart{grid-column:4 / 6!important;}
+  /* Con Ordenar visible hay seis controles; cuando está oculto quedan cinco. */
+  .bar{
+    grid-template-columns:minmax(240px,2fr) repeat(5,minmax(105px,.72fr))!important;
+  }
+  .bar:has(#sort[hidden]){
+    grid-template-columns:minmax(280px,2.2fr) minmax(115px,.72fr) minmax(125px,.78fr) minmax(125px,.78fr) minmax(190px,1.1fr)!important;
+  }
+  #btn-cart{
+    grid-column:auto!important;
+    min-width:0!important;
+    width:100%!important;
+    justify-self:stretch!important;
+    margin:0!important;
+  }
+  #sort[hidden] ~ #btn-cart{grid-column:auto!important;}
 }
 
 /* Ajuste 2026-09-10: palabras escritas en el buscador, visibles en azul y negrita. */

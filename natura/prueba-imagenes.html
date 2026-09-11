@@ -21,13 +21,14 @@
       const response = await fetch('catalogo.html?prueba_fuente=' + Date.now(), { cache:'no-store' });
       if(!response.ok) throw new Error('No se pudo leer catalogo.html: HTTP ' + response.status);
       let html = await response.text();
+      const testScript = '<script src="prueba-imagenes-gdrive.js?prueba=2026-09-11"></scr' + 'ipt>';
       const injection = [
         '<base href="https://irenismb.github.io/stock/natura/">',
         '<meta name="robots" content="noindex,nofollow,noarchive">',
-        '<script src="prueba-imagenes-gdrive.js?prueba=2026-09-11"><\\/script>'
+        testScript
       ].join('');
       html = html.replace(/<head([^>]*)>/i, '<head$1>' + injection);
-      html = html.replace(/<title>[\\s\\S]*?<\\/title>/i, '<title>PRUEBA TEMPORAL · Catálogo imágenes</title>');
+      html = html.replace(/<title>[\s\S]*?<\/title>/i, '<title>PRUEBA TEMPORAL · Catálogo imágenes</title>');
       document.open();
       document.write(html);
       document.close();

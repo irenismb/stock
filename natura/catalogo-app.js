@@ -3756,6 +3756,7 @@
         sortSel.hidden = showAlbumGrid;
         sortSel.disabled = showAlbumGrid;
       }
+      syncPSPButtonVisibility();
       if(albumNav){
         albumNav.hidden = !selectedAudience;
       }
@@ -4455,6 +4456,92 @@ function collageCurrentSnapshot(){
 function collagePriceText(p){
   if(!shouldShowProductPrices()) return "";
   return p&&p.hasPrice===false ? "Consultar precio" : fmtCOP.format(Number(p?.price)||0);
+}
+
+function pspSelectedSubcategoryProducts(){
+  if(!selectedAudience || !selectedCategory || selectedFamily) return [];
+  return (Array.isArray(all) ? all : []).filter(p =>
+    productMatchesAudience(p, selectedAudience) &&
+    cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
+    p && p.hasPrice === false
+  );
+}
+
+function pspClipboardText(){
+  return pspSelectedSubcategoryProducts()
+    .map(p=>{
+      const name=String(p && p.name || "")
+        .replace(/[\t\r\n]+/g," ")
+        .replace(/\s{2,}/g," ")
+        .trim();
+      const code=String(p && p.id || "").trim();
+      return name && code ? `${name}\t${code}` : "";
+    })
+    .filter(Boolean)
+    .join("\r\n");
+}
+
+async function pspCopyCurrentSubcategory(){
+  const text=pspClipboardText();
+  if(!text) return;
+
+  try{
+    if(navigator.clipboard && typeof navigator.clipboard.writeText === "function"){
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+  }catch(_){}
+
+  try{
+    const helper=document.createElement("textarea");
+    helper.value=text;
+    helper.setAttribute("readonly","");
+    helper.setAttribute("aria-hidden","true");
+    helper.style.position="fixed";
+    helper.style.left="-9999px";
+    helper.style.top="0";
+    helper.style.opacity="0";
+    document.body.appendChild(helper);
+    helper.focus();
+    helper.select();
+    helper.setSelectionRange(0,helper.value.length);
+    document.execCommand("copy");
+    helper.remove();
+  }catch(_){}
+}
+
+function syncPSPButtonVisibility(){
+  const btn=document.getElementById("pspBtn");
+  if(!btn) return;
+  const visible=Boolean(selectedAudience && selectedCategory && !selectedFamily);
+  btn.hidden=!visible;
+  btn.disabled=!visible;
+}
+
+function initPSPFeature(){
+  const toolbar=document.querySelector(".bar");
+  if(!toolbar) return;
+
+  let btn=document.getElementById("pspBtn");
+  if(!btn){
+    btn=document.createElement("button");
+    btn.className="btn-ghost";
+    btn.id="pspBtn";
+    btn.type="button";
+    btn.textContent="PSP";
+    btn.hidden=true;
+    btn.setAttribute("aria-label","Copiar nombres y códigos de los productos sin precio de esta subcategoría");
+    const collageBtn=document.getElementById("collageBtn");
+    if(collageBtn) toolbar.insertBefore(btn,collageBtn);
+    else toolbar.appendChild(btn);
+  }
+
+  if(btn.dataset.pspBound!=="1"){
+    btn.dataset.pspBound="1";
+    btn.addEventListener("click",()=>{ void pspCopyCurrentSubcategory(); });
+  }
+
+  syncPSPButtonVisibility();
 }
 
 function initCollageFeature(){
@@ -6173,6 +6260,7 @@ async function init(){
       bindGridActions();
       initKeyboardAccessibility();
   initCollageFeature();
+  initPSPFeature();
 
       if(albumBackBtn){
         albumBackBtn.addEventListener("click", ()=>{
@@ -6412,6 +6500,7 @@ function syncFilterVisibility(){
   if(catSel){catSel.hidden=true;catSel.disabled=true;catSel.value="";}
   if(brandSel){brandSel.hidden=true;brandSel.disabled=true;brandSel.value="";}
   if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
+  syncPSPButtonVisibility();
   if(albumNav) albumNav.hidden=!selectedAudience;
   if(albumBackBtn){
     albumBackBtn.textContent=selectedFamily?`← Volver a ${selectedCategory}`:(selectedCategory?`← Volver a ${selectedAudience}`:"← Volver al inicio");
@@ -6706,6 +6795,7 @@ async function init(){
   bindGridActions();
   initKeyboardAccessibility();
   initCollageFeature();
+  initPSPFeature();
   if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
   syncWordToggleButton();
   rebuildSearchTicker();

@@ -2426,13 +2426,30 @@
     async function invoiceBuildCanvas(){
       const { items, client, addr } = invoiceValidateInput();
       const width = 1103;
-      const rowHeight = 88;
-      const tableTop = 680;
-      const tableHeaderHeight = 52;
-      const tableHeight = tableHeaderHeight + items.length * rowHeight;
-      const summaryTop = tableTop + tableHeight + 34;
-      const footerTop = summaryTop + 205;
-      const height = Math.max(1426, footerTop + 160);
+      const tableTop = 510;
+      const tableHeaderHeight = 44;
+      const cols = [52, 142, 637, 707, 867, 1047];
+      const articleTextWidth = cols[2] - cols[1] - 24;
+
+      // Calcula la altura de cada artículo según su nombre: la columna es más ancha
+      // y las filas cortas ocupan menos espacio, por lo que caben más productos.
+      const measureCanvas = document.createElement("canvas");
+      const measureCtx = measureCanvas.getContext("2d");
+      if(!measureCtx) throw new Error("No fue posible preparar la factura PNG.");
+      measureCtx.font = "600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const preparedRows = items.map(it=>{
+        const nameLines = invoiceWrapLines(measureCtx, String(it.name || ""), articleTextWidth, 4);
+        const rowHeight = Math.max(60, 22 + nameLines.length * 19);
+        return { it, nameLines, rowHeight };
+      });
+
+      const tableRowsHeight = preparedRows.reduce((sum,row)=>sum + row.rowHeight, 0);
+      const tableHeight = tableHeaderHeight + tableRowsHeight;
+      const summaryTop = tableTop + tableHeight + 22;
+      const summaryHeight = 145;
+      const footerTop = summaryTop + summaryHeight + 24;
+      const height = Math.max(1040, footerTop + 135);
+
       const canvas = document.createElement("canvas");
       canvas.width = width;
       canvas.height = height;
@@ -2440,7 +2457,6 @@
       if(!ctx) throw new Error("No fue posible preparar la factura PNG.");
 
       const mauve = "#8f4963";
-      const mauveDark = "#71374d";
       const rose = "#c54e73";
       const purple = "#6f3aa0";
       const gold = "#b8781f";
@@ -2458,99 +2474,104 @@
       topGrad.addColorStop(.45,"#f0d58e");
       topGrad.addColorStop(1,"#b8701e");
       ctx.fillStyle = topGrad;
-      ctx.fillRect(0,0,width,18);
+      ctx.fillRect(0,0,width,16);
 
       const logo = await invoiceLoadOfficialLogo();
       if(logo){
-        const size = 145;
-        ctx.drawImage(logo, 54, 50, size, size);
+        const size = 112;
+        ctx.drawImage(logo, 54, 37, size, size);
       }
 
       ctx.fillStyle = gold;
-      ctx.font = "900 34px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("IRENISMB STOCK NATURA", 235, 96);
+      ctx.font = "900 31px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("IRENISMB STOCK NATURA", 195, 76);
       ctx.fillStyle = ink;
-      ctx.font = "500 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Factura de venta", 235, 136);
+      ctx.font = "500 21px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Factura de venta", 195, 111);
       ctx.fillStyle = mauve;
-      ctx.font = "800 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Natura · AVON", 235, 185);
+      ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Natura · AVON", 195, 143);
 
       ctx.fillStyle = softRose;
       ctx.strokeStyle = "#e7a7ba";
       ctx.lineWidth = 2;
-      invoiceRoundRect(ctx, 755, 62, 292, 150, 18);
+      invoiceRoundRect(ctx, 790, 47, 257, 96, 17);
       ctx.fill(); ctx.stroke();
       ctx.fillStyle = rose;
-      ctx.font = "900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font = "900 22px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("FACTURA DE VENTA", 901, 138);
+      ctx.fillText("FACTURA DE VENTA", 918, 103);
       ctx.textAlign = "left";
 
+      // Datos generales compactos.
+      const metaY = 170;
+      const metaH = 92;
       ctx.fillStyle = "#ffffff";
       ctx.strokeStyle = line;
       ctx.lineWidth = 2;
-      invoiceRoundRect(ctx, 52, 260, 995, 125, 18);
+      invoiceRoundRect(ctx, 52, metaY, 995, metaH, 17);
       ctx.fill(); ctx.stroke();
       const metaW = 995/4;
       const metaX = [75, 75+metaW, 75+metaW*2, 75+metaW*3];
-      invoiceDrawLabelValue(ctx, metaX[0], 295, "Fecha", invoiceDateColombia(), 190);
-      invoiceDrawLabelValue(ctx, metaX[1], 295, "Ciudad de envío", addr.city || "", 190);
-      invoiceDrawLabelValue(ctx, metaX[2], 295, "Medio de pago", invoicePaymentMethod(), 190);
-      invoiceDrawLabelValue(ctx, metaX[3], 295, "Moneda", "COP", 145);
+      invoiceDrawLabelValue(ctx, metaX[0], metaY+29, "Fecha", invoiceDateColombia(), 190);
+      invoiceDrawLabelValue(ctx, metaX[1], metaY+29, "Ciudad de envío", addr.city || "", 190);
+      invoiceDrawLabelValue(ctx, metaX[2], metaY+29, "Medio de pago", invoicePaymentMethod(), 190);
+      invoiceDrawLabelValue(ctx, metaX[3], metaY+29, "Moneda", "COP", 145);
       ctx.strokeStyle = line;
       for(let i=1;i<4;i++){
         const xx = 52 + metaW*i;
-        ctx.beginPath(); ctx.moveTo(xx, 278); ctx.lineTo(xx, 367); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(xx, metaY+14); ctx.lineTo(xx, metaY+metaH-14); ctx.stroke();
       }
 
-      const boxY = 420, boxH = 230, boxW = 482;
+      // Empresa y cliente: menos altura sin perder información útil.
+      const boxY = 282, boxH = 202, boxW = 482;
       ctx.fillStyle = softPurple; ctx.strokeStyle = "#cdb7e4";
       invoiceRoundRect(ctx, 52, boxY, boxW, boxH, 18); ctx.fill(); ctx.stroke();
       ctx.fillStyle = softRose; ctx.strokeStyle = "#efbdcc";
       invoiceRoundRect(ctx, 565, boxY, boxW, boxH, 18); ctx.fill(); ctx.stroke();
 
       ctx.fillStyle = purple;
-      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("DATOS DE LA EMPRESA", 82, 462);
+      ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("DATOS DE LA EMPRESA", 82, boxY+36);
       ctx.fillStyle = ink;
-      ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Irenismb Stock Natura", 82, 507);
-      ctx.font = "500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Calle 10A #20A-06", 82, 542);
-      ctx.fillText("Barrio Los Almendros · Santa Marta", 82, 574);
-      ctx.fillText("Celular: 3042088961", 82, 606);
+      ctx.font = "800 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Irenismb Stock Natura", 82, boxY+73);
+      ctx.font = "500 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Calle 10A #20A-06", 82, boxY+105);
+      ctx.fillText("Barrio Los Almendros · Santa Marta", 82, boxY+133);
+      ctx.fillText("Celular: 3042088961", 82, boxY+161);
 
       ctx.fillStyle = rose;
-      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("DATOS DEL CLIENTE", 595, 462);
+      ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("DATOS DEL CLIENTE", 595, boxY+36);
       ctx.fillStyle = ink;
-      ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      const clientName = invoiceWrapLines(ctx, client.name, 405, 1)[0];
-      ctx.fillText(clientName, 595, 507);
-      ctx.font = "500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font = "800 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const clientNameLines = invoiceWrapLines(ctx, client.name, 405, 2);
+      clientNameLines.forEach((lineText,i)=>ctx.fillText(lineText,595,boxY+73+i*21));
+      ctx.font = "500 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       const clientAddr = joinParts([addr.via, addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
       const addrLines = invoiceWrapLines(ctx, clientAddr, 405, 2);
-      addrLines.forEach((lineText,i)=>ctx.fillText(lineText,595,542+i*25));
-      const afterAddrY = 542 + addrLines.length*25;
-      ctx.fillText(joinParts([addr.city, addr.region], ", "), 595, afterAddrY + 7);
-      ctx.fillText(`Celular: ${client.phone}`, 595, afterAddrY + 38);
+      const clientAddressY = boxY + 113 + Math.max(0,clientNameLines.length-1)*21;
+      addrLines.forEach((lineText,i)=>ctx.fillText(lineText,595,clientAddressY+i*20));
+      const afterAddrY = clientAddressY + addrLines.length*20;
+      ctx.fillText(joinParts([addr.city, addr.region], ", "), 595, afterAddrY + 5);
+      ctx.fillText(`Celular: ${client.phone}`, 595, afterAddrY + 31);
 
-      const cols = [52, 160, 535, 650, 850, 1047];
+      // Tabla: artículo más ancho y filas de altura adaptativa.
       ctx.fillStyle = "#7648a5";
-      invoiceRoundRect(ctx, cols[0], tableTop, cols[5]-cols[0], tableHeaderHeight, 14);
+      invoiceRoundRect(ctx, cols[0], tableTop, cols[5]-cols[0], tableHeaderHeight, 13);
       ctx.fill();
       ctx.fillStyle = "#ffffff";
-      ctx.font = "800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font = "800 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.textAlign = "center";
       const headers = ["CÓDIGO","ARTÍCULO","CANT.","VALOR UNITARIO","TOTAL"];
-      for(let i=0;i<5;i++){
-        ctx.fillText(headers[i], (cols[i]+cols[i+1])/2, tableTop+32);
-      }
+      for(let i=0;i<5;i++) ctx.fillText(headers[i], (cols[i]+cols[i+1])/2, tableTop+28);
       ctx.textAlign = "left";
 
-      items.forEach((it,index)=>{
-        const y = tableTop + tableHeaderHeight + index*rowHeight;
+      let rowY = tableTop + tableHeaderHeight;
+      preparedRows.forEach((row,index)=>{
+        const { it, nameLines, rowHeight } = row;
+        const y = rowY;
         ctx.fillStyle = index % 2 ? "#fffdfd" : "#ffffff";
         ctx.fillRect(cols[0], y, cols[5]-cols[0], rowHeight);
         ctx.strokeStyle = line;
@@ -2560,21 +2581,22 @@
           ctx.beginPath(); ctx.moveTo(cols[c], y); ctx.lineTo(cols[c], y+rowHeight); ctx.stroke();
         }
 
+        const centerY = y + rowHeight/2 + 5;
         ctx.fillStyle = ink;
         ctx.textAlign = "center";
-        ctx.font = "800 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-        ctx.fillText(String(it.id || ""), (cols[0]+cols[1])/2, y+47);
-        ctx.font = "800 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-        ctx.fillText(String(Math.max(0, Number(it.qty)||0)), (cols[2]+cols[3])/2, y+47);
-        ctx.font = "700 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-        ctx.fillText(invoiceMoney(it.price), (cols[3]+cols[4])/2, y+47);
-        ctx.fillText(invoiceMoney((Number(it.price)||0)*(Number(it.qty)||0)), (cols[4]+cols[5])/2, y+47);
+        ctx.font = "800 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        ctx.fillText(String(it.id || ""), (cols[0]+cols[1])/2, centerY);
+        ctx.fillText(String(Math.max(0, Number(it.qty)||0)), (cols[2]+cols[3])/2, centerY);
+        ctx.font = "700 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        ctx.fillText(invoiceMoney(it.price), (cols[3]+cols[4])/2, centerY);
+        ctx.fillText(invoiceMoney((Number(it.price)||0)*(Number(it.qty)||0)), (cols[4]+cols[5])/2, centerY);
 
         ctx.textAlign = "left";
         ctx.font = "600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-        const nameLines = invoiceWrapLines(ctx, String(it.name||""), cols[2]-cols[1]-28, 3);
-        const startY = y + 27 - Math.max(0,nameLines.length-1)*10;
-        nameLines.forEach((lineText,i)=>ctx.fillText(lineText, cols[1]+14, startY+i*21));
+        const nameBlockHeight = nameLines.length * 19;
+        const nameStartY = y + (rowHeight - nameBlockHeight)/2 + 15;
+        nameLines.forEach((lineText,i)=>ctx.fillText(lineText, cols[1]+12, nameStartY+i*19));
+        rowY += rowHeight;
       });
       ctx.textAlign = "left";
 
@@ -2583,55 +2605,55 @@
       const total = subtotal + shipping;
 
       ctx.fillStyle = softPurple; ctx.strokeStyle = "#cdb7e4";
-      invoiceRoundRect(ctx, 52, summaryTop, 482, 170, 18); ctx.fill(); ctx.stroke();
+      invoiceRoundRect(ctx, 52, summaryTop, 482, summaryHeight, 18); ctx.fill(); ctx.stroke();
       ctx.fillStyle = purple;
-      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("INFORMACIÓN", 82, summaryTop+43);
+      ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("INFORMACIÓN", 82, summaryTop+36);
       ctx.fillStyle = muted;
-      ctx.font = "500 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font = "500 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       const noteLines = [
         "Factura comercial de venta.",
-        "Los valores están expresados en pesos colombianos.",
+        "Valores expresados en pesos colombianos.",
         "Gracias por confiar en tu consultora de belleza."
       ];
-      noteLines.forEach((lineText,i)=>ctx.fillText(lineText,82,summaryTop+80+i*27));
+      noteLines.forEach((lineText,i)=>ctx.fillText(lineText,82,summaryTop+68+i*23));
 
       ctx.fillStyle = softGold; ctx.strokeStyle = "#e1bb74";
-      invoiceRoundRect(ctx, 565, summaryTop, 482, 170, 18); ctx.fill(); ctx.stroke();
+      invoiceRoundRect(ctx, 565, summaryTop, 482, summaryHeight, 18); ctx.fill(); ctx.stroke();
       ctx.fillStyle = gold;
-      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("RESUMEN DE LA VENTA", 595, summaryTop+43);
-      ctx.font = "600 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("RESUMEN DE LA VENTA", 595, summaryTop+36);
+      ctx.font = "600 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.fillStyle = ink;
-      ctx.fillText("Subtotal productos",595,summaryTop+80);
-      ctx.fillText("Envío",595,summaryTop+108);
+      ctx.fillText("Subtotal productos",595,summaryTop+68);
+      ctx.fillText("Envío",595,summaryTop+94);
       ctx.textAlign = "right";
-      ctx.fillText(invoiceMoney(subtotal),1015,summaryTop+80);
-      ctx.fillText(invoiceMoney(shipping),1015,summaryTop+108);
+      ctx.fillText(invoiceMoney(subtotal),1015,summaryTop+68);
+      ctx.fillText(invoiceMoney(shipping),1015,summaryTop+94);
       ctx.strokeStyle = "#e1bb74";
-      ctx.beginPath(); ctx.moveTo(595,summaryTop+125); ctx.lineTo(1015,summaryTop+125); ctx.stroke();
-      ctx.font = "900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.beginPath(); ctx.moveTo(595,summaryTop+108); ctx.lineTo(1015,summaryTop+108); ctx.stroke();
+      ctx.font = "900 22px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.fillStyle = gold;
-      ctx.fillText(invoiceMoney(total),1015,summaryTop+157);
+      ctx.fillText(invoiceMoney(total),1015,summaryTop+135);
       ctx.textAlign = "left";
 
       ctx.fillStyle = rose;
-      ctx.font = "500 italic 24px Georgia, serif";
+      ctx.font = "500 italic 21px Georgia, serif";
       ctx.textAlign = "center";
-      ctx.fillText("Gracias por confiar en tu consultora de belleza", width/2, footerTop+55);
+      ctx.fillText("Gracias por confiar en tu consultora de belleza", width/2, footerTop+43);
       ctx.fillStyle = "#a8878f";
-      ctx.font = "700 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("BELLEZA QUE TRANSFORMA · CONFIANZA QUE PERDURA", width/2, footerTop+92);
+      ctx.font = "700 12px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("BELLEZA QUE TRANSFORMA · CONFIANZA QUE PERDURA", width/2, footerTop+74);
       ctx.textAlign = "left";
 
-      const bottomGrad = ctx.createLinearGradient(0,height-65,width,height);
+      const bottomGrad = ctx.createLinearGradient(0,height-58,width,height);
       bottomGrad.addColorStop(0,"#b0446f");
       bottomGrad.addColorStop(.5,"#eaa5b7");
       bottomGrad.addColorStop(1,"#d5a04a");
       ctx.fillStyle = bottomGrad;
       ctx.beginPath();
-      ctx.moveTo(0,height-46);
-      ctx.quadraticCurveTo(width*.48,height-5,width,height-85);
+      ctx.moveTo(0,height-40);
+      ctx.quadraticCurveTo(width*.48,height-5,width,height-72);
       ctx.lineTo(width,height);
       ctx.lineTo(0,height);
       ctx.closePath();
@@ -5020,11 +5042,11 @@ function initCollageFeature(){
     btn.className="btn-ghost";
     btn.id="collageBtn";
     btn.type="button";
-    btn.textContent="Collage";
-    btn.setAttribute("aria-label","Mostrar collage de los productos de la vista actual");
     if(cartButton) toolbar.insertBefore(btn,cartButton);
     else toolbar.appendChild(btn);
   }
+  btn.textContent="Folleto";
+  btn.setAttribute("aria-label","Mostrar folleto de los productos de la vista actual");
 
   if(document.getElementById("collageModal")) return;
 

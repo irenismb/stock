@@ -1,425 +1,650 @@
-// Producción: Google Drive es la fuente autoritativa de todas las imágenes del catálogo.
-// Índice dinámico desde Apps Script, con caché local de 5 minutos y respaldo estático.
 (() => {
-  'use strict';
+  const GPS_LOG_ENDPOINT = "https://script.google.com/macros/s/AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO/exec";
+  const USER_ID_KEY = "irenismb_user_id";
+  const VISITOR_SHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
+  const VISITOR_ID_SHEET = "id_navegador";
+  const VISIT_LOG_SHEET = "Hoja 1";
+  const VISIT_MODE_KEY = "MODO_REGISTRO_VISITAS";
+  const OWN_VISITS_KEY = "REGISTRAR_VISITAS_PROPIAS";
+  const VISIT_BROWSER_MARKER = "irenismb_visit_registered_browser";
+  const LEGACY_VISIT_DEVICE_MARKER = "irenismb_visit_registered_device";
+  const VISIT_DAY_MARKER_PREFIX = "irenismb_visit_registered_day_";
+  const OWN_BROWSER_IDS_FALLBACK = new Set([
+    "461e0283-5358-4400-a31e-d8d74866d660",
+    "7aa54b29-d9db-4d17-a8dd-56bdc11c1f74",
+    "747d377e-20e4-423e-bed1-463b3154eb72",
+    "bdfc4faf-9f3b-4b27-867d-538ab2392c60",
+    "a2542505-3211-4970-885b-30dbeb5e43ee",
+    "481dd00a-2810-4e7f-b371-d303a4a468a5",
+    "dfd7a7e8-cf33-43d6-9ae3-a99309fe9508"
+  ]);
 
-  const SCRIPT_BASE = (() => {
-    try {
-      return new URL('.', document.currentScript && document.currentScript.src ? document.currentScript.src : location.href).href;
-    } catch (_) {
-      return 'https://irenismb.github.io/stock/natura/js/';
+  iniciarRegistroVisita();
+
+  async function iniciarRegistroVisita() {
+    const configuracionDisponible = await esperarConfiguracionSegura();
+    if (!configuracionDisponible) {
+      console.info("No se registra la visita porque la configuración remota de privacidad no estuvo disponible.");
+      return;
     }
-  })();
 
-  const DRIVE_INDEX_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w/exec';
-  const DRIVE_MAP_SOURCE = new URL('catalogo-imagenes-drive-map.js', SCRIPT_BASE).href;
-  const ANALYTICS_RUNTIME = new URL('analytics-visitas-runtime.js?v=2026-09-11-gdrive-dynamic', SCRIPT_BASE).href;
-  const CATALOG_PATH_MARKER = '/stock/natura/';
-  const DRIVE_IMAGE_BASE = 'https://lh3.googleusercontent.com/d/';
-  const CACHE_KEY = 'natura-drive-image-index-v1';
-  const CACHE_TTL_MS = 5 * 60 * 1000;
-  const nativeFetch = window.fetch.bind(window);
+    const userId = obtenerIdLocal();
+    const politica = await obtenerPoliticaRegistroVisitas(userId);
+    if (!politica.registrar) return;
 
-  const FALLBACK_GIFT_DRIVE_BY_FILE = Object.freeze({
-    '1.webp': '1VkM-lp9lE8YY8l46LeXeI_ZAzHxpUsC0',
-    '2.webp': '1BvYz5IpAyYOvMJnPfpBvYFuVWqBMPR7u',
-    '3.webp': '1PtuZ6dPJzEB2MGcYtuycK1XIWBb4yjCo',
-    '4.webp': '18Wk5a-OriwGRBnfbdxkHljxvW8TYdUq0',
-    '5.webp': '1K-d8UjSZIIx2SPb_-2LbPjPjO0cEFSz9',
-    '6.webp': '1-aJdnoNHqFA2t1DfcfQkletQF1_43TDJ',
-    '7.webp': '10rD3CAstjBWQiO_67zHTyJuMBND4hm2d'
-  });
-
-  const FALLBACK_ASSET_BY_PATH = Object.freeze({
-    'logos/youtube.webp': '1TAPz3EcrWi7Wyj2gwR5ZNK-7O2tDs3P8',
-    'logos/whatsapp.webp': '1KAD5ufqQZ7n79L10mepkIoGBWt_W4qsY',
-    'logos/tiktok.webp': '1HLfckCdrAcRY6V5Zf8lte1c6rie0Kaon',
-    'logos/suplente.webp': '1NG_kfr3Gb09_eAoIKUNRdEPaTtYqAHFI',
-    'logos/suplente.png': '1SDGHgGqwKH03X3W6JTLpt4we5gg8AiHe',
-    'logos/maps.webp': '1VdcarKEUJV-aDLRxC7axY9_oIUtGPZgH',
-    'logos/logo_empresa.webp': '1_szHpI2Ow1TBsHBVyDSGoXfUa7Ra8ndf',
-    'logos/logo_empresa.png': '1qAB4okTAZONuiEo_Jl_DLMIj6VKrzl10',
-    'logos/instagram.webp': '1XcVrp0joflfMotor_B7rfarR_77txQuB',
-    'logos/google_business.webp': '1hviVePMA_HTHl7RBhEf0GK_ZTj1L7-xX',
-    'logos/facebook.webp': '13iR-ONK1qBZI4ymsasnX7YNxg6c3wHl6',
-    'iconos/2026-09-06_icono categoria otros productos hogar variedad.webp': '1sIxlmqRA01wpi1ZbtAEAvG86ALqeJ72W',
-    'iconos/2026-09-06_icono categoria regalos caja lazo rosa.webp': '1NnsN9ZrVNpao6gYimZZmGYMy_5bSWLNI',
-    'iconos/2026-09-06_icono categoria unisex cuidado botanico neutro.webp': '1PHh42WcxXfdVgRCYCQ0zi6Dd0U9Hy0sq',
-    'iconos/2026-09-06_icono categoria para el perfume azul.webp': '1CowK9gWD7LX6b4_bjRx23qzYtYxI3KGF',
-    'iconos/2026-09-06_icono categoria para ella perfume floral.webp': '1cH0WDt139_pqQ6NBPg3m7PjsAkvO6Qye',
-    'iconos/2026-09-06_icono subcategoria medicamentos frasco capsulas medicas.webp': '1Kq3r6c21h_qLghuDI2LSmAgKawWZCEnh',
-    'iconos/2026-09-06_icono subcategoria papeleria cuaderno lapiz corazon.webp': '197cN4XvIx6wfaGM7dHzSAjWFJcdwq8A4',
-    'iconos/2026-09-06_icono subcategoria juguetes oso bloques infantiles.webp': '1An2vuZPrJA8jnXCzsiquy1mp1hVDp0Q6',
-    'iconos/2026-09-06_icono subcategoria tecnologia hogar asistente inteligente.webp': '1VRVceYVGC_ioTQua9eBLXdIcwrBX3m3X',
-    'iconos/2026-09-06_icono subcategoria maquillaje brocha labial rosa.webp': '1W1dXo_ZXbNrAxlxftipkvQ2DCbn4xYl3',
-    'iconos/2026-09-06_icono subcategoria kits combos regalo cosmeticos.webp': '1Cn90ErJ_Pu7KHtREPruFFJPElSQrwfnd',
-    'iconos/2026-09-06_icono subcategoria proteccion solar crema amarilla.webp': '1pbGbiNfDMERMPRxnYDtXQxWPscYopO1p',
-    'iconos/2026-09-06_icono subcategoria higiene intima flor rosa.webp': '112fB2HGlqsBxYH7WbOJqJWWrxQJgx5qq',
-    'iconos/2026-09-06_icono subcategoria higiene corporal jabon turquesa.webp': '1isgXCkTL9PVftJpNtFbWmQ3fw7odOqWR',
-    'iconos/2026-09-06_icono subcategoria manos pies cuidado suave.webp': '1nlskH4xkbTUXF4eFjCaYynoLXVKd-yCQ',
-    'iconos/2026-09-06_icono subcategoria cabello mechon brillante capilar.webp': '1e7JSLZmsdJAcIFukSJKtA8iZQDwpRGjs',
-    'iconos/2026-09-06_icono subcategoria cuidado corporal locion vegetal.webp': '1IkB6Y3e-jIoofccwwJGuz9hwgB3VZ9J5',
-    'iconos/2026-09-06_icono subcategoria cuidado facial crema rosa.webp': '18Qnxbp4qT6t78Q2hm2ktQiK3p1GvsKOK',
-    'iconos/2026-09-06_icono subcategoria desodorantes roll on vegetal.webp': '1bBXisFh7g2ZcmLdJg6PtqaDjlxg41Edc',
-    'iconos/2026-09-06_icono subcategoria perfumes fragancia floral rosa.webp': '1aguCZaRTwEKbB5eLGDQOYtB3kSaULj_7'
-  });
-
-  let driveByCode = Object.create(null);
-  let productIdByFilename = Object.create(null);
-  let productFilesByCode = Object.create(null);
-  let giftDriveByFile = { ...FALLBACK_GIFT_DRIVE_BY_FILE };
-  let driveAssetByPath = { ...FALLBACK_ASSET_BY_PATH };
-  let currentIndexSource = 'fallback';
-
-  function validDriveId(value) {
-    return typeof value === 'string' && /^[A-Za-z0-9_-]{10,}$/.test(value);
+    try {
+      const ubicacion = await obtenerUbicacionPreferida();
+      const enviado = await enviarRegistroUbicacion(ubicacion, userId);
+      if (enviado) marcarRegistroVisita(politica.modo);
+    } catch (error) {
+      console.info("Ubicación no disponible.", error);
+      try {
+        const enviado = await enviarRegistroUbicacion(ubicacionNoDisponible(), userId);
+        if (enviado) marcarRegistroVisita(politica.modo);
+      } catch (sendError) {
+        console.error("No se pudo enviar el registro de visita.", sendError);
+      }
+    }
   }
 
-  function normalizeDynamicIndex(data) {
-    if (!data || data.ok !== true || !data.products || typeof data.products !== 'object') {
-      throw new Error('El índice dinámico de Drive no tiene la estructura esperada.');
+  async function esperarConfiguracionSegura() {
+    try {
+      if (!window.REMOTE_CONFIG_READY) return false;
+      await window.REMOTE_CONFIG_READY;
+
+      const valores = window.REMOTE_CONTROL_VALUES || {};
+      const clavesRequeridas = [
+        VISIT_MODE_KEY,
+        OWN_VISITS_KEY,
+        "HABILITAR_UBICACION_GPS"
+      ];
+
+      return clavesRequeridas.every(clave =>
+        Object.prototype.hasOwnProperty.call(valores, clave) &&
+        String(valores[clave] ?? "").trim() !== ""
+      );
+    } catch (_) {
+      return false;
+    }
+  }
+
+  async function obtenerUbicacionPreferida() {
+    if (window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false) {
+      return obtenerUbicacionPorIp();
     }
 
-    const products = Object.create(null);
-    const byFilename = Object.create(null);
-    const firstByCode = Object.create(null);
-    const gifts = Object.create(null);
-    const assets = Object.create(null);
+    try {
+      const coordenadas = await obtenerCoordenadasGps();
+      const lugar = await obtenerCiudadDesdeGps(coordenadas);
+      return {
+        ...lugar,
+        fuente: fuenteGps(coordenadas.accuracy),
+        lat: coordenadas.latitude,
+        lng: coordenadas.longitude,
+        acc: coordenadas.accuracy
+      };
+    } catch (error) {
+      console.info("GPS no disponible; se usa ubicación aproximada por IP.", error);
+      return obtenerUbicacionPorIp();
+    }
+  }
 
-    Object.keys(data.products).forEach(code => {
-      if (!/^\d{4}$/.test(code)) return;
-      const items = Array.isArray(data.products[code]) ? data.products[code] : [];
-      const clean = items
-        .filter(item => item && validDriveId(item.id) && typeof item.name === 'string' && item.name)
-        .map(item => ({ id: item.id, name: item.name }))
-        .sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }));
-      if (!clean.length) return;
-      products[code] = clean;
-      firstByCode[code] = clean[0].id;
-      clean.forEach(item => { byFilename[item.name] = item.id; });
+  function obtenerCoordenadasGps() {
+    return new Promise((resolve, reject) => {
+      if (!("geolocation" in navigator)) {
+        reject(new Error("Geolocalización no disponible"));
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        posicion => {
+          const c = posicion && posicion.coords;
+          if (!c) {
+            reject(new Error("Coordenadas no disponibles"));
+            return;
+          }
+          resolve({
+            latitude: Number(c.latitude),
+            longitude: Number(c.longitude),
+            accuracy: Number(c.accuracy)
+          });
+        },
+        error => reject(error || new Error("No se obtuvo permiso de ubicación")),
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 300000 }
+      );
     });
+  }
 
-    if (data.gifts && typeof data.gifts === 'object') {
-      Object.keys(data.gifts).forEach(name => {
-        const item = data.gifts[name];
-        if (item && validDriveId(item.id)) gifts[name] = item.id;
-      });
+  async function obtenerCiudadDesdeGps(coords) {
+    try {
+      return await obtenerDireccionExactaDesdeGps(coords);
+    } catch (error) {
+      console.info("Dirección exacta no disponible; se usa geocodificación general.", error);
     }
 
-    if (data.assets && typeof data.assets === 'object') {
-      Object.keys(data.assets).forEach(path => {
-        const item = data.assets[path];
-        if (item && validDriveId(item.id)) assets[path] = item.id;
-      });
-    }
+    const url = new URL("https://api.bigdatacloud.net/data/reverse-geocode-client");
+    url.searchParams.set("latitude", String(coords.latitude));
+    url.searchParams.set("longitude", String(coords.longitude));
+    url.searchParams.set("localityLanguage", "es");
 
-    if (!Object.keys(firstByCode).length) {
-      throw new Error('El índice dinámico no contiene imágenes de productos válidas.');
-    }
+    const respuesta = await fetchConTiempo(url.toString(), 8000);
+    if (!respuesta.ok) throw new Error("Sin geocodificación GPS");
+
+    const datos = await respuesta.json();
+    const departamento = normalizarTexto(datos.principalSubdivision || "");
+    const ciudad = normalizarTexto(datos.locality || datos.city || departamento || "");
+    const pais = normalizarTexto(datos.countryName || datos.countryCode || "");
+    if (!ciudad) throw new Error("Ciudad GPS no disponible");
 
     return {
-      generatedAt: typeof data.generatedAt === 'string' ? data.generatedAt : '',
-      source: data.source && typeof data.source === 'object' ? data.source : {},
-      products,
-      byFilename,
-      firstByCode,
-      gifts,
-      assets
+      ciudad,
+      departamento,
+      pais,
+      direccion: [ciudad, departamento, pais].filter(Boolean).join(", ")
     };
   }
 
-  function applyDynamicIndex(index, sourceLabel) {
-    productFilesByCode = index.products;
-    productIdByFilename = index.byFilename;
-    driveByCode = index.firstByCode;
-    giftDriveByFile = { ...FALLBACK_GIFT_DRIVE_BY_FILE, ...index.gifts };
-    driveAssetByPath = { ...FALLBACK_ASSET_BY_PATH, ...index.assets };
-    currentIndexSource = sourceLabel;
+  async function obtenerDireccionExactaDesdeGps(coords) {
+    const url = new URL("https://nominatim.openstreetmap.org/reverse");
+    url.searchParams.set("format", "jsonv2");
+    url.searchParams.set("lat", String(coords.latitude));
+    url.searchParams.set("lon", String(coords.longitude));
+    url.searchParams.set("zoom", "18");
+    url.searchParams.set("addressdetails", "1");
+    url.searchParams.set("accept-language", "es");
+
+    const respuesta = await fetchConTiempo(url.toString(), 8000);
+    if (!respuesta.ok) throw new Error("Sin dirección exacta");
+
+    const datos = await respuesta.json();
+    const detalle = datos.address || {};
+    const via = normalizarTexto(
+      detalle.road || detalle.pedestrian || detalle.residential || detalle.footway || detalle.path || ""
+    );
+    const numero = normalizarTexto(detalle.house_number || "");
+    const ciudad = normalizarTexto(
+      detalle.city || detalle.town || detalle.village || detalle.municipality || detalle.county || detalle.state || ""
+    ).replace(/^Perímetro Urbano\s+/i, "");
+    const departamento = normalizarTexto(detalle.state || detalle.region || detalle.county || "");
+    const pais = normalizarTexto(detalle.country || detalle.country_code || "");
+    const direccion = via
+      ? normalizarDireccion(`${via}${numero ? ` #${numero.replace(/^#\s*/, "")}` : ""}`)
+      : [ciudad, departamento, pais].filter(Boolean).join(", ");
+
+    if (!ciudad) throw new Error("Ciudad GPS no disponible");
+    return { ciudad, departamento, pais, direccion };
   }
 
-  function readCachedIndex() {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (!raw) return null;
-      const cached = JSON.parse(raw);
-      if (!cached || !cached.data || !Number.isFinite(cached.savedAt)) return null;
-      return {
-        index: normalizeDynamicIndex(cached.data),
-        savedAt: cached.savedAt,
-        fresh: Date.now() - cached.savedAt < CACHE_TTL_MS
-      };
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function saveCachedIndex(data) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
-    } catch (_) {}
-  }
-
-  async function fetchDynamicIndex() {
-    const response = await nativeFetch(DRIVE_INDEX_ENDPOINT, {
-      cache: 'no-store',
-      redirect: 'follow'
-    });
-    if (!response.ok) throw new Error(`Índice dinámico Drive: HTTP ${response.status}`);
-    const data = await response.json();
-    const normalized = normalizeDynamicIndex(data);
-    saveCachedIndex(data);
-    applyDynamicIndex(normalized, 'dynamic');
-    return normalized;
-  }
-
-  async function loadStaticProductFallback() {
-    const response = await nativeFetch(DRIVE_MAP_SOURCE, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`Respaldo estático Drive: HTTP ${response.status}`);
-    const source = await response.text();
-    const match = source.match(/const\s+DRIVE_BY_CODE\s*=\s*(\{[\s\S]*?\});/);
-    if (!match) throw new Error('No se encontró DRIVE_BY_CODE en el respaldo estático.');
-    const parsed = Function(`"use strict"; return (${match[1]});`)();
-    if (!parsed || typeof parsed !== 'object') throw new Error('El respaldo estático de Drive no es válido.');
-    driveByCode = Object.freeze({ ...parsed });
-    productFilesByCode = Object.create(null);
-    productIdByFilename = Object.create(null);
-    currentIndexSource = 'static-fallback';
-    return driveByCode;
-  }
-
-  const cachedIndex = readCachedIndex();
-  if (cachedIndex) applyDynamicIndex(cachedIndex.index, cachedIndex.fresh ? 'cache-fresh' : 'cache-stale');
-
-  const driveMapReady = (async () => {
-    if (cachedIndex) {
-      if (!cachedIndex.fresh) {
-        fetchDynamicIndex()
-          .then(() => remapExistingDocumentImages())
-          .catch(error => console.warn('No se pudo refrescar el índice dinámico de Drive; se conserva la caché.', error));
+  async function obtenerUbicacionPorIp() {
+    const servicios = [
+      {
+        url: "https://ipapi.co/json/",
+        ciudad: d => d.city,
+        departamento: d => d.region || d.region_code,
+        pais: d => d.country_name || d.country
+      },
+      {
+        url: "https://api.db-ip.com/v2/free/self",
+        ciudad: d => d.city,
+        departamento: d => d.stateProv,
+        pais: d => d.countryName || d.countryCode
+      },
+      {
+        url: "https://ipwho.is/",
+        ciudad: d => d.city,
+        departamento: d => d.region,
+        pais: d => d.country || d.country_code,
+        fallo: d => d && d.success === false
       }
-      return driveByCode;
-    }
+    ];
 
-    try {
-      await fetchDynamicIndex();
-      return driveByCode;
-    } catch (error) {
-      console.warn('No se pudo cargar el índice dinámico de Drive; se usará el respaldo estático.', error);
+    for (const servicio of servicios) {
       try {
-        await loadStaticProductFallback();
-      } catch (fallbackError) {
-        console.error('Tampoco se pudo cargar el respaldo estático de imágenes de Drive.', fallbackError);
-        driveByCode = Object.freeze({});
+        const respuesta = await fetchConTiempo(servicio.url, 7000);
+        if (!respuesta.ok) continue;
+
+        const datos = await respuesta.json();
+        if (servicio.fallo && servicio.fallo(datos)) continue;
+
+        const ciudad = normalizarTexto(servicio.ciudad(datos) || "");
+        const departamento = normalizarTexto(servicio.departamento(datos) || "");
+        const pais = normalizarTexto(servicio.pais(datos) || "");
+
+        if (ciudad || pais) {
+          return {
+            ciudad: ciudad || "Ubicación no disponible",
+            departamento,
+            pais,
+            direccion: [ciudad, departamento, pais].filter(Boolean).join(", "),
+            fuente: "IP",
+            lat: "",
+            lng: "",
+            acc: ""
+          };
+        }
+      } catch (error) {
+        console.info("Servicio de ubicación por IP no disponible.", error);
       }
-      return driveByCode;
     }
-  })();
 
-  setInterval(() => {
-    fetchDynamicIndex()
-      .then(() => remapExistingDocumentImages())
-      .catch(error => console.warn('Actualización en segundo plano del índice Drive no disponible.', error));
-  }, CACHE_TTL_MS);
-
-  window.DRIVE_IMAGE_SOURCE = Object.freeze({
-    provider: 'Google Drive',
-    folderId: '133WAYlDKSt3r8KIObttDcv86eHPmPQ5b',
-    resourcesFolderId: '1VftdVdVOzva6xNVG0TvEkR-h6eh90duP',
-    indexEndpoint: DRIVE_INDEX_ENDPOINT,
-    cacheTtlMs: CACHE_TTL_MS,
-    endpoint: 'lh3.googleusercontent.com',
-    authoritative: true,
-    dynamic: true,
-    products: true,
-    gifts: true,
-    logos: true,
-    icons: true,
-    placeholders: true,
-    ready: driveMapReady,
-    get indexSource() { return currentIndexSource; }
-  });
-  window.DRIVE_PRODUCT_IMAGE_SOURCE = window.DRIVE_IMAGE_SOURCE;
-
-  function driveImageUrl(id) {
-    return DRIVE_IMAGE_BASE + encodeURIComponent(String(id || ''));
+    return ubicacionNoDisponible();
   }
 
-  function catalogRelativePath(url) {
-    const markerIndex = url.pathname.indexOf(CATALOG_PATH_MARKER);
-    if (markerIndex < 0) return '';
-    return decodeURIComponent(url.pathname.slice(markerIndex + CATALOG_PATH_MARKER.length));
-  }
-
-  function resolveDriveImage(raw) {
+  async function fetchConTiempo(url, timeoutMs) {
+    const controlador = new AbortController();
+    const temporizador = setTimeout(() => controlador.abort(), timeoutMs);
     try {
-      const original = String(raw || '');
-      if (!original) return original;
-      const url = new URL(original, location.href);
-
-      if (url.hostname === 'lh3.googleusercontent.com') return original;
-
-      const relative = catalogRelativePath(url);
-      if (!relative) return original;
-
-      const assetId = driveAssetByPath[relative] || '';
-      if (assetId) return driveImageUrl(assetId);
-
-      if (relative.startsWith('logos/') || relative.startsWith('iconos/')) {
-        return driveImageUrl(`__drive_missing_asset_${relative.split('/').pop() || 'unknown'}__`);
-      }
-
-      if (!relative.startsWith('productos/')) return original;
-
-      const productRelative = relative.slice('productos/'.length);
-      const parts = productRelative.split('/').filter(Boolean);
-
-      if (parts.length >= 2 && parts[0].toLowerCase() === 'regalos') {
-        const filename = parts[parts.length - 1];
-        const giftId = giftDriveByFile[filename] || '';
-        return giftId ? driveImageUrl(giftId) : driveImageUrl(`__drive_missing_gift_${filename}__`);
-      }
-
-      const filename = parts[parts.length - 1] || '';
-      const exactId = productIdByFilename[filename] || '';
-      if (exactId) return driveImageUrl(exactId);
-
-      const codeMatch = filename.match(/^(\d{4})(?=_|[.\s-]|$)/);
-      if (!codeMatch) return driveImageUrl('__drive_missing_product__');
-      const id = driveByCode[codeMatch[1]] || '';
-      return id ? driveImageUrl(id) : driveImageUrl(`__drive_missing_${codeMatch[1]}__`);
-    } catch (_) {
-      return String(raw || '');
+      return await fetch(url, { cache: "no-store", signal: controlador.signal });
+    } finally {
+      clearTimeout(temporizador);
     }
   }
 
-  const srcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
-  if (srcDescriptor && srcDescriptor.set && srcDescriptor.get) {
-    Object.defineProperty(HTMLImageElement.prototype, 'src', {
-      configurable: srcDescriptor.configurable,
-      enumerable: srcDescriptor.enumerable,
-      get: srcDescriptor.get,
-      set(value) {
-        return srcDescriptor.set.call(this, resolveDriveImage(value));
+  function esIpLocalNumerica(value) {
+    const ip = String(value || "").trim();
+    const match = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+    if (!match) return false;
+
+    const partes = match.slice(1).map(Number);
+    if (partes.some(parte => parte < 0 || parte > 255)) return false;
+
+    if (partes[0] === 10) return true;
+    if (partes[0] === 192 && partes[1] === 168) return true;
+    if (partes[0] === 172 && partes[1] >= 16 && partes[1] <= 31) return true;
+    return false;
+  }
+
+  function obtenerIpLocalNumerica() {
+    return new Promise(resolve => {
+      const RTCPeer = window.RTCPeerConnection || window.webkitRTCPeerConnection;
+      if (!RTCPeer) {
+        resolve("");
+        return;
       }
-    });
-  }
 
-  const sourceSrcsetDescriptor = typeof HTMLSourceElement !== 'undefined'
-    ? Object.getOwnPropertyDescriptor(HTMLSourceElement.prototype, 'srcset')
-    : null;
-  if (sourceSrcsetDescriptor && sourceSrcsetDescriptor.set && sourceSrcsetDescriptor.get) {
-    Object.defineProperty(HTMLSourceElement.prototype, 'srcset', {
-      configurable: sourceSrcsetDescriptor.configurable,
-      enumerable: sourceSrcsetDescriptor.enumerable,
-      get: sourceSrcsetDescriptor.get,
-      set(value) {
-        return sourceSrcsetDescriptor.set.call(this, resolveDriveImage(value));
-      }
-    });
-  }
+      let terminado = false;
+      let pc = null;
+      const finalizar = value => {
+        if (terminado) return;
+        terminado = true;
+        try { if (pc) pc.close(); } catch (_) {}
+        resolve(esIpLocalNumerica(value) ? String(value).trim() : "");
+      };
 
-  const nativeSetAttribute = Element.prototype.setAttribute;
-  Element.prototype.setAttribute = function(name, value) {
-    const attr = String(name).toLowerCase();
-    if (this instanceof HTMLImageElement && attr === 'src') {
-      value = resolveDriveImage(value);
-    } else if (typeof HTMLSourceElement !== 'undefined' && this instanceof HTMLSourceElement && attr === 'srcset') {
-      value = resolveDriveImage(value);
-    }
-    return nativeSetAttribute.call(this, name, value);
-  };
+      const temporizador = setTimeout(() => finalizar(""), 1300);
 
-  function remapExistingDocumentImages() {
-    document.querySelectorAll('img[src]').forEach(img => {
-      const current = img.getAttribute('src');
-      const mapped = resolveDriveImage(current);
-      if (mapped && mapped !== current) img.src = mapped;
-    });
+      try {
+        pc = new RTCPeer({ iceServers: [] });
+        pc.createDataChannel("ip");
 
-    document.querySelectorAll('source[srcset]').forEach(source => {
-      const current = source.getAttribute('srcset');
-      const mapped = resolveDriveImage(current);
-      if (mapped && mapped !== current) source.srcset = mapped;
-    });
-
-    document.querySelectorAll('link[rel~="icon"][href], link[rel="apple-touch-icon"][href], link[rel="preload"][as="image"][href]').forEach(link => {
-      const current = link.getAttribute('href');
-      const mapped = resolveDriveImage(current);
-      if (mapped && mapped !== current) link.setAttribute('href', mapped);
-    });
-
-    document.querySelectorAll('meta[property="og:image"], meta[property="og:image:secure_url"], meta[name="twitter:image"]').forEach(meta => {
-      const current = meta.getAttribute('content');
-      const mapped = resolveDriveImage(current);
-      if (mapped && mapped !== current) meta.setAttribute('content', mapped);
-    });
-  }
-
-  remapExistingDocumentImages();
-
-  window.fetch = function(input, init) {
-    let url = '';
-    try {
-      url = typeof input === 'string' ? input : String(input && input.url || '');
-    } catch (_) {}
-
-    if (/^https:\/\/api\.github\.com\/repos\/irenismb\/stock\/git\/trees\//i.test(url)) {
-      return driveMapReady.then(map => {
-        const tree = [];
-        const codes = Object.keys(map).sort();
-
-        codes.forEach(code => {
-          const dynamicFiles = productFilesByCode[code];
-          if (Array.isArray(dynamicFiles) && dynamicFiles.length) {
-            dynamicFiles.forEach((item, index) => {
-              tree.push({
-                path: `natura/productos/${item.name}`,
-                type: 'blob',
-                mode: '100644',
-                sha: `drive-${code}-${index + 1}`
-              });
-            });
-          } else {
-            tree.push({
-              path: `natura/productos/${code}_01_drive.webp`,
-              type: 'blob',
-              mode: '100644',
-              sha: `drive-${code}`
-            });
+        pc.onicecandidate = event => {
+          const candidate = String(event?.candidate?.candidate || "");
+          const ips = candidate.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g) || [];
+          const local = ips.find(esIpLocalNumerica);
+          if (local) {
+            clearTimeout(temporizador);
+            finalizar(local);
           }
-        });
+        };
 
-        Object.keys(giftDriveByFile)
-          .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }))
-          .forEach(filename => {
-            tree.push({
-              path: `natura/productos/regalos/${filename}`,
-              type: 'blob',
-              mode: '100644',
-              sha: `drive-regalo-${filename}`
-            });
+        pc.createOffer()
+          .then(offer => pc.setLocalDescription(offer))
+          .catch(() => {
+            clearTimeout(temporizador);
+            finalizar("");
           });
+      } catch (_) {
+        clearTimeout(temporizador);
+        finalizar("");
+      }
+    });
+  }
 
-        return new Response(JSON.stringify({
-          sha: `google-drive-${currentIndexSource}`,
-          truncated: false,
-          tree
-        }), {
-          status: 200,
-          headers: {
-            'Content-Type': 'application/json; charset=utf-8',
-            'x-ratelimit-remaining': '999'
-          }
-        });
+  async function enviarRegistroUbicacion(ubicacion, userId) {
+    try {
+      const contextoPromise = typeof window.obtenerContextoVisitaCatalogo === "function"
+        ? Promise.race([
+            Promise.resolve(window.obtenerContextoVisitaCatalogo()).catch(() => ({})),
+            new Promise(resolve => setTimeout(() => resolve({}), 1600))
+          ])
+        : Promise.resolve({});
+
+      const [contexto, ipLocal] = await Promise.all([
+        contextoPromise,
+        obtenerIpLocalNumerica()
+      ]);
+      const direccion = normalizarDireccion(
+        ubicacion.direccion || [ubicacion.ciudad, ubicacion.departamento, ubicacion.pais].filter(Boolean).join(", ")
+      );
+
+      const loadId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const origenActual = String(contexto.ultimo_origen || contexto.origen || "").trim();
+      const primerOrigen = String(contexto.primer_origen || "").trim();
+      const medio = String(contexto.medio || "").trim();
+      const campana = String(contexto.campana || "").trim();
+      const conversion = String(contexto.conversion || "").trim();
+      const partesOrigen = [origenActual || "Directo / no detectable"];
+      if(primerOrigen && primerOrigen !== origenActual) partesOrigen.push(`primero: ${primerOrigen}`);
+      if(medio) partesOrigen.push(`medio: ${medio}`);
+      if(campana) partesOrigen.push(`campaña: ${campana}`);
+      if(conversion) partesOrigen.push(`conversión: ${conversion}`);
+      const origenTelegram = partesOrigen.join(" · ");
+
+      const payload = new URLSearchParams({
+        lat: String(ubicacion.lat ?? ""),
+        lng: String(ubicacion.lng ?? ""),
+        acc: String(ubicacion.acc ?? ""),
+        fuente: String(ubicacion.fuente || "SIN_UBICACION"),
+        src: String(ubicacion.fuente || "SIN_UBICACION"),
+        ciudad: String(ubicacion.ciudad || ""),
+        departamento: String(ubicacion.departamento || ""),
+        pais: String(ubicacion.pais || ""),
+        direccion,
+        navegador: userId,
+        user_id: userId,
+        load_id: loadId,
+        ts: String(Date.now()),
+        dispositivo: String(contexto.dispositivo || ""),
+        marca: String(contexto.marca || ""),
+        modelo: String(contexto.modelo || ""),
+        ip_local: String(ipLocal || ""),
+        origen: origenTelegram,
+        origen_actual: origenActual,
+        primer_origen: primerOrigen,
+        ultimo_origen: String(contexto.ultimo_origen || origenActual),
+        medio,
+        campana,
+        certeza_origen: String(contexto.certeza_origen || ""),
+        conversion,
+        conversion_detalle: String(contexto.conversion_detalle || ""),
+        categoria: String(contexto.categoria || ""),
+        producto: String(contexto.producto || ""),
+        carrito_productos: String(contexto.carrito_productos || "0"),
+        carrito_unidades: String(contexto.carrito_unidades || "0"),
+        carrito_total: String(contexto.carrito_total || "0"),
+        cb: Math.random().toString(36).slice(2)
       });
+
+      await fetch(`${GPS_LOG_ENDPOINT}?${payload.toString()}`, {
+        method: "GET",
+        mode: "no-cors",
+        cache: "no-store",
+        keepalive: true
+      });
+      return await confirmarRegistroVisita(loadId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function consultarIdVisita(loadId) {
+    return new Promise((resolve, reject) => {
+      const callbackName = `__irenismbVisitConfirm_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const script = document.createElement("script");
+      let settled = false;
+
+      const cleanup = () => {
+        try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+        try { script.remove(); } catch (_) {}
+      };
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error("Tiempo de espera agotado al confirmar el registro de visita."));
+      }, 3500);
+
+      window[callbackName] = payload => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+
+        const rows = payload && payload.status === "ok" && payload.table && Array.isArray(payload.table.rows)
+          ? payload.table.rows
+          : [];
+        const found = rows.some(row => {
+          const cells = Array.isArray(row && row.c) ? row.c : [];
+          return valorCelda(cells[0]).trim() === loadId;
+        });
+        resolve(found);
+      };
+
+      script.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error("No se pudo consultar la confirmación del registro de visita."));
+      };
+
+      const safeLoadId = String(loadId || "").replace(/'/g, "\\'");
+      const params = new URLSearchParams({
+        sheet: VISIT_LOG_SHEET,
+        range: "N:N",
+        tq: `select N where N = '${safeLoadId}' limit 1`,
+        tqx: `out:json;responseHandler:${callbackName}`
+      });
+      script.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(VISITOR_SHEET_ID)}/gviz/tq?${params.toString()}`;
+      script.async = true;
+      document.head.appendChild(script);
+    });
+  }
+
+  async function confirmarRegistroVisita(loadId) {
+    const delays = [350, 700, 1200, 1800];
+    for (const delay of delays) {
+      await new Promise(resolve => setTimeout(resolve, delay));
+      try {
+        if (await consultarIdVisita(loadId)) return true;
+      } catch (_) {}
+    }
+    return false;
+  }
+
+  async function obtenerPoliticaRegistroVisitas(userId) {
+    const valores = window.REMOTE_CONTROL_VALUES || {};
+    const modo = normalizarModoRegistro(valores[VISIT_MODE_KEY]);
+    const registrarPropias = parsearBooleanoRemoto(valores[OWN_VISITS_KEY], false);
+
+    if (modo === "NINGUNA") {
+      return { registrar: false, modo };
     }
 
-    return nativeFetch(input, init);
-  };
+    if (!registrarPropias && await esNavegadorPropio(userId)) {
+      return { registrar: false, modo };
+    }
 
-  const analyticsScript = document.createElement('script');
-  analyticsScript.src = ANALYTICS_RUNTIME;
-  analyticsScript.async = false;
-  analyticsScript.onerror = () => console.error('No se pudo cargar el módulo de analítica de visitas.');
-  document.head.appendChild(analyticsScript);
+    if (modo === "UNA POR NAVEGADOR" && tieneMarcaNavegador()) {
+      return { registrar: false, modo };
+    }
+
+    if (modo === "UNA POR DIA" && tieneMarcaDiaActual()) {
+      return { registrar: false, modo };
+    }
+
+    return { registrar: true, modo };
+  }
+
+  function normalizarModoRegistro(value) {
+    const normalized = normalizarClave(value);
+    if (normalized === "UNA POR DISPOSITIVO") return "UNA POR NAVEGADOR";
+    if (["TODAS", "UNA POR DIA", "UNA POR NAVEGADOR", "NINGUNA"].includes(normalized)) return normalized;
+    return "TODAS";
+  }
+
+  function parsearBooleanoRemoto(value, fallback) {
+    const normalized = normalizarClave(value);
+    if (["ACTIVADO", "ACTIVO", "TRUE", "VERDADERO", "SI", "SÍ", "1", "ON"].includes(normalized)) return true;
+    if (["DESACTIVADO", "INACTIVO", "FALSE", "FALSO", "NO", "0", "OFF"].includes(normalized)) return false;
+    return fallback;
+  }
+
+  function normalizarClave(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .toUpperCase();
+  }
+
+  async function esNavegadorPropio(userId) {
+    if (!userId) return false;
+    if (OWN_BROWSER_IDS_FALLBACK.has(userId)) return true;
+
+    try {
+      const ids = await cargarIdsNavegadoresPropios();
+      return ids.has(userId);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function cargarIdsNavegadoresPropios() {
+    return new Promise((resolve, reject) => {
+      const callbackName = `__irenismbOwnBrowsers_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const script = document.createElement("script");
+      let settled = false;
+
+      const cleanup = () => {
+        try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; }
+        try { script.remove(); } catch (_) {}
+      };
+
+      const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        reject(new Error("Tiempo de espera agotado al consultar navegadores propios."));
+      }, 3500);
+
+      window[callbackName] = payload => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+
+        if (!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)) {
+          reject(new Error("No se pudo leer la lista de navegadores propios."));
+          return;
+        }
+
+        const ids = new Set(OWN_BROWSER_IDS_FALLBACK);
+        for (const row of payload.table.rows) {
+          const cells = Array.isArray(row && row.c) ? row.c : [];
+          const id = valorCelda(cells[0]).trim();
+          const nombre = normalizarClave(valorCelda(cells[1]));
+          if (id && ["MARTIN", "IRENIS"].includes(nombre)) ids.add(id);
+        }
+        resolve(ids);
+      };
+
+      script.onerror = () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        cleanup();
+        reject(new Error("No se pudo conectar con la lista de navegadores propios."));
+      };
+
+      const params = new URLSearchParams({
+        sheet: VISITOR_ID_SHEET,
+        range: "A:B",
+        tq: "select A,B",
+        tqx: `out:json;responseHandler:${callbackName}`
+      });
+      script.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(VISITOR_SHEET_ID)}/gviz/tq?${params.toString()}`;
+      script.async = true;
+      document.head.appendChild(script);
+    });
+  }
+
+  function valorCelda(cell) {
+    if (!cell) return "";
+    if (cell.f !== undefined && cell.f !== null) return String(cell.f);
+    if (cell.v !== undefined && cell.v !== null) return String(cell.v);
+    return "";
+  }
+
+  function fechaActualColombia() {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Bogota",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit"
+    }).format(new Date());
+  }
+
+  function tieneMarcaNavegador() {
+    try {
+      return localStorage.getItem(VISIT_BROWSER_MARKER) === "1" ||
+             localStorage.getItem(LEGACY_VISIT_DEVICE_MARKER) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function tieneMarcaDiaActual() {
+    try {
+      return localStorage.getItem(`${VISIT_DAY_MARKER_PREFIX}${fechaActualColombia()}`) === "1";
+    } catch (_) {
+      return false;
+    }
+  }
+
+  function marcarRegistroVisita(modo) {
+    try {
+      if (modo === "UNA POR NAVEGADOR") {
+        localStorage.setItem(VISIT_BROWSER_MARKER, "1");
+      } else if (modo === "UNA POR DIA") {
+        localStorage.setItem(`${VISIT_DAY_MARKER_PREFIX}${fechaActualColombia()}`, "1");
+      }
+    } catch (_) {}
+  }
+
+  function obtenerIdLocal() {
+    try {
+      let id = localStorage.getItem(USER_ID_KEY);
+      if (id) return id;
+
+      id = window.crypto && typeof window.crypto.randomUUID === "function"
+        ? window.crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      localStorage.setItem(USER_ID_KEY, id);
+      return id;
+    } catch (_) {
+      return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    }
+  }
+
+  function fuenteGps(accuracy) {
+    const valor = Number(accuracy);
+    if (!Number.isFinite(valor) || valor <= 35) return "GPS";
+    if (valor <= 120) return "WI-FI";
+    if (valor <= 1000) return "CELULAR";
+    return "GPS";
+  }
+
+  function ubicacionNoDisponible() {
+    return {
+      ciudad: "Ubicación no disponible",
+      departamento: "",
+      pais: "",
+      direccion: "",
+      fuente: "SIN_UBICACION",
+      lat: "",
+      lng: "",
+      acc: ""
+    };
+  }
+
+  function normalizarTexto(valor) {
+    return String(valor || "").replace(/[<>]/g, "").trim().slice(0, 80);
+  }
+
+  function normalizarDireccion(valor) {
+    return String(valor || "").replace(/[<>]/g, "").replace(/\s+/g, " ").trim().slice(0, 180);
+  }
 })();

@@ -25,8 +25,9 @@ jobs:
           test "$(find natura/iconos -maxdepth 1 -type f | wc -l)" -eq 20
           test -f natura/logos/logo_empresa.webp
           test -f natura/logos/whatsapp.webp
-          test -f "natura/iconos/2026-09-06_icono belleza maquillaje brocha mujer.webp"
-          test -f "natura/iconos/2026-09-06_icono perfumeria frasco perfume.webp"
+          test -f "natura/iconos/2026-09-06_icono subcategoria maquillaje brocha labial rosa.webp"
+          test -f "natura/iconos/2026-09-06_icono categoria para ella perfume floral.webp"
+          test -f "natura/iconos/2026-09-06_icono categoria para el perfume azul.webp"
           if git diff --cached --name-only | grep -q '^natura/productos/'; then
             echo "Error: no se deben restaurar imágenes de productos en GitHub"
             exit 1

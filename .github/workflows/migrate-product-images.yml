@@ -1,4 +1,4 @@
-name: Migrar imágenes de productos a Drive
+name: Restaurar recursos fijos del catálogo
 
 on:
   push:
@@ -10,26 +10,32 @@ permissions:
   contents: write
 
 jobs:
-  migrate:
+  restore-fixed-assets:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Aplicar cambio validado
+
+      - name: Restaurar logos e iconos históricos
         shell: bash
         run: |
-          printf '%s' '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' | base64 -d | gzip -d > /tmp/catalog.patch
-          git apply --check /tmp/catalog.patch
-          git apply /tmp/catalog.patch
-          node --check natura/catalogo-app.js
-          test "$(git hash-object natura/catalogo-app.js)" = "324cc0e5874b189fc7c6be17c9ab4581815160a1"
-          test "$(git hash-object natura/catalogo.html)" = "900d3be467431e7bf254807d8eb5f42c8b311ad3"
-      - name: Guardar cambio
+          git checkout e3dc78200fdfe123050952f4a282c6a8a9acc2e2 -- natura/logos natura/iconos
+          test "$(find natura/logos -maxdepth 1 -type f | wc -l)" -eq 11
+          test "$(find natura/iconos -maxdepth 1 -type f | wc -l)" -eq 20
+          test -f natura/logos/logo_empresa.webp
+          test -f natura/logos/whatsapp.webp
+          test -f "natura/iconos/2026-09-06_icono belleza maquillaje brocha mujer.webp"
+          test -f "natura/iconos/2026-09-06_icono perfumeria frasco perfume.webp"
+          if git diff --cached --name-only | grep -q '^natura/productos/'; then
+            echo "Error: no se deben restaurar imágenes de productos en GitHub"
+            exit 1
+          fi
+
+      - name: Guardar restauración
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add natura/catalogo-app.js natura/catalogo.html
-          git commit -m "Usar Drive/Hatchable para imágenes de productos"
+          git commit -m "Restaurar logos e iconos fijos del catálogo"
           git push origin main

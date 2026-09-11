@@ -28,23 +28,22 @@
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
 
-    // Las imágenes normales se relacionan por el código interno global de cuatro dígitos.
-    // Todas las imágenes de producto viven directamente en la carpeta productos y se relacionan por el código global de cuatro dígitos.
+    // GitHub Pages aloja el código del catálogo y sus recursos fijos (logos e iconos).
+    // Las imágenes variables de productos NO viven en GitHub: se resuelven desde Google Drive
+    // mediante el servicio público de índice definido más abajo.
     const GITHUB_CATALOG_SOURCE = {
       owner: "irenismb",
       repo: "stock",
       branch: "main",
-      catalogDir: "natura",
-      productsFolder: "productos"
+      catalogDir: "natura"
     };
 
 
     // Galería visual exclusiva de "Regalos para toda ocasión".
-    // La carpeta de trabajo está en Drive, pero la web solo consume su publicación en GitHub.
+    // Sus imágenes viven en la subcarpeta regalos de Google Drive y se reciben por el mismo servicio.
     // Los regalos no forman parte del inventario del Google Sheet y sus nombres de archivo no se muestran.
     const GIFT_GITHUB_SOURCE = {
-      section: "Regalos para toda ocasión",
-      folder: "regalos"
+      section: "Regalos para toda ocasión"
     };
 
 	const INTERRUPTORES = {
@@ -318,9 +317,9 @@
 
 
     const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
-    const GITHUB_API_BASE = `https://api.github.com/repos/${GITHUB_CATALOG_SOURCE.owner}/${GITHUB_CATALOG_SOURCE.repo}`;
+    const PRODUCT_IMAGE_API_URL = "https://natura-product.hatchable.site/api/products";
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
-    const GITHUB_IMAGE_INDEX_CACHE_KEY = "irenismb_github_image_index_cache";
+    const PRODUCT_IMAGE_INDEX_CACHE_KEY = "irenismb_drive_image_index_cache_v2";
 
     function googleSheetQueryUrl(callbackName){
       const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
@@ -647,89 +646,126 @@
       }
     }
 
-    function readGitHubImageIndexCache(){
+    function readProductImageIndexCache(){
       try{
-        const raw = localStorage.getItem(GITHUB_IMAGE_INDEX_CACHE_KEY);
-        if(!raw) return [];
+        const raw = localStorage.getItem(PRODUCT_IMAGE_INDEX_CACHE_KEY);
+        if(!raw) return { entries:[], giftImageUrls:[] };
         const parsed = JSON.parse(raw);
         const entries = Array.isArray(parsed?.entries) ? parsed.entries : [];
-        return entries
-          .map(entry => ({ path:String(entry?.path || "").trim(), type:"blob" }))
-          .filter(entry => entry.path && PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(entry.path)));
+        const giftImageUrls = Array.isArray(parsed?.giftImageUrls) ? parsed.giftImageUrls : [];
+        return {
+          entries: entries
+            .map(entry => ({
+              path:String(entry?.path || "").trim(),
+              url:String(entry?.url || "").trim(),
+              id:String(entry?.id || "").trim(),
+              type:"blob"
+            }))
+            .filter(entry =>
+              entry.path &&
+              /^https:\/\//i.test(entry.url) &&
+              PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(entry.path))
+            ),
+          giftImageUrls: giftImageUrls
+            .map(url => String(url || "").trim())
+            .filter(url => /^https:\/\//i.test(url))
+        };
       }catch(_){
-        return [];
+        return { entries:[], giftImageUrls:[] };
       }
     }
 
-    function saveGitHubImageIndexCache(entries){
+    function saveProductImageIndexCache(entries, giftImageUrls){
       try{
-        const paths = (Array.isArray(entries) ? entries : [])
-          .map(entry => String(entry?.path || "").trim())
-          .filter(Boolean);
-        localStorage.setItem(GITHUB_IMAGE_INDEX_CACHE_KEY, JSON.stringify({
+        const cleanEntries = (Array.isArray(entries) ? entries : [])
+          .map(entry => ({
+            path:String(entry?.path || "").trim(),
+            url:String(entry?.url || "").trim(),
+            id:String(entry?.id || "").trim()
+          }))
+          .filter(entry => entry.path && /^https:\/\//i.test(entry.url));
+        const cleanGifts = (Array.isArray(giftImageUrls) ? giftImageUrls : [])
+          .map(url => String(url || "").trim())
+          .filter(url => /^https:\/\//i.test(url));
+        localStorage.setItem(PRODUCT_IMAGE_INDEX_CACHE_KEY, JSON.stringify({
           savedAt:Date.now(),
-          entries:paths.map(path => ({ path }))
+          entries:cleanEntries,
+          giftImageUrls:cleanGifts
         }));
       }catch(_){}
     }
 
-    async function fetchGitHubJson(url){
+    async function fetchProductImageManifest(){
       const controller = new AbortController();
       const timer = window.setTimeout(()=>controller.abort(), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
       try{
-        const response = await fetch(url, {
+        const response = await fetch(PRODUCT_IMAGE_API_URL, {
           cache:"no-store",
           signal:controller.signal,
-          headers:{ "Accept":"application/vnd.github+json" }
+          headers:{ "Accept":"application/json" }
         });
         if(!response.ok){
-          const remaining = response.headers.get("x-ratelimit-remaining");
-          const suffix = remaining === "0" ? " Se alcanzó temporalmente el límite de consultas de la API." : "";
-          throw new Error(`GitHub respondió ${response.status} al consultar las imágenes.${suffix}`);
+          throw new Error(`El servicio de imágenes respondió ${response.status}.`);
         }
-        return await response.json();
+        const payload = await response.json();
+        if(!payload || payload.ok !== true || !payload.products || typeof payload.products !== "object"){
+          throw new Error("El servicio de imágenes devolvió una respuesta no válida.");
+        }
+        return payload;
       }finally{
         window.clearTimeout(timer);
       }
     }
 
-    async function loadGitHubImageIndex(){
+    function productImageManifestToIndex(payload){
+      const entries = [];
+      const products = payload && payload.products && typeof payload.products === "object"
+        ? payload.products
+        : {};
+
+      for(const [code, sequences] of Object.entries(products)){
+        if(!/^\d{4}$/.test(code) || !sequences || typeof sequences !== "object") continue;
+        for(const item of Object.values(sequences)){
+          const path = String(item?.name || "").trim();
+          const url = String(item?.url || "").trim();
+          if(!path || !/^https:\/\//i.test(url)) continue;
+          if(!PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(path))) continue;
+          entries.push({
+            path,
+            url,
+            id:String(item?.id || "").trim(),
+            type:"blob"
+          });
+        }
+      }
+
+      const giftImageUrls = (Array.isArray(payload?.gifts) ? payload.gifts : [])
+        .map(item => String(item?.url || "").trim())
+        .filter(url => /^https:\/\//i.test(url));
+
+      return { entries, giftImageUrls };
+    }
+
+    async function loadProductImageIndex(){
       try{
-        const ref = encodeURIComponent(GITHUB_CATALOG_SOURCE.branch);
-        const treeUrl = `${GITHUB_API_BASE}/git/trees/${ref}?recursive=1`;
-        const treePayload = await fetchGitHubJson(treeUrl);
-        if(!treePayload || !Array.isArray(treePayload.tree) || treePayload.truncated){
-          throw new Error("La API de GitHub no devolvió un árbol completo del repositorio.");
+        const payload = await fetchProductImageManifest();
+        const index = productImageManifestToIndex(payload);
+        if(!index.entries.length){
+          throw new Error("El servicio de imágenes no devolvió productos válidos.");
         }
-
-        const prefix = `${GITHUB_CATALOG_SOURCE.catalogDir}/${GITHUB_CATALOG_SOURCE.productsFolder}/`;
-        const entries = treePayload.tree
-          .filter(entry => {
-            if(!entry || entry.type !== "blob") return false;
-            const fullPath = String(entry.path || "");
-            if(!fullPath.startsWith(prefix)) return false;
-            const filename = fullPath.split("/").pop() || "";
-            return PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(filename));
-          })
-          .map(entry => ({
-            ...entry,
-            path:String(entry.path || "").slice(prefix.length)
-          }));
-
-        if(!entries.length){
-          throw new Error("La API de GitHub no encontró imágenes publicadas dentro de la carpeta productos.");
+        if(Number(payload?.duplicateCount) > 0){
+          console.warn("El servicio de imágenes detectó nombres duplicados para una misma secuencia de producto.", payload.duplicates || []);
         }
-
-        saveGitHubImageIndexCache(entries);
-        return entries;
+        saveProductImageIndexCache(index.entries, index.giftImageUrls);
+        return index;
       }catch(error){
-        const cached = readGitHubImageIndexCache();
-        if(cached.length){
-          console.warn("No se pudo actualizar el índice dinámico de imágenes; se conserva el último índice válido guardado en el navegador.", error);
+        const cached = readProductImageIndexCache();
+        if(cached.entries.length){
+          console.warn("No se pudo actualizar el índice de imágenes desde Google Drive; se conserva el último índice válido guardado en el navegador.", error);
           return cached;
         }
-        console.warn("No se pudo construir el índice dinámico de imágenes desde la API de GitHub; se usarán imágenes suplentes.", error);
-        return [];
+        console.warn("No se pudo construir el índice de imágenes desde Google Drive; se usarán imágenes suplentes.", error);
+        return { entries:[], giftImageUrls:[] };
       }
     }
 
@@ -813,19 +849,19 @@
         throw sheetError;
       }
 
-      let imageEntries = [];
+      let imageIndex = { entries:[], giftImageUrls:[] };
       try{
-        imageEntries = refreshImages ? await loadGitHubImageIndex() : readGitHubImageIndexCache();
+        imageIndex = refreshImages ? await loadProductImageIndex() : readProductImageIndexCache();
       }catch(error){
-        console.warn("Los productos se cargaron desde el Google Sheet, pero no se pudo actualizar el índice dinámico de imágenes publicadas. Se usarán imágenes suplentes.", error);
-        imageEntries = [];
+        console.warn("Los productos se cargaron desde el Google Sheet, pero no se pudo actualizar el índice dinámico de imágenes de Google Drive. Se usarán imágenes suplentes.", error);
+        imageIndex = { entries:[], giftImageUrls:[] };
       }
 
       const sheetCodes = new Set(
         rows.map(row => String(row && row.code || "").trim()).filter(Boolean)
       );
       const imagesByCode = new Map();
-      const entries = Array.isArray(imageEntries) ? imageEntries : [];
+      const entries = Array.isArray(imageIndex?.entries) ? imageIndex.entries : [];
 
       try{
         for(const entry of entries){
@@ -851,20 +887,11 @@
 
       let giftImageUrls = [];
       try{
-        const giftPrefix = `${String(GIFT_GITHUB_SOURCE.folder || "").toLowerCase()}/`;
-        giftImageUrls = entries
-          .filter(entry => {
-            const relativePath = String(entry && entry.path || "");
-            return relativePath.toLowerCase().startsWith(giftPrefix) &&
-                   PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(relativePath));
-          })
-          .sort((a,b)=>String(a.path || "").localeCompare(String(b.path || ""), "es", { numeric:true, sensitivity:"base" }))
-          .map(entry => {
-            const publishedPath = `${GITHUB_CATALOG_SOURCE.productsFolder}/${entry.path}`;
-            return publishedGitHubAssetUrl(publishedPath);
-          });
+        giftImageUrls = (Array.isArray(imageIndex?.giftImageUrls) ? imageIndex.giftImageUrls : [])
+          .map(url => String(url || "").trim())
+          .filter(url => /^https:\/\//i.test(url));
       }catch(error){
-        console.warn("No se pudo preparar la galería de regalos. Los productos del inventario continuarán cargando.", error);
+        console.warn("No se pudo preparar la galería de regalos desde Google Drive. Los productos del inventario continuarán cargando.", error);
         giftImageUrls = [];
       }
 
@@ -964,10 +991,9 @@
       const imageRelativePaths = imageEntries
         .map(imageEntry => String(imageEntry && imageEntry.path || ""))
         .filter(Boolean);
-      const imageUrls = imageRelativePaths.map(imageRelativePath => {
-        const publishedPath = `${GITHUB_CATALOG_SOURCE.productsFolder}/${imageRelativePath}`;
-        return publishedGitHubAssetUrl(publishedPath);
-      });
+      const imageUrls = imageEntries
+        .map(imageEntry => String(imageEntry && imageEntry.url || "").trim())
+        .filter(imageUrl => /^https:\/\//i.test(imageUrl));
       const imageRelativePath = imageRelativePaths[0] || "";
       const docsImageUrl = imageUrls[0] || "";
       const syntheticFilename = imageRelativePath || `${code}.webp`;
@@ -5211,23 +5237,13 @@ function initCollageFeature(){
   }
 
   function marketplacePresentationProductCandidates(p){
-    const imgFilename=String(p?.imgFilename||"").trim();
-    const relativeProduct=imgFilename?`${GITHUB_CATALOG_SOURCE.productsFolder}/${imgFilename}`:"";
-    const rawProduct=relativeProduct?marketplacePresentationRawGitHubUrl(relativeProduct):"";
-    const publishedProduct=relativeProduct?publishedGitHubAssetUrl(relativeProduct):"";
-    const isLocalFile=String(location.protocol||"").toLowerCase()==="file:";
-
-    // En file:// Chromium trata muchos archivos locales como orígenes opacos.
-    // Dibujarlos en canvas puede contaminarlo e impedir exportar el PNG.
-    // Por eso, al probar en PC se priorizan copias HTTPS CORS-safe del mismo recurso.
+    // Las imágenes de producto se sirven desde Google Drive mediante URLs HTTPS con CORS.
+    // GitHub queda reservado para recursos fijos como logos e iconos.
     return [
-      rawProduct,
-      publishedProduct,
       collageExportImageUrl(p),
       marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.webp`),
       marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.png`),
       productPlaceholderAbsoluteUrl(),
-      ...(isLocalFile?[]:[marketplacePresentationLocalAssetUrl(relativeProduct)]),
       marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.webp`),
       marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.png`),
       ...COMPANY_LOGOS

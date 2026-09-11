@@ -2291,12 +2291,12 @@
     function loadShippingFromLS(){
       if(!shippingCopInp) return;
 
-      const MIN_SHIPPING = 6000;
+      const MIN_SHIPPING = 7000;
 
       const raw = readStringLS(LS_SHIPPING_KEY, "");
       const v = toNumberDigits(raw);
 
-      // Si no hay valor guardado, usar 6.000 por defecto (editable).
+      // Si no hay valor guardado, usar 7.000 por defecto (editable).
       shippingCopInp.value = (v ? String(v) : String(MIN_SHIPPING));
     }
     function saveShippingToLS(){
@@ -2320,6 +2320,15 @@
 	
     const ORDER_LOG_TIMEOUT_MS = 6500;
 
+    const INVOICE_MOVEMENTS_SOURCE = {
+      spreadsheetId: "1M8yCu65FG0wBeBAPqMXLaaXg2YXIhrJ_4gJ5lo1tZ9g",
+      sheetName: "movimientos"
+    };
+    const INVOICE_SANT_LOCAL_KEY = "irenismb_invoice_last_sant";
+    const INVOICE_PAYMENT_LOCAL_KEY = "irenismb_invoice_payment_method";
+    const INVOICE_REMOTE_SANT_LOOKUP_ENABLED = false;
+    let invoiceSantRemoteCache = { value:0, ts:0 };
+
     function buildLineItems(){
       const items = cartItemsArray();
       const includeCode = shouldSendProductCodesByWhatsApp();
@@ -2339,6 +2348,492 @@
         .replace(/\n+/g, " ")
         .replace(/\s+/g, " ")
         .trim();
+    }
+
+    function invoiceDateColombia(){
+      try{
+        return new Intl.DateTimeFormat("en-CA", {
+          timeZone:"America/Bogota",
+          year:"numeric",
+          month:"2-digit",
+          day:"2-digit"
+        }).format(new Date());
+      }catch(_){
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+      }
+    }
+
+    function invoiceMoney(value){
+      const n = Math.max(0, Math.round(Number(value) || 0));
+      return `COP ${new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 }).format(n)}`;
+    }
+
+    function invoiceReadLocalSantMax(){
+      try{
+        const raw = String(localStorage.getItem(INVOICE_SANT_LOCAL_KEY) || "").trim();
+        const m = raw.match(/^SANT(\d{7})$/i);
+        return m ? Number(m[1]) || 0 : 0;
+      }catch(_){
+        return 0;
+      }
+    }
+
+    function invoiceRememberSant(sant){
+      try{ localStorage.setItem(INVOICE_SANT_LOCAL_KEY, String(sant || "")); }catch(_){}
+    }
+
+    function invoiceParseSantMax(values){
+      let max = 0;
+      for(const value of Array.isArray(values) ? values : []){
+        const m = String(value || "").trim().match(/^SANT(\d{7})$/i);
+        if(m) max = Math.max(max, Number(m[1]) || 0);
+      }
+      return max;
+    }
+
+    function invoiceFetchRemoteSantMax(){
+      const now = Date.now();
+      if(invoiceSantRemoteCache.ts && now - invoiceSantRemoteCache.ts < 15000){
+        return Promise.resolve(invoiceSantRemoteCache.value || 0);
+      }
+
+      return new Promise((resolve, reject)=>{
+        const callbackName = "__invoiceSant_" + Date.now() + "_" + Math.random().toString(36).slice(2);
+        const script = document.createElement("script");
+        let settled = false;
+
+        const cleanup = ()=>{
+          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
+          if(script.parentNode) script.parentNode.removeChild(script);
+        };
+        const timer = window.setTimeout(()=>{
+          if(settled) return;
+          settled = true;
+          cleanup();
+          reject(new Error("No fue posible consultar la numeración SANT vigente."));
+        }, 8000);
+
+        window[callbackName] = response=>{
+          if(settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          cleanup();
+          try{
+            const rows = Array.isArray(response?.table?.rows) ? response.table.rows : [];
+            const values = rows.map(row=> row?.c?.[0]?.v ?? row?.c?.[0]?.f ?? "");
+            const max = invoiceParseSantMax(values);
+            invoiceSantRemoteCache = { value:max, ts:Date.now() };
+            resolve(max);
+          }catch(err){
+            reject(err);
+          }
+        };
+
+        script.onerror = ()=>{
+          if(settled) return;
+          settled = true;
+          window.clearTimeout(timer);
+          cleanup();
+          reject(new Error("No fue posible consultar la numeración SANT vigente."));
+        };
+
+        const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(INVOICE_MOVEMENTS_SOURCE.spreadsheetId)}/gviz/tq`;
+        const params = new URLSearchParams({
+          sheet: INVOICE_MOVEMENTS_SOURCE.sheetName,
+          headers: "1",
+          tq: "select B where B is not null",
+          tqx: `out:json;responseHandler:${callbackName}`,
+          _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
+        });
+        script.src = `${base}?${params.toString()}`;
+        document.head.appendChild(script);
+      });
+    }
+
+    async function invoiceNextSant(){
+      let remoteMax = 0;
+      if(INVOICE_REMOTE_SANT_LOOKUP_ENABLED){
+        try{ remoteMax = await invoiceFetchRemoteSantMax(); }catch(_){}
+      }
+      const localMax = invoiceReadLocalSantMax();
+      const next = Math.max(remoteMax, localMax) + 1;
+      if(next > 9999999) throw new Error("La numeración SANT alcanzó su límite configurado.");
+      return `SANT${String(next).padStart(7,"0")}`;
+    }
+
+    function invoicePrefetchSant(){
+      if(INVOICE_REMOTE_SANT_LOOKUP_ENABLED) invoiceFetchRemoteSantMax().catch(()=>{});
+    }
+
+    function invoicePaymentMethod(){
+      const el = document.getElementById("invoicePaymentMethod");
+      const allowed = new Set(["Efectivo","Transferencia","Nequi","Daviplata","Tarjeta","Otro"]);
+      const value = String(el?.value || "Nequi").trim();
+      return allowed.has(value) ? value : "Nequi";
+    }
+
+    function invoiceValidateInput(){
+      const cartItems = cartItemsArray();
+      if(!cartItems.length) throw new Error("Agrega al menos un producto al carrito antes de generar la factura.");
+      if(!shouldShowProductPrices()){
+        throw new Error("No se puede generar una factura de venta con los precios ocultos.");
+      }
+
+      const items = cartItems.map(it=>{
+        const current = productById.get(String(it.id));
+        if(!current) throw new Error(`El producto ${it.id || ""} ya no está disponible en el inventario vigente.`);
+        const qty = Math.max(0, safeInt(it.qty, 0));
+        if(!qty) throw new Error(`La cantidad del producto ${current.name || it.id} no es válida.`);
+        if(current.hasPrice === false) throw new Error(`El producto ${current.name || it.id} no tiene precio vigente.`);
+        const stock = Number(current.stock);
+        if(!Number.isInteger(stock) || stock < 0){
+          throw new Error(`No se puede confirmar el stock vigente de ${current.name || it.id}.`);
+        }
+        if(stock < qty){
+          throw new Error(`Stock insuficiente para ${current.name || it.id}. Disponible: ${stock}.`);
+        }
+        return {
+          ...it,
+          id: String(current.id || it.id || ""),
+          name: String(current.name || it.name || ""),
+          price: Number(current.price) || 0,
+          hasPrice: current.hasPrice !== false,
+          stock,
+          qty
+        };
+      });
+
+      const client = getClientDataCurrent();
+      const addr = getAddressDataCurrent();
+      const missing = [];
+      if(!client.name) missing.push("nombre del cliente");
+      if(!client.phone) missing.push("celular");
+      if(!addr.via) missing.push("dirección");
+      if(!addr.barrio) missing.push("barrio");
+      if(!addr.city) missing.push("ciudad");
+      if(missing.length){
+        throw new Error(`Faltan datos para la factura: ${missing.join(", ")}.`);
+      }
+
+      return { items, client, addr };
+    }
+
+    function invoiceRoundRect(ctx, x, y, w, h, r){
+      const radius = Math.max(0, Math.min(Number(r)||0, Math.min(w,h)/2));
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    function invoiceWrapLines(ctx, text, maxWidth, maxLines=4){
+      const words = String(text || "").replace(/\s+/g," ").trim().split(" ").filter(Boolean);
+      if(!words.length) return [""];
+      const lines = [];
+      let current = "";
+      for(const word of words){
+        const test = current ? `${current} ${word}` : word;
+        if(ctx.measureText(test).width <= maxWidth || !current){
+          current = test;
+        }else{
+          lines.push(current);
+          current = word;
+          if(lines.length >= maxLines) break;
+        }
+      }
+      if(lines.length < maxLines && current) lines.push(current);
+      if(lines.length === maxLines){
+        const usedWords = lines.join(" ").split(" ").length;
+        if(usedWords < words.length){
+          let last = lines[lines.length-1];
+          while(last && ctx.measureText(last + "…").width > maxWidth) last = last.slice(0,-1).trimEnd();
+          lines[lines.length-1] = (last || "") + "…";
+        }
+      }
+      return lines;
+    }
+
+    function invoiceLoadImage(src){
+      return new Promise((resolve, reject)=>{
+        const img = new Image();
+        img.onload = ()=>resolve(img);
+        img.onerror = reject;
+        img.decoding = "async";
+        img.src = src;
+      });
+    }
+
+    async function invoiceLoadOfficialLogo(){
+      const candidates = ["logos/logo_empresa.webp", "logos/logo_empresa.png"];
+      for(const src of candidates){
+        try{ return await invoiceLoadImage(src); }catch(_){}
+      }
+      return null;
+    }
+
+    function invoiceDrawLabelValue(ctx, x, y, label, value, width){
+      ctx.fillStyle = "#745d60";
+      ctx.font = "700 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText(label.toUpperCase(), x, y);
+      ctx.fillStyle = "#2d2628";
+      ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const lines = invoiceWrapLines(ctx, value, width, 2);
+      lines.forEach((line, i)=>ctx.fillText(line, x, y + 31 + i*25));
+    }
+
+    async function invoiceBuildCanvas(sant){
+      const { items, client, addr } = invoiceValidateInput();
+      const width = 1103;
+      const rowHeight = 88;
+      const tableTop = 680;
+      const tableHeaderHeight = 52;
+      const tableHeight = tableHeaderHeight + items.length * rowHeight;
+      const summaryTop = tableTop + tableHeight + 34;
+      const footerTop = summaryTop + 205;
+      const height = Math.max(1426, footerTop + 160);
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d", { alpha:false });
+      if(!ctx) throw new Error("No fue posible preparar la factura PNG.");
+
+      const mauve = "#8f4963";
+      const mauveDark = "#71374d";
+      const rose = "#c54e73";
+      const purple = "#6f3aa0";
+      const gold = "#b8781f";
+      const ink = "#282326";
+      const muted = "#735f65";
+      const line = "#eadcda";
+      const softRose = "#fff6f8";
+      const softPurple = "#faf7ff";
+      const softGold = "#fffaf1";
+
+      ctx.fillStyle = "#fffdfc";
+      ctx.fillRect(0,0,width,height);
+      const topGrad = ctx.createLinearGradient(0,0,width,0);
+      topGrad.addColorStop(0,"#c98a31");
+      topGrad.addColorStop(.45,"#f0d58e");
+      topGrad.addColorStop(1,"#b8701e");
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0,0,width,18);
+
+      const logo = await invoiceLoadOfficialLogo();
+      if(logo){
+        const size = 145;
+        ctx.drawImage(logo, 54, 50, size, size);
+      }
+
+      ctx.fillStyle = gold;
+      ctx.font = "900 34px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("IRENISMB STOCK NATURA", 235, 96);
+      ctx.fillStyle = ink;
+      ctx.font = "500 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Factura de venta", 235, 136);
+      ctx.fillStyle = mauve;
+      ctx.font = "800 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Natura · AVON", 235, 185);
+
+      ctx.fillStyle = softRose;
+      ctx.strokeStyle = "#e7a7ba";
+      ctx.lineWidth = 2;
+      invoiceRoundRect(ctx, 755, 62, 292, 150, 18);
+      ctx.fill(); ctx.stroke();
+      ctx.fillStyle = rose;
+      ctx.font = "800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("FACTURA DE VENTA", 901, 100);
+      ctx.fillStyle = mauveDark;
+      ctx.font = "900 35px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText(sant, 901, 157);
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = "#ffffff";
+      ctx.strokeStyle = line;
+      ctx.lineWidth = 2;
+      invoiceRoundRect(ctx, 52, 260, 995, 125, 18);
+      ctx.fill(); ctx.stroke();
+      const metaW = 995/4;
+      const metaX = [75, 75+metaW, 75+metaW*2, 75+metaW*3];
+      invoiceDrawLabelValue(ctx, metaX[0], 295, "Fecha", invoiceDateColombia(), 190);
+      invoiceDrawLabelValue(ctx, metaX[1], 295, "Ciudad de envío", addr.city || "Santa Marta", 190);
+      invoiceDrawLabelValue(ctx, metaX[2], 295, "Medio de pago", invoicePaymentMethod(), 190);
+      invoiceDrawLabelValue(ctx, metaX[3], 295, "Moneda", "COP", 145);
+      ctx.strokeStyle = line;
+      for(let i=1;i<4;i++){
+        const xx = 52 + metaW*i;
+        ctx.beginPath(); ctx.moveTo(xx, 278); ctx.lineTo(xx, 367); ctx.stroke();
+      }
+
+      const boxY = 420, boxH = 230, boxW = 482;
+      ctx.fillStyle = softPurple; ctx.strokeStyle = "#cdb7e4";
+      invoiceRoundRect(ctx, 52, boxY, boxW, boxH, 18); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = softRose; ctx.strokeStyle = "#efbdcc";
+      invoiceRoundRect(ctx, 565, boxY, boxW, boxH, 18); ctx.fill(); ctx.stroke();
+
+      ctx.fillStyle = purple;
+      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("DATOS DE LA EMPRESA", 82, 462);
+      ctx.fillStyle = ink;
+      ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Irenismb Stock Natura", 82, 507);
+      ctx.font = "500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("Calle 10A #20A-06", 82, 542);
+      ctx.fillText("Barrio Los Almendros · Santa Marta", 82, 574);
+      ctx.fillText("Celular: 3042088961", 82, 606);
+
+      ctx.fillStyle = rose;
+      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("DATOS DEL CLIENTE", 595, 462);
+      ctx.fillStyle = ink;
+      ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const clientName = invoiceWrapLines(ctx, client.name, 405, 1)[0];
+      ctx.fillText(clientName, 595, 507);
+      ctx.font = "500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const clientAddr = joinParts([addr.via, addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
+      const addrLines = invoiceWrapLines(ctx, clientAddr, 405, 2);
+      addrLines.forEach((lineText,i)=>ctx.fillText(lineText,595,542+i*25));
+      const afterAddrY = 542 + addrLines.length*25;
+      ctx.fillText(joinParts([addr.city, addr.region], ", "), 595, afterAddrY + 7);
+      ctx.fillText(`Celular: ${client.phone}`, 595, afterAddrY + 38);
+
+      const cols = [52, 160, 535, 650, 850, 1047];
+      ctx.fillStyle = "#7648a5";
+      invoiceRoundRect(ctx, cols[0], tableTop, cols[5]-cols[0], tableHeaderHeight, 14);
+      ctx.fill();
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.textAlign = "center";
+      const headers = ["CÓDIGO","ARTÍCULO","CANT.","VALOR UNITARIO","TOTAL"];
+      for(let i=0;i<5;i++){
+        ctx.fillText(headers[i], (cols[i]+cols[i+1])/2, tableTop+32);
+      }
+      ctx.textAlign = "left";
+
+      items.forEach((it,index)=>{
+        const y = tableTop + tableHeaderHeight + index*rowHeight;
+        ctx.fillStyle = index % 2 ? "#fffdfd" : "#ffffff";
+        ctx.fillRect(cols[0], y, cols[5]-cols[0], rowHeight);
+        ctx.strokeStyle = line;
+        ctx.lineWidth = 1;
+        ctx.strokeRect(cols[0], y, cols[5]-cols[0], rowHeight);
+        for(let c=1;c<5;c++){
+          ctx.beginPath(); ctx.moveTo(cols[c], y); ctx.lineTo(cols[c], y+rowHeight); ctx.stroke();
+        }
+
+        ctx.fillStyle = ink;
+        ctx.textAlign = "center";
+        ctx.font = "800 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        ctx.fillText(String(it.id || ""), (cols[0]+cols[1])/2, y+47);
+        ctx.font = "800 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        ctx.fillText(String(Math.max(0, Number(it.qty)||0)), (cols[2]+cols[3])/2, y+47);
+        ctx.font = "700 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        ctx.fillText(invoiceMoney(it.price), (cols[3]+cols[4])/2, y+47);
+        ctx.fillText(invoiceMoney((Number(it.price)||0)*(Number(it.qty)||0)), (cols[4]+cols[5])/2, y+47);
+
+        ctx.textAlign = "left";
+        ctx.font = "600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+        const nameLines = invoiceWrapLines(ctx, String(it.name||""), cols[2]-cols[1]-28, 3);
+        const startY = y + 27 - Math.max(0,nameLines.length-1)*10;
+        nameLines.forEach((lineText,i)=>ctx.fillText(lineText, cols[1]+14, startY+i*21));
+      });
+      ctx.textAlign = "left";
+
+      const subtotal = items.reduce((sum,it)=>sum+(Number(it.price)||0)*(Number(it.qty)||0),0);
+      const shipping = getShippingCop() || 7000;
+      const total = subtotal + shipping;
+
+      ctx.fillStyle = softPurple; ctx.strokeStyle = "#cdb7e4";
+      invoiceRoundRect(ctx, 52, summaryTop, 482, 170, 18); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = purple;
+      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("INFORMACIÓN", 82, summaryTop+43);
+      ctx.fillStyle = muted;
+      ctx.font = "500 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      const noteLines = [
+        "Factura comercial de venta.",
+        "Los valores están expresados en pesos colombianos.",
+        "Gracias por confiar en tu consultora de belleza."
+      ];
+      noteLines.forEach((lineText,i)=>ctx.fillText(lineText,82,summaryTop+80+i*27));
+
+      ctx.fillStyle = softGold; ctx.strokeStyle = "#e1bb74";
+      invoiceRoundRect(ctx, 565, summaryTop, 482, 170, 18); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = gold;
+      ctx.font = "900 18px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("RESUMEN DE LA VENTA", 595, summaryTop+43);
+      ctx.font = "600 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillStyle = ink;
+      ctx.fillText("Subtotal productos",595,summaryTop+80);
+      ctx.fillText("Envío",595,summaryTop+108);
+      ctx.textAlign = "right";
+      ctx.fillText(invoiceMoney(subtotal),1015,summaryTop+80);
+      ctx.fillText(invoiceMoney(shipping),1015,summaryTop+108);
+      ctx.strokeStyle = "#e1bb74";
+      ctx.beginPath(); ctx.moveTo(595,summaryTop+125); ctx.lineTo(1015,summaryTop+125); ctx.stroke();
+      ctx.font = "900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillStyle = gold;
+      ctx.fillText(invoiceMoney(total),1015,summaryTop+157);
+      ctx.textAlign = "left";
+
+      ctx.fillStyle = rose;
+      ctx.font = "500 italic 24px Georgia, serif";
+      ctx.textAlign = "center";
+      ctx.fillText("Gracias por confiar en tu consultora de belleza", width/2, footerTop+55);
+      ctx.fillStyle = "#a8878f";
+      ctx.font = "700 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.fillText("BELLEZA QUE TRANSFORMA · CONFIANZA QUE PERDURA", width/2, footerTop+92);
+      ctx.textAlign = "left";
+
+      const bottomGrad = ctx.createLinearGradient(0,height-65,width,height);
+      bottomGrad.addColorStop(0,"#b0446f");
+      bottomGrad.addColorStop(.5,"#eaa5b7");
+      bottomGrad.addColorStop(1,"#d5a04a");
+      ctx.fillStyle = bottomGrad;
+      ctx.beginPath();
+      ctx.moveTo(0,height-46);
+      ctx.quadraticCurveTo(width*.48,height-5,width,height-85);
+      ctx.lineTo(width,height);
+      ctx.lineTo(0,height);
+      ctx.closePath();
+      ctx.fill();
+
+      return canvas;
+    }
+
+    function invoiceCanvasToBlob(canvas){
+      return new Promise((resolve,reject)=>{
+        canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("No fue posible convertir la factura a PNG.")), "image/png");
+      });
+    }
+
+    async function invoiceBuildPng(){
+      await loadProducts();
+      const sant = await invoiceNextSant();
+      const canvas = await invoiceBuildCanvas(sant);
+      const blob = await invoiceCanvasToBlob(canvas);
+      return { blob, sant };
+    }
+
+    async function invoiceCopyPngFromCart(){
+      if(!navigator.clipboard || typeof navigator.clipboard.write !== "function" || typeof ClipboardItem === "undefined"){
+        throw new Error("Este navegador no permite copiar imágenes PNG directamente al portapapeles.");
+      }
+
+      invoiceValidateInput();
+      let built = null;
+      const blobPromise = invoiceBuildPng().then(result=>{
+        built = result;
+        return result.blob;
+      });
+
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
+      if(built?.sant) invoiceRememberSant(built.sant);
+      return built;
     }
 
     function viaTypeLabel(tipo){
@@ -2393,7 +2888,7 @@
         ? ("https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(addressLine))
         : "";
 
-      return { addressLine, barrio, mapLink };
+      return { addressLine, barrio, mapLink, city, region, via };
     }
 	function buildBuyerMessage(){
 	  const items = cartItemsArray();
@@ -2543,6 +3038,8 @@
     const cartItemsEl = document.getElementById("cartItems");
     const cartTotalEl = document.getElementById("cartTotal");
     const cartBuyBtn = document.getElementById("cartBuyBtn");
+    const cartInvoiceBtn = document.getElementById("cartInvoiceBtn");
+    const invoicePaymentMethodInp = document.getElementById("invoicePaymentMethod");
     const cartClearBtn = document.getElementById("cartClearBtn");
     const cartAddressBtn = document.getElementById("cartAddressBtn");
     const cartClientBtn = document.getElementById("cartClientBtn");
@@ -2551,6 +3048,7 @@
       if(cartModal.classList.contains("open")) return;
       rememberModalTrigger(cartModal);
       renderCartModal();
+      invoicePrefetchSant();
       cartModal.classList.add("open");
       cartModal.setAttribute("aria-hidden", "false");
       lockBodyScroll();
@@ -2700,6 +3198,47 @@
     if(waTopTrackingLink){
       waTopTrackingLink.addEventListener("click", ()=>{
         registrarConversionCatalogo("Abrió WhatsApp", "Contacto superior");
+      });
+    }
+
+    if(invoicePaymentMethodInp){
+      try{
+        const savedPayment = String(localStorage.getItem(INVOICE_PAYMENT_LOCAL_KEY) || "").trim();
+        if(savedPayment && Array.from(invoicePaymentMethodInp.options).some(o=>o.value===savedPayment)){
+          invoicePaymentMethodInp.value = savedPayment;
+        }else{
+          invoicePaymentMethodInp.value = "Nequi";
+        }
+      }catch(_){ invoicePaymentMethodInp.value = "Nequi"; }
+      invoicePaymentMethodInp.addEventListener("change", ()=>{
+        try{ localStorage.setItem(INVOICE_PAYMENT_LOCAL_KEY, invoicePaymentMethod()); }catch(_){}
+      });
+    }
+
+    let invoiceCopying = false;
+    if(cartInvoiceBtn){
+      cartInvoiceBtn.addEventListener("click", async ()=>{
+        if(invoiceCopying) return;
+        invoiceCopying = true;
+        const previousText = cartInvoiceBtn.textContent;
+        cartInvoiceBtn.disabled = true;
+        cartInvoiceBtn.textContent = "Generando factura...";
+        try{
+          saveClientToLS();
+          saveAddressToLS();
+          saveShippingToLS();
+          await invoiceCopyPngFromCart();
+          cartInvoiceBtn.textContent = "Factura copiada";
+        }catch(err){
+          console.error("No se pudo copiar la factura PNG:", err);
+          alert(String(err?.message || "No se pudo copiar la factura PNG."));
+        }finally{
+          setTimeout(()=>{
+            invoiceCopying = false;
+            cartInvoiceBtn.disabled = false;
+            cartInvoiceBtn.textContent = previousText;
+          }, 1400);
+        }
       });
     }
 

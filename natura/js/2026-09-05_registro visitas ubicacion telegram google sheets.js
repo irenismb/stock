@@ -1,5 +1,5 @@
 // Producción: Google Drive es la fuente autoritativa de todas las imágenes del catálogo.
-// Este cargador se ejecuta antes de que termine la carga asíncrona del inventario.
+// Índice dinámico desde Apps Script, con caché local de 5 minutos y respaldo estático.
 (() => {
   'use strict';
 
@@ -11,12 +11,16 @@
     }
   })();
 
+  const DRIVE_INDEX_ENDPOINT = 'https://script.google.com/macros/s/AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w/exec';
   const DRIVE_MAP_SOURCE = new URL('catalogo-imagenes-drive-map.js', SCRIPT_BASE).href;
-  const ANALYTICS_RUNTIME = new URL('analytics-visitas-runtime.js?v=2026-09-11-gdrive', SCRIPT_BASE).href;
+  const ANALYTICS_RUNTIME = new URL('analytics-visitas-runtime.js?v=2026-09-11-gdrive-dynamic', SCRIPT_BASE).href;
   const CATALOG_PATH_MARKER = '/stock/natura/';
   const DRIVE_IMAGE_BASE = 'https://lh3.googleusercontent.com/d/';
+  const CACHE_KEY = 'natura-drive-image-index-v1';
+  const CACHE_TTL_MS = 5 * 60 * 1000;
+  const nativeFetch = window.fetch.bind(window);
 
-  const GIFT_DRIVE_BY_FILE = Object.freeze({
+  const FALLBACK_GIFT_DRIVE_BY_FILE = Object.freeze({
     '1.webp': '1VkM-lp9lE8YY8l46LeXeI_ZAzHxpUsC0',
     '2.webp': '1BvYz5IpAyYOvMJnPfpBvYFuVWqBMPR7u',
     '3.webp': '1PtuZ6dPJzEB2MGcYtuycK1XIWBb4yjCo',
@@ -26,7 +30,7 @@
     '7.webp': '10rD3CAstjBWQiO_67zHTyJuMBND4hm2d'
   });
 
-  const DRIVE_ASSET_BY_PATH = Object.freeze({
+  const FALLBACK_ASSET_BY_PATH = Object.freeze({
     'logos/youtube.webp': '1TAPz3EcrWi7Wyj2gwR5ZNK-7O2tDs3P8',
     'logos/whatsapp.webp': '1KAD5ufqQZ7n79L10mepkIoGBWt_W4qsY',
     'logos/tiktok.webp': '1HLfckCdrAcRY6V5Zf8lte1c6rie0Kaon',
@@ -61,37 +65,178 @@
   });
 
   let driveByCode = Object.create(null);
+  let productIdByFilename = Object.create(null);
+  let productFilesByCode = Object.create(null);
+  let giftDriveByFile = { ...FALLBACK_GIFT_DRIVE_BY_FILE };
+  let driveAssetByPath = { ...FALLBACK_ASSET_BY_PATH };
+  let currentIndexSource = 'fallback';
 
-  async function loadDriveMap() {
-    const response = await fetch(DRIVE_MAP_SOURCE, { cache: 'no-store' });
-    if (!response.ok) throw new Error(`No se pudo cargar el índice de imágenes de Drive: HTTP ${response.status}`);
+  function validDriveId(value) {
+    return typeof value === 'string' && /^[A-Za-z0-9_-]{10,}$/.test(value);
+  }
+
+  function normalizeDynamicIndex(data) {
+    if (!data || data.ok !== true || !data.products || typeof data.products !== 'object') {
+      throw new Error('El índice dinámico de Drive no tiene la estructura esperada.');
+    }
+
+    const products = Object.create(null);
+    const byFilename = Object.create(null);
+    const firstByCode = Object.create(null);
+    const gifts = Object.create(null);
+    const assets = Object.create(null);
+
+    Object.keys(data.products).forEach(code => {
+      if (!/^\d{4}$/.test(code)) return;
+      const items = Array.isArray(data.products[code]) ? data.products[code] : [];
+      const clean = items
+        .filter(item => item && validDriveId(item.id) && typeof item.name === 'string' && item.name)
+        .map(item => ({ id: item.id, name: item.name }))
+        .sort((a, b) => a.name.localeCompare(b.name, 'es', { numeric: true, sensitivity: 'base' }));
+      if (!clean.length) return;
+      products[code] = clean;
+      firstByCode[code] = clean[0].id;
+      clean.forEach(item => { byFilename[item.name] = item.id; });
+    });
+
+    if (data.gifts && typeof data.gifts === 'object') {
+      Object.keys(data.gifts).forEach(name => {
+        const item = data.gifts[name];
+        if (item && validDriveId(item.id)) gifts[name] = item.id;
+      });
+    }
+
+    if (data.assets && typeof data.assets === 'object') {
+      Object.keys(data.assets).forEach(path => {
+        const item = data.assets[path];
+        if (item && validDriveId(item.id)) assets[path] = item.id;
+      });
+    }
+
+    if (!Object.keys(firstByCode).length) {
+      throw new Error('El índice dinámico no contiene imágenes de productos válidas.');
+    }
+
+    return {
+      generatedAt: typeof data.generatedAt === 'string' ? data.generatedAt : '',
+      source: data.source && typeof data.source === 'object' ? data.source : {},
+      products,
+      byFilename,
+      firstByCode,
+      gifts,
+      assets
+    };
+  }
+
+  function applyDynamicIndex(index, sourceLabel) {
+    productFilesByCode = index.products;
+    productIdByFilename = index.byFilename;
+    driveByCode = index.firstByCode;
+    giftDriveByFile = { ...FALLBACK_GIFT_DRIVE_BY_FILE, ...index.gifts };
+    driveAssetByPath = { ...FALLBACK_ASSET_BY_PATH, ...index.assets };
+    currentIndexSource = sourceLabel;
+  }
+
+  function readCachedIndex() {
+    try {
+      const raw = localStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const cached = JSON.parse(raw);
+      if (!cached || !cached.data || !Number.isFinite(cached.savedAt)) return null;
+      return {
+        index: normalizeDynamicIndex(cached.data),
+        savedAt: cached.savedAt,
+        fresh: Date.now() - cached.savedAt < CACHE_TTL_MS
+      };
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveCachedIndex(data) {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), data }));
+    } catch (_) {}
+  }
+
+  async function fetchDynamicIndex() {
+    const response = await nativeFetch(DRIVE_INDEX_ENDPOINT, {
+      cache: 'no-store',
+      redirect: 'follow'
+    });
+    if (!response.ok) throw new Error(`Índice dinámico Drive: HTTP ${response.status}`);
+    const data = await response.json();
+    const normalized = normalizeDynamicIndex(data);
+    saveCachedIndex(data);
+    applyDynamicIndex(normalized, 'dynamic');
+    return normalized;
+  }
+
+  async function loadStaticProductFallback() {
+    const response = await nativeFetch(DRIVE_MAP_SOURCE, { cache: 'no-store' });
+    if (!response.ok) throw new Error(`Respaldo estático Drive: HTTP ${response.status}`);
     const source = await response.text();
     const match = source.match(/const\s+DRIVE_BY_CODE\s*=\s*(\{[\s\S]*?\});/);
-    if (!match) throw new Error('No se encontró el índice DRIVE_BY_CODE.');
+    if (!match) throw new Error('No se encontró DRIVE_BY_CODE en el respaldo estático.');
     const parsed = Function(`"use strict"; return (${match[1]});`)();
-    if (!parsed || typeof parsed !== 'object') throw new Error('El índice de Drive no es válido.');
+    if (!parsed || typeof parsed !== 'object') throw new Error('El respaldo estático de Drive no es válido.');
     driveByCode = Object.freeze({ ...parsed });
+    productFilesByCode = Object.create(null);
+    productIdByFilename = Object.create(null);
+    currentIndexSource = 'static-fallback';
     return driveByCode;
   }
 
-  const driveMapReady = loadDriveMap().catch(error => {
-    console.error('No se pudo preparar el índice autoritativo de imágenes de Google Drive. Se usarán imágenes suplentes.', error);
-    driveByCode = Object.freeze({});
-    return driveByCode;
-  });
+  const cachedIndex = readCachedIndex();
+  if (cachedIndex) applyDynamicIndex(cachedIndex.index, cachedIndex.fresh ? 'cache-fresh' : 'cache-stale');
+
+  const driveMapReady = (async () => {
+    if (cachedIndex) {
+      if (!cachedIndex.fresh) {
+        fetchDynamicIndex()
+          .then(() => remapExistingDocumentImages())
+          .catch(error => console.warn('No se pudo refrescar el índice dinámico de Drive; se conserva la caché.', error));
+      }
+      return driveByCode;
+    }
+
+    try {
+      await fetchDynamicIndex();
+      return driveByCode;
+    } catch (error) {
+      console.warn('No se pudo cargar el índice dinámico de Drive; se usará el respaldo estático.', error);
+      try {
+        await loadStaticProductFallback();
+      } catch (fallbackError) {
+        console.error('Tampoco se pudo cargar el respaldo estático de imágenes de Drive.', fallbackError);
+        driveByCode = Object.freeze({});
+      }
+      return driveByCode;
+    }
+  })();
+
+  setInterval(() => {
+    fetchDynamicIndex()
+      .then(() => remapExistingDocumentImages())
+      .catch(error => console.warn('Actualización en segundo plano del índice Drive no disponible.', error));
+  }, CACHE_TTL_MS);
 
   window.DRIVE_IMAGE_SOURCE = Object.freeze({
     provider: 'Google Drive',
     folderId: '133WAYlDKSt3r8KIObttDcv86eHPmPQ5b',
     resourcesFolderId: '1VftdVdVOzva6xNVG0TvEkR-h6eh90duP',
+    indexEndpoint: DRIVE_INDEX_ENDPOINT,
+    cacheTtlMs: CACHE_TTL_MS,
     endpoint: 'lh3.googleusercontent.com',
     authoritative: true,
+    dynamic: true,
     products: true,
     gifts: true,
     logos: true,
     icons: true,
     placeholders: true,
-    ready: driveMapReady
+    ready: driveMapReady,
+    get indexSource() { return currentIndexSource; }
   });
   window.DRIVE_PRODUCT_IMAGE_SOURCE = window.DRIVE_IMAGE_SOURCE;
 
@@ -116,8 +261,8 @@
       const relative = catalogRelativePath(url);
       if (!relative) return original;
 
-      const fixedAssetId = DRIVE_ASSET_BY_PATH[relative] || '';
-      if (fixedAssetId) return driveImageUrl(fixedAssetId);
+      const assetId = driveAssetByPath[relative] || '';
+      if (assetId) return driveImageUrl(assetId);
 
       if (relative.startsWith('logos/') || relative.startsWith('iconos/')) {
         return driveImageUrl(`__drive_missing_asset_${relative.split('/').pop() || 'unknown'}__`);
@@ -130,11 +275,14 @@
 
       if (parts.length >= 2 && parts[0].toLowerCase() === 'regalos') {
         const filename = parts[parts.length - 1];
-        const giftId = GIFT_DRIVE_BY_FILE[filename] || '';
+        const giftId = giftDriveByFile[filename] || '';
         return giftId ? driveImageUrl(giftId) : driveImageUrl(`__drive_missing_gift_${filename}__`);
       }
 
       const filename = parts[parts.length - 1] || '';
+      const exactId = productIdByFilename[filename] || '';
+      if (exactId) return driveImageUrl(exactId);
+
       const codeMatch = filename.match(/^(\d{4})(?=_|[.\s-]|$)/);
       if (!codeMatch) return driveImageUrl('__drive_missing_product__');
       const id = driveByCode[codeMatch[1]] || '';
@@ -183,8 +331,9 @@
 
   function remapExistingDocumentImages() {
     document.querySelectorAll('img[src]').forEach(img => {
-      const mapped = resolveDriveImage(img.getAttribute('src'));
-      if (mapped && mapped !== img.getAttribute('src')) img.src = mapped;
+      const current = img.getAttribute('src');
+      const mapped = resolveDriveImage(current);
+      if (mapped && mapped !== current) img.src = mapped;
     });
 
     document.querySelectorAll('source[srcset]').forEach(source => {
@@ -208,7 +357,6 @@
 
   remapExistingDocumentImages();
 
-  const nativeFetch = window.fetch.bind(window);
   window.fetch = function(input, init) {
     let url = '';
     try {
@@ -217,21 +365,46 @@
 
     if (/^https:\/\/api\.github\.com\/repos\/irenismb\/stock\/git\/trees\//i.test(url)) {
       return driveMapReady.then(map => {
-        const tree = Object.keys(map).sort().map(code => ({
-          path: `natura/productos/${code}_01_drive.webp`,
-          type: 'blob',
-          mode: '100644',
-          sha: `drive-${code}`
-        }));
-        Object.keys(GIFT_DRIVE_BY_FILE).sort((a, b) => a.localeCompare(b, 'es', { numeric: true })).forEach(filename => {
-          tree.push({
-            path: `natura/productos/regalos/${filename}`,
-            type: 'blob',
-            mode: '100644',
-            sha: `drive-regalo-${filename}`
-          });
+        const tree = [];
+        const codes = Object.keys(map).sort();
+
+        codes.forEach(code => {
+          const dynamicFiles = productFilesByCode[code];
+          if (Array.isArray(dynamicFiles) && dynamicFiles.length) {
+            dynamicFiles.forEach((item, index) => {
+              tree.push({
+                path: `natura/productos/${item.name}`,
+                type: 'blob',
+                mode: '100644',
+                sha: `drive-${code}-${index + 1}`
+              });
+            });
+          } else {
+            tree.push({
+              path: `natura/productos/${code}_01_drive.webp`,
+              type: 'blob',
+              mode: '100644',
+              sha: `drive-${code}`
+            });
+          }
         });
-        return new Response(JSON.stringify({ sha: 'google-drive-authoritative', truncated: false, tree }), {
+
+        Object.keys(giftDriveByFile)
+          .sort((a, b) => a.localeCompare(b, 'es', { numeric: true }))
+          .forEach(filename => {
+            tree.push({
+              path: `natura/productos/regalos/${filename}`,
+              type: 'blob',
+              mode: '100644',
+              sha: `drive-regalo-${filename}`
+            });
+          });
+
+        return new Response(JSON.stringify({
+          sha: `google-drive-${currentIndexSource}`,
+          truncated: false,
+          tree
+        }), {
           status: 200,
           headers: {
             'Content-Type': 'application/json; charset=utf-8',

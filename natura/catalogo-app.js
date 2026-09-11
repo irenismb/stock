@@ -2320,14 +2320,7 @@
 	
     const ORDER_LOG_TIMEOUT_MS = 6500;
 
-    const INVOICE_MOVEMENTS_SOURCE = {
-      spreadsheetId: "1M8yCu65FG0wBeBAPqMXLaaXg2YXIhrJ_4gJ5lo1tZ9g",
-      sheetName: "movimientos"
-    };
-    const INVOICE_SANT_LOCAL_KEY = "irenismb_invoice_last_sant";
     const INVOICE_PAYMENT_LOCAL_KEY = "irenismb_invoice_payment_method";
-    const INVOICE_REMOTE_SANT_LOOKUP_ENABLED = false;
-    let invoiceSantRemoteCache = { value:0, ts:0 };
 
     function buildLineItems(){
       const items = cartItemsArray();
@@ -2369,103 +2362,6 @@
       return `COP ${new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 }).format(n)}`;
     }
 
-    function invoiceReadLocalSantMax(){
-      try{
-        const raw = String(localStorage.getItem(INVOICE_SANT_LOCAL_KEY) || "").trim();
-        const m = raw.match(/^SANT(\d{7})$/i);
-        return m ? Number(m[1]) || 0 : 0;
-      }catch(_){
-        return 0;
-      }
-    }
-
-    function invoiceRememberSant(sant){
-      try{ localStorage.setItem(INVOICE_SANT_LOCAL_KEY, String(sant || "")); }catch(_){}
-    }
-
-    function invoiceParseSantMax(values){
-      let max = 0;
-      for(const value of Array.isArray(values) ? values : []){
-        const m = String(value || "").trim().match(/^SANT(\d{7})$/i);
-        if(m) max = Math.max(max, Number(m[1]) || 0);
-      }
-      return max;
-    }
-
-    function invoiceFetchRemoteSantMax(){
-      const now = Date.now();
-      if(invoiceSantRemoteCache.ts && now - invoiceSantRemoteCache.ts < 15000){
-        return Promise.resolve(invoiceSantRemoteCache.value || 0);
-      }
-
-      return new Promise((resolve, reject)=>{
-        const callbackName = "__invoiceSant_" + Date.now() + "_" + Math.random().toString(36).slice(2);
-        const script = document.createElement("script");
-        let settled = false;
-
-        const cleanup = ()=>{
-          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-        };
-        const timer = window.setTimeout(()=>{
-          if(settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error("No fue posible consultar la numeración SANT vigente."));
-        }, 8000);
-
-        window[callbackName] = response=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          try{
-            const rows = Array.isArray(response?.table?.rows) ? response.table.rows : [];
-            const values = rows.map(row=> row?.c?.[0]?.v ?? row?.c?.[0]?.f ?? "");
-            const max = invoiceParseSantMax(values);
-            invoiceSantRemoteCache = { value:max, ts:Date.now() };
-            resolve(max);
-          }catch(err){
-            reject(err);
-          }
-        };
-
-        script.onerror = ()=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          reject(new Error("No fue posible consultar la numeración SANT vigente."));
-        };
-
-        const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(INVOICE_MOVEMENTS_SOURCE.spreadsheetId)}/gviz/tq`;
-        const params = new URLSearchParams({
-          sheet: INVOICE_MOVEMENTS_SOURCE.sheetName,
-          headers: "1",
-          tq: "select B where B is not null",
-          tqx: `out:json;responseHandler:${callbackName}`,
-          _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
-        });
-        script.src = `${base}?${params.toString()}`;
-        document.head.appendChild(script);
-      });
-    }
-
-    async function invoiceNextSant(){
-      let remoteMax = 0;
-      if(INVOICE_REMOTE_SANT_LOOKUP_ENABLED){
-        try{ remoteMax = await invoiceFetchRemoteSantMax(); }catch(_){}
-      }
-      const localMax = invoiceReadLocalSantMax();
-      const next = Math.max(remoteMax, localMax) + 1;
-      if(next > 9999999) throw new Error("La numeración SANT alcanzó su límite configurado.");
-      return `SANT${String(next).padStart(7,"0")}`;
-    }
-
-    function invoicePrefetchSant(){
-      if(INVOICE_REMOTE_SANT_LOOKUP_ENABLED) invoiceFetchRemoteSantMax().catch(()=>{});
-    }
-
     function invoicePaymentMethod(){
       const el = document.getElementById("invoicePaymentMethod");
       const allowed = new Set(["Efectivo","Transferencia","Nequi","Daviplata","Tarjeta","Otro"]);
@@ -2481,41 +2377,21 @@
       }
 
       const items = cartItems.map(it=>{
-        const current = productById.get(String(it.id));
-        if(!current) throw new Error(`El producto ${it.id || ""} ya no está disponible en el inventario vigente.`);
         const qty = Math.max(0, safeInt(it.qty, 0));
-        if(!qty) throw new Error(`La cantidad del producto ${current.name || it.id} no es válida.`);
-        if(current.hasPrice === false) throw new Error(`El producto ${current.name || it.id} no tiene precio vigente.`);
-        const stock = Number(current.stock);
-        if(!Number.isInteger(stock) || stock < 0){
-          throw new Error(`No se puede confirmar el stock vigente de ${current.name || it.id}.`);
-        }
-        if(stock < qty){
-          throw new Error(`Stock insuficiente para ${current.name || it.id}. Disponible: ${stock}.`);
-        }
+        if(!qty) throw new Error(`La cantidad del producto ${it.name || it.id || ""} no es válida.`);
+        if(it.hasPrice === false) throw new Error(`El producto ${it.name || it.id || ""} no tiene precio registrado en el carrito.`);
         return {
           ...it,
-          id: String(current.id || it.id || ""),
-          name: String(current.name || it.name || ""),
-          price: Number(current.price) || 0,
-          hasPrice: current.hasPrice !== false,
-          stock,
+          id: String(it.id || ""),
+          name: String(it.name || ""),
+          price: Number(it.price) || 0,
+          hasPrice: it.hasPrice !== false,
           qty
         };
       });
 
       const client = getClientDataCurrent();
       const addr = getAddressDataCurrent();
-      const missing = [];
-      if(!client.name) missing.push("nombre del cliente");
-      if(!client.phone) missing.push("celular");
-      if(!addr.via) missing.push("dirección");
-      if(!addr.barrio) missing.push("barrio");
-      if(!addr.city) missing.push("ciudad");
-      if(missing.length){
-        throw new Error(`Faltan datos para la factura: ${missing.join(", ")}.`);
-      }
-
       return { items, client, addr };
     }
 
@@ -2585,7 +2461,7 @@
       lines.forEach((line, i)=>ctx.fillText(line, x, y + 31 + i*25));
     }
 
-    async function invoiceBuildCanvas(sant){
+    async function invoiceBuildCanvas(){
       const { items, client, addr } = invoiceValidateInput();
       const width = 1103;
       const rowHeight = 88;
@@ -2644,12 +2520,9 @@
       invoiceRoundRect(ctx, 755, 62, 292, 150, 18);
       ctx.fill(); ctx.stroke();
       ctx.fillStyle = rose;
-      ctx.font = "800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font = "900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("FACTURA DE VENTA", 901, 100);
-      ctx.fillStyle = mauveDark;
-      ctx.font = "900 35px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText(sant, 901, 157);
+      ctx.fillText("FACTURA DE VENTA", 901, 138);
       ctx.textAlign = "left";
 
       ctx.fillStyle = "#ffffff";
@@ -2660,7 +2533,7 @@
       const metaW = 995/4;
       const metaX = [75, 75+metaW, 75+metaW*2, 75+metaW*3];
       invoiceDrawLabelValue(ctx, metaX[0], 295, "Fecha", invoiceDateColombia(), 190);
-      invoiceDrawLabelValue(ctx, metaX[1], 295, "Ciudad de envío", addr.city || "Santa Marta", 190);
+      invoiceDrawLabelValue(ctx, metaX[1], 295, "Ciudad de envío", addr.city || "", 190);
       invoiceDrawLabelValue(ctx, metaX[2], 295, "Medio de pago", invoicePaymentMethod(), 190);
       invoiceDrawLabelValue(ctx, metaX[3], 295, "Moneda", "COP", 145);
       ctx.strokeStyle = line;
@@ -2744,7 +2617,7 @@
       ctx.textAlign = "left";
 
       const subtotal = items.reduce((sum,it)=>sum+(Number(it.price)||0)*(Number(it.qty)||0),0);
-      const shipping = getShippingCop() || 7000;
+      const shipping = getShippingCop();
       const total = subtotal + shipping;
 
       ctx.fillStyle = softPurple; ctx.strokeStyle = "#cdb7e4";
@@ -2812,11 +2685,9 @@
     }
 
     async function invoiceBuildPng(){
-      await loadProducts();
-      const sant = await invoiceNextSant();
-      const canvas = await invoiceBuildCanvas(sant);
+      const canvas = await invoiceBuildCanvas();
       const blob = await invoiceCanvasToBlob(canvas);
-      return { blob, sant };
+      return { blob };
     }
 
     async function invoiceCopyPngFromCart(){
@@ -2832,7 +2703,6 @@
       });
 
       await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
-      if(built?.sant) invoiceRememberSant(built.sant);
       return built;
     }
 
@@ -3048,7 +2918,6 @@
       if(cartModal.classList.contains("open")) return;
       rememberModalTrigger(cartModal);
       renderCartModal();
-      invoicePrefetchSant();
       cartModal.classList.add("open");
       cartModal.setAttribute("aria-hidden", "false");
       lockBodyScroll();
@@ -4295,7 +4164,7 @@
         sortSel.hidden = showAlbumGrid;
         sortSel.disabled = showAlbumGrid;
       }
-      syncPSPButtonVisibility();
+      syncSPREButtonVisibility();
       if(albumNav){
         albumNav.hidden = !selectedAudience;
       }
@@ -4997,17 +4866,12 @@ function collagePriceText(p){
   return p&&p.hasPrice===false ? "Consultar precio" : fmtCOP.format(Number(p?.price)||0);
 }
 
-function pspSelectedSubcategoryProducts(){
-  if(!selectedAudience || !selectedCategory || selectedFamily) return [];
-  return (Array.isArray(all) ? all : []).filter(p =>
-    productMatchesAudience(p, selectedAudience) &&
-    cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
-    p && p.hasPrice === false
-  );
+function spreCurrentLevelProducts(){
+  return currentProductSourceList().filter(p => p && p.hasPrice === false);
 }
 
-function pspClipboardText(){
-  return pspSelectedSubcategoryProducts()
+function spreClipboardText(){
+  return spreCurrentLevelProducts()
     .map(p=>{
       const name=String(p && p.name || "")
         .replace(/[\t\r\n]+/g," ")
@@ -5020,8 +4884,8 @@ function pspClipboardText(){
     .join("\r\n");
 }
 
-async function pspCopyCurrentSubcategory(){
-  const text=pspClipboardText();
+async function spreCopyCurrentLevel(){
+  const text=spreClipboardText();
   if(!text) return;
 
   try{
@@ -5049,38 +4913,38 @@ async function pspCopyCurrentSubcategory(){
   }catch(_){}
 }
 
-function syncPSPButtonVisibility(){
-  const btn=document.getElementById("pspBtn");
+function syncSPREButtonVisibility(){
+  const btn=document.getElementById("spreBtn");
   if(!btn) return;
-  const visible=Boolean(selectedAudience && selectedCategory && !selectedFamily);
+  const visible=Array.isArray(all) && all.length>0;
   btn.hidden=!visible;
   btn.disabled=!visible;
 }
 
-function initPSPFeature(){
+function initSPREFeature(){
   const toolbar=document.querySelector(".bar");
   if(!toolbar) return;
 
-  let btn=document.getElementById("pspBtn");
+  let btn=document.getElementById("spreBtn");
   if(!btn){
     btn=document.createElement("button");
     btn.className="btn-ghost";
-    btn.id="pspBtn";
+    btn.id="spreBtn";
     btn.type="button";
-    btn.textContent="PSP";
+    btn.textContent="SPRE";
     btn.hidden=true;
-    btn.setAttribute("aria-label","Copiar nombres y códigos de los productos sin precio de esta subcategoría");
+    btn.setAttribute("aria-label","Copiar nombres y códigos de los productos sin precio del nivel actual");
     const collageBtn=document.getElementById("collageBtn");
     if(collageBtn) toolbar.insertBefore(btn,collageBtn);
     else toolbar.appendChild(btn);
   }
 
-  if(btn.dataset.pspBound!=="1"){
-    btn.dataset.pspBound="1";
-    btn.addEventListener("click",()=>{ void pspCopyCurrentSubcategory(); });
+  if(btn.dataset.spreBound!=="1"){
+    btn.dataset.spreBound="1";
+    btn.addEventListener("click",()=>{ void spreCopyCurrentLevel(); });
   }
 
-  syncPSPButtonVisibility();
+  syncSPREButtonVisibility();
 }
 
 function initCollageFeature(){
@@ -6799,7 +6663,7 @@ async function init(){
       bindGridActions();
       initKeyboardAccessibility();
   initCollageFeature();
-  initPSPFeature();
+  initSPREFeature();
 
       if(albumBackBtn){
         albumBackBtn.addEventListener("click", ()=>{
@@ -7039,7 +6903,7 @@ function syncFilterVisibility(){
   if(catSel){catSel.hidden=true;catSel.disabled=true;catSel.value="";}
   if(brandSel){brandSel.hidden=true;brandSel.disabled=true;brandSel.value="";}
   if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
-  syncPSPButtonVisibility();
+  syncSPREButtonVisibility();
   if(albumNav) albumNav.hidden=!selectedAudience;
   if(albumBackBtn){
     albumBackBtn.textContent=selectedFamily?`← Volver a ${selectedCategory}`:(selectedCategory?`← Volver a ${selectedAudience}`:"← Volver al inicio");
@@ -7334,7 +7198,7 @@ async function init(){
   bindGridActions();
   initKeyboardAccessibility();
   initCollageFeature();
-  initPSPFeature();
+  initSPREFeature();
   if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
   syncWordToggleButton();
   rebuildSearchTicker();

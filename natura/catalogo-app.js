@@ -529,7 +529,6 @@
     function applyRemoteCategoryRows(rows){
       const hidden = [];
       const excluded = [];
-      const allowed = [];
       let validRows = 0;
 
       for(const row of (Array.isArray(rows) ? rows : [])){
@@ -546,7 +545,6 @@
 
         validRows++;
         const routeKey = routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState);
-        allowed.push(routeKey);
         if(hiddenState === true) hidden.push(routeKey);
         if(excludedState === true) excluded.push(routeKey);
       }
@@ -558,20 +556,16 @@
 
       const uniqueHidden = [...new Set(hidden)];
       const uniqueExcluded = [...new Set(excluded)];
-      const uniqueAllowed = [...new Set(allowed)];
 
       const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
       const previousExcluded = JSON.stringify(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA || []);
-      const previousAllowed = JSON.stringify([...allowedProductRouteKeySet].sort());
 
       window.ALBUMES_OCULTOS = uniqueHidden;
       window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = uniqueExcluded;
-      allowedProductRouteKeySet = new Set(uniqueAllowed);
       saveRemoteCategoryCache(uniqueHidden, uniqueExcluded);
 
       return previousHidden !== JSON.stringify(uniqueHidden) ||
-             previousExcluded !== JSON.stringify(uniqueExcluded) ||
-             previousAllowed !== JSON.stringify([...allowedProductRouteKeySet].sort());
+             previousExcluded !== JSON.stringify(uniqueExcluded);
     }
 
     async function refreshRemoteCatalogConfiguration(options = {}){
@@ -808,7 +802,8 @@
       return numberedEntries.length ? [...numberedEntries, ...legacyEntries] : legacyEntries;
     }
 
-    async function loadGoogleSheetCatalog(){
+    async function loadGoogleSheetCatalog(options = {}){
+      const refreshImages = options.refreshImages !== false;
       let rows = [];
       try{
         rows = await loadGoogleSheetRows();
@@ -820,7 +815,7 @@
 
       let imageEntries = [];
       try{
-        imageEntries = await loadGitHubImageIndex();
+        imageEntries = refreshImages ? await loadGitHubImageIndex() : readGitHubImageIndexCache();
       }catch(error){
         console.warn("Los productos se cargaron desde el Google Sheet, pero no se pudo actualizar el índice dinámico de imágenes publicadas. Se usarán imágenes suplentes.", error);
         imageEntries = [];
@@ -1519,7 +1514,6 @@
     let selectedAlbumKey = "";
     let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
     let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
-    let allowedProductRouteKeySet = new Set();
 
     function cleanNavKey(value){
       return normalizeText(value).replace(/\s+/g, " ");
@@ -1528,14 +1522,6 @@
     function getProductRouteKey(p){
       if(!p) return "";
       return routeKeyFromParts(p.section, p.category, p.subcategory, p.fragranceFamily, p.commercialState);
-    }
-
-    function isProductRouteAuthorized(p){
-      if(!p) return false;
-      if(p.isGiftGalleryImage === true) return true;
-      if(allowedProductRouteKeySet.size === 0) return true;
-      const key = getProductRouteKey(p);
-      return Boolean(key && allowedProductRouteKeySet.has(key));
     }
 
     function isProductHiddenByRoute(p){
@@ -1560,7 +1546,7 @@
 
     function navigationCategoryForProduct(p){
       if(!p) return "General";
-      return String(p.subcategory || p.category || "General").trim() || "General";
+      return String(p.subcategory || "General").trim() || "General";
     }
 
     function navigationFamilyForProduct(p){
@@ -1568,13 +1554,21 @@
       return String(p.fragranceFamily || "").trim();
     }
 
+    function productsForNavigationGroup(audienceLabel, list = all){
+      return (Array.isArray(list) ? list : []).filter(p => productMatchesAudience(p, audienceLabel));
+    }
+
     function isDirectProductAudience(audienceLabel){
-      const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audienceLabel));
-      return !!(group && group.directProducts === true);
+      const products = productsForNavigationGroup(audienceLabel);
+      if(!products.length) return false;
+      // Si la hoja define al menos una subcategoría, la navegación la muestra automáticamente.
+      // Solo se entra directo a productos cuando ninguna fila del grupo tiene subcategoría.
+      return !products.some(p => String(p && p.subcategory || "").trim());
     }
 
     function isDirectProductSection(sectionLabel){
-      return NAV_AUDIENCES.some(item => item.directProducts === true && cleanNavKey(item.section) === cleanNavKey(sectionLabel));
+      const products = (Array.isArray(all) ? all : []).filter(p => cleanNavKey(p && p.section) === cleanNavKey(sectionLabel));
+      return products.length > 0 && !products.some(p => String(p && p.subcategory || "").trim());
     }
 
     function collectAlbumPreview(found, p){
@@ -1587,33 +1581,52 @@
     }
 
     function buildRootAlbums(list){
-      const out = [];
-      for(const group of NAV_AUDIENCES){
-        const products = (Array.isArray(list) ? list : []).filter(p => productMatchesAudience(p, group.label));
+      const source = Array.isArray(list) ? list : [];
+      const byGroup = new Map();
+
+      for(const p of source){
+        const label = String(mainNavigationGroupForProduct(p) || "").trim();
+        if(!label) continue;
+        const key = cleanNavKey(label);
+        const existing = byGroup.get(key) || { label, products:[] };
+        existing.products.push(p);
+        byGroup.set(key, existing);
+      }
+
+      const preferredOrder = new Map(NAV_AUDIENCES.map((item,index)=>[cleanNavKey(item.label), index]));
+      const groups = Array.from(byGroup.values()).sort((a,b)=>{
+        const aRank = preferredOrder.has(cleanNavKey(a.label)) ? preferredOrder.get(cleanNavKey(a.label)) : Number.MAX_SAFE_INTEGER;
+        const bRank = preferredOrder.has(cleanNavKey(b.label)) ? preferredOrder.get(cleanNavKey(b.label)) : Number.MAX_SAFE_INTEGER;
+        return aRank - bRank || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
+      });
+
+      return groups.map((dynamicGroup,index)=>{
+        const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(dynamicGroup.label)) || {};
+        const visual = CATEGORY_VISUALS[cleanNavKey(dynamicGroup.label)] || {};
+        const subtitle = String(group.subtitle || `Productos disponibles en ${dynamicGroup.label}.`).trim();
         const album = {
-          key:`audience::${cleanNavKey(group.label)}`,
+          key:`audience::${cleanNavKey(dynamicGroup.label)}`,
           navType:"audience",
-          navValue:group.label,
-          label:group.label,
-          subtitle:group.subtitle,
-          icon:group.icon || "",
+          navValue:dynamicGroup.label,
+          label:dynamicGroup.label,
+          subtitle,
+          icon:group.icon || visual.icon || "•",
           iconSvg:group.iconSvg || "",
-          iconImage:group.iconImage || "",
+          iconImage:group.iconImage || visual.iconImage || "",
           theme:group.theme || "",
-          products,
+          products:dynamicGroup.products,
           cover:null,
           previewImages:[],
-          searchKey:normalizeText(`${group.label} ${group.subtitle}`),
+          searchKey:normalizeText(`${dynamicGroup.label} ${subtitle}`),
           hasStructuredProducts:true,
           hasUnstructuredProducts:false,
           onlyUnstructured:false,
-          count:products.length,
-          colorIndex:out.length % ALBUM_COLORS.length
+          count:dynamicGroup.products.length,
+          colorIndex:index % ALBUM_COLORS.length
         };
-        for(const p of products) collectAlbumPreview(album,p);
-        out.push(album);
-      }
-      return out;
+        for(const p of dynamicGroup.products) collectAlbumPreview(album,p);
+        return album;
+      });
     }
 
     function buildCategoryAlbums(list, audienceLabel){
@@ -1658,8 +1671,7 @@
       for(const p of (Array.isArray(list) ? list : [])){
         if(!productMatchesAudience(p, audienceLabel)) continue;
         if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(categoryLabel)) continue;
-        const family = navigationFamilyForProduct(p);
-        if(!family) continue;
+        const family = navigationFamilyForProduct(p) || "General";
         const key = cleanNavKey(family);
         const visual = CATEGORY_VISUALS[key] || { icon:"•" };
         const found = byFamily.get(key) || {
@@ -1694,7 +1706,14 @@
     }
 
     function buildAlbums(list){
-      if(selectedAudience && selectedCategory) return buildFamilyAlbums(list, selectedAudience, selectedCategory);
+      if(selectedAudience && selectedCategory){
+        const scoped = (Array.isArray(list) ? list : []).filter(p =>
+          productMatchesAudience(p, selectedAudience) &&
+          cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory)
+        );
+        const hasFamilies = scoped.some(p => Boolean(navigationFamilyForProduct(p)));
+        return hasFamilies ? buildFamilyAlbums(list, selectedAudience, selectedCategory) : [];
+      }
       return selectedAudience ? buildCategoryAlbums(list, selectedAudience) : buildRootAlbums(list);
     }
 
@@ -1727,7 +1746,9 @@
 
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
-      return source.filter(p => isProductRouteAuthorized(p) && !isProductHiddenByRoute(p));
+      // Productos es la fuente de verdad. Categorias puede ocultar una ruta explícitamente,
+      // pero nunca es requisito previo para publicar una categoría o subcategoría nueva.
+      return source.filter(p => !isProductHiddenByRoute(p));
     }
 
     function filterSearchExcludedProducts(list){
@@ -1780,7 +1801,11 @@
         source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
       }
       if(selectedFamily){
-        source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily));
+        if(cleanNavKey(selectedFamily) === cleanNavKey("General")){
+          source = source.filter(p => !navigationFamilyForProduct(p));
+        }else{
+          source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily));
+        }
       }
       return source;
     }
@@ -3792,8 +3817,12 @@
 
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
-      const validAudience = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(audience));
-      selectedAudience = validAudience ? validAudience.label : "";
+      const liveAudienceLabels = [...new Set((Array.isArray(all) ? all : [])
+        .map(mainNavigationGroupForProduct)
+        .map(value => String(value || "").trim())
+        .filter(Boolean))];
+      const validAudience = liveAudienceLabels.find(label => cleanNavKey(label) === cleanNavKey(audience));
+      selectedAudience = validAudience || "";
       selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
       selectedFamily = selectedCategory && family ? family : "";
       if(sort && sortSel) sortSel.value = sort;
@@ -3920,8 +3949,10 @@
 
       filtered.sort((a,b)=>{
         if(!selectedAudience){
-          const order = new Map(NAV_AUDIENCES.map((item,index)=>[item.label,index]));
-          return (order.get(a.label) ?? 99) - (order.get(b.label) ?? 99);
+          const order = new Map(NAV_AUDIENCES.map((item,index)=>[cleanNavKey(item.label),index]));
+          const aRank = order.has(cleanNavKey(a.label)) ? order.get(cleanNavKey(a.label)) : Number.MAX_SAFE_INTEGER;
+          const bRank = order.has(cleanNavKey(b.label)) ? order.get(cleanNavKey(b.label)) : Number.MAX_SAFE_INTEGER;
+          return aRank - bRank || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
         }
         return a.label.localeCompare(b.label, "es", { sensitivity:"base" });
       });
@@ -4180,8 +4211,14 @@
       render();
     }
 
-    async function loadProducts(){
-      updateCountTextLoading();
+    let inventoryRefreshInFlight = false;
+    const INVENTORY_REFRESH_MS = 60000;
+    let inventoryRefreshTimer = 0;
+
+    async function loadProducts(options = {}){
+      const silent = options.silent === true;
+      const refreshImages = options.refreshImages !== false;
+      if(!silent) updateCountTextLoading();
       clearLegacyProductCaches();
 
       try{
@@ -4192,10 +4229,10 @@
 
       let catalogSource;
       try{
-        catalogSource = await loadGoogleSheetCatalog();
+        catalogSource = await loadGoogleSheetCatalog({ refreshImages });
       }catch(err){
         console.error("Error al cargar el Google Sheet oficial.", err);
-        updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
+        if(!silent) updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
         return;
       }
 
@@ -4206,13 +4243,13 @@
           .filter(Boolean);
       }catch(err){
         console.error("El Google Sheet respondió, pero ocurrió un error al procesar sus productos.", err);
-        updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
+        if(!silent) updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
         return;
       }
 
       if(!sheetProducts.length){
         console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
-        updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
+        if(!silent) updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
         return;
       }
 
@@ -4246,11 +4283,12 @@
           }
         }
         if(selectedFamily){
-          const hasFamily = all.some(p =>
-            productMatchesAudience(p, selectedAudience) &&
-            cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory) &&
-            cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily)
-          );
+          const hasFamily = all.some(p => {
+            if(!productMatchesAudience(p, selectedAudience)) return false;
+            if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(selectedCategory)) return false;
+            if(cleanNavKey(selectedFamily) === cleanNavKey("General")) return !navigationFamilyForProduct(p);
+            return cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily);
+          });
           if(!hasFamily) selectedFamily = "";
         }
         refreshNavigationAlbums();
@@ -4274,8 +4312,25 @@
         render();
       }catch(err){
         console.error("Los productos se cargaron, pero ocurrió un error al renderizar el catálogo.", err);
-        updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
+        if(!silent) updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
       }
+    }
+
+    function startInventoryAutoRefresh(){
+      if(inventoryRefreshTimer) return;
+      inventoryRefreshTimer = window.setInterval(async ()=>{
+        if(inventoryRefreshInFlight || document.hidden) return;
+        inventoryRefreshInFlight = true;
+        try{
+          // La hoja Productos se relee periódicamente. Las imágenes usan el último índice
+          // conocido para evitar consumir innecesariamente la API pública de GitHub.
+          await loadProducts({ silent:true, refreshImages:false });
+        }catch(error){
+          console.info("No se pudo actualizar el inventario automáticamente; se conserva la vista actual.", error);
+        }finally{
+          inventoryRefreshInFlight = false;
+        }
+      }, INVENTORY_REFRESH_MS);
     }
 
     function initCartButton(){
@@ -6660,5 +6715,6 @@ async function init(){
   loadAddressFromLS();
   await initializeRemoteCatalogConfiguration();
   await loadProducts();
+  startInventoryAutoRefresh();
   uxRestoreScrollPosition();
 }

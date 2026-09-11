@@ -9,7 +9,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:M: Código, Sección, Público, Categoría, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa, Descripción y Código Natura.
+    // Hoja Productos, estructura A:M: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa y Descripción.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -386,23 +386,22 @@
             return {
               code,
               section: value(1),
-              public: value(2),
-              category: value(3),
-              subcategory: "",
-              fragranceFamily: "",
-              condition: value(4),
-              commercialState: value(5),
-              name: value(6),
-              priceText: value(7),
-              costText: value(8),
-              stockText: value(9),
-              referenceExternal: value(10),
-              description: value(11),
-              codeNatura: value(12),
+              category: value(2),
+              subcategory: value(3),
+              fragranceFamily: value(4),
+              condition: value(5),
+              commercialState: value(6),
+              name: value(7),
+              priceText: value(8),
+              costText: value(9),
+              stockText: value(10),
+              referenceExternal: value(11),
+              description: value(12),
+              codeNatura: "",
               fullTxtRecord: [
-                value(6),
+                value(7),
                 "",
-                `Precio: ${value(7)} Costo: ${value(8)} Stock: ${value(9)} Referencia externa: ${value(10)}. ${value(11)}`
+                `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
               ].join("\n")
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);

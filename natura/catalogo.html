@@ -2084,8 +2084,20 @@
       <div class="cart-modal-footer">
         <div class="cart-shipping">
           <label for="shippingCop">Valor del envío</label>
-          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Ej: 6000" aria-label="Valor del envío en COP" />
-          <small class="cart-shipping-hint">Valor inicial sugerido: $6.000. Puedes ajustarlo.</small>
+          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Ej: 7000" aria-label="Valor del envío en COP" />
+          <small class="cart-shipping-hint">Valor inicial sugerido: 7.000 COP. Puedes ajustarlo.</small>
+        </div>
+
+        <div class="cart-shipping">
+          <label for="invoicePaymentMethod">Medio de pago</label>
+          <select id="invoicePaymentMethod" aria-label="Medio de pago de la factura">
+            <option value="Nequi">Nequi</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Transferencia">Transferencia</option>
+            <option value="Daviplata">Daviplata</option>
+            <option value="Tarjeta">Tarjeta</option>
+            <option value="Otro">Otro</option>
+          </select>
         </div>
 
         <div class="cart-summary" aria-label="Resumen del pedido">
@@ -2098,6 +2110,7 @@
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Datos del pedido</button>
+          <button class="btn-ghost" id="cartInvoiceBtn" type="button">Copiar factura PNG</button>
           <button class="btn-acc" id="cartBuyBtn" type="button">Continuar pedido por WhatsApp</button>
         </div>
       </div>
@@ -2204,7 +2217,7 @@
     </div>
   </div>
 
-  <script src="catalogo-app.js?actualizacion=psp-sin-precio-2026-09-11"></script>
+  <script src="catalogo-app.js?actualizacion=factura-png-portapapeles-2026-09-11"></script>
   <script src="analytics-visitas.js"></script>
   <button id="goToStartBtn" class="page-nav-btn go-to-start-btn is-hidden" type="button" aria-label="Ir al inicio de la página" title="Ir al inicio de la página">
     <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 15 6-6 6 6"></path></svg>

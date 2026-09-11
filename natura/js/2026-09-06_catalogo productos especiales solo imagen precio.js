@@ -4420,21 +4420,22 @@ function initCollageFeature(){
     .collage-heading{padding:4px 56px 14px 2px;text-align:center}
     .collage-route{margin:0;color:#f8fafc;font-size:clamp(23px,3vw,38px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
     .collage-actions{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;margin:0 0 18px}
-    .collage-format-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(590px,100%)}
-    .collage-format-option{min-height:48px;padding:10px 14px;border-radius:14px;border:1px solid #d9c9c1;background:#fffdfb;color:#352b2c;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(141,83,96,.08);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}
-    .collage-format-option:hover{transform:translateY(-1px);border-color:#b9954f;box-shadow:0 7px 18px rgba(141,83,96,.14)}
-    .collage-format-option.is-active{background:#a55f70;border-color:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.28)}
-    .collage-format-option:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,149,79,.24)}
-    .collage-download,.collage-share{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;font-weight:950;cursor:pointer}
+    .collage-selector-block{width:min(590px,100%)}
+    .collage-control-label{margin:0 0 7px;color:#f8fafc;font-size:14px;line-height:1.2;font-weight:900;text-align:left}
+    .collage-type-choices,.collage-format-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
+    .collage-type-option,.collage-format-option{min-height:48px;padding:10px 14px;border-radius:14px;border:1px solid #d9c9c1;background:#fffdfb;color:#352b2c;font-weight:900;cursor:pointer;box-shadow:0 4px 14px rgba(141,83,96,.08);transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease,background .16s ease}
+    .collage-type-option:hover:not(:disabled),.collage-format-option:hover{transform:translateY(-1px);border-color:#b9954f;box-shadow:0 7px 18px rgba(141,83,96,.14)}
+    .collage-type-option.is-active,.collage-format-option.is-active{background:#a55f70;border-color:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.28)}
+    .collage-type-option:focus-visible,.collage-format-option:focus-visible{outline:none;box-shadow:0 0 0 3px rgba(185,149,79,.24)}
+    .collage-type-option:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
+    .collage-size-control[hidden],.collage-selection-hint[hidden]{display:none!important}
+    .collage-download,.collage-share{min-height:48px;min-width:220px;padding:11px 20px;border-radius:13px;font-weight:950;cursor:pointer}
     .collage-download{border:1px solid #a55f70;background:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.22)}
     .collage-download:hover{background:#8f4f60;border-color:#8f4f60}
     .collage-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
     .collage-share:hover{background:#fff0cf;border-color:#b9954f}
     .collage-download:disabled,.collage-share:disabled{opacity:.6;cursor:wait}
-    .collage-ficha{min-height:44px;min-width:220px;padding:10px 20px;border-radius:13px;border:1px solid #b9954f;background:#b9954f;color:#fff;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(185,149,79,.24)}
-    .collage-ficha:hover:not(:disabled){background:#a98032;border-color:#a98032;transform:translateY(-1px)}
-    .collage-ficha:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;background:#fffdfb;color:#8d5360}
-    .collage-selection-hint{margin:-2px 0 2px;color:#f3dfab;font-size:13px;line-height:1.35;font-weight:800;text-align:center;max-width:680px}
+    .collage-selection-hint{width:min(590px,100%);margin:0;padding:13px 14px;border-radius:14px;background:rgba(185,149,79,.10);border:1px solid rgba(185,149,79,.28);color:#f3dfab;font-size:13px;line-height:1.4;font-weight:800;text-align:center}
     .card .description{text-align:justify!important;text-align-last:left!important;text-justify:inter-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
     .marketplace-preview-modal{position:fixed;inset:0;z-index:2210;display:none;align-items:center;justify-content:center;padding:18px}
     .marketplace-preview-modal.open{display:flex}
@@ -4489,8 +4490,10 @@ function initCollageFeature(){
       .collage-name{font-size:12.5px}
       .collage-price{font-size:14px}
       .collage-heading{padding-right:44px;padding-bottom:14px}
-      .collage-format-choices{grid-template-columns:1fr;width:100%;max-width:320px}
-      .collage-format-option,.collage-download,.collage-share,.collage-ficha{width:100%;max-width:320px}
+      .collage-selector-block{width:100%;max-width:320px}
+      .collage-type-choices{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .collage-format-choices{grid-template-columns:1fr}
+      .collage-type-option,.collage-format-option,.collage-download,.collage-share{width:100%;max-width:320px}
       .marketplace-preview-modal{padding:10px}
       .marketplace-preview-shell{width:min(96vw,96vh);max-height:96vh;border-radius:18px;padding:14px}
       .marketplace-preview-heading{padding-right:44px}
@@ -4530,14 +4533,23 @@ function initCollageFeature(){
         <h2 class="collage-route" id="collageRoute"></h2>
       </header>
       <div class="collage-actions">
-        <div class="collage-format-choices" role="group" aria-label="Formato de exportación del collage">
-          <button class="collage-format-option is-active" type="button" data-collage-format="instagram" aria-pressed="true">Instagram · 1080 × 1350</button>
-          <button class="collage-format-option" type="button" data-collage-format="marketplace" aria-pressed="false">Marketplace · 1200 × 1200</button>
+        <div class="collage-selector-block">
+          <div class="collage-control-label">Tipo</div>
+          <div class="collage-type-choices" role="group" aria-label="Tipo de imagen">
+            <button class="collage-type-option is-active" id="collageTypeCollageBtn" type="button" data-collage-type="collage" aria-pressed="true">Collage</button>
+            <button class="collage-type-option" id="collageFichaBtn" type="button" data-collage-type="ficha" aria-pressed="false" disabled>Ficha</button>
+          </div>
         </div>
-        <button class="collage-ficha" id="collageFichaBtn" type="button" disabled>Ficha</button>
-        <p class="collage-selection-hint" id="collageSelectionHint">El primer producto queda seleccionado automáticamente; toca otro para cambiarlo.</p>
-        <button class="collage-download" id="collageDownloadBtn" type="button">Descargar PNG</button>
-        <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando PNG…</button>
+        <div class="collage-selector-block collage-size-control" id="collageSizeControl">
+          <div class="collage-control-label">Tamaño</div>
+          <div class="collage-format-choices" role="group" aria-label="Tamaño del collage">
+            <button class="collage-format-option is-active" type="button" data-collage-format="instagram" aria-pressed="true">Instagram · 1080 × 1350</button>
+            <button class="collage-format-option" type="button" data-collage-format="marketplace" aria-pressed="false">Marketplace · 1200 × 1200</button>
+          </div>
+        </div>
+        <p class="collage-selection-hint" id="collageSelectionHint" hidden></p>
+        <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando imagen…</button>
+        <button class="collage-download" id="collageDownloadBtn" type="button" disabled>Preparando PNG…</button>
       </div>
       <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
     </section>
@@ -4547,15 +4559,21 @@ function initCollageFeature(){
   const routeEl=modal.querySelector("#collageRoute");
   const collageTree=modal.querySelector("#collageTree");
   const closeBtn=modal.querySelector(".collage-close");
+  const collageTypeBtn=modal.querySelector("#collageTypeCollageBtn");
   const fichaBtn=modal.querySelector("#collageFichaBtn");
+  const sizeControl=modal.querySelector("#collageSizeControl");
   const selectionHint=modal.querySelector("#collageSelectionHint");
   const downloadBtn=modal.querySelector("#collageDownloadBtn");
   const shareBtn=modal.querySelector("#collageShareBtn");
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
   let collageSelectedProduct=null;
+  let collageExportMode="collage";
   let collagePreparedShareFile=null;
   let collagePreparedShareKey="";
   let collagePrepareSequence=0;
+  let fichaPreparedFile=null;
+  let fichaPreparedKey="";
+  let fichaPrepareSequence=0;
 
   const COLLAGE_EXPORT_FORMATS={
     instagram:{
@@ -4591,15 +4609,58 @@ function initCollageFeature(){
     return `${format?.key||"instagram"}::${String(snapshot?.title||"")}::${productKey}`;
   }
 
+  function canClipboardPng(){
+    return !!(navigator?.clipboard && typeof navigator.clipboard.write==="function" && typeof window.ClipboardItem==="function");
+  }
+
+  function copyPreparedPngFile(file){
+    if(!file || file.type!=="image/png") throw new Error("No hay una imagen PNG lista para copiar.");
+    if(!canClipboardPng()) throw new Error("Este navegador no permite copiar imágenes PNG al portapapeles.");
+    return navigator.clipboard.write([new ClipboardItem({"image/png":file})]);
+  }
+
+  function downloadPreparedPngFile(file,fileName){
+    if(!file) throw new Error("No hay una imagen PNG lista para descargar.");
+    const url=URL.createObjectURL(file);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download=fileName||file.name||"imagen.png";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),1500);
+  }
+
+  function setActionPreparing(){
+    if(shareBtn){
+      shareBtn.disabled=true;
+      shareBtn.textContent="Preparando imagen…";
+      shareBtn.title="";
+    }
+    if(downloadBtn){
+      downloadBtn.disabled=true;
+      downloadBtn.textContent="Preparando PNG…";
+    }
+  }
+
+  function setActionReady(){
+    const ready=collageExportMode==="ficha" ? !!fichaPreparedFile : !!collagePreparedShareFile;
+    if(shareBtn){
+      shareBtn.disabled=!ready;
+      shareBtn.textContent="Copiar imagen";
+      shareBtn.title=canClipboardPng()?"":"Tu navegador podría no permitir copiar imágenes al portapapeles.";
+    }
+    if(downloadBtn){
+      downloadBtn.disabled=!ready;
+      downloadBtn.textContent="Descargar PNG";
+    }
+  }
+
   function invalidateCollageSharePreparation(){
     collagePreparedShareFile=null;
     collagePreparedShareKey="";
     collagePrepareSequence++;
-    if(shareBtn){
-      shareBtn.disabled=true;
-      shareBtn.textContent="Preparando PNG…";
-      shareBtn.title="El PNG se está preparando para compartir.";
-    }
+    if(collageExportMode==="collage") setActionPreparing();
   }
 
   function queueCollageSharePreparation(){
@@ -4607,19 +4668,15 @@ function initCollageFeature(){
     if(!snapshot.products.length){
       collagePreparedShareFile=null;
       collagePreparedShareKey="";
-      if(shareBtn){
-        shareBtn.disabled=true;
-        shareBtn.textContent="Compartir PNG";
-      }
-      return;
-    }
-    if(!(window.File && navigator && typeof navigator.share === "function")){
-      collagePreparedShareFile=null;
-      collagePreparedShareKey="";
-      if(shareBtn){
-        shareBtn.disabled=true;
-        shareBtn.textContent="Compartir no disponible";
-        shareBtn.title="Este navegador no permite compartir archivos PNG directamente.";
+      if(collageExportMode==="collage"){
+        if(shareBtn){
+          shareBtn.disabled=true;
+          shareBtn.textContent="Copiar imagen";
+        }
+        if(downloadBtn){
+          downloadBtn.disabled=true;
+          downloadBtn.textContent="Descargar PNG";
+        }
       }
       return;
     }
@@ -4628,15 +4685,75 @@ function initCollageFeature(){
     const token=++collagePrepareSequence;
     collagePreparedShareFile=null;
     collagePreparedShareKey="";
-    if(shareBtn){
-      shareBtn.disabled=true;
-      shareBtn.textContent="Preparando PNG…";
-      shareBtn.title="El PNG se está preparando para compartir.";
-    }
+    if(collageExportMode==="collage") setActionPreparing();
     window.setTimeout(()=>{
       downloadCollageImage("prepare",{token,key}).catch(error=>{
-        console.info("No se pudo preparar el PNG del collage para compartir.",error);
+        console.info("No se pudo preparar el PNG del collage.",error);
       });
+    },0);
+  }
+
+  function fichaPreparationKey(product){
+    return String(product?.id||product?.code||product?.name||"").trim();
+  }
+
+  function invalidateFichaPreparation(){
+    fichaPreparedFile=null;
+    fichaPreparedKey="";
+    fichaPrepareSequence++;
+    if(collageExportMode==="ficha") setActionPreparing();
+  }
+
+  function queueFichaPreparation(){
+    const product=collageSelectedProduct;
+    const key=fichaPreparationKey(product);
+    const token=++fichaPrepareSequence;
+    fichaPreparedFile=null;
+    fichaPreparedKey="";
+    if(collageExportMode==="ficha") setActionPreparing();
+
+    if(!product || !key){
+      if(collageExportMode==="ficha"){
+        if(shareBtn){
+          shareBtn.disabled=true;
+          shareBtn.textContent="Copiar imagen";
+        }
+        if(downloadBtn){
+          downloadBtn.disabled=true;
+          downloadBtn.textContent="Descargar PNG";
+        }
+      }
+      return;
+    }
+
+    window.setTimeout(async()=>{
+      try{
+        const {canvas,fileName}=await buildMarketplacePresentationCanvas(product);
+        const prepared=await prepareCanvasPngFile(canvas,fileName);
+        const file=prepared.file || (window.File ? new File([prepared.blob],fileName||"ficha.png",{type:"image/png"}) : null);
+        const stillCurrent=token===fichaPrepareSequence && key===fichaPreparationKey(collageSelectedProduct);
+        if(!stillCurrent) return;
+        fichaPreparedFile=file;
+        fichaPreparedKey=key;
+        if(collageExportMode==="ficha") setActionReady();
+      }catch(error){
+        const stillCurrent=token===fichaPrepareSequence;
+        if(stillCurrent){
+          fichaPreparedFile=null;
+          fichaPreparedKey="";
+          if(collageExportMode==="ficha"){
+            if(shareBtn){
+              shareBtn.disabled=true;
+              shareBtn.textContent="Copiar imagen";
+            }
+            if(downloadBtn){
+              downloadBtn.disabled=true;
+              downloadBtn.textContent="Descargar PNG";
+            }
+          }
+        }
+        console.error("No se pudo preparar la ficha del producto.",error);
+      }
     },0);
   }
 
@@ -4647,7 +4764,27 @@ function initCollageFeature(){
       button.classList.toggle("is-active",active);
       button.setAttribute("aria-pressed",active?"true":"false");
     }
-    if(modal.classList.contains("open")) queueCollageSharePreparation();
+    if(modal.classList.contains("open") && collageExportMode==="collage") queueCollageSharePreparation();
+  }
+
+  function setCollageExportMode(mode){
+    collageExportMode=mode==="ficha"?"ficha":"collage";
+    const isFicha=collageExportMode==="ficha";
+    modal.classList.toggle("is-ficha-mode",isFicha);
+    collageTypeBtn?.classList.toggle("is-active",!isFicha);
+    collageTypeBtn?.setAttribute("aria-pressed",isFicha?"false":"true");
+    fichaBtn?.classList.toggle("is-active",isFicha);
+    fichaBtn?.setAttribute("aria-pressed",isFicha?"true":"false");
+    if(sizeControl) sizeControl.hidden=isFicha;
+    if(selectionHint) selectionHint.hidden=!isFicha;
+
+    if(isFicha){
+      if(fichaPreparedFile && fichaPreparedKey===fichaPreparationKey(collageSelectedProduct)) setActionReady();
+      else queueFichaPreparation();
+    }else{
+      if(collagePreparedShareFile && collagePreparedShareKey===collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat())) setActionReady();
+      else queueCollageSharePreparation();
+    }
   }
 
   function setCollageSelectedProduct(product,item){
@@ -4666,6 +4803,8 @@ function initCollageFeature(){
         ? `Producto para Ficha: ${String(collageSelectedProduct.name||'Producto').trim()}`
         : 'No hay un producto disponible para preparar Ficha.';
     }
+    invalidateFichaPreparation();
+    if(collageExportMode==="ficha" && modal.classList.contains("open")) queueFichaPreparation();
   }
 
   function closeCollage(){
@@ -5462,31 +5601,33 @@ function initCollageFeature(){
 
     const format=getCollageExportFormat();
     const shareKey=collageShareCacheKey(snapshot,format);
-    const isShareAction=action==="share";
+    const isCopyAction=action==="copy";
     const isPrepareAction=action==="prepare";
 
-    if(isShareAction){
+    if(isCopyAction){
       if(!collagePreparedShareFile || collagePreparedShareKey!==shareKey){
         queueCollageSharePreparation();
         return;
       }
-      const originalText=shareBtn?.textContent||"Compartir PNG";
       if(shareBtn){
         shareBtn.disabled=true;
-        shareBtn.textContent="Compartiendo…";
+        shareBtn.textContent="Copiando…";
       }
       try{
-        const sharePromise=sharePreparedPngFile(collagePreparedShareFile);
-        await sharePromise;
-      }catch(shareError){
-        if(!(shareError && shareError.name==='AbortError')){
-          console.error(`No se pudo compartir el PNG del collage para ${format.label}.`,shareError);
-          alert('Este navegador no permite compartir archivos PNG directamente.');
-        }
-      }finally{
+        await copyPreparedPngFile(collagePreparedShareFile);
+        if(shareBtn) shareBtn.textContent="Copiada";
+        window.setTimeout(()=>{
+          if(shareBtn && collageExportMode==="collage"){
+            shareBtn.disabled=false;
+            shareBtn.textContent="Copiar imagen";
+          }
+        },900);
+      }catch(copyError){
+        console.error(`No se pudo copiar el PNG del collage para ${format.label}.`,copyError);
+        alert("Este navegador no permite copiar esta imagen al portapapeles. Puedes usar Descargar PNG.");
         if(shareBtn){
           shareBtn.disabled=false;
-          shareBtn.textContent=originalText==='Compartiendo…'?"Compartir PNG":originalText;
+          shareBtn.textContent="Copiar imagen";
         }
       }
       return;
@@ -5810,23 +5951,9 @@ function initCollageFeature(){
         const file=window.File ? new File([blob],format.downloadName,{type:"image/png"}) : null;
         const stillCurrent=options.token===collagePrepareSequence && options.key===shareKey;
         if(stillCurrent){
-          if(file && canNativeSharePng(file)){
-            collagePreparedShareFile=file;
-            collagePreparedShareKey=shareKey;
-            if(shareBtn){
-              shareBtn.disabled=false;
-              shareBtn.textContent="Compartir PNG";
-              shareBtn.title="";
-            }
-          }else{
-            collagePreparedShareFile=null;
-            collagePreparedShareKey="";
-            if(shareBtn){
-              shareBtn.disabled=true;
-              shareBtn.textContent="Compartir no disponible";
-              shareBtn.title="Este navegador no permite compartir archivos PNG directamente.";
-            }
-          }
+          collagePreparedShareFile=file;
+          collagePreparedShareKey=file?shareKey:"";
+          if(collageExportMode==="collage") setActionReady();
         }
       }else{
         const url=URL.createObjectURL(blob);
@@ -5844,10 +5971,16 @@ function initCollageFeature(){
         if(stillCurrent){
           collagePreparedShareFile=null;
           collagePreparedShareKey="";
-          if(shareBtn){
-            shareBtn.disabled=true;
-            shareBtn.textContent="Compartir no disponible";
-            shareBtn.title="No se pudo preparar el PNG para compartir.";
+          if(collageExportMode==="collage"){
+            if(shareBtn){
+              shareBtn.disabled=true;
+              shareBtn.textContent="Copiar imagen";
+              shareBtn.title="No se pudo preparar la imagen.";
+            }
+            if(downloadBtn){
+              downloadBtn.disabled=true;
+              downloadBtn.textContent="Descargar PNG";
+            }
           }
         }
         console.info(`No se pudo preparar el PNG del collage para ${format.label}.`,error);
@@ -5862,12 +5995,11 @@ function initCollageFeature(){
           downloadBtn.disabled=false;
           downloadBtn.textContent="Descargar PNG";
         }
-        if(shareBtn){
+        if(collageExportMode==="collage"){
           const currentKey=collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat());
           const ready=!!collagePreparedShareFile && collagePreparedShareKey===currentKey;
-          shareBtn.disabled=!ready;
-          shareBtn.textContent=ready?"Compartir PNG":"Preparando PNG…";
-          if(!ready) queueCollageSharePreparation();
+          if(ready) setActionReady();
+          else queueCollageSharePreparation();
         }
       }
     }
@@ -5908,7 +6040,7 @@ function initCollageFeature(){
     modal.classList.add("open");
     modal.setAttribute("aria-hidden","false");
     document.body.classList.add("collage-open");
-    queueCollageSharePreparation();
+    setCollageExportMode("collage");
     requestAnimationFrame(()=>closeBtn?.focus({preventScroll:true}));
   });
 
@@ -5916,12 +6048,54 @@ function initCollageFeature(){
     button.addEventListener("click",()=>setCollageExportFormat(button.dataset.collageFormat));
   }
   setCollageExportFormat("instagram");
+  collageTypeBtn?.addEventListener("click",()=>setCollageExportMode("collage"));
   fichaBtn?.addEventListener("click",()=>{
     if(!collageSelectedProduct) return;
-    downloadMarketplacePresentationCard(collageSelectedProduct,fichaBtn);
+    setCollageExportMode("ficha");
   });
-  downloadBtn?.addEventListener("click",()=>downloadCollageImage("download"));
-  shareBtn?.addEventListener("click",()=>downloadCollageImage("share"));
+  downloadBtn?.addEventListener("click",()=>{
+    try{
+      if(collageExportMode==="ficha"){
+        if(!fichaPreparedFile) return queueFichaPreparation();
+        downloadPreparedPngFile(fichaPreparedFile,fichaPreparedFile.name);
+      }else{
+        const currentKey=collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat());
+        if(collagePreparedShareFile && collagePreparedShareKey===currentKey){
+          downloadPreparedPngFile(collagePreparedShareFile,collagePreparedShareFile.name);
+        }else{
+          queueCollageSharePreparation();
+        }
+      }
+    }catch(error){
+      console.error("No se pudo descargar el PNG.",error);
+      alert("No se pudo descargar la imagen PNG.");
+    }
+  });
+  shareBtn?.addEventListener("click",async()=>{
+    const file=collageExportMode==="ficha"?fichaPreparedFile:collagePreparedShareFile;
+    if(!file){
+      if(collageExportMode==="ficha") queueFichaPreparation();
+      else queueCollageSharePreparation();
+      return;
+    }
+    shareBtn.disabled=true;
+    shareBtn.textContent="Copiando…";
+    try{
+      await copyPreparedPngFile(file);
+      shareBtn.textContent="Copiada";
+      window.setTimeout(()=>{
+        if(shareBtn){
+          shareBtn.disabled=false;
+          shareBtn.textContent="Copiar imagen";
+        }
+      },900);
+    }catch(error){
+      console.error("No se pudo copiar la imagen al portapapeles.",error);
+      alert("Este navegador no permite copiar esta imagen al portapapeles. Puedes usar Descargar PNG.");
+      shareBtn.disabled=false;
+      shareBtn.textContent="Copiar imagen";
+    }
+  });
 
   modal.addEventListener("click",event=>{
     if(event.target.closest("[data-collage-close]")) closeCollage();

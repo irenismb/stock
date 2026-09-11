@@ -1,6 +1,5 @@
 {
   "version": 1,
-  "sourceFolderId": "133WAYlDKSt3r8KIObttDcv86eHPmPQ5b",
   "targetDirectory": "natura/productos",
   "bootstrap": "trust-existing-exact-path",
   "files": {}

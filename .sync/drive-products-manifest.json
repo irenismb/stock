@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "targetDirectory": "natura/productos",
+  "bootstrap": "trust-existing-exact-path",
+  "files": {}
+}

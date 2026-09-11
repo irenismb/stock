@@ -4420,6 +4420,7 @@ function initCollageFeature(){
     .collage-heading{padding:4px 56px 14px 2px;text-align:center}
     .collage-route{margin:0;color:#f8fafc;font-size:clamp(23px,3vw,38px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
     .collage-actions{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;margin:0 0 18px}
+    .collage-output-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(590px,100%)}
     .collage-selector-block{width:min(590px,100%)}
     .collage-control-label{margin:0 0 7px;color:#f8fafc;font-size:14px;line-height:1.2;font-weight:900;text-align:left}
     .collage-type-choices,.collage-format-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
@@ -4430,6 +4431,7 @@ function initCollageFeature(){
     .collage-type-option:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
     .collage-size-control[hidden],.collage-selection-hint[hidden]{display:none!important}
     .collage-download,.collage-share{min-height:48px;min-width:220px;padding:11px 20px;border-radius:13px;font-weight:950;cursor:pointer}
+    .collage-output-actions .collage-download,.collage-output-actions .collage-share{min-width:0;width:100%}
     .collage-download{border:1px solid #a55f70;background:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.22)}
     .collage-download:hover{background:#8f4f60;border-color:#8f4f60}
     .collage-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
@@ -4548,8 +4550,10 @@ function initCollageFeature(){
           </div>
         </div>
         <p class="collage-selection-hint" id="collageSelectionHint" hidden></p>
-        <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando imagen…</button>
-        <button class="collage-download" id="collageDownloadBtn" type="button" disabled>Preparando PNG…</button>
+        <div class="collage-output-actions">
+          <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando imagen…</button>
+          <button class="collage-download" id="collageDownloadBtn" type="button" disabled>Preparando PNG…</button>
+        </div>
       </div>
       <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
     </section>

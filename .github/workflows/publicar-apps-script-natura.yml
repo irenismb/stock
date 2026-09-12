@@ -1,92 +1,17 @@
-name: Publicar manualmente Apps Script desde GitHub
+name: Google Apps Script es la fuente principal
 
 on:
   workflow_dispatch:
-    inputs:
-      project:
-        description: Nombre de la carpeta del proyecto que se publicará manualmente en Google Apps Script
-        required: true
-        type: string
 
 permissions:
   contents: read
 
-concurrency:
-  group: publicar-manualmente-apps-script-natura
-  cancel-in-progress: false
-
 jobs:
-  publicar:
+  protegido:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v7
-
-      - name: Validar proyecto seleccionado
-        env:
-          PROJECT: ${{ inputs.project }}
+      - name: Mantener Google como fuente principal
         run: |
-          project_dir="natura/apps-script/$PROJECT"
-
-          if [ ! -d "$project_dir" ]; then
-            echo "::error::No existe la carpeta $project_dir"
-            exit 1
-          fi
-          if [ ! -f "$project_dir/.clasp.json" ]; then
-            echo "::error::$PROJECT no está registrado con un scriptId."
-            exit 1
-          fi
-          if [ ! -f "$project_dir/appsscript.json" ]; then
-            echo "::error::$PROJECT no contiene appsscript.json."
-            exit 1
-          fi
-
-      - name: Preparar Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          package-manager-cache: false
-
-      - name: Instalar clasp
-        run: npm install --global @google/clasp@3.4.1
-
-      - name: Restaurar autorización de Google
-        env:
-          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-        run: |
-          if [ -z "$CLASPRC_JSON" ]; then
-            echo "::error::Falta el secreto CLASPRC_JSON"
-            exit 1
-          fi
-          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
-          chmod 600 "$RUNNER_TEMP/.clasprc.json"
-
-      - name: Publicar manualmente el proyecto seleccionado
-        env:
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-          PROJECT: ${{ inputs.project }}
-        run: |
-          project_dir="natura/apps-script/$PROJECT"
-          cd "$project_dir"
-
-          clasp push --force
-
-          mapfile -t deployment_ids < <(
-            clasp deployments 2>/dev/null |
-              awk '/^- / && $3 != "@HEAD" {print $2}'
-          )
-
-          if [ "${#deployment_ids[@]}" -eq 0 ]; then
-            echo "No existe una implementación versionada; creando una nueva"
-            clasp deploy --description "Publicación manual GitHub ${GITHUB_SHA}"
-          elif [ "${#deployment_ids[@]}" -eq 1 ]; then
-            echo "Actualizando implementación ${deployment_ids[0]}"
-            clasp deploy --deploymentId "${deployment_ids[0]}" --description "Publicación manual GitHub ${GITHUB_SHA}"
-          else
-            echo "::error::$PROJECT tiene varias implementaciones versionadas. No se actualizará ninguna automáticamente."
-            printf 'Implementaciones detectadas:\n'
-            printf -- '- %s\n' "${deployment_ids[@]}"
-            exit 1
-          fi
+          echo "Google Apps Script es la fuente principal."
+          echo "Este workflow no publica, no despliega y no elimina nada en Google."
+          echo "La sincronización permitida es Google Apps Script -> GitHub."

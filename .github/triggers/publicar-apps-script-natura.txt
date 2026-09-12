@@ -1,0 +1,2 @@
+Control manual para publicar Apps Script Natura desde GitHub a Google e implementar.
+No editar salvo para solicitar una publicación manual.

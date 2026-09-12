@@ -56,20 +56,35 @@ jobs:
             printf '%s\n' "$SELECTED_PROJECT" > "$projects_file"
           else
             changed_projects="$RUNNER_TEMP/changed-projects.txt"
+            old_projects="$RUNNER_TEMP/old-projects.txt"
+            current_projects="$RUNNER_TEMP/current-projects.txt"
+            disappeared_projects="$RUNNER_TEMP/disappeared-projects.txt"
+
             git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- "natura/apps-script/*/**" |
               awk -F/ 'NF >= 4 {print $3}' |
               sort -u > "$changed_projects"
 
+            git ls-tree -r --name-only "$BEFORE_SHA" -- "natura/apps-script" |
+              awk -F/ 'NF == 4 && $4 == ".clasp.json" {print $3}' |
+              sort -u > "$old_projects"
+
+            find natura/apps-script -mindepth 2 -maxdepth 2 -type f -name .clasp.json -print |
+              awk -F/ 'NF == 4 {print $3}' |
+              sort -u > "$current_projects"
+
+            comm -23 "$old_projects" "$current_projects" > "$disappeared_projects"
+
             while IFS= read -r project; do
               [ -n "$project" ] || continue
-              project_dir="natura/apps-script/$project"
-
-              if [ -d "$project_dir" ]; then
+              if [ -d "natura/apps-script/$project" ]; then
                 printf '%s\n' "$project" >> "$projects_file"
-                continue
               fi
+            done < "$changed_projects"
 
+            while IFS= read -r project; do
+              [ -n "$project" ] || continue
               old_config_path="natura/apps-script/$project/.clasp.json"
+
               if ! old_config="$(git show "$BEFORE_SHA:$old_config_path" 2>/dev/null)"; then
                 echo "::warning::La carpeta $project desapareció, pero no se pudo recuperar su .clasp.json anterior. No se eliminará ni renombrará ningún proyecto de Google."
                 continue
@@ -110,7 +125,7 @@ jobs:
               else
                 echo "::warning::El scriptId de $project aparece en varias carpetas actuales. No se renombrará ni eliminará el proyecto de Google automáticamente."
               fi
-            done < "$changed_projects"
+            done < "$disappeared_projects"
 
             sort -u -o "$projects_file" "$projects_file"
             sort -u -o "$renamed_projects_file" "$renamed_projects_file"

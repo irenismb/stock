@@ -108,7 +108,7 @@ jobs:
               cd "$project_dir"
               clasp push
 
-              deployment_id="$(clasp deployments 2>/dev/null | awk '/^-/ && $2 != "@HEAD" {print $2; exit}')"
+              deployment_id="$(clasp deployments 2>/dev/null | sed -n 's/^- \([^ ]*\) @[^ ]*.*/\1/p' | head -n 1)"
 
               if [ -n "$deployment_id" ]; then
                 echo "Actualizando implementación $deployment_id"

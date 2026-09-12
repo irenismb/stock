@@ -1,10 +1,70 @@
 {
+  "source": "Google Apps Script",
   "scriptIds": [
+    "1ixlF9IxWP5Khzcc1oRzGUAqhW0Qca_v49n4kCdt5ZvAZMjv0EvIYjzL1",
     "11cBZTt9tTCajorgtB2C40JRgy0fgOmaZTim3cX_GkB09Jqt5TJ8bg8ud",
-    "1XysD32CX_6x4hTF2maSPh4f0esbsLH4tstRl8ETVdsRFLCQ7H2RGMEXL",
-    "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN",
-    "12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt",
-    "1TT-GhDm3MqMzZqbXVCVV-Dj95a3KzsnOr2QEXkuGhQLgo5RfMk53cR3a",
-    "1iT8XOx7_Fxe71c9wWQStFheydxp_VV3vOs56sEc04kgbhVkw8SCINTfa"
+    "1PYUUNWunA-7EEiM1mBlOBw0HZmUZDeop5GsSoFOLbRiXuk5qOnnjp90U",
+    "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
+    "1UNpuMUE9JZVj4o6SxGuMmAe74dQgiPbDjvNr6E1Y7AJrlO8ZNIPOtwhp",
+    "1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b",
+    "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
+    "1rPZFgRLNHL5vf70Hftcih_Z9yXfvX5KeTUxA8hsH1rYYSFZti02G3wuv",
+    "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS"
+  ],
+  "projects": [
+    {
+      "scriptId": "1ixlF9IxWP5Khzcc1oRzGUAqhW0Qca_v49n4kCdt5ZvAZMjv0EvIYjzL1",
+      "name": "Apps Script - imágenes catálogo",
+      "duplicateName": false,
+      "gitPath": "Apps Script - imágenes catálogo"
+    },
+    {
+      "scriptId": "11cBZTt9tTCajorgtB2C40JRgy0fgOmaZTim3cX_GkB09Jqt5TJ8bg8ud",
+      "name": "coordenadas-natura",
+      "duplicateName": false,
+      "gitPath": "coordenadas-natura"
+    },
+    {
+      "scriptId": "1PYUUNWunA-7EEiM1mBlOBw0HZmUZDeop5GsSoFOLbRiXuk5qOnnjp90U",
+      "name": "Copy of coordenadas-natura",
+      "duplicateName": false,
+      "gitPath": "Copy of coordenadas-natura"
+    },
+    {
+      "scriptId": "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
+      "name": "cxp-apps script",
+      "duplicateName": false,
+      "gitPath": "cxp-apps script"
+    },
+    {
+      "scriptId": "1UNpuMUE9JZVj4o6SxGuMmAe74dQgiPbDjvNr6E1Y7AJrlO8ZNIPOtwhp",
+      "name": "google doc a pagina web catalogo",
+      "duplicateName": false,
+      "gitPath": "google doc a pagina web catalogo"
+    },
+    {
+      "scriptId": "1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b",
+      "name": "lectura de carpetas en natura",
+      "duplicateName": true,
+      "gitPath": "lectura de carpetas en natura/1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b"
+    },
+    {
+      "scriptId": "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
+      "name": "lectura de carpetas en natura",
+      "duplicateName": true,
+      "gitPath": "lectura de carpetas en natura/1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf"
+    },
+    {
+      "scriptId": "1rPZFgRLNHL5vf70Hftcih_Z9yXfvX5KeTUxA8hsH1rYYSFZti02G3wuv",
+      "name": "Proyecto sin título",
+      "duplicateName": false,
+      "gitPath": "Proyecto sin título"
+    },
+    {
+      "scriptId": "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS",
+      "name": "ventas_dr_he_aroma_apps_script",
+      "duplicateName": false,
+      "gitPath": "ventas_dr_he_aroma_apps_script"
+    }
   ]
 }

@@ -9,16 +9,9 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: Proyecto que se publicará en Google Apps Script
+        description: Nombre de la carpeta del proyecto que se publicará en Google Apps Script
         required: true
-        type: choice
-        options:
-          - coordenadas-natura
-          - coordenadas-de-visitantes-natura
-          - coordenadas-de-visitantes-natura-2
-          - pedidos-natura
-          - pedidos-natura-2
-          - ventas-natura
+        type: string
 
 permissions:
   contents: read
@@ -39,7 +32,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Identificar proyectos modificados o eliminados
+      - name: Identificar proyectos modificados, renombrados o eliminados
         id: projects
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -48,8 +41,10 @@ jobs:
           SELECTED_PROJECT: ${{ inputs.project }}
         run: |
           projects_file="$RUNNER_TEMP/projects.txt"
+          renamed_projects_file="$RUNNER_TEMP/renamed-projects.txt"
           deleted_projects_file="$RUNNER_TEMP/deleted-projects.txt"
           : > "$projects_file"
+          : > "$renamed_projects_file"
           : > "$deleted_projects_file"
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
@@ -76,32 +71,50 @@ jobs:
 
               old_config_path="natura/apps-script/$project/.clasp.json"
               if ! old_config="$(git show "$BEFORE_SHA:$old_config_path" 2>/dev/null)"; then
-                echo "::warning::La carpeta $project desapareció, pero no se pudo recuperar su .clasp.json anterior. No se eliminará ningún proyecto de Google."
+                echo "::warning::La carpeta $project desapareció, pero no se pudo recuperar su .clasp.json anterior. No se eliminará ni renombrará ningún proyecto de Google."
                 continue
               fi
 
               old_script_id="$(printf '%s' "$old_config" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("scriptId", ""))' 2>/dev/null || true)"
               if [ -z "$old_script_id" ]; then
-                echo "::warning::No se pudo obtener el scriptId anterior de $project. No se eliminará ningún proyecto de Google."
+                echo "::warning::No se pudo obtener el scriptId anterior de $project. No se eliminará ni renombrará ningún proyecto de Google."
                 continue
               fi
 
-              script_still_present=false
+              matching_projects="$RUNNER_TEMP/matching-$project.txt"
+              : > "$matching_projects"
+
               while IFS= read -r current_config; do
                 current_script_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$current_config" 2>/dev/null || true)"
                 if [ "$current_script_id" = "$old_script_id" ]; then
-                  script_still_present=true
-                  break
+                  basename "$(dirname "$current_config")" >> "$matching_projects"
                 fi
               done < <(find natura/apps-script -mindepth 2 -maxdepth 2 -type f -name .clasp.json -print)
 
-              if [ "$script_still_present" = true ]; then
-                echo "El script de $project sigue registrado en otra carpeta; se interpreta como renombre o movimiento y no se elimina de Google."
-              else
+              match_count="$(wc -l < "$matching_projects" | tr -d ' ')"
+
+              if [ "$match_count" -eq 0 ]; then
                 printf '%s\n' "$project" >> "$deleted_projects_file"
                 echo "Proyecto eliminado del repositorio y marcado para eliminar también de Google Apps Script: $project"
+                continue
+              fi
+
+              if [ "$match_count" -eq 1 ]; then
+                current_project="$(head -n 1 "$matching_projects")"
+                if [ "$current_project" != "$project" ] && grep -Fxq "$current_project" "$changed_projects"; then
+                  printf '%s\t%s\t%s\n' "$project" "$current_project" "$old_script_id" >> "$renamed_projects_file"
+                  echo "Proyecto renombrado: $project -> $current_project. El nombre se sincronizará también en Google Apps Script."
+                else
+                  echo "El script de $project sigue registrado en $current_project; no se elimina de Google."
+                fi
+              else
+                echo "::warning::El scriptId de $project aparece en varias carpetas actuales. No se renombrará ni eliminará el proyecto de Google automáticamente."
               fi
             done < "$changed_projects"
+
+            sort -u -o "$projects_file" "$projects_file"
+            sort -u -o "$renamed_projects_file" "$renamed_projects_file"
+            sort -u -o "$deleted_projects_file" "$deleted_projects_file"
           fi
 
           if [ -s "$projects_file" ]; then
@@ -112,6 +125,14 @@ jobs:
             echo "has_projects=false" >> "$GITHUB_OUTPUT"
           fi
 
+          if [ -s "$renamed_projects_file" ]; then
+            echo "has_renamed_projects=true" >> "$GITHUB_OUTPUT"
+            echo "Proyectos cuyo nombre se sincronizará en Google Apps Script:"
+            awk -F '\t' '{print "- " $1 " -> " $2}' "$renamed_projects_file"
+          else
+            echo "has_renamed_projects=false" >> "$GITHUB_OUTPUT"
+          fi
+
           if [ -s "$deleted_projects_file" ]; then
             echo "has_deleted_projects=true" >> "$GITHUB_OUTPUT"
             echo "Proyectos que se eliminarán de Google Apps Script:"
@@ -120,11 +141,11 @@ jobs:
             echo "has_deleted_projects=false" >> "$GITHUB_OUTPUT"
           fi
 
-          if [ -s "$projects_file" ] || [ -s "$deleted_projects_file" ]; then
+          if [ -s "$projects_file" ] || [ -s "$renamed_projects_file" ] || [ -s "$deleted_projects_file" ]; then
             echo "has_work=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_work=false" >> "$GITHUB_OUTPUT"
-            echo "No hay proyectos existentes que publicar ni proyectos que eliminar de Google Apps Script."
+            echo "No hay proyectos que publicar, renombrar o eliminar en Google Apps Script."
           fi
 
       - name: Preparar Node.js
@@ -149,6 +170,71 @@ jobs:
           fi
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Sincronizar nombres de proyectos en Google Apps Script
+        if: steps.projects.outputs.has_renamed_projects == 'true'
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          # Fuerza una llamada autenticada para que clasp renueve el access token si fuera necesario.
+          clasp list-scripts >/dev/null
+
+          access_token="$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1], encoding="utf-8")); c=((d.get("tokens") or {}).get("default") or d.get("token") or d); print(c.get("access_token", ""))' "$RUNNER_TEMP/.clasprc.json" 2>/dev/null || true)"
+          if [ -z "$access_token" ]; then
+            echo "::error::No se pudo obtener un access token renovado desde la autorización de clasp."
+            exit 1
+          fi
+
+          while IFS=$'\t' read -r old_project new_project script_id; do
+            [ -n "$new_project" ] || continue
+            metadata_file="$RUNNER_TEMP/drive-metadata-$new_project.json"
+            response_file="$RUNNER_TEMP/drive-rename-$new_project.json"
+
+            status="$(curl --silent --show-error --output "$metadata_file" --write-out '%{http_code}' \
+              --header "Authorization: Bearer $access_token" \
+              "https://www.googleapis.com/drive/v3/files/$script_id?fields=id,name,mimeType&supportsAllDrives=true")"
+
+            if [ "$status" != "200" ]; then
+              echo "::error::No se pudo verificar en Google Drive el proyecto $new_project (HTTP $status)."
+              cat "$metadata_file"
+              exit 1
+            fi
+
+            mime_type="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("mimeType", ""))' "$metadata_file")"
+            current_name="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("name", ""))' "$metadata_file")"
+
+            if [ "$mime_type" != "application/vnd.google-apps.script" ]; then
+              echo "::error::El scriptId de $new_project no corresponde a un archivo independiente de Google Apps Script. No se cambiará ningún nombre."
+              exit 1
+            fi
+
+            if [ "$current_name" = "$new_project" ]; then
+              echo "El proyecto de Google ya se llama $new_project."
+              continue
+            fi
+
+            payload="$(python3 -c 'import json,sys; print(json.dumps({"name": sys.argv[1]}, ensure_ascii=False))' "$new_project")"
+            status="$(curl --silent --show-error --output "$response_file" --write-out '%{http_code}' \
+              --request PATCH \
+              --header "Authorization: Bearer $access_token" \
+              --header "Content-Type: application/json; charset=UTF-8" \
+              --data "$payload" \
+              "https://www.googleapis.com/drive/v3/files/$script_id?fields=id,name,mimeType&supportsAllDrives=true")"
+
+            if [ "$status" != "200" ]; then
+              echo "::error::No se pudo cambiar el nombre de $old_project a $new_project en Google Apps Script (HTTP $status)."
+              cat "$response_file"
+              exit 1
+            fi
+
+            confirmed_name="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("name", ""))' "$response_file")"
+            if [ "$confirmed_name" != "$new_project" ]; then
+              echo "::error::Google no confirmó el nombre esperado para $new_project."
+              exit 1
+            fi
+
+            echo "Nombre actualizado en Google Apps Script: $old_project -> $new_project"
+          done < "$RUNNER_TEMP/renamed-projects.txt"
 
       - name: Eliminar de Google Apps Script los proyectos borrados
         if: steps.projects.outputs.has_deleted_projects == 'true'

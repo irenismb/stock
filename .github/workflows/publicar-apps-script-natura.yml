@@ -211,6 +211,8 @@ jobs:
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
+          repo_root="$(git rev-parse --show-toplevel)"
+
           while IFS=$'\t' read -r script_id project_name git_path; do
             [ -n "$script_id" ] || continue
             project_dir="natura/apps-script/$git_path"
@@ -244,13 +246,31 @@ jobs:
                 echo "Creando primera implementación versionada"
                 clasp deploy --description "GitHub ${GITHUB_SHA}"
               elif [ "${#deployment_ids[@]}" -eq 1 ]; then
-                echo "Actualizando implementación ${deployment_ids[0]}"
+                echo "Actualizando única implementación ${deployment_ids[0]}"
                 clasp deploy --deploymentId "${deployment_ids[0]}" --description "GitHub ${GITHUB_SHA}"
               else
-                echo "::error::$project_name tiene varias implementaciones versionadas. No se actualizará ninguna automáticamente para evitar modificar la incorrecta."
-                printf 'Implementaciones detectadas:\n'
-                printf -- '- %s\n' "${deployment_ids[@]}"
-                exit 1
+                referenced_ids=()
+                for deployment_id in "${deployment_ids[@]}"; do
+                  if grep -R -F -q \
+                    --exclude-dir=.git \
+                    --exclude-dir=.github \
+                    --exclude-dir=apps-script \
+                    --exclude-dir=apps-script-excluidos \
+                    -- "$deployment_id" "$repo_root/natura"; then
+                    referenced_ids+=("$deployment_id")
+                  fi
+                done
+
+                if [ "${#referenced_ids[@]}" -eq 1 ]; then
+                  echo "Varias implementaciones detectadas; actualizando la usada por el proyecto: ${referenced_ids[0]}"
+                  clasp deploy --deploymentId "${referenced_ids[0]}" --description "GitHub ${GITHUB_SHA}"
+                else
+                  echo "::error::$project_name tiene ${#deployment_ids[@]} implementaciones versionadas y no se pudo identificar de forma inequívoca cuál usa el sitio."
+                  printf 'Implementaciones detectadas:\n'
+                  printf -- '- %s\n' "${deployment_ids[@]}"
+                  printf 'Implementaciones referenciadas por el sitio: %s\n' "${#referenced_ids[@]}"
+                  exit 1
+                fi
               fi
             )
           done < "$RUNNER_TEMP/projects.tsv"

@@ -1,6 +1,11 @@
 name: Publicar Apps Script de Natura
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "natura/apps-script/*/**"
   workflow_dispatch:
     inputs:
       project:
@@ -20,12 +25,39 @@ concurrency:
 
 jobs:
   publicar:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
       - name: Descargar repositorio
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Identificar proyectos modificados
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE_SHA: ${{ github.event.before }}
+          CURRENT_SHA: ${{ github.sha }}
+          SELECTED_PROJECT: ${{ inputs.project }}
+        run: |
+          projects_file="$RUNNER_TEMP/projects.txt"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            printf '%s\n' "$SELECTED_PROJECT" > "$projects_file"
+          else
+            git diff --name-only "$BEFORE_SHA" "$CURRENT_SHA" -- "natura/apps-script/*/**" |
+              awk -F/ 'NF >= 4 {print $3}' |
+              sort -u > "$projects_file"
+          fi
+
+          if [ ! -s "$projects_file" ]; then
+            echo "::error::No se encontró ningún proyecto modificado"
+            exit 1
+          fi
+
+          echo "Proyectos que se publicarán:"
+          sed 's/^/- /' "$projects_file"
 
       - name: Preparar Node.js
         uses: actions/setup-node@v4
@@ -46,28 +78,29 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Validar proyecto seleccionado
-        env:
-          PROJECT: ${{ inputs.project }}
-        run: |
-          project_dir="natura/apps-script/$PROJECT"
-          if [ ! -f "$project_dir/.clasp.json" ]; then
-            echo "::error::No existe la configuración del proyecto seleccionado"
-            exit 1
-          fi
-          if [ ! -f "$project_dir/appsscript.json" ]; then
-            echo "::error::Primero ejecuta Sincronizar Apps Script de Natura para descargar el proyecto"
-            exit 1
-          fi
-          if ! find "$project_dir" -type f \( -name '*.js' -o -name '*.gs' -o -name '*.html' \) -print -quit | grep -q .; then
-            echo "::error::La carpeta no contiene código de Apps Script"
-            exit 1
-          fi
-
-      - name: Publicar en Google Apps Script
+      - name: Validar y publicar proyectos
         env:
           CLASP_CONFIG_AUTH: ${{ runner.temp }}/.clasprc.json
-          PROJECT: ${{ inputs.project }}
         run: |
-          cd "natura/apps-script/$PROJECT"
-          clasp push
+          while IFS= read -r project; do
+            project_dir="natura/apps-script/$project"
+
+            if [ ! -f "$project_dir/.clasp.json" ]; then
+              echo "::error::No existe la configuración de $project"
+              exit 1
+            fi
+            if [ ! -f "$project_dir/appsscript.json" ]; then
+              echo "::error::Primero sincroniza $project desde Google Apps Script"
+              exit 1
+            fi
+            if ! find "$project_dir" -type f \( -name '*.js' -o -name '*.gs' -o -name '*.html' \) -print -quit | grep -q .; then
+              echo "::error::$project no contiene código de Apps Script"
+              exit 1
+            fi
+
+            echo "Publicando $project"
+            (
+              cd "$project_dir"
+              clasp push
+            )
+          done < "$RUNNER_TEMP/projects.txt"

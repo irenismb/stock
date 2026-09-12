@@ -6,6 +6,10 @@ Esta carpeta contiene exclusivamente los proyectos de Google Apps Script relacio
 
 - `coordenadas-natura`
 - `coordenadas-de-visitantes-natura`
+- `coordenadas-de-visitantes-natura-2`
+- `pedidos-natura`
+- `pedidos-natura-2`
+- `ventas-natura`
 
 ## Sincronización bidireccional
 

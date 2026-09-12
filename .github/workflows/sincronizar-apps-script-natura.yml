@@ -49,25 +49,40 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Inventariar todos los proyectos de Google Apps Script
+      - name: Inventariar solo proyectos activos de Google Apps Script
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
-          clasp list-scripts --json > "$RUNNER_TEMP/google-scripts.json"
+          # list-scripts se usa solo para descubrir los scriptId accesibles.
+          # Después se consulta Drive y se excluye expresamente trashed=true.
+          clasp list-scripts --json > "$RUNNER_TEMP/google-scripts-raw.json"
 
-          python3 - "$RUNNER_TEMP/google-scripts.json" "natura/apps-script/google-projects.json" "$RUNNER_TEMP/google-projects.tsv" <<'PY'
+          python3 - \
+            "$RUNNER_TEMP/google-scripts-raw.json" \
+            "$RUNNER_TEMP/.clasprc.json" \
+            "natura/apps-script/google-projects.json" \
+            "$RUNNER_TEMP/google-projects.tsv" \
+            "$RUNNER_TEMP/trashed-script-ids.txt" <<'PY'
           import collections
           import json
           import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
 
-          source_path, registry_path, tsv_path = sys.argv[1:4]
+          source_path, auth_path, registry_path, tsv_path, trashed_path = sys.argv[1:6]
+
           with open(source_path, encoding="utf-8") as fh:
               scripts = json.load(fh)
-
           if not isinstance(scripts, list):
               raise SystemExit("La respuesta de clasp list-scripts no es una lista JSON válida")
-          if not scripts:
-              raise SystemExit("Google no devolvió ningún proyecto de Apps Script; se detiene para evitar cambios incorrectos en GitHub")
+
+          with open(auth_path, encoding="utf-8") as fh:
+              auth = json.load(fh)
+          credentials = ((auth.get("tokens") or {}).get("default") or auth.get("token") or auth)
+          access_token = credentials.get("access_token", "") if isinstance(credentials, dict) else ""
+          if not access_token:
+              raise SystemExit("No se pudo obtener el access_token actualizado de clasp")
 
           invalid_chars = '<>:"/\\|?*'
           reserved = {"CON", "PRN", "AUX", "NUL"}
@@ -75,17 +90,45 @@ jobs:
           reserved.update({f"LPT{i}" for i in range(1, 10)})
 
           seen_ids = set()
-          normalized = []
+          active = []
+          trashed_ids = []
+
           for item in scripts:
               script_id = item.get("id", "")
-              name = item.get("name", "")
               if not isinstance(script_id, str) or not script_id:
                   raise SystemExit("Google devolvió un proyecto sin scriptId válido")
-              if not isinstance(name, str) or not name:
-                  raise SystemExit(f"Google devolvió un nombre vacío para {script_id}")
               if script_id in seen_ids:
                   raise SystemExit(f"Google devolvió dos veces el scriptId {script_id}")
               seen_ids.add(script_id)
+
+              encoded_id = urllib.parse.quote(script_id, safe="")
+              url = (
+                  f"https://www.googleapis.com/drive/v3/files/{encoded_id}"
+                  "?fields=id,name,mimeType,trashed&supportsAllDrives=true"
+              )
+              request = urllib.request.Request(
+                  url,
+                  headers={"Authorization": f"Bearer {access_token}"},
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      metadata = json.load(response)
+              except urllib.error.HTTPError as error:
+                  body = error.read().decode("utf-8", errors="replace")
+                  raise SystemExit(
+                      f"No se pudo consultar en Drive el scriptId {script_id}: HTTP {error.code}: {body}"
+                  )
+
+              if metadata.get("mimeType") != "application/vnd.google-apps.script":
+                  raise SystemExit(f"El id {script_id} no corresponde a un proyecto independiente de Apps Script")
+
+              if metadata.get("trashed") is True:
+                  trashed_ids.append(script_id)
+                  continue
+
+              name = metadata.get("name", "")
+              if not isinstance(name, str) or not name:
+                  raise SystemExit(f"Google devolvió un nombre vacío para {script_id}")
 
               valid = name not in {".", ".."}
               valid = valid and not any(ord(ch) < 32 for ch in name)
@@ -96,12 +139,16 @@ jobs:
                   raise SystemExit(
                       f"El nombre de Google '{name}' no puede usarse exactamente como carpeta en Windows"
                   )
-              normalized.append({"scriptId": script_id, "name": name})
 
-          counts = collections.Counter(item["name"].casefold() for item in normalized)
-          normalized.sort(key=lambda x: (x["name"].casefold(), x["scriptId"]))
+              active.append({"scriptId": script_id, "name": name})
 
-          for item in normalized:
+          if not active:
+              raise SystemExit("Google no devolvió ningún proyecto activo de Apps Script; se detiene para evitar cambios incorrectos en GitHub")
+
+          counts = collections.Counter(item["name"].casefold() for item in active)
+          active.sort(key=lambda x: (x["name"].casefold(), x["scriptId"]))
+
+          for item in active:
               duplicate = counts[item["name"].casefold()] > 1
               item["duplicateName"] = duplicate
               item["gitPath"] = (
@@ -110,24 +157,30 @@ jobs:
 
           registry = {
               "source": "Google Apps Script",
-              "scriptIds": [item["scriptId"] for item in normalized],
-              "projects": normalized,
+              "filter": "trashed=false",
+              "scriptIds": [item["scriptId"] for item in active],
+              "projects": active,
           }
           with open(registry_path, "w", encoding="utf-8", newline="\n") as fh:
               json.dump(registry, fh, ensure_ascii=False, indent=2)
               fh.write("\n")
 
           with open(tsv_path, "w", encoding="utf-8", newline="\n") as fh:
-              for item in normalized:
+              for item in active:
                   fh.write(f'{item["scriptId"]}\t{item["name"]}\t{item["gitPath"]}\n')
 
+          with open(trashed_path, "w", encoding="utf-8", newline="\n") as fh:
+              for script_id in sorted(trashed_ids):
+                  fh.write(script_id + "\n")
+
           duplicate_names = sorted(
-              {item["name"] for item in normalized if item["duplicateName"]},
+              {item["name"] for item in active if item["duplicateName"]},
               key=str.casefold,
           )
-          print(f"Proyectos encontrados en Google: {len(normalized)}")
+          print(f"Proyectos activos encontrados en Google: {len(active)}")
+          print(f"Proyectos excluidos por estar en la papelera: {len(trashed_ids)}")
           if duplicate_names:
-              print("Nombres duplicados en Google; se agruparán bajo una carpeta con el nombre exacto:")
+              print("Nombres duplicados entre proyectos activos; se agruparán bajo una carpeta con el nombre exacto:")
               for name in duplicate_names:
                   print(f"- {name}")
           PY
@@ -162,7 +215,7 @@ jobs:
 
             match_count="$(wc -l < "$matches_file" | tr -d ' ')"
             if [ "$match_count" -gt 1 ]; then
-              echo "::error::El scriptId $script_id aparece en varias carpetas de GitHub."
+              echo "::error::El scriptId $script_id aparece en varias carpetas activas de GitHub."
               cat "$matches_file"
               exit 1
             fi
@@ -205,7 +258,44 @@ jobs:
             )
           done < "$projects_tsv"
 
-      - name: Avisar sobre carpetas que ya no aparecen en Google
+      - name: Apartar de la sincronización los proyectos que están en la papelera
+        run: |
+          trashed_ids="$RUNNER_TEMP/trashed-script-ids.txt"
+          archive_root="natura/apps-script-excluidos/papelera-google"
+
+          [ -s "$trashed_ids" ] || {
+            echo "No hay proyectos de Apps Script en la papelera entre los proyectos descubiertos."
+            exit 0
+          }
+
+          while IFS= read -r -d '' config; do
+            local_id="$(python3 - "$config" <<'PY'
+          import json
+          import sys
+          try:
+              with open(sys.argv[1], encoding="utf-8") as fh:
+                  print(json.load(fh).get("scriptId", ""))
+          except Exception:
+              print("")
+          PY
+          )"
+            [ -n "$local_id" ] || continue
+            grep -Fxq "$local_id" "$trashed_ids" || continue
+
+            current_dir="$(dirname "$config")"
+            target_dir="$archive_root/$local_id"
+            mkdir -p "$archive_root"
+
+            if [ -e "$target_dir" ]; then
+              echo "::warning::Ya existe una copia preservada para $local_id fuera de la sincronización activa. Se mantiene la carpeta actual sin sobrescribir nada."
+              continue
+            fi
+
+            echo "Apartando de natura/apps-script un proyecto que Google tiene en la papelera: $local_id"
+            mv "$current_dir" "$target_dir"
+          done < <(find natura/apps-script -mindepth 2 -maxdepth 3 -type f -name .clasp.json -print0)
+
+      - name: Avisar sobre carpetas que ya no aparecen entre los proyectos activos de Google
         run: |
           remote_ids="$RUNNER_TEMP/remote-ids.txt"
           cut -f1 "$RUNNER_TEMP/google-projects.tsv" | sort -u > "$remote_ids"
@@ -223,21 +313,25 @@ jobs:
           )"
             [ -n "$local_id" ] || continue
             if ! grep -Fxq "$local_id" "$remote_ids"; then
-              echo "::warning::$(dirname "$config") ya no aparece en la lista de Google. Se conserva en GitHub y no se borra nada de Google."
+              echo "::warning::$(dirname "$config") ya no aparece entre los proyectos activos de Google. Se conserva en GitHub y no se borra nada de Google."
             fi
           done < <(find natura/apps-script -mindepth 2 -maxdepth 3 -type f -name .clasp.json -print0)
 
       - name: Guardar en GitHub la copia recibida desde Google
         run: |
           git add -A natura/apps-script
+          if [ -d natura/apps-script-excluidos ]; then
+            git add -A natura/apps-script-excluidos
+          fi
+
           if git diff --cached --quiet; then
-            echo "Google y GitHub ya están sincronizados."
+            echo "Google y GitHub ya están sincronizados para los proyectos activos."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sincronizar todos los Apps Script desde Google"
+          git commit -m "Sincronizar Apps Script activos desde Google"
 
           if ! git push origin HEAD:main; then
             echo "::warning::main cambió durante la sincronización. No se forzará el push; la siguiente ejecución volverá a copiar Google sobre el estado más reciente."

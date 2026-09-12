@@ -1,0 +1,15 @@
+{
+  "source": "Google Apps Script",
+  "auditedAt": "2026-09-12T17:10:42Z",
+  "projects": [
+    {"name":"Apps Script - imágenes catálogo","scriptId":"1ixlF9IxWP5Khzcc1oRzGUAqhW0Qca_v49n4kCdt5ZvAZMjv0EvIYjzL1","totalDeployments":1,"versionedDeployments":0,"headDeployments":1},
+    {"name":"coordenadas-natura","scriptId":"11cBZTt9tTCajorgtB2C40JRgy0fgOmaZTim3cX_GkB09Jqt5TJ8bg8ud","totalDeployments":2,"versionedDeployments":1,"headDeployments":1},
+    {"name":"Copy of coordenadas-natura","scriptId":"1PYUUNWunA-7EEiM1mBlOBw0HZmUZDeop5GsSoFOLbRiXuk5qOnnjp90U","totalDeployments":1,"versionedDeployments":0,"headDeployments":1},
+    {"name":"cxp-apps script","scriptId":"1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2","totalDeployments":13,"versionedDeployments":12,"headDeployments":1},
+    {"name":"google doc a pagina web catalogo","scriptId":"1UNpuMUE9JZVj4o6SxGuMmAe74dQgiPbDjvNr6E1Y7AJrlO8ZNIPOtwhp","totalDeployments":2,"versionedDeployments":1,"headDeployments":1},
+    {"name":"lectura de carpetas en natura","scriptId":"1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b","totalDeployments":1,"versionedDeployments":0,"headDeployments":1},
+    {"name":"lectura de carpetas en natura","scriptId":"1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf","totalDeployments":2,"versionedDeployments":1,"headDeployments":1},
+    {"name":"Proyecto sin título","scriptId":"1rPZFgRLNHL5vf70Hftcih_Z9yXfvX5KeTUxA8hsH1rYYSFZti02G3wuv","totalDeployments":1,"versionedDeployments":0,"headDeployments":1},
+    {"name":"ventas_dr_he_aroma_apps_script","scriptId":"1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS","totalDeployments":25,"versionedDeployments":24,"headDeployments":1}
+  ]
+}

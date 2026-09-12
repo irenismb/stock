@@ -3973,6 +3973,7 @@ input:focus-visible,select:focus-visible,button:focus-visible,textarea:focus-vis
   .album-root-card .album-meta{max-width:82% !important}
   .grid:not(.album-grid-mode){gap:12px !important}
 }
+
 @media(max-width:480px){
   .bar{grid-template-columns:1fr !important}
   .search-wrap,#btn-cart{grid-column:auto !important}
@@ -4161,25 +4162,6 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
 @media(max-width:350px){.grid.album-grid-mode.root-nav-mode{grid-template-columns:1fr!important}.bar{grid-template-columns:1fr!important}.search-wrap,#btn-cart{grid-column:auto!important}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 
-/* Ajuste 2026-09-12: la acción de WhatsApp conserva su ancho completo en escritorio. */
-@media (min-width:981px){
-  /* Con Ordenar visible hay seis controles; cuando está oculto quedan cinco. */
-  .bar{
-    grid-template-columns:minmax(220px,2fr) repeat(4,minmax(96px,.72fr)) minmax(210px,1.08fr)!important;
-  }
-  .bar:has(#sort[hidden]){
-    grid-template-columns:minmax(280px,2.2fr) minmax(115px,.72fr) minmax(125px,.78fr) minmax(125px,.78fr) minmax(190px,1.1fr)!important;
-  }
-  #btn-cart{
-    grid-column:auto!important;
-    min-width:0!important;
-    width:100%!important;
-    justify-self:stretch!important;
-    margin:0!important;
-  }
-  #sort[hidden] ~ #btn-cart{grid-column:auto!important;}
-}
-
 /* Ajuste 2026-09-10: palabras escritas en el buscador, visibles en azul y negrita. */
 .card .name .search-match-highlight,
 .card .meta .search-match-highlight,
@@ -4250,5 +4232,76 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
   .cart-subtotal{
     grid-column:1/-1;
     align-items:flex-end;
+  }
+}
+
+/* Barra de acciones: una línea en PC y parejas debajo del buscador en móvil. */
+@media (min-width:981px){
+  .site-header > .wrap.intro{
+    max-width:1480px!important;
+  }
+  .bar{
+    display:flex!important;
+    flex-wrap:nowrap!important;
+    align-items:stretch!important;
+  }
+  .bar .search-wrap{
+    flex:2 1 220px!important;
+    width:auto!important;
+    min-width:190px!important;
+    max-width:none!important;
+  }
+  .bar > #sort,
+  .bar > #toggleWordPanelBtn,
+  .bar > #spreBtn,
+  .bar > #collageBtn,
+  .bar > #priceAdminBtn{
+    flex:1 1 105px!important;
+    width:auto!important;
+    min-width:88px!important;
+    max-width:170px!important;
+    margin:0!important;
+  }
+  .bar > #btn-cart{
+    flex:0 0 auto!important;
+    width:auto!important;
+    min-width:max-content!important;
+    max-width:none!important;
+    padding-inline:24px!important;
+    justify-self:auto!important;
+    white-space:nowrap!important;
+    margin:0!important;
+  }
+}
+
+@media (max-width:760px){
+  .bar{
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+  }
+  .bar .search-wrap{
+    grid-column:1 / -1!important;
+    order:-1;
+  }
+  .bar > #sort,
+  .bar > #toggleWordPanelBtn,
+  .bar > #spreBtn,
+  .bar > #collageBtn,
+  .bar > #priceAdminBtn,
+  .bar > #btn-cart{
+    grid-column:auto!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    justify-self:stretch!important;
+  }
+  .bar > #btn-cart{
+    padding-inline:14px!important;
+  }
+  .bar > .count-slot{
+    grid-column:1 / -1!important;
+    order:1;
   }
 }

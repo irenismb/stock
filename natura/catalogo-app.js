@@ -4105,33 +4105,66 @@ function spreClipboardText(){
     .join("\r\n");
 }
 
+function spreLegacyCopyText(text){
+  const helper=document.createElement("textarea");
+  const active=document.activeElement;
+  helper.value=text;
+  helper.autocapitalize="off";
+  helper.autocomplete="off";
+  helper.spellcheck=false;
+  helper.setAttribute("aria-hidden","true");
+  helper.style.position="fixed";
+  helper.style.left="0";
+  helper.style.top="0";
+  helper.style.width="1px";
+  helper.style.height="1px";
+  helper.style.padding="0";
+  helper.style.border="0";
+  helper.style.fontSize="16px";
+  helper.style.opacity="0";
+  document.body.appendChild(helper);
+
+  try{
+    helper.focus({preventScroll:true});
+    helper.select();
+    helper.setSelectionRange(0,text.length);
+    return document.execCommand("copy")===true;
+  }finally{
+    helper.remove();
+    try{ active?.focus({preventScroll:true}); }catch(_){}
+  }
+}
+
 async function spreCopyCurrentLevel(){
   const text=spreClipboardText();
   if(!text) return;
 
-  try{
-    if(navigator.clipboard && typeof navigator.clipboard.writeText === "function"){
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-  }catch(_){}
+  const btn=document.getElementById("spreBtn");
+  const originalText=btn?.textContent||"SPRE";
+  let copied=false;
 
   try{
-    const helper=document.createElement("textarea");
-    helper.value=text;
-    helper.setAttribute("readonly","");
-    helper.setAttribute("aria-hidden","true");
-    helper.style.position="fixed";
-    helper.style.left="-9999px";
-    helper.style.top="0";
-    helper.style.opacity="0";
-    document.body.appendChild(helper);
-    helper.focus();
-    helper.select();
-    helper.setSelectionRange(0,helper.value.length);
-    document.execCommand("copy");
-    helper.remove();
+    copied=spreLegacyCopyText(text);
   }catch(_){}
+
+  if(!copied){
+    try{
+      if(navigator.clipboard && typeof navigator.clipboard.writeText === "function"){
+        await navigator.clipboard.writeText(text);
+        copied=true;
+      }
+    }catch(_){}
+  }
+
+  if(!copied){
+    alert("No se pudo copiar la lista. Revisa el permiso del portapapeles e intenta nuevamente.");
+    return;
+  }
+
+  if(btn){
+    btn.textContent="Copiado";
+    window.setTimeout(()=>{ btn.textContent=originalText; },900);
+  }
 }
 
 function syncSPREButtonVisibility(){
@@ -4186,7 +4219,7 @@ function initCollageFeature(){
     .collage-heading{padding:4px 56px 14px 2px;text-align:center}
     .collage-route{margin:0;color:#f8fafc;font-size:clamp(23px,3vw,38px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
     .collage-actions{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;margin:0 0 18px}
-    .collage-output-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(590px,100%)}
+    .collage-output-actions{display:flex;justify-content:center;align-items:center;width:min(590px,100%)}
     .collage-selector-block{width:min(590px,100%)}
     .collage-control-label{margin:0 0 7px;color:#f8fafc;font-size:14px;line-height:1.2;font-weight:900;text-align:left}
     .collage-type-choices,.collage-format-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
@@ -4197,7 +4230,7 @@ function initCollageFeature(){
     .collage-type-option:disabled{opacity:.5;cursor:not-allowed;box-shadow:none}
     .collage-size-control[hidden],.collage-selection-hint[hidden]{display:none!important}
     .collage-download,.collage-share{min-height:48px;min-width:220px;padding:11px 20px;border-radius:13px;font-weight:950;cursor:pointer}
-    .collage-output-actions .collage-download,.collage-output-actions .collage-share{min-width:0;width:100%}
+    .collage-output-actions .collage-share{min-width:0;width:min(320px,100%)}
     .collage-download{border:1px solid #a55f70;background:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.22)}
     .collage-download:hover{background:#8f4f60;border-color:#8f4f60}
     .collage-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
@@ -4318,7 +4351,6 @@ function initCollageFeature(){
         <p class="collage-selection-hint" id="collageSelectionHint" hidden></p>
         <div class="collage-output-actions">
           <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando imagen…</button>
-          <button class="collage-download" id="collageDownloadBtn" type="button" disabled>Preparando PNG…</button>
         </div>
       </div>
       <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
@@ -4333,7 +4365,7 @@ function initCollageFeature(){
   const fichaBtn=modal.querySelector("#collageFichaBtn");
   const sizeControl=modal.querySelector("#collageSizeControl");
   const selectionHint=modal.querySelector("#collageSelectionHint");
-  const downloadBtn=modal.querySelector("#collageDownloadBtn");
+  const downloadBtn=null;
   const shareBtn=modal.querySelector("#collageShareBtn");
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
   let collageSelectedProduct=null;
@@ -4417,7 +4449,7 @@ function initCollageFeature(){
     const ready=collageExportMode==="ficha" ? !!fichaPreparedFile : !!collagePreparedShareFile;
     if(shareBtn){
       shareBtn.disabled=!ready;
-      shareBtn.textContent="Copiar imagen";
+      shareBtn.textContent="Copiar y descargar";
       shareBtn.title=canClipboardPng()?"":"Tu navegador podría no permitir copiar imágenes al portapapeles.";
     }
     if(downloadBtn){
@@ -4441,7 +4473,7 @@ function initCollageFeature(){
       if(collageExportMode==="collage"){
         if(shareBtn){
           shareBtn.disabled=true;
-          shareBtn.textContent="Copiar imagen";
+          shareBtn.textContent="Copiar y descargar";
         }
         if(downloadBtn){
           downloadBtn.disabled=true;
@@ -4486,7 +4518,7 @@ function initCollageFeature(){
       if(collageExportMode==="ficha"){
         if(shareBtn){
           shareBtn.disabled=true;
-          shareBtn.textContent="Copiar imagen";
+          shareBtn.textContent="Copiar y descargar";
         }
         if(downloadBtn){
           downloadBtn.disabled=true;
@@ -4514,7 +4546,7 @@ function initCollageFeature(){
           if(collageExportMode==="ficha"){
             if(shareBtn){
               shareBtn.disabled=true;
-              shareBtn.textContent="Copiar imagen";
+              shareBtn.textContent="Copiar y descargar";
             }
             if(downloadBtn){
               downloadBtn.disabled=true;
@@ -5736,7 +5768,7 @@ function initCollageFeature(){
           if(collageExportMode==="collage"){
             if(shareBtn){
               shareBtn.disabled=true;
-              shareBtn.textContent="Copiar imagen";
+              shareBtn.textContent="Copiar y descargar";
               shareBtn.title="No se pudo preparar la imagen.";
             }
             if(downloadBtn){
@@ -5815,24 +5847,6 @@ function initCollageFeature(){
     if(!collageSelectedProduct) return;
     setCollageExportMode("ficha");
   });
-  downloadBtn?.addEventListener("click",()=>{
-    try{
-      if(collageExportMode==="ficha"){
-        if(!fichaPreparedFile) return queueFichaPreparation();
-        downloadPreparedPngFile(fichaPreparedFile,fichaPreparedFile.name);
-      }else{
-        const currentKey=collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat());
-        if(collagePreparedShareFile && collagePreparedShareKey===currentKey){
-          downloadPreparedPngFile(collagePreparedShareFile,collagePreparedShareFile.name);
-        }else{
-          queueCollageSharePreparation();
-        }
-      }
-    }catch(error){
-      console.error("No se pudo descargar el PNG.",error);
-      alert("No se pudo descargar la imagen PNG.");
-    }
-  });
   shareBtn?.addEventListener("click",async()=>{
     const file=collageExportMode==="ficha"?fichaPreparedFile:collagePreparedShareFile;
     if(!file){
@@ -5841,22 +5855,54 @@ function initCollageFeature(){
       return;
     }
     shareBtn.disabled=true;
-    shareBtn.textContent="Copiando…";
+    shareBtn.textContent="Copiando y descargando…";
+
+    let copyPromise=null;
+    let copyError=null;
+    let downloadError=null;
+
     try{
-      await copyPreparedPngFile(file);
-      shareBtn.textContent="Copiada";
-      window.setTimeout(()=>{
-        if(shareBtn){
-          shareBtn.disabled=false;
-          shareBtn.textContent="Copiar imagen";
-        }
-      },900);
+      copyPromise=copyPreparedPngFile(file);
     }catch(error){
-      console.error("No se pudo copiar la imagen al portapapeles.",error);
-      alert("Este navegador no permite copiar esta imagen al portapapeles. Puedes usar Descargar PNG.");
-      shareBtn.disabled=false;
-      shareBtn.textContent="Copiar imagen";
+      copyError=error;
     }
+
+    try{
+      downloadPreparedPngFile(file,file.name);
+    }catch(error){
+      downloadError=error;
+    }
+
+    if(copyPromise){
+      try{
+        await copyPromise;
+      }catch(error){
+        copyError=error;
+      }
+    }
+
+    if(copyError) console.error("No se pudo copiar la imagen al portapapeles.",copyError);
+    if(downloadError) console.error("No se pudo descargar la imagen PNG.",downloadError);
+
+    if(!copyError && !downloadError){
+      shareBtn.textContent="Copiada y descargada";
+    }else if(copyError && !downloadError){
+      shareBtn.textContent="Descargada";
+      alert("La imagen se descargó, pero este navegador no permitió copiarla al portapapeles.");
+    }else if(!copyError && downloadError){
+      shareBtn.textContent="Copiada";
+      alert("La imagen se copió, pero el navegador no permitió descargarla.");
+    }else{
+      shareBtn.textContent="No se pudo completar";
+      alert("No se pudo copiar ni descargar la imagen.");
+    }
+
+    window.setTimeout(()=>{
+      if(shareBtn){
+        shareBtn.disabled=false;
+        shareBtn.textContent="Copiar y descargar";
+      }
+    },1200);
   });
 
   modal.addEventListener("click",event=>{
@@ -6181,6 +6227,25 @@ function makeCard(p){
   refreshCardUI(card,p);
   return card;
 }
+
+window.addEventListener("irenismb:precio-guardado",event=>{
+  const detail=event?.detail||{};
+  const code=String(detail.codigo||"").trim();
+  const normalizedPrice=String(detail.precio||"").trim();
+  if(!/^\d{4}$/.test(code)) return;
+  if(normalizedPrice!=="" && !/^\d+$/.test(normalizedPrice)) return;
+
+  let changed=false;
+  for(const product of all){
+    if(String(product?.id||"").trim()!==code) continue;
+    product.priceText=normalizedPrice;
+    product.price=normalizedPrice===""?0:Number(normalizedPrice);
+    product.hasPrice=normalizedPrice!=="";
+    changed=true;
+  }
+
+  if(changed) scheduleJsonLdUpdate();
+});
 
 function makeEmptyState(message){
   const div=document.createElement("div");

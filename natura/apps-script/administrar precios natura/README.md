@@ -1,6 +1,6 @@
 # Administrador de precios Natura
 
-Este proyecto publica un panel de Google Apps Script para modificar únicamente el campo `Precio` de la pestaña `Productos` del inventario oficial.
+Este proyecto publica el servicio autenticado de Google Apps Script que permite modificar únicamente el campo `Precio` de la pestaña `Productos` del inventario oficial. El catálogo utiliza una conexión privada con este servicio para editar el precio dentro de cada tarjeta.
 
 Seguridad y consistencia:
 
@@ -13,4 +13,4 @@ Seguridad y consistencia:
 - el precio anterior se compara antes de guardar y el nuevo valor se relee después de escribir;
 - no se modifica el formato de las celdas ni otro campo del producto.
 
-El catálogo muestra el acceso solamente al abrirlo con `?administrar=precios`.
+El catálogo muestra el acceso solamente al abrirlo con `?administrar=precios`. En el nivel de productos, el botón `Precios` autentica la cuenta de Google y habilita un campo `Guardar` en el lugar donde aparece cada precio.

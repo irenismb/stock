@@ -2,9 +2,11 @@ const INVENTARIO_SPREADSHEET_ID = "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs"
 const INVENTARIO_SHEET_NAME = "Productos";
 const INVENTARIO_HEADER_ROW = 1;
 
-function doGet() {
+function doGet(evento) {
+  const modo = String(evento && evento.parameter && evento.parameter.modo || "").trim();
+  const archivo = modo === "puente" ? "Puente" : "Admin";
   return HtmlService
-    .createHtmlOutputFromFile("Admin")
+    .createHtmlOutputFromFile(archivo)
     .setTitle("Administrar precios · Irenismb Stock Natura");
 }
 
@@ -181,8 +183,8 @@ function normalizarPrecioEntrada_(valor) {
 
   const digitos = texto.replace(/[.\s]/g, "");
   const numero = Number(digitos);
-  if (!Number.isSafeInteger(numero) || numero < 0) {
-    throw new Error("El precio indicado no es válido.");
+  if (!Number.isSafeInteger(numero) || numero <= 0) {
+    throw new Error("El precio debe ser un entero mayor que cero o quedar vacío.");
   }
   return String(numero);
 }

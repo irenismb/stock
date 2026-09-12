@@ -1,2 +1,3 @@
 2026-09-12 crear y publicar el administrador de precios Natura mediante Google Apps Script.
 Solicitud de publicación confirmada el 2026-09-12.
+Actualizar la conexión para edición directa de precios en las tarjetas el 2026-09-12.

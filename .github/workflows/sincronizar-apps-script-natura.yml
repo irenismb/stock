@@ -49,26 +49,28 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Inventariar todos los Apps Script activos visibles en Google Drive
+      - name: Inventariar todos los Apps Script activos conocidos y visibles
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
-          # Fuerza a clasp a validar/refrescar las credenciales antes de consultar Drive.
-          clasp list-scripts >/dev/null
+          # clasp refresca las credenciales y aporta otra fuente de scriptId.
+          clasp list-scripts --json > "$RUNNER_TEMP/clasp-scripts.json"
 
           python3 - \
             "$RUNNER_TEMP/.clasprc.json" \
+            "$RUNNER_TEMP/clasp-scripts.json" \
             "natura/apps-script/google-projects.json" \
             "$RUNNER_TEMP/google-projects.tsv" \
             "$RUNNER_TEMP/trashed-script-ids.txt" <<'PY'
           import collections
           import json
+          import os
           import sys
           import urllib.error
           import urllib.parse
           import urllib.request
 
-          auth_path, registry_path, tsv_path, trashed_path = sys.argv[1:5]
+          auth_path, clasp_path, registry_path, tsv_path, trashed_path = sys.argv[1:6]
 
           with open(auth_path, encoding="utf-8") as fh:
               auth = json.load(fh)
@@ -76,6 +78,8 @@ jobs:
           access_token = credentials.get("access_token", "") if isinstance(credentials, dict) else ""
           if not access_token:
               raise SystemExit("No se pudo obtener el access_token actualizado de clasp")
+
+          headers = {"Authorization": f"Bearer {access_token}"}
 
           def drive_list(trashed):
               result = []
@@ -94,10 +98,7 @@ jobs:
                   if page_token:
                       params["pageToken"] = page_token
                   url = "https://www.googleapis.com/drive/v3/files?" + urllib.parse.urlencode(params)
-                  request = urllib.request.Request(
-                      url,
-                      headers={"Authorization": f"Bearer {access_token}"},
-                  )
+                  request = urllib.request.Request(url, headers=headers)
                   try:
                       with urllib.request.urlopen(request, timeout=30) as response:
                           payload = json.load(response)
@@ -109,30 +110,78 @@ jobs:
                   if not page_token:
                       return result
 
-          active_raw = drive_list(False)
-          trashed_raw = drive_list(True)
+          def get_metadata(script_id):
+              encoded = urllib.parse.quote(script_id, safe="")
+              url = (
+                  f"https://www.googleapis.com/drive/v3/files/{encoded}"
+                  "?fields=id,name,mimeType,trashed&supportsAllDrives=true"
+              )
+              request = urllib.request.Request(url, headers=headers)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.load(response)
+              except urllib.error.HTTPError as error:
+                  if error.code in (403, 404):
+                      print(f"AVISO: no se pudo consultar el scriptId conocido {script_id}: HTTP {error.code}")
+                      return None
+                  body = error.read().decode("utf-8", errors="replace")
+                  raise SystemExit(f"No se pudo consultar {script_id}: HTTP {error.code}: {body}")
 
-          if not active_raw:
-              raise SystemExit("Google no devolvió ningún proyecto activo de Apps Script; se detiene para evitar cambios incorrectos")
+          candidate_ids = set()
+
+          # 1) Lo que clasp puede enumerar.
+          with open(clasp_path, encoding="utf-8") as fh:
+              clasp_items = json.load(fh)
+          if isinstance(clasp_items, list):
+              for item in clasp_items:
+                  script_id = item.get("id", "") if isinstance(item, dict) else ""
+                  if isinstance(script_id, str) and script_id:
+                      candidate_ids.add(script_id)
+
+          # 2) Todo lo que Drive puede enumerar, activo o en papelera.
+          drive_active = drive_list(False)
+          drive_trashed = drive_list(True)
+          for item in drive_active + drive_trashed:
+              script_id = item.get("id", "") if isinstance(item, dict) else ""
+              if isinstance(script_id, str) and script_id:
+                  candidate_ids.add(script_id)
+
+          # 3) Todos los scriptId que Git ya conoce, incluso los apartados.
+          for root in ("natura/apps-script", "natura/apps-script-excluidos"):
+              if not os.path.isdir(root):
+                  continue
+              for base, _, files in os.walk(root):
+                  if ".clasp.json" not in files:
+                      continue
+                  path = os.path.join(base, ".clasp.json")
+                  try:
+                      with open(path, encoding="utf-8") as fh:
+                          script_id = json.load(fh).get("scriptId", "")
+                  except Exception:
+                      continue
+                  if isinstance(script_id, str) and script_id:
+                      candidate_ids.add(script_id)
 
           invalid_chars = '<>:"/\\|?*'
           reserved = {"CON", "PRN", "AUX", "NUL"}
           reserved.update({f"COM{i}" for i in range(1, 10)})
           reserved.update({f"LPT{i}" for i in range(1, 10)})
 
-          seen_ids = set()
           active = []
-          for item in active_raw:
-              script_id = item.get("id", "")
-              name = item.get("name", "")
-              if not isinstance(script_id, str) or not script_id:
-                  raise SystemExit("Google devolvió un Apps Script sin scriptId válido")
-              if script_id in seen_ids:
+          trashed_ids = []
+          for script_id in sorted(candidate_ids):
+              metadata = get_metadata(script_id)
+              if not metadata:
                   continue
-              seen_ids.add(script_id)
+              if metadata.get("mimeType") != "application/vnd.google-apps.script":
+                  continue
+              if metadata.get("trashed") is True:
+                  trashed_ids.append(script_id)
+                  continue
+
+              name = metadata.get("name", "")
               if not isinstance(name, str) or not name:
                   raise SystemExit(f"Google devolvió un nombre vacío para {script_id}")
-
               valid = name not in {".", ".."}
               valid = valid and not any(ord(ch) < 32 for ch in name)
               valid = valid and not any(ch in invalid_chars for ch in name)
@@ -140,8 +189,10 @@ jobs:
               valid = valid and name.split(".", 1)[0].upper() not in reserved
               if not valid:
                   raise SystemExit(f"El nombre de Google '{name}' no puede usarse exactamente como carpeta en Windows")
-
               active.append({"scriptId": script_id, "name": name})
+
+          if not active:
+              raise SystemExit("No se encontró ningún Apps Script activo accesible")
 
           counts = collections.Counter(item["name"].casefold() for item in active)
           active.sort(key=lambda x: (x["name"].casefold(), x["scriptId"]))
@@ -150,14 +201,9 @@ jobs:
               item["duplicateName"] = duplicate
               item["gitPath"] = f'{item["name"]}/{item["scriptId"]}' if duplicate else item["name"]
 
-          trashed_ids = sorted({
-              item.get("id", "") for item in trashed_raw
-              if isinstance(item.get("id", ""), str) and item.get("id", "")
-          })
-
           registry = {
-              "source": "Google Drive / Apps Script",
-              "filter": "mimeType=application/vnd.google-apps.script; trashed=false",
+              "source": "Google Drive / Apps Script + scriptId conocidos",
+              "filter": "trashed=false",
               "scriptIds": [item["scriptId"] for item in active],
               "projects": active,
           }
@@ -170,16 +216,14 @@ jobs:
                   fh.write(f'{item["scriptId"]}\t{item["name"]}\t{item["gitPath"]}\n')
 
           with open(trashed_path, "w", encoding="utf-8", newline="\n") as fh:
-              for script_id in trashed_ids:
+              for script_id in sorted(set(trashed_ids)):
                   fh.write(script_id + "\n")
 
-          print(f"Proyectos activos visibles en Google: {len(active)}")
-          print(f"Proyectos visibles en la papelera y excluidos: {len(trashed_ids)}")
-          duplicate_names = sorted({item["name"] for item in active if item["duplicateName"]}, key=str.casefold)
-          if duplicate_names:
-              print("Nombres duplicados entre proyectos activos:")
-              for name in duplicate_names:
-                  print(f"- {name}")
+          print(f"scriptId candidatos comprobados: {len(candidate_ids)}")
+          print(f"Proyectos activos accesibles: {len(active)}")
+          print(f"Proyectos en papelera excluidos: {len(set(trashed_ids))}")
+          for item in active:
+              print(f"ACTIVO: {item['name']} [{item['scriptId']}]")
           PY
 
       - name: Apartar proyectos que no están activos en Google
@@ -221,6 +265,48 @@ jobs:
             echo "Apartando de natura/apps-script $current_dir ($reason). No se modifica Google."
             mv "$current_dir" "$target_dir"
           done < "$configs"
+
+      - name: Recuperar proyectos activos que estaban apartados
+        run: |
+          while IFS=$'\t' read -r script_id remote_name git_path; do
+            [ -n "$script_id" ] || continue
+            if find natura/apps-script -mindepth 2 -maxdepth 3 -type f -name .clasp.json -print0 | \
+              xargs -0 -r grep -lF "\"$script_id\"" >/dev/null 2>&1; then
+              continue
+            fi
+
+            found=""
+            while IFS= read -r -d '' config; do
+              current_id="$(python3 - "$config" <<'PY'
+          import json
+          import sys
+          try:
+              with open(sys.argv[1], encoding="utf-8") as fh:
+                  print(json.load(fh).get("scriptId", ""))
+          except Exception:
+              print("")
+          PY
+          )"
+              if [ "$current_id" = "$script_id" ]; then
+                found="$(dirname "$config")"
+                break
+              fi
+            done < <(find natura/apps-script-excluidos -type f -name .clasp.json -print0 2>/dev/null || true)
+
+            if [ -n "$found" ]; then
+              staging="$RUNNER_TEMP/recover-$script_id"
+              echo "Google confirma que vuelve a estar activo: recuperando $remote_name"
+              mv "$found" "$staging"
+              target="natura/apps-script/$git_path"
+              mkdir -p "$(dirname "$target")"
+              if [ -e "$target" ]; then
+                conflict_root="natura/apps-script-excluidos/conflictos-sync"
+                mkdir -p "$conflict_root"
+                mv "$target" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
+              fi
+              mv "$staging" "$target"
+            fi
+          done < "$RUNNER_TEMP/google-projects.tsv"
 
       - name: Sincronizar nombres y contenido desde Google
         env:
@@ -270,8 +356,7 @@ jobs:
                   if ! rmdir "$target_dir" 2>/dev/null; then
                     conflict_root="natura/apps-script-excluidos/conflictos-sync"
                     mkdir -p "$conflict_root"
-                    conflict="$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
-                    mv "$target_dir" "$conflict"
+                    mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
                   fi
                   mkdir -p "$(dirname "$target_dir")"
                   mv "$staging_dir" "$target_dir"
@@ -279,9 +364,7 @@ jobs:
                   if [ -e "$target_dir" ]; then
                     conflict_root="natura/apps-script-excluidos/conflictos-sync"
                     mkdir -p "$conflict_root"
-                    conflict="$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
-                    echo "Preservando conflicto local en $conflict"
-                    mv "$target_dir" "$conflict"
+                    mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
                   fi
                   mkdir -p "$(dirname "$target_dir")"
                   echo "Google manda: moviendo $current_dir -> $git_path"
@@ -292,9 +375,7 @@ jobs:
               if [ -e "$target_dir" ]; then
                 conflict_root="natura/apps-script-excluidos/conflictos-sync"
                 mkdir -p "$conflict_root"
-                conflict="$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
-                echo "Preservando carpeta local en conflicto: $target_dir -> $conflict"
-                mv "$target_dir" "$conflict"
+                mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
               fi
               mkdir -p "$target_dir"
               printf '{\n  "scriptId": "%s",\n  "rootDir": "."\n}\n' "$script_id" > "$target_dir/.clasp.json"

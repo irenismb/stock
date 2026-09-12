@@ -4,26 +4,23 @@
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
     // ==========================================
     // Los valores locales funcionan como respaldo.
-    // Si existen las hojas "Configuracion" y "Categorias" en el Google Sheet,
-    // sus valores se aplican globalmente a todos los visitantes.
+    // La hoja "Configuracion" conserva únicamente los controles que siguen siendo editables.
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:M: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Estado comercial, Nombre, Precio, Costo, Stock, Referencia externa y Descripción.
+    // Hoja Productos, estructura A:L: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa y Descripción.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
       gid: "893686273"
     };
 
-    // Control global remoto. Las hojas deben estar en el mismo archivo de Google Sheets.
+    // Control global remoto. La hoja debe estar en el mismo archivo de Google Sheets.
     // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
-    // Categorias: A=Sección, B=Categoría, C=Subcategoría, D=Familia olfativa, E=Estado comercial, F=Ocultar del catálogo, G=Excluir de búsquedas, H=Nota.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
       controlsSheetName: "Configuracion",
-      categoriesSheetName: "Categorias",
       refreshMs: 60000
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -53,108 +50,40 @@
 
 	const INTERRUPTORES = {
 	  MOSTRAR_CANTIDAD_STOCK: false,
-	  MOSTRAR_TEXTO_ESTADO_STOCK: false,
 	  MOSTRAR_PRECIOS_PRODUCTO: true,
-	  MOSTRAR_CODIGOS_PRODUCTO: true,
-	  ENVIAR_CODIGOS_PRODUCTO_WHATSAPP: true,
-	  HABILITAR_UBICACION_GPS: true,
-	  APLICAR_LIMITES_STOCK: false,
-	  MOSTRAR_IMAGENES_PRODUCTO: true,
-	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp",
-
-	  PERMITIR_TOGGLE_PALABRAS_SUGERIDAS: true,
-	  PALABRAS_SUGERIDAS_INICIAN_VISIBLES: false,
-	  MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR: false,
-	  MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS: true,
-	  APLICAR_ALBUMES_OCULTOS: true,
-	  APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA: true
+	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp"
     };
     window.INTERRUPTORES = INTERRUPTORES;
-    const REMOTE_BOOLEAN_CONTROL_KEYS = new Set(
-      Object.keys(INTERRUPTORES).filter(key => typeof INTERRUPTORES[key] === "boolean")
-    );
+    const REMOTE_BOOLEAN_CONTROL_KEYS = new Set([
+      "MOSTRAR_CANTIDAD_STOCK",
+      "MOSTRAR_PRECIOS_PRODUCTO"
+    ]);
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
-    const ALBUMES_OCULTOS_SEGUROS = [
-      "Otros productos|Otros productos|Medicamentos||A la venta",
-      "Otros productos|Otros productos|Electrodomésticos de segunda mano no a la venta||No a la venta"
-    ];
-    const ALBUMES_EXCLUIDOS_SEGUROS = ALBUMES_OCULTOS_SEGUROS.slice();
-    const REMOTE_CATEGORIES_CACHE_KEY = "irenismb_remote_routes_cache";
-
-    function readRemoteCategoryCache(){
-      try{
-        const raw = localStorage.getItem(REMOTE_CATEGORIES_CACHE_KEY);
-        if(!raw) return null;
-        const parsed = JSON.parse(raw);
-        if(!parsed || typeof parsed !== "object") return null;
-
-        const cleanList = value => Array.isArray(value)
-          ? value
-              .map(item => String(item || "").trim())
-              .filter(Boolean)
-              .filter(item => item.split("|").length === 5)
-          : null;
-
-        const hidden = cleanList(parsed.hidden);
-        const excluded = cleanList(parsed.excluded);
-        if(!hidden || !excluded) return null;
-
-        return { hidden, excluded };
-      }catch(_){
-        return null;
-      }
-    }
-
-    function saveRemoteCategoryCache(hidden, excluded){
-      try{
-        localStorage.setItem(REMOTE_CATEGORIES_CACHE_KEY, JSON.stringify({
-          hidden: Array.isArray(hidden) ? hidden : [],
-          excluded: Array.isArray(excluded) ? excluded : []
-        }));
-      }catch(_){}
-    }
-
-    const cachedCategoryConfig = readRemoteCategoryCache();
-
-    const ALBUMES_OCULTOS = cachedCategoryConfig
-      ? cachedCategoryConfig.hidden.slice()
-      : ALBUMES_OCULTOS_SEGUROS.slice();
-    window.ALBUMES_OCULTOS = ALBUMES_OCULTOS;
-
-    const ALBUMES_EXCLUIDOS_EN_BUSQUEDA = cachedCategoryConfig
-      ? cachedCategoryConfig.excluded.slice()
-      : ALBUMES_EXCLUIDOS_SEGUROS.slice();
-    window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = ALBUMES_EXCLUIDOS_EN_BUSQUEDA;
-
     function shouldEnforceStockLimits(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_LIMITES_STOCK === true);
+      return false;
     }
     function shouldShowProductImages(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_IMAGENES_PRODUCTO !== false);
+      return true;
     }
     function shouldShowProductPrices(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_PRECIOS_PRODUCTO !== false);
     }
     function shouldShowProductCodes(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_CODIGOS_PRODUCTO !== false);
+      return true;
     }
     function shouldSendProductCodesByWhatsApp(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.ENVIAR_CODIGOS_PRODUCTO_WHATSAPP !== false);
+      return true;
     }
     function shouldAllowSuggestionToggle(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PERMITIR_TOGGLE_PALABRAS_SUGERIDAS !== false);
+      return true;
     }
     function shouldShowSuggestionsInitially(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.PALABRAS_SUGERIDAS_INICIAN_VISIBLES === true);
+      return false;
     }
 
     function shouldShowProductImageInNavigationPanels(){
-      return !!(
-        shouldShowProductImages() &&
-        window.INTERRUPTORES &&
-        window.INTERRUPTORES.MOSTRAR_IMAGEN_PRODUCTO_EN_CATEGORIAS_SUBCATEGORIAS === true
-      );
+      return true;
     }
     const _hasIdle = ("requestIdleCallback" in window);
     function runIdle(fn, timeout=1200){
@@ -209,25 +138,6 @@
       };
       if(labels[key]) return labels[key];
       return raw.charAt(0).toLocaleUpperCase("es-CO") + raw.slice(1);
-    }
-
-    function shouldApplyHiddenAlbums(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_ALBUMES_OCULTOS === true);
-    }
-    function shouldApplySearchAlbumExclusions(){
-      return !!(window.INTERRUPTORES && window.INTERRUPTORES.APLICAR_EXCLUSION_ALBUMES_EN_BUSQUEDA === true);
-    }
-    function getHiddenAlbumNames(){
-      if(!shouldApplyHiddenAlbums()) return [];
-      return (Array.isArray(window.ALBUMES_OCULTOS) ? window.ALBUMES_OCULTOS : [])
-        .map(item => normalizeText(item))
-        .filter(Boolean);
-    }
-    function getSearchExcludedAlbumNames(){
-      if(!shouldApplySearchAlbumExclusions()) return [];
-      return (Array.isArray(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA) ? window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA : [])
-        .map(item => normalizeText(item))
-        .filter(Boolean);
     }
 
     function toNumberDigits(s){
@@ -329,8 +239,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:M",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M",
+        range: "A:L",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L",
         tqx: `out:json;responseHandler:${callbackName}`,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
         // Cada apertura del catálogo consulta la versión más reciente de Productos.
@@ -390,18 +300,17 @@
               subcategory: value(3),
               fragranceFamily: value(4),
               condition: value(5),
-              commercialState: value(6),
-              name: value(7),
-              priceText: value(8),
-              costText: value(9),
-              stockText: value(10),
-              referenceExternal: value(11),
-              description: value(12),
+              name: value(6),
+              priceText: value(7),
+              costText: value(8),
+              stockText: value(9),
+              referenceExternal: value(10),
+              description: value(11),
               codeNatura: "",
               fullTxtRecord: [
-                value(7),
+                value(6),
                 "",
-                `Precio: ${value(8)} Costo: ${value(9)} Stock: ${value(10)} Referencia externa: ${value(11)}. ${value(12)}`
+                `Precio: ${value(7)} Costo: ${value(8)} Stock: ${value(9)} Referencia externa: ${value(10)}. ${value(11)}`
               ].join("\n")
             };
           }).filter(row => /^\d{4}$/.test(row.code) && row.name);
@@ -522,74 +431,20 @@
       return changed;
     }
 
-    function routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState){
-      return [section, category, subcategory, fragranceFamily, commercialState]
-        .map(value => normalizeText(value).replace(/\s+/g, " "))
-        .join("|");
-    }
-
-    function applyRemoteCategoryRows(rows){
-      const hidden = [];
-      const excluded = [];
-      let validRows = 0;
-
-      for(const row of (Array.isArray(rows) ? rows : [])){
-        const section = String(row?.[0] || "").trim();
-        const category = String(row?.[1] || "").trim();
-        const subcategory = String(row?.[2] || "").trim();
-        const fragranceFamily = String(row?.[3] || "").trim();
-        const commercialState = String(row?.[4] || "").trim();
-        if(!section || !category || !commercialState) continue;
-
-        const hiddenState = parseRemoteBoolean(row?.[5]);
-        const excludedState = parseRemoteBoolean(row?.[6]);
-        if(hiddenState === null && excludedState === null) continue;
-
-        validRows++;
-        const routeKey = routeKeyFromParts(section, category, subcategory, fragranceFamily, commercialState);
-        if(hiddenState === true) hidden.push(routeKey);
-        if(excludedState === true) excluded.push(routeKey);
-      }
-
-      if(validRows === 0){
-        console.info("La hoja Categorias no devolvió rutas válidas; se conserva la configuración anterior.");
-        return false;
-      }
-
-      const uniqueHidden = [...new Set(hidden)];
-      const uniqueExcluded = [...new Set(excluded)];
-
-      const previousHidden = JSON.stringify(window.ALBUMES_OCULTOS || []);
-      const previousExcluded = JSON.stringify(window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA || []);
-
-      window.ALBUMES_OCULTOS = uniqueHidden;
-      window.ALBUMES_EXCLUIDOS_EN_BUSQUEDA = uniqueExcluded;
-      saveRemoteCategoryCache(uniqueHidden, uniqueExcluded);
-
-      return previousHidden !== JSON.stringify(uniqueHidden) ||
-             previousExcluded !== JSON.stringify(uniqueExcluded);
-    }
-
     async function refreshRemoteCatalogConfiguration(options = {}){
       const rebuild = options.rebuild !== false;
       const initial = options.initial === true;
 
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
 
-      const [controlsResult, categoriesResult] = await Promise.allSettled([
+      const controlsResult = await Promise.allSettled([
         loadGoogleSheetRemoteMatrix(
           REMOTE_CONTROL_SOURCE.controlsSheetName,
           "A:E",
           "select A,B,C,D,E",
           "__remoteCatalogControls"
-        ),
-        loadGoogleSheetRemoteMatrix(
-          REMOTE_CONTROL_SOURCE.categoriesSheetName,
-          "A:H",
-          "select A,B,C,D,E,F,G,H",
-          "__remoteCatalogCategories"
         )
-      ]);
+      ]).then(results => results[0]);
 
       let changed = false;
 
@@ -597,12 +452,6 @@
         changed = applyRemoteControlRows(controlsResult.value) || changed;
       }else{
         console.info("Configuración remota no disponible; se conservan los interruptores locales.", controlsResult.reason);
-      }
-
-      if(categoriesResult.status === "fulfilled"){
-        changed = applyRemoteCategoryRows(categoriesResult.value) || changed;
-      }else{
-        console.info("Categorías remotas no disponibles; se conservan las listas locales.", categoriesResult.reason);
       }
 
       if(initial){
@@ -917,7 +766,6 @@
       const subcategory = String(row.subcategory || "").trim();
       const fragranceFamily = String(row.fragranceFamily || "").trim();
       const condition = String(row.condition || "").trim();
-      const commercialState = String(row.commercialState || "A la venta").trim() || "A la venta";
       if(!/^\d{4}$/.test(code) || !name) return null;
 
       const indexedImages = imageIndex && imageIndex.get(code);
@@ -944,7 +792,6 @@
         subcategory,
         fragranceFamily,
         condition,
-        commercialState,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
         price: parseOptionalWholeNumber(priceText) ?? 0,
         hasPrice: Boolean(priceText),
@@ -982,7 +829,6 @@
             subcategory: "",
             fragranceFamily: "",
             condition: "",
-            commercialState: "A la venta",
             brand: "",
             price: 0,
             hasPrice: false,
@@ -1014,8 +860,6 @@
 
     function updateCatalogFooterProducts(products){
       const list = document.getElementById("beautyProductsList");
-      // Este listado está fijado en catalogo.html y no se reconstruye con la carga dinámica.
-      if(list?.dataset.staticCatalog === "true") return;
       const count = document.querySelector(".beauty-products-count");
       const source = Array.isArray(products) ? products : [];
       const namedProducts = source.filter(product => product && String(product.name || "").trim());
@@ -1046,32 +890,9 @@
 
         const meta = document.createElement("span");
         meta.className = "beauty-product-meta";
-        const metaParts = [];
-        const mainGroup = mainNavigationGroupForProduct(product);
-        const subcategory = navigationCategoryForProduct(product);
-        if(mainGroup) metaParts.push(mainGroup);
-        if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) metaParts.push(subcategory);
-        if(product?.fragranceFamily) metaParts.push(product.fragranceFamily);
-        if(product?.id && shouldShowProductCodes()) metaParts.push(`Código ${product.id}`);
-        if(shouldShowProductPrices() && product?.hasPrice !== false && Number(product?.price) >= 0){
-          metaParts.push(fmtCOP.format(Number(product.price)));
-        }
-        const hasKnownStock = Number.isInteger(product?.stock) && product.stock >= 0;
-        if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
-          metaParts.push(hasKnownStock ? `Stock: ${product.stock}` : "Stock: Por confirmar");
-        }
-        if(INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
-          metaParts.push(hasKnownStock
-            ? (product.stock > 0 ? "Disponible" : "Sin stock")
-            : "Disponibilidad por confirmar");
-        }
-        meta.textContent = metaParts.filter(Boolean).join(" · ");
+        meta.textContent = `Código ${String(product?.id || "").trim()}`;
 
-        const description = document.createElement("span");
-        description.className = "beauty-product-description";
-        description.textContent = String(product?.description || `Producto disponible en ${product?.category || "Irenismb Stock Natura"}.`).trim();
-
-        item.append(title, meta, description);
+        item.append(title, meta);
         fragment.appendChild(item);
       }
       list.replaceChildren(fragment);
@@ -1473,26 +1294,9 @@
     let selectedCategory = "";
     let selectedFamily = "";
     let selectedAlbumKey = "";
-    let hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
-    let searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
 
     function cleanNavKey(value){
       return normalizeText(value).replace(/\s+/g, " ");
-    }
-
-    function getProductRouteKey(p){
-      if(!p) return "";
-      return routeKeyFromParts(p.section, p.category, p.subcategory, p.fragranceFamily, p.commercialState);
-    }
-
-    function isProductHiddenByRoute(p){
-      const key = getProductRouteKey(p);
-      return Boolean(key && hiddenAlbumNameSet.has(key));
-    }
-
-    function isProductExcludedFromSearchByRoute(p){
-      const key = getProductRouteKey(p);
-      return Boolean(key && searchExcludedAlbumNameSet.has(key));
     }
 
     function mainNavigationGroupForProduct(p){
@@ -1707,15 +1511,12 @@
 
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
-      // Productos es la fuente de verdad. Categorias puede ocultar una ruta explícitamente,
-      // pero nunca es requisito previo para publicar una categoría o subcategoría nueva.
-      return source.filter(p => !isProductHiddenByRoute(p));
+      return source.slice();
     }
 
     function filterSearchExcludedProducts(list){
       const source = Array.isArray(list) ? list : [];
-      if(!shouldApplySearchAlbumExclusions()) return source.slice();
-      return source.filter(p => !isProductExcludedFromSearchByRoute(p));
+      return source.slice();
     }
 
     function hasAlbumFolders(){
@@ -1727,17 +1528,7 @@
     }
 
     function shouldShowAlbumGrid(){
-      // La configuración remota puede hacer que, al escribir en el buscador,
-      // se muestren de inmediato las tarjetas de producto coincidentes.
-      // Con el control desactivado se conserva la navegación por categorías
-      // y sus contadores de coincidencias.
-      const searchActive = getCombinedWordTerms().length > 0;
-      const showDirectMatches = !!(
-        searchActive &&
-        window.INTERRUPTORES &&
-        window.INTERRUPTORES.MOSTRAR_PRODUCTOS_COINCIDENTES_AL_ESCRIBIR === true
-      );
-      return albumModeEnabled() && albums.length > 0 && !selectedFamily && !isDirectProductAudience(selectedAudience) && !showDirectMatches;
+      return albumModeEnabled() && albums.length > 0 && !selectedFamily && !isDirectProductAudience(selectedAudience);
     }
 
     function getSelectedAlbum(){
@@ -2913,94 +2704,6 @@
       unlockBodyScroll();
       restoreModalTrigger(cartModal);
     }
-
-    function renderCartModal(){
-      const enforce = shouldEnforceStockLimits();
-      const items = cartItemsArray();
-      const total = cartTotalValue() + getShippingCop();
-      const showPrices = shouldShowProductPrices();
-      const hasUnpricedItems = items.some(it => it && it.hasPrice === false);
-      cartTotalEl.textContent = (!showPrices || hasUnpricedItems)
-        ? "Total: Por confirmar"
-        : ("Total: " + fmtCOP.format(total));
-
-      if(!items.length){
-        cartItemsEl.innerHTML = `<div class="cart-empty">Carrito vacío.</div>`;
-        return;
-      }
-
-      const frag = document.createDocumentFragment();
-      items.forEach(it=>{
-        const row = document.createElement("div");
-        row.className = "cart-item";
-        row.setAttribute("data-id", it.id);
-
-        const left = document.createElement("div");
-        left.className = "cart-item-left";
-
-        const p = productById.get(String(it.id));
-        const imgFilename = (p && p.imgFilename) ? p.imgFilename : it.imgFilename;
-
-        left.appendChild(makeCartThumbFromFilename(imgFilename, it.name, p && p.docsImageUrl));
-
-        const main = document.createElement("div");
-        main.className = "cart-item-main";
-        main.innerHTML = `
-          <p class="cart-item-name"></p>
-          <p class="cart-item-sub"></p>
-        `;
-        main.querySelector(".cart-item-name").textContent = it.name;
-        const cartMetaParts = [];
-        if(shouldShowProductCodes()) cartMetaParts.push(`Id: ${it.id}`);
-        if(shouldShowProductPrices()){
-          cartMetaParts.push(it.hasPrice === false ? "Precio: Por confirmar" : `Precio: ${fmtCOP.format(Number(it.price)||0)}`);
-        }else{
-          cartMetaParts.push("Precio: Por confirmar");
-        }
-        main.querySelector(".cart-item-sub").textContent = cartMetaParts.join(" · ");
-        left.appendChild(main);
-
-        const controls = document.createElement("div");
-        controls.className = "cart-controls";
-        controls.innerHTML = `
-          <button class="cart-qty-btn" type="button" data-act="dec" aria-label="Disminuir">−</button>
-          <span class="cart-qty" aria-label="Cantidad">${it.qty}</span>
-          <button class="cart-qty-btn" type="button" data-act="inc" aria-label="Aumentar">+</button>
-        `;
-
-        const incBtn = controls.querySelector('button[data-act="inc"]');
-        const hasKnownStock = Number.isFinite(it.stock) && it.stock >= 0;
-        const maxStock = hasKnownStock ? it.stock : null;
-
-        if(incBtn){
-          incBtn.disabled = enforce
-            ? (!hasKnownStock || maxStock <= 0 || (Number(it.qty)||0) >= maxStock)
-            : false;
-        }
-
-        const subtotal = document.createElement("div");
-        subtotal.className = "cart-subtotal";
-        subtotal.textContent = (!shouldShowProductPrices() || it.hasPrice === false)
-          ? "Por confirmar"
-          : fmtCOP.format((Number(it.price)||0) * (Number(it.qty)||0));
-
-        const remove = document.createElement("button");
-        remove.className = "cart-remove";
-        remove.type = "button";
-        remove.textContent = "Eliminar";
-        remove.setAttribute("data-act", "remove");
-
-        row.appendChild(left);
-        row.appendChild(controls);
-        row.appendChild(subtotal);
-        row.appendChild(remove);
-        frag.appendChild(row);
-      });
-
-      cartItemsEl.innerHTML = "";
-      cartItemsEl.appendChild(frag);
-    }
-
     cartItemsEl.addEventListener("click", (e)=>{
       const btn = e.target.closest("button");
       if(!btn) return;
@@ -3027,10 +2730,6 @@
       if(act === "dec"){
         newQty = Math.max(0, newQty - 1);
       }
-      if(act === "remove"){
-        newQty = 0;
-      }
-
       if(!newQty) delete cart[id];
       else cart[id].qty = newQty;
 
@@ -3424,88 +3123,9 @@
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         parts.push(hasKnownStock ? `Stock: ${stockVal}` : "Stock: Por confirmar");
       }
-      if(INTERRUPTORES.MOSTRAR_TEXTO_ESTADO_STOCK){
-        parts.push(hasKnownStock
-          ? (stockVal > 0 ? "Disponible" : "Sin stock")
-          : "Disponibilidad por confirmar");
-      }
       return parts.filter(Boolean).join(" · ");
     }
-
-    function refreshCardUI(card, p){
-      const row = card.querySelector(".row");
-      const actions = card.querySelector(".actions");
-      const meta = card.querySelector(".meta");
-
-      if(meta) meta.hidden = false;
-      if(row) row.hidden = false;
-      if(actions) actions.hidden = false;
-
-      const enforce = shouldEnforceStockLimits();
-      const id = String(p.id);
-      const q = (cart[id]?.qty || 0);
-
-      const qtyPill = card.querySelector('[data-role="qty"]');
-      const decBtn = card.querySelector('button[data-act="dec"]');
-      const incBtn = card.querySelector('button[data-act="inc"]');
-
-      if(qtyPill) qtyPill.textContent = `En carrito: ${q}`;
-      if(decBtn) decBtn.disabled = q <= 0;
-
-      const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
-      const maxStock = hasKnownStock ? p.stock : null;
-      const canAdd = !enforce || (hasKnownStock && maxStock > 0 && q < maxStock);
-
-      if(incBtn){
-        incBtn.disabled = !canAdd;
-        incBtn.classList.toggle("in-cart", q > 0);
-        if(enforce && !hasKnownStock){
-          incBtn.textContent = "Stock por confirmar";
-        }else if(enforce && maxStock <= 0){
-          incBtn.textContent = "Sin stock";
-        }else{
-          incBtn.textContent = "Agregar";
-        }
-      }
-    }
-
-    function makeCard(p){
-      const card = cardTemplate.content.firstElementChild.cloneNode(true);
-      card.id = "p-" + encodeURIComponent(String(p.id));
-      card.dataset.id = String(p.id);
-
-      const imgBox = card.querySelector(".img");
-      imgBox.appendChild(makeImgFromFilename(p.imgFilename, p.name, p.docsImageUrl));
-
-      const nameEl = card.querySelector(".name");
-      const metaEl = card.querySelector(".meta");
-      const descriptionEl = card.querySelector(".description");
-      const priceEl = card.querySelector(".price");
-
-      const visibleName = String(p.name || "");
-      nameEl.textContent = visibleName;
-      nameEl.title = visibleName;
-      metaEl.textContent = stockMetaText(p);
-      descriptionEl.textContent = String((p && p.description) || "").trim();
-      descriptionEl.hidden = !descriptionEl.textContent;
-      card.classList.toggle("has-long-description", descriptionEl.textContent.length > 900);
-      priceEl.textContent = shouldShowProductPrices()
-        ? (p.hasPrice === false ? "Consultar precio" : fmtCOP.format(p.price))
-        : "";
-
-      if(p && p.isGiftGalleryImage){
-        card.classList.add("gift-gallery-card");
-        const pad = card.querySelector(".pad");
-        if(pad) pad.hidden = true;
-        imgBox.setAttribute("aria-label", "Imagen de regalo para toda ocasión");
-      }
-
-      refreshCardUI(card, p);
-      return card;
-    }
-
-
-    function makeAlbumPreview(sources, label){
+   function makeAlbumPreview(sources, label){
       const img = document.createElement("img");
       img.alt = label ? ("Vista previa " + label) : "Vista previa de la categoría";
       img.loading = "lazy";
@@ -3644,14 +3264,6 @@
 
       return card;
     }
-
-    function makeEmptyState(message){
-      const div = document.createElement("div");
-      div.className = "empty-state";
-      div.textContent = message;
-      return div;
-    }
-
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
     const sortSel = document.getElementById("sort");
@@ -3682,22 +3294,6 @@
     const toggleWordPanelBtn = document.getElementById("toggleWordPanelBtn");
 
     let wordSuggestionsVisible = shouldShowSuggestionsInitially();
-
-    function syncWordToggleButton(){
-      if(!toggleWordPanelBtn) return;
-
-      const canToggle = shouldAllowSuggestionToggle();
-      const isVisible = wordSuggestionsVisible;
-
-      toggleWordPanelBtn.hidden = !canToggle;
-      toggleWordPanelBtn.disabled = !canToggle;
-      toggleWordPanelBtn.textContent = "Filtros";
-      toggleWordPanelBtn.title = isVisible ? "Ocultar filtros" : "Mostrar filtros";
-      toggleWordPanelBtn.setAttribute("aria-label", toggleWordPanelBtn.title);
-      toggleWordPanelBtn.setAttribute("aria-pressed", isVisible ? "true" : "false");
-      toggleWordPanelBtn.classList.toggle("is-active", isVisible);
-    }
-
     function setWordSuggestionsVisible(nextValue){
       wordSuggestionsVisible = !!nextValue;
 
@@ -3746,14 +3342,6 @@
       mqCountMobile.addListener(placeResponsiveHeaderMeta);
     }
     placeResponsiveHeaderMeta();
-
-    function updateTickerVisibility(){
-      if(!searchWrap || !qInp) return;
-      const empty = !String(qInp.value || "").trim();
-      const focused = (document.activeElement === qInp);
-      searchWrap.classList.toggle("show-ticker", empty && !focused);
-    }
-
     function updateCountAttention(){
       if(!countEl || !qInp) return;
       const hasQuery = getCombinedWordTerms().length > 0;
@@ -4000,115 +3588,7 @@
       selectedSuggestionTerms = selectedSuggestionTerms.filter(t => t !== clean);
       render();
     }
-
-    function renderWordSuggestions(){
-      if(!wordPanel || !wordChips || !activeTerms || !activeTermsWrap || !clearTermsBtn) return;
-
-      syncWordToggleButton();
-
-      const showAlbumGrid = shouldShowAlbumGrid();
-      if(showAlbumGrid || !wordSuggestionsVisible){
-        wordPanel.hidden = true;
-        clearTermsBtn.hidden = true;
-        activeTermsWrap.hidden = true;
-        wordChips.innerHTML = "";
-        activeTerms.innerHTML = "";
-        return;
-      }
-
-      const entries = buildSuggestionEntries();
-      const activeTermsList = uniqueTerms(selectedSuggestionTerms || []);
-      const rawQuery = qInp ? String(qInp.value || "") : "";
-      const typedTerms = parseSearchTerms(rawQuery);
-      const hasTypedCharacters = rawQuery.trim().length > 0;
-      const hasWordFilter = activeTermsList.length > 0 || typedTerms.length > 0;
-
-      wordPanel.hidden = !(entries.length || activeTermsList.length || typedTerms.length);
-      clearTermsBtn.hidden = !(activeTermsList.length > 0 || hasTypedCharacters);
-      clearTermsBtn.classList.toggle("search-active", hasTypedCharacters);
-      activeTermsWrap.hidden = !activeTermsList.length;
-
-      wordChips.innerHTML = "";
-      activeTerms.innerHTML = "";
-
-      if(activeTermsList.length){
-        const activeFrag = document.createDocumentFragment();
-        for(const term of activeTermsList){
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "term-chip is-active";
-          btn.dataset.term = term;
-          btn.dataset.role = "remove-active-term";
-          btn.setAttribute("aria-label", `Quitar palabra ${term}`);
-          btn.innerHTML = `<span>${term}</span><span class="term-chip-remove" aria-hidden="true">×</span>`;
-          activeFrag.appendChild(btn);
-        }
-        activeTerms.appendChild(activeFrag);
-      }
-
-      if(!entries.length){
-        const empty = document.createElement("div");
-        empty.className = "word-empty";
-        empty.textContent = "No hay palabras sugeridas para esta vista.";
-        wordChips.appendChild(empty);
-      }else{
-        const frag = document.createDocumentFragment();
-        for(const entry of entries){
-          const btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "term-chip" + (activeTermsList.includes(entry.term) ? " is-active" : "");
-          btn.dataset.term = entry.term;
-          btn.dataset.role = "toggle-term";
-          btn.setAttribute("aria-pressed", activeTermsList.includes(entry.term) ? "true" : "false");
-          btn.innerHTML = `<span>${entry.term}</span><span class="term-chip-count">${entry.count}</span>`;
-          frag.appendChild(btn);
-        }
-        wordChips.appendChild(frag);
-      }
-    }
-
-    function rebuildSearchTicker(){
-      if(!searchWrap || !searchTicker || !tickerInner || !qInp) return;
-
-      const text = String(qInp.getAttribute("placeholder") || "").trim();
-      if(!text){
-        tickerInner.innerHTML = "";
-        searchWrap.style.setProperty("--marquee-distance", "0px");
-        return;
-      }
-
-      tickerInner.innerHTML = "";
-
-      const seq = document.createElement("div");
-      seq.className = "ticker-seq";
-      tickerInner.appendChild(seq);
-
-      const available = Math.max(1, searchTicker.clientWidth || searchWrap.clientWidth || 1);
-      const target = Math.max(280, Math.floor(available * 1.7));
-
-      let guard = 0;
-      while(seq.scrollWidth < target && guard < 60){
-        const item = document.createElement("span");
-        item.className = "ticker-item";
-        item.textContent = text;
-        seq.appendChild(item);
-        guard++;
-      }
-
-      const seqWidth = seq.scrollWidth || 0;
-      if(seqWidth <= 0) return;
-
-      const clone = seq.cloneNode(true);
-      tickerInner.appendChild(clone);
-
-      const SPEED_PX_PER_SEC = 60;
-      const duration = Math.max(8, seqWidth / SPEED_PX_PER_SEC);
-
-      searchWrap.style.setProperty("--marquee-distance", seqWidth + "px");
-      searchWrap.style.setProperty("--marquee-duration", duration.toFixed(2) + "s");
-    }
-
-    function clearSelectButKeepFirst(sel){
+   function clearSelectButKeepFirst(sel){
       const first = sel.querySelector("option[value='']");
       sel.innerHTML = "";
       if(first) sel.appendChild(first);
@@ -4128,76 +3608,6 @@
         sel.appendChild(opt);
       }
     }
-
-    function syncFilterVisibility(){
-      const showAlbumGrid = shouldShowAlbumGrid();
-      const directSelected = isDirectProductAudience(selectedAudience);
-
-      if(catSel){
-        catSel.hidden = true;
-        catSel.disabled = true;
-        catSel.value = "";
-      }
-      if(brandSel){
-        brandSel.hidden = true;
-        brandSel.disabled = true;
-        brandSel.value = "";
-      }
-      if(sortSel){
-        sortSel.hidden = showAlbumGrid;
-        sortSel.disabled = showAlbumGrid;
-      }
-      syncSPREButtonVisibility();
-      if(albumNav){
-        albumNav.hidden = !selectedAudience;
-      }
-      if(albumBackBtn){
-        albumBackBtn.textContent = selectedFamily
-          ? `← Volver a ${selectedCategory}`
-          : (selectedCategory ? `← Volver a ${selectedAudience}` : "← Volver al inicio");
-      }
-      placeResponsiveHeaderMeta();
-      if(albumPath){
-        albumPath.textContent = selectedAudience
-          ? (selectedFamily
-              ? `${selectedAudience} › ${selectedCategory} › ${selectedFamily}`
-              : (selectedCategory ? `${selectedAudience} › ${selectedCategory}` : selectedAudience))
-          : "";
-      }
-      if(qInp){
-        const searchScopeLabel = selectedFamily || selectedCategory || selectedAudience;
-        qInp.placeholder = selectedAudience
-          ? `Buscar en ${searchScopeLabel}`
-          : "Buscar producto, línea o categoría";
-        qInp.setAttribute("aria-label", selectedAudience ? `Buscar dentro de ${searchScopeLabel}` : "Buscar producto, línea o categoría");
-      }
-      if(grid){
-        grid.classList.toggle("album-grid-mode", showAlbumGrid);
-        grid.classList.toggle("root-nav-mode", showAlbumGrid && !selectedAudience);
-        const label = !selectedAudience
-          ? "Secciones principales"
-          : (directSelected
-              ? "Productos"
-              : (!selectedCategory ? "Subcategorías" : (albums.length > 0 && !selectedFamily ? "Familias olfativas" : "Productos")));
-        grid.setAttribute("aria-label", showAlbumGrid ? label : "Productos");
-      }
-      if(catalogEntryIntro){
-        const hasTerms = getCombinedWordTerms().length > 0;
-        catalogEntryIntro.hidden = hasTerms || !!selectedCategory || directSelected;
-        if(catalogEntryTitle){
-          catalogEntryTitle.textContent = selectedAudience || "¿Qué estás buscando?";
-        }
-        if(catalogEntryText){
-          catalogEntryText.textContent = selectedAudience
-            ? (directSelected ? "Explora los regalos disponibles." : "Elige una categoría para ver los productos disponibles.")
-            : "Elige una categoría para comenzar.";
-        }
-      }
-
-      rebuildSearchTicker();
-      updateTickerVisibility();
-    }
-
     function readStateFromUrl(){
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
@@ -4253,43 +3663,6 @@
       if(sortSel) sortSel.value = "";
       selectedSuggestionTerms = [];
     }
-
-    function openAlbum(key, opts={}){
-      const target = albumByKey.get(String(key || ""));
-      if(!target) return;
-      if(target.navType === "audience"){
-        selectedAudience = target.navValue;
-        selectedCategory = "";
-        selectedFamily = "";
-      }else if(target.navType === "category"){
-        selectedAudience = target.audience || selectedAudience;
-        selectedCategory = target.navValue;
-        selectedFamily = "";
-      }else if(target.navType === "family"){
-        selectedAudience = target.audience || selectedAudience;
-        selectedCategory = target.category || selectedCategory;
-        selectedFamily = target.navValue;
-      }
-      if(!opts.keepFilters) resetDiscoveryFilters();
-      refreshNavigationAlbums();
-      refreshFilterOptionsForScope();
-      render();
-    }
-
-    function closeAlbum(opts={}){
-      if(selectedFamily){
-        selectedFamily = "";
-      }else if(selectedCategory){
-        selectedCategory = "";
-      }else{
-        selectedAudience = "";
-      }
-      if(!opts.keepFilters) resetDiscoveryFilters();
-      refreshNavigationAlbums();
-      refreshFilterOptionsForScope();
-      render();
-    }
-
     function buildFilteredList(){
       const source = currentProductSourceList();
       const sortMode = sortSel ? sortSel.value : "";
@@ -4354,9 +3727,6 @@
     let _renderToken = 0;
     function render(){
       const token = ++_renderToken;
-
-      hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
-      searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
 
       syncFilterVisibility();
       syncWordToggleButton();
@@ -4453,129 +3823,7 @@
     function updateCountTextError(msg){
       if(countEl) countEl.textContent = msg || "Error al cargar productos.";
     }
-
-    function bindGridActions(){
-      grid.addEventListener("click", (e)=>{
-        const albumBtn = e.target.closest("[data-album-open]");
-        if(albumBtn){
-          const key = albumBtn.getAttribute("data-album-open") || "";
-          if(key) openAlbum(key, { keepFilters:getCombinedWordTerms().length > 0 });
-          return;
-        }
-
-        const btn = e.target.closest("button[data-act]");
-        if(!btn) return;
-        const card = e.target.closest(".card");
-        if(!card) return;
-        const id = card.dataset.id;
-        if(!id) return;
-
-        const p = productById.get(String(id));
-        if(!p) return;
-
-        const act = btn.getAttribute("data-act");
-        const enforce = shouldEnforceStockLimits();
-        const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
-        const maxStock = hasKnownStock ? p.stock : null;
-
-        const currentQty = safeInt(cart[id]?.qty, 0);
-
-        let newQty = currentQty;
-
-        if(act === "inc"){
-          if(!enforce){
-            newQty = currentQty + 1;
-          }else if(hasKnownStock && maxStock > 0 && currentQty < maxStock){
-            newQty = currentQty + 1;
-          }else{
-            newQty = currentQty;
-          }
-        }else if(act === "dec"){
-          newQty = Math.max(0, currentQty - 1);
-        }
-
-        if(newQty <= 0){
-          delete cart[id];
-        }else{
-          cart[id] = {
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            hasPrice: p.hasPrice !== false,
-            qty: newQty,
-            stock: p.stock,
-            imgFilename: p.imgFilename || null
-          };
-        }
-
-        if(act === "inc" && newQty > currentQty){
-          registrarConversionCatalogo("Añadió al carrito", String(p.name || ""));
-        }
-        saveCart();
-        refreshCardUI(card, p);
-
-        if(cartModal && cartModal.classList.contains("open")){
-          renderCartModal();
-        }
-      });
-    }
-
-    function bindFilters(){
-      [sortSel].forEach(sel=>{
-        if(!sel) return;
-        sel.addEventListener("change", ()=>{
-          render();
-        });
-      });
-
-      qInp.addEventListener("input", ()=>{
-        render();
-      });
-
-      if(wordChips){
-        wordChips.addEventListener("click", (e)=>{
-          const btn = e.target.closest("[data-role='toggle-term']");
-          if(!btn) return;
-          toggleSuggestionTerm(btn.getAttribute("data-term") || "");
-        });
-      }
-
-      if(activeTerms){
-        activeTerms.addEventListener("click", (e)=>{
-          const btn = e.target.closest("[data-role='remove-active-term']");
-          if(!btn) return;
-          removeSuggestionTerm(btn.getAttribute("data-term") || "");
-        });
-      }
-
-      if(clearTermsBtn){
-        clearTermsBtn.addEventListener("click", ()=>{
-          selectedSuggestionTerms = [];
-          if(qInp) qInp.value = "";
-          render();
-        });
-      }
-
-      if(toggleWordPanelBtn){
-        toggleWordPanelBtn.addEventListener("click", ()=>{
-          toggleWordSuggestionsVisible();
-        });
-      }
-
-      qInp.addEventListener("focus", ()=>{
-        updateTickerVisibility();
-      });
-      qInp.addEventListener("blur", ()=>{
-        updateTickerVisibility();
-      });
-
-      window.addEventListener("resize", ()=>{
-        rebuildSearchTicker();
-        updateTickerVisibility();
-      }, { passive:true });
-    }
-
-    function buildCategoriesAndBrands(list){
+   function buildCategoriesAndBrands(list){
       const cats = new Set();
       const brands = new Set();
       for(const p of list){
@@ -4589,9 +3837,6 @@
     }
 
     function rebuildCatalogVisibility(){
-      hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
-      searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
-
       all = filterVisibleProducts(allLoadedProducts);
       productById = new Map(all.map(p => [String(p.id), p]));
       refreshNavigationAlbums();
@@ -4655,14 +3900,7 @@
 
       allLoadedProducts = [...sheetProducts, ...giftProducts];
 
-      try{
-        hiddenAlbumNameSet = new Set(getHiddenAlbumNames());
-        searchExcludedAlbumNameSet = new Set(getSearchExcludedAlbumNames());
-        all = filterVisibleProducts(allLoadedProducts);
-      }catch(err){
-        console.warn("No se pudieron aplicar todos los controles de categorías. Se muestran los productos cargados para no dejar el catálogo vacío.", err);
-        all = allLoadedProducts.slice();
-      }
+      all = filterVisibleProducts(allLoadedProducts);
 
       try{
         productById = new Map(all.map(p => [String(p.id), p]));
@@ -6629,35 +5867,6 @@ function initCollageFeature(){
     if(event.key==="Escape"&&modal.classList.contains("open")) closeCollage();
   });
 }
-
-async function init(){
-      refreshCartCount();
-      initCartButton();
-      initShipping();
-      bindFilters();
-      bindGridActions();
-      initKeyboardAccessibility();
-  initCollageFeature();
-  initSPREFeature();
-
-      if(albumBackBtn){
-        albumBackBtn.addEventListener("click", ()=>{
-          closeAlbum({ keepFilters:getCombinedWordTerms().length > 0 });
-        });
-      }
-
-      syncWordToggleButton();
-      rebuildSearchTicker();
-      updateTickerVisibility();
-      updateCountAttention();
-
-      loadClientFromLS();     // precarga datos
-      loadAddressFromLS();    // precarga datos (Santa Marta / Magdalena por defecto)
-
-      await initializeRemoteCatalogConfiguration();
-      await loadProducts();
-    }
-
     // Arranque
     init().catch(error=>{
       console.error("No se pudo iniciar el catálogo.", error);
@@ -7069,12 +6278,7 @@ function renderCartModal(){
     const subtotal=document.createElement("div");
     subtotal.className="cart-subtotal";
     subtotal.innerHTML=`<span>Subtotal</span><strong>${(!shouldShowProductPrices()||it.hasPrice===false)?"Por confirmar":fmtCOP.format((Number(it.price)||0)*(Number(it.qty)||0))}</strong>`;
-    const remove=document.createElement("button");
-    remove.className="cart-remove";
-    remove.type="button";
-    remove.textContent="Eliminar";
-    remove.dataset.act="remove";
-    row.append(left,controls,subtotal,remove);
+    row.append(left,controls,subtotal);
     frag.appendChild(row);
   });
   cartItemsEl.innerHTML="";

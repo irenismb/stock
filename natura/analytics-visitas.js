@@ -4,11 +4,7 @@
   const VISITOR_SHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
   const VISITOR_ID_SHEET = "id_navegador";
   const VISIT_LOG_SHEET = "Hoja 1";
-  const VISIT_MODE_KEY = "MODO_REGISTRO_VISITAS";
   const OWN_VISITS_KEY = "REGISTRAR_VISITAS_PROPIAS";
-  const VISIT_BROWSER_MARKER = "irenismb_visit_registered_browser";
-  const LEGACY_VISIT_DEVICE_MARKER = "irenismb_visit_registered_device";
-  const VISIT_DAY_MARKER_PREFIX = "irenismb_visit_registered_day_";
   const OWN_BROWSER_IDS_FALLBACK = new Set([
     "461e0283-5358-4400-a31e-d8d74866d660",
     "7aa54b29-d9db-4d17-a8dd-56bdc11c1f74",
@@ -34,13 +30,11 @@
 
     try {
       const ubicacion = await obtenerUbicacionPreferida();
-      const enviado = await enviarRegistroUbicacion(ubicacion, userId);
-      if (enviado) marcarRegistroVisita(politica.modo);
+      await enviarRegistroUbicacion(ubicacion, userId);
     } catch (error) {
       console.info("Ubicación no disponible.", error);
       try {
-        const enviado = await enviarRegistroUbicacion(ubicacionNoDisponible(), userId);
-        if (enviado) marcarRegistroVisita(politica.modo);
+        await enviarRegistroUbicacion(ubicacionNoDisponible(), userId);
       } catch (sendError) {
         console.error("No se pudo enviar el registro de visita.", sendError);
       }
@@ -53,11 +47,7 @@
       await window.REMOTE_CONFIG_READY;
 
       const valores = window.REMOTE_CONTROL_VALUES || {};
-      const clavesRequeridas = [
-        VISIT_MODE_KEY,
-        OWN_VISITS_KEY,
-        "HABILITAR_UBICACION_GPS"
-      ];
+      const clavesRequeridas = [OWN_VISITS_KEY];
 
       return clavesRequeridas.every(clave =>
         Object.prototype.hasOwnProperty.call(valores, clave) &&
@@ -69,10 +59,6 @@
   }
 
   async function obtenerUbicacionPreferida() {
-    if (window.INTERRUPTORES && window.INTERRUPTORES.HABILITAR_UBICACION_GPS === false) {
-      return obtenerUbicacionPorIp();
-    }
-
     try {
       const coordenadas = await obtenerCoordenadasGps();
       const lugar = await obtenerCiudadDesdeGps(coordenadas);
@@ -445,33 +431,13 @@
 
   async function obtenerPoliticaRegistroVisitas(userId) {
     const valores = window.REMOTE_CONTROL_VALUES || {};
-    const modo = normalizarModoRegistro(valores[VISIT_MODE_KEY]);
     const registrarPropias = parsearBooleanoRemoto(valores[OWN_VISITS_KEY], false);
 
-    if (modo === "NINGUNA") {
-      return { registrar: false, modo };
-    }
-
     if (!registrarPropias && await esNavegadorPropio(userId)) {
-      return { registrar: false, modo };
+      return { registrar: false, modo: "TODAS" };
     }
 
-    if (modo === "UNA POR NAVEGADOR" && tieneMarcaNavegador()) {
-      return { registrar: false, modo };
-    }
-
-    if (modo === "UNA POR DIA" && tieneMarcaDiaActual()) {
-      return { registrar: false, modo };
-    }
-
-    return { registrar: true, modo };
-  }
-
-  function normalizarModoRegistro(value) {
-    const normalized = normalizarClave(value);
-    if (normalized === "UNA POR DISPOSITIVO") return "UNA POR NAVEGADOR";
-    if (["TODAS", "UNA POR DIA", "UNA POR NAVEGADOR", "NINGUNA"].includes(normalized)) return normalized;
-    return "TODAS";
+    return { registrar: true, modo: "TODAS" };
   }
 
   function parsearBooleanoRemoto(value, fallback) {
@@ -566,42 +532,6 @@
     if (cell.f !== undefined && cell.f !== null) return String(cell.f);
     if (cell.v !== undefined && cell.v !== null) return String(cell.v);
     return "";
-  }
-
-  function fechaActualColombia() {
-    return new Intl.DateTimeFormat("en-CA", {
-      timeZone: "America/Bogota",
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit"
-    }).format(new Date());
-  }
-
-  function tieneMarcaNavegador() {
-    try {
-      return localStorage.getItem(VISIT_BROWSER_MARKER) === "1" ||
-             localStorage.getItem(LEGACY_VISIT_DEVICE_MARKER) === "1";
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function tieneMarcaDiaActual() {
-    try {
-      return localStorage.getItem(`${VISIT_DAY_MARKER_PREFIX}${fechaActualColombia()}`) === "1";
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function marcarRegistroVisita(modo) {
-    try {
-      if (modo === "UNA POR NAVEGADOR") {
-        localStorage.setItem(VISIT_BROWSER_MARKER, "1");
-      } else if (modo === "UNA POR DIA") {
-        localStorage.setItem(`${VISIT_DAY_MARKER_PREFIX}${fechaActualColombia()}`, "1");
-      }
-    } catch (_) {}
   }
 
   function obtenerIdLocal() {

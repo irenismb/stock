@@ -1,32 +1,6 @@
-// Navegación, compartir y controles auxiliares.
-
-// Navegación auxiliar y compartir: módulo aislado que no altera la lógica del catálogo.
+// Compartir catálogo: módulo aislado que no altera la lógica principal.
     (() => {
-      const startBtn = document.getElementById("goToStartBtn");
-      const finalBtn = document.getElementById("goToEndBtn");
-      const footer = document.querySelector(".site-footer");
       const shareBtn = document.getElementById("shareCatalogBtn");
-
-      function actualizarBotonesNavegacion(){
-        const doc = document.documentElement;
-        const sinDesplazamiento = doc.scrollHeight <= window.innerHeight + 24;
-        const cercaDelInicio = window.scrollY <= 180;
-        const cercaDelFinal = window.scrollY + window.innerHeight >= doc.scrollHeight - 180;
-        startBtn?.classList.toggle("is-hidden", sinDesplazamiento || cercaDelInicio);
-        finalBtn?.classList.toggle("is-hidden", sinDesplazamiento || cercaDelFinal);
-      }
-
-      startBtn?.addEventListener("click", () => {
-        window.scrollTo({ top:0, left:0, behavior:"smooth" });
-      });
-
-      finalBtn?.addEventListener("click", () => {
-        if(footer){
-          footer.scrollIntoView({ behavior:"smooth", block:"end" });
-        }else{
-          window.scrollTo({ top:document.documentElement.scrollHeight, behavior:"smooth" });
-        }
-      });
 
       shareBtn?.addEventListener("click", async () => {
         const url = window.location.href.split("#")[0];
@@ -57,8 +31,4 @@
           if(error?.name !== "AbortError") console.error("No fue posible compartir el catálogo.", error);
         }
       });
-
-      window.addEventListener("scroll", actualizarBotonesNavegacion, { passive:true });
-      window.addEventListener("resize", actualizarBotonesNavegacion, { passive:true });
-      actualizarBotonesNavegacion();
     })();

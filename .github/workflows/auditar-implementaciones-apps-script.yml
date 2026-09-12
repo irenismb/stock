@@ -1,5 +1,6 @@
 name: Auditar implementaciones de Google Apps Script
 
+# Solo lectura: este workflow no modifica proyectos ni implementaciones en Google.
 on:
   workflow_dispatch:
   push:

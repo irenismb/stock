@@ -80,7 +80,7 @@ jobs:
 
       - name: Validar y publicar proyectos
         env:
-          CLASP_CONFIG_AUTH: ${{ runner.temp }}/.clasprc.json
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
           while IFS= read -r project; do
             project_dir="natura/apps-script/$project"

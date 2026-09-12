@@ -1,4 +1,4 @@
-name: Sincronizar Apps Script desde Google
+name: Sincronizar todos los Apps Script desde Google
 
 on:
   workflow_dispatch:
@@ -15,7 +15,7 @@ concurrency:
 jobs:
   sincronizar:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
 
     steps:
       - name: Descargar repositorio
@@ -43,89 +43,99 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Leer proyectos de Google Apps Script
+      - name: Inventariar todos los proyectos de Google Apps Script
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
-          if [ ! -f "natura/apps-script/google-projects.json" ]; then
-            echo "::error::Falta natura/apps-script/google-projects.json"
-            exit 1
-          fi
-
           clasp list-scripts --json > "$RUNNER_TEMP/google-scripts.json"
-          python3 - "$RUNNER_TEMP/google-scripts.json" <<'PY'
+
+          python3 - "$RUNNER_TEMP/google-scripts.json" "natura/apps-script/google-projects.json" <<'PY'
           import json
           import sys
-          with open(sys.argv[1], encoding="utf-8") as fh:
-              data = json.load(fh)
-          if not isinstance(data, list):
-              raise SystemExit("La respuesta de clasp list-scripts no es una lista JSON válida")
-          PY
 
-      - name: Sincronizar nombres y código desde Google
-        env:
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-        run: |
-          registry="natura/apps-script/google-projects.json"
-          scripts_json="$RUNNER_TEMP/google-scripts.json"
-
-          mapfile -t script_ids < <(
-            python3 - "$registry" <<'PY'
-          import json
-          import sys
-          with open(sys.argv[1], encoding="utf-8") as fh:
-              data = json.load(fh)
-          for script_id in data.get("scriptIds", []):
-              if script_id:
-                  print(script_id)
-          PY
-          )
-
-          if [ "${#script_ids[@]}" -eq 0 ]; then
-            echo "::error::No hay scriptIds registrados."
-            exit 1
-          fi
-
-          for script_id in "${script_ids[@]}"; do
-            remote_name="$(python3 - "$scripts_json" "$script_id" <<'PY'
-          import json
-          import sys
-          with open(sys.argv[1], encoding="utf-8") as fh:
+          source_path, registry_path = sys.argv[1], sys.argv[2]
+          with open(source_path, encoding="utf-8") as fh:
               scripts = json.load(fh)
-          script_id = sys.argv[2]
-          for item in scripts:
-              if item.get("id") == script_id:
-                  print(item.get("name", ""))
-                  break
-          PY
-          )"
 
-            if [ -z "$remote_name" ]; then
-              echo "::warning::El proyecto $script_id no aparece accesible en Google. No se borrará ni moverá nada del repositorio."
-              continue
-            fi
+          if not isinstance(scripts, list):
+              raise SystemExit("La respuesta de clasp list-scripts no es una lista JSON válida")
+          if not scripts:
+              raise SystemExit("Google no devolvió ningún proyecto de Apps Script; se detiene para evitar cambios incorrectos en GitHub")
 
-            if ! python3 - "$remote_name" <<'PY'
-          import sys
-          name = sys.argv[1]
           invalid_chars = '<>:"/\\|?*'
           reserved = {"CON", "PRN", "AUX", "NUL"}
           reserved.update({f"COM{i}" for i in range(1, 10)})
           reserved.update({f"LPT{i}" for i in range(1, 10)})
-          ok = bool(name) and name not in {".", ".."}
-          ok = ok and not any(ord(ch) < 32 for ch in name)
-          ok = ok and not any(ch in invalid_chars for ch in name)
-          ok = ok and not name.endswith((" ", "."))
-          ok = ok and name.split(".", 1)[0].upper() not in reserved
-          raise SystemExit(0 if ok else 1)
-          PY
-            then
-              echo "::error::El nombre de Google '$remote_name' no es válido como carpeta de Windows."
-              exit 1
-            fi
 
+          seen_ids = set()
+          seen_names = {}
+          normalized = []
+
+          for item in scripts:
+              script_id = item.get("id", "")
+              name = item.get("name", "")
+              if not isinstance(script_id, str) or not script_id:
+                  raise SystemExit("Google devolvió un proyecto sin scriptId válido")
+              if not isinstance(name, str) or not name:
+                  raise SystemExit(f"Google devolvió un nombre vacío para {script_id}")
+              if script_id in seen_ids:
+                  raise SystemExit(f"Google devolvió dos veces el scriptId {script_id}")
+              seen_ids.add(script_id)
+
+              valid = name not in {".", ".."}
+              valid = valid and not any(ord(ch) < 32 for ch in name)
+              valid = valid and not any(ch in invalid_chars for ch in name)
+              valid = valid and not name.endswith((" ", "."))
+              valid = valid and name.split(".", 1)[0].upper() not in reserved
+              if not valid:
+                  raise SystemExit(
+                      f"El nombre de Google '{name}' no puede usarse exactamente como carpeta en Windows"
+                  )
+
+              key = name.casefold()
+              if key in seen_names and seen_names[key] != script_id:
+                  raise SystemExit(
+                      f"Hay dos proyectos de Google con el mismo nombre para Windows: '{name}'. "
+                      "No pueden representarse como dos carpetas con el mismo nombre."
+                  )
+              seen_names[key] = script_id
+              normalized.append({"scriptId": script_id, "name": name})
+
+          normalized.sort(key=lambda x: (x["name"].casefold(), x["scriptId"]))
+          registry = {
+              "source": "Google Apps Script",
+              "scriptIds": [item["scriptId"] for item in normalized],
+              "projects": normalized,
+          }
+          with open(registry_path, "w", encoding="utf-8", newline="\n") as fh:
+              json.dump(registry, fh, ensure_ascii=False, indent=2)
+              fh.write("\n")
+
+          print(f"Proyectos encontrados en Google: {len(normalized)}")
+          PY
+
+      - name: Sincronizar nombres y contenido desde Google
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          scripts_json="$RUNNER_TEMP/google-scripts.json"
+          projects_tsv="$RUNNER_TEMP/google-projects.tsv"
+
+          python3 - "$scripts_json" > "$projects_tsv" <<'PY'
+          import json
+          import sys
+          with open(sys.argv[1], encoding="utf-8") as fh:
+              scripts = json.load(fh)
+          for item in sorted(scripts, key=lambda x: (x["name"].casefold(), x["id"])):
+              print(f'{item["id"]}\t{item["name"]}')
+          PY
+
+          while IFS=$'\t' read -r script_id remote_name; do
+            [ -n "$script_id" ] || continue
+            target_dir="natura/apps-script/$remote_name"
             matches_file="$RUNNER_TEMP/matches-$script_id.txt"
             : > "$matches_file"
+
             while IFS= read -r -d '' config; do
               current_id="$(python3 - "$config" <<'PY'
           import json
@@ -144,51 +154,69 @@ jobs:
 
             match_count="$(wc -l < "$matches_file" | tr -d ' ')"
             if [ "$match_count" -gt 1 ]; then
-              echo "::error::El scriptId $script_id aparece en varias carpetas del repositorio."
+              echo "::error::El scriptId $script_id aparece en varias carpetas de GitHub."
               cat "$matches_file"
               exit 1
             fi
-
-            target_dir="natura/apps-script/$remote_name"
 
             if [ "$match_count" -eq 1 ]; then
               current_dir="$(head -n 1 "$matches_file")"
               if [ "$current_dir" != "$target_dir" ]; then
                 if [ -e "$target_dir" ]; then
-                  echo "::error::Google quiere renombrar $(basename "$current_dir") a $remote_name, pero $target_dir ya existe."
+                  echo "::error::Google exige el nombre '$remote_name', pero $target_dir ya existe y corresponde a otra carpeta."
                   exit 1
                 fi
                 echo "Google manda: renombrando $(basename "$current_dir") -> $remote_name"
                 git mv "$current_dir" "$target_dir"
               fi
             else
-              if [ -e "$target_dir" ] && [ -f "$target_dir/.clasp.json" ]; then
-                existing_id="$(python3 - "$target_dir/.clasp.json" <<'PY'
+              if [ -e "$target_dir" ]; then
+                echo "::error::$target_dir ya existe pero no está vinculado al scriptId $script_id."
+                exit 1
+              fi
+              mkdir -p "$target_dir"
+              printf '{\n  "scriptId": "%s",\n  "rootDir": "."\n}\n' "$script_id" > "$target_dir/.clasp.json"
+              echo "Google manda: creando en GitHub la carpeta $remote_name"
+            fi
+
+            echo "Copiando desde Google Apps Script: $remote_name"
+            (
+              cd "$target_dir"
+              clasp pull --deleteUnusedFiles --force
+            )
+          done < "$projects_tsv"
+
+      - name: Avisar sobre carpetas que ya no aparecen en Google
+        run: |
+          scripts_json="$RUNNER_TEMP/google-scripts.json"
+          remote_ids="$RUNNER_TEMP/remote-ids.txt"
+          python3 - "$scripts_json" > "$remote_ids" <<'PY'
           import json
           import sys
           with open(sys.argv[1], encoding="utf-8") as fh:
-              print(json.load(fh).get("scriptId", ""))
+              for item in json.load(fh):
+                  print(item["id"])
+          PY
+          sort -u -o "$remote_ids" "$remote_ids"
+
+          while IFS= read -r -d '' config; do
+            local_id="$(python3 - "$config" <<'PY'
+          import json
+          import sys
+          try:
+              with open(sys.argv[1], encoding="utf-8") as fh:
+                  print(json.load(fh).get("scriptId", ""))
+          except Exception:
+              print("")
           PY
           )"
-                if [ "$existing_id" != "$script_id" ]; then
-                  echo "::error::$target_dir pertenece a otro scriptId."
-                  exit 1
-                fi
-              else
-                mkdir -p "$target_dir"
-                printf '{\n  "scriptId": "%s",\n  "rootDir": "."\n}\n' "$script_id" > "$target_dir/.clasp.json"
-                echo "Restaurando en GitHub el proyecto de Google: $remote_name"
-              fi
+            [ -n "$local_id" ] || continue
+            if ! grep -Fxq "$local_id" "$remote_ids"; then
+              echo "::warning::$(dirname "$config") ya no aparece en la lista de Google. Se conserva en GitHub y no se borra nada de Google."
             fi
+          done < <(find natura/apps-script -mindepth 2 -maxdepth 2 -type f -name .clasp.json -print0)
 
-            echo "Descargando desde Google Apps Script: $remote_name"
-            (
-              cd "$target_dir"
-              clasp pull
-            )
-          done
-
-      - name: Guardar cambios recibidos desde Google
+      - name: Guardar en GitHub la copia recibida desde Google
         run: |
           git add -A natura/apps-script
           if git diff --cached --quiet; then
@@ -198,6 +226,9 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sincronizar Apps Script desde Google"
-          git pull --rebase origin main
-          git push origin HEAD:main
+          git commit -m "Sincronizar todos los Apps Script desde Google"
+
+          if ! git push origin HEAD:main; then
+            echo "::warning::main cambió durante la sincronización. No se forzará el push; la siguiente ejecución volverá a copiar Google sobre el estado más reciente."
+            exit 0
+          fi

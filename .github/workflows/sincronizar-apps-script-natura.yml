@@ -40,7 +40,7 @@ jobs:
 
       - name: Descargar proyectos registrados
         env:
-          CLASP_CONFIG_AUTH: ${{ runner.temp }}/.clasprc.json
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
           while IFS= read -r -d '' config; do
             project_dir="$(dirname "$config")"

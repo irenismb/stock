@@ -703,3 +703,4 @@ function reverseGeocodeCached_(lat, lng){
     return { status: "EXCEPTION", address: "" };
   }
 }
+// Prueba de sincronización bidireccional: 2026-09-12

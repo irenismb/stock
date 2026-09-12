@@ -4,6 +4,12 @@ on:
   workflow_dispatch:
   schedule:
     - cron: "*/5 * * * *"
+  push:
+    branches:
+      - main
+    paths:
+      - "natura/apps-script/**"
+      - ".github/workflows/sincronizar-apps-script-natura.yml"
 
 permissions:
   contents: write

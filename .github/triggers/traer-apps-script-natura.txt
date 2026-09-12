@@ -1,0 +1,2 @@
+Control manual para traer Apps Script Natura desde Google a GitHub.
+No editar salvo para solicitar una sincronización manual.

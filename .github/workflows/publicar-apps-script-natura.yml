@@ -1,17 +1,177 @@
-name: Google Apps Script es la fuente principal
+name: Publicar e implementar Apps Script Natura
 
 on:
+  workflow_run:
+    workflows:
+      - "Sincronizar Apps Script Natura desde Google"
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
   contents: read
 
+concurrency:
+  group: publicar-apps-script-natura
+  cancel-in-progress: false
+
 jobs:
-  protegido:
+  publicar:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - name: Mantener Google como fuente principal
+      - name: Descargar repositorio actual
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Detectar proyectos Natura que cambiaron en Git
+        id: projects
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          SYNC_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
         run: |
-          echo "Google Apps Script es la fuente principal."
-          echo "Este workflow no publica, no despliega y no elimina nada en Google."
-          echo "La sincronización permitida es Google Apps Script -> GitHub."
+          projects_file="$RUNNER_TEMP/projects.tsv"
+          : > "$projects_file"
+
+          python3 - \
+            "natura/apps-script/google-projects.json" \
+            "$projects_file" \
+            "$EVENT_NAME" \
+            "$SYNC_HEAD_SHA" <<'PY'
+          import json
+          import os
+          import subprocess
+          import sys
+
+          registry_path, output_path, event_name, sync_head = sys.argv[1:5]
+
+          with open(registry_path, encoding="utf-8") as fh:
+              registry = json.load(fh)
+
+          projects = registry.get("projects") or []
+          selected = []
+
+          if event_name == "workflow_dispatch":
+              selected = projects
+          else:
+              head = subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+              if not sync_head or sync_head == head:
+                  changed = []
+              else:
+                  try:
+                      changed = subprocess.check_output(
+                          ["git", "diff", "--name-only", sync_head, head, "--", "natura/apps-script"],
+                          text=True,
+                      ).splitlines()
+                  except subprocess.CalledProcessError:
+                      changed = []
+
+              for project in projects:
+                  git_path = project.get("gitPath", "")
+                  if not git_path:
+                      continue
+                  prefix = f"natura/apps-script/{git_path}/"
+                  if any(path.startswith(prefix) for path in changed):
+                      selected.append(project)
+
+          seen = set()
+          with open(output_path, "w", encoding="utf-8", newline="\n") as fh:
+              for project in selected:
+                  script_id = project.get("scriptId", "")
+                  name = project.get("name", "")
+                  git_path = project.get("gitPath", "")
+                  if not script_id or not git_path or script_id in seen:
+                      continue
+                  if "natura" not in name.casefold():
+                      continue
+                  seen.add(script_id)
+                  fh.write(f"{script_id}\t{name}\t{git_path}\n")
+
+          print(f"Proyectos Natura a publicar: {len(seen)}")
+          PY
+
+          if [ -s "$projects_file" ]; then
+            echo "has_projects=true" >> "$GITHUB_OUTPUT"
+            cat "$projects_file"
+          else
+            echo "has_projects=false" >> "$GITHUB_OUTPUT"
+            echo "La sincronización no produjo cambios de código en proyectos Natura."
+          fi
+
+      - name: Preparar Node.js
+        if: steps.projects.outputs.has_projects == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Instalar clasp
+        if: steps.projects.outputs.has_projects == 'true'
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Restaurar autorización de Google
+        if: steps.projects.outputs.has_projects == 'true'
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Falta el secreto CLASPRC_JSON"
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Publicar código y actualizar implementación
+        if: steps.projects.outputs.has_projects == 'true'
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          while IFS=$'\t' read -r script_id project_name git_path; do
+            [ -n "$script_id" ] || continue
+            project_dir="natura/apps-script/$git_path"
+
+            if [ ! -f "$project_dir/.clasp.json" ]; then
+              echo "::error::Falta .clasp.json en $project_name"
+              exit 1
+            fi
+            if [ ! -f "$project_dir/appsscript.json" ]; then
+              echo "::error::Falta appsscript.json en $project_name"
+              exit 1
+            fi
+
+            actual_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$project_dir/.clasp.json")"
+            if [ "$actual_id" != "$script_id" ]; then
+              echo "::error::El scriptId de $project_name no coincide con el inventario de Google."
+              exit 1
+            fi
+
+            echo "Publicando en Google: $project_name"
+            (
+              cd "$project_dir"
+              clasp push --force
+
+              mapfile -t deployment_ids < <(
+                clasp deployments 2>/dev/null |
+                  awk '/^- / && $3 != "@HEAD" {print $2}'
+              )
+
+              if [ "${#deployment_ids[@]}" -eq 0 ]; then
+                echo "Creando la primera implementación versionada de $project_name"
+                clasp deploy --description "GitHub ${GITHUB_SHA}"
+              elif [ "${#deployment_ids[@]}" -eq 1 ]; then
+                echo "Actualizando implementación ${deployment_ids[0]} de $project_name"
+                clasp deploy --deploymentId "${deployment_ids[0]}" --description "GitHub ${GITHUB_SHA}"
+              else
+                echo "::error::$project_name tiene varias implementaciones versionadas. No se modificará ninguna automáticamente para evitar actualizar la incorrecta."
+                printf 'Implementaciones detectadas:\n'
+                printf -- '- %s\n' "${deployment_ids[@]}"
+                exit 1
+              fi
+            )
+          done < "$RUNNER_TEMP/projects.tsv"
+
+          echo "Publicación terminada. No se eliminó ningún proyecto de Google."

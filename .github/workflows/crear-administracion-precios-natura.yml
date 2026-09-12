@@ -1,0 +1,144 @@
+name: Crear y publicar administrador de precios Natura
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/triggers/crear-administracion-precios-natura.txt"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: crear-administracion-precios-natura
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Instalar clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Restaurar autorización de Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Falta el secreto CLASPRC_JSON"
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Crear o reutilizar el proyecto Apps Script
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          project_dir="natura/apps-script/administrar precios natura"
+          if [ ! -f "$project_dir/.clasp.json" ]; then
+            temp_dir="$(mktemp -d)"
+            (
+              cd "$temp_dir"
+              clasp create --type webapp --title "administrar precios natura"
+            )
+            cp "$temp_dir/.clasp.json" "$project_dir/.clasp.json"
+          fi
+
+          script_id="$(python3 -c 'import json; print(json.load(open("natura/apps-script/administrar precios natura/.clasp.json", encoding="utf-8"))["scriptId"])')"
+          if [ -z "$script_id" ]; then
+            echo "::error::No se obtuvo un scriptId válido"
+            exit 1
+          fi
+
+      - name: Publicar código e implementación
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          project_dir="natura/apps-script/administrar precios natura"
+          (
+            cd "$project_dir"
+            clasp push --force
+
+            mapfile -t deployment_ids < <(
+              clasp deployments 2>/dev/null |
+                awk '/^- / && $3 != "@HEAD" {print $2}'
+            )
+
+            if [ "${#deployment_ids[@]}" -eq 0 ]; then
+              clasp deploy --description "GitHub ${GITHUB_SHA}"
+            elif [ "${#deployment_ids[@]}" -eq 1 ]; then
+              clasp deploy --deploymentId "${deployment_ids[0]}" --description "GitHub ${GITHUB_SHA}"
+            else
+              echo "::error::Se encontraron varias implementaciones y no se modificará ninguna por suposición."
+              exit 1
+            fi
+          )
+
+          mapfile -t deployment_ids < <(
+            cd "$project_dir" &&
+              clasp deployments 2>/dev/null |
+              awk '/^- / && $3 != "@HEAD" {print $2}'
+          )
+          if [ "${#deployment_ids[@]}" -ne 1 ]; then
+            echo "::error::No se pudo identificar una única implementación."
+            exit 1
+          fi
+
+          deployment_id="${deployment_ids[0]}"
+          endpoint="https://script.google.com/macros/s/${deployment_id}/exec"
+
+          python3 - "$endpoint" <<'PY'
+          import json
+          import pathlib
+          import sys
+
+          endpoint = sys.argv[1]
+          config_path = pathlib.Path("natura/precios-admin-config.js")
+          config_path.write_text(
+              "// Generado automáticamente por GitHub Actions después de publicar Apps Script.\n"
+              "window.PRECIOS_ADMIN_CONFIG = Object.freeze({\n"
+              f"  endpoint: {json.dumps(endpoint)}\n"
+              "});\n",
+              encoding="utf-8",
+          )
+
+          deployment_path = pathlib.Path("natura/apps-script/administrar precios natura/deployment.json")
+          deployment_path.write_text(
+              json.dumps({"deploymentId": endpoint.split("/")[-2], "endpoint": endpoint}, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          PY
+
+      - name: Guardar identificación verificada
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- \
+            "natura/apps-script/administrar precios natura/.clasp.json" \
+            "natura/apps-script/administrar precios natura/deployment.json" \
+            "natura/precios-admin-config.js"
+
+          if git diff --cached --quiet; then
+            echo "La identificación publicada ya estaba actualizada."
+            exit 0
+          fi
+
+          git commit -m "Publicar administrador de precios Natura"
+          git push origin main

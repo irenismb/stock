@@ -1,12 +1,10 @@
 {
-  "source": "Google Drive / Apps Script + scriptId conocidos",
-  "filter": "trashed=false",
+  "source": "Google Apps Script",
+  "filter": "trashed=false; name contains natura (case-insensitive)",
   "scriptIds": [
     "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN",
-    "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
     "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
-    "12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt",
-    "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS"
+    "12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt"
   ],
   "projects": [
     {
@@ -14,12 +12,6 @@
       "name": "coordenadas de visitantes natura",
       "duplicateName": false,
       "gitPath": "coordenadas de visitantes natura"
-    },
-    {
-      "scriptId": "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
-      "name": "cxp-apps script",
-      "duplicateName": false,
-      "gitPath": "cxp-apps script"
     },
     {
       "scriptId": "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
@@ -32,12 +24,6 @@
       "name": "pedidos natura",
       "duplicateName": false,
       "gitPath": "pedidos natura"
-    },
-    {
-      "scriptId": "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS",
-      "name": "ventas_dr_he_aroma_apps_script",
-      "duplicateName": false,
-      "gitPath": "ventas_dr_he_aroma_apps_script"
     }
   ]
 }

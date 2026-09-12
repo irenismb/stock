@@ -4141,21 +4141,28 @@ async function spreCopyCurrentLevel(){
 
   const btn=document.getElementById("spreBtn");
   const originalText=btn?.textContent||"SPRE";
-  let copied=false;
+  let legacyCopied=false;
+  let clipboardPromise=null;
 
   try{
-    copied=spreLegacyCopyText(text);
+    legacyCopied=spreLegacyCopyText(text);
   }catch(_){}
 
-  if(!copied){
+  try{
+    if(navigator.clipboard && typeof navigator.clipboard.writeText === "function"){
+      clipboardPromise=navigator.clipboard.writeText(text);
+    }
+  }catch(_){}
+
+  let clipboardCopied=false;
+  if(clipboardPromise){
     try{
-      if(navigator.clipboard && typeof navigator.clipboard.writeText === "function"){
-        await navigator.clipboard.writeText(text);
-        copied=true;
-      }
+      await clipboardPromise;
+      clipboardCopied=true;
     }catch(_){}
   }
 
+  const copied=legacyCopied||clipboardCopied;
   if(!copied){
     alert("No se pudo copiar la lista. Revisa el permiso del portapapeles e intenta nuevamente.");
     return;

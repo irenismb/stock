@@ -1,5 +1,5 @@
 const SPREADSHEET_ID = "1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc";
-const HEADER_ROW = 2;
+const HEADER_ROW = 1;
 const START_COL = 2; // B
 const TZ = "America/Bogota";
 

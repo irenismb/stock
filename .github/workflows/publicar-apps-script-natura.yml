@@ -1,0 +1,73 @@
+name: Publicar Apps Script de Natura
+
+on:
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Proyecto que se publicará en Google Apps Script
+        required: true
+        type: choice
+        options:
+          - coordenadas-natura
+          - coordenadas-de-visitantes-natura
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publicar-apps-script-natura
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Instalar clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Restaurar autorización de Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Falta el secreto CLASPRC_JSON"
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Validar proyecto seleccionado
+        env:
+          PROJECT: ${{ inputs.project }}
+        run: |
+          project_dir="natura/apps-script/$PROJECT"
+          if [ ! -f "$project_dir/.clasp.json" ]; then
+            echo "::error::No existe la configuración del proyecto seleccionado"
+            exit 1
+          fi
+          if [ ! -f "$project_dir/appsscript.json" ]; then
+            echo "::error::Primero ejecuta Sincronizar Apps Script de Natura para descargar el proyecto"
+            exit 1
+          fi
+          if ! find "$project_dir" -type f \( -name '*.js' -o -name '*.gs' -o -name '*.html' \) -print -quit | grep -q .; then
+            echo "::error::La carpeta no contiene código de Apps Script"
+            exit 1
+          fi
+
+      - name: Publicar en Google Apps Script
+        env:
+          CLASP_CONFIG_AUTH: ${{ runner.temp }}/.clasprc.json
+          PROJECT: ${{ inputs.project }}
+        run: |
+          cd "natura/apps-script/$PROJECT"
+          clasp push

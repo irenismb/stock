@@ -1,19 +1,18 @@
-name: Publicar e implementar Apps Script Natura
+name: Publicar e implementar Apps Script Natura manualmente
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
     paths:
-      - "natura/apps-script/**"
-      - ".github/workflows/publicar-apps-script-natura.yml"
-  workflow_dispatch:
+      - ".github/triggers/publicar-apps-script-natura.txt"
 
 permissions:
   contents: read
 
 concurrency:
-  group: publicar-apps-script-natura
+  group: publicar-apps-script-natura-manual
   cancel-in-progress: false
 
 jobs:
@@ -25,47 +24,24 @@ jobs:
       - name: Descargar repositorio
         uses: actions/checkout@v7
         with:
+          ref: main
           fetch-depth: 0
 
-      - name: Detectar proyectos Natura modificados
+      - name: Localizar proyectos Natura de Git
         id: projects
-        env:
-          EVENT_NAME: ${{ github.event_name }}
-          BEFORE_SHA: ${{ github.event.before }}
-          CURRENT_SHA: ${{ github.sha }}
         run: |
           projects_file="$RUNNER_TEMP/projects.tsv"
           : > "$projects_file"
 
-          python3 - \
-            "$projects_file" \
-            "$EVENT_NAME" \
-            "$BEFORE_SHA" \
-            "$CURRENT_SHA" <<'PY'
+          python3 - "$projects_file" <<'PY'
           import json
           import os
-          import subprocess
           import sys
 
-          output_path, event_name, before_sha, current_sha = sys.argv[1:5]
+          output_path = sys.argv[1]
           root = "natura/apps-script"
-
-          changed = []
-          if event_name == "push":
-              zero = "0" * 40
-              base = before_sha
-              if not base or base == zero:
-                  try:
-                      base = subprocess.check_output(["git", "rev-parse", f"{current_sha}^"], text=True).strip()
-                  except subprocess.CalledProcessError:
-                      base = ""
-              if base:
-                  changed = subprocess.check_output(
-                      ["git", "diff", "--name-only", base, current_sha, "--", root],
-                      text=True,
-                  ).splitlines()
-
           projects = []
+
           for base, _, files in os.walk(root):
               if ".clasp.json" not in files:
                   continue
@@ -78,22 +54,12 @@ jobs:
                   continue
 
               config_path = os.path.join(base, ".clasp.json")
-              try:
-                  with open(config_path, encoding="utf-8") as fh:
-                      script_id = json.load(fh).get("scriptId", "")
-              except Exception as exc:
-                  raise SystemExit(f"No se pudo leer {config_path}: {exc}")
-
+              with open(config_path, encoding="utf-8") as fh:
+                  script_id = json.load(fh).get("scriptId", "")
               if not isinstance(script_id, str) or not script_id:
                   raise SystemExit(f"{config_path} no contiene un scriptId válido")
 
-              include = event_name == "workflow_dispatch"
-              if event_name == "push":
-                  prefix = f"{root}/{rel}/"
-                  include = any(path.startswith(prefix) for path in changed)
-
-              if include:
-                  projects.append((script_id, top_name, rel))
+              projects.append((script_id, top_name, rel))
 
           seen = set()
           with open(output_path, "w", encoding="utf-8", newline="\n") as fh:
@@ -103,7 +69,7 @@ jobs:
                   seen.add(script_id)
                   fh.write(f"{script_id}\t{project_name}\t{rel}\n")
 
-          print(f"Proyectos Natura a publicar: {len(seen)}")
+          print(f"Proyectos Natura disponibles para publicación manual: {len(seen)}")
           for _, name, rel in projects:
               print(f"- {name}: {rel}")
           PY
@@ -112,7 +78,7 @@ jobs:
             echo "has_projects=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_projects=false" >> "$GITHUB_OUTPUT"
-            echo "No hay cambios de proyectos Natura que publicar."
+            echo "No hay proyectos Natura que publicar."
           fi
 
       - name: Preparar Node.js
@@ -235,7 +201,13 @@ jobs:
             echo "Publicando en Google Apps Script: $project_name"
             (
               cd "$project_dir"
-              clasp push --force
+              push_output="$(clasp push --force 2>&1)"
+              printf '%s\n' "$push_output"
+
+              if printf '%s\n' "$push_output" | grep -Fq "Script is already up to date."; then
+                echo "El código ya coincide con Google; no se crea una versión innecesaria."
+                exit 0
+              fi
 
               mapfile -t deployment_ids < <(
                 clasp deployments 2>/dev/null |
@@ -275,4 +247,4 @@ jobs:
             )
           done < "$RUNNER_TEMP/projects.tsv"
 
-          echo "Publicación terminada. GitHub es la fuente y no se eliminó ningún proyecto de Google."
+          echo "Publicación manual terminada. No se eliminó ningún proyecto de Google."

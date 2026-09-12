@@ -39,7 +39,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Identificar proyectos modificados
+      - name: Identificar proyectos modificados o eliminados
         id: projects
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -48,8 +48,16 @@ jobs:
           SELECTED_PROJECT: ${{ inputs.project }}
         run: |
           projects_file="$RUNNER_TEMP/projects.txt"
+          deleted_projects_file="$RUNNER_TEMP/deleted-projects.txt"
+          : > "$projects_file"
+          : > "$deleted_projects_file"
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            project_dir="natura/apps-script/$SELECTED_PROJECT"
+            if [ ! -d "$project_dir" ]; then
+              echo "::error::El proyecto seleccionado ya no existe en el repositorio: $SELECTED_PROJECT"
+              exit 1
+            fi
             printf '%s\n' "$SELECTED_PROJECT" > "$projects_file"
           else
             changed_projects="$RUNNER_TEMP/changed-projects.txt"
@@ -57,42 +65,81 @@ jobs:
               awk -F/ 'NF >= 4 {print $3}' |
               sort -u > "$changed_projects"
 
-            : > "$projects_file"
             while IFS= read -r project; do
               [ -n "$project" ] || continue
               project_dir="natura/apps-script/$project"
 
               if [ -d "$project_dir" ]; then
                 printf '%s\n' "$project" >> "$projects_file"
+                continue
+              fi
+
+              old_config_path="natura/apps-script/$project/.clasp.json"
+              if ! old_config="$(git show "$BEFORE_SHA:$old_config_path" 2>/dev/null)"; then
+                echo "::warning::La carpeta $project desapareció, pero no se pudo recuperar su .clasp.json anterior. No se eliminará ningún proyecto de Google."
+                continue
+              fi
+
+              old_script_id="$(printf '%s' "$old_config" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("scriptId", ""))' 2>/dev/null || true)"
+              if [ -z "$old_script_id" ]; then
+                echo "::warning::No se pudo obtener el scriptId anterior de $project. No se eliminará ningún proyecto de Google."
+                continue
+              fi
+
+              script_still_present=false
+              while IFS= read -r current_config; do
+                current_script_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$current_config" 2>/dev/null || true)"
+                if [ "$current_script_id" = "$old_script_id" ]; then
+                  script_still_present=true
+                  break
+                fi
+              done < <(find natura/apps-script -mindepth 2 -maxdepth 2 -type f -name .clasp.json -print)
+
+              if [ "$script_still_present" = true ]; then
+                echo "El script de $project sigue registrado en otra carpeta; se interpreta como renombre o movimiento y no se elimina de Google."
               else
-                echo "Proyecto eliminado del repositorio: $project. Se omite la publicación en Apps Script."
+                printf '%s\n' "$project" >> "$deleted_projects_file"
+                echo "Proyecto eliminado del repositorio y marcado para eliminar también de Google Apps Script: $project"
               fi
             done < "$changed_projects"
           fi
 
-          if [ ! -s "$projects_file" ]; then
-            echo "No hay proyectos existentes que publicar."
+          if [ -s "$projects_file" ]; then
+            echo "has_projects=true" >> "$GITHUB_OUTPUT"
+            echo "Proyectos que se publicarán:"
+            sed 's/^/- /' "$projects_file"
+          else
             echo "has_projects=false" >> "$GITHUB_OUTPUT"
-            exit 0
           fi
 
-          echo "has_projects=true" >> "$GITHUB_OUTPUT"
-          echo "Proyectos que se publicarán:"
-          sed 's/^/- /' "$projects_file"
+          if [ -s "$deleted_projects_file" ]; then
+            echo "has_deleted_projects=true" >> "$GITHUB_OUTPUT"
+            echo "Proyectos que se eliminarán de Google Apps Script:"
+            sed 's/^/- /' "$deleted_projects_file"
+          else
+            echo "has_deleted_projects=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          if [ -s "$projects_file" ] || [ -s "$deleted_projects_file" ]; then
+            echo "has_work=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_work=false" >> "$GITHUB_OUTPUT"
+            echo "No hay proyectos existentes que publicar ni proyectos que eliminar de Google Apps Script."
+          fi
 
       - name: Preparar Node.js
-        if: steps.projects.outputs.has_projects == 'true'
+        if: steps.projects.outputs.has_work == 'true'
         uses: actions/setup-node@v7
         with:
           node-version: "24"
           package-manager-cache: false
 
       - name: Instalar clasp
-        if: steps.projects.outputs.has_projects == 'true'
+        if: steps.projects.outputs.has_work == 'true'
         run: npm install --global @google/clasp@3.4.1
 
       - name: Restaurar autorización de Google
-        if: steps.projects.outputs.has_projects == 'true'
+        if: steps.projects.outputs.has_work == 'true'
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
@@ -102,6 +149,36 @@ jobs:
           fi
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Eliminar de Google Apps Script los proyectos borrados
+        if: steps.projects.outputs.has_deleted_projects == 'true'
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          while IFS= read -r project; do
+            [ -n "$project" ] || continue
+            old_config_path="natura/apps-script/$project/.clasp.json"
+            temp_dir="$RUNNER_TEMP/delete-$project"
+            mkdir -p "$temp_dir"
+
+            if ! git show "$BEFORE_SHA:$old_config_path" > "$temp_dir/.clasp.json"; then
+              echo "::error::No se pudo recuperar la configuración anterior de $project. No se eliminará nada de Google."
+              exit 1
+            fi
+
+            script_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$temp_dir/.clasp.json" 2>/dev/null || true)"
+            if [ -z "$script_id" ]; then
+              echo "::error::La configuración anterior de $project no contiene un scriptId válido."
+              exit 1
+            fi
+
+            echo "Eliminando de Google Apps Script el proyecto correspondiente a $project"
+            (
+              cd "$temp_dir"
+              clasp delete-script --force
+            )
+          done < "$RUNNER_TEMP/deleted-projects.txt"
 
       - name: Validar, publicar y desplegar proyectos
         if: steps.projects.outputs.has_projects == 'true'

@@ -227,7 +227,6 @@ jobs:
                     --exclude-dir=.git \
                     --exclude-dir=.github \
                     --exclude-dir=apps-script \
-                    --exclude-dir=apps-script-excluidos \
                     -- "$deployment_id" "$repo_root/natura"; then
                     referenced_ids+=("$deployment_id")
                   fi

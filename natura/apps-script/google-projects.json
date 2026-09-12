@@ -1,12 +1,20 @@
 {
-  "source": "Google Drive / Apps Script",
-  "filter": "mimeType=application/vnd.google-apps.script; trashed=false",
+  "source": "Google Drive / Apps Script + scriptId conocidos",
+  "filter": "trashed=false",
   "scriptIds": [
+    "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN",
     "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
     "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
+    "12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt",
     "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS"
   ],
   "projects": [
+    {
+      "scriptId": "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN",
+      "name": "coordenadas de visitantes natura",
+      "duplicateName": false,
+      "gitPath": "coordenadas de visitantes natura"
+    },
     {
       "scriptId": "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
       "name": "cxp-apps script",
@@ -18,6 +26,12 @@
       "name": "lectura de carpetas en natura",
       "duplicateName": false,
       "gitPath": "lectura de carpetas en natura"
+    },
+    {
+      "scriptId": "12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt",
+      "name": "pedidos natura",
+      "duplicateName": false,
+      "gitPath": "pedidos natura"
     },
     {
       "scriptId": "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS",

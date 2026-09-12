@@ -1,17 +1,235 @@
-name: Sincronización Google a Git desactivada
+name: Traer Apps Script Natura desde Google
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/triggers/traer-apps-script-natura.txt"
 
 permissions:
-  contents: read
+  contents: write
+
+concurrency:
+  group: traer-apps-script-natura-desde-google
+  cancel-in-progress: false
 
 jobs:
-  estado:
+  sincronizar:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
+
     steps:
-      - name: Confirmar dirección de sincronización
+      - name: Descargar repositorio
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Instalar clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Restaurar autorización de Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
         run: |
-          echo "La sincronización automática Google Apps Script -> GitHub está desactivada."
-          echo "La dirección activa es GitHub -> Google Apps Script -> implementación."
-          echo "Este workflow no lee, modifica ni elimina proyectos de Google."
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Falta el secreto CLASPRC_JSON"
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Localizar solo proyectos activos con natura en el nombre
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          clasp list-scripts --json > "$RUNNER_TEMP/list-scripts.json"
+
+          python3 - \
+            "$RUNNER_TEMP/.clasprc.json" \
+            "$RUNNER_TEMP/list-scripts.json" \
+            "$RUNNER_TEMP/google-projects.tsv" <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.error
+          import urllib.parse
+          import urllib.request
+          from collections import Counter
+
+          auth_path, list_path, output_path = sys.argv[1:4]
+          root = "natura/apps-script"
+
+          existing = {}
+          for base, _, files in os.walk(root):
+              if ".clasp.json" not in files:
+                  continue
+              path = os.path.join(base, ".clasp.json")
+              try:
+                  with open(path, encoding="utf-8") as fh:
+                      script_id = json.load(fh).get("scriptId", "")
+              except Exception:
+                  continue
+              if script_id:
+                  existing[script_id] = base
+
+          with open(list_path, encoding="utf-8") as fh:
+              raw = json.load(fh)
+          if isinstance(raw, dict):
+              items = raw.get("scriptProjects") or raw.get("projects") or raw.get("scripts") or []
+          else:
+              items = raw
+
+          candidate_ids = set(existing)
+          for item in items or []:
+              if isinstance(item, dict):
+                  script_id = item.get("scriptId") or item.get("id")
+                  if script_id:
+                      candidate_ids.add(script_id)
+
+          with open(auth_path, encoding="utf-8") as fh:
+              auth = json.load(fh)
+          credentials = ((auth.get("tokens") or {}).get("default") or auth.get("token") or auth)
+          token = credentials.get("access_token", "") if isinstance(credentials, dict) else ""
+          if not token:
+              raise SystemExit("No se pudo obtener el access_token actualizado de clasp")
+
+          headers = {"Authorization": f"Bearer {token}"}
+          selected = []
+          statuses = {}
+
+          for script_id in sorted(candidate_ids):
+              encoded = urllib.parse.quote(script_id, safe="")
+              url = (
+                  f"https://www.googleapis.com/drive/v3/files/{encoded}"
+                  "?fields=id,name,mimeType,trashed&supportsAllDrives=true"
+              )
+              request = urllib.request.Request(url, headers=headers)
+              try:
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      metadata = json.load(response)
+              except urllib.error.HTTPError as error:
+                  if script_id in existing:
+                      body = error.read().decode("utf-8", errors="replace")
+                      raise SystemExit(f"No se pudo verificar el proyecto existente {script_id}: HTTP {error.code}: {body}")
+                  continue
+
+              name = str(metadata.get("name") or "").strip()
+              mime = metadata.get("mimeType")
+              trashed = metadata.get("trashed") is True
+              statuses[script_id] = {"name": name, "trashed": trashed}
+
+              if mime != "application/vnd.google-apps.script" or trashed:
+                  continue
+              if "natura" not in name.casefold():
+                  continue
+              selected.append({"scriptId": script_id, "name": name})
+
+          if not selected:
+              raise SystemExit("Google no devolvió ningún proyecto Apps Script activo cuyo nombre contenga natura")
+
+          counts = Counter(item["name"] for item in selected)
+          forbidden = '<>:"/\\|?*'
+          for item in selected:
+              name = item["name"]
+              if any(ch in name for ch in forbidden) or name.endswith(" ") or name.endswith("."):
+                  raise SystemExit(f"El nombre de Google no puede representarse como carpeta de Windows: {name}")
+              item["gitPath"] = name if counts[name] == 1 else f'{name}/{item["scriptId"]}'
+
+          with open(output_path, "w", encoding="utf-8", newline="\n") as fh:
+              for item in sorted(selected, key=lambda x: (x["name"].casefold(), x["scriptId"])):
+                  fh.write(f'{item["scriptId"]}\t{item["name"]}\t{item["gitPath"]}\n')
+
+          selected_ids = {item["scriptId"] for item in selected}
+          os.makedirs("natura/apps-script-excluidos/no-seleccionados", exist_ok=True)
+          with open("natura/apps-script/google-projects.json", "w", encoding="utf-8", newline="\n") as fh:
+              json.dump({"source": "Google Apps Script", "filter": "active name contains natura", "projects": selected}, fh, ensure_ascii=False, indent=2)
+              fh.write("\n")
+
+          with open(os.path.join(os.environ.get("RUNNER_TEMP", "/tmp"), "selected-script-ids.txt"), "w", encoding="utf-8") as fh:
+              for script_id in sorted(selected_ids):
+                  fh.write(script_id + "\n")
+
+          print(f"Proyectos Natura seleccionados: {len(selected)}")
+          for item in selected:
+              print(f'- {item["name"]} [{item["scriptId"]}]')
+          PY
+
+      - name: Mantener fuera de la carpeta activa lo que no sea Natura activo
+        run: |
+          selected_ids="$RUNNER_TEMP/selected-script-ids.txt"
+          find natura/apps-script -type f -name .clasp.json -print0 | while IFS= read -r -d '' config; do
+            script_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$config" 2>/dev/null || true)"
+            [ -n "$script_id" ] || continue
+            grep -Fxq "$script_id" "$selected_ids" && continue
+
+            current_dir="$(dirname "$config")"
+            archive_root="natura/apps-script-excluidos/no-seleccionados"
+            mkdir -p "$archive_root"
+            target="$archive_root/$script_id"
+            if [ -e "$target" ]; then
+              target="$archive_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
+            fi
+            echo "Apartando de la carpeta activa: $current_dir"
+            mv "$current_dir" "$target"
+          done
+
+      - name: Traer nombres y código desde Google
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          while IFS=$'\t' read -r script_id remote_name git_path; do
+            [ -n "$script_id" ] || continue
+            target_dir="natura/apps-script/$git_path"
+            found=""
+
+            while IFS= read -r -d '' config; do
+              current_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$config" 2>/dev/null || true)"
+              if [ "$current_id" = "$script_id" ]; then
+                found="$(dirname "$config")"
+                break
+              fi
+            done < <(find natura/apps-script -type f -name .clasp.json -print0)
+
+            if [ -n "$found" ] && [ "$found" != "$target_dir" ]; then
+              staging="$RUNNER_TEMP/move-$script_id"
+              mv "$found" "$staging"
+              if [ -e "$target_dir" ]; then
+                conflict_root="natura/apps-script-excluidos/conflictos-sync"
+                mkdir -p "$conflict_root"
+                mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
+              fi
+              mkdir -p "$(dirname "$target_dir")"
+              mv "$staging" "$target_dir"
+            elif [ -z "$found" ]; then
+              mkdir -p "$target_dir"
+              printf '{\n  "scriptId": "%s",\n  "rootDir": "."\n}\n' "$script_id" > "$target_dir/.clasp.json"
+            fi
+
+            echo "Trayendo desde Google: $remote_name"
+            (
+              cd "$target_dir"
+              clasp pull --deleteUnusedFiles --force
+            )
+          done < "$RUNNER_TEMP/google-projects.tsv"
+
+      - name: Guardar en GitHub lo traído desde Google
+        run: |
+          git add -A natura/apps-script natura/apps-script-excluidos
+          if git diff --cached --quiet; then
+            echo "GitHub ya coincide con Google para los proyectos Natura."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Traer Apps Script Natura desde Google"
+          git push origin HEAD:main

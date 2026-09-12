@@ -1,4 +1,4 @@
-name: Sincronizar todos los Apps Script desde Google
+name: Sincronizar Apps Script Natura desde Google
 
 on:
   workflow_dispatch:
@@ -15,11 +15,12 @@ permissions:
   contents: write
 
 concurrency:
-  group: sincronizar-apps-script-desde-google
+  group: sincronizar-apps-script-natura-desde-google
   cancel-in-progress: false
 
 jobs:
   sincronizar:
+    if: github.event_name != 'push' || github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -49,11 +50,10 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Inventariar todos los Apps Script activos conocidos y visibles
+      - name: Inventariar solo Apps Script activos cuyo nombre contiene natura
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
-          # clasp refresca las credenciales y aporta otra fuente de scriptId.
           clasp list-scripts --json > "$RUNNER_TEMP/clasp-scripts.json"
 
           python3 - \
@@ -61,7 +61,8 @@ jobs:
             "$RUNNER_TEMP/clasp-scripts.json" \
             "natura/apps-script/google-projects.json" \
             "$RUNNER_TEMP/google-projects.tsv" \
-            "$RUNNER_TEMP/trashed-script-ids.txt" <<'PY'
+            "$RUNNER_TEMP/trashed-script-ids.txt" \
+            "$RUNNER_TEMP/non-natura-script-ids.txt" <<'PY'
           import collections
           import json
           import os
@@ -70,7 +71,7 @@ jobs:
           import urllib.parse
           import urllib.request
 
-          auth_path, clasp_path, registry_path, tsv_path, trashed_path = sys.argv[1:6]
+          auth_path, clasp_path, registry_path, tsv_path, trashed_path, non_natura_path = sys.argv[1:7]
 
           with open(auth_path, encoding="utf-8") as fh:
               auth = json.load(fh)
@@ -129,7 +130,6 @@ jobs:
 
           candidate_ids = set()
 
-          # 1) Lo que clasp puede enumerar.
           with open(clasp_path, encoding="utf-8") as fh:
               clasp_items = json.load(fh)
           if isinstance(clasp_items, list):
@@ -138,15 +138,11 @@ jobs:
                   if isinstance(script_id, str) and script_id:
                       candidate_ids.add(script_id)
 
-          # 2) Todo lo que Drive puede enumerar, activo o en papelera.
-          drive_active = drive_list(False)
-          drive_trashed = drive_list(True)
-          for item in drive_active + drive_trashed:
+          for item in drive_list(False) + drive_list(True):
               script_id = item.get("id", "") if isinstance(item, dict) else ""
               if isinstance(script_id, str) and script_id:
                   candidate_ids.add(script_id)
 
-          # 3) Todos los scriptId que Git ya conoce, incluso los apartados.
           for root in ("natura/apps-script", "natura/apps-script-excluidos"):
               if not os.path.isdir(root):
                   continue
@@ -167,13 +163,13 @@ jobs:
           reserved.update({f"COM{i}" for i in range(1, 10)})
           reserved.update({f"LPT{i}" for i in range(1, 10)})
 
-          active = []
+          selected = []
           trashed_ids = []
+          non_natura_ids = []
+
           for script_id in sorted(candidate_ids):
               metadata = get_metadata(script_id)
-              if not metadata:
-                  continue
-              if metadata.get("mimeType") != "application/vnd.google-apps.script":
+              if not metadata or metadata.get("mimeType") != "application/vnd.google-apps.script":
                   continue
               if metadata.get("trashed") is True:
                   trashed_ids.append(script_id)
@@ -181,7 +177,12 @@ jobs:
 
               name = metadata.get("name", "")
               if not isinstance(name, str) or not name:
-                  raise SystemExit(f"Google devolvió un nombre vacío para {script_id}")
+                  continue
+
+              if "natura" not in name.casefold():
+                  non_natura_ids.append(script_id)
+                  continue
+
               valid = name not in {".", ".."}
               valid = valid and not any(ord(ch) < 32 for ch in name)
               valid = valid and not any(ch in invalid_chars for ch in name)
@@ -189,50 +190,53 @@ jobs:
               valid = valid and name.split(".", 1)[0].upper() not in reserved
               if not valid:
                   raise SystemExit(f"El nombre de Google '{name}' no puede usarse exactamente como carpeta en Windows")
-              active.append({"scriptId": script_id, "name": name})
 
-          if not active:
-              raise SystemExit("No se encontró ningún Apps Script activo accesible")
+              selected.append({"scriptId": script_id, "name": name})
 
-          counts = collections.Counter(item["name"].casefold() for item in active)
-          active.sort(key=lambda x: (x["name"].casefold(), x["scriptId"]))
-          for item in active:
+          counts = collections.Counter(item["name"].casefold() for item in selected)
+          selected.sort(key=lambda x: (x["name"].casefold(), x["scriptId"]))
+          for item in selected:
               duplicate = counts[item["name"].casefold()] > 1
               item["duplicateName"] = duplicate
               item["gitPath"] = f'{item["name"]}/{item["scriptId"]}' if duplicate else item["name"]
 
           registry = {
-              "source": "Google Drive / Apps Script + scriptId conocidos",
-              "filter": "trashed=false",
-              "scriptIds": [item["scriptId"] for item in active],
-              "projects": active,
+              "source": "Google Apps Script",
+              "filter": "trashed=false; name contains natura (case-insensitive)",
+              "scriptIds": [item["scriptId"] for item in selected],
+              "projects": selected,
           }
           with open(registry_path, "w", encoding="utf-8", newline="\n") as fh:
               json.dump(registry, fh, ensure_ascii=False, indent=2)
               fh.write("\n")
 
           with open(tsv_path, "w", encoding="utf-8", newline="\n") as fh:
-              for item in active:
+              for item in selected:
                   fh.write(f'{item["scriptId"]}\t{item["name"]}\t{item["gitPath"]}\n')
 
           with open(trashed_path, "w", encoding="utf-8", newline="\n") as fh:
               for script_id in sorted(set(trashed_ids)):
                   fh.write(script_id + "\n")
 
-          print(f"scriptId candidatos comprobados: {len(candidate_ids)}")
-          print(f"Proyectos activos accesibles: {len(active)}")
+          with open(non_natura_path, "w", encoding="utf-8", newline="\n") as fh:
+              for script_id in sorted(set(non_natura_ids)):
+                  fh.write(script_id + "\n")
+
+          print(f"Proyectos con 'natura' seleccionados: {len(selected)}")
+          print(f"Proyectos activos sin 'natura' excluidos: {len(set(non_natura_ids))}")
           print(f"Proyectos en papelera excluidos: {len(set(trashed_ids))}")
-          for item in active:
-              print(f"ACTIVO: {item['name']} [{item['scriptId']}]")
+          for item in selected:
+              print(f"SINCRONIZAR: {item['name']} [{item['scriptId']}]")
           PY
 
-      - name: Apartar proyectos que no están activos en Google
+      - name: Sacar de la carpeta activa todo proyecto que no cumpla el filtro
         run: |
-          active_ids="$RUNNER_TEMP/active-script-ids.txt"
-          cut -f1 "$RUNNER_TEMP/google-projects.tsv" | sort -u > "$active_ids"
+          selected_ids="$RUNNER_TEMP/selected-script-ids.txt"
+          cut -f1 "$RUNNER_TEMP/google-projects.tsv" | sort -u > "$selected_ids"
           trashed_ids="$RUNNER_TEMP/trashed-script-ids.txt"
+          non_natura_ids="$RUNNER_TEMP/non-natura-script-ids.txt"
           configs="$RUNNER_TEMP/local-configs.bin"
-          find natura/apps-script -mindepth 2 -maxdepth 3 -type f -name .clasp.json -print0 > "$configs"
+          find natura/apps-script -type f -name .clasp.json -print0 > "$configs"
 
           while IFS= read -r -d '' config; do
             [ -e "$config" ] || continue
@@ -247,33 +251,52 @@ jobs:
           PY
           )"
             [ -n "$local_id" ] || continue
-            grep -Fxq "$local_id" "$active_ids" && continue
+            grep -Fxq "$local_id" "$selected_ids" && continue
 
             current_dir="$(dirname "$config")"
             if grep -Fxq "$local_id" "$trashed_ids"; then
               archive_root="natura/apps-script-excluidos/papelera-google"
-              reason="papelera de Google"
+              reason="está en la papelera de Google"
+            elif grep -Fxq "$local_id" "$non_natura_ids"; then
+              archive_root="natura/apps-script-excluidos/no-natura"
+              reason="su nombre no contiene natura"
             else
               archive_root="natura/apps-script-excluidos/no-activos-google"
-              reason="fuera del inventario activo de Google"
+              reason="ya no está disponible como proyecto activo"
             fi
+
             mkdir -p "$archive_root"
             target_dir="$archive_root/$local_id"
             if [ -e "$target_dir" ]; then
               target_dir="$archive_root/${local_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
             fi
-            echo "Apartando de natura/apps-script $current_dir ($reason). No se modifica Google."
+            echo "Apartando $current_dir: $reason. Google no se modifica."
             mv "$current_dir" "$target_dir"
           done < "$configs"
 
-      - name: Recuperar proyectos activos que estaban apartados
+      - name: Recuperar proyectos Natura activos que estuvieran apartados
         run: |
           while IFS=$'\t' read -r script_id remote_name git_path; do
             [ -n "$script_id" ] || continue
-            if find natura/apps-script -mindepth 2 -maxdepth 3 -type f -name .clasp.json -print0 | \
-              xargs -0 -r grep -lF "\"$script_id\"" >/dev/null 2>&1; then
-              continue
-            fi
+
+            found_active=""
+            while IFS= read -r -d '' config; do
+              current_id="$(python3 - "$config" <<'PY'
+          import json
+          import sys
+          try:
+              with open(sys.argv[1], encoding="utf-8") as fh:
+                  print(json.load(fh).get("scriptId", ""))
+          except Exception:
+              print("")
+          PY
+          )"
+              if [ "$current_id" = "$script_id" ]; then
+                found_active="$(dirname "$config")"
+                break
+              fi
+            done < <(find natura/apps-script -type f -name .clasp.json -print0)
+            [ -n "$found_active" ] && continue
 
             found=""
             while IFS= read -r -d '' config; do
@@ -295,7 +318,6 @@ jobs:
 
             if [ -n "$found" ]; then
               staging="$RUNNER_TEMP/recover-$script_id"
-              echo "Google confirma que vuelve a estar activo: recuperando $remote_name"
               mv "$found" "$staging"
               target="natura/apps-script/$git_path"
               mkdir -p "$(dirname "$target")"
@@ -304,6 +326,7 @@ jobs:
                 mkdir -p "$conflict_root"
                 mv "$target" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
               fi
+              echo "Recuperando proyecto Natura activo: $remote_name"
               mv "$staging" "$target"
             fi
           done < "$RUNNER_TEMP/google-projects.tsv"
@@ -332,12 +355,11 @@ jobs:
               if [ "$current_id" = "$script_id" ]; then
                 dirname "$config" >> "$matches_file"
               fi
-            done < <(find natura/apps-script -mindepth 2 -maxdepth 3 -type f -name .clasp.json -print0)
+            done < <(find natura/apps-script -type f -name .clasp.json -print0)
 
             match_count="$(wc -l < "$matches_file" | tr -d ' ')"
             if [ "$match_count" -gt 1 ]; then
-              echo "::error::El scriptId $script_id aparece en varias carpetas activas de GitHub."
-              cat "$matches_file"
+              echo "::error::El scriptId $script_id aparece en varias carpetas activas."
               exit 1
             fi
 
@@ -345,31 +367,14 @@ jobs:
               current_dir="$(head -n 1 "$matches_file")"
               if [ "$current_dir" != "$target_dir" ]; then
                 staging_dir="$RUNNER_TEMP/google-sync-$script_id"
-                if [[ "$target_dir" == "$current_dir/"* ]]; then
-                  echo "Google manda: agrupando $current_dir -> $git_path"
-                  mv "$current_dir" "$staging_dir"
-                  mkdir -p "$(dirname "$target_dir")"
-                  mv "$staging_dir" "$target_dir"
-                elif [[ "$current_dir" == "$target_dir/"* ]]; then
-                  echo "Google manda: desagrupando $current_dir -> $git_path"
-                  mv "$current_dir" "$staging_dir"
-                  if ! rmdir "$target_dir" 2>/dev/null; then
-                    conflict_root="natura/apps-script-excluidos/conflictos-sync"
-                    mkdir -p "$conflict_root"
-                    mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
-                  fi
-                  mkdir -p "$(dirname "$target_dir")"
-                  mv "$staging_dir" "$target_dir"
-                else
-                  if [ -e "$target_dir" ]; then
-                    conflict_root="natura/apps-script-excluidos/conflictos-sync"
-                    mkdir -p "$conflict_root"
-                    mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
-                  fi
-                  mkdir -p "$(dirname "$target_dir")"
-                  echo "Google manda: moviendo $current_dir -> $git_path"
-                  mv "$current_dir" "$target_dir"
+                mv "$current_dir" "$staging_dir"
+                if [ -e "$target_dir" ]; then
+                  conflict_root="natura/apps-script-excluidos/conflictos-sync"
+                  mkdir -p "$conflict_root"
+                  mv "$target_dir" "$conflict_root/${script_id}-$(date +%Y%m%d%H%M%S)-$RANDOM"
                 fi
+                mkdir -p "$(dirname "$target_dir")"
+                mv "$staging_dir" "$target_dir"
               fi
             else
               if [ -e "$target_dir" ]; then
@@ -379,17 +384,16 @@ jobs:
               fi
               mkdir -p "$target_dir"
               printf '{\n  "scriptId": "%s",\n  "rootDir": "."\n}\n' "$script_id" > "$target_dir/.clasp.json"
-              echo "Google manda: creando en GitHub $git_path"
             fi
 
-            echo "Copiando desde Google Apps Script: $remote_name [$script_id]"
+            echo "Copiando desde Google: $remote_name"
             (
               cd "$target_dir"
               clasp pull --deleteUnusedFiles --force
             )
           done < "$RUNNER_TEMP/google-projects.tsv"
 
-      - name: Guardar en GitHub la copia recibida desde Google
+      - name: Guardar en GitHub la copia filtrada desde Google
         run: |
           git add -A natura/apps-script
           if [ -d natura/apps-script-excluidos ]; then
@@ -397,15 +401,15 @@ jobs:
           fi
 
           if git diff --cached --quiet; then
-            echo "Google y GitHub ya están sincronizados para los proyectos activos."
+            echo "Los proyectos Natura ya están sincronizados."
             exit 0
           fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Sincronizar Apps Script activos desde Google"
+          git commit -m "Sincronizar solo Apps Script Natura desde Google"
 
           if ! git push origin HEAD:main; then
-            echo "::warning::main cambió durante la sincronización. No se forzará el push; la siguiente ejecución volverá a copiar Google sobre el estado más reciente."
+            echo "::warning::main cambió durante la sincronización. No se forzará el push."
             exit 0
           fi

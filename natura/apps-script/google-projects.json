@@ -1,20 +1,12 @@
 {
-  "source": "Google Apps Script",
-  "filter": "trashed=false",
+  "source": "Google Drive / Apps Script",
+  "filter": "mimeType=application/vnd.google-apps.script; trashed=false",
   "scriptIds": [
-    "1ixlF9IxWP5Khzcc1oRzGUAqhW0Qca_v49n4kCdt5ZvAZMjv0EvIYjzL1",
     "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
-    "1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b",
     "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
     "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS"
   ],
   "projects": [
-    {
-      "scriptId": "1ixlF9IxWP5Khzcc1oRzGUAqhW0Qca_v49n4kCdt5ZvAZMjv0EvIYjzL1",
-      "name": "Apps Script - imágenes catálogo",
-      "duplicateName": false,
-      "gitPath": "Apps Script - imágenes catálogo"
-    },
     {
       "scriptId": "1v9c_nPNd-p0JLfhDn5xSXmvhFivhbX4CfXmsMAVyC2rqfGTzrrvc1wZ2",
       "name": "cxp-apps script",
@@ -22,16 +14,10 @@
       "gitPath": "cxp-apps script"
     },
     {
-      "scriptId": "1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b",
-      "name": "lectura de carpetas en natura",
-      "duplicateName": true,
-      "gitPath": "lectura de carpetas en natura/1pVGJBnif5xYKZ2lFBzFcMnOfBdeBKlAE6L2tsIWIt49-GxOKaIhsjf1b"
-    },
-    {
       "scriptId": "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf",
       "name": "lectura de carpetas en natura",
-      "duplicateName": true,
-      "gitPath": "lectura de carpetas en natura/1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf"
+      "duplicateName": false,
+      "gitPath": "lectura de carpetas en natura"
     },
     {
       "scriptId": "1arapd2HxrYyTv1pqo-QiNyqWx1z34gNy2GCAPdR9oQjeiuUM5RvwXlIS",

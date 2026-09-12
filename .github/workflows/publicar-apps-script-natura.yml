@@ -83,7 +83,7 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Validar, publicar y desplegar proyectos
+      - name: Validar y publicar proyectos
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
@@ -107,23 +107,5 @@ jobs:
             (
               cd "$project_dir"
               clasp push
-
-              mapfile -t deployment_ids < <(
-                clasp deployments 2>/dev/null |
-                  awk '/^- / && $3 != "@HEAD" {print $2}'
-              )
-
-              if [ "${#deployment_ids[@]}" -eq 0 ]; then
-                echo "No existe una implementación versionada; creando una nueva"
-                clasp deploy --description "GitHub ${GITHUB_SHA}"
-              elif [ "${#deployment_ids[@]}" -eq 1 ]; then
-                echo "Actualizando implementación ${deployment_ids[0]}"
-                clasp deploy --deploymentId "${deployment_ids[0]}" --description "GitHub ${GITHUB_SHA}"
-              else
-                echo "::error::$project tiene varias implementaciones versionadas. No se actualizará ninguna automáticamente para evitar modificar la incorrecta."
-                printf 'Implementaciones detectadas:\n'
-                printf -- '- %s\n' "${deployment_ids[@]}"
-                exit 1
-              fi
             )
           done < "$RUNNER_TEMP/projects.txt"

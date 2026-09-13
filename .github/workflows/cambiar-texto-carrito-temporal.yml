@@ -1,0 +1,61 @@
+name: Cambiar texto estado carrito
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/triggers/cambiar-texto-carrito-temporal.txt'
+
+permissions:
+  contents: write
+
+jobs:
+  cambiar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Cambiar texto del estado del carrito
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+
+          js_path = Path('natura/catalogo-app.js')
+          js = js_path.read_text(encoding='utf-8')
+          old = 'Aún no agregado'
+          new = 'No agregado al carrito'
+          count = js.count(old)
+          if count != 1:
+              raise SystemExit(f'Se esperaba exactamente una aparición de {old!r}; encontradas: {count}')
+          js_path.write_text(js.replace(old, new, 1), encoding='utf-8', newline='\n')
+
+          html_path = Path('natura/catalogo.html')
+          html = html_path.read_text(encoding='utf-8')
+          old_src = 'catalogo-app.js?actualizacion=integral-2026-09-13-7'
+          new_src = 'catalogo-app.js?actualizacion=integral-2026-09-13-8'
+          if html.count(old_src) != 1:
+              raise SystemExit(f'No se encontró exactamente una referencia de caché esperada: {html.count(old_src)}')
+          html_path.write_text(html.replace(old_src, new_src, 1), encoding='utf-8', newline='\n')
+          PY
+
+          git diff --check
+          git diff -- natura/catalogo-app.js natura/catalogo.html
+
+      - name: Confirmar cambios en main
+        shell: bash
+        run: |
+          git config user.name 'stock'
+          git config user.email '131928432+irenismb@users.noreply.github.com'
+          git add natura/catalogo-app.js natura/catalogo.html
+          if git diff --cached --quiet; then
+            echo '::error::No hubo cambios que confirmar'
+            exit 1
+          fi
+          git commit -m 'Cambiar estado vacío del carrito a No agregado al carrito'
+          git push origin HEAD:main

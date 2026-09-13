@@ -18,74 +18,86 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Aplicar almacenamiento técnico seguro
+      - name: Finalizar integración segura
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import base64
           import re
-          import subprocess
 
-          historical = subprocess.check_output(
-              ['git','show','6ed97019a27cc6e9aa2f5dce5efcf790969c2b28:natura/catalogo-app.js'],
-              text=True,
-              encoding='utf-8'
-          )
-          Path('natura/catalogo-app.js').write_text(historical, encoding='utf-8', newline='\n')
+          html = Path('natura/catalogo.html')
+          text = html.read_text(encoding='utf-8')
+          old = 'catalogo-app.js?actualizacion=integral-2026-09-13-6'
+          new = 'catalogo-app.js?actualizacion=integral-2026-09-13-7'
+          if text.count(old) != 1:
+              raise SystemExit(f'No se encontró exactamente una referencia de caché esperada: {text.count(old)}')
+          html.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
 
-          path = Path('natura/apps-script/administrar precios natura/Código.js')
-          text = path.read_text(encoding='utf-8')
-          constants = '\n'.join([
-              'const CONFIG_SHEET_NAME = "Configuracion";',
-              'const CONFIG_KEYS = [',
-              '  "REGISTRAR_VISITAS_PROPIAS",',
-              '  "MOSTRAR_CANTIDAD_STOCK",',
-              '  "MOSTRAR_PRECIOS_PRODUCTO"',
-              '];',
-          ])
-          text, n = re.subn(
-              r'const CONFIG_LEGACY_SHEET_NAME = "Configuracion";[\s\S]*?const CONFIG_UPDATED_AT_KEY = "CONFIGURACION_ACTUALIZADA_EN";',
-              constants,
-              text,
+          workflow = Path('.github/workflows/publicar-apps-script-natura.yml')
+          wf = workflow.read_text(encoding='utf-8')
+          wf, n = re.subn(
+              r'\n      - name: Verificar configuración pública del catálogo[\s\S]*\Z',
+              '',
+              wf,
               count=1,
           )
           if n != 1:
-              raise SystemExit(f'No se reemplazaron constantes de configuración: {n}')
+              raise SystemExit(f'No se encontró el bloque de verificación anterior: {n}')
 
-          encoded = 'ZnVuY3Rpb24gb2J0ZW5lckNvbmZpZ3VyYWNpb25XZWIoKSB7CiAgY29uc3QgY29udGV4dG8gPSBvYnRlbmVyQ29udGV4dG9Db25maWd1cmFjaW9uXygpOwogIGNvbnN0IHZhbG9yZXMgPSBsZWVyVmFsb3Jlc0NvbmZpZ3VyYWNpb25fKGNvbnRleHRvKTsKICByZXR1cm4gewogICAgb2s6IHRydWUsCiAgICB2YWxvcmVzOiB2YWxvcmVzLAogICAgYWN0dWFsaXphZG9FbjogbmV3IERhdGUoKS50b0lTT1N0cmluZygpCiAgfTsKfQoKZnVuY3Rpb24gYWN0dWFsaXphckNvbmZpZ3VyYWNpb25XZWIoY2xhdmUsIGFjdGl2YWRvKSB7CiAgY29uc3QgY2xhdmVTZWd1cmEgPSBTdHJpbmcoY2xhdmUgPT0gbnVsbCA/ICIiIDogY2xhdmUpLnRyaW0oKS50b1VwcGVyQ2FzZSgpOwogIGlmIChDT05GSUdfS0VZUy5pbmRleE9mKGNsYXZlU2VndXJhKSA9PT0gLTEpIHsKICAgIHRocm93IG5ldyBFcnJvcigiTGEgY2xhdmUgZGUgY29uZmlndXJhY2nDs24gbm8gZXMgdsOhbGlkYS4iKTsKICB9CgogIGNvbnN0IGVzdGFkbyA9IG5vcm1hbGl6YXJCb29sZWFub0NvbmZpZ3VyYWNpb25fKGFjdGl2YWRvKTsKICBpZiAoZXN0YWRvID09PSBudWxsKSB7CiAgICB0aHJvdyBuZXcgRXJyb3IoIkVsIGVzdGFkbyBkZSBjb25maWd1cmFjacOzbiBubyBlcyB2w6FsaWRvLiIpOwogIH0KCiAgY29uc3QgYmxvcXVlbyA9IExvY2tTZXJ2aWNlLmdldFNjcmlwdExvY2soKTsKICBibG9xdWVvLndhaXRMb2NrKDMwMDAwKTsKICB0cnkgewogICAgY29uc3QgY29udGV4dG8gPSBvYnRlbmVyQ29udGV4dG9Db25maWd1cmFjaW9uXygpOwogICAgY29uc3QgY29pbmNpZGVuY2lhcyA9IGNvbnRleHRvLmZpbGFzLmZpbHRlcihmdW5jdGlvbihpdGVtKSB7CiAgICAgIHJldHVybiBpdGVtLmNsYXZlID09PSBjbGF2ZVNlZ3VyYTsKICAgIH0pOwogICAgaWYgKGNvaW5jaWRlbmNpYXMubGVuZ3RoICE9PSAxKSB7CiAgICAgIHRocm93IG5ldyBFcnJvcigKICAgICAgICAiTGEgY2xhdmUgIiArIGNsYXZlU2VndXJhICsgIiBkZWJlIGV4aXN0aXIgZXhhY3RhbWVudGUgdW5hIHZleiBlbiBsYSBwZXN0YcOxYSBDb25maWd1cmFjaW9uLiIKICAgICAgKTsKICAgIH0KCiAgICBjb25zdCBmaWxhID0gY29pbmNpZGVuY2lhc1swXS5maWxhOwogICAgY29uc3QgZXN0YWRvVGV4dG8gPSBlc3RhZG8gPyAiQUNUSVZBRE8iIDogIkRFU0FDVElWQURPIjsKICAgIGNvbnRleHRvLmhvamEuZ2V0UmFuZ2UoZmlsYSwgY29udGV4dG8uY29sdW1uYXMuZXN0YWRvICsgMSkuc2V0VmFsdWUoZXN0YWRvVGV4dG8pOwogICAgU3ByZWFkc2hlZXRBcHAuZmx1c2goKTsKCiAgICBjb25zdCBndWFyZGFkbyA9IG5vcm1hbGl6YXJFc3RhZG9Db25maWd1cmFjaW9uXygKICAgICAgY29udGV4dG8uaG9qYS5nZXRSYW5nZShmaWxhLCBjb250ZXh0by5jb2x1bW5hcy5lc3RhZG8gKyAxKS5nZXREaXNwbGF5VmFsdWUoKQogICAgKTsKICAgIGlmIChndWFyZGFkbyAhPT0gZXN0YWRvVGV4dG8pIHsKICAgICAgdGhyb3cgbmV3IEVycm9yKCJHb29nbGUgU2hlZXRzIG5vIGNvbmZpcm3DsyBlbCBlc3RhZG8gZGUgY29uZmlndXJhY2nDs24gZXNwZXJhZG8uIik7CiAgICB9CgogICAgY29uc3QgdmFsb3JlcyA9IGxlZXJWYWxvcmVzQ29uZmlndXJhY2lvbl8oY29udGV4dG8pOwogICAgcmV0dXJuIHsKICAgICAgb2s6IHRydWUsCiAgICAgIGNsYXZlOiBjbGF2ZVNlZ3VyYSwKICAgICAgZXN0YWRvOiB2YWxvcmVzW2NsYXZlU2VndXJhXSwKICAgICAgYWN0aXZhZG86IHZhbG9yZXNbY2xhdmVTZWd1cmFdID09PSAiQUNUSVZBRE8iLAogICAgICB2YWxvcmVzOiB2YWxvcmVzLAogICAgICBhY3R1YWxpemFkb0VuOiBuZXcgRGF0ZSgpLnRvSVNPU3RyaW5nKCkKICAgIH07CiAgfSBmaW5hbGx5IHsKICAgIGJsb3F1ZW8ucmVsZWFzZUxvY2soKTsKICB9Cn0KCmZ1bmN0aW9uIG9idGVuZXJDb250ZXh0b0NvbmZpZ3VyYWNpb25fKCkgewogIGNvbnN0IGxpYnJvID0gU3ByZWFkc2hlZXRBcHAub3BlbkJ5SWQoSU5WRU5UQVJJT19TUFJFQURTSEVFVF9JRCk7CiAgY29uc3QgaG9qYSA9IGxpYnJvLmdldFNoZWV0QnlOYW1lKENPTkZJR19TSEVFVF9OQU1FKTsKICBpZiAoIWhvamEpIHsKICAgIHRocm93IG5ldyBFcnJvcigiTm8gZXhpc3RlIGxhIHBlc3Rhw7FhIENvbmZpZ3VyYWNpb24gZW4gZWwgaW52ZW50YXJpbyBvZmljaWFsLiIpOwogIH0KCiAgY29uc3QgZmlsYXNBTGVlciA9IE1hdGgubWluKE1hdGgubWF4KGhvamEuZ2V0TGFzdFJvdygpLCAxKSwgMTAwKTsKICBjb25zdCBjb2x1bW5hc0FMZWVyID0gTWF0aC5taW4oTWF0aC5tYXgoaG9qYS5nZXRMYXN0Q29sdW1uKCksIDEpLCAzMCk7CiAgY29uc3QgdmFsb3JlcyA9IGhvamEuZ2V0UmFuZ2UoMSwgMSwgZmlsYXNBTGVlciwgY29sdW1uYXNBTGVlcikuZ2V0RGlzcGxheVZhbHVlcygpOwogIGNvbnN0IGNhbmRpZGF0b3MgPSBbXTsKCiAgdmFsb3Jlcy5mb3JFYWNoKGZ1bmN0aW9uKGZpbGEsIGluZGljZUZpbGEpIHsKICAgIGNvbnN0IG5vcm1hbGl6YWRvcyA9IGZpbGEubWFwKG5vcm1hbGl6YXJFbmNhYmV6YWRvXyk7CiAgICBjb25zdCBlc3RhZG9zID0gW107CiAgICBjb25zdCBjbGF2ZXMgPSBbXTsKICAgIG5vcm1hbGl6YWRvcy5mb3JFYWNoKGZ1bmN0aW9uKHZhbG9yLCBpbmRpY2VDb2x1bW5hKSB7CiAgICAgIGlmICh2YWxvciA9PT0gbm9ybWFsaXphckVuY2FiZXphZG9fKCJFc3RhZG8iKSkgZXN0YWRvcy5wdXNoKGluZGljZUNvbHVtbmEpOwogICAgICBpZiAodmFsb3IgPT09IG5vcm1hbGl6YXJFbmNhYmV6YWRvXygiQ2xhdmUgdMOpY25pY2EiKSkgY2xhdmVzLnB1c2goaW5kaWNlQ29sdW1uYSk7CiAgICB9KTsKICAgIGlmIChlc3RhZG9zLmxlbmd0aCA9PT0gMSAmJiBjbGF2ZXMubGVuZ3RoID09PSAxKSB7CiAgICAgIGNhbmRpZGF0b3MucHVzaCh7IGZpbGE6IGluZGljZUZpbGEsIGVzdGFkbzogZXN0YWRvc1swXSwgY2xhdmU6IGNsYXZlc1swXSB9KTsKICAgIH0KICB9KTsKCiAgaWYgKGNhbmRpZGF0b3MubGVuZ3RoICE9PSAxKSB7CiAgICB0aHJvdyBuZXcgRXJyb3IoCiAgICAgICJMb3MgZW5jYWJlemFkb3MgRXN0YWRvIHkgQ2xhdmUgdMOpY25pY2EgZGViZW4gaWRlbnRpZmljYXIgdW5hIMO6bmljYSB0YWJsYSBlbiBDb25maWd1cmFjaW9uLiIKICAgICk7CiAgfQoKICBjb25zdCBlbmNhYmV6YWRvID0gY2FuZGlkYXRvc1swXTsKICBjb25zdCBmaWxhcyA9IFtdOwogIGZvciAobGV0IGluZGljZUZpbGEgPSBlbmNhYmV6YWRvLmZpbGEgKyAxOyBpbmRpY2VGaWxhIDwgdmFsb3Jlcy5sZW5ndGg7IGluZGljZUZpbGErKykgewogICAgY29uc3QgY2xhdmUgPSBTdHJpbmcodmFsb3Jlc1tpbmRpY2VGaWxhXVtlbmNhYmV6YWRvLmNsYXZlXSB8fCAiIikudHJpbSgpLnRvVXBwZXJDYXNlKCk7CiAgICBpZiAoIWNsYXZlKSBjb250aW51ZTsKICAgIGZpbGFzLnB1c2goeyBmaWxhOiBpbmRpY2VGaWxhICsgMSwgY2xhdmU6IGNsYXZlIH0pOwogIH0KCiAgcmV0dXJuIHsKICAgIGhvamE6IGhvamEsCiAgICBjb2x1bW5hczogeyBlc3RhZG86IGVuY2FiZXphZG8uZXN0YWRvLCBjbGF2ZTogZW5jYWJlemFkby5jbGF2ZSB9LAogICAgZmlsYXM6IGZpbGFzCiAgfTsKfQoKZnVuY3Rpb24gbGVlclZhbG9yZXNDb25maWd1cmFjaW9uXyhjb250ZXh0bykgewogIGNvbnN0IHZhbG9yZXMgPSB7fTsKICBDT05GSUdfS0VZUy5mb3JFYWNoKGZ1bmN0aW9uKGNsYXZlKSB7CiAgICBjb25zdCBjb2luY2lkZW5jaWFzID0gY29udGV4dG8uZmlsYXMuZmlsdGVyKGZ1bmN0aW9uKGl0ZW0pIHsgcmV0dXJuIGl0ZW0uY2xhdmUgPT09IGNsYXZlOyB9KTsKICAgIGlmIChjb2luY2lkZW5jaWFzLmxlbmd0aCAhPT0gMSkgewogICAgICB0aHJvdyBuZXcgRXJyb3IoCiAgICAgICAgIkxhIGNsYXZlICIgKyBjbGF2ZSArICIgZGViZSBleGlzdGlyIGV4YWN0YW1lbnRlIHVuYSB2ZXogZW4gbGEgcGVzdGHDsWEgQ29uZmlndXJhY2lvbi4iCiAgICAgICk7CiAgICB9CiAgICBjb25zdCBlc3RhZG8gPSBub3JtYWxpemFyRXN0YWRvQ29uZmlndXJhY2lvbl8oCiAgICAgIGNvbnRleHRvLmhvamEuZ2V0UmFuZ2UoY29pbmNpZGVuY2lhc1swXS5maWxhLCBjb250ZXh0by5jb2x1bW5hcy5lc3RhZG8gKyAxKS5nZXREaXNwbGF5VmFsdWUoKQogICAgKTsKICAgIGlmICghZXN0YWRvKSB7CiAgICAgIHRocm93IG5ldyBFcnJvcigiTGEgY2xhdmUgIiArIGNsYXZlICsgIiBubyB0aWVuZSB1biBlc3RhZG8gdsOhbGlkbyBlbiBDb25maWd1cmFjaW9uLiIpOwogICAgfQogICAgdmFsb3Jlc1tjbGF2ZV0gPSBlc3RhZG87CiAgfSk7CiAgcmV0dXJuIHZhbG9yZXM7Cn0KCmZ1bmN0aW9uIG5vcm1hbGl6YXJFc3RhZG9Db25maWd1cmFjaW9uXyh2YWxvcikgewogIGNvbnN0IG5vcm1hbGl6YWRvID0gbm9ybWFsaXphckVuY2FiZXphZG9fKHZhbG9yKTsKICBpZiAoWyJhY3RpdmFkbyIsICJhY3Rpdm8iLCAidHJ1ZSIsICJ2ZXJkYWRlcm8iLCAic2kiLCAiMSIsICJvbiJdLmluZGV4T2Yobm9ybWFsaXphZG8pICE9PSAtMSkgewogICAgcmV0dXJuICJBQ1RJVkFETyI7CiAgfQogIGlmIChbImRlc2FjdGl2YWRvIiwgImluYWN0aXZvIiwgImZhbHNlIiwgImZhbHNvIiwgIm5vIiwgIjAiLCAib2ZmIl0uaW5kZXhPZihub3JtYWxpemFkbykgIT09IC0xKSB7CiAgICByZXR1cm4gIkRFU0FDVElWQURPIjsKICB9CiAgcmV0dXJuICIiOwp9CgpmdW5jdGlvbiBub3JtYWxpemFyQm9vbGVhbm9Db25maWd1cmFjaW9uXyh2YWxvcikgewogIGlmICh2YWxvciA9PT0gdHJ1ZSkgcmV0dXJuIHRydWU7CiAgaWYgKHZhbG9yID09PSBmYWxzZSkgcmV0dXJuIGZhbHNlOwogIGNvbnN0IGVzdGFkbyA9IG5vcm1hbGl6YXJFc3RhZG9Db25maWd1cmFjaW9uXyh2YWxvcik7CiAgaWYgKGVzdGFkbyA9PT0gIkFDVElWQURPIikgcmV0dXJuIHRydWU7CiAgaWYgKGVzdGFkbyA9PT0gIkRFU0FDVElWQURPIikgcmV0dXJuIGZhbHNlOwogIHJldHVybiBudWxsOwp9'
-          functions = base64.b64decode(encoded).decode('utf-8')
-          text, n = re.subn(
-              r'function obtenerConfiguracionWeb\(\) \{[\s\S]*?function normalizarBooleanoConfiguracion_\(valor\) \{[\s\S]*?\n\}',
-              lambda _: functions,
-              text,
-              count=1,
-          )
-          if n != 1:
-              raise SystemExit(f'No se reemplazaron funciones de configuración: {n}')
-          path.write_text(text, encoding='utf-8', newline='\n')
-
-          admin = Path('natura/precios-admin.js')
-          js = admin.read_text(encoding='utf-8')
-          old = 'for(const r of rows||[]){if(r[0]&&r[1]&&["x","si","true","1","oculto"].includes(norm(r[2])))rules.add(key(r[0],r[1]))}'
-          new = 'for(const r of rows||[]){if(!r[0]||!r[1])continue;const k=key(r[0],r[1]);["x","si","true","1","oculto"].includes(norm(r[2]))?rules.add(k):rules.delete(k)}'
-          if js.count(old) != 1:
-              raise SystemExit(f'No se encontró exactamente una carga de reglas legacy: {js.count(old)}')
-          admin.write_text(js.replace(old, new, 1), encoding='utf-8', newline='\n')
+          verify = [
+              '',
+              '      - name: Verificar configuración pública del catálogo',
+              '        run: |',
+              '          response_file="$RUNNER_TEMP/catalog-config.csv"',
+              '          url="https://docs.google.com/spreadsheets/d/1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs/gviz/tq?sheet=Configuracion&range=A:E&tq=select%20A%2CB%2CC%2CD%2CE&tqx=out:csv"',
+              '          curl --fail --silent --show-error --location --retry 4 --retry-delay 2 --max-time 45 "$url" --output "$response_file"',
+              '          python3 - "$response_file" <<\'PY\'',
+              '          import csv',
+              '          import sys',
+              '',
+              '          expected = {',
+              '              "REGISTRAR_VISITAS_PROPIAS",',
+              '              "MOSTRAR_CANTIDAD_STOCK",',
+              '              "MOSTRAR_PRECIOS_PRODUCTO",',
+              '          }',
+              '          found = {}',
+              '          with open(sys.argv[1], encoding="utf-8-sig", newline="") as fh:',
+              '              for row in csv.reader(fh):',
+              '                  if len(row) < 5:',
+              '                      continue',
+              '                  key = str(row[4] or "").strip().upper()',
+              '                  if key not in expected:',
+              '                      continue',
+              '                  if key in found:',
+              '                      raise SystemExit(f"Clave duplicada en Configuracion: {key}")',
+              '                  state = str(row[1] or "").strip().upper()',
+              '                  if state not in {"ACTIVADO", "DESACTIVADO"}:',
+              '                      raise SystemExit(f"Estado inválido para {key}: {state}")',
+              '                  found[key] = state',
+              '',
+              '          missing = expected - set(found)',
+              '          if missing:',
+              '              raise SystemExit(f"Faltan claves de configuración: {sorted(missing)}")',
+              '          print("Configuración pública verificada:")',
+              '          for key in sorted(found):',
+              '              print(f"- {key}: {found[key]}")',
+              '          PY',
+          ]
+          workflow.write_text(wf.rstrip() + '\n' + '\n'.join(verify) + '\n', encoding='utf-8', newline='\n')
           PY
 
           git diff --check
-          git diff -- natura/catalogo-app.js 'natura/apps-script/administrar precios natura/Código.js' natura/precios-admin.js
+          git diff -- natura/catalogo.html .github/workflows/publicar-apps-script-natura.yml
 
       - name: Confirmar cambios en main
         shell: bash
         run: |
           git config user.name 'stock'
           git config user.email '131928432+irenismb@users.noreply.github.com'
-          git add natura/catalogo-app.js 'natura/apps-script/administrar precios natura/Código.js' natura/precios-admin.js
+          git add natura/catalogo.html .github/workflows/publicar-apps-script-natura.yml
           if git diff --cached --quiet; then
             echo '::error::No hubo cambios que confirmar'
             exit 1
           fi
-          git commit -m 'Administrar configuración web con backend seguro en Google Sheets'
+          git commit -m 'Finalizar configuración web administrable y verificación pública'
           git push origin HEAD:main

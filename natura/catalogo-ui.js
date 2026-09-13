@@ -111,6 +111,7 @@
     }
     #grid.quick-image-search > .album-card{display:none!important}
     #grid.quick-image-search > .card:not(.album-card){
+      position:relative!important;
       min-width:0!important;
       min-height:0!important;
       margin:0!important;
@@ -152,6 +153,28 @@
       cursor:pointer!important;
       background:#fff!important;
     }
+    #grid.quick-image-search > .card.quick-image-selected::after{
+      content:"✓";
+      position:absolute;
+      top:10px;
+      right:10px;
+      z-index:5;
+      width:36px;
+      height:36px;
+      border-radius:999px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:#168a55;
+      color:#fff;
+      border:3px solid #fff;
+      box-shadow:0 4px 14px rgba(0,0,0,.24);
+      font:900 24px/1 Arial,sans-serif;
+      pointer-events:none;
+    }
+    #grid.quick-image-search > .card.quick-image-selected{
+      box-shadow:0 0 0 3px rgba(22,138,85,.42),0 10px 24px rgba(0,0,0,.12)!important;
+    }
     body.quick-image-search-active #catalogEntryIntro,
     body.quick-image-search-active #topline,
     body.quick-image-search-active #albumNavHost{display:none!important}
@@ -161,12 +184,43 @@
         grid-template-columns:repeat(2,minmax(0,1fr))!important;
         gap:10px!important;
       }
+      #grid.quick-image-search > .card.quick-image-selected::after{
+        width:32px;
+        height:32px;
+        top:8px;
+        right:8px;
+        font-size:21px;
+      }
     }
   `;
   document.head.appendChild(style);
 
   function isActive(){
     return enabled && String(searchInput.value || "").trim().length > 0;
+  }
+
+  function selectedInCart(productId){
+    const id = String(productId || "");
+    if(!id) return false;
+    try{
+      if(typeof cart !== "undefined" && cart && typeof cart === "object"){
+        return Number(cart[id]?.qty || 0) > 0;
+      }
+    }catch(_){ }
+    try{
+      const stored = JSON.parse(localStorage.getItem("cart") || "{}");
+      return Number(stored?.[id]?.qty || 0) > 0;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function syncQuickSelectionMarks(){
+    for(const card of grid.querySelectorAll(".card:not(.album-card)")){
+      const selected = selectedInCart(card.dataset.id);
+      card.classList.toggle("quick-image-selected", selected);
+      card.setAttribute("aria-selected", selected ? "true" : "false");
+    }
   }
 
   function renderQuickResults(){
@@ -212,6 +266,7 @@
         if(product) refreshCardUI(card, product);
       }
     }
+    syncQuickSelectionMarks();
   }
 
   let quickRenderQueued = false;
@@ -271,8 +326,12 @@
     event.preventDefault();
     event.stopPropagation();
     addButton.click();
-    card.classList.add("quick-image-added");
-    window.setTimeout(() => card.classList.remove("quick-image-added"), 160);
+    card.classList.add("quick-image-selected", "quick-image-added");
+    card.setAttribute("aria-selected", "true");
+    window.setTimeout(() => {
+      card.classList.remove("quick-image-added");
+      syncQuickSelectionMarks();
+    }, 160);
   }, true);
 
   function syncAdminToggle(){
@@ -298,7 +357,7 @@
     row.innerHTML = `
       <div>
         <span class="catalog-admin-config-label">Vista rápida de imágenes al buscar</span>
-        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra únicamente imágenes grandes y completas de los productos. Al pulsar una imagen se agrega una unidad al carrito. Esta preferencia queda guardada en este navegador.</span>
+        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra únicamente imágenes grandes y completas de los productos. Al pulsar una imagen se agrega una unidad al carrito y queda marcada con un ✓. Esta preferencia queda guardada en este navegador.</span>
       </div>
       <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-quick-images-toggle>DESACTIVADO</button>
     `;

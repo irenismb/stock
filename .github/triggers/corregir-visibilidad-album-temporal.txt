@@ -1,1 +1,1 @@
-2026-09-12: separar Visible/Oculto del contador en tarjetas de álbum.
+2026-09-12: separar Visible/Oculto del contador en tarjetas de álbum. intento 2

@@ -1,4 +1,4 @@
-name: Ajustar configuración web segura
+name: Ajustar caché de configuración web
 
 on:
   push:
@@ -18,86 +18,26 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Finalizar integración segura
+      - name: Actualizar caché del catálogo
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import re
-
-          html = Path('natura/catalogo.html')
-          text = html.read_text(encoding='utf-8')
+          path = Path('natura/catalogo.html')
+          text = path.read_text(encoding='utf-8')
           old = 'catalogo-app.js?actualizacion=integral-2026-09-13-6'
           new = 'catalogo-app.js?actualizacion=integral-2026-09-13-7'
           if text.count(old) != 1:
-              raise SystemExit(f'No se encontró exactamente una referencia de caché esperada: {text.count(old)}')
-          html.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
-
-          workflow = Path('.github/workflows/publicar-apps-script-natura.yml')
-          wf = workflow.read_text(encoding='utf-8')
-          wf, n = re.subn(
-              r'\n      - name: Verificar configuración pública del catálogo[\s\S]*\Z',
-              '',
-              wf,
-              count=1,
-          )
-          if n != 1:
-              raise SystemExit(f'No se encontró el bloque de verificación anterior: {n}')
-
-          verify = [
-              '',
-              '      - name: Verificar configuración pública del catálogo',
-              '        run: |',
-              '          response_file="$RUNNER_TEMP/catalog-config.csv"',
-              '          url="https://docs.google.com/spreadsheets/d/1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs/gviz/tq?sheet=Configuracion&range=A:E&tq=select%20A%2CB%2CC%2CD%2CE&tqx=out:csv"',
-              '          curl --fail --silent --show-error --location --retry 4 --retry-delay 2 --max-time 45 "$url" --output "$response_file"',
-              '          python3 - "$response_file" <<\'PY\'',
-              '          import csv',
-              '          import sys',
-              '',
-              '          expected = {',
-              '              "REGISTRAR_VISITAS_PROPIAS",',
-              '              "MOSTRAR_CANTIDAD_STOCK",',
-              '              "MOSTRAR_PRECIOS_PRODUCTO",',
-              '          }',
-              '          found = {}',
-              '          with open(sys.argv[1], encoding="utf-8-sig", newline="") as fh:',
-              '              for row in csv.reader(fh):',
-              '                  if len(row) < 5:',
-              '                      continue',
-              '                  key = str(row[4] or "").strip().upper()',
-              '                  if key not in expected:',
-              '                      continue',
-              '                  if key in found:',
-              '                      raise SystemExit(f"Clave duplicada en Configuracion: {key}")',
-              '                  state = str(row[1] or "").strip().upper()',
-              '                  if state not in {"ACTIVADO", "DESACTIVADO"}:',
-              '                      raise SystemExit(f"Estado inválido para {key}: {state}")',
-              '                  found[key] = state',
-              '',
-              '          missing = expected - set(found)',
-              '          if missing:',
-              '              raise SystemExit(f"Faltan claves de configuración: {sorted(missing)}")',
-              '          print("Configuración pública verificada:")',
-              '          for key in sorted(found):',
-              '              print(f"- {key}: {found[key]}")',
-              '          PY',
-          ]
-          workflow.write_text(wf.rstrip() + '\n' + '\n'.join(verify) + '\n', encoding='utf-8', newline='\n')
+              raise SystemExit(f'No se encontró exactamente una referencia esperada: {text.count(old)}')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
           PY
-
           git diff --check
-          git diff -- natura/catalogo.html .github/workflows/publicar-apps-script-natura.yml
 
-      - name: Confirmar cambios en main
+      - name: Confirmar cambio en main
         shell: bash
         run: |
           git config user.name 'stock'
           git config user.email '131928432+irenismb@users.noreply.github.com'
-          git add natura/catalogo.html .github/workflows/publicar-apps-script-natura.yml
-          if git diff --cached --quiet; then
-            echo '::error::No hubo cambios que confirmar'
-            exit 1
-          fi
-          git commit -m 'Finalizar configuración web administrable y verificación pública'
+          git add natura/catalogo.html
+          git commit -m 'Actualizar caché tras migrar controles al administrador web'
           git push origin HEAD:main

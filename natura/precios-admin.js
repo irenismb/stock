@@ -4,11 +4,9 @@
   const grid = document.getElementById("grid");
   if (!boton || !grid) return;
 
-  const parametros = new URL(window.location.href).searchParams;
-  const modoAdministrador = parametros.get("administrar") === "precios";
   const endpoint = String(window.PRECIOS_ADMIN_CONFIG?.endpoint || "").trim();
   const endpointValido = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint);
-  if (!modoAdministrador || !endpointValido) return;
+  if (!endpointValido) return;
 
   const estilos = document.createElement("style");
   estilos.textContent = `
@@ -35,7 +33,6 @@
   let secuencia = 0;
   const solicitudes = new Map();
 
-  boton.hidden = false;
   boton.setAttribute("aria-pressed", "false");
   boton.addEventListener("click", alternarEdicion);
 
@@ -53,6 +50,7 @@
   function sincronizarInterfaz(){
     const disponible = hayTarjetasDeProductos();
     if(!disponible && editando) detenerEdicion();
+    boton.hidden = !disponible;
     if(!conectando) boton.disabled = !disponible;
     boton.title = disponible
       ? "Editar los precios de los productos visibles"

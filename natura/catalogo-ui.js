@@ -88,11 +88,12 @@
   });
 })();
 
-// Vista rápida por imágenes durante la búsqueda.
+// Muestra productos completos directamente durante la búsqueda, sin exigir llegar al último nivel de categoría.
 (() => {
   const STORAGE_KEY = "irenismb_quick_image_search_v1";
   const searchInput = document.getElementById("q");
   const grid = document.getElementById("grid");
+  const count = document.getElementById("count");
   if(!searchInput || !grid) return;
 
   let enabled = false;
@@ -100,140 +101,21 @@
     enabled = localStorage.getItem(STORAGE_KEY) === "1";
   }catch(_){ }
 
-  const style = document.createElement("style");
-  style.id = "quick-image-search-style";
-  style.textContent = `
-    #grid.quick-image-search{
-      display:grid!important;
-      grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;
-      gap:14px!important;
-      align-items:start!important;
-    }
-    #grid.quick-image-search > .album-card{display:none!important}
-    #grid.quick-image-search > .card:not(.album-card){
-      position:relative!important;
-      min-width:0!important;
-      min-height:0!important;
-      margin:0!important;
-      padding:0!important;
-      overflow:hidden!important;
-      border-radius:16px!important;
-      cursor:pointer!important;
-      content-visibility:visible!important;
-      contain:none!important;
-      background:#fff!important;
-    }
-    #grid.quick-image-search > .card:not(.album-card) > :not(.img){display:none!important}
-    #grid.quick-image-search > .card:not(.album-card) > .img{
-      width:100%!important;
-      aspect-ratio:1 / 1!important;
-      min-height:0!important;
-      height:auto!important;
-      margin:0!important;
-      padding:0!important;
-      border:0!important;
-      border-radius:0!important;
-      background:#fff!important;
-      display:flex!important;
-      align-items:center!important;
-      justify-content:center!important;
-      overflow:hidden!important;
-    }
-    #grid.quick-image-search > .card:not(.album-card) > .img::before{display:none!important}
-    #grid.quick-image-search > .card:not(.album-card) > .img img{
-      position:static!important;
-      inset:auto!important;
-      transform:none!important;
-      width:100%!important;
-      height:100%!important;
-      max-width:100%!important;
-      max-height:100%!important;
-      object-fit:contain!important;
-      display:block!important;
-      cursor:pointer!important;
-      background:#fff!important;
-    }
-    #grid.quick-image-search > .card.quick-image-selected::after{
-      content:"✓";
-      position:absolute;
-      top:10px;
-      right:10px;
-      z-index:5;
-      width:36px;
-      height:36px;
-      border-radius:999px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:#168a55;
-      color:#fff;
-      border:3px solid #fff;
-      box-shadow:0 4px 14px rgba(0,0,0,.24);
-      font:900 24px/1 Arial,sans-serif;
-      pointer-events:none;
-    }
-    #grid.quick-image-search > .card.quick-image-selected{
-      box-shadow:0 0 0 3px rgba(22,138,85,.42),0 10px 24px rgba(0,0,0,.12)!important;
-    }
-    body.quick-image-search-active #catalogEntryIntro,
-    body.quick-image-search-active #topline,
-    body.quick-image-search-active #albumNavHost{display:none!important}
-    #grid.quick-image-search > .card.quick-image-added{transform:scale(.965);transition:transform .12s ease}
-    @media(max-width:760px){
-      #grid.quick-image-search{
-        grid-template-columns:repeat(2,minmax(0,1fr))!important;
-        gap:10px!important;
-      }
-      #grid.quick-image-search > .card.quick-image-selected::after{
-        width:32px;
-        height:32px;
-        top:8px;
-        right:8px;
-        font-size:21px;
-      }
-    }
-  `;
-  document.head.appendChild(style);
-
   function isActive(){
     return enabled && String(searchInput.value || "").trim().length > 0;
   }
 
-  function selectedInCart(productId){
-    const id = String(productId || "");
-    if(!id) return false;
-    try{
-      if(typeof cart !== "undefined" && cart && typeof cart === "object"){
-        return Number(cart[id]?.qty || 0) > 0;
-      }
-    }catch(_){ }
-    try{
-      const stored = JSON.parse(localStorage.getItem("cart") || "{}");
-      return Number(stored?.[id]?.qty || 0) > 0;
-    }catch(_){
-      return false;
-    }
-  }
-
-  function syncQuickSelectionMarks(){
-    for(const card of grid.querySelectorAll(".card:not(.album-card)")){
-      const selected = selectedInCart(card.dataset.id);
-      card.classList.toggle("quick-image-selected", selected);
-      card.setAttribute("aria-selected", selected ? "true" : "false");
-    }
-  }
-
-  function renderQuickResults(){
+  function renderDirectProducts(){
     const active = isActive();
-    grid.classList.toggle("quick-image-search", active);
-    document.body.classList.toggle("quick-image-search-active", active);
+    document.body.classList.toggle("direct-product-search-active", active);
+    grid.classList.remove("quick-image-search");
     if(!active) return;
 
     let products = [];
     try{
       products = typeof buildFilteredList === "function" ? buildFilteredList() : [];
     }catch(error){
-      console.error("No se pudieron preparar los productos de la vista rápida.", error);
+      console.error("No se pudieron preparar los productos de la búsqueda directa.", error);
       products = [];
     }
 
@@ -253,7 +135,7 @@
         try{
           fragment.appendChild(makeCard(product));
         }catch(error){
-          console.warn("No se pudo crear una imagen de producto en la vista rápida.", error);
+          console.warn("No se pudo crear una tarjeta de producto en la búsqueda directa.", error);
         }
       }
     }
@@ -266,73 +148,54 @@
         if(product) refreshCardUI(card, product);
       }
     }
-    syncQuickSelectionMarks();
+
+    if(count){
+      count.hidden = false;
+      count.textContent = `${products.length} ${products.length === 1 ? "producto" : "productos"}`;
+    }
   }
 
-  let quickRenderQueued = false;
+  let directRenderQueued = false;
   function syncView(){
-    if(quickRenderQueued) return;
-    quickRenderQueued = true;
+    if(directRenderQueued) return;
+    directRenderQueued = true;
     requestAnimationFrame(() => {
-      quickRenderQueued = false;
-      renderQuickResults();
+      directRenderQueued = false;
+      renderDirectProducts();
     });
   }
 
-  // El catálogo principal vuelve a pintar la cuadrícula cuando cambia la búsqueda,
-  // el carrito, los filtros o se actualiza el inventario. La vista rápida debe
-  // reaplicarse después de cualquiera de esos renderizados para no quedar sustituida
-  // por los álbumes o las tarjetas completas aunque el interruptor siga ACTIVADO.
+  // El render principal puede volver a mostrar álbumes; al buscar con esta opción
+  // activada se sustituyen por tarjetas normales completas de los productos encontrados.
   try{
-    if(typeof render === "function" && !render.__quickImageSearchWrapped){
+    if(typeof render === "function" && !render.__directProductSearchWrapped){
       const baseRender = render;
       const wrappedRender = function(...args){
         const result = baseRender.apply(this, args);
         if(isActive()) syncView();
         return result;
       };
-      wrappedRender.__quickImageSearchWrapped = true;
+      wrappedRender.__directProductSearchWrapped = true;
       render = wrappedRender;
     }
   }catch(error){
-    console.warn("No se pudo enlazar la vista rápida con el render principal.", error);
+    console.warn("No se pudo enlazar la búsqueda directa con el render principal.", error);
   }
 
   function setEnabled(next){
     enabled = !!next;
     try{ localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0"); }catch(_){ }
-    if(!enabled && typeof render === "function"){
-      render();
-    }else{
-      syncView();
-    }
+    if(typeof render === "function") render();
+    if(enabled) syncView();
     syncAdminToggle();
   }
 
+  // Se conservan los nombres públicos anteriores para no romper integraciones existentes.
   window.setCatalogQuickImageSearchEnabled = setEnabled;
   window.isCatalogQuickImageSearchEnabled = () => enabled;
 
   searchInput.addEventListener("input", syncView);
   searchInput.addEventListener("search", syncView);
-
-  grid.addEventListener("click", event => {
-    if(!isActive()) return;
-    const imageBox = event.target.closest(".card:not(.album-card) > .img");
-    if(!imageBox || !grid.contains(imageBox)) return;
-    const card = imageBox.closest(".card:not(.album-card)");
-    const addButton = card?.querySelector('button[data-act="inc"]');
-    if(!card || !addButton || addButton.disabled) return;
-
-    event.preventDefault();
-    event.stopPropagation();
-    addButton.click();
-    card.classList.add("quick-image-selected", "quick-image-added");
-    card.setAttribute("aria-selected", "true");
-    window.setTimeout(() => {
-      card.classList.remove("quick-image-added");
-      syncQuickSelectionMarks();
-    }, 160);
-  }, true);
 
   function syncAdminToggle(){
     const button = document.querySelector("[data-admin-quick-images-toggle]");
@@ -356,8 +219,8 @@
     row.dataset.adminQuickImagesRow = "";
     row.innerHTML = `
       <div>
-        <span class="catalog-admin-config-label">Vista rápida de imágenes al buscar</span>
-        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra únicamente imágenes grandes y completas de los productos. Al pulsar una imagen se agrega una unidad al carrito y queda marcada con un ✓. Esta preferencia queda guardada en este navegador.</span>
+        <span class="catalog-admin-config-label">Mostrar productos directamente al buscar</span>
+        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra las tarjetas completas de los productos encontrados, con imagen, descripción, precio y botones para agregar o quitar, sin tener que llegar al nivel más profundo de la categoría. Esta preferencia queda guardada en este navegador.</span>
       </div>
       <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-quick-images-toggle>DESACTIVADO</button>
     `;

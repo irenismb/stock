@@ -1,4 +1,4 @@
-name: Conservar scroll en modo administrador
+name: Limpiar scroll en modo administrador
 
 on:
   push:
@@ -11,7 +11,7 @@ permissions:
   contents: write
 
 jobs:
-  corregir:
+  limpiar:
     runs-on: ubuntu-latest
     steps:
       - name: Descargar repositorio
@@ -20,7 +20,7 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Evitar desplazamiento automatico en administracion
+      - name: Dejar una sola condicion de administracion
         shell: bash
         run: |
           python3 <<'PY'
@@ -28,12 +28,12 @@ jobs:
           import re
           js_path = Path('natura/catalogo-app.js')
           js = js_path.read_text(encoding='utf-8')
-          needle = 'function uxScrollToCatalogStart(){\n'
-          replacement = 'function uxScrollToCatalogStart(){\n  // En administración se conserva la posición al navegar entre niveles.\n  if(window.CATALOG_ADMIN_MODE_ACTIVE) return;\n'
-          count = js.count(needle)
+          block = '  // En administración se conserva la posición al navegar entre niveles.\n  if(window.CATALOG_ADMIN_MODE_ACTIVE) return;\n'
+          double = block + block
+          count = js.count(double)
           if count != 1:
-              raise SystemExit(f'Se esperaba una función uxScrollToCatalogStart; encontradas: {count}')
-          js_path.write_text(js.replace(needle, replacement, 1), encoding='utf-8', newline='\n')
+              raise SystemExit(f'Se esperaba un bloque duplicado exacto; encontrados: {count}')
+          js_path.write_text(js.replace(double, block, 1), encoding='utf-8', newline='\n')
           html_path = Path('natura/catalogo.html')
           html = html_path.read_text(encoding='utf-8')
           pattern = r'catalogo-app\.js\?actualizacion=integral-2026-09-13-(\d+)'
@@ -48,15 +48,11 @@ jobs:
           git diff --check
           git diff -- natura/catalogo-app.js natura/catalogo.html
 
-      - name: Confirmar cambios en main
+      - name: Confirmar limpieza en main
         shell: bash
         run: |
           git config user.name 'stock'
           git config user.email '131928432+irenismb@users.noreply.github.com'
           git add natura/catalogo-app.js natura/catalogo.html
-          if git diff --cached --quiet; then
-            echo '::error::No hubo cambios que confirmar'
-            exit 1
-          fi
-          git commit -m 'Conservar posicion al navegar en modo administrador'
+          git commit -m 'Limpiar condicion de scroll del modo administrador'
           git push origin HEAD:main

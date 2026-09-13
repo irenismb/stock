@@ -1,1 +1,1 @@
-2026-09-13: ejecutar ajuste seguro corregido para administrar Configuracion exclusivamente desde la web.
+2026-09-13: finalizar caché y verificación pública de los controles administrados desde la web.

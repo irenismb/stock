@@ -1,1 +1,0 @@
-2026-09-12: cargar precios-admin-config.js antes de catalogo-app.js y actualizar el botón Administrar.

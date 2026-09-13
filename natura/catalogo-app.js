@@ -6376,7 +6376,7 @@ function refreshCardUI(card,p){
   const qtyPill=card.querySelector('[data-role="qty"]');
   const decBtn=card.querySelector('button[data-act="dec"]');
   const incBtn=card.querySelector('button[data-act="inc"]');
-  if(qtyPill){qtyPill.textContent=q>0?`${q} en carrito`:"Aún no agregado";qtyPill.classList.toggle("has-items",q>0);}
+  if(qtyPill){qtyPill.textContent=q>0?`${q} en carrito`:"No agregado al carrito";qtyPill.classList.toggle("has-items",q>0);}
   if(decBtn) decBtn.disabled=q<=0;
   const hasKnownStock=Number.isFinite(p.stock)&&p.stock>=0;
   const maxStock=hasKnownStock?p.stock:null;

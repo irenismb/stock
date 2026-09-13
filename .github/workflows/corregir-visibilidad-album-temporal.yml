@@ -30,12 +30,14 @@ jobs:
           js = js_path.read_text(encoding='utf-8')
 
           old_css = '.card,.album-card{position:relative}.catalog-admin-vis{position:absolute;z-index:20;top:8px;right:8px}'
-          new_css = '''.card,.album-card{position:relative}.catalog-admin-vis{position:absolute;z-index:20;top:8px;right:8px}
-  .album-card.catalog-admin-has-vis .album-card-top{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;grid-template-areas:"icon count" "icon vis";align-items:start!important;column-gap:14px!important;row-gap:7px!important}
-  .album-card.catalog-admin-has-vis .album-icon{grid-area:icon}
-  .album-card.catalog-admin-has-vis .album-count-badge{grid-area:count;justify-self:end}
-  .album-card.catalog-admin-has-vis .catalog-admin-vis{grid-area:vis;position:static;z-index:auto;justify-self:end;max-width:100%}
-  .album-card.catalog-admin-has-vis .catalog-admin-vis button{max-width:100%;padding:6px 9px;line-height:1.15;white-space:normal;text-align:center}'''
+          new_css = (
+              '.card,.album-card{position:relative}.catalog-admin-vis{position:absolute;z-index:20;top:8px;right:8px}\n'
+              '  .album-card.catalog-admin-has-vis .album-card-top{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;grid-template-areas:"icon count" "icon vis";align-items:start!important;column-gap:14px!important;row-gap:7px!important}\n'
+              '  .album-card.catalog-admin-has-vis .album-icon{grid-area:icon}\n'
+              '  .album-card.catalog-admin-has-vis .album-count-badge{grid-area:count;justify-self:end}\n'
+              '  .album-card.catalog-admin-has-vis .catalog-admin-vis{grid-area:vis;position:static;z-index:auto;justify-self:end;max-width:100%}\n'
+              '  .album-card.catalog-admin-has-vis .catalog-admin-vis button{max-width:100%;padding:6px 9px;line-height:1.15;white-space:normal;text-align:center}'
+          )
           if js.count(old_css) != 1:
               raise SystemExit(f'CSS base inesperado: {js.count(old_css)} coincidencias')
           js = js.replace(old_css, new_css, 1)

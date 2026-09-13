@@ -17,66 +17,41 @@ jobs:
         with:
           ref: main
           fetch-depth: 0
-      - name: Sustituir lectura de Configuracion por Apps Script
+      - name: Cargar configuración antes del catálogo
         shell: bash
         run: |
           python3 <<'PY'
           from pathlib import Path
-          import re
 
-          path = Path('natura/catalogo-app.js')
+          path = Path('natura/catalogo.html')
           text = path.read_text(encoding='utf-8')
 
-          text, n = re.subn(
-              r'    // Control global remoto\.[\s\S]*?    window\.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;',
-              '''    // Control global remoto. Se almacena en propiedades internas del Apps Script administrador.\n    // La pestaña legacy Configuracion ya no forma parte de la lectura normal del catálogo.\n    const REMOTE_CONTROL_SOURCE = {\n      enabled: true,\n      endpoint: String(window.PRECIOS_ADMIN_CONFIG?.endpoint || "").trim(),\n      refreshMs: 60000\n    };\n    window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;''',
-              text,
-              count=1,
-          )
-          if n != 1:
-              raise SystemExit(f'No se pudo sustituir REMOTE_CONTROL_SOURCE: coincidencias={n}')
+          old = '''  <script src="catalogo-app.js?actualizacion=integral-2026-09-13-5"></script>\n  <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>\n  <script src="catalogo-ui.js?actualizacion=integral-2026-09-12"></script>\n  <script src="precios-admin-config.js?actualizacion=2026-09-12-1"></script>\n  <script src="precios-admin.js?actualizacion=2026-09-13-1"></script>'''
+          new = '''  <script src="precios-admin-config.js?actualizacion=2026-09-13-2"></script>\n  <script src="catalogo-app.js?actualizacion=integral-2026-09-13-6"></script>\n  <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>\n  <script src="catalogo-ui.js?actualizacion=integral-2026-09-12"></script>\n  <script src="precios-admin.js?actualizacion=2026-09-13-2"></script>'''
+          if text.count(old) != 1:
+              raise SystemExit(f'Bloque de scripts esperado no encontrado exactamente una vez: {text.count(old)}')
+          text = text.replace(old, new, 1)
 
-          text = text.replace(
-              '// La hoja "Configuracion" conserva únicamente los controles que siguen siendo editables.',
-              '// Los controles globales se administran desde la web y se guardan en Apps Script.'
-          )
-
-          loader = '''    function loadAppsScriptRemoteConfiguration(){\n      return new Promise((resolve, reject)=>{\n        const endpoint = String(REMOTE_CONTROL_SOURCE.endpoint || "").trim();\n        if(!/^https:\\/\\/script\\.google\\.com\\/macros\\/s\\/[A-Za-z0-9_-]+\\/exec$/.test(endpoint)){\n          reject(new Error("El endpoint de configuración del catálogo no es válido."));\n          return;\n        }\n\n        const callbackName = `__remoteCatalogConfig_${Date.now()}_${Math.random().toString(36).slice(2)}`;\n        const script = document.createElement("script");\n        let settled = false;\n\n        const cleanup = ()=>{\n          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }\n          if(script.parentNode) script.parentNode.removeChild(script);\n        };\n\n        const timer = window.setTimeout(()=>{\n          if(settled) return;\n          settled = true;\n          cleanup();\n          reject(new Error("Tiempo de espera agotado al consultar la configuración del catálogo."));\n        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);\n\n        window[callbackName] = payload=>{\n          if(settled) return;\n          settled = true;\n          window.clearTimeout(timer);\n          cleanup();\n          if(!payload || payload.ok !== true || !payload.valores || typeof payload.valores !== "object"){\n            reject(new Error(String(payload?.error || "Apps Script devolvió una configuración no válida.")));\n            return;\n          }\n          resolve(payload.valores);\n        };\n\n        script.onerror = ()=>{\n          if(settled) return;\n          settled = true;\n          window.clearTimeout(timer);\n          cleanup();\n          reject(new Error("No se pudo conectar con la configuración del catálogo."));\n        };\n\n        const url = new URL(endpoint);\n        url.searchParams.set("modo", "config");\n        url.searchParams.set("callback", callbackName);\n        url.searchParams.set("_", `${Date.now()}_${Math.random().toString(36).slice(2)}`);\n        script.src = url.toString();\n        script.async = true;\n        document.head.appendChild(script);\n      });\n    }\n\n    function parseRemoteBoolean'''
-
-          text, n = re.subn(
-              r'    function googleSheetRemoteQueryUrl\(sheetName, range, tq, callbackName\)\{[\s\S]*?\n    function parseRemoteBoolean',
-              lambda _: loader,
-              text,
-              count=1,
-          )
-          if n != 1:
-              raise SystemExit(f'No se pudo sustituir el cargador remoto: coincidencias={n}')
-
-          refresh = '''    async function refreshRemoteCatalogConfiguration(options = {}){\n      const rebuild = options.rebuild !== false;\n      const initial = options.initial === true;\n\n      if(!REMOTE_CONTROL_SOURCE.enabled) return false;\n\n      let changed = false;\n      try{\n        const values = await loadAppsScriptRemoteConfiguration();\n        const rows = Object.entries(values || {}).map(([key,state]) => ["", state, "", "", key]);\n        changed = applyRemoteControlRows(rows) || changed;\n      }catch(error){\n        console.info("Configuración remota no disponible; se conservan los interruptores locales.", error);\n      }\n\n      if(initial){\n        wordSuggestionsVisible = shouldShowSuggestionsInitially();\n        syncWordToggleButton();\n      }\n\n      if(changed && rebuild && allLoadedProducts.length){\n        rebuildCatalogVisibility();\n        syncWordToggleButton();\n        rebuildSearchTicker();\n        updateTickerVisibility();\n        if(cartModal && cartModal.classList.contains("open")) renderCartModal();\n      }\n\n      return changed;\n    }\n\n    let remoteConfigPollingTimer = 0;'''
-
-          text, n = re.subn(
-              r'    async function refreshRemoteCatalogConfiguration\(options = \{\}\)\{[\s\S]*?\n    let remoteConfigPollingTimer = 0;',
-              lambda _: refresh,
-              text,
-              count=1,
-          )
-          if n != 1:
-              raise SystemExit(f'No se pudo sustituir refreshRemoteCatalogConfiguration: coincidencias={n}')
+          old_button = '''        <button class="btn-ghost" id="priceAdminBtn" type="button" hidden aria-label="Administrar precios">\n          Precios\n        </button>'''
+          new_button = '''        <button class="btn-ghost" id="priceAdminBtn" type="button" hidden aria-label="Administrar catálogo">\n          Administrar\n        </button>'''
+          if text.count(old_button) != 1:
+              raise SystemExit(f'Botón administrador esperado no encontrado exactamente una vez: {text.count(old_button)}')
+          text = text.replace(old_button, new_button, 1)
 
           path.write_text(text, encoding='utf-8', newline='\n')
           PY
 
           git diff --check
-          git diff -- natura/catalogo-app.js
+          git diff -- natura/catalogo.html
       - name: Confirmar cambio en main
         shell: bash
         run: |
-          if git diff --quiet -- natura/catalogo-app.js; then
-            echo '::error::No hubo cambios en catalogo-app.js'
+          if git diff --quiet -- natura/catalogo.html; then
+            echo '::error::No hubo cambios en catalogo.html'
             exit 1
           fi
           git config user.name 'stock'
           git config user.email '131928432+irenismb@users.noreply.github.com'
-          git add natura/catalogo-app.js
-          git commit -m 'Leer configuración del catálogo desde Apps Script'
+          git add natura/catalogo.html
+          git commit -m 'Integrar configuración web antes de cargar el catálogo'
           git push origin HEAD:main

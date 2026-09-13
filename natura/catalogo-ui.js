@@ -6,7 +6,7 @@
   if(!footerText) return;
 
   footerText.innerHTML = `
-    Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta, especializada en productos Natura y AVON. Encuentra perfumes, maquillaje y productos para el cuidado facial, corporal y capilar, con líneas como Natura Tododia, Ekos, Lumina, Chronos, Kaiak, Essencial, Homem, Una y Faces, además de AVON Care y Far Away.
+    Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta, especializada en productos Natura y AVON. Encuentra perfumes, maquillaje y productos para el cuidado facial, corporal y capilar, con líneas como <strong>Natura Tododia, Ekos, Lumina, Chronos, Kaiak, Essencial, Homem, Una y Faces, además de AVON Care y Far Away</strong>.
     Te asesoramos por <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">WhatsApp</a>, vía telefónica o de manera presencial en el barrio Almendros.
     <strong>Dirección:</strong> Calle 10A #20A-06.
     <strong>Teléfono:</strong> <a href="tel:+573042088961" rel="nofollow">+57 304 208 8961</a>.
@@ -155,9 +155,11 @@
   function syncAdminToggle(){
     const button = document.querySelector("[data-admin-quick-images-toggle]");
     if(!button) return;
-    button.disabled = false;
-    button.setAttribute("aria-checked", enabled ? "true" : "false");
-    button.textContent = enabled ? "ACTIVADO" : "DESACTIVADO";
+    const checked = enabled ? "true" : "false";
+    const text = enabled ? "ACTIVADO" : "DESACTIVADO";
+    if(button.disabled) button.disabled = false;
+    if(button.getAttribute("aria-checked") !== checked) button.setAttribute("aria-checked", checked);
+    if(button.textContent !== text) button.textContent = text;
   }
 
   function installAdminToggle(){
@@ -187,7 +189,15 @@
     syncAdminToggle();
   }
 
-  const observer = new MutationObserver(() => installAdminToggle());
+  let adminObserverQueued = false;
+  const observer = new MutationObserver(() => {
+    if(adminObserverQueued) return;
+    adminObserverQueued = true;
+    requestAnimationFrame(() => {
+      adminObserverQueued = false;
+      installAdminToggle();
+    });
+  });
   observer.observe(document.body, {childList:true, subtree:true});
   installAdminToggle();
   syncView();

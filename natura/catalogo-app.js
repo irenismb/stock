@@ -2123,9 +2123,9 @@
 
     function invoiceValidateInput(){
       const cartItems = cartItemsArray();
-      if(!cartItems.length) throw new Error("Agrega al menos un producto al carrito antes de generar la factura.");
+      if(!cartItems.length) throw new Error("Agrega al menos un producto al carrito antes de generar el resumen.");
       if(!shouldShowProductPrices()){
-        throw new Error("No se puede generar una factura de venta con los precios ocultos.");
+        throw new Error("No se puede generar un resumen de pedido con los precios ocultos.");
       }
 
       const items = cartItems.map(it=>{
@@ -2225,7 +2225,7 @@
       // y las filas cortas ocupan menos espacio, por lo que caben más productos.
       const measureCanvas = document.createElement("canvas");
       const measureCtx = measureCanvas.getContext("2d");
-      if(!measureCtx) throw new Error("No fue posible preparar la factura PNG.");
+      if(!measureCtx) throw new Error("No fue posible preparar el resumen PNG.");
       measureCtx.font = "600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       const preparedRows = items.map(it=>{
         const nameLines = invoiceWrapLines(measureCtx, String(it.name || ""), articleTextWidth, 4);
@@ -2244,7 +2244,7 @@
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d", { alpha:false });
-      if(!ctx) throw new Error("No fue posible preparar la factura PNG.");
+      if(!ctx) throw new Error("No fue posible preparar el resumen PNG.");
 
       const mauve = "#8f4963";
       const rose = "#c54e73";
@@ -2277,7 +2277,7 @@
       ctx.fillText("IRENISMB STOCK NATURA", 195, 76);
       ctx.fillStyle = ink;
       ctx.font = "500 21px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Factura de venta", 195, 111);
+      ctx.fillText("Resumen de pedido", 195, 111);
       ctx.fillStyle = mauve;
       ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.fillText("Natura · AVON", 195, 143);
@@ -2290,7 +2290,7 @@
       ctx.fillStyle = rose;
       ctx.font = "900 22px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("FACTURA DE VENTA", 918, 103);
+      ctx.fillText("RESUMEN DE PEDIDO", 918, 103);
       ctx.textAlign = "left";
 
       // Datos generales compactos.
@@ -2402,7 +2402,7 @@
       ctx.fillStyle = muted;
       ctx.font = "500 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       const noteLines = [
-        "Factura comercial de venta.",
+        "Resumen comercial del pedido.",
         "Valores expresados en pesos colombianos.",
         "Gracias por confiar en tu consultora de belleza."
       ];
@@ -2412,7 +2412,7 @@
       invoiceRoundRect(ctx, 565, summaryTop, 482, summaryHeight, 18); ctx.fill(); ctx.stroke();
       ctx.fillStyle = gold;
       ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("RESUMEN DE LA VENTA", 595, summaryTop+36);
+      ctx.fillText("RESUMEN DEL PEDIDO", 595, summaryTop+36);
       ctx.font = "600 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.fillStyle = ink;
       ctx.fillText("Subtotal productos",595,summaryTop+68);
@@ -2454,7 +2454,7 @@
 
     function invoiceCanvasToBlob(canvas){
       return new Promise((resolve,reject)=>{
-        canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("No fue posible convertir la factura a PNG.")), "image/png");
+        canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("No fue posible convertir el resumen a PNG.")), "image/png");
       });
     }
 
@@ -2465,11 +2465,11 @@
     }
 
     function invoiceDownloadPng(blob){
-      if(!blob) throw new Error("No fue posible preparar la descarga de la factura.");
+      if(!blob) throw new Error("No fue posible preparar la descarga del resumen.");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `factura-${invoiceDateColombia()}.png`;
+      link.download = `resumen-pedido-${invoiceDateColombia()}.png`;
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();
@@ -2509,8 +2509,8 @@
       }
 
       const copied = await copyPromise;
-      if(copyError) console.error("No se pudo copiar la factura PNG.", copyError);
-      if(downloadError) console.error("No se pudo descargar la factura PNG.", downloadError);
+      if(copyError) console.error("No se pudo copiar el resumen PNG.", copyError);
+      if(downloadError) console.error("No se pudo descargar el resumen PNG.", downloadError);
 
       return {copied, downloaded:!downloadError};
     }
@@ -2753,10 +2753,11 @@
       const enforce = shouldEnforceStockLimits();
       const act = btn.getAttribute("data-act");
       const current = cart[id];
+      const previousQty = safeInt(current.qty, 0);
 
       const hasKnownStock = Number.isFinite(current.stock) && current.stock >= 0;
       const maxStock = hasKnownStock ? current.stock : null;
-      let newQty = safeInt(current.qty, 0);
+      let newQty = previousQty;
 
       if(act === "inc"){
         if(!enforce){
@@ -2771,7 +2772,7 @@
       if(!newQty) delete cart[id];
       else cart[id].qty = newQty;
 
-      if(act === "inc" && newQty > safeInt(current.qty, 0)){
+      if(act === "inc" && newQty > previousQty){
         registrarConversionCatalogo("Añadió al carrito", String(current.name || ""));
       }
       saveCart();
@@ -2811,38 +2812,26 @@
         invoiceCopying = true;
         const previousText = cartInvoiceBtn.textContent;
         cartInvoiceBtn.disabled = true;
-        cartInvoiceBtn.textContent = "Generando factura...";
+        cartInvoiceBtn.textContent = "Generando resumen...";
         try{
           saveClientToLS();
           saveAddressToLS();
           saveShippingToLS();
           const result = await invoiceGeneratePngFromCart();
-          let saleRegistrationError = null;
-          if(result.copied || result.downloaded){
-            try{
-              await registerOrderInSheet("Venta");
-            }catch(err){
-              saleRegistrationError = err;
-              console.error("No se pudo registrar la venta en Google Sheets:", err);
-            }
-          }
           if(result.copied && result.downloaded){
-            cartInvoiceBtn.textContent = "Factura generada";
+            cartInvoiceBtn.textContent = "Resumen generado";
           }else if(result.downloaded){
-            cartInvoiceBtn.textContent = "Factura descargada";
-            alert("La factura se descargó, pero este navegador no permitió copiarla al portapapeles.");
+            cartInvoiceBtn.textContent = "Resumen descargado";
+            alert("El resumen se descargó, pero este navegador no permitió copiarlo al portapapeles.");
           }else if(result.copied){
-            cartInvoiceBtn.textContent = "Factura copiada";
-            alert("La factura se copió, pero el navegador no permitió descargarla.");
+            cartInvoiceBtn.textContent = "Resumen copiado";
+            alert("El resumen se copió, pero el navegador no permitió descargarlo.");
           }else{
-            throw new Error("No se pudo copiar ni descargar la factura.");
-          }
-          if(saleRegistrationError){
-            alert("La factura se generó, pero no se pudo registrar la venta en el libro de pedidos. Intenta nuevamente cuando tengas conexión.");
+            throw new Error("No se pudo copiar ni descargar el resumen.");
           }
         }catch(err){
-          console.error("No se pudo generar la factura PNG:", err);
-          alert(String(err?.message || "No se pudo generar la factura PNG."));
+          console.error("No se pudo generar el resumen PNG:", err);
+          alert(String(err?.message || "No se pudo generar el resumen PNG."));
         }finally{
           setTimeout(()=>{
             invoiceCopying = false;
@@ -3311,6 +3300,11 @@
           img.alt = "";
           img.decoding = "async";
           img.loading = "eager";
+          img.onerror = ()=>{
+            img.onerror = null;
+            img.remove();
+            icon.textContent = album.icon || "•";
+          };
           img.src = album.iconImage;
           icon.replaceChildren(img);
         }else if(album.iconSvg){
@@ -4854,12 +4848,24 @@ function initCollageFeature(){
         if(index>=candidates.length){ resolve(null); return; }
         const img=new Image();
         const url=candidates[index++];
+        let settled=false;
+        let timer=0;
+        const finish=(value)=>{
+          if(settled) return;
+          settled=true;
+          window.clearTimeout(timer);
+          img.onload=null;
+          img.onerror=null;
+          if(value) resolve(value);
+          else tryNext();
+        };
         try{
           const parsed=new URL(url,location.href);
           if(parsed.origin!==location.origin) img.crossOrigin="anonymous";
         }catch(_){}
-        img.onload=()=>resolve(img);
-        img.onerror=tryNext;
+        timer=window.setTimeout(()=>finish(null),7000);
+        img.onload=()=>finish(img);
+        img.onerror=()=>finish(null);
         img.src=url;
       };
       tryNext();
@@ -6103,7 +6109,7 @@ function initCollageFeature(){
     const file=collagePreparedShareFile;
     if(!file){
       queueCollageSharePreparation();
-      return;
+      return {copied:false,downloaded:false,pending:true};
     }
     const label=button?.dataset?.channelLabel||"Red social";
     for(const current of socialButtons) current.disabled=true;
@@ -6139,8 +6145,15 @@ function initCollageFeature(){
     window.setTimeout(()=>{
       if(collageExportMode==="collage") setActionReady();
     },1200);
+
+    return {
+      copied:!copyError,
+      downloaded:!downloadError,
+      pending:false
+    };
   }
 
+  window.catalogoCopyAndDownloadCollageForChannel=copyAndDownloadForChannel;
   messengerBtn?.addEventListener("click",()=>{ void copyAndDownloadForChannel(messengerBtn); });
   facebookBtn?.addEventListener("click",()=>{ void copyAndDownloadForChannel(facebookBtn); });
 
@@ -6585,6 +6598,17 @@ function renderCartModal(){
   const hasUnpricedItems=items.some(it=>it&&it.hasPrice===false);
   const subtotalEl=document.getElementById("cartSubtotal");
   const shippingEl=document.getElementById("cartShippingTotal");
+  if(cartInvoiceBtn && !invoiceCopying){
+    const canGenerateSummary=items.length>0&&showPrices&&!hasUnpricedItems;
+    cartInvoiceBtn.disabled=!canGenerateSummary;
+    cartInvoiceBtn.title=canGenerateSummary
+      ? "Crear un resumen PNG del pedido; no registra una venta"
+      : !items.length
+        ? "Agrega productos para crear el resumen"
+        : "Todos los productos deben tener un precio visible";
+  }
+  if(cartBuyBtn && !orderSending) cartBuyBtn.disabled=items.length===0;
+  if(cartClearBtn) cartClearBtn.disabled=items.length===0;
   if(subtotalEl) subtotalEl.textContent=(!showPrices||hasUnpricedItems)?"Por confirmar":fmtCOP.format(subtotalValue);
   if(shippingEl) shippingEl.textContent=fmtCOP.format(shippingValue);
   cartTotalEl.textContent=(!showPrices||hasUnpricedItems)?"Total: Por confirmar":"Total: "+fmtCOP.format(total);

@@ -397,11 +397,12 @@
     }
   }
 
-  function waitUntilReady(token, timeoutMs = 25000){
+  function waitUntilReady(token, timeoutMs = 45000){
     return new Promise((resolve, reject) => {
       const started = Date.now();
       const check = () => {
         if(token !== actionToken){ reject(new Error("Operación reemplazada.")); return; }
+        if(!modal.classList.contains("open")){ reject(new Error("El folleto se cerró.")); return; }
         if(!outputButton.disabled){ resolve(); return; }
         if(Date.now() - started >= timeoutMs){ reject(new Error("La imagen tardó demasiado en generarse.")); return; }
         window.setTimeout(check, 50);
@@ -425,12 +426,21 @@
       await waitUntilReady(token);
       if(token !== actionToken) return;
 
-      // El botón social original ya tiene la lógica robusta para copiar al
-      // portapapeles y descargar el PNG preparado en el formato seleccionado.
-      outputButton.click();
+      const copyAndDownload = window.catalogoCopyAndDownloadCollageForChannel;
+      if(typeof copyAndDownload !== "function"){
+        throw new Error("La acción de salida del folleto no está disponible.");
+      }
+      const result = await copyAndDownload(outputButton);
 
       if(token !== actionToken) return;
-      button.textContent = "✓ Copiada y descargada";
+      if(result?.pending || (!result?.copied && !result?.downloaded)){
+        throw new Error("No se pudo copiar ni descargar la imagen.");
+      }
+      button.textContent = result.copied && result.downloaded
+        ? "✓ Copiada y descargada"
+        : result.downloaded
+          ? "✓ Descargada"
+          : "✓ Copiada";
       await new Promise(resolve => window.setTimeout(resolve, 1100));
     }catch(error){
       console.error("No se pudo generar, copiar y descargar la imagen del folleto.", error);
@@ -451,7 +461,10 @@
     button.addEventListener("click", () => { void generateCopyAndDownload(button); });
   }
 
-  const observer = new MutationObserver(() => syncHiddenActions());
+  const observer = new MutationObserver(() => {
+    syncHiddenActions();
+    if(!modal.classList.contains("open")) actionToken++;
+  });
   observer.observe(modal, {attributes:true, attributeFilter:["class"]});
 })();
 

@@ -13,4 +13,4 @@ Seguridad y consistencia:
 - el precio anterior se compara antes de guardar y el nuevo valor se relee después de escribir;
 - no se modifica el formato de las celdas ni otro campo del producto.
 
-El catálogo muestra el acceso solamente al abrirlo con `?administrar=precios`. En el nivel de productos, el botón `Precios` autentica la cuenta de Google y habilita un campo `Guardar` en el lugar donde aparece cada precio.
+En el nivel de productos, el catálogo muestra el botón `Precios`, autentica la cuenta de Google y habilita un campo `Guardar` en el lugar donde aparece cada precio. Fuera de ese nivel el botón permanece oculto.

@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Conexión para editar precios</title>
+  <title>Conexión del administrador</title>
   <style>
     :root{color-scheme:light;--ink:#352b2c;--muted:#78696b;--line:#e7dad7;--rose:#8d5360;--soft:#fff7f8;--ok:#176b3a;--error:#a02323}
     *{box-sizing:border-box}
@@ -19,7 +19,7 @@
 </head>
 <body>
   <main>
-    <h1>Edición de precios</h1>
+    <h1>Administración del catálogo</h1>
     <p id="estado" role="status" aria-live="polite">Verificando la conexión con el catálogo…</p>
   </main>
 
@@ -42,7 +42,7 @@
       }
 
       if(!apertura){
-        mostrarError("Abre esta conexión desde el botón Precios del catálogo.");
+        mostrarError("Abre esta conexión desde el botón Administrar del catálogo.");
         return;
       }
 
@@ -52,13 +52,13 @@
       puerto.start();
 
       apertura.postMessage(
-        {tipo:"irenismb-precios-puente-listo", canal:canal},
+        {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad"]},
         "*",
         [canalMensajes.port2]
       );
 
       estado.className = "ok";
-      estado.textContent = "Conexión activa. Vuelve al catálogo y mantén esta ventana abierta mientras editas precios.";
+      estado.textContent = "Conexión activa. Vuelve al catálogo y mantén esta ventana abierta mientras administras precios y visibilidad.";
       try{
         apertura.focus();
         window.top.blur();
@@ -67,24 +67,51 @@
 
     function procesarSolicitud(evento){
       const mensaje = evento && evento.data || {};
-      if(mensaje.tipo !== "actualizar-precio" || !mensaje.solicitudId) return;
+      if(!mensaje.solicitudId) return;
 
-      google.script.run
-        .withSuccessHandler(function(resultado){
-          responder({
-            tipo:"precio-actualizado",
-            solicitudId:mensaje.solicitudId,
-            resultado:resultado
-          });
-        })
-        .withFailureHandler(function(error){
-          responder({
-            tipo:"precio-error",
-            solicitudId:mensaje.solicitudId,
-            error:error && error.message ? error.message : String(error || "No se pudo guardar el precio.")
-          });
-        })
-        .actualizarPrecioWeb(mensaje.codigo, mensaje.precioNuevo, mensaje.precioAnterior);
+      if(mensaje.tipo === "actualizar-precio"){
+        google.script.run
+          .withSuccessHandler(function(resultado){
+            responder({
+              tipo:"precio-actualizado",
+              solicitudId:mensaje.solicitudId,
+              resultado:resultado
+            });
+          })
+          .withFailureHandler(function(error){
+            responder({
+              tipo:"precio-error",
+              solicitudId:mensaje.solicitudId,
+              error:error && error.message ? error.message : String(error || "No se pudo guardar el precio.")
+            });
+          })
+          .actualizarPrecioWeb(mensaje.codigo, mensaje.precioNuevo, mensaje.precioAnterior);
+        return;
+      }
+
+      if(mensaje.tipo === "actualizar-visibilidad"){
+        google.script.run
+          .withSuccessHandler(function(resultado){
+            responder({
+              tipo:"visibilidad-actualizada",
+              solicitudId:mensaje.solicitudId,
+              resultado:resultado
+            });
+          })
+          .withFailureHandler(function(error){
+            responder({
+              tipo:"visibilidad-error",
+              solicitudId:mensaje.solicitudId,
+              error:error && error.message ? error.message : String(error || "No se pudo guardar la visibilidad.")
+            });
+          })
+          .actualizarVisibilidadWeb(
+            mensaje.tipoRegla,
+            mensaje.identificador,
+            Boolean(mensaje.ocultoNuevo),
+            mensaje.etiqueta || ""
+          );
+      }
     }
 
     function responder(mensaje){

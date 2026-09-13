@@ -1,9 +1,9 @@
 const SPREADSHEET_ID = "1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc";
-const HEADER_ROW = 2;
-const START_COL = 2; // B
 const TZ = "America/Bogota";
+const HEADER_SCAN_MAX_ROWS = 30;
+const HEADER_SCAN_MAX_COLS = 40;
 
-const HEADERS = [
+const REQUIRED_HEADERS = [
   "Nombre producto",
   "Valor unitario",
   "Cantidad solicitada",
@@ -15,60 +15,125 @@ const HEADERS = [
   "Fecha pedido",
   "Nombre cliente",
   "Celular cliente",
-  "Direccion cliente"
+  "Direccion cliente",
+  "Tipo movimiento"
 ];
 
-function getSheet_() {
-  return SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
+function normalizeHeader_(value) {
+  return String(value == null ? "" : value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+}
+
+function canonicalHeaderMap_() {
+  const map = {};
+  REQUIRED_HEADERS.forEach(function(header) {
+    map[normalizeHeader_(header)] = header;
+  });
+  return map;
+}
+
+function resolveSheetContext_() {
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const canonical = canonicalHeaderMap_();
+  const requiredKeys = Object.keys(canonical);
+  const matches = [];
+  const duplicateRows = [];
+
+  spreadsheet.getSheets().forEach(function(sheet) {
+    const rowCount = Math.min(sheet.getMaxRows(), HEADER_SCAN_MAX_ROWS);
+    const colCount = Math.min(sheet.getMaxColumns(), HEADER_SCAN_MAX_COLS);
+    if (rowCount < 1 || colCount < 1) return;
+
+    const values = sheet.getRange(1, 1, rowCount, colCount).getDisplayValues();
+    values.forEach(function(row, rowIndex) {
+      const found = {};
+      const duplicates = [];
+
+      row.forEach(function(value, colIndex) {
+        const key = normalizeHeader_(value);
+        if (!canonical[key]) return;
+        if (found[key]) {
+          duplicates.push(canonical[key]);
+          return;
+        }
+        found[key] = colIndex + 1;
+      });
+
+      if (duplicates.length) {
+        duplicateRows.push(sheet.getName() + " fila " + (rowIndex + 1) + ": " + duplicates.join(", "));
+        return;
+      }
+
+      const complete = requiredKeys.every(function(key) { return !!found[key]; });
+      if (!complete) return;
+
+      const columnByHeader = {};
+      requiredKeys.forEach(function(key) {
+        columnByHeader[canonical[key]] = found[key];
+      });
+
+      matches.push({
+        sheet: sheet,
+        headerRow: rowIndex + 1,
+        columnByHeader: columnByHeader
+      });
+    });
+  });
+
+  if (matches.length !== 1) {
+    const duplicateDetail = duplicateRows.length ? " Encabezados duplicados: " + duplicateRows.join(" | ") : "";
+    throw new Error(
+      "No se pudo identificar de forma única la tabla de pedidos por sus encabezados. Coincidencias: " + matches.length + "." + duplicateDetail
+    );
+  }
+
+  return matches[0];
+}
+
+function movementType_(body) {
+  const raw = safe_(body && (body.tipoMovimiento || body.tipo_movimiento || body.movimiento));
+  const normalized = normalizeHeader_(raw);
+  if (normalized === "venta") return "Venta";
+  if (normalized === "pedido") return "Pedido";
+  return "Pedido";
 }
 
 function doGet(e) {
   const q = e && e.parameter ? e.parameter : {};
 
   if (q.test === "1") {
-    const sheet = getSheet_();
-    ensureHeaders_(sheet);
-
-    const numeroPedido = nextOrderNumber_(sheet);
-    const fechaPedido = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
-
-    const row = [[
-      "PRODUCTO PRUEBA",
-      1000,
-      1,
-      1000,
-      "MARCA PRUEBA",
-      "CATEGORIA PRUEBA",
-      "COD-PRUEBA",
-      numeroPedido,
-      fechaPedido,
-      "CLIENTE PRUEBA",
-      "3000000000",
-      "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros"
-    ]];
-
-    const startRow = Math.max(HEADER_ROW + 1, sheet.getLastRow() + 1);
-    sheet.getRange(startRow, START_COL, 1, HEADERS.length).setValues(row);
-
-    setDireccionClienteRichText_(
-      sheet,
-      startRow,
-      1,
-      "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros",
-      "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent_("Calle 10A #20A-06, Santa Marta, Magdalena")
-    );
-
-    return json_({
-      ok: true,
-      modo: "test_get",
-      numeroPedido: numeroPedido,
-      fechaPedido: fechaPedido
-    });
+    const context = resolveSheetContext_();
+    const payload = {
+      tipoMovimiento: "Pedido",
+      totalPedido: 1000,
+      cliente: {
+        nombre: "CLIENTE PRUEBA",
+        celular: "3000000000",
+        direccion: "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros",
+        direccionBase: "Calle 10A #20A-06, Santa Marta, Magdalena"
+      },
+      items: [{
+        nombreProducto: "PRODUCTO PRUEBA",
+        valorUnitario: 1000,
+        cantidadSolicitada: 1,
+        totalPedido: 1000,
+        marca: "MARCA PRUEBA",
+        categoria: "CATEGORIA PRUEBA",
+        codigo: "COD-PRUEBA"
+      }]
+    };
+    const result = appendMovement_(context, payload, payload.items);
+    result.modo = "test_get";
+    return json_(result);
   }
 
   return json_({
     ok: true,
-    message: "Web app activa. Usa ?test=1 para insertar una fila de prueba."
+    message: "Web app activa. Registra pedidos y ventas según Tipo movimiento."
   });
 }
 
@@ -77,9 +142,7 @@ function doPost(e) {
   lock.waitLock(30000);
 
   try {
-    const sheet = getSheet_();
-    ensureHeaders_(sheet);
-
+    const context = resolveSheetContext_();
     const raw = (e && e.postData && e.postData.contents) ? e.postData.contents : "{}";
     const body = JSON.parse(raw);
     const items = Array.isArray(body.items) ? body.items : [];
@@ -88,45 +151,7 @@ function doPost(e) {
       return json_({ ok: false, message: "No hay productos para registrar." });
     }
 
-    const numeroPedido = nextOrderNumber_(sheet);
-    const fechaPedido = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
-
-    const nombreCliente = safe_(body && body.cliente && body.cliente.nombre);
-    const celularCliente = safe_(body && body.cliente && body.cliente.celular);
-    const direccionClienteVisible = buildDireccionClienteVisible_(body);
-    const direccionClienteMapa = buildDireccionClienteMapa_(body);
-    const totalPedidoGeneral = num_(body && body.totalPedido);
-
-    const rows = items.map(function(item) {
-      return [
-        safe_(item && item.nombreProducto),
-        num_(item && item.valorUnitario),
-        num_(item && item.cantidadSolicitada),
-        totalPedidoGeneral || num_(item && item.totalPedido),
-        safe_(item && item.marca),
-        safe_(item && item.categoria),
-        safe_(item && item.codigo),
-        numeroPedido,
-        fechaPedido,
-        nombreCliente,
-        celularCliente,
-        direccionClienteVisible
-      ];
-    });
-
-    const startRow = Math.max(HEADER_ROW + 1, sheet.getLastRow() + 1);
-    sheet.getRange(startRow, START_COL, rows.length, HEADERS.length).setValues(rows);
-
-    if (direccionClienteVisible) {
-      setDireccionClienteRichText_(sheet, startRow, rows.length, direccionClienteVisible, direccionClienteMapa);
-    }
-
-    return json_({
-      ok: true,
-      numeroPedido: numeroPedido,
-      fechaPedido: fechaPedido,
-      filas: rows.length
-    });
+    return json_(appendMovement_(context, body, items));
   } catch (err) {
     return json_({
       ok: false,
@@ -137,64 +162,95 @@ function doPost(e) {
   }
 }
 
-function probarRegistroManual_() {
-  const sheet = getSheet_();
-  ensureHeaders_(sheet);
-
-  const numeroPedido = nextOrderNumber_(sheet);
+function appendMovement_(context, body, items) {
+  const sheet = context.sheet;
+  const columns = context.columnByHeader;
+  const numeroPedido = nextOrderNumber_(context);
   const fechaPedido = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
+  const tipoMovimiento = movementType_(body);
 
-  const direccionVisible = "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros";
-  const direccionMapa = "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent_("Calle 10A #20A-06, Santa Marta, Magdalena");
+  const nombreCliente = safe_(body && body.cliente && body.cliente.nombre);
+  const celularCliente = safe_(body && body.cliente && body.cliente.celular);
+  const direccionClienteVisible = buildDireccionClienteVisible_(body);
+  const direccionClienteMapa = buildDireccionClienteMapa_(body);
+  const totalPedidoGeneral = num_(body && body.totalPedido);
 
-  const startRow = Math.max(HEADER_ROW + 1, sheet.getLastRow() + 1);
+  const records = items.map(function(item) {
+    return {
+      "Nombre producto": safe_(item && item.nombreProducto),
+      "Valor unitario": num_(item && item.valorUnitario),
+      "Cantidad solicitada": num_(item && item.cantidadSolicitada),
+      "Total pedido": totalPedidoGeneral || num_(item && item.totalPedido),
+      "Marca": safe_(item && item.marca),
+      "Categoria": safe_(item && item.categoria),
+      "Codigo": safe_(item && item.codigo),
+      "Numero pedido": numeroPedido,
+      "Fecha pedido": fechaPedido,
+      "Nombre cliente": nombreCliente,
+      "Celular cliente": celularCliente,
+      "Direccion cliente": direccionClienteVisible,
+      "Tipo movimiento": tipoMovimiento
+    };
+  });
 
-  sheet.getRange(startRow, START_COL, 1, HEADERS.length)
-    .setValues([[
-      "MANUAL PRUEBA",
-      5000,
-      2,
-      10000,
-      "NATURA",
-      "PRUEBA",
-      "MAN-001",
-      numeroPedido,
-      fechaPedido,
-      "MARTIN PRUEBA",
-      "3001112233",
-      direccionVisible
-    ]]);
+  const startRow = Math.max(context.headerRow + 1, sheet.getLastRow() + 1);
 
-  setDireccionClienteRichText_(sheet, startRow, 1, direccionVisible, direccionMapa);
-}
+  REQUIRED_HEADERS.forEach(function(header) {
+    const col = columns[header];
+    if (!col) throw new Error("Falta el encabezado requerido: " + header);
+    const values = records.map(function(record) { return [record[header]]; });
+    sheet.getRange(startRow, col, values.length, 1).setValues(values);
+  });
 
-function ensureHeaders_(sheet) {
-  const range = sheet.getRange(HEADER_ROW, START_COL, 1, HEADERS.length);
-  const current = range.getValues()[0].map(function(v) { return String(v).trim(); });
-
-  let same = true;
-  for (let i = 0; i < HEADERS.length; i++) {
-    if (current[i] !== HEADERS[i]) {
-      same = false;
-      break;
-    }
+  if (direccionClienteVisible) {
+    setDireccionClienteRichText_(context, startRow, records.length, direccionClienteVisible, direccionClienteMapa);
   }
 
-  if (!same) {
-    range.setValues([HEADERS]);
-    range.setFontWeight("bold");
-  }
+  return {
+    ok: true,
+    numeroPedido: numeroPedido,
+    fechaPedido: fechaPedido,
+    tipoMovimiento: tipoMovimiento,
+    filas: records.length
+  };
 }
 
-function nextOrderNumber_(sheet) {
+function probarRegistroManual_() {
+  const context = resolveSheetContext_();
+  const payload = {
+    tipoMovimiento: "Pedido",
+    totalPedido: 10000,
+    cliente: {
+      nombre: "MARTIN PRUEBA",
+      celular: "3001112233",
+      direccion: "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros",
+      direccionBase: "Calle 10A #20A-06, Santa Marta, Magdalena"
+    },
+    items: [{
+      nombreProducto: "MANUAL PRUEBA",
+      valorUnitario: 5000,
+      cantidadSolicitada: 2,
+      totalPedido: 10000,
+      marca: "NATURA",
+      categoria: "PRUEBA",
+      codigo: "MAN-001"
+    }]
+  };
+  return appendMovement_(context, payload, payload.items);
+}
+
+function nextOrderNumber_(context) {
   const props = PropertiesService.getScriptProperties();
   let last = Number(props.getProperty("ultimo_numero_pedido") || "0");
 
   if (!last) {
+    const sheet = context.sheet;
     const lastRow = sheet.getLastRow();
-    if (lastRow > HEADER_ROW) {
-      const colNumeroPedido = START_COL + 7; // I dentro del bloque B:M
-      const values = sheet.getRange(HEADER_ROW + 1, colNumeroPedido, lastRow - HEADER_ROW, 1)
+    const numeroCol = context.columnByHeader["Numero pedido"];
+    if (!numeroCol) throw new Error("No se encontró el encabezado Numero pedido.");
+
+    if (lastRow > context.headerRow) {
+      const values = sheet.getRange(context.headerRow + 1, numeroCol, lastRow - context.headerRow, 1)
         .getValues()
         .flat();
       last = values.reduce(function(max, value) {
@@ -212,13 +268,10 @@ function buildDireccionClienteVisible_(body) {
   const cliente = body && body.cliente ? body.cliente : {};
   const direccionVisible = safe_(cliente.direccion);
 
-  if (direccionVisible) {
-    return direccionVisible;
-  }
+  if (direccionVisible) return direccionVisible;
 
   const direccionBase = safe_(cliente.direccionBase);
   const barrio = safe_(cliente.barrio);
-
   return joinParts_([
     direccionBase,
     barrio ? "Barrio " + barrio : ""
@@ -228,44 +281,28 @@ function buildDireccionClienteVisible_(body) {
 function buildDireccionClienteMapa_(body) {
   const cliente = body && body.cliente ? body.cliente : {};
   const direccionMapa = safe_(cliente.direccionMapa);
-
-  if (direccionMapa) {
-    return direccionMapa;
-  }
+  if (direccionMapa) return direccionMapa;
 
   const direccionBase = safe_(cliente.direccionBase);
   if (direccionBase) {
     return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent_(direccionBase);
   }
-
   return "";
 }
 
-function setDireccionClienteRichText_(sheet, startRow, numRows, visibleText, linkUrl) {
+function setDireccionClienteRichText_(context, startRow, numRows, visibleText, linkUrl) {
   if (!numRows || numRows < 1) return;
-
-  const colDireccionCliente = START_COL + HEADERS.indexOf("Direccion cliente");
-  if (colDireccionCliente < START_COL) return;
+  const colDireccionCliente = context.columnByHeader["Direccion cliente"];
+  if (!colDireccionCliente) throw new Error("No se encontró el encabezado Direccion cliente.");
 
   const values = [];
   for (let i = 0; i < numRows; i++) {
-    if (visibleText && linkUrl) {
-      values.push([
-        SpreadsheetApp.newRichTextValue()
-          .setText(visibleText)
-          .setLinkUrl(linkUrl)
-          .build()
-      ]);
-    } else {
-      values.push([
-        SpreadsheetApp.newRichTextValue()
-          .setText(visibleText || "")
-          .build()
-      ]);
-    }
+    const builder = SpreadsheetApp.newRichTextValue().setText(visibleText || "");
+    if (visibleText && linkUrl) builder.setLinkUrl(linkUrl);
+    values.push([builder.build()]);
   }
 
-  sheet.getRange(startRow, colDireccionCliente, numRows, 1).setRichTextValues(values);
+  context.sheet.getRange(startRow, colDireccionCliente, numRows, 1).setRichTextValues(values);
 }
 
 function joinParts_(parts, sep) {

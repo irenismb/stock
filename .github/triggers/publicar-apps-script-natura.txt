@@ -1,2 +1,3 @@
-Control manual para publicar Apps Script Natura desde GitHub a Google e implementar.
-No editar salvo para solicitar una publicación manual.
+Control de despliegue de Apps Script Natura desde GitHub a Google e implementación.
+Solicitud automática de publicación: 2026-09-12.
+Motivo: activar administración de visibilidad y precios del catálogo.

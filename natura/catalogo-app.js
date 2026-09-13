@@ -2464,20 +2464,55 @@
       return { blob };
     }
 
-    async function invoiceCopyPngFromCart(){
-      if(!navigator.clipboard || typeof navigator.clipboard.write !== "function" || typeof ClipboardItem === "undefined"){
-        throw new Error("Este navegador no permite copiar imágenes PNG directamente al portapapeles.");
+    function invoiceDownloadPng(blob){
+      if(!blob) throw new Error("No fue posible preparar la descarga de la factura.");
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `factura-${invoiceDateColombia()}.png`;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(()=>URL.revokeObjectURL(url), 1500);
+    }
+
+    async function invoiceGeneratePngFromCart(){
+      invoiceValidateInput();
+
+      let copyError = null;
+      let downloadError = null;
+      const buildPromise = invoiceBuildPng();
+      const blobPromise = buildPromise.then(result=>result.blob);
+      let copyPromise = Promise.resolve(false);
+
+      if(navigator.clipboard && typeof navigator.clipboard.write === "function" && typeof ClipboardItem !== "undefined"){
+        try{
+          copyPromise = navigator.clipboard
+            .write([new ClipboardItem({"image/png":blobPromise})])
+            .then(()=>true, error=>{
+              copyError = error;
+              return false;
+            });
+        }catch(error){
+          copyError = error;
+        }
+      }else{
+        copyError = new Error("Este navegador no permite copiar imágenes PNG directamente al portapapeles.");
       }
 
-      invoiceValidateInput();
-      let built = null;
-      const blobPromise = invoiceBuildPng().then(result=>{
-        built = result;
-        return result.blob;
-      });
+      const built = await buildPromise;
+      try{
+        invoiceDownloadPng(built.blob);
+      }catch(error){
+        downloadError = error;
+      }
 
-      await navigator.clipboard.write([new ClipboardItem({ "image/png": blobPromise })]);
-      return built;
+      const copied = await copyPromise;
+      if(copyError) console.error("No se pudo copiar la factura PNG.", copyError);
+      if(downloadError) console.error("No se pudo descargar la factura PNG.", downloadError);
+
+      return {copied, downloaded:!downloadError};
     }
 
     function viaTypeLabel(tipo){
@@ -2778,11 +2813,21 @@
           saveClientToLS();
           saveAddressToLS();
           saveShippingToLS();
-          await invoiceCopyPngFromCart();
-          cartInvoiceBtn.textContent = "Factura copiada";
+          const result = await invoiceGeneratePngFromCart();
+          if(result.copied && result.downloaded){
+            cartInvoiceBtn.textContent = "Factura generada";
+          }else if(result.downloaded){
+            cartInvoiceBtn.textContent = "Factura descargada";
+            alert("La factura se descargó, pero este navegador no permitió copiarla al portapapeles.");
+          }else if(result.copied){
+            cartInvoiceBtn.textContent = "Factura copiada";
+            alert("La factura se copió, pero el navegador no permitió descargarla.");
+          }else{
+            throw new Error("No se pudo copiar ni descargar la factura.");
+          }
         }catch(err){
-          console.error("No se pudo copiar la factura PNG:", err);
-          alert(String(err?.message || "No se pudo copiar la factura PNG."));
+          console.error("No se pudo generar la factura PNG:", err);
+          alert(String(err?.message || "No se pudo generar la factura PNG."));
         }finally{
           setTimeout(()=>{
             invoiceCopying = false;
@@ -5188,6 +5233,48 @@ function initCollageFeature(){
     return state;
   }
 
+  function presentationDrawBotanicalAccent(ctx,x,y,scale=1,direction=1,color="rgba(194,143,129,.20)"){
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.scale(direction*scale,scale);
+    ctx.strokeStyle=color;
+    ctx.fillStyle=color;
+    ctx.lineWidth=3;
+    ctx.beginPath();
+    ctx.moveTo(0,150);
+    ctx.bezierCurveTo(14,105,34,57,72,0);
+    ctx.stroke();
+    const leaves=[
+      {x:13,y:117,rx:25,ry:9,r:-.72},
+      {x:26,y:91,rx:27,ry:10,r:.54},
+      {x:38,y:65,rx:25,ry:9,r:-.66},
+      {x:53,y:38,rx:23,ry:8,r:.56},
+      {x:67,y:14,rx:19,ry:7,r:-.55}
+    ];
+    for(const leaf of leaves){
+      ctx.beginPath();
+      ctx.ellipse(leaf.x,leaf.y,leaf.rx,leaf.ry,leaf.r,0,Math.PI*2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function presentationDrawHeart(ctx,cx,cy,size,color){
+    ctx.save();
+    ctx.translate(cx,cy);
+    ctx.scale(size/24,size/24);
+    ctx.beginPath();
+    ctx.moveTo(0,7);
+    ctx.bezierCurveTo(-18,-5,-14,-18,-5,-18);
+    ctx.bezierCurveTo(0,-18,3,-14,0,-9);
+    ctx.bezierCurveTo(3,-14,6,-18,11,-18);
+    ctx.bezierCurveTo(20,-18,22,-5,0,7);
+    ctx.closePath();
+    ctx.fillStyle=color;
+    ctx.fill();
+    ctx.restore();
+  }
+
   async function buildMarketplacePresentationCanvas(p){
     const [loadedProductImage,loadedLogoImage]=await Promise.all([
       collageLoadCanvasImage(p),
@@ -5204,138 +5291,186 @@ function initCollageFeature(){
     const H=canvas.height;
 
     const cream='#fffdfb';
-    const dark='#352b2c';
-    const mauve='#a55f70';
-    const mauveDark='#8d5360';
-    const muted='#78696b';
+    const dark='#2f282a';
+    const mauve='#a65f72';
+    const mauveDark='#8f3f59';
+    const muted='#6f6365';
     const gold='#b9954f';
-    const border='#eadfda';
-    const divider='#e6d8d2';
+    const border='#ead8d3';
+    const roseSoft='#f9e7e8';
 
-    const bg=ctx.createLinearGradient(0,0,0,H);
-    bg.addColorStop(0,'#fffdfa');
-    bg.addColorStop(.45,'#faf6f2');
-    bg.addColorStop(1,'#f3ece7');
+    const bg=ctx.createLinearGradient(0,0,W,H);
+    bg.addColorStop(0,'#fffdf9');
+    bg.addColorStop(.5,'#fffaf7');
+    bg.addColorStop(1,'#f8eeeb');
     ctx.fillStyle=bg;
     ctx.fillRect(0,0,W,H);
     ctx.textBaseline='top';
 
-    const headerX=46;
-    const headerY=34;
-    const headerW=W-92;
-    const headerH=126;
-    collageCanvasRoundRect(ctx,headerX,headerY,headerW,headerH,22);
-    ctx.fillStyle=cream;
+    ctx.fillStyle='rgba(243,205,207,.28)';
+    ctx.beginPath();
+    ctx.moveTo(W-280,0);
+    ctx.bezierCurveTo(W-185,95,W-112,73,W,204);
+    ctx.lineTo(W,0);
+    ctx.closePath();
     ctx.fill();
-    ctx.strokeStyle=border;
-    ctx.lineWidth=1.2;
-    ctx.stroke();
+    ctx.fillStyle='rgba(244,215,207,.24)';
+    ctx.beginPath();
+    ctx.moveTo(0,H-210);
+    ctx.bezierCurveTo(135,H-120,165,H-60,330,H);
+    ctx.lineTo(0,H);
+    ctx.closePath();
+    ctx.fill();
+    presentationDrawBotanicalAccent(ctx,14,52,.78,1,'rgba(194,143,129,.14)');
+    presentationDrawBotanicalAccent(ctx,W-14,H-160,.76,-1,'rgba(194,143,129,.14)');
 
-    marketplacePresentationDrawContainedImage(ctx,logoImage,64,52,78,78,2);
+    const drawPanel=(x,y,w,h,r=22)=>{
+      ctx.save();
+      ctx.shadowColor='rgba(113,73,80,.12)';
+      ctx.shadowBlur=18;
+      ctx.shadowOffsetY=7;
+      collageCanvasRoundRect(ctx,x,y,w,h,r);
+      ctx.fillStyle='rgba(255,255,255,.94)';
+      ctx.fill();
+      ctx.restore();
+      collageCanvasRoundRect(ctx,x,y,w,h,r);
+      ctx.strokeStyle=border;
+      ctx.lineWidth=1.4;
+      ctx.stroke();
+    };
+
+    const header={x:32,y:42,w:W-64,h:164};
+    drawPanel(header.x,header.y,header.w,header.h,22);
+    marketplacePresentationDrawContainedImage(ctx,logoImage,60,63,112,112,2);
     ctx.fillStyle=mauveDark;
-    ctx.font='900 24px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    ctx.fillText('IRENISMB STOCK NATURA',164,61);
+    ctx.font='900 40px Calibri, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('IRENISMB STOCK NATURA',208,80);
     ctx.fillStyle=muted;
-    ctx.font='600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    ctx.fillText('Natura & AVON · Santa Marta · Envíos a toda Colombia',164,96);
+    ctx.font='500 25px Calibri, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Natura & AVON · Santa Marta · Envíos a toda Colombia',208,129);
     ctx.fillStyle=gold;
-    collageCanvasRoundRect(ctx,66,140,W-132,4,2);
+    collageCanvasRoundRect(ctx,60,184,W-120,4,2);
     ctx.fill();
 
-    const imageCard={x:58,y:194,w:470,h:438};
-    collageCanvasRoundRect(ctx,imageCard.x,imageCard.y,imageCard.w,imageCard.h,24);
-    ctx.fillStyle=cream;
+    const imageCard={x:32,y:228,w:493,h:520};
+    const detailCard={x:540,y:228,w:628,h:520};
+    drawPanel(imageCard.x,imageCard.y,imageCard.w,imageCard.h,22);
+    drawPanel(detailCard.x,detailCard.y,detailCard.w,detailCard.h,22);
+
+    ctx.save();
+    collageCanvasRoundRect(ctx,imageCard.x+22,imageCard.y+22,imageCard.w-44,imageCard.h-44,15);
+    ctx.clip();
+    const imageBg=ctx.createLinearGradient(imageCard.x,imageCard.y,imageCard.x+imageCard.w,imageCard.y+imageCard.h);
+    imageBg.addColorStop(0,'#f2e5d5');
+    imageBg.addColorStop(.52,'#fffaf2');
+    imageBg.addColorStop(1,'#ead7c5');
+    ctx.fillStyle=imageBg;
+    ctx.fillRect(imageCard.x+22,imageCard.y+22,imageCard.w-44,imageCard.h-44);
+    presentationDrawBotanicalAccent(ctx,imageCard.x+34,imageCard.y+300,.92,1,'rgba(191,151,115,.14)');
+    marketplacePresentationDrawContainedImage(ctx,productImage,imageCard.x+22,imageCard.y+22,imageCard.w-44,imageCard.h-44,26);
+    ctx.restore();
+
+    const textX=detailCard.x+28;
+    const textW=detailCard.w-56;
+    let y=detailCard.y+32;
+    collageCanvasRoundRect(ctx,textX,y,318,48,12);
+    ctx.fillStyle=roseSoft;
     ctx.fill();
-    ctx.strokeStyle=border;
-    ctx.lineWidth=1.2;
-    ctx.stroke();
-    marketplacePresentationDrawContainedImage(ctx,productImage,imageCard.x,imageCard.y,imageCard.w,imageCard.h,30);
+    ctx.fillStyle=mauveDark;
+    ctx.font='900 21px Calibri, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('PRESENTACIÓN DE PRODUCTO',textX+20,y+11);
+    y+=78;
 
-    const textX=566;
-    const textW=W-textX-58;
-    let y=205;
-    ctx.fillStyle=mauve;
-    ctx.font='900 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    ctx.fillText('PRESENTACIÓN DE PRODUCTO',textX,y);
-    y+=34;
-
+    let titleSize=42;
+    let titleLines=[];
+    do{
+      ctx.font=`900 ${titleSize}px Calibri, "Segoe UI", Arial, sans-serif`;
+      titleLines=marketplacePresentationWrapLines(ctx,String(p.name||'Producto').toUpperCase(),textW,5);
+      if(titleLines.length<=4) break;
+      titleSize-=2;
+    }while(titleSize>=32);
     ctx.fillStyle=dark;
-    ctx.font='900 31px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    let titleLines=marketplacePresentationWrapLines(ctx,String(p.name||'Producto'),textW,5);
-    for(const line of titleLines){
+    ctx.font=`900 ${titleSize}px Calibri, "Segoe UI", Arial, sans-serif`;
+    const titleLineHeight=Math.round(titleSize*1.08);
+    for(const line of titleLines.slice(0,4)){
       ctx.fillText(line,textX,y);
-      y+=38;
+      y+=titleLineHeight;
     }
 
-    y+=6;
-    if(shouldShowProductPrices() && p.hasPrice!==false && Number(p.price)>0){
-      ctx.fillStyle=mauveDark;
-      ctx.font='950 34px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-      ctx.fillText(fmtCOP.format(p.price),textX,y);
-      y+=50;
-    }
-
+    y+=14;
     const metaParts=[];
     if(p.id) metaParts.push(`Código ${p.id}`);
     if(p.category) metaParts.push(String(p.category).trim());
     if(p.subcategory) metaParts.push(String(p.subcategory).trim());
+    if(p.family) metaParts.push(String(p.family).trim());
     ctx.fillStyle=muted;
-    ctx.font='650 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
+    ctx.font='500 21px Calibri, "Segoe UI", Arial, sans-serif';
     const metaLines=marketplacePresentationWrapLines(ctx,metaParts.filter(Boolean).join(' · '),textW,3);
     for(const line of metaLines){
       ctx.fillText(line,textX,y);
-      y+=22;
+      y+=28;
     }
 
-    const descX=58;
-    const descY=672;
-    const descW=W-116;
-    const descH=370;
-    collageCanvasRoundRect(ctx,descX,descY,descW,descH,24);
-    ctx.fillStyle=cream;
-    ctx.fill();
-    ctx.strokeStyle=border;
-    ctx.lineWidth=1.2;
-    ctx.stroke();
+    if(shouldShowProductPrices()){
+      const priceText=p.hasPrice===false || !(Number(p.price)>0) ? 'Consultar precio' : fmtCOP.format(p.price);
+      const priceY=Math.min(detailCard.y+detailCard.h-82,y+24);
+      collageCanvasRoundRect(ctx,textX,priceY,270,54,14);
+      ctx.fillStyle=roseSoft;
+      ctx.fill();
+      ctx.fillStyle=mauveDark;
+      ctx.font='900 27px Calibri, "Segoe UI", Arial, sans-serif';
+      ctx.fillText(priceText,textX+20,priceY+11);
+    }
 
-    ctx.fillStyle=mauve;
-    ctx.font='900 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    ctx.fillText('DESCRIPCIÓN',descX+24,descY+22);
+    const desc={x:32,y:770,w:W-64,h:324};
+    drawPanel(desc.x,desc.y,desc.w,desc.h,22);
+    collageCanvasRoundRect(ctx,desc.x+28,desc.y+22,180,48,12);
+    ctx.fillStyle=roseSoft;
+    ctx.fill();
+    ctx.fillStyle=mauveDark;
+    ctx.font='900 22px Calibri, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('DESCRIPCIÓN',desc.x+47,desc.y+33);
 
     const description=String(p.description||'').trim()||'Descripción no disponible.';
-    const descTextX=descX+24;
-    const descTextY=descY+58;
-    const descTextW=descW-48;
-    const lineHeight=28;
-    const maxLines=10;
-    ctx.fillStyle=dark;
-    ctx.font='500 17px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    const fullLines=marketplacePresentationWrapLines(ctx,description,descTextW,999);
-    let descLines=fullLines.slice(0,maxLines);
-    if(fullLines.length>maxLines){
+    const descTextX=desc.x+30;
+    const descTextY=desc.y+90;
+    const descTextW=desc.w-60;
+    const maxLines=7;
+    let descSize=23;
+    let descLines=[];
+    do{
+      ctx.font=`500 ${descSize}px Calibri, "Segoe UI", Arial, sans-serif`;
+      descLines=marketplacePresentationWrapLines(ctx,description,descTextW,999);
+      if(descLines.length<=maxLines) break;
+      descSize-=1;
+    }while(descSize>=17);
+    if(descLines.length>maxLines){
+      descLines=descLines.slice(0,maxLines);
       descLines[maxLines-1]=marketplacePresentationTrimLine(ctx,descLines[maxLines-1],descTextW);
     }
-    marketplacePresentationDrawJustified(ctx,descLines,descTextX,descTextY,descTextW,lineHeight);
+    ctx.fillStyle=dark;
+    ctx.font=`500 ${descSize}px Calibri, "Segoe UI", Arial, sans-serif`;
+    marketplacePresentationDrawJustified(ctx,descLines,descTextX,descTextY,descTextW,Math.round(descSize*1.43));
 
-    const footerLineY=H-110;
-    ctx.strokeStyle=divider;
-    ctx.lineWidth=1;
+    const footerLineY=1125;
+    ctx.strokeStyle=gold;
+    ctx.lineWidth=2;
     ctx.beginPath();
-    ctx.moveTo(58,footerLineY);
-    ctx.lineTo(W-58,footerLineY);
+    ctx.moveTo(34,footerLineY);
+    ctx.lineTo(W-34,footerLineY);
     ctx.stroke();
     ctx.textAlign='center';
-    ctx.fillStyle=dark;
-    ctx.font='800 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    ctx.fillText('IRENISMB STOCK NATURA',W/2,H-84);
+    ctx.fillStyle=mauveDark;
+    ctx.font='900 20px Calibri, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('IRENISMB STOCK NATURA',W/2,1142);
     ctx.fillStyle=muted;
-    ctx.font='600 13px system-ui, -apple-system, Segoe UI, Arial, sans-serif';
-    ctx.fillText('Santa Marta · WhatsApp +57 304 208 8961',W/2,H-60);
+    ctx.font='500 17px Calibri, "Segoe UI", Arial, sans-serif';
+    ctx.fillText('Santa Marta · WhatsApp +57 304 208 8961',W/2,1170);
     ctx.textAlign='left';
 
     const code=String(p.id||'').trim();
     const safeName=marketplacePresentationSanitizeFilename(String(p.name||'')).slice(0,72);
-    const fileName=`${code?`${code}_`:''}${safeName}_ficha_marketplace.png`;
+    const fileName=`${code?`${code}_`:''}${safeName}_ficha.png`;
     return {canvas,fileName};
   }
 
@@ -5463,10 +5598,15 @@ function initCollageFeature(){
         total<=36 ? 6 : 7;
       const gap=isMarketplace?16:14;
       const headingGap=isMarketplace?18:16;
-      const titleFontSize=isMarketplace?36:38;
-      const titleLineHeight=isMarketplace?44:46;
+      const parentTitleFontSize=isMarketplace?31:34;
+      const focusTitleFontSize=isMarketplace?37:42;
+      const parentTitleLineHeight=Math.round(parentTitleFontSize*1.14);
+      const focusTitleLineHeight=Math.round(focusTitleFontSize*1.12);
       const blocks=collageExportBlocks(snapshot.tree);
       const imageMap=new Map();
+      const routeParts=Array.isArray(snapshot.titleParts)?snapshot.titleParts.filter(Boolean):[];
+      const focusTitle=String(routeParts.at(-1)||snapshot.title||"Catálogo");
+      const parentTitle=routeParts.length>1?routeParts.slice(0,-1).join(" › "):"";
 
       await Promise.all(snapshot.products.map(async p=>{
         imageMap.set(p,await collageLoadCanvasImage(p));
@@ -5519,14 +5659,14 @@ function initCollageFeature(){
           const maxTextW=Math.max(64,cardW-(captionPad*2));
           let lines=collageCanvasWrapLines(
             pctx,
-            String(product?.name||"Producto"),
+            String(product?.name||"Producto").toUpperCase(),
             maxTextW
           );
           lines=trimWrappedLines(pctx,lines,maxTextW,columns>=5?2:3);
           const price=collagePriceText(product);
           const textH=
             lines.length*nameLine+
-            (price?priceSize+10:0)+
+            (price?priceSize+24:0)+
             (captionPad*2);
           return {product,lines,price,height:imageH+textH};
         });
@@ -5548,10 +5688,15 @@ function initCollageFeature(){
         return layout;
       }
 
-      let naturalH=isMarketplace?68:72;
-      pctx.font=`900 ${titleFontSize}px system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
-      const titleLines=collageCanvasWrapLines(pctx,snapshot.title,CONTENT_W-120);
-      naturalH+=Math.min(titleLines.length,2)*titleLineHeight+(isMarketplace?42:46);
+      pctx.font=`900 ${parentTitleFontSize}px Georgia, Cambria, serif`;
+      const parentTitleLines=parentTitle
+        ? collageCanvasWrapLines(pctx,parentTitle,CONTENT_W-(isMarketplace?150:130)).slice(0,2)
+        : [];
+      pctx.font=`900 ${focusTitleFontSize}px Georgia, Cambria, serif`;
+      const focusTitleLines=collageCanvasWrapLines(pctx,focusTitle,CONTENT_W-(isMarketplace?180:150)).slice(0,2);
+      let naturalH=isMarketplace?92:104;
+      naturalH+=parentTitleLines.length*parentTitleLineHeight;
+      naturalH+=focusTitleLines.length*focusTitleLineHeight+(isMarketplace?62:68);
 
       for(const block of blocks){
         if(block.type==="heading"){
@@ -5577,26 +5722,64 @@ function initCollageFeature(){
       ctx.fillRect(0,0,natural.width,natural.height);
       ctx.textBaseline="top";
 
-      let y=isMarketplace?38:42;
-      ctx.fillStyle="#b9954f";
-      collageCanvasRoundRect(ctx,MARGIN,y,CONTENT_W,4,2);
+      ctx.fillStyle="rgba(240,204,199,.22)";
+      ctx.beginPath();
+      ctx.moveTo(0,0);
+      ctx.lineTo(155,0);
+      ctx.bezierCurveTo(93,68,82,128,0,182);
+      ctx.closePath();
       ctx.fill();
-      y+=18;
+      ctx.beginPath();
+      ctx.moveTo(PAGE_W,natural.height);
+      ctx.lineTo(PAGE_W-190,natural.height);
+      ctx.bezierCurveTo(PAGE_W-102,natural.height-70,PAGE_W-92,natural.height-132,PAGE_W,natural.height-190);
+      ctx.closePath();
+      ctx.fill();
+      presentationDrawBotanicalAccent(ctx,4,42,isMarketplace ? .7 : .64,1,"rgba(186,137,122,.17)");
+      presentationDrawBotanicalAccent(ctx,PAGE_W-4,natural.height-168,isMarketplace ? .72 : .66,-1,"rgba(186,137,122,.17)");
 
+      let y=isMarketplace?30:34;
+      const brandLineGap=isMarketplace?170:155;
+      ctx.strokeStyle="#b9954f";
+      ctx.lineWidth=3;
+      ctx.beginPath();
+      ctx.moveTo(MARGIN,y+10);
+      ctx.lineTo(PAGE_W/2-brandLineGap,y+10);
+      ctx.moveTo(PAGE_W/2+brandLineGap,y+10);
+      ctx.lineTo(PAGE_W-MARGIN,y+10);
+      ctx.stroke();
       ctx.fillStyle="#8d5360";
-      ctx.font="850 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
+      ctx.font=`900 ${isMarketplace?18:17}px Calibri, "Segoe UI", Arial, sans-serif`;
       ctx.textAlign="center";
       ctx.fillText("IRENISMB STOCK NATURA",PAGE_W/2,y);
-      y+=29;
+      y+=isMarketplace?46:44;
 
-      ctx.fillStyle="#352b2c";
-      ctx.font=`900 ${titleFontSize}px system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
-      const displayTitleLines=titleLines.slice(0,2);
-      for(const line of displayTitleLines){
+      if(parentTitleLines.length){
+        ctx.fillStyle="#352b2c";
+        ctx.font=`900 ${parentTitleFontSize}px Georgia, Cambria, serif`;
+        for(const line of parentTitleLines){
+          ctx.fillText(line,PAGE_W/2,y);
+          y+=parentTitleLineHeight;
+        }
+      }
+      ctx.fillStyle="#9a3f5a";
+      ctx.font=`900 ${focusTitleFontSize}px Georgia, Cambria, serif`;
+      for(const line of focusTitleLines){
         ctx.fillText(line,PAGE_W/2,y);
-        y+=titleLineHeight;
+        y+=focusTitleLineHeight;
       }
       y+=14;
+      const ornamentY=y+5;
+      ctx.strokeStyle="rgba(181,137,116,.58)";
+      ctx.lineWidth=2;
+      ctx.beginPath();
+      ctx.moveTo(PAGE_W/2-150,ornamentY);
+      ctx.lineTo(PAGE_W/2-36,ornamentY);
+      ctx.moveTo(PAGE_W/2+36,ornamentY);
+      ctx.lineTo(PAGE_W/2+150,ornamentY);
+      ctx.stroke();
+      presentationDrawHeart(ctx,PAGE_W/2,ornamentY+5,isMarketplace?22:20,"rgba(199,139,132,.72)");
+      y+=isMarketplace?42:40;
       ctx.textAlign="left";
 
       for(const block of blocks){
@@ -5623,12 +5806,12 @@ function initCollageFeature(){
             const x=xStart+c*(gl.cardW+gap);
             const h=row.height;
 
-            collageCanvasRoundRect(ctx,x,y,gl.cardW,h,16);
+            collageCanvasRoundRect(ctx,x,y,gl.cardW,h,18);
             ctx.save();
-            ctx.shadowColor="rgba(104,72,78,.13)";
-            ctx.shadowBlur=12;
-            ctx.shadowOffsetY=5;
-            ctx.fillStyle="#fffdfb";
+            ctx.shadowColor="rgba(104,72,78,.16)";
+            ctx.shadowBlur=16;
+            ctx.shadowOffsetY=7;
+            ctx.fillStyle="rgba(255,255,255,.96)";
             ctx.fill();
             ctx.restore();
 
@@ -5637,23 +5820,28 @@ function initCollageFeature(){
             ctx.stroke();
 
             ctx.save();
-            collageCanvasRoundRect(ctx,x,y,gl.cardW,gl.imageH,15);
+            const imageInset=Math.max(9,Math.min(14,gl.cardW*.055));
+            collageCanvasRoundRect(ctx,x+imageInset,y+imageInset,gl.cardW-imageInset*2,gl.imageH-imageInset,13);
             ctx.clip();
-            ctx.fillStyle="#ffffff";
-            ctx.fillRect(x,y,gl.cardW,gl.imageH);
+            const cardImageBg=ctx.createLinearGradient(x,y,x+gl.cardW,y+gl.imageH);
+            cardImageBg.addColorStop(0,"#f5e9dd");
+            cardImageBg.addColorStop(.5,"#fffdfa");
+            cardImageBg.addColorStop(1,"#eee0d4");
+            ctx.fillStyle=cardImageBg;
+            ctx.fillRect(x+imageInset,y+imageInset,gl.cardW-imageInset*2,gl.imageH-imageInset);
 
             const img=imageMap.get(entry.product);
             if(img&&img.naturalWidth&&img.naturalHeight){
-              const pad=Math.max(8,Math.min(16,gl.cardW*.07));
-              const aw=gl.cardW-pad*2;
-              const ah=gl.imageH-pad*2;
+              const pad=Math.max(8,Math.min(15,gl.cardW*.06));
+              const aw=gl.cardW-(imageInset+pad)*2;
+              const ah=gl.imageH-imageInset-pad*2;
               const scale=Math.min(aw/img.naturalWidth,ah/img.naturalHeight);
               const dw=img.naturalWidth*scale;
               const dh=img.naturalHeight*scale;
               ctx.drawImage(
                 img,
                 x+(gl.cardW-dw)/2,
-                y+(gl.imageH-dh)/2,
+                y+imageInset+(gl.imageH-imageInset-dh)/2,
                 dw,
                 dh
               );
@@ -5663,8 +5851,8 @@ function initCollageFeature(){
             ctx.strokeStyle="#f0e7e2";
             ctx.lineWidth=1;
             ctx.beginPath();
-            ctx.moveTo(x+10,y+gl.imageH);
-            ctx.lineTo(x+gl.cardW-10,y+gl.imageH);
+            ctx.moveTo(x+imageInset,y+gl.imageH);
+            ctx.lineTo(x+gl.cardW-imageInset,y+gl.imageH);
             ctx.stroke();
 
             let ty=y+gl.imageH+gl.captionPad;
@@ -5677,10 +5865,14 @@ function initCollageFeature(){
             }
 
             if(entry.price){
-              ty+=4;
+              const pillH=gl.priceSize+17;
+              const pillY=y+h-gl.captionPad-pillH;
+              collageCanvasRoundRect(ctx,x+imageInset,pillY,gl.cardW-imageInset*2,pillH,11);
+              ctx.fillStyle="#f9e6e5";
+              ctx.fill();
               ctx.fillStyle="#8d5360";
               ctx.font=`950 ${gl.priceSize}px system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
-              ctx.fillText(entry.price,x+gl.cardW/2,ty);
+              ctx.fillText(entry.price,x+gl.cardW/2,pillY+Math.max(7,(pillH-gl.priceSize)/2-1));
             }
             ctx.textAlign="left";
           }

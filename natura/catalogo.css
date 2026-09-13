@@ -4235,10 +4235,32 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
   }
 }
 
+/* Un mismo límite horizontal para encabezado, barras, navegación y tarjetas. */
+:root{
+  --catalog-layout-width:1180px;
+}
+.wrap,
+main,
+.site-header > .wrap.intro{
+  max-width:var(--catalog-layout-width)!important;
+}
+@media (min-width:1221px){
+  main{
+    padding-left:0!important;
+    padding-right:0!important;
+  }
+}
+@media (max-width:1220px){
+  main{
+    padding-left:16px!important;
+    padding-right:16px!important;
+  }
+}
+
 /* Barra de acciones: una línea en PC y parejas debajo del buscador en móvil. */
 @media (min-width:981px){
   .site-header > .wrap.intro{
-    max-width:1480px!important;
+    max-width:var(--catalog-layout-width)!important;
   }
   .bar{
     display:flex!important;
@@ -4275,6 +4297,10 @@ input,select,button,textarea,.search-wrap input{color:var(--ux-ink)!important;bo
 }
 
 @media (max-width:760px){
+  main{
+    padding-left:9px!important;
+    padding-right:9px!important;
+  }
   .bar{
     display:grid!important;
     grid-template-columns:repeat(2,minmax(0,1fr))!important;

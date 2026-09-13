@@ -6,7 +6,7 @@
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
   const SHEET_ID=(()=>{try{return String(GOOGLE_SHEET_SOURCE?.spreadsheetId||"").trim()}catch(_){return "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs"}})();
   const rules=new Set();
-  let admin=false, connecting=false, popup=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false;
+  let admin=false, adminMissingPriceOnly=false, connecting=false, popup=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false;
   let capabilities=new Set(["precio"]);
   const requests=new Map();
   const CONFIG_ITEMS=[
@@ -40,10 +40,14 @@
   document.head.appendChild(css);
 
   window.CATALOG_ADMIN_MODE_ACTIVE=false;
+  window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;
   window.CATALOG_VISIBILITY_RULES=rules;
   window.filterVisibleProducts=list=>{
     const a=Array.isArray(list)?list:[];
-    return window.CATALOG_ADMIN_MODE_ACTIVE?a.slice():a.filter(p=>!isHidden(p));
+    if(window.CATALOG_ADMIN_MODE_ACTIVE){
+      return adminMissingPriceOnly?a.filter(p=>p&&!p.isGiftGalleryImage&&p.hasPrice===false):a.slice();
+    }
+    return a.filter(p=>!isHidden(p));
   };
 
   btn.hidden=false; btn.textContent="Administrar"; btn.setAttribute("aria-pressed","false"); btn.setAttribute("aria-label","Administrar catálogo");
@@ -77,19 +81,22 @@
   function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
   function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
   function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);pendingChannel="";connecting=false;btn.textContent="Administrar";if(openAfterConnect)startAdmin();openAfterConnect=false}
-  function startAdmin(){admin=true;window.CATALOG_ADMIN_MODE_ACTIVE=true;btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");rebuild();if(capabilities.has("configuracion"))loadAdminConfig()}
-  function stopAdmin(){admin=false;window.CATALOG_ADMIN_MODE_ACTIVE=false;btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");removeAdminUI();rebuild()}
+  function startAdmin(){admin=true;adminMissingPriceOnly=false;window.CATALOG_ADMIN_MODE_ACTIVE=true;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");rebuild();if(capabilities.has("configuracion"))loadAdminConfig()}
+  function stopAdmin(){admin=false;adminMissingPriceOnly=false;window.CATALOG_ADMIN_MODE_ACTIVE=false;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");removeAdminUI();rebuild()}
   function removeAdminUI(){document.getElementById("catalogAdminConfig")?.remove();grid.querySelectorAll(".catalog-admin-vis").forEach(x=>x.remove());grid.querySelectorAll(".catalog-admin-has-vis").forEach(x=>x.classList.remove("catalog-admin-has-vis"));grid.querySelectorAll(".catalog-admin-hidden,.catalog-admin-inherited").forEach(x=>x.classList.remove("catalog-admin-hidden","catalog-admin-inherited"));grid.querySelectorAll(".card").forEach(removePrice)}
 
   function ensureConfigPanel(){
     let panel=document.getElementById("catalogAdminConfig");
-    if(panel)return panel;
+    if(panel){renderAdminMissingPriceToggle();return panel}
     panel=document.createElement("section");panel.id="catalogAdminConfig";panel.className="catalog-admin-config";panel.setAttribute("aria-label","Configuración del catálogo");
     const rows=CONFIG_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-config-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-config-toggle="${item.key}">Cargando…</button></div>`).join("");
-    panel.innerHTML=`<div class="catalog-admin-config-head"><div><h2>Configuración del catálogo</h2><p class="catalog-admin-config-note">Estos controles se guardan en Google automáticamente. Ya no necesitas editar la pestaña Configuracion.</p></div></div><div class="catalog-admin-config-list">${rows}</div><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p>`;
-    panel.addEventListener("click",e=>{const b=e.target.closest("[data-config-toggle]");if(b&&!b.disabled)saveConfigToggle(b)});
-    grid.insertAdjacentElement("beforebegin",panel);return panel;
+    const adminFilter=`<div class="catalog-admin-config-row" data-admin-filter="sin-precio"><div><span class="catalog-admin-config-label">Ver productos sin precio</span><span class="catalog-admin-config-help">Filtro exclusivo del modo administrador. Muestra únicamente productos del inventario cuyo Precio está vacío.</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-missing-price-toggle>DESACTIVADO</button></div>`;
+    panel.innerHTML=`<div class="catalog-admin-config-head"><div><h2>Configuración del catálogo</h2><p class="catalog-admin-config-note">Los controles públicos se guardan en Google automáticamente. El filtro de administración solo afecta esta sesión.</p></div></div><div class="catalog-admin-config-list">${rows}${adminFilter}</div><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p>`;
+    panel.addEventListener("click",e=>{const local=e.target.closest("[data-admin-missing-price-toggle]");if(local&&!local.disabled){toggleAdminMissingPrice(local);return}const b=e.target.closest("[data-config-toggle]");if(b&&!b.disabled)saveConfigToggle(b)});
+    grid.insertAdjacentElement("beforebegin",panel);renderAdminMissingPriceToggle();return panel;
   }
+  function renderAdminMissingPriceToggle(){const b=document.querySelector("[data-admin-missing-price-toggle]");if(!b)return;b.disabled=false;b.setAttribute("aria-checked",adminMissingPriceOnly?"true":"false");b.textContent=adminMissingPriceOnly?"ACTIVADO":"DESACTIVADO"}
+  function toggleAdminMissingPrice(button){adminMissingPriceOnly=!adminMissingPriceOnly;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=adminMissingPriceOnly;renderAdminMissingPriceToggle();rebuild()}
   function setConfigStatus(text,cls=""){const el=document.getElementById("catalogAdminConfigStatus");if(!el)return;el.textContent=text||"";el.className="catalog-admin-config-status"+(cls?" "+cls:"")}
   function renderConfigValues(values){
     const source=values&&typeof values==="object"?values:{};
@@ -123,7 +130,7 @@
   function installPrices(){grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(addPrice)}
   function addPrice(card){if(card.querySelector(".price-admin-editor"))return;const price=card.querySelector(".price"),row=card.querySelector(".row"),code=visibilityId("producto",card.dataset.id||"");if(!price||!row||!/^\d{4}$/.test(code))return;const p=productObj(code),prev=p&&p.hasPrice!==false?String(Number(p.price)||""):priceValue(price.textContent),ed=document.createElement("div"),inp=document.createElement("input"),save=document.createElement("button"),st=document.createElement("span");ed.className="price-admin-editor";ed.dataset.prev=prev;inp.className="price-admin-input";inp.inputMode="numeric";inp.value=editable(prev);save.className="btn-acc price-admin-save";save.textContent="Guardar";save.disabled=true;st.className="price-admin-status";inp.oninput=()=>save.disabled=!validPrice(inp.value)||priceValue(inp.value)===ed.dataset.prev;save.onclick=()=>savePrice(card,price,ed,inp,save,st);ed.append(inp,save,st);price.hidden=true;row.classList.add("price-admin-active");price.insertAdjacentElement("afterend",ed)}
   function removePrice(card){const p=card.querySelector(".price"),r=card.querySelector(".row");card.querySelector(".price-admin-editor")?.remove();if(p)p.hidden=false;r?.classList.remove("price-admin-active")}
-  async function savePrice(card,price,ed,inp,save,st){const v=priceValue(inp.value);if(inp.value.trim()&&!validPrice(inp.value)){status(st,"Precio inválido","err");return}inp.disabled=save.disabled=true;save.textContent="Guardando…";try{const code=visibilityId("producto",card.dataset.id||""),r=await request({tipo:"actualizar-precio",codigo:code,precioNuevo:v,precioAnterior:ed.dataset.prev});const g=priceValue(r?.precioGuardado);ed.dataset.prev=g;inp.value=editable(g);const p=productObj(code);if(p){p.price=g?Number(g):0;p.hasPrice=!!g}price.textContent=window.INTERRUPTORES?.MOSTRAR_PRECIOS_PRODUCTO!==false?(g?"$ "+new Intl.NumberFormat("es-CO").format(Number(g)):"Consultar precio"):"";status(st,"Precio guardado","ok")}catch(e){status(st,e.message||"No se pudo guardar","err")}finally{inp.disabled=false;save.textContent="Guardar";save.disabled=priceValue(inp.value)===ed.dataset.prev}}
+  async function savePrice(card,price,ed,inp,save,st){const v=priceValue(inp.value);if(inp.value.trim()&&!validPrice(inp.value)){status(st,"Precio inválido","err");return}inp.disabled=save.disabled=true;save.textContent="Guardando…";try{const code=visibilityId("producto",card.dataset.id||""),r=await request({tipo:"actualizar-precio",codigo:code,precioNuevo:v,precioAnterior:ed.dataset.prev});const g=priceValue(r?.precioGuardado);ed.dataset.prev=g;inp.value=editable(g);const p=productObj(code);if(p){p.price=g?Number(g):0;p.hasPrice=!!g}price.textContent=window.INTERRUPTORES?.MOSTRAR_PRECIOS_PRODUCTO!==false?(g?"$ "+new Intl.NumberFormat("es-CO").format(Number(g)):"Consultar precio"):"";status(st,"Precio guardado","ok");if(adminMissingPriceOnly&&p?.hasPrice)setTimeout(rebuild,0)}catch(e){status(st,e.message||"No se pudo guardar","err")}finally{inp.disabled=false;save.textContent="Guardar";save.disabled=priceValue(inp.value)===ed.dataset.prev}}
   function validPrice(v){const t=String(v??"").trim();if(!t)return true;if(!/^(?:\d+|\d{1,3}(?:[.\s]\d{3})+)$/.test(t))return false;const n=Number(t.replace(/[.\s]/g,""));return Number.isSafeInteger(n)&&n>0}
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
   function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}

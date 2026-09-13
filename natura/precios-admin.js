@@ -1,325 +1,85 @@
-// Edición segura de precios dentro de las tarjetas del catálogo.
+// Administración del catálogo: precios y visibilidad.
 (() => {
-  const boton = document.getElementById("priceAdminBtn");
-  const grid = document.getElementById("grid");
-  if (!boton || !grid) return;
+  const btn=document.getElementById("priceAdminBtn"), grid=document.getElementById("grid");
+  if(!btn||!grid) return;
+  const endpoint=String(window.PRECIOS_ADMIN_CONFIG?.endpoint||"").trim();
+  if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
+  const SHEET_ID=(()=>{try{return String(GOOGLE_SHEET_SOURCE?.spreadsheetId||"").trim()}catch(_){return "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs"}})();
+  const rules=new Set();
+  let admin=false, connecting=false, popup=null, port=null, pendingChannel="", openAfterConnect=false, seq=0;
+  let capabilities=new Set(["precio"]);
+  const requests=new Map();
 
-  const endpoint = String(window.PRECIOS_ADMIN_CONFIG?.endpoint || "").trim();
-  const endpointValido = /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint);
-  if (!endpointValido) return;
+  const css=document.createElement("style");
+  css.textContent=`
+  .card,.album-card{position:relative}.catalog-admin-vis{position:absolute;z-index:20;top:8px;right:8px}
+  .catalog-admin-vis button{border:1px solid #cdbdc0;border-radius:999px;padding:7px 10px;background:#fff;color:#4c3b3e;font:800 11px Arial;box-shadow:0 2px 10px #33222720;cursor:pointer}
+  .catalog-admin-vis button.hidden{background:#ffe8ec;border-color:#d996a5;color:#8f263c}.catalog-admin-vis button.inherited{background:#f3f0f1;color:#71676a;cursor:not-allowed}
+  .catalog-admin-hidden{outline:2px dashed #c75b72!important;outline-offset:-2px;opacity:.72}.catalog-admin-inherited{outline:2px dashed #9d9698!important;outline-offset:-2px;opacity:.72}
+  .price-admin-editor{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:7px;flex:1 1 220px}.price-admin-input{width:100%;height:40px;padding:8px;border:1px solid #d8c9c6;border-radius:10px;text-align:right;font:750 15px Arial}.price-admin-save{min-width:82px}.price-admin-status{grid-column:1/-1;font-size:11px;font-weight:750}.price-admin-status.ok{color:#176b3a}.price-admin-status.err{color:#a02323}
+  .card .row.price-admin-active{align-items:flex-start;flex-wrap:wrap;gap:8px}#priceAdminBtn[aria-pressed="true"]{color:#8d5360!important;border-color:#cfa8b0!important;background:#f5e5e8!important}
+  html.catalog-vis-loading #grid{visibility:hidden}`;
+  document.head.appendChild(css);
 
-  const estilos = document.createElement("style");
-  estilos.textContent = `
-    .price-admin-editor{display:grid;grid-template-columns:minmax(90px,1fr) auto;align-items:center;gap:7px;flex:1 1 220px;min-width:0}
-    .price-admin-input{width:100%;min-width:0;height:40px;padding:8px 10px;border:1px solid #d8c9c6;border-radius:10px;background:#fff;color:#352b2c;font:750 15px/1 Arial,sans-serif;text-align:right}
-    .price-admin-save{min-width:86px;height:40px;padding:8px 13px;border-radius:10px;font-weight:850}
-    .price-admin-status{grid-column:1/-1;min-height:17px;color:#78696b;font-size:11.5px;font-weight:750;text-align:left}
-    .price-admin-status:empty{display:none}
-    .price-admin-status.is-ok{color:#176b3a}
-    .price-admin-status.is-error{color:#a02323}
-    .card .row.price-admin-active{align-items:flex-start;flex-wrap:wrap;gap:8px}
-    .card .row.price-admin-active>[data-role="qty"]{margin-left:auto}
-    #priceAdminBtn[aria-pressed="true"]{color:#8d5360!important;border-color:#cfa8b0!important;background:#f5e5e8!important}
-    @media(max-width:520px){.price-admin-editor{flex-basis:100%}.price-admin-input{font-size:16px}}
-  `;
-  document.head.appendChild(estilos);
+  window.CATALOG_ADMIN_MODE_ACTIVE=false;
+  window.CATALOG_VISIBILITY_RULES=rules;
+  window.filterVisibleProducts=list=>{
+    const a=Array.isArray(list)?list:[];
+    return window.CATALOG_ADMIN_MODE_ACTIVE?a.slice():a.filter(p=>!isHidden(p));
+  };
 
-  let editando = false;
-  let conectando = false;
-  let ventanaPuente = null;
-  let puerto = null;
-  let canalPendiente = "";
-  let activarAlConectar = false;
-  let secuencia = 0;
-  const solicitudes = new Map();
+  btn.hidden=false; btn.textContent="Administrar"; btn.setAttribute("aria-pressed","false");
+  btn.addEventListener("click",toggleAdmin);
+  new MutationObserver(()=>requestAnimationFrame(syncUI)).observe(grid,{childList:true,subtree:true});
+  window.addEventListener("message",onBridgeReady); window.addEventListener("beforeunload",closeBridge);
 
-  boton.setAttribute("aria-pressed", "false");
-  boton.addEventListener("click", alternarEdicion);
+  document.documentElement.classList.add("catalog-vis-loading");
+  loadRules().finally(()=>{document.documentElement.classList.remove("catalog-vis-loading"); rebuild();});
 
-  const observador = new MutationObserver(() => window.requestAnimationFrame(sincronizarInterfaz));
-  observador.observe(grid, {childList:true, subtree:true});
-  window.addEventListener("message", recibirConexion);
-  window.addEventListener("beforeunload", cerrarConexion);
-  sincronizarInterfaz();
+  function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}
+  function key(t,id){return `${norm(t)}::${norm(id)}`}
+  function ids(p){const c=norm(p?.category),s=norm(p?.subcategory),f=norm(p?.fragranceFamily),sec=norm(p?.section);return{sec,c,s:c&&s?`${c}|${s}`:"",f:c&&s&&f?`${c}|${s}|${f}`:""}}
+  function isHidden(p){if(!p)return false;const i=ids(p),code=String(p.id||p.code||"").trim();return (code&&rules.has(key("producto",code)))||(i.sec&&rules.has(key("seccion",i.sec)))||(i.c&&rules.has(key("categoria",i.c)))||(i.s&&rules.has(key("subcategoria",i.s)))||(i.f&&rules.has(key("familia",i.f)))}
+  function isDirectProduct(p){return rules.has(key("producto",String(p?.id||p?.code||"").trim()))}
+  function cell(c){return !c?"":c.f!=null?String(c.f):c.v!=null?String(c.v):""}
 
-  function hayTarjetasDeProductos(){
-    return !grid.classList.contains("album-grid-mode") &&
-      Boolean(grid.querySelector(":scope > .card:not(.album-card)"));
-  }
+  function loadRules(){return new Promise(resolve=>{
+    if(!SHEET_ID){resolve();return} const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
+    const finish=rows=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}s.remove();rules.clear();for(const r of rows||[]){if(r[0]&&r[1]&&["x","si","true","1","oculto"].includes(norm(r[2])))rules.add(key(r[0],r[1]))}resolve()};
+    const timer=setTimeout(()=>finish([]),6000); window[cb]=p=>finish(p?.status==="ok"&&Array.isArray(p?.table?.rows)?p.table.rows.map(r=>(r.c||[]).map(cell)):[]); s.onerror=()=>finish([]);
+    const q=new URLSearchParams({sheet:"Visibilidad",headers:"1",range:"A:E",tq:"select A,B,C,D,E",tqx:`out:json;responseHandler:${cb}`,_:String(Date.now())});
+    s.src=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?${q}`;s.async=true;document.head.appendChild(s);
+  })}
+  function rebuild(){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();if(typeof refreshFilterOptionsForScope==="function")refreshFilterOptionsForScope();if(typeof render==="function")render()}catch(e){console.info(e)}requestAnimationFrame(syncUI)}
+  function syncUI(){btn.hidden=false;btn.disabled=connecting;btn.title=admin?"Salir del modo administrador":"Administrar precios y visibilidad";if(!admin)return;installVisibility();installPrices()}
 
-  function sincronizarInterfaz(){
-    const disponible = hayTarjetasDeProductos();
-    if(!disponible && editando) detenerEdicion();
-    boton.hidden = !disponible;
-    if(!conectando) boton.disabled = !disponible;
-    boton.title = disponible
-      ? "Editar los precios de los productos visibles"
-      : "Abre una categoría hasta llegar a sus productos";
-    if(editando) instalarEditores();
-  }
+  function toggleAdmin(){if(admin){stopAdmin();return} if(port&&popup&&!popup.closed){startAdmin();return} connect()}
+  function connect(){if(connecting)return;connecting=true;openAfterConnect=true;btn.textContent="Conectando…";pendingChannel=randomChannel();const u=new URL(endpoint);u.searchParams.set("modo","puente");u.searchParams.set("canal",pendingChannel);popup=window.open(u,"irenismbAdminGoogle","popup=yes,width=520,height=320,resizable=yes,scrollbars=yes");if(!popup){connecting=false;btn.textContent="Administrar";alert("Permite ventanas emergentes para conectar con Google.")}}
+  function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
+  function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
+  function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);pendingChannel="";connecting=false;btn.textContent="Administrar";if(openAfterConnect)startAdmin();openAfterConnect=false}
+  function startAdmin(){admin=true;window.CATALOG_ADMIN_MODE_ACTIVE=true;btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");rebuild()}
+  function stopAdmin(){admin=false;window.CATALOG_ADMIN_MODE_ACTIVE=false;btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");removeAdminUI();rebuild()}
+  function removeAdminUI(){grid.querySelectorAll(".catalog-admin-vis").forEach(x=>x.remove());grid.querySelectorAll(".catalog-admin-hidden,.catalog-admin-inherited").forEach(x=>x.classList.remove("catalog-admin-hidden","catalog-admin-inherited"));grid.querySelectorAll(".card").forEach(removePrice)}
 
-  function alternarEdicion(){
-    if(editando){
-      detenerEdicion();
-      return;
-    }
-    if(!hayTarjetasDeProductos()) return;
-    if(puerto && ventanaPuente && !ventanaPuente.closed){
-      iniciarEdicion();
-      return;
-    }
-    conectarConGoogle();
-  }
+  function installVisibility(){if(!capabilities.has("visibilidad"))return;grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(productVis);grid.querySelectorAll(":scope > .album-card").forEach(albumVis)}
+  function productObj(code){try{return productById?.get?.(code)||allLoadedProducts?.find?.(p=>String(p?.id||"")===code)||null}catch(_){return null}}
+  function mark(card,direct,inherited){card.classList.toggle("catalog-admin-hidden",!!direct);card.classList.toggle("catalog-admin-inherited",!!inherited)}
+  function productVis(card){if(card.querySelector(".catalog-admin-vis"))return;const code=String(card.dataset.id||"").trim(),p=productObj(code);if(!/^\d{4}$/.test(code)||!p)return;const direct=isDirectProduct(p),inherited=isHidden(p)&&!direct;mark(card,direct,inherited);addVisButton(card,inherited?null:{tipo:"producto",id:code,label:String(p.name||code),hidden:direct},inherited)}
+  function albumInfo(card){const b=card.querySelector("[data-album-open]");if(!b)return null;const p=String(b.dataset.albumOpen||"").split("::").map(norm),label=String(card.querySelector(".album-label")?.textContent||"").trim();if(p[0]==="audience"&&p[1])return{tipo:"categoria",id:p[1],label:label||p[1],parents:[]};if(p[0]==="category"&&p[1]&&p[2])return{tipo:"subcategoria",id:`${p[1]}|${p[2]}`,label:label||p[2],parents:[key("categoria",p[1])]};if(p[0]==="family"&&p[1]&&p[2]&&p[3])return{tipo:"familia",id:`${p[1]}|${p[2]}|${p[3]}`,label:label||p[3],parents:[key("categoria",p[1]),key("subcategoria",`${p[1]}|${p[2]}`)]};return null}
+  function albumVis(card){if(card.querySelector(".catalog-admin-vis"))return;const i=albumInfo(card);if(!i)return;const direct=rules.has(key(i.tipo,i.id)),inherited=!direct&&i.parents.some(x=>rules.has(x));mark(card,direct,inherited);addVisButton(card,inherited?null:{...i,hidden:direct},inherited)}
+  function addVisButton(card,info,inherited){const w=document.createElement("div"),b=document.createElement("button");w.className="catalog-admin-vis";b.type="button";if(inherited){b.textContent="Oculto por nivel superior";b.className="inherited";b.disabled=true}else{b.textContent=info.hidden?"Oculto":"Visible";b.className=info.hidden?"hidden":"";b.title=info.hidden?`Mostrar ${info.label}`:`Ocultar ${info.label}`;b.onclick=e=>{e.preventDefault();e.stopPropagation();saveVisibility(info,b)}}w.appendChild(b);card.appendChild(w)}
+  async function saveVisibility(info,b){b.disabled=true;const old=b.textContent;b.textContent="Guardando…";try{const r=await request({tipo:"actualizar-visibilidad",tipoRegla:info.tipo,identificador:info.id,etiqueta:info.label,ocultoNuevo:!info.hidden});const k=key(info.tipo,info.id);r?.oculto?rules.add(k):rules.delete(k);rebuild()}catch(e){b.disabled=false;b.textContent=old;alert(e.message||"No se pudo guardar la visibilidad.")}}
 
-  function conectarConGoogle(){
-    if(conectando) return;
-    conectando = true;
-    activarAlConectar = true;
-    boton.disabled = true;
-    boton.textContent = "Conectando…";
-    canalPendiente = crearCanalSeguro();
+  function installPrices(){grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(addPrice)}
+  function addPrice(card){if(card.querySelector(".price-admin-editor"))return;const price=card.querySelector(".price"),row=card.querySelector(".row"),code=String(card.dataset.id||"").trim();if(!price||!row||!/^\d{4}$/.test(code))return;const prev=priceValue(price.textContent),ed=document.createElement("div"),inp=document.createElement("input"),save=document.createElement("button"),st=document.createElement("span");ed.className="price-admin-editor";ed.dataset.prev=prev;inp.className="price-admin-input";inp.inputMode="numeric";inp.value=editable(prev);save.className="btn-acc price-admin-save";save.textContent="Guardar";save.disabled=true;st.className="price-admin-status";inp.oninput=()=>save.disabled=!validPrice(inp.value)||priceValue(inp.value)===ed.dataset.prev;save.onclick=()=>savePrice(card,price,ed,inp,save,st);ed.append(inp,save,st);price.hidden=true;row.classList.add("price-admin-active");price.insertAdjacentElement("afterend",ed)}
+  function removePrice(card){const p=card.querySelector(".price"),r=card.querySelector(".row");card.querySelector(".price-admin-editor")?.remove();if(p)p.hidden=false;r?.classList.remove("price-admin-active")}
+  async function savePrice(card,price,ed,inp,save,st){const v=priceValue(inp.value);if(inp.value.trim()&&!validPrice(inp.value)){status(st,"Precio inválido","err");return}inp.disabled=save.disabled=true;save.textContent="Guardando…";try{const r=await request({tipo:"actualizar-precio",codigo:String(card.dataset.id||""),precioNuevo:v,precioAnterior:ed.dataset.prev});const g=priceValue(r?.precioGuardado);ed.dataset.prev=g;inp.value=editable(g);price.textContent=g?"$ "+new Intl.NumberFormat("es-CO").format(Number(g)):"Consultar precio";status(st,"Precio guardado","ok")}catch(e){status(st,e.message||"No se pudo guardar","err")}finally{inp.disabled=false;save.textContent="Guardar";save.disabled=priceValue(inp.value)===ed.dataset.prev}}
+  function validPrice(v){const t=String(v??"").trim();if(!t)return true;if(!/^(?:\d+|\d{1,3}(?:[.\s]\d{3})+)$/.test(t))return false;const n=Number(t.replace(/[.\s]/g,""));return Number.isSafeInteger(n)&&n>0}
+  function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
+  function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}
 
-    const url = new URL(endpoint);
-    url.searchParams.set("modo", "puente");
-    url.searchParams.set("canal", canalPendiente);
-    ventanaPuente = window.open(
-      url.toString(),
-      "irenismbPreciosGoogle",
-      "popup=yes,width=500,height=300,resizable=yes,scrollbars=yes"
-    );
-
-    if(!ventanaPuente){
-      conectando = false;
-      activarAlConectar = false;
-      boton.textContent = "Precios";
-      sincronizarInterfaz();
-      window.alert("El navegador bloqueó la conexión con Google. Permite ventanas emergentes para este sitio.");
-    }
-  }
-
-  function crearCanalSeguro(){
-    const bytes = new Uint8Array(24);
-    window.crypto.getRandomValues(bytes);
-    return Array.from(bytes, value => value.toString(16).padStart(2, "0")).join("");
-  }
-
-  function esOrigenGoogleConfiable(origen){
-    return origen === "https://script.google.com" ||
-      /^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(origen);
-  }
-
-  function recibirConexion(evento){
-    const mensaje = evento && evento.data || {};
-    if(mensaje.tipo !== "irenismb-precios-puente-listo") return;
-    if(!esOrigenGoogleConfiable(evento.origin)) return;
-    if(!canalPendiente || mensaje.canal !== canalPendiente) return;
-    if(!evento.ports || !evento.ports[0]) return;
-
-    puerto?.close();
-    puerto = evento.ports[0];
-    puerto.onmessage = recibirRespuesta;
-    puerto.start();
-    canalPendiente = "";
-    conectando = false;
-    boton.textContent = "Precios";
-
-    if(activarAlConectar && hayTarjetasDeProductos()) iniciarEdicion();
-    else sincronizarInterfaz();
-    activarAlConectar = false;
-  }
-
-  function iniciarEdicion(){
-    editando = true;
-    boton.textContent = "Terminar edición";
-    boton.setAttribute("aria-pressed", "true");
-    instalarEditores();
-  }
-
-  function detenerEdicion(){
-    editando = false;
-    boton.textContent = "Precios";
-    boton.setAttribute("aria-pressed", "false");
-    for(const card of grid.querySelectorAll(".card")) retirarEditor(card);
-    sincronizarInterfaz();
-  }
-
-  function instalarEditores(){
-    if(!editando) return;
-    for(const card of grid.querySelectorAll(":scope > .card:not(.album-card)")) instalarEditor(card);
-  }
-
-  function instalarEditor(card){
-    if(card.querySelector(".price-admin-editor")) return;
-    const price = card.querySelector(".price");
-    const row = card.querySelector(".row");
-    const code = String(card.dataset.id || "").trim();
-    if(!price || !row || !/^\d{4}$/.test(code)) return;
-
-    const previous = precioComparable(price.textContent);
-    const editor = document.createElement("div");
-    editor.className = "price-admin-editor";
-    editor.dataset.previous = previous;
-
-    const input = document.createElement("input");
-    input.className = "price-admin-input";
-    input.type = "text";
-    input.inputMode = "numeric";
-    input.autocomplete = "off";
-    input.placeholder = "Escribe el precio";
-    input.value = formatoEditable(previous);
-    input.setAttribute("aria-label", "Precio del producto " + code);
-
-    const save = document.createElement("button");
-    save.className = "btn-acc price-admin-save";
-    save.type = "button";
-    save.textContent = "Guardar";
-    save.disabled = true;
-
-    const status = document.createElement("span");
-    status.className = "price-admin-status";
-    status.setAttribute("role", "status");
-    status.setAttribute("aria-live", "polite");
-
-    input.addEventListener("input", () => {
-      limpiarEstado(status);
-      const parsed = validarPrecio(input.value, false);
-      save.disabled = !parsed.valido || parsed.normalizado === editor.dataset.previous;
-    });
-    input.addEventListener("keydown", event => {
-      if(event.key === "Enter" && !save.disabled){
-        event.preventDefault();
-        guardarPrecio(card, price, editor, input, save, status);
-      }else if(event.key === "Escape"){
-        input.value = formatoEditable(editor.dataset.previous);
-        save.disabled = true;
-        limpiarEstado(status);
-      }
-    });
-    save.addEventListener("click", () => guardarPrecio(card, price, editor, input, save, status));
-
-    editor.append(input, save, status);
-    price.hidden = true;
-    row.classList.add("price-admin-active");
-    price.insertAdjacentElement("afterend", editor);
-  }
-
-  function retirarEditor(card){
-    const price = card.querySelector(".price");
-    const row = card.querySelector(".row");
-    card.querySelector(".price-admin-editor")?.remove();
-    if(price) price.hidden = false;
-    row?.classList.remove("price-admin-active");
-  }
-
-  async function guardarPrecio(card, price, editor, input, save, status){
-    const parsed = validarPrecio(input.value, true);
-    if(!parsed.valido){
-      mostrarEstado(status, parsed.error, "error");
-      input.focus();
-      return;
-    }
-    if(parsed.normalizado === editor.dataset.previous) return;
-
-    input.disabled = true;
-    save.disabled = true;
-    save.textContent = "Guardando…";
-    mostrarEstado(status, "Guardando en Google Sheets…");
-
-    try{
-      const result = await solicitarActualizacion({
-        codigo:String(card.dataset.id || "").trim(),
-        precioNuevo:parsed.normalizado,
-        precioAnterior:editor.dataset.previous
-      });
-      const guardado = precioComparable(result && result.precioGuardado);
-      editor.dataset.previous = guardado;
-      input.value = formatoEditable(guardado);
-      price.textContent = guardado === "" ? "Consultar precio" : formatoCatalogo(guardado);
-      mostrarEstado(status, "Precio guardado", "ok");
-      window.dispatchEvent(new CustomEvent("irenismb:precio-guardado", {
-        detail:{codigo:String(card.dataset.id || "").trim(), precio:guardado}
-      }));
-      window.setTimeout(() => {
-        if(status.textContent === "Precio guardado") limpiarEstado(status);
-      }, 1500);
-    }catch(error){
-      mostrarEstado(status, error && error.message ? error.message : "No se pudo guardar el precio.", "error");
-    }finally{
-      input.disabled = false;
-      save.textContent = "Guardar";
-      save.disabled = precioComparable(input.value) === editor.dataset.previous;
-    }
-  }
-
-  function solicitarActualizacion(datos){
-    return new Promise((resolve, reject) => {
-      if(!puerto || !ventanaPuente || ventanaPuente.closed){
-        reject(new Error("La conexión con Google se cerró. Pulsa Terminar edición y vuelve a activar Precios."));
-        return;
-      }
-
-      const solicitudId = "precio-" + Date.now() + "-" + (++secuencia);
-      const timer = window.setTimeout(() => {
-        solicitudes.delete(solicitudId);
-        reject(new Error("Google tardó demasiado en responder. Intenta nuevamente."));
-      }, 45000);
-
-      solicitudes.set(solicitudId, {resolve, reject, timer});
-      puerto.postMessage({tipo:"actualizar-precio", solicitudId, ...datos});
-    });
-  }
-
-  function recibirRespuesta(evento){
-    const mensaje = evento && evento.data || {};
-    const pending = solicitudes.get(mensaje.solicitudId);
-    if(!pending) return;
-    window.clearTimeout(pending.timer);
-    solicitudes.delete(mensaje.solicitudId);
-
-    if(mensaje.tipo === "precio-actualizado") pending.resolve(mensaje.resultado || {});
-    else pending.reject(new Error(mensaje.error || "No se pudo guardar el precio."));
-  }
-
-  function validarPrecio(value, conMensaje){
-    const text = String(value == null ? "" : value).trim();
-    if(text === "") return {valido:true, normalizado:""};
-    if(!/^(?:\d+|\d{1,3}(?:[.\s]\d{3})+)$/.test(text)){
-      return {valido:false, normalizado:"", error:conMensaje ? "Escribe un número entero; puedes usar puntos de miles." : ""};
-    }
-    const normalized = text.replace(/[.\s]/g, "").replace(/^0+(?=\d)/, "");
-    const number = Number(normalized);
-    if(!Number.isSafeInteger(number) || number <= 0){
-      return {valido:false, normalizado:"", error:conMensaje ? "El precio debe ser mayor que cero o quedar vacío." : ""};
-    }
-    return {valido:true, normalizado:String(number)};
-  }
-
-  function precioComparable(value){
-    const text = String(value == null ? "" : value).trim();
-    if(!text || /^Consultar precio$/i.test(text)) return "";
-    const digits = text.replace(/[^\d]/g, "");
-    return digits ? String(Number(digits)) : "";
-  }
-
-  function formatoEditable(value){
-    return value === "" ? "" : new Intl.NumberFormat("es-CO").format(Number(value));
-  }
-
-  function formatoCatalogo(value){
-    return "$ " + new Intl.NumberFormat("es-CO").format(Number(value));
-  }
-
-  function mostrarEstado(element, message, type){
-    element.className = "price-admin-status" + (type ? " is-" + type : "");
-    element.textContent = message || "";
-  }
-
-  function limpiarEstado(element){
-    mostrarEstado(element, "");
-  }
-
-  function cerrarConexion(){
-    try{ puerto?.close(); }catch(_){}
-    try{ if(ventanaPuente && !ventanaPuente.closed) ventanaPuente.close(); }catch(_){}
-  }
+  function request(data){return new Promise((resolve,reject)=>{if(!port||!popup||popup.closed){reject(new Error("La conexión con Google se cerró."));return}const id=(data.tipo==="actualizar-visibilidad"?"vis":"price")+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
+  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
+  function closeBridge(){try{port?.close()}catch(_){}try{if(popup&&!popup.closed)popup.close()}catch(_){}}
 })();

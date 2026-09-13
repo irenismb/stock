@@ -203,7 +203,7 @@
   syncView();
 })();
 
-// Formatos del folleto: los dos botones generan y copian la imagen.
+// Formatos del folleto: cada botón genera, copia y descarga la imagen.
 (() => {
   const modal = document.getElementById("collageModal");
   if(!modal) return;
@@ -215,8 +215,8 @@
   const socialActions = modal.querySelector("#collageSocialActions");
   const messengerBtn = modal.querySelector("#collageMessengerBtn");
   const facebookBtn = modal.querySelector("#collageFacebookBtn");
-  const captureButton = messengerBtn || facebookBtn;
-  if(!sizeControl || formatButtons.length < 2 || !captureButton) return;
+  const outputButton = messengerBtn || facebookBtn;
+  if(!sizeControl || formatButtons.length < 2 || !outputButton) return;
 
   const labels = {
     instagram: "Vertical · 1080 × 1350",
@@ -245,8 +245,10 @@
   if(!helper){
     helper = document.createElement("div");
     helper.className = "collage-format-helper";
-    helper.textContent = "Selecciona un formato para generar y copiar la imagen.";
+    helper.textContent = "Selecciona un formato para generar, copiar y descargar la imagen.";
     labelEl?.insertAdjacentElement("afterend", helper);
+  }else{
+    helper.textContent = "Selecciona un formato para generar, copiar y descargar la imagen.";
   }
 
   function restoreLabels(){
@@ -255,7 +257,7 @@
       button.textContent = labels[key] || button.textContent;
       button.classList.remove("is-copying");
       button.disabled = false;
-      button.setAttribute("aria-label", `Generar y copiar ${labels[key] || "imagen"}`);
+      button.setAttribute("aria-label", `Generar, copiar y descargar ${labels[key] || "imagen"}`);
     }
   }
 
@@ -276,7 +278,7 @@
       const started = Date.now();
       const check = () => {
         if(token !== actionToken){ reject(new Error("Operación reemplazada.")); return; }
-        if(!captureButton.disabled){ resolve(); return; }
+        if(!outputButton.disabled){ resolve(); return; }
         if(Date.now() - started >= timeoutMs){ reject(new Error("La imagen tardó demasiado en generarse.")); return; }
         window.setTimeout(check, 50);
       };
@@ -284,108 +286,33 @@
     });
   }
 
-  function temporarilyReplaceClipboardWrite(replacement){
-    const clipboard = navigator.clipboard;
-    if(!clipboard || typeof clipboard.write !== "function") return null;
-    const own = Object.getOwnPropertyDescriptor(clipboard, "write");
-    try{
-      Object.defineProperty(clipboard, "write", {
-        configurable: true,
-        writable: true,
-        value: replacement
-      });
-    }catch(_){
-      try{ clipboard.write = replacement; }catch(__){ return null; }
-      if(clipboard.write !== replacement) return null;
-    }
-    return () => {
-      try{
-        if(own) Object.defineProperty(clipboard, "write", own);
-        else delete clipboard.write;
-      }catch(_){ }
-    };
-  }
-
-  function capturePreparedBlob(resolveBlob, rejectBlob){
-    let captured = false;
-    const restoreClipboard = temporarilyReplaceClipboardWrite(items => {
-      captured = true;
-      try{
-        const item = items?.[0];
-        if(!item || typeof item.getType !== "function") throw new Error("No se encontró la imagen preparada.");
-        Promise.resolve(item.getType("image/png")).then(resolveBlob, rejectBlob);
-        return Promise.resolve();
-      }catch(error){
-        rejectBlob(error);
-        return Promise.reject(error);
-      }
-    });
-    if(!restoreClipboard) throw new Error("No se pudo acceder temporalmente al portapapeles del navegador.");
-
-    const blockDownload = event => {
-      const link = event.target?.closest?.("a[download]");
-      if(!link) return;
-      event.preventDefault();
-      event.stopImmediatePropagation();
-    };
-    document.addEventListener("click", blockDownload, true);
-    try{
-      captureButton.click();
-    }finally{
-      document.removeEventListener("click", blockDownload, true);
-      restoreClipboard();
-    }
-    if(!captured) throw new Error("No se pudo obtener la imagen generada.");
-  }
-
   let actionToken = 0;
-  async function generateAndCopy(button){
+  async function generateCopyAndDownload(button){
     if(modal.classList.contains("is-ficha-mode")) return;
-    if(!navigator.clipboard || typeof navigator.clipboard.write !== "function" || typeof window.ClipboardItem !== "function"){
-      alert("Este navegador no permite copiar imágenes PNG directamente al portapapeles.");
-      return;
-    }
 
     const token = ++actionToken;
-    let resolveBlob;
-    let rejectBlob;
-    const blobPromise = new Promise((resolve, reject) => {
-      resolveBlob = resolve;
-      rejectBlob = reject;
-    });
-
-    let clipboardPromise;
-    try{
-      clipboardPromise = navigator.clipboard.write([
-        new ClipboardItem({"image/png": blobPromise})
-      ]);
-      clipboardPromise.catch(() => {});
-    }catch(error){
-      rejectBlob(error);
-      alert("No fue posible iniciar la copia de la imagen al portapapeles.");
-      return;
-    }
-
     for(const current of formatButtons){
       current.disabled = true;
       current.classList.toggle("is-copying", current === button);
     }
-    button.textContent = "Generando y copiando…";
+    button.textContent = "Generando, copiando y descargando…";
 
     try{
       await waitUntilReady(token);
       if(token !== actionToken) return;
-      capturePreparedBlob(resolveBlob, rejectBlob);
-      await clipboardPromise;
+
+      // El botón social original ya tiene la lógica robusta para copiar al
+      // portapapeles y descargar el PNG preparado en el formato seleccionado.
+      outputButton.click();
+
       if(token !== actionToken) return;
-      button.textContent = "✓ Copiada";
-      await new Promise(resolve => window.setTimeout(resolve, 900));
+      button.textContent = "✓ Copiada y descargada";
+      await new Promise(resolve => window.setTimeout(resolve, 1100));
     }catch(error){
-      rejectBlob(error);
-      console.error("No se pudo generar y copiar la imagen del folleto.", error);
+      console.error("No se pudo generar, copiar y descargar la imagen del folleto.", error);
       if(token === actionToken){
-        button.textContent = "No se pudo copiar";
-        alert("No se pudo copiar la imagen al portapapeles. Revisa los permisos del navegador e inténtalo nuevamente.");
+        button.textContent = "No se pudo completar";
+        alert("No se pudo completar la generación de la imagen. Inténtalo nuevamente.");
         await new Promise(resolve => window.setTimeout(resolve, 1100));
       }
     }finally{
@@ -397,7 +324,7 @@
   syncHiddenActions();
 
   for(const button of formatButtons){
-    button.addEventListener("click", () => { void generateAndCopy(button); });
+    button.addEventListener("click", () => { void generateCopyAndDownload(button); });
   }
 
   const observer = new MutationObserver(() => syncHiddenActions());
@@ -463,7 +390,7 @@
   }
 
   const observer = new MutationObserver(queueSync);
-  observer.observe(count, {childList:true, characterData:true, subtree:true});
+  observer.observe(count, {childList:true, characterData:true,subtree:true});
   observer.observe(grid, {childList:true, subtree:true});
   syncLoadingUi();
 })();

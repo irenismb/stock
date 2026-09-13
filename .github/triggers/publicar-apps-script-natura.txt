@@ -1,3 +1,3 @@
 Control de despliegue de Apps Script Natura desde GitHub a Google e implementación.
 Solicitud automática de publicación: 2026-09-12.
-Motivo: activar administración de visibilidad y precios del catálogo.
+Motivo: migrar controles globales a propiedades de Apps Script y administrarlos desde la web.

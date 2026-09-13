@@ -6214,9 +6214,15 @@ function uxScrollStack(){
 }
 
 function uxScrollToCatalogStart(){
-  // En administración se conserva la posición al navegar entre niveles.
-  if(window.CATALOG_ADMIN_MODE_ACTIVE) return;
-  const target=document.querySelector("main")||grid;
+  let target=document.querySelector("main")||grid;
+  if(window.CATALOG_ADMIN_MODE_ACTIVE&&grid){
+    const first=Array.from(grid.children).find(el=>{
+      if(!el||!el.matches?.(".album-card,.card")||el.hidden) return false;
+      const style=window.getComputedStyle(el);
+      return style.display!=="none"&&style.visibility!=="hidden";
+    });
+    target=first||grid;
+  }
   if(!target) return;
   const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-86);
   requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"smooth"}));

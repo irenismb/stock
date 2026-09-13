@@ -58,7 +58,7 @@
 
   function loadRules(){return new Promise(resolve=>{
     if(!SHEET_ID){resolve();return} const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
-    const finish=rows=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}s.remove();rules.clear();for(const r of rows||[]){if(r[0]&&r[1]&&["x","si","true","1","oculto"].includes(norm(r[2])))rules.add(key(r[0],r[1]))}resolve()};
+    const finish=rows=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}s.remove();rules.clear();for(const r of rows||[]){if(!r[0]||!r[1])continue;const k=key(r[0],r[1]);["x","si","true","1","oculto"].includes(norm(r[2]))?rules.add(k):rules.delete(k)}resolve()};
     const timer=setTimeout(()=>finish([]),6000); window[cb]=p=>finish(p?.status==="ok"&&Array.isArray(p?.table?.rows)?p.table.rows.map(r=>(r.c||[]).map(cell)):[]); s.onerror=()=>finish([]);
     const q=new URLSearchParams({sheet:"Visibilidad",headers:"1",range:"A:E",tq:"select A,B,C,D,E",tqx:`out:json;responseHandler:${cb}`,_:String(Date.now())});
     s.src=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?${q}`;s.async=true;document.head.appendChild(s);

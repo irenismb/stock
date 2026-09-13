@@ -88,21 +88,69 @@
   });
 })();
 
-// Muestra productos completos directamente durante la búsqueda, sin exigir llegar al último nivel de categoría.
+// Vistas directas de productos. Las dos opciones de administrador son independientes:
+// 1) mostrar tarjetas completas al buscar; 2) mostrar todo el catálogo cuando el buscador está vacío.
 (() => {
-  const STORAGE_KEY = "irenismb_quick_image_search_v1";
+  const SEARCH_DIRECT_STORAGE_KEY = "irenismb_quick_image_search_v1";
+  const SHOW_ALL_STORAGE_KEY = "irenismb_show_all_products_direct_v1";
   const searchInput = document.getElementById("q");
   const grid = document.getElementById("grid");
   const count = document.getElementById("count");
   if(!searchInput || !grid) return;
 
-  let enabled = false;
+  let searchDirectEnabled = false;
+  let showAllEnabled = false;
   try{
-    enabled = localStorage.getItem(STORAGE_KEY) === "1";
+    searchDirectEnabled = localStorage.getItem(SEARCH_DIRECT_STORAGE_KEY) === "1";
+    showAllEnabled = localStorage.getItem(SHOW_ALL_STORAGE_KEY) === "1";
   }catch(_){ }
 
+  function hasSearch(){
+    return String(searchInput.value || "").trim().length > 0;
+  }
+
+  function isSearchDirectActive(){
+    return searchDirectEnabled && hasSearch();
+  }
+
+  function isShowAllDirectActive(){
+    return showAllEnabled && !hasSearch();
+  }
+
   function isActive(){
-    return enabled && String(searchInput.value || "").trim().length > 0;
+    return isSearchDirectActive() || isShowAllDirectActive();
+  }
+
+  function allCatalogProducts(){
+    try{
+      if(typeof all !== "undefined" && Array.isArray(all)){
+        return all.filter(product => product && !product.isGiftGalleryImage);
+      }
+    }catch(error){
+      console.warn("No se pudo leer el catálogo completo para la vista directa.", error);
+    }
+    return [];
+  }
+
+  function directProducts(){
+    if(isShowAllDirectActive()){
+      const products = allCatalogProducts();
+      if(!products.length && /cargando productos/i.test(String(count?.textContent || ""))){
+        return null;
+      }
+      return products;
+    }
+
+    if(isSearchDirectActive()){
+      try{
+        return typeof buildFilteredList === "function" ? buildFilteredList() : [];
+      }catch(error){
+        console.error("No se pudieron preparar los productos de la búsqueda directa.", error);
+        return [];
+      }
+    }
+
+    return [];
   }
 
   function renderDirectProducts(){
@@ -111,13 +159,8 @@
     grid.classList.remove("quick-image-search");
     if(!active) return;
 
-    let products = [];
-    try{
-      products = typeof buildFilteredList === "function" ? buildFilteredList() : [];
-    }catch(error){
-      console.error("No se pudieron preparar los productos de la búsqueda directa.", error);
-      products = [];
-    }
+    const products = directProducts();
+    if(products === null) return;
 
     grid.classList.remove("album-grid-mode", "root-nav-mode", "album-three-column-layout");
     const fragment = document.createDocumentFragment();
@@ -127,7 +170,9 @@
       empty.className = "empty-state";
       const title = document.createElement("strong");
       title.className = "empty-state-title";
-      title.textContent = "No se encontraron productos con ese nombre.";
+      title.textContent = hasSearch()
+        ? "No se encontraron productos con ese nombre."
+        : "No hay productos disponibles.";
       empty.appendChild(title);
       fragment.appendChild(empty);
     }else{
@@ -135,7 +180,7 @@
         try{
           fragment.appendChild(makeCard(product));
         }catch(error){
-          console.warn("No se pudo crear una tarjeta de producto en la búsqueda directa.", error);
+          console.warn("No se pudo crear una tarjeta de producto en la vista directa.", error);
         }
       }
     }
@@ -165,8 +210,8 @@
     });
   }
 
-  // El render principal puede volver a mostrar álbumes; al buscar con esta opción
-  // activada se sustituyen por tarjetas normales completas de los productos encontrados.
+  // El render principal puede volver a mostrar álbumes. Cuando cualquiera de las
+  // dos vistas directas corresponde al estado actual, las tarjetas completas se reaplican.
   try{
     if(typeof render === "function" && !render.__directProductSearchWrapped){
       const baseRender = render;
@@ -179,59 +224,93 @@
       render = wrappedRender;
     }
   }catch(error){
-    console.warn("No se pudo enlazar la búsqueda directa con el render principal.", error);
+    console.warn("No se pudo enlazar la vista directa con el render principal.", error);
   }
 
-  function setEnabled(next){
-    enabled = !!next;
-    try{ localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0"); }catch(_){ }
+  function setSearchDirectEnabled(next){
+    searchDirectEnabled = !!next;
+    try{ localStorage.setItem(SEARCH_DIRECT_STORAGE_KEY, searchDirectEnabled ? "1" : "0"); }catch(_){ }
     if(typeof render === "function") render();
-    if(enabled) syncView();
-    syncAdminToggle();
+    if(isActive()) syncView();
+    syncAdminToggles();
+  }
+
+  function setShowAllEnabled(next){
+    showAllEnabled = !!next;
+    try{ localStorage.setItem(SHOW_ALL_STORAGE_KEY, showAllEnabled ? "1" : "0"); }catch(_){ }
+    if(typeof render === "function") render();
+    if(isActive()) syncView();
+    syncAdminToggles();
   }
 
   // Se conservan los nombres públicos anteriores para no romper integraciones existentes.
-  window.setCatalogQuickImageSearchEnabled = setEnabled;
-  window.isCatalogQuickImageSearchEnabled = () => enabled;
+  window.setCatalogQuickImageSearchEnabled = setSearchDirectEnabled;
+  window.isCatalogQuickImageSearchEnabled = () => searchDirectEnabled;
+  window.setCatalogShowAllProductsDirectEnabled = setShowAllEnabled;
+  window.isCatalogShowAllProductsDirectEnabled = () => showAllEnabled;
 
   searchInput.addEventListener("input", syncView);
   searchInput.addEventListener("search", syncView);
 
-  function syncAdminToggle(){
-    const button = document.querySelector("[data-admin-quick-images-toggle]");
+  function syncSwitch(button, state){
     if(!button) return;
-    const checked = enabled ? "true" : "false";
-    const text = enabled ? "ACTIVADO" : "DESACTIVADO";
+    const checked = state ? "true" : "false";
+    const text = state ? "ACTIVADO" : "DESACTIVADO";
     if(button.disabled) button.disabled = false;
     if(button.getAttribute("aria-checked") !== checked) button.setAttribute("aria-checked", checked);
     if(button.textContent !== text) button.textContent = text;
   }
 
-  function installAdminToggle(){
+  function syncAdminToggles(){
+    syncSwitch(document.querySelector("[data-admin-quick-images-toggle]"), searchDirectEnabled);
+    syncSwitch(document.querySelector("[data-admin-show-all-products-toggle]"), showAllEnabled);
+  }
+
+  function installAdminToggles(){
     const list = document.querySelector("#catalogAdminConfig .catalog-admin-config-list");
-    if(!list || list.querySelector("[data-admin-quick-images-row]")){
-      syncAdminToggle();
-      return;
+    if(!list) return;
+
+    if(!list.querySelector("[data-admin-quick-images-row]")){
+      const searchRow = document.createElement("div");
+      searchRow.className = "catalog-admin-config-row";
+      searchRow.dataset.adminQuickImagesRow = "";
+      searchRow.innerHTML = `
+        <div>
+          <span class="catalog-admin-config-label">Mostrar productos directamente al buscar</span>
+          <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra las tarjetas completas de los productos encontrados, con imagen, descripción, precio y botones para agregar o quitar, sin tener que llegar al nivel más profundo de la categoría. Esta preferencia queda guardada en este navegador.</span>
+        </div>
+        <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-quick-images-toggle>DESACTIVADO</button>
+      `;
+      list.appendChild(searchRow);
+
+      searchRow.querySelector("[data-admin-quick-images-toggle]")?.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setSearchDirectEnabled(!searchDirectEnabled);
+      });
     }
 
-    const row = document.createElement("div");
-    row.className = "catalog-admin-config-row";
-    row.dataset.adminQuickImagesRow = "";
-    row.innerHTML = `
-      <div>
-        <span class="catalog-admin-config-label">Mostrar productos directamente al buscar</span>
-        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra las tarjetas completas de los productos encontrados, con imagen, descripción, precio y botones para agregar o quitar, sin tener que llegar al nivel más profundo de la categoría. Esta preferencia queda guardada en este navegador.</span>
-      </div>
-      <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-quick-images-toggle>DESACTIVADO</button>
-    `;
-    list.appendChild(row);
+    if(!list.querySelector("[data-admin-show-all-products-row]")){
+      const allRow = document.createElement("div");
+      allRow.className = "catalog-admin-config-row";
+      allRow.dataset.adminShowAllProductsRow = "";
+      allRow.innerHTML = `
+        <div>
+          <span class="catalog-admin-config-label">Mostrar todos los productos directamente</span>
+          <span class="catalog-admin-config-help">Muestra todas las tarjetas completas del catálogo sin tener que entrar a las categorías. Permite ver precios y agregar o quitar productos directamente. Al escribir en el buscador, esta opción deja actuar a la búsqueda normal o a la opción de búsqueda directa si también está activada. Esta preferencia queda guardada en este navegador.</span>
+        </div>
+        <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-show-all-products-toggle>DESACTIVADO</button>
+      `;
+      list.appendChild(allRow);
 
-    row.querySelector("[data-admin-quick-images-toggle]")?.addEventListener("click", event => {
-      event.preventDefault();
-      event.stopPropagation();
-      setEnabled(!enabled);
-    });
-    syncAdminToggle();
+      allRow.querySelector("[data-admin-show-all-products-toggle]")?.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        setShowAllEnabled(!showAllEnabled);
+      });
+    }
+
+    syncAdminToggles();
   }
 
   let adminObserverQueued = false;
@@ -240,11 +319,11 @@
     adminObserverQueued = true;
     requestAnimationFrame(() => {
       adminObserverQueued = false;
-      installAdminToggle();
+      installAdminToggles();
     });
   });
   observer.observe(document.body, {childList:true, subtree:true});
-  installAdminToggle();
+  installAdminToggles();
   syncView();
 })();
 

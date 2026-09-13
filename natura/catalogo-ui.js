@@ -192,3 +192,204 @@
   installAdminToggle();
   syncView();
 })();
+
+// Formatos del folleto: los dos botones generan y copian la imagen.
+(() => {
+  const modal = document.getElementById("collageModal");
+  if(!modal) return;
+
+  const sizeControl = modal.querySelector("#collageSizeControl");
+  const formatChoices = sizeControl?.querySelector(".collage-format-choices");
+  const formatButtons = [...modal.querySelectorAll("[data-collage-format]")];
+  const genericActions = modal.querySelector("#collageGenericActions");
+  const socialActions = modal.querySelector("#collageSocialActions");
+  const messengerBtn = modal.querySelector("#collageMessengerBtn");
+  const facebookBtn = modal.querySelector("#collageFacebookBtn");
+  const captureButton = messengerBtn || facebookBtn;
+  if(!sizeControl || formatButtons.length < 2 || !captureButton) return;
+
+  const labels = {
+    instagram: "Vertical · 1080 × 1350",
+    marketplace: "Cuadrado · 1200 × 1200"
+  };
+
+  const style = document.createElement("style");
+  style.id = "collage-two-format-actions-style";
+  style.textContent = `
+    #collageModal:not(.is-ficha-mode) #collageGenericActions,
+    #collageModal:not(.is-ficha-mode) #collageSocialActions{display:none!important}
+    #collageModal .collage-format-helper{
+      margin:2px 0 8px;
+      color:#c3cede;
+      font:600 12px/1.35 Arial,sans-serif;
+    }
+    #collageModal .collage-format-option.is-copying{cursor:wait;opacity:.82}
+  `;
+  document.head.appendChild(style);
+
+  const labelEl = sizeControl.querySelector(".collage-control-label");
+  if(labelEl) labelEl.textContent = "Formato";
+  if(formatChoices) formatChoices.setAttribute("aria-label", "Formato de la imagen");
+
+  let helper = sizeControl.querySelector(".collage-format-helper");
+  if(!helper){
+    helper = document.createElement("div");
+    helper.className = "collage-format-helper";
+    helper.textContent = "Selecciona un formato para generar y copiar la imagen.";
+    labelEl?.insertAdjacentElement("afterend", helper);
+  }
+
+  function restoreLabels(){
+    for(const button of formatButtons){
+      const key = String(button.dataset.collageFormat || "");
+      button.textContent = labels[key] || button.textContent;
+      button.classList.remove("is-copying");
+      button.disabled = false;
+      button.setAttribute("aria-label", `Generar y copiar ${labels[key] || "imagen"}`);
+    }
+  }
+
+  function syncHiddenActions(){
+    if(socialActions){
+      socialActions.hidden = true;
+      socialActions.setAttribute("aria-hidden", "true");
+    }
+    if(genericActions){
+      const ficha = modal.classList.contains("is-ficha-mode");
+      genericActions.hidden = !ficha;
+      genericActions.toggleAttribute("aria-hidden", !ficha);
+    }
+  }
+
+  function waitUntilReady(token, timeoutMs = 25000){
+    return new Promise((resolve, reject) => {
+      const started = Date.now();
+      const check = () => {
+        if(token !== actionToken){ reject(new Error("Operación reemplazada.")); return; }
+        if(!captureButton.disabled){ resolve(); return; }
+        if(Date.now() - started >= timeoutMs){ reject(new Error("La imagen tardó demasiado en generarse.")); return; }
+        window.setTimeout(check, 50);
+      };
+      check();
+    });
+  }
+
+  function temporarilyReplaceClipboardWrite(replacement){
+    const clipboard = navigator.clipboard;
+    if(!clipboard || typeof clipboard.write !== "function") return null;
+    const own = Object.getOwnPropertyDescriptor(clipboard, "write");
+    try{
+      Object.defineProperty(clipboard, "write", {
+        configurable: true,
+        writable: true,
+        value: replacement
+      });
+    }catch(_){
+      try{ clipboard.write = replacement; }catch(__){ return null; }
+      if(clipboard.write !== replacement) return null;
+    }
+    return () => {
+      try{
+        if(own) Object.defineProperty(clipboard, "write", own);
+        else delete clipboard.write;
+      }catch(_){ }
+    };
+  }
+
+  function capturePreparedBlob(resolveBlob, rejectBlob){
+    let captured = false;
+    const restoreClipboard = temporarilyReplaceClipboardWrite(items => {
+      captured = true;
+      try{
+        const item = items?.[0];
+        if(!item || typeof item.getType !== "function") throw new Error("No se encontró la imagen preparada.");
+        Promise.resolve(item.getType("image/png")).then(resolveBlob, rejectBlob);
+        return Promise.resolve();
+      }catch(error){
+        rejectBlob(error);
+        return Promise.reject(error);
+      }
+    });
+    if(!restoreClipboard) throw new Error("No se pudo acceder temporalmente al portapapeles del navegador.");
+
+    const blockDownload = event => {
+      const link = event.target?.closest?.("a[download]");
+      if(!link) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+    document.addEventListener("click", blockDownload, true);
+    try{
+      captureButton.click();
+    }finally{
+      document.removeEventListener("click", blockDownload, true);
+      restoreClipboard();
+    }
+    if(!captured) throw new Error("No se pudo obtener la imagen generada.");
+  }
+
+  let actionToken = 0;
+  async function generateAndCopy(button){
+    if(modal.classList.contains("is-ficha-mode")) return;
+    if(!navigator.clipboard || typeof navigator.clipboard.write !== "function" || typeof window.ClipboardItem !== "function"){
+      alert("Este navegador no permite copiar imágenes PNG directamente al portapapeles.");
+      return;
+    }
+
+    const token = ++actionToken;
+    let resolveBlob;
+    let rejectBlob;
+    const blobPromise = new Promise((resolve, reject) => {
+      resolveBlob = resolve;
+      rejectBlob = reject;
+    });
+
+    let clipboardPromise;
+    try{
+      clipboardPromise = navigator.clipboard.write([
+        new ClipboardItem({"image/png": blobPromise})
+      ]);
+      clipboardPromise.catch(() => {});
+    }catch(error){
+      rejectBlob(error);
+      alert("No fue posible iniciar la copia de la imagen al portapapeles.");
+      return;
+    }
+
+    for(const current of formatButtons){
+      current.disabled = true;
+      current.classList.toggle("is-copying", current === button);
+    }
+    button.textContent = "Generando y copiando…";
+
+    try{
+      await waitUntilReady(token);
+      if(token !== actionToken) return;
+      capturePreparedBlob(resolveBlob, rejectBlob);
+      await clipboardPromise;
+      if(token !== actionToken) return;
+      button.textContent = "✓ Copiada";
+      await new Promise(resolve => window.setTimeout(resolve, 900));
+    }catch(error){
+      rejectBlob(error);
+      console.error("No se pudo generar y copiar la imagen del folleto.", error);
+      if(token === actionToken){
+        button.textContent = "No se pudo copiar";
+        alert("No se pudo copiar la imagen al portapapeles. Revisa los permisos del navegador e inténtalo nuevamente.");
+        await new Promise(resolve => window.setTimeout(resolve, 1100));
+      }
+    }finally{
+      if(token === actionToken) restoreLabels();
+    }
+  }
+
+  restoreLabels();
+  syncHiddenActions();
+
+  for(const button of formatButtons){
+    button.addEventListener("click", () => { void generateAndCopy(button); });
+  }
+
+  const observer = new MutationObserver(() => syncHiddenActions());
+  observer.observe(modal, {attributes:true, attributeFilter:["class"]});
+})();

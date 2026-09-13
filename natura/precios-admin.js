@@ -18,7 +18,7 @@
   .catalog-admin-hidden{outline:2px dashed #c75b72!important;outline-offset:-2px;opacity:.72}.catalog-admin-inherited{outline:2px dashed #9d9698!important;outline-offset:-2px;opacity:.72}
   .price-admin-editor{display:grid;grid-template-columns:minmax(90px,1fr) auto;gap:7px;flex:1 1 220px}.price-admin-input{width:100%;height:40px;padding:8px;border:1px solid #d8c9c6;border-radius:10px;text-align:right;font:750 15px Arial}.price-admin-save{min-width:82px}.price-admin-status{grid-column:1/-1;font-size:11px;font-weight:750}.price-admin-status.ok{color:#176b3a}.price-admin-status.err{color:#a02323}
   .card .row.price-admin-active{align-items:flex-start;flex-wrap:wrap;gap:8px}#priceAdminBtn[aria-pressed="true"]{color:#8d5360!important;border-color:#cfa8b0!important;background:#f5e5e8!important}
-  html.catalog-vis-loading #grid{visibility:hidden}`;
+  `;
   document.head.appendChild(css);
 
   window.CATALOG_ADMIN_MODE_ACTIVE=false;
@@ -33,8 +33,7 @@
   new MutationObserver(()=>requestAnimationFrame(syncUI)).observe(grid,{childList:true,subtree:true});
   window.addEventListener("message",onBridgeReady); window.addEventListener("beforeunload",closeBridge);
 
-  document.documentElement.classList.add("catalog-vis-loading");
-  loadRules().finally(()=>{document.documentElement.classList.remove("catalog-vis-loading"); rebuild();});
+  loadRules().finally(rebuild);
 
   function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}
   function key(t,id){return `${norm(t)}::${norm(id)}`}

@@ -26,40 +26,24 @@ jobs:
           python3 <<'PY'
           from pathlib import Path
           import re
-
           js_path = Path('natura/catalogo-app.js')
           js = js_path.read_text(encoding='utf-8')
-          old = '''function uxScrollToCatalogStart(){
-  const target=document.querySelector("main")||grid;
-  if(!target) return;
-  const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-86);
-  requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"smooth"}));
-}'''
-          new = '''function uxScrollToCatalogStart(){
-  // En modo administrador se conserva la posición para no interrumpir el trabajo
-  // al entrar en categorías, subcategorías o familias.
-  if(window.CATALOG_ADMIN_MODE_ACTIVE) return;
-  const target=document.querySelector("main")||grid;
-  if(!target) return;
-  const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-86);
-  requestAnimationFrame(()=>window.scrollTo({top:y,left:0,behavior:"smooth"}));
-}'''
-          count = js.count(old)
+          needle = 'function uxScrollToCatalogStart(){\n'
+          replacement = 'function uxScrollToCatalogStart(){\n  // En administración se conserva la posición al navegar entre niveles.\n  if(window.CATALOG_ADMIN_MODE_ACTIVE) return;\n'
+          count = js.count(needle)
           if count != 1:
-              raise SystemExit(f'Se esperaba una función uxScrollToCatalogStart exacta; encontradas: {count}')
-          js_path.write_text(js.replace(old, new, 1), encoding='utf-8', newline='\n')
-
+              raise SystemExit(f'Se esperaba una función uxScrollToCatalogStart; encontradas: {count}')
+          js_path.write_text(js.replace(needle, replacement, 1), encoding='utf-8', newline='\n')
           html_path = Path('natura/catalogo.html')
           html = html_path.read_text(encoding='utf-8')
           pattern = r'catalogo-app\.js\?actualizacion=integral-2026-09-13-(\d+)'
           matches = re.findall(pattern, html)
           if len(matches) != 1:
-              raise SystemExit(f'Se esperaba una referencia versionada de catalogo-app.js; encontradas: {matches}')
+              raise SystemExit(f'Referencia versionada inesperada: {matches}')
           current = int(matches[0])
           html = re.sub(pattern, f'catalogo-app.js?actualizacion=integral-2026-09-13-{current+1}', html, count=1)
           html_path.write_text(html, encoding='utf-8', newline='\n')
           PY
-
           node --check natura/catalogo-app.js
           git diff --check
           git diff -- natura/catalogo-app.js natura/catalogo.html

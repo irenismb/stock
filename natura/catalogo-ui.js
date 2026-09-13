@@ -66,8 +66,8 @@
   style.textContent = `
     #grid.quick-image-search{
       display:grid!important;
-      grid-template-columns:repeat(auto-fill,minmax(118px,1fr))!important;
-      gap:10px!important;
+      grid-template-columns:repeat(auto-fill,minmax(190px,1fr))!important;
+      gap:14px!important;
       align-items:start!important;
     }
     #grid.quick-image-search > .album-card{display:none!important}
@@ -77,8 +77,11 @@
       margin:0!important;
       padding:0!important;
       overflow:hidden!important;
-      border-radius:14px!important;
+      border-radius:16px!important;
       cursor:pointer!important;
+      content-visibility:visible!important;
+      contain:none!important;
+      background:#fff!important;
     }
     #grid.quick-image-search > .card:not(.album-card) > :not(.img){display:none!important}
     #grid.quick-image-search > .card:not(.album-card) > .img{
@@ -94,22 +97,31 @@
       display:flex!important;
       align-items:center!important;
       justify-content:center!important;
+      overflow:hidden!important;
     }
+    #grid.quick-image-search > .card:not(.album-card) > .img::before{display:none!important}
     #grid.quick-image-search > .card:not(.album-card) > .img img{
+      position:static!important;
+      inset:auto!important;
+      transform:none!important;
       width:100%!important;
       height:100%!important;
-      max-width:none!important;
-      max-height:none!important;
+      max-width:100%!important;
+      max-height:100%!important;
       object-fit:contain!important;
       display:block!important;
       cursor:pointer!important;
+      background:#fff!important;
     }
     body.quick-image-search-active #catalogEntryIntro,
     body.quick-image-search-active #topline,
     body.quick-image-search-active #albumNavHost{display:none!important}
     #grid.quick-image-search > .card.quick-image-added{transform:scale(.965);transition:transform .12s ease}
-    @media(max-width:640px){
-      #grid.quick-image-search{grid-template-columns:repeat(auto-fill,minmax(92px,1fr))!important;gap:8px!important}
+    @media(max-width:760px){
+      #grid.quick-image-search{
+        grid-template-columns:repeat(2,minmax(0,1fr))!important;
+        gap:10px!important;
+      }
     }
   `;
   document.head.appendChild(style);
@@ -118,24 +130,71 @@
     return enabled && String(searchInput.value || "").trim().length > 0;
   }
 
-  function syncView(){
+  function renderQuickResults(){
     const active = isActive();
     grid.classList.toggle("quick-image-search", active);
     document.body.classList.toggle("quick-image-search-active", active);
+    if(!active) return;
+
+    let products = [];
+    try{
+      products = typeof buildFilteredList === "function" ? buildFilteredList() : [];
+    }catch(error){
+      console.error("No se pudieron preparar los productos de la vista rápida.", error);
+      products = [];
+    }
+
+    grid.classList.remove("album-grid-mode", "root-nav-mode", "album-three-column-layout");
+    const fragment = document.createDocumentFragment();
+
+    if(!products.length){
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      const title = document.createElement("strong");
+      title.className = "empty-state-title";
+      title.textContent = "No se encontraron productos con ese nombre.";
+      empty.appendChild(title);
+      fragment.appendChild(empty);
+    }else{
+      for(const product of products){
+        try{
+          fragment.appendChild(makeCard(product));
+        }catch(error){
+          console.warn("No se pudo crear una imagen de producto en la vista rápida.", error);
+        }
+      }
+    }
+
+    grid.replaceChildren(fragment);
+
+    if(typeof refreshCardUI === "function" && typeof productById !== "undefined"){
+      for(const card of grid.querySelectorAll(".card:not(.album-card)")){
+        const product = productById.get(String(card.dataset.id || ""));
+        if(product) refreshCardUI(card, product);
+      }
+    }
+  }
+
+  function syncView(){
+    requestAnimationFrame(renderQuickResults);
   }
 
   function setEnabled(next){
     enabled = !!next;
     try{ localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0"); }catch(_){ }
-    syncView();
+    if(!enabled && typeof render === "function"){
+      render();
+    }else{
+      syncView();
+    }
     syncAdminToggle();
   }
 
   window.setCatalogQuickImageSearchEnabled = setEnabled;
   window.isCatalogQuickImageSearchEnabled = () => enabled;
 
-  searchInput.addEventListener("input", () => requestAnimationFrame(syncView));
-  searchInput.addEventListener("search", () => requestAnimationFrame(syncView));
+  searchInput.addEventListener("input", syncView);
+  searchInput.addEventListener("search", syncView);
 
   grid.addEventListener("click", event => {
     if(!isActive()) return;
@@ -175,7 +234,7 @@
     row.innerHTML = `
       <div>
         <span class="catalog-admin-config-label">Vista rápida de imágenes al buscar</span>
-        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra únicamente las imágenes de los productos. Al pulsar una imagen se agrega una unidad al carrito. Esta preferencia queda guardada en este navegador.</span>
+        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra únicamente imágenes grandes y completas de los productos. Al pulsar una imagen se agrega una unidad al carrito. Esta preferencia queda guardada en este navegador.</span>
       </div>
       <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-quick-images-toggle>DESACTIVADO</button>
     `;

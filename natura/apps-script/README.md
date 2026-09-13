@@ -22,6 +22,6 @@ La publicación valida que cada proyecto tenga `appsscript.json` y archivos de c
 
 ## Administración de precios
 
-El workflow **Crear y publicar administrador de precios Natura** crea o actualiza una implementación independiente. El catálogo público permanece en modo de solo lectura; el panel se abre únicamente con `?administrar=precios`, se ejecuta como la cuenta de Google que accede y requiere que esa cuenta tenga permiso de edición sobre el inventario oficial.
+El workflow **Crear y publicar administrador de precios Natura** crea o actualiza una implementación independiente. En el nivel de productos, el catálogo muestra el botón `Precios`; la edición se ejecuta como la cuenta de Google que accede y requiere que esa cuenta tenga permiso de edición sobre el inventario oficial.
 
 La escritura resuelve los campos por el texto actual de los encabezados, exige una coincidencia única del código, compara el precio anterior y modifica solamente la celda de Precio sin alterar su formato.

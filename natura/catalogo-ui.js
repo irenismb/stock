@@ -88,7 +88,7 @@
   });
 })();
 
-// Con la opción activa muestra productos completos directamente: sin búsqueda enseña todo el catálogo y al escribir filtra.
+// Muestra productos completos directamente durante la búsqueda, sin exigir llegar al último nivel de categoría.
 (() => {
   const STORAGE_KEY = "irenismb_quick_image_search_v1";
   const searchInput = document.getElementById("q");
@@ -102,48 +102,7 @@
   }catch(_){ }
 
   function isActive(){
-    return enabled;
-  }
-
-  function directProductList(){
-    let source = [];
-    try{
-      if(typeof all !== "undefined" && Array.isArray(all)){
-        source = all.filter(product => product && !product.isGiftGalleryImage);
-      }
-    }catch(_){ }
-
-    if(!source.length && /cargando productos/i.test(String(count?.textContent || ""))){
-      return null;
-    }
-
-    const query = String(searchInput.value || "").trim();
-    let terms = [];
-    try{
-      if(typeof parseSearchTerms === "function"){
-        terms = parseSearchTerms(query);
-      }else if(typeof normalizeText === "function"){
-        terms = normalizeText(query).split(/\s+/).filter(Boolean);
-      }else{
-        terms = query.toLowerCase().split(/\s+/).filter(Boolean);
-      }
-    }catch(_){
-      terms = query.toLowerCase().split(/\s+/).filter(Boolean);
-    }
-
-    if(terms.length){
-      source = source.filter(product => {
-        const key = String(product?.searchKey || "").toLowerCase();
-        return terms.every(term => key.includes(String(term || "").toLowerCase()));
-      });
-    }
-
-    source.sort((a,b)=>
-      String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" }) ||
-      String(a?.id || "").localeCompare(String(b?.id || ""), "es", { sensitivity:"base" })
-    );
-
-    return source;
+    return enabled && String(searchInput.value || "").trim().length > 0;
   }
 
   function renderDirectProducts(){
@@ -152,10 +111,14 @@
     grid.classList.remove("quick-image-search");
     if(!active) return;
 
-    const products = directProductList();
-    if(products === null) return;
+    let products = [];
+    try{
+      products = typeof buildFilteredList === "function" ? buildFilteredList() : [];
+    }catch(error){
+      console.error("No se pudieron preparar los productos de la búsqueda directa.", error);
+      products = [];
+    }
 
-    const query = String(searchInput.value || "").trim();
     grid.classList.remove("album-grid-mode", "root-nav-mode", "album-three-column-layout");
     const fragment = document.createDocumentFragment();
 
@@ -164,9 +127,7 @@
       empty.className = "empty-state";
       const title = document.createElement("strong");
       title.className = "empty-state-title";
-      title.textContent = query
-        ? "No se encontraron productos con ese nombre."
-        : "No hay productos disponibles.";
+      title.textContent = "No se encontraron productos con ese nombre.";
       empty.appendChild(title);
       fragment.appendChild(empty);
     }else{
@@ -174,7 +135,7 @@
         try{
           fragment.appendChild(makeCard(product));
         }catch(error){
-          console.warn("No se pudo crear una tarjeta de producto en la vista directa.", error);
+          console.warn("No se pudo crear una tarjeta de producto en la búsqueda directa.", error);
         }
       }
     }
@@ -204,9 +165,8 @@
     });
   }
 
-  // El render principal puede volver a mostrar álbumes; mientras esta opción esté
-  // activada se sustituyen por tarjetas normales completas de todos los productos
-  // o de las coincidencias del buscador.
+  // El render principal puede volver a mostrar álbumes; al buscar con esta opción
+  // activada se sustituyen por tarjetas normales completas de los productos encontrados.
   try{
     if(typeof render === "function" && !render.__directProductSearchWrapped){
       const baseRender = render;
@@ -219,18 +179,14 @@
       render = wrappedRender;
     }
   }catch(error){
-    console.warn("No se pudo enlazar la vista directa con el render principal.", error);
+    console.warn("No se pudo enlazar la búsqueda directa con el render principal.", error);
   }
 
   function setEnabled(next){
     enabled = !!next;
     try{ localStorage.setItem(STORAGE_KEY, enabled ? "1" : "0"); }catch(_){ }
     if(typeof render === "function") render();
-    if(enabled){
-      syncView();
-    }else{
-      document.body.classList.remove("direct-product-search-active");
-    }
+    if(enabled) syncView();
     syncAdminToggle();
   }
 
@@ -263,8 +219,8 @@
     row.dataset.adminQuickImagesRow = "";
     row.innerHTML = `
       <div>
-        <span class="catalog-admin-config-label">Mostrar productos directamente</span>
-        <span class="catalog-admin-config-help">Al activarlo muestra todas las tarjetas completas del catálogo, con imagen, descripción, precio y botones para agregar o quitar. Si escribes en el buscador, la lista se filtra automáticamente. Esta preferencia queda guardada en este navegador.</span>
+        <span class="catalog-admin-config-label">Mostrar productos directamente al buscar</span>
+        <span class="catalog-admin-config-help">Mientras escribes en el buscador muestra las tarjetas completas de los productos encontrados, con imagen, descripción, precio y botones para agregar o quitar, sin tener que llegar al nivel más profundo de la categoría. Esta preferencia queda guardada en este navegador.</span>
       </div>
       <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-quick-images-toggle>DESACTIVADO</button>
     `;

@@ -1,1 +1,1 @@
-2026-09-12: migrar lectura de controles globales desde la pestaña Configuracion a propiedades de Apps Script.
+2026-09-12: cargar precios-admin-config.js antes de catalogo-app.js y actualizar el botón Administrar.

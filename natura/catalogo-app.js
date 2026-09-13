@@ -6214,6 +6214,8 @@ function uxScrollStack(){
 }
 
 function uxScrollToCatalogStart(){
+  // En administración se conserva la posición al navegar entre niveles.
+  if(window.CATALOG_ADMIN_MODE_ACTIVE) return;
   const target=document.querySelector("main")||grid;
   if(!target) return;
   const y=Math.max(0,target.getBoundingClientRect().top+window.scrollY-86);

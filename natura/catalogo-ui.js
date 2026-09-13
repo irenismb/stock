@@ -175,8 +175,33 @@
     }
   }
 
+  let quickRenderQueued = false;
   function syncView(){
-    requestAnimationFrame(renderQuickResults);
+    if(quickRenderQueued) return;
+    quickRenderQueued = true;
+    requestAnimationFrame(() => {
+      quickRenderQueued = false;
+      renderQuickResults();
+    });
+  }
+
+  // El catálogo principal vuelve a pintar la cuadrícula cuando cambia la búsqueda,
+  // el carrito, los filtros o se actualiza el inventario. La vista rápida debe
+  // reaplicarse después de cualquiera de esos renderizados para no quedar sustituida
+  // por los álbumes o las tarjetas completas aunque el interruptor siga ACTIVADO.
+  try{
+    if(typeof render === "function" && !render.__quickImageSearchWrapped){
+      const baseRender = render;
+      const wrappedRender = function(...args){
+        const result = baseRender.apply(this, args);
+        if(isActive()) syncView();
+        return result;
+      };
+      wrappedRender.__quickImageSearchWrapped = true;
+      render = wrappedRender;
+    }
+  }catch(error){
+    console.warn("No se pudo enlazar la vista rápida con el render principal.", error);
   }
 
   function setEnabled(next){

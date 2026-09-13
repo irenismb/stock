@@ -467,3 +467,19 @@
   observer.observe(grid, {childList:true, subtree:true});
   syncLoadingUi();
 })();
+
+// En móvil el carrito ocupa una fila completa de la barra.
+(() => {
+  const style = document.createElement("style");
+  style.id = "mobile-cart-full-row-style";
+  style.textContent = `
+    @media (max-width:760px){
+      .bar #btn-cart{
+        grid-column:1 / -1!important;
+        width:100%!important;
+        max-width:none!important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();

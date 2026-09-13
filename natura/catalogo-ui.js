@@ -1,3 +1,42 @@
+// Simplifica la barra de búsqueda en PC y móvil: sin Ordenar, sin botón Filtros y sin panel de filtros.
+(() => {
+  const style = document.createElement("style");
+  style.id = "catalog-search-controls-cleanup";
+  style.textContent = `
+    #sort,
+    #toggleWordPanelBtn,
+    #wordPanel{display:none!important}
+  `;
+  document.head.appendChild(style);
+
+  const sort = document.getElementById("sort");
+  if(sort){
+    sort.value = "";
+    sort.disabled = true;
+    sort.hidden = true;
+  }
+
+  const filterButton = document.getElementById("toggleWordPanelBtn");
+  if(filterButton){
+    filterButton.hidden = true;
+    filterButton.disabled = true;
+  }
+
+  const panel = document.getElementById("wordPanel");
+  if(panel){
+    panel.hidden = true;
+    panel.setAttribute("aria-hidden", "true");
+  }
+
+  try{
+    const url = new URL(window.location.href);
+    if(url.searchParams.has("sort")){
+      url.searchParams.delete("sort");
+      history.replaceState(null, "", url.toString());
+    }
+  }catch(_){ }
+})();
+
 // Ajustes del pie del catálogo: texto comercial/SEO y retiro del listado completo de productos.
 (() => {
   document.querySelector(".beauty-products-details")?.remove();

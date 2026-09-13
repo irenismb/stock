@@ -2625,7 +2625,7 @@
 	  return lines.join("\n");
 	}
 
-    function buildOrderPayload(){
+    function buildOrderPayload(tipoMovimiento="Pedido"){
       const items = cartItemsArray();
       const client = getClientDataCurrent();
       const atribucion = contextoAtribucionVisita();
@@ -2635,8 +2635,11 @@
       const totalPedido = subtotal + envio;
       const direccionClienteVisible = joinParts([addr.addressLine || "", addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
 
+      tipoMovimiento = normalizeText(tipoMovimiento) === "venta" ? "Venta" : "Pedido";
+
       return {
-        source: "catalogo-whatsapp",
+        source: tipoMovimiento === "Venta" ? "catalogo-factura" : "catalogo-whatsapp",
+        tipoMovimiento,
         client_request_id: `${Date.now()}-${Math.random().toString(36).slice(2,10)}`,
         totalPedido,
         cliente: {
@@ -2689,8 +2692,8 @@
       });
     }
 
-    async function registerOrderInSheet(){
-      const payload = buildOrderPayload();
+    async function registerOrderInSheet(tipoMovimiento="Pedido"){
+      const payload = buildOrderPayload(tipoMovimiento);
       if(!Array.isArray(payload.items) || !payload.items.length) return { ok:false, skipped:true };
 
       const body = JSON.stringify(payload);
@@ -2814,6 +2817,15 @@
           saveAddressToLS();
           saveShippingToLS();
           const result = await invoiceGeneratePngFromCart();
+          let saleRegistrationError = null;
+          if(result.copied || result.downloaded){
+            try{
+              await registerOrderInSheet("Venta");
+            }catch(err){
+              saleRegistrationError = err;
+              console.error("No se pudo registrar la venta en Google Sheets:", err);
+            }
+          }
           if(result.copied && result.downloaded){
             cartInvoiceBtn.textContent = "Factura generada";
           }else if(result.downloaded){
@@ -2824,6 +2836,9 @@
             alert("La factura se copió, pero el navegador no permitió descargarla.");
           }else{
             throw new Error("No se pudo copiar ni descargar la factura.");
+          }
+          if(saleRegistrationError){
+            alert("La factura se generó, pero no se pudo registrar la venta en el libro de pedidos. Intenta nuevamente cuando tengas conexión.");
           }
         }catch(err){
           console.error("No se pudo generar la factura PNG:", err);
@@ -2855,7 +2870,7 @@
 
           registrarConversionCatalogo("Inició pedido por WhatsApp", String(cartTotalQty()));
           try{
-            await registerOrderInSheet();
+            await registerOrderInSheet("Pedido");
             registrarConversionCatalogo("Pedido registrado", String(cartTotalQty()));
           }catch(err){
             console.error("No se pudo registrar el pedido en Google Sheets:", err);
@@ -4272,6 +4287,11 @@ function initCollageFeature(){
     .collage-route{margin:0;color:#f8fafc;font-size:clamp(23px,3vw,38px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
     .collage-actions{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;margin:0 0 18px}
     .collage-output-actions{display:flex;justify-content:center;align-items:center;width:min(590px,100%)}
+    .collage-output-actions[hidden],.collage-social-actions[hidden]{display:none!important}
+    .collage-social-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:min(590px,100%)}
+    .collage-social-btn{min-height:48px;padding:11px 20px;border-radius:13px;border:1px solid #b9954f;background:#fff7ea;color:#8d5360;font-weight:950;cursor:pointer;box-shadow:0 8px 22px rgba(185,149,79,.14)}
+    .collage-social-btn:hover:not(:disabled){background:#fff0cf;border-color:#b9954f;transform:translateY(-1px)}
+    .collage-social-btn:disabled{opacity:.6;cursor:wait}
     .collage-selector-block{width:min(590px,100%)}
     .collage-control-label{margin:0 0 7px;color:#f8fafc;font-size:14px;line-height:1.2;font-weight:900;text-align:left}
     .collage-type-choices,.collage-format-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%}
@@ -4346,7 +4366,8 @@ function initCollageFeature(){
       .collage-selector-block{width:100%;max-width:320px}
       .collage-type-choices{grid-template-columns:repeat(2,minmax(0,1fr))}
       .collage-format-choices{grid-template-columns:1fr}
-      .collage-type-option,.collage-format-option,.collage-download,.collage-share{width:100%;max-width:320px}
+      .collage-type-option,.collage-format-option,.collage-download,.collage-share,.collage-social-btn{width:100%;max-width:320px}
+      .collage-social-actions{grid-template-columns:1fr;max-width:320px}
       .marketplace-preview-modal{padding:10px}
       .marketplace-preview-shell{width:min(96vw,96vh);max-height:96vh;border-radius:18px;padding:14px}
       .marketplace-preview-heading{padding-right:44px}
@@ -4401,8 +4422,12 @@ function initCollageFeature(){
           </div>
         </div>
         <p class="collage-selection-hint" id="collageSelectionHint" hidden></p>
-        <div class="collage-output-actions">
+        <div class="collage-output-actions" id="collageGenericActions">
           <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando imagen…</button>
+        </div>
+        <div class="collage-social-actions" id="collageSocialActions" hidden>
+          <button class="collage-social-btn" id="collageMessengerBtn" type="button" data-channel-label="Messenger" disabled>Messenger</button>
+          <button class="collage-social-btn" id="collageFacebookBtn" type="button" data-channel-label="Facebook" disabled>Facebook</button>
         </div>
       </div>
       <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
@@ -4419,6 +4444,11 @@ function initCollageFeature(){
   const selectionHint=modal.querySelector("#collageSelectionHint");
   const downloadBtn=null;
   const shareBtn=modal.querySelector("#collageShareBtn");
+  const genericActions=modal.querySelector("#collageGenericActions");
+  const socialActions=modal.querySelector("#collageSocialActions");
+  const messengerBtn=modal.querySelector("#collageMessengerBtn");
+  const facebookBtn=modal.querySelector("#collageFacebookBtn");
+  const socialButtons=[messengerBtn,facebookBtn].filter(Boolean);
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
   let collageSelectedProduct=null;
   let collageExportMode="collage";
@@ -4486,7 +4516,14 @@ function initCollageFeature(){
   }
 
   function setActionPreparing(){
-    if(shareBtn){
+    if(collageExportMode==="collage"){
+      for(const button of socialButtons){
+        const label=button.dataset.channelLabel||button.textContent||"Red social";
+        button.disabled=true;
+        button.textContent=`${label} · preparando…`;
+        button.title="";
+      }
+    }else if(shareBtn){
       shareBtn.disabled=true;
       shareBtn.textContent="Preparando imagen…";
       shareBtn.title="";
@@ -4499,7 +4536,14 @@ function initCollageFeature(){
 
   function setActionReady(){
     const ready=collageExportMode==="ficha" ? !!fichaPreparedFile : !!collagePreparedShareFile;
-    if(shareBtn){
+    if(collageExportMode==="collage"){
+      for(const button of socialButtons){
+        const label=button.dataset.channelLabel||"Red social";
+        button.disabled=!ready;
+        button.textContent=label;
+        button.title=canClipboardPng()?`${label}: copiar imagen al portapapeles y descargar PNG`:`${label}: descargar PNG; el navegador podría impedir copiar al portapapeles`;
+      }
+    }else if(shareBtn){
       shareBtn.disabled=!ready;
       shareBtn.textContent="Copiar y descargar";
       shareBtn.title=canClipboardPng()?"":"Tu navegador podría no permitir copiar imágenes al portapapeles.";
@@ -4624,6 +4668,8 @@ function initCollageFeature(){
   function setCollageExportMode(mode){
     collageExportMode=mode==="ficha"?"ficha":"collage";
     const isFicha=collageExportMode==="ficha";
+    if(genericActions) genericActions.hidden=!isFicha;
+    if(socialActions) socialActions.hidden=isFicha;
     modal.classList.toggle("is-ficha-mode",isFicha);
     collageTypeBtn?.classList.toggle("is-active",!isFicha);
     collageTypeBtn?.setAttribute("aria-pressed",isFicha?"false":"true");
@@ -5587,6 +5633,7 @@ function initCollageFeature(){
       const PAGE_W=format.pageW;
       const PAGE_H=format.pageH;
       const MARGIN=format.margin;
+      const RENDER_SCALE=2;
       const CONTENT_W=PAGE_W-(MARGIN*2);
       const total=snapshot.products.length;
       const isMarketplace=format.key==="marketplace";
@@ -5710,16 +5757,18 @@ function initCollageFeature(){
       naturalH+=72;
 
       const natural=document.createElement("canvas");
-      natural.width=PAGE_W;
-      natural.height=Math.max(PAGE_H,Math.ceil(naturalH));
+      const naturalLogicalHeight=Math.max(PAGE_H,Math.ceil(naturalH));
+      natural.width=PAGE_W*RENDER_SCALE;
+      natural.height=naturalLogicalHeight*RENDER_SCALE;
       const ctx=natural.getContext("2d");
+      ctx.scale(RENDER_SCALE,RENDER_SCALE);
 
-      const bgGradient=ctx.createLinearGradient(0,0,0,natural.height);
+      const bgGradient=ctx.createLinearGradient(0,0,0,naturalLogicalHeight);
       bgGradient.addColorStop(0,"#fffdfa");
       bgGradient.addColorStop(.42,"#faf6f2");
       bgGradient.addColorStop(1,"#f4eee9");
       ctx.fillStyle=bgGradient;
-      ctx.fillRect(0,0,natural.width,natural.height);
+      ctx.fillRect(0,0,PAGE_W,naturalLogicalHeight);
       ctx.textBaseline="top";
 
       ctx.fillStyle="rgba(240,204,199,.22)";
@@ -5730,13 +5779,13 @@ function initCollageFeature(){
       ctx.closePath();
       ctx.fill();
       ctx.beginPath();
-      ctx.moveTo(PAGE_W,natural.height);
-      ctx.lineTo(PAGE_W-190,natural.height);
-      ctx.bezierCurveTo(PAGE_W-102,natural.height-70,PAGE_W-92,natural.height-132,PAGE_W,natural.height-190);
+      ctx.moveTo(PAGE_W,naturalLogicalHeight);
+      ctx.lineTo(PAGE_W-190,naturalLogicalHeight);
+      ctx.bezierCurveTo(PAGE_W-102,naturalLogicalHeight-70,PAGE_W-92,naturalLogicalHeight-132,PAGE_W,naturalLogicalHeight-190);
       ctx.closePath();
       ctx.fill();
       presentationDrawBotanicalAccent(ctx,4,42,isMarketplace ? .7 : .64,1,"rgba(186,137,122,.17)");
-      presentationDrawBotanicalAccent(ctx,PAGE_W-4,natural.height-168,isMarketplace ? .72 : .66,-1,"rgba(186,137,122,.17)");
+      presentationDrawBotanicalAccent(ctx,PAGE_W-4,naturalLogicalHeight-168,isMarketplace ? .72 : .66,-1,"rgba(186,137,122,.17)");
 
       let y=isMarketplace?30:34;
       const brandLineGap=isMarketplace?170:155;
@@ -5908,6 +5957,8 @@ function initCollageFeature(){
       finalCanvas.width=PAGE_W;
       finalCanvas.height=PAGE_H;
       const fctx=finalCanvas.getContext("2d");
+      fctx.imageSmoothingEnabled=true;
+      fctx.imageSmoothingQuality="high";
 
       const finalGradient=fctx.createLinearGradient(0,0,0,PAGE_H);
       finalGradient.addColorStop(0,"#fffdfa");
@@ -5915,7 +5966,7 @@ function initCollageFeature(){
       fctx.fillStyle=finalGradient;
       fctx.fillRect(0,0,PAGE_W,PAGE_H);
 
-      const usedHeight=Math.max(1,Math.min(natural.height,Math.ceil(y+42)));
+      const usedHeight=Math.max(1,Math.min(naturalLogicalHeight,Math.ceil(y+42)));
       const verticalPadding=isMarketplace?24:18;
       const horizontalPadding=isMarketplace?24:0;
       const scale=Math.min(1,(PAGE_H-verticalPadding)/usedHeight,(PAGE_W-horizontalPadding)/PAGE_W);
@@ -5924,7 +5975,7 @@ function initCollageFeature(){
 
       fctx.drawImage(
         natural,
-        0,0,PAGE_W,usedHeight,
+        0,0,PAGE_W*RENDER_SCALE,usedHeight*RENDER_SCALE,
         (PAGE_W-drawW)/2,
         (PAGE_H-drawH)/2,
         drawW,drawH
@@ -6048,11 +6099,56 @@ function initCollageFeature(){
     if(!collageSelectedProduct) return;
     setCollageExportMode("ficha");
   });
-  shareBtn?.addEventListener("click",async()=>{
-    const file=collageExportMode==="ficha"?fichaPreparedFile:collagePreparedShareFile;
+  async function copyAndDownloadForChannel(button){
+    const file=collagePreparedShareFile;
     if(!file){
-      if(collageExportMode==="ficha") queueFichaPreparation();
-      else queueCollageSharePreparation();
+      queueCollageSharePreparation();
+      return;
+    }
+    const label=button?.dataset?.channelLabel||"Red social";
+    for(const current of socialButtons) current.disabled=true;
+    if(button) button.textContent=`${label} · copiando y descargando…`;
+
+    let copyPromise=null;
+    let copyError=null;
+    let downloadError=null;
+    try{ copyPromise=copyPreparedPngFile(file); }catch(error){ copyError=error; }
+    try{ downloadPreparedPngFile(file,file.name); }catch(error){ downloadError=error; }
+    if(copyPromise){
+      try{ await copyPromise; }catch(error){ copyError=error; }
+    }
+
+    if(copyError) console.error(`No se pudo copiar el collage para ${label}.`,copyError);
+    if(downloadError) console.error(`No se pudo descargar el collage para ${label}.`,downloadError);
+
+    if(button){
+      if(!copyError && !downloadError) button.textContent=`${label} · copiada y descargada`;
+      else if(copyError && !downloadError) button.textContent=`${label} · descargada`;
+      else if(!copyError && downloadError) button.textContent=`${label} · copiada`;
+      else button.textContent=`${label} · no se pudo completar`;
+    }
+
+    if(copyError && !downloadError){
+      alert("La imagen se descargó, pero este navegador no permitió copiarla al portapapeles.");
+    }else if(!copyError && downloadError){
+      alert("La imagen se copió al portapapeles, pero el navegador no permitió descargarla.");
+    }else if(copyError && downloadError){
+      alert("No se pudo copiar ni descargar la imagen.");
+    }
+
+    window.setTimeout(()=>{
+      if(collageExportMode==="collage") setActionReady();
+    },1200);
+  }
+
+  messengerBtn?.addEventListener("click",()=>{ void copyAndDownloadForChannel(messengerBtn); });
+  facebookBtn?.addEventListener("click",()=>{ void copyAndDownloadForChannel(facebookBtn); });
+
+  shareBtn?.addEventListener("click",async()=>{
+    if(collageExportMode!=="ficha") return;
+    const file=fichaPreparedFile;
+    if(!file){
+      queueFichaPreparation();
       return;
     }
     shareBtn.disabled=true;
@@ -6061,48 +6157,22 @@ function initCollageFeature(){
     let copyPromise=null;
     let copyError=null;
     let downloadError=null;
-
-    try{
-      copyPromise=copyPreparedPngFile(file);
-    }catch(error){
-      copyError=error;
-    }
-
-    try{
-      downloadPreparedPngFile(file,file.name);
-    }catch(error){
-      downloadError=error;
-    }
-
+    try{ copyPromise=copyPreparedPngFile(file); }catch(error){ copyError=error; }
+    try{ downloadPreparedPngFile(file,file.name); }catch(error){ downloadError=error; }
     if(copyPromise){
-      try{
-        await copyPromise;
-      }catch(error){
-        copyError=error;
-      }
+      try{ await copyPromise; }catch(error){ copyError=error; }
     }
 
-    if(copyError) console.error("No se pudo copiar la imagen al portapapeles.",copyError);
-    if(downloadError) console.error("No se pudo descargar la imagen PNG.",downloadError);
+    if(copyError) console.error("No se pudo copiar la ficha al portapapeles.",copyError);
+    if(downloadError) console.error("No se pudo descargar la ficha PNG.",downloadError);
 
-    if(!copyError && !downloadError){
-      shareBtn.textContent="Copiada y descargada";
-    }else if(copyError && !downloadError){
-      shareBtn.textContent="Descargada";
-      alert("La imagen se descargó, pero este navegador no permitió copiarla al portapapeles.");
-    }else if(!copyError && downloadError){
-      shareBtn.textContent="Copiada";
-      alert("La imagen se copió, pero el navegador no permitió descargarla.");
-    }else{
-      shareBtn.textContent="No se pudo completar";
-      alert("No se pudo copiar ni descargar la imagen.");
-    }
+    if(!copyError && !downloadError) shareBtn.textContent="Copiada y descargada";
+    else if(copyError && !downloadError) shareBtn.textContent="Descargada";
+    else if(!copyError && downloadError) shareBtn.textContent="Copiada";
+    else shareBtn.textContent="No se pudo completar";
 
     window.setTimeout(()=>{
-      if(shareBtn){
-        shareBtn.disabled=false;
-        shareBtn.textContent="Copiar y descargar";
-      }
+      if(collageExportMode==="ficha") setActionReady();
     },1200);
   });
 

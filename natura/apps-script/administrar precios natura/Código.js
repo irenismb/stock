@@ -1,13 +1,16 @@
 const INVENTARIO_SPREADSHEET_ID = "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs";
 const INVENTARIO_SHEET_NAME = "Productos";
 const INVENTARIO_HEADER_ROW = 1;
+const VISIBILIDAD_SHEET_NAME = "Visibilidad";
+const VISIBILIDAD_HEADERS = ["Tipo", "Identificador", "Oculto", "Etiqueta", "Actualizado"];
+const VISIBILIDAD_TIPOS = ["producto", "seccion", "categoria", "subcategoria", "familia"];
 
 function doGet(evento) {
   const modo = String(evento && evento.parameter && evento.parameter.modo || "").trim();
   const archivo = modo === "puente" ? "Puente" : "Admin";
   return HtmlService
     .createHtmlOutputFromFile(archivo)
-    .setTitle("Administrar precios · Irenismb Stock Natura");
+    .setTitle("Administrar catálogo · Irenismb Stock Natura");
 }
 
 function obtenerProductosPrecios() {
@@ -115,6 +118,108 @@ function actualizarPrecioWeb(codigo, precioNuevo, precioAnterior) {
   }
 }
 
+function obtenerVisibilidadWeb() {
+  const contexto = obtenerContextoVisibilidad_(false);
+  if (!contexto) {
+    return { reglas: [], actualizadoEn: new Date().toISOString() };
+  }
+
+  const ultimaFila = contexto.hoja.getLastRow();
+  if (ultimaFila <= 1) {
+    return { reglas: [], actualizadoEn: new Date().toISOString() };
+  }
+
+  const valores = contexto.hoja
+    .getRange(2, 1, ultimaFila - 1, contexto.ultimaColumna)
+    .getDisplayValues();
+
+  const reglas = valores
+    .map(function(fila) {
+      return {
+        tipo: String(fila[contexto.columnas.tipo] || "").trim(),
+        identificador: String(fila[contexto.columnas.identificador] || "").trim(),
+        oculto: normalizarEstadoOculto_(fila[contexto.columnas.oculto]),
+        etiqueta: String(fila[contexto.columnas.etiqueta] || "").trim()
+      };
+    })
+    .filter(function(regla) {
+      return regla.tipo && regla.identificador;
+    });
+
+  return { reglas: reglas, actualizadoEn: new Date().toISOString() };
+}
+
+function actualizarVisibilidadWeb(tipo, identificador, ocultoNuevo, etiqueta) {
+  const tipoSeguro = normalizarTipoVisibilidad_(tipo);
+  const identificadorSeguro = normalizarIdentificadorVisibilidad_(identificador);
+  const etiquetaSegura = String(etiqueta == null ? "" : etiqueta).trim().slice(0, 250);
+  const ocultoSeguro = Boolean(ocultoNuevo);
+
+  if (VISIBILIDAD_TIPOS.indexOf(tipoSeguro) === -1) {
+    throw new Error("El tipo de regla de visibilidad no es válido.");
+  }
+  if (!identificadorSeguro) {
+    throw new Error("La regla de visibilidad necesita un identificador.");
+  }
+
+  const bloqueo = LockService.getScriptLock();
+  bloqueo.waitLock(30000);
+
+  try {
+    const contexto = obtenerContextoVisibilidad_(true);
+    const ultimaFila = contexto.hoja.getLastRow();
+    const coincidencias = [];
+
+    if (ultimaFila > 1) {
+      const valores = contexto.hoja
+        .getRange(2, 1, ultimaFila - 1, contexto.ultimaColumna)
+        .getDisplayValues();
+
+      valores.forEach(function(fila, indice) {
+        const tipoFila = normalizarTipoVisibilidad_(fila[contexto.columnas.tipo]);
+        const idFila = normalizarIdentificadorVisibilidad_(fila[contexto.columnas.identificador]);
+        if (tipoFila === tipoSeguro && idFila === identificadorSeguro) {
+          coincidencias.push(indice + 2);
+        }
+      });
+    }
+
+    if (coincidencias.length > 1) {
+      throw new Error(
+        "La regla " + tipoSeguro + " / " + identificadorSeguro + " está duplicada en la pestaña Visibilidad."
+      );
+    }
+
+    const filaDestino = coincidencias.length === 1 ? coincidencias[0] : contexto.hoja.getLastRow() + 1;
+    const ahora = new Date();
+
+    contexto.hoja.getRange(filaDestino, contexto.columnas.tipo + 1).setValue(tipoSeguro);
+    contexto.hoja.getRange(filaDestino, contexto.columnas.identificador + 1).setValue(identificadorSeguro);
+    contexto.hoja.getRange(filaDestino, contexto.columnas.oculto + 1).setValue(ocultoSeguro ? "X" : "");
+    contexto.hoja.getRange(filaDestino, contexto.columnas.etiqueta + 1).setValue(etiquetaSegura);
+    contexto.hoja.getRange(filaDestino, contexto.columnas.actualizado + 1).setValue(ahora);
+    SpreadsheetApp.flush();
+
+    const ocultoGuardado = normalizarEstadoOculto_(
+      contexto.hoja.getRange(filaDestino, contexto.columnas.oculto + 1).getDisplayValue()
+    );
+    if (ocultoGuardado !== ocultoSeguro) {
+      throw new Error("Google Sheets no confirmó la visibilidad esperada.");
+    }
+
+    return {
+      ok: true,
+      tipo: tipoSeguro,
+      identificador: identificadorSeguro,
+      etiqueta: etiquetaSegura,
+      oculto: ocultoGuardado,
+      actualizadoEn: ahora.toISOString()
+    };
+  } finally {
+    bloqueo.releaseLock();
+  }
+}
+
 function obtenerContextoInventario_() {
   const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
   const hoja = libro.getSheetByName(INVENTARIO_SHEET_NAME);
@@ -134,6 +239,33 @@ function obtenerContextoInventario_() {
       codigo: buscarEncabezadoUnico_(encabezados, "Código"),
       nombre: buscarEncabezadoUnico_(encabezados, "Nombre"),
       precio: buscarEncabezadoUnico_(encabezados, "Precio")
+    }
+  };
+}
+
+function obtenerContextoVisibilidad_(crearSiFalta) {
+  const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
+  let hoja = libro.getSheetByName(VISIBILIDAD_SHEET_NAME);
+
+  if (!hoja && !crearSiFalta) return null;
+  if (!hoja) {
+    hoja = libro.insertSheet(VISIBILIDAD_SHEET_NAME);
+    hoja.getRange(1, 1, 1, VISIBILIDAD_HEADERS.length).setValues([VISIBILIDAD_HEADERS]);
+    SpreadsheetApp.flush();
+  }
+
+  const ultimaColumna = Math.max(VISIBILIDAD_HEADERS.length, hoja.getLastColumn());
+  const encabezados = hoja.getRange(1, 1, 1, ultimaColumna).getDisplayValues()[0];
+
+  return {
+    hoja: hoja,
+    ultimaColumna: ultimaColumna,
+    columnas: {
+      tipo: buscarEncabezadoUnico_(encabezados, "Tipo"),
+      identificador: buscarEncabezadoUnico_(encabezados, "Identificador"),
+      oculto: buscarEncabezadoUnico_(encabezados, "Oculto"),
+      etiqueta: buscarEncabezadoUnico_(encabezados, "Etiqueta"),
+      actualizado: buscarEncabezadoUnico_(encabezados, "Actualizado")
     }
   };
 }
@@ -163,6 +295,19 @@ function normalizarEncabezado_(valor) {
     .trim()
     .toLowerCase()
     .replace(/\s+/g, " ");
+}
+
+function normalizarTipoVisibilidad_(valor) {
+  return normalizarEncabezado_(valor).replace(/\s+/g, "");
+}
+
+function normalizarIdentificadorVisibilidad_(valor) {
+  return normalizarEncabezado_(valor).slice(0, 500);
+}
+
+function normalizarEstadoOculto_(valor) {
+  const normalizado = normalizarEncabezado_(valor);
+  return ["x", "si", "true", "1", "oculto"].indexOf(normalizado) !== -1;
 }
 
 function normalizarCodigo_(valor) {

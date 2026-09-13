@@ -4,7 +4,7 @@
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
     // ==========================================
     // Los valores locales funcionan como respaldo.
-    // La hoja "Configuracion" conserva únicamente los controles que siguen siendo editables.
+    // Los controles globales se administran desde la web y se guardan en Apps Script.
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
@@ -15,12 +15,11 @@
       gid: "893686273"
     };
 
-    // Control global remoto. La hoja debe estar en el mismo archivo de Google Sheets.
-    // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
+    // Control global remoto. Se almacena en propiedades internas del Apps Script administrador.
+    // La pestaña legacy Configuracion ya no forma parte de la lectura normal del catálogo.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
-      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
-      controlsSheetName: "Configuracion",
+      endpoint: String(window.PRECIOS_ADMIN_CONFIG?.endpoint || "").trim(),
       refreshMs: 60000
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -333,23 +332,15 @@
     }
 
 
-    function googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(REMOTE_CONTROL_SOURCE.spreadsheetId)}/gviz/tq`;
-      const query = new URLSearchParams({
-        sheet: sheetName,
-        headers: "1",
-        range,
-        tq,
-        tqx: `out:json;responseHandler:${callbackName}`,
-        // La configuración y las rutas también deben consultarse sin caché.
-        _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
-      });
-      return `${base}?${query.toString()}`;
-    }
-
-    function loadGoogleSheetRemoteMatrix(sheetName, range, tq, callbackPrefix){
+    function loadAppsScriptRemoteConfiguration(){
       return new Promise((resolve, reject)=>{
-        const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const endpoint = String(REMOTE_CONTROL_SOURCE.endpoint || "").trim();
+        if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)){
+          reject(new Error("El endpoint de configuración del catálogo no es válido."));
+          return;
+        }
+
+        const callbackName = `__remoteCatalogConfig_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         const script = document.createElement("script");
         let settled = false;
 
@@ -362,33 +353,19 @@
           if(settled) return;
           settled = true;
           cleanup();
-          reject(new Error(`Tiempo de espera agotado al consultar la hoja ${sheetName}.`));
+          reject(new Error("Tiempo de espera agotado al consultar la configuración del catálogo."));
         }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
 
-        window[callbackName] = (payload)=>{
+        window[callbackName] = payload=>{
           if(settled) return;
           settled = true;
           window.clearTimeout(timer);
           cleanup();
-
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
-            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
-            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || `No se pudo leer la hoja ${sheetName}.`));
+          if(!payload || payload.ok !== true || !payload.valores || typeof payload.valores !== "object"){
+            reject(new Error(String(payload?.error || "Apps Script devolvió una configuración no válida.")));
             return;
           }
-
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-          resolve(payload.table.rows.map(row=>{
-            const cells = Array.isArray(row && row.c) ? row.c : [];
-            return cells.map(cellValue);
-          }));
+          resolve(payload.valores);
         };
 
         script.onerror = ()=>{
@@ -396,10 +373,14 @@
           settled = true;
           window.clearTimeout(timer);
           cleanup();
-          reject(new Error(`No se pudo conectar con la hoja ${sheetName}.`));
+          reject(new Error("No se pudo conectar con la configuración del catálogo."));
         };
 
-        script.src = googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName);
+        const url = new URL(endpoint);
+        url.searchParams.set("modo", "config");
+        url.searchParams.set("callback", callbackName);
+        url.searchParams.set("_", `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+        script.src = url.toString();
         script.async = true;
         document.head.appendChild(script);
       });
@@ -437,21 +418,13 @@
 
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
 
-      const controlsResult = await Promise.allSettled([
-        loadGoogleSheetRemoteMatrix(
-          REMOTE_CONTROL_SOURCE.controlsSheetName,
-          "A:E",
-          "select A,B,C,D,E",
-          "__remoteCatalogControls"
-        )
-      ]).then(results => results[0]);
-
       let changed = false;
-
-      if(controlsResult.status === "fulfilled"){
-        changed = applyRemoteControlRows(controlsResult.value) || changed;
-      }else{
-        console.info("Configuración remota no disponible; se conservan los interruptores locales.", controlsResult.reason);
+      try{
+        const values = await loadAppsScriptRemoteConfiguration();
+        const rows = Object.entries(values || {}).map(([key,state]) => ["", state, "", "", key]);
+        changed = applyRemoteControlRows(rows) || changed;
+      }catch(error){
+        console.info("Configuración remota no disponible; se conservan los interruptores locales.", error);
       }
 
       if(initial){

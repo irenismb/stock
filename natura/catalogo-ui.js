@@ -403,3 +403,67 @@
   const observer = new MutationObserver(() => syncHiddenActions());
   observer.observe(modal, {attributes:true, attributeFilter:["class"]});
 })();
+
+// Inicio compacto y estado de carga sin mensajes contradictorios.
+(() => {
+  document.getElementById("catalogEntryIntro")?.remove();
+
+  const count = document.getElementById("count");
+  const grid = document.getElementById("grid");
+  if(!count || !grid) return;
+
+  let initialLoading = true;
+  let queued = false;
+
+  function isHardError(text){
+    return /error|no se pudieron cargar|no se pudo cargar|reintenta más tarde/i.test(String(text || ""));
+  }
+
+  function ensureLoadingState(){
+    const existing = grid.querySelector(".empty-state");
+    if(existing){
+      const title = existing.querySelector(".empty-state-title");
+      if(title && title.textContent !== "Cargando productos…") title.textContent = "Cargando productos…";
+      existing.querySelector(".empty-state-text")?.remove();
+      existing.querySelector(".empty-state-actions")?.remove();
+      return;
+    }
+
+    if(grid.querySelector(".card,.album-card")) return;
+    const state = document.createElement("div");
+    state.className = "empty-state catalog-loading-state";
+    const title = document.createElement("strong");
+    title.className = "empty-state-title";
+    title.textContent = "Cargando productos…";
+    state.appendChild(title);
+    grid.replaceChildren(state);
+  }
+
+  function syncLoadingUi(){
+    const text = String(count.textContent || "").trim();
+    const hasCatalogCards = !!grid.querySelector(".card,.album-card");
+
+    if(initialLoading && (hasCatalogCards || isHardError(text))) initialLoading = false;
+
+    if(initialLoading){
+      count.hidden = true;
+      ensureLoadingState();
+    }else if(count.hidden){
+      count.hidden = false;
+    }
+  }
+
+  function queueSync(){
+    if(queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      syncLoadingUi();
+    });
+  }
+
+  const observer = new MutationObserver(queueSync);
+  observer.observe(count, {childList:true, characterData:true, subtree:true});
+  observer.observe(grid, {childList:true, subtree:true});
+  syncLoadingUi();
+})();

@@ -5682,7 +5682,7 @@ function initCollageFeature(){
           gap*Math.max(0,rows.length-1);
 
         const layout={
-          indent,cols,cardW,imageH,nameSize,nameLine,priceSize,captionPad,rows,height
+          indent,available,cols,cardW,imageH,nameSize,nameLine,priceSize,captionPad,rows,height
         };
         cardLayouts.set(block,layout);
         return layout;
@@ -5801,9 +5801,11 @@ function initCollageFeature(){
         const xStart=MARGIN+gl.indent;
 
         for(const row of gl.rows){
+          const rowWidth=row.items.length*gl.cardW+Math.max(0,row.items.length-1)*gap;
+          const rowX=xStart+Math.max(0,(gl.available-rowWidth)/2);
           for(let c=0;c<row.items.length;c++){
             const entry=row.items[c];
-            const x=xStart+c*(gl.cardW+gap);
+            const x=rowX+c*(gl.cardW+gap);
             const h=row.height;
 
             collageCanvasRoundRect(ctx,x,y,gl.cardW,h,18);

@@ -93,7 +93,7 @@
   <script defer src="catalogo-app.js?actualizacion=integral-2026-09-12-3"></script>
   <script defer src="catalogo-mejoras-post.js?actualizacion=2026-09-16-1"></script>
   <script defer src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>
-  <script defer src="catalogo-ui.js?actualizacion=integral-2026-09-12"></script>
+  <script defer src="catalogo-ui.js?actualizacion=2026-09-16-2"></script>
   <script defer src="precios-admin-config.js?actualizacion=2026-09-12-1"></script>
   <script defer src="precios-admin.js?actualizacion=2026-09-12-2"></script>
 
@@ -216,228 +216,76 @@
             <div class="word-panel-title">Filtros del catálogo</div>
             <div class="word-panel-subtitle">Combina filtros o palabras para encontrar productos más rápido.</div>
           </div>
-          <button class="btn-ghost word-clear" id="clearTermsBtn" type="button" hidden>Limpiar todo</button>
+          <button class="word-panel-close" id="wordPanelCloseBtn" type="button" aria-label="Cerrar filtros">×</button>
         </div>
-
-        <div class="filter-summary" id="filterSummary" aria-live="polite" hidden></div>
-
-        <div class="word-active" id="activeTermsWrap" hidden>
-          <div class="word-label">Palabras activas</div>
-          <div class="word-active-list" id="activeTerms"></div>
+        <div class="word-panel-actions">
+          <button class="word-panel-clear" id="wordPanelClearBtn" type="button">Limpiar filtros</button>
         </div>
-
-        <div class="word-chips" id="wordChips"></div>
+        <div class="word-groups" id="wordGroups"></div>
       </section>
-
-
-      <noscript>
-        <div style="margin-top:12px;border:1px solid #22304a;border-radius:14px;padding:12px;background:rgba(18,24,38,.55);">
-          <h2 style="margin:0 0 6px;font-size:16px;">Catálogo Natura en Santa Marta</h2>
-          <p style="margin:0 0 8px;color:#a9b4c2;line-height:1.45;">
-            Activa JavaScript para ver el catálogo completo.
-          </p>
-          <p style="margin:0;">
-            <a href="https://wa.me/573042088961"
-               rel="noopener noreferrer" target="_blank" style="font-weight:900;">
-              Comprar por WhatsApp
-            </a>
-          </p>
-        </div>
-      </noscript>
     </div>
   </header>
 
-  <main class="wrap">
-    <h2 class="visually-hidden">Catálogo de productos Irenismb Stock Natura</h2>
-    <section class="catalog-entry-intro" id="catalogEntryIntro" aria-labelledby="catalogEntryTitle">
-      <p class="catalog-entry-kicker">Explora el catálogo</p>
-      <h2 class="catalog-entry-title" id="catalogEntryTitle">¿Qué estás buscando?</h2>
-      <p class="catalog-entry-text" id="catalogEntryText">Elige una categoría para comenzar.</p>
-    </section>
-    <div class="topline" id="topline">
-      <div class="count" id="count" aria-live="polite">Cargando productos…</div>
+  <main id="main-content">
+    <div class="wrap">
+      <div id="grid" class="grid" aria-live="polite" aria-busy="true"></div>
     </div>
-    <div id="albumNavHost">
-      <div class="album-nav" id="albumNav" hidden>
-        <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a la categoría</button>
-        <div class="album-path" id="albumPath" aria-live="polite"></div>
+  </main>
+
+  <div id="cartBackdrop" class="modal-backdrop" hidden></div>
+  <section id="cartModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="cartTitle" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <h2 id="cartTitle">Carrito de compra</h2>
+        <button id="cartClose" class="modal-close" type="button" aria-label="Cerrar carrito">×</button>
+      </div>
+      <div id="cartBody" class="modal-body"></div>
+    </div>
+  </section>
+
+  <div id="imageBackdrop" class="modal-backdrop" hidden></div>
+  <section id="imageModal" class="modal image-modal" role="dialog" aria-modal="true" aria-labelledby="imageModalTitle" hidden>
+    <div class="modal-card image-modal-card">
+      <div class="modal-head">
+        <h2 id="imageModalTitle">Imagen del producto</h2>
+        <button id="imageClose" class="modal-close" type="button" aria-label="Cerrar imagen">×</button>
+      </div>
+      <div class="image-modal-body">
+        <img id="imageModalImg" src="" alt="" />
       </div>
     </div>
+  </section>
 
-    <section id="grid" class="grid" aria-label="Productos"></section>
-  </main>
+  <div id="collageBackdrop" class="modal-backdrop" hidden></div>
+  <section id="collageModal" class="modal collage-modal" role="dialog" aria-modal="true" aria-labelledby="collageTitle" hidden>
+    <div class="modal-card collage-modal-card">
+      <div class="modal-head">
+        <h2 id="collageTitle">Folleto</h2>
+        <button id="collageClose" class="modal-close" type="button" aria-label="Cerrar folleto">×</button>
+      </div>
+      <div class="collage-actions">
+        <button id="collageDownload" class="btn-acc" type="button">Descargar imagen</button>
+      </div>
+      <div id="collageStatus" class="collage-status" role="status" aria-live="polite"></div>
+      <div id="collageBody" class="collage-body"></div>
+    </div>
+  </section>
+
+  <div id="priceAdminBackdrop" class="modal-backdrop" hidden></div>
+  <section id="priceAdminModal" class="modal price-admin-modal" role="dialog" aria-modal="true" aria-labelledby="priceAdminTitle" hidden>
+    <div class="modal-card price-admin-card">
+      <div class="modal-head">
+        <h2 id="priceAdminTitle">Administrar precios</h2>
+        <button id="priceAdminClose" class="modal-close" type="button" aria-label="Cerrar administración de precios">×</button>
+      </div>
+      <div id="priceAdminBody" class="price-admin-body"></div>
+    </div>
+  </section>
 
   <footer class="site-footer">
     <div class="wrap">
-      <details class="beauty-products-details">
-        <summary class="beauty-products-summary">
-          <span>Listado de productos del catálogo</span>
-          <span class="beauty-products-count">Cargando productos…</span>
-        </summary>
-        <div class="beauty-products-content">
-          <ol class="beauty-products-list" id="beautyProductsList" aria-label="Listado completo de productos del catálogo"></ol>
-        </div>
-      </details>
-
-      <section class="footer-card" aria-label="Información de la tienda">
-        <p>
-          Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
-          Te asesoramos por <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">WhatsApp</a>, vía telefónica o de manera presencial en el barrio los Almendros.
-          <strong>Dirección:</strong> Calle 10A #20A-06.
-          <strong>Teléfono:</strong> <a href="tel:+573042088961" rel="nofollow">+57 304 208 8961</a>.
-          Realizamos envíos nacionales e internacionales.
-        </p>
-      </section>
+      <p>© Irenismb Stock Natura · Santa Marta, Colombia</p>
     </div>
   </footer>
-
-  <div class="cart-modal" id="cartModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Carrito">
-    <div class="cart-modal-backdrop" id="cartModalBackdrop"></div>
-    <div class="cart-modal-content" role="document" aria-label="Contenido del carrito">
-      <div class="cart-modal-header">
-        <h3 class="cart-modal-title">🛒 Carrito</h3>
-        <button class="cart-modal-close" id="cartModalClose" type="button" aria-label="Cerrar">✕</button>
-      </div>
-      <div class="cart-modal-layout">
-        <div class="cart-modal-body">
-          <div id="cartItems"></div>
-        </div>
-        <div class="cart-modal-footer">
-        <div class="cart-shipping">
-          <label for="shippingCop">Valor del envío</label>
-          <input id="shippingCop" type="text" inputmode="numeric" placeholder="Ej: 7000" aria-label="Valor del envío en COP" />
-          <small class="cart-shipping-hint">Valor inicial sugerido: 7.000 COP. Puedes ajustarlo.</small>
-        </div>
-
-        <div class="cart-shipping">
-          <label for="invoicePaymentMethod">Medio de pago</label>
-          <select id="invoicePaymentMethod" aria-label="Medio de pago de la factura">
-            <option value="Nequi">Nequi</option>
-            <option value="Efectivo">Efectivo</option>
-            <option value="Transferencia">Transferencia</option>
-            <option value="Daviplata">Daviplata</option>
-            <option value="Tarjeta">Tarjeta</option>
-            <option value="Otro">Otro</option>
-          </select>
-        </div>
-
-        <div class="cart-summary" aria-label="Resumen del pedido">
-          <div class="cart-summary-row"><span>Productos</span><strong id="cartSubtotal">$0</strong></div>
-          <div class="cart-summary-row"><span>Envío</span><strong id="cartShippingTotal">$0</strong></div>
-          <div class="cart-total" id="cartTotal">Total: $0</div>
-        </div>
-
-        <div class="cart-footer-actions">
-          <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
-          <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
-          <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Datos del pedido</button>
-          <button class="btn-ghost" id="cartInvoiceBtn" type="button">Copiar factura PNG</button>
-          <button class="btn-acc" id="cartBuyBtn" type="button">Continuar pedido por WhatsApp</button>
-        </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-modal" id="addressModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Dirección">
-    <div class="form-modal-backdrop" id="addressModalBackdrop"></div>
-    <div class="form-modal-content" role="document" aria-label="Contenido de dirección">
-      <div class="form-modal-header">
-        <h3 class="form-modal-title">📍 Dirección</h3>
-        <button class="form-modal-close" id="addressModalClose" type="button" aria-label="Cerrar">✕</button>
-      </div>
-
-      <div class="addr-actions-top" aria-label="Acciones dirección">
-        <button class="btn-ghost" id="addrCancelBtn" type="button">Cancelar</button>
-        <button class="btn-acc" id="addrSaveBtn" type="button">Guardar</button>
-        <a class="btn-ghost" id="addrMapsLink" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true" tabindex="-1">Ver en mapa</a>
-      </div>
-
-      <div class="form-modal-body">
-        <div class="client-grid">
-          <div class="field">
-            <label for="addrCity">Ciudad</label>
-            <input id="addrCity" type="text" autocomplete="address-level2" placeholder="Ej: Santa Marta" />
-          </div>
-          <div class="field">
-            <label for="addrRegion">Departamento</label>
-            <input id="addrRegion" type="text" autocomplete="address-level1" placeholder="Ej: Magdalena" />
-          </div>
-
-          <div class="field">
-            <label for="addrViaTipo">Tipo de vía</label>
-            <select id="addrViaTipo">
-              <option value="">Ej: Calle / Carrera / Av</option>
-              <option value="Cl">Calle (Cl)</option>
-              <option value="Cra">Carrera (Cra)</option>
-              <option value="Av">Avenida (Av)</option>
-              <option value="Dg">Diagonal (Dg)</option>
-              <option value="Tv">Transversal (Tv)</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="addrViaNum">Número</label>
-            <input id="addrViaNum" type="text" inputmode="text" placeholder="Ej: 10A" />
-          </div>
-
-          <div class="field">
-            <label for="addrPlaca">#/Placa</label>
-            <input id="addrPlaca" type="text" inputmode="text" placeholder="Ej: 20A-06" />
-          </div>
-          <div class="field">
-            <label for="addrBarrio">Barrio</label>
-            <input id="addrBarrio" type="text" autocomplete="address-line2" placeholder="Ej: Los Almendros" />
-          </div>
-
-          <div class="field span-2">
-            <label for="addrFinal">Dirección final</label>
-            <input id="addrFinal" type="text" readonly />
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="form-modal" id="clientModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Datos del pedido">
-    <div class="form-modal-backdrop" id="clientModalBackdrop"></div>
-    <div class="form-modal-content" role="document" aria-label="Contenido de datos del pedido">
-      <div class="form-modal-header">
-        <h3 class="form-modal-title">🧾 Datos del pedido</h3>
-        <button class="form-modal-close" id="clientModalClose" type="button" aria-label="Cerrar">✕</button>
-      </div>
-
-      <div class="form-modal-body">
-        <div class="client-grid">
-          <div class="field">
-            <label for="clientName">Nombre</label>
-            <input id="clientName" type="text" autocomplete="name" placeholder="Ej: Juan Pérez" />
-          </div>
-          <div class="field">
-            <label for="clientPhone">Teléfono (WhatsApp)</label>
-            <input id="clientPhone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Ej: 3111234567" />
-          </div>
-
-          <div class="field span-2">
-            <label for="clientObs">Observación</label>
-            <textarea id="clientObs" rows="1" placeholder="Ej: Dejar en portería, horario de entrega, pago por Nequi..."></textarea>
-          </div>
-        </div>
-      </div>
-
-      <div class="form-modal-footer">
-        <button class="btn-ghost" id="clientCancelBtn" type="button">Cancelar</button>
-        <button class="btn-acc" id="clientSaveBtn" type="button">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="img-modal" id="imgModal" aria-hidden="true" aria-modal="true" role="dialog" aria-label="Imagen ampliada">
-    <div class="img-modal-backdrop" id="imgModalBackdrop"></div>
-    <button class="img-modal-close" id="imgModalClose" type="button" aria-label="Cerrar">✕</button>
-    <div class="img-modal-content" role="document">
-      <img id="imgModalImg" alt="Imagen ampliada del producto" />
-    </div>
-  </div>
-
 </body>
 </html>

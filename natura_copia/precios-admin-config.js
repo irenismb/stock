@@ -157,7 +157,8 @@ window.PRECIOS_ADMIN_CONFIG = Object.freeze({
       syncAll();
     });
   });
-  observer.observe(document.documentElement, {childList:true, subtree:true});
+  const adminHost = document.getElementById("grid")?.parentElement || document.body;
+  if(adminHost) observer.observe(adminHost, {childList:true});
 
   window.setCatalogAdminHideHiddenEnabled = setEnabled;
   window.isCatalogAdminHideHiddenEnabled = () => enabled;

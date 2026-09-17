@@ -488,7 +488,7 @@
 
   const observer = new MutationObserver(queueSync);
   observer.observe(count, {childList:true, characterData:true,subtree:true});
-  observer.observe(grid, {childList:true, subtree:true});
+  observer.observe(grid, {childList:true});
   syncLoadingUi();
 })();
 

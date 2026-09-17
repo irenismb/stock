@@ -95,12 +95,17 @@
     return input && typeof input.url === "string" ? input.url : "";
   }
 
-  function normalizeImageEndpoint(input) {
+  function isImageIndexRequest(input) {
     try {
       const url = new URL(requestUrl(input), location.href);
-      return url.origin + url.pathname;
+      const endpoint = new URL(IMAGE_ENDPOINT);
+      if (url.origin !== endpoint.origin || url.pathname !== endpoint.pathname) return false;
+      for (const key of url.searchParams.keys()) {
+        if (key !== "_") return false;
+      }
+      return true;
     } catch (_) {
-      return "";
+      return false;
     }
   }
 
@@ -139,7 +144,7 @@
   }
 
   window.fetch = function optimizedFetch(input, init = {}) {
-    if (normalizeImageEndpoint(input) === IMAGE_ENDPOINT && requestMethod(input, init) === "GET") {
+    if (isImageIndexRequest(input) && requestMethod(input, init) === "GET") {
       const cached = readJson(localStorage, IMAGE_CACHE_KEY);
       if (cached && cached.ok === true) {
         let lastRefreshAt = 0;

@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Conexión para editar precios</title>
+  <style>
+    :root{color-scheme:light;--ink:#352b2c;--muted:#78696b;--line:#e7dad7;--rose:#8d5360;--soft:#fff7f8;--ok:#176b3a;--error:#a02323}
+    *{box-sizing:border-box}
+    body{margin:0;background:#f8f3ef;color:var(--ink);font:15px/1.45 Arial,sans-serif}
+    main{max-width:520px;margin:0 auto;padding:28px 20px;text-align:center}
+    h1{margin:0 0 10px;font-size:24px}
+    p{margin:0;color:var(--muted)}
+    #estado{padding:16px;border:1px solid var(--line);border-radius:14px;background:#fff}
+    #estado.ok{color:var(--ok);border-color:#b8ddcf;background:#eef9f4}
+    #estado.error{color:var(--error);border-color:#e6bac3;background:#fff4f6}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Edición de precios</h1>
+    <p id="estado" role="status" aria-live="polite">Verificando la conexión con el catálogo…</p>
+  </main>
+
+  <script>
+    const estado = document.getElementById("estado");
+    let puerto = null;
+
+    google.script.url.getLocation(function(ubicacion){
+      const canal = String(ubicacion && ubicacion.parameter && ubicacion.parameter.canal || "").trim();
+      if(!/^[A-Za-z0-9_-]{16,120}$/.test(canal)){
+        mostrarError("La solicitud de conexión no es válida.");
+        return;
+      }
+
+      let apertura = null;
+      try{
+        apertura = window.top && window.top.opener ? window.top.opener : window.opener;
+      }catch(_){
+        apertura = window.opener;
+      }
+
+      if(!apertura){
+        mostrarError("Abre esta conexión desde el botón Precios del catálogo.");
+        return;
+      }
+
+      const canalMensajes = new MessageChannel();
+      puerto = canalMensajes.port1;
+      puerto.onmessage = procesarSolicitud;
+      puerto.start();
+
+      apertura.postMessage(
+        {tipo:"irenismb-precios-puente-listo", canal:canal},
+        "*",
+        [canalMensajes.port2]
+      );
+
+      estado.className = "ok";
+      estado.textContent = "Conexión activa. Vuelve al catálogo y mantén esta ventana abierta mientras editas precios.";
+      try{
+        apertura.focus();
+        window.top.blur();
+      }catch(_){}
+    });
+
+    function procesarSolicitud(evento){
+      const mensaje = evento && evento.data || {};
+      if(mensaje.tipo !== "actualizar-precio" || !mensaje.solicitudId) return;
+
+      google.script.run
+        .withSuccessHandler(function(resultado){
+          responder({
+            tipo:"precio-actualizado",
+            solicitudId:mensaje.solicitudId,
+            resultado:resultado
+          });
+        })
+        .withFailureHandler(function(error){
+          responder({
+            tipo:"precio-error",
+            solicitudId:mensaje.solicitudId,
+            error:error && error.message ? error.message : String(error || "No se pudo guardar el precio.")
+          });
+        })
+        .actualizarPrecioWeb(mensaje.codigo, mensaje.precioNuevo, mensaje.precioAnterior);
+    }
+
+    function responder(mensaje){
+      try{
+        puerto && puerto.postMessage(mensaje);
+      }catch(_){}
+    }
+
+    function mostrarError(mensaje){
+      estado.className = "error";
+      estado.textContent = mensaje;
+    }
+  </script>
+</body>
+</html>

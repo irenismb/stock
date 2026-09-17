@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Administrar precios</title>
+  <style>
+    :root{color-scheme:light;--ink:#243126;--muted:#647066;--line:#dbe4dc;--brand:#8b3f74;--brand-dark:#6f2f5b;--surface:#fff;--bg:#f6f8f6;--ok:#176b3a;--error:#a02323}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Arial,sans-serif}
+    main{max-width:1000px;margin:0 auto;padding:24px 16px 48px}
+    h1{margin:0 0 6px;font-size:clamp(24px,4vw,34px)}
+    .intro{margin:0 0 18px;color:var(--muted)}
+    .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+    input[type="search"]{flex:1 1 280px;min-width:0}
+    input{border:1px solid var(--line);border-radius:10px;padding:10px 12px;font:inherit;background:#fff;color:var(--ink)}
+    button{border:0;border-radius:10px;padding:10px 14px;font:700 14px Arial,sans-serif;cursor:pointer;background:var(--brand);color:#fff}
+    button:hover{background:var(--brand-dark)}
+    button:disabled{cursor:wait;opacity:.65}
+    .secondary{background:#68736b}
+    .status{min-height:24px;margin:8px 0 12px;color:var(--muted)}
+    .status.ok{color:var(--ok)}
+    .status.error{color:var(--error)}
+    .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}
+    th{position:sticky;top:0;background:#edf2ee;z-index:1}
+    td.codigo{width:90px;font-weight:700}
+    td.precio{width:180px}
+    td.accion{width:110px}
+    .precio-input{width:150px;text-align:right}
+    tr:last-child td{border-bottom:0}
+    [hidden]{display:none!important}
+    @media(max-width:650px){th:nth-child(2),td:nth-child(2){min-width:260px}.table-wrap{border-radius:10px}}
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Administrar precios</h1>
+    <p class="intro">Los productos se identifican por sus encabezados vigentes. Solo se modifica el campo Precio.</p>
+
+    <div class="toolbar">
+      <input id="buscar" type="search" placeholder="Buscar por código o nombre" aria-label="Buscar producto">
+      <button id="recargar" class="secondary" type="button">Recargar</button>
+    </div>
+
+    <div id="estado" class="status" role="status" aria-live="polite">Cargando productos…</div>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Código</th><th>Nombre</th><th>Precio</th><th>Acción</th></tr></thead>
+        <tbody id="productos"></tbody>
+      </table>
+    </div>
+  </main>
+
+  <script>
+    const estado = document.getElementById("estado");
+    const cuerpo = document.getElementById("productos");
+    const buscar = document.getElementById("buscar");
+    const recargar = document.getElementById("recargar");
+    let productos = [];
+
+    recargar.addEventListener("click", cargarProductos);
+    buscar.addEventListener("input", renderizar);
+    cargarProductos();
+
+    function cargarProductos(){
+      estado.className = "status";
+      estado.textContent = "Cargando productos…";
+      recargar.disabled = true;
+      google.script.run
+        .withSuccessHandler(function(resultado){
+          productos = Array.isArray(resultado && resultado.productos) ? resultado.productos : [];
+          recargar.disabled = false;
+          estado.textContent = productos.length + " productos disponibles.";
+          renderizar();
+        })
+        .withFailureHandler(mostrarError)
+        .obtenerProductosPrecios();
+    }
+
+    function renderizar(){
+      const termino = normalizar(buscar.value);
+      const visibles = productos.filter(function(producto){
+        return !termino || normalizar(producto.codigo + " " + producto.nombre).includes(termino);
+      });
+
+      cuerpo.textContent = "";
+      const fragmento = document.createDocumentFragment();
+
+      visibles.forEach(function(producto){
+        const fila = document.createElement("tr");
+        const codigo = document.createElement("td");
+        const nombre = document.createElement("td");
+        const precio = document.createElement("td");
+        const accion = document.createElement("td");
+        const entrada = document.createElement("input");
+        const guardar = document.createElement("button");
+
+        codigo.className = "codigo";
+        precio.className = "precio";
+        accion.className = "accion";
+        codigo.textContent = producto.codigo;
+        nombre.textContent = producto.nombre;
+        entrada.className = "precio-input";
+        entrada.type = "text";
+        entrada.inputMode = "numeric";
+        entrada.value = producto.precio || "";
+        entrada.setAttribute("aria-label", "Precio de " + producto.nombre);
+        guardar.type = "button";
+        guardar.textContent = "Guardar";
+        guardar.addEventListener("click", function(){
+          guardarPrecio(producto, entrada, guardar);
+        });
+
+        precio.appendChild(entrada);
+        accion.appendChild(guardar);
+        fila.append(codigo, nombre, precio, accion);
+        fragmento.appendChild(fila);
+      });
+
+      cuerpo.appendChild(fragmento);
+      if (!visibles.length) {
+        const fila = document.createElement("tr");
+        const celda = document.createElement("td");
+        celda.colSpan = 4;
+        celda.textContent = "No se encontraron productos.";
+        fila.appendChild(celda);
+        cuerpo.appendChild(fila);
+      }
+    }
+
+    function guardarPrecio(producto, entrada, boton){
+      const nuevo = entrada.value.trim();
+      if (!confirm("¿Guardar el nuevo precio del producto " + producto.codigo + "?")) return;
+
+      boton.disabled = true;
+      estado.className = "status";
+      estado.textContent = "Guardando " + producto.codigo + "…";
+
+      google.script.run
+        .withSuccessHandler(function(resultado){
+          producto.precio = resultado.precioGuardado || "";
+          entrada.value = producto.precio;
+          boton.disabled = false;
+          estado.className = "status ok";
+          estado.textContent = "Precio guardado y verificado para " + producto.codigo + ".";
+          try {
+            if (window.opener) {
+              window.opener.postMessage({ tipo:"irenismb-precio-actualizado", codigo:producto.codigo }, "*");
+            }
+          } catch (_) {}
+        })
+        .withFailureHandler(function(error){
+          boton.disabled = false;
+          mostrarError(error);
+        })
+        .actualizarPrecioWeb(producto.codigo, nuevo, producto.precio || "");
+    }
+
+    function mostrarError(error){
+      recargar.disabled = false;
+      estado.className = "status error";
+      estado.textContent = error && error.message ? error.message : String(error || "No se pudo completar la operación.");
+    }
+
+    function normalizar(valor){
+      return String(valor || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim();
+    }
+  </script>
+</body>
+</html>

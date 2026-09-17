@@ -14,11 +14,11 @@ Esta carpeta contiene exclusivamente los proyectos de Google Apps Script relacio
 
 ## Sincronización bidireccional
 
-- **Google Apps Script → GitHub:** el workflow manual **Sincronizar Apps Script de Natura** ejecuta `clasp pull` y solo crea commits dentro de `natura/apps-script/`.
+- **Google Apps Script → GitHub:** el workflow manual **Sincronizar Apps Script de Natura** ejecuta `clasp pull` y solo crea commits dentro de `natura_copia/apps-script/`.
 - **PC → GitHub → Google Apps Script:** al hacer **Commit** y **Push origin** desde GitHub Desktop, GitHub identifica los proyectos modificados dentro de esta carpeta y ejecuta `clasp push` automáticamente.
 - **Publicación manual alternativa:** el workflow **Publicar Apps Script de Natura** permite elegir y publicar un proyecto concreto.
 
-La publicación valida que cada proyecto tenga `appsscript.json` y archivos de código. Los commits creados por la descarga se ignoran para evitar ciclos. Ningún archivo situado fuera de `natura/apps-script/` se envía a Google Apps Script.
+La publicación valida que cada proyecto tenga `appsscript.json` y archivos de código. Los commits creados por la descarga se ignoran para evitar ciclos. Ningún archivo situado fuera de `natura_copia/apps-script/` se envía a Google Apps Script.
 
 ## Administración de precios
 

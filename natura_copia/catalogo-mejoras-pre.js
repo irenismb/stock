@@ -98,6 +98,13 @@
     }
   }
 
+  function requestMethod(input, init) {
+    const method = init && init.method
+      ? init.method
+      : (typeof Request !== "undefined" && input instanceof Request ? input.method : "GET");
+    return String(method || "GET").toUpperCase();
+  }
+
   async function fetchFreshImagePayload() {
     if (imageRefreshPromise) return imageRefreshPromise;
 
@@ -126,7 +133,7 @@
   }
 
   window.fetch = function optimizedFetch(input, init = {}) {
-    if (normalizeImageEndpoint(input) === IMAGE_ENDPOINT) {
+    if (normalizeImageEndpoint(input) === IMAGE_ENDPOINT && requestMethod(input, init) === "GET") {
       const cached = readJson(localStorage, IMAGE_CACHE_KEY);
       if (cached && cached.ok === true) {
         let lastRefreshAt = 0;

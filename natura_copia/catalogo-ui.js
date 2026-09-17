@@ -16,19 +16,26 @@
             return;
           }
           if(navigator.clipboard?.writeText){
-            await navigator.clipboard.writeText(url);
-            const tituloAnterior = shareBtn.title;
-            shareBtn.title = "Enlace copiado";
-            shareBtn.setAttribute("aria-label", "Enlace del catálogo copiado");
-            setTimeout(() => {
-              shareBtn.title = tituloAnterior || "Compartir catálogo";
-              shareBtn.setAttribute("aria-label", "Compartir catálogo");
-            }, 1800);
-            return;
+            try{
+              await navigator.clipboard.writeText(url);
+              const tituloAnterior = shareBtn.title;
+              shareBtn.title = "Enlace copiado";
+              shareBtn.setAttribute("aria-label", "Enlace del catálogo copiado");
+              setTimeout(() => {
+                shareBtn.title = tituloAnterior || "Compartir catálogo";
+                shareBtn.setAttribute("aria-label", "Compartir catálogo");
+              }, 1800);
+              return;
+            }catch(error){
+              console.info("No fue posible copiar el enlace automáticamente; se mostrará para copiarlo manualmente.", error);
+            }
           }
           window.prompt("Copia el enlace del catálogo:", url);
         }catch(error){
-          if(error?.name !== "AbortError") console.error("No fue posible compartir el catálogo.", error);
+          if(error?.name !== "AbortError"){
+            console.error("No fue posible compartir el catálogo.", error);
+            window.prompt("Copia el enlace del catálogo:", url);
+          }
         }
       });
     })();

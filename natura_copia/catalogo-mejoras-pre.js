@@ -89,9 +89,15 @@
   const originalFetch = window.fetch.bind(window);
   let imageRefreshPromise = null;
 
+  function requestUrl(input) {
+    if (typeof input === "string") return input;
+    if (typeof URL !== "undefined" && input instanceof URL) return input.href;
+    return input && typeof input.url === "string" ? input.url : "";
+  }
+
   function normalizeImageEndpoint(input) {
     try {
-      const url = new URL(typeof input === "string" ? input : input.url, location.href);
+      const url = new URL(requestUrl(input), location.href);
       return url.origin + url.pathname;
     } catch (_) {
       return "";

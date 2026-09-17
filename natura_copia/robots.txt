@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://irenismb.github.io/stock/natura_copia/sitemap.xml

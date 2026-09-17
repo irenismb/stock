@@ -42,7 +42,9 @@
       }
       window.prompt("Copia el enlace del catálogo:", url);
     }catch(error){
-      if(error?.name !== "AbortError") console.error("No fue posible compartir el catálogo.", error);
+      if(error?.name === "AbortError") return;
+      console.error("No fue posible compartir el catálogo.", error);
+      window.prompt("Copia el enlace del catálogo:", url);
     }
   });
 })();
@@ -169,8 +171,6 @@
     });
   }
 
-  // El render principal puede volver a mostrar álbumes. Cuando cualquiera de las
-  // dos vistas directas corresponde al estado actual, las tarjetas completas se reaplican.
   try{
     if(typeof render === "function" && !render.__directProductSearchWrapped){
       const baseRender = render;
@@ -202,7 +202,6 @@
     syncAdminToggles();
   }
 
-  // Se conservan los nombres públicos anteriores para no romper integraciones existentes.
   window.setCatalogQuickImageSearchEnabled = setSearchDirectEnabled;
   window.isCatalogQuickImageSearchEnabled = () => searchDirectEnabled;
   window.setCatalogShowAllProductsDirectEnabled = setShowAllEnabled;

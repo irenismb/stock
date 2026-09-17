@@ -22,53 +22,10 @@ function getSheet_() {
   return SpreadsheetApp.openById(SPREADSHEET_ID).getSheets()[0];
 }
 
-function doGet(e) {
-  const q = e && e.parameter ? e.parameter : {};
-
-  if (q.test === "1") {
-    const sheet = getSheet_();
-    ensureHeaders_(sheet);
-
-    const numeroPedido = nextOrderNumber_(sheet);
-    const fechaPedido = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
-
-    const row = [[
-      "PRODUCTO PRUEBA",
-      1000,
-      1,
-      1000,
-      "MARCA PRUEBA",
-      "CATEGORIA PRUEBA",
-      "COD-PRUEBA",
-      numeroPedido,
-      fechaPedido,
-      "CLIENTE PRUEBA",
-      "3000000000",
-      "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros"
-    ]];
-
-    const startRow = Math.max(HEADER_ROW + 1, sheet.getLastRow() + 1);
-    sheet.getRange(startRow, START_COL, 1, HEADERS.length).setValues(row);
-
-    setDireccionClienteRichText_(
-      sheet,
-      startRow,
-      1,
-      "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros",
-      "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent_("Calle 10A #20A-06, Santa Marta, Magdalena")
-    );
-
-    return json_({
-      ok: true,
-      modo: "test_get",
-      numeroPedido: numeroPedido,
-      fechaPedido: fechaPedido
-    });
-  }
-
+function doGet() {
   return json_({
     ok: true,
-    message: "Web app activa. Usa ?test=1 para insertar una fila de prueba."
+    message: "Web app activa. Los pedidos se registran únicamente mediante POST."
   });
 }
 

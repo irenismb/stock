@@ -184,7 +184,7 @@ function buildDireccionClienteVisible_(body) {
 
 function buildDireccionClienteMapa_(body) {
   const cliente = body && body.cliente ? body.cliente : {};
-  const direccionMapa = safe_(cliente.direccionMapa);
+  const direccionMapa = safeHttpUrl_(cliente.direccionMapa);
 
   if (direccionMapa) {
     return direccionMapa;
@@ -235,7 +235,13 @@ function joinParts_(parts, sep) {
 
 function safe_(value) {
   const text = String(value == null ? "" : value).trim();
-  return text.charAt(0) === "=" ? "'" + text : text;
+  return /^[=+\-@]/.test(text) ? "'" + text : text;
+}
+
+function safeHttpUrl_(value) {
+  const text = String(value == null ? "" : value).trim();
+  if (!text) return "";
+  return /^https?:\/\//i.test(text) ? text : "";
 }
 
 function num_(value) {

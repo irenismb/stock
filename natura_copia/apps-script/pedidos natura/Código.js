@@ -234,7 +234,8 @@ function joinParts_(parts, sep) {
 }
 
 function safe_(value) {
-  return String(value == null ? "" : value).trim();
+  const text = String(value == null ? "" : value).trim();
+  return text.charAt(0) === "=" ? "'" + text : text;
 }
 
 function num_(value) {

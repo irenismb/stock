@@ -52,7 +52,7 @@
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="catalogo.css?actualizacion=integral-2026-09-13-3" />
+  <link rel="stylesheet" href="catalogo.css?actualizacion=movil-admin-whatsapp-2026-09-20-2" />
 
   <script type="application/ld+json">
   {
@@ -462,10 +462,19 @@
   </div>
 
   <script src="precios-admin-config.js?actualizacion=2026-09-13-3"></script>
-  <script src="catalogo-app.js?actualizacion=2026-09-20-config-1"></script>
+  <script src="catalogo-app.js?actualizacion=2026-09-20-modular-2"></script>
+  <script src="catalogo-carrito-pedido.js?actualizacion=2026-09-20-2"></script>
+  <script src="catalogo-herramientas.js?actualizacion=2026-09-20-bootstrap-2"></script>
   <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>
-  <script src="catalogo-ui.js?actualizacion=integral-2026-09-13-3"></script>
+  <script src="catalogo-ui.js?actualizacion=2026-09-20-movil-admin-whatsapp-2"></script>
   <script src="precios-admin.js?actualizacion=2026-09-20-config-1"></script>
+  <script>
+    // catalogo.html es el punto de entrada: inicia el catálogo cuando todos los módulos ya están cargados.
+    init().catch(error=>{
+      console.error("No se pudo iniciar el catálogo.", error);
+      updateCountTextError("No se pudo iniciar el catálogo. Reintenta más tarde.");
+    });
+  </script>
 
 </body>
 </html>

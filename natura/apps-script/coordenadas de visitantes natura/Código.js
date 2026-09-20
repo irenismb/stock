@@ -12,6 +12,10 @@ const VISIT_MODES = new Set(["TODAS", "UNA POR DIA", "UNA POR DISPOSITIVO", "NIN
 const TELEGRAM_BOT_TOKEN_PROPERTY = "TELEGRAM_BOT_TOKEN";
 const TELEGRAM_CHAT_ID_PROPERTY = "TELEGRAM_CHAT_ID";
 
+const MAX_POST_BYTES = 16000;
+const VISIT_RATE_SECONDS = 20;
+const ALLOWED_SOURCES = new Set(["GPS", "WI-FI", "CELULAR", "GEO", "IP", "SIN_UBICACION"]);
+
 // ✅ Coordenada fija (punto de referencia) para calcular distancia
 const REF_LAT = 11.244958;
 const REF_LNG = -74.190684;
@@ -45,12 +49,42 @@ const REQUIRED_HEADERS = [
   "distancia (m)",
   "direccion",
   "fecha",
-  "hora"
+  "hora",
+  "id visita"
 ];
 
 // ===================== ENDPOINTS =====================
-function doGet(e)  { return handleRequest_(e); }
-function doPost(e) { return handleRequest_(e); }
+function doGet(e) {
+  const p = parseParams_(e);
+
+  // Compatibilidad temporal durante la transición del catálogo de GET a POST.
+  // Se retira en el despliegue final, una vez publicado el cliente nuevo.
+  if (p.user_id || p.navegador) {
+    return handleWriteRequest_(e);
+  }
+
+  const callback = safeCallback_(p.prefix || "");
+  const visitId = normalizeVisitId_(p.load_id || p.visit_id || "", false);
+
+  if (visitId) {
+    const result = {
+      ok: true,
+      status: visitExistsById_(visitId) ? "registered" : "not_found",
+      id_visita: visitId
+    };
+    return jsonOrJsonp_(result, callback);
+  }
+
+  return jsonOrJsonp_({
+    ok: true,
+    status: "ready",
+    message: "Web app activa. Registra visitas por POST con validación y control de duplicados."
+  }, callback);
+}
+
+function doPost(e) {
+  return handleWriteRequest_(e);
+}
 
 // Ejecuta 1 vez desde el editor para autorizar Spreadsheet
 function authTest(){
@@ -181,111 +215,107 @@ function isPrivateIpv4_(value){
 }
 
 // ===================== LÓGICA PRINCIPAL =====================
-function handleRequest_(e){
+function handleWriteRequest_(e){
   let lock = null;
   let telegramPayload = null;
 
   try{
-    const p = parseParams_(e);
-
-    const latTxt = String(p.lat == null ? "" : p.lat).trim();
-    const lngTxt = String(p.lng == null ? "" : p.lng).trim();
-
-    const lat = (latTxt === "") ? NaN : Number(latTxt);
-    const lng = (lngTxt === "") ? NaN : Number(lngTxt);
-    const hasCoords = isFinite(lat) && isFinite(lng);
-
-    const userIdRaw = String((p.user_id || p.navegador || "")).trim();
-    const identity = getBrowserIdentity_(userIdRaw);
-    const navegadorVal = identity.navegador || userIdRaw;
-
-    if (shouldSkipOwnVisit_(identity)) return ok_();
-
-    const accTxt = String(p.acc == null ? "" : p.acc).trim();
-    const accNum = (accTxt === "") ? NaN : Number(accTxt);
-    const accVal = isFinite(accNum) ? accNum : "";
-
-    let fuenteVal = String((p.fuente || p.src || "")).trim();
-    if (!fuenteVal){
-      fuenteVal = hasCoords ? "GEO" : "SIN_UBICACION";
+    const rawBody = String(e && e.postData && e.postData.contents || "");
+    if (rawBody.length > MAX_POST_BYTES){
+      return json_({ ok:false, status:"invalid", message:"Solicitud demasiado grande." });
     }
 
-    const clientAddress = String((p.direccion || "")).trim();
-    const cityVal = String((p.ciudad || "")).trim();
-    const departmentVal = String((p.departamento || "")).trim();
-    const countryVal = String((p.pais || "")).trim();
-    const visitId = String((p.load_id || "")).trim();
+    const p = parseParams_(e);
+    const userIdRaw = normalizeBrowserId_(p.user_id || p.navegador || "", true);
+    const visitId = normalizeVisitId_(p.load_id || "", true);
+    const location = normalizeLocation_(p);
+    const identity = getBrowserIdentity_(userIdRaw);
+    const navegadorVal = safeClientText_(identity.navegador || userIdRaw, 120);
 
-    const deviceVal = String((p.dispositivo || "")).trim();
-    const brandVal = String((p.marca || "")).trim();
-    const modelVal = String((p.modelo || "")).trim();
-    const ipLocalRaw = String((p.ip_local || "")).trim();
+    if (shouldSkipOwnVisit_(identity)){
+      return json_({ ok:true, status:"skipped", id_visita:visitId });
+    }
+
+    const cityVal = safeClientText_(p.ciudad, 80);
+    const departmentVal = safeClientText_(p.departamento, 80);
+    const countryVal = safeClientText_(p.pais, 80);
+    const clientAddress = safeClientText_(p.direccion, 180);
+
+    const deviceVal = safeClientText_(p.dispositivo, 120);
+    const brandVal = safeClientText_(p.marca, 80);
+    const modelVal = safeClientText_(p.modelo, 120);
+    const ipLocalRaw = safePlainText_(p.ip_local, 64);
     const ipLocalVal = isPrivateIpv4_(ipLocalRaw) ? ipLocalRaw : "";
-    const originVal = String((p.origen || "")).trim();
-    const categoryVal = String((p.categoria || "")).trim();
-    const productVal = String((p.producto || "")).trim();
-    const cartProductsVal = Math.max(0, Number(p.carrito_productos) || 0);
-    const cartUnitsVal = Math.max(0, Number(p.carrito_unidades) || 0);
-    const cartTotalVal = Math.max(0, Number(p.carrito_total) || 0);
+    const originVal = safeClientText_(p.origen, 300);
+    const categoryVal = safeClientText_(p.categoria, 120);
+    const productVal = safeClientText_(p.producto, 180);
+    const cartProductsVal = boundedWholeNumber_(p.carrito_productos, 0, 500);
+    const cartUnitsVal = boundedWholeNumber_(p.carrito_unidades, 0, 5000);
+    const cartTotalVal = boundedNumber_(p.carrito_total, 0, 100000000);
 
     lock = LockService.getScriptLock();
-    if (!lock.tryLock(2000)) return ok_();
+    if (!lock.tryLock(3000)){
+      return json_({ ok:false, status:"busy", id_visita:visitId });
+    }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
-    if (!sh) return ok_();
+    if (!sh) throw new Error("No se encontró la hoja de visitas.");
 
-    const headerIndex = ensureHeaders_(sh, REQUIRED_HEADERS);
+    const headerIndex = resolveHeaders_(sh, REQUIRED_HEADERS);
     const lastCol = sh.getLastColumn();
+
+    if (visitExistsInSheet_(sh, headerIndex, visitId)){
+      return json_({ ok:true, status:"duplicate", id_visita:visitId });
+    }
+
+    if (isRateLimited_(userIdRaw)){
+      return json_({ ok:false, status:"rate_limited", id_visita:visitId });
+    }
 
     const now = new Date();
     const dateStr = Utilities.formatDate(now, TZ, "yyyy-MM-dd");
     const timeStr = Utilities.formatDate(now, TZ, "HH:mm:ss");
-
     const visitMode = getVisitMode_();
     const visitStats = getVisitStats_(sh, headerIndex, userIdRaw);
 
     if (!shouldRegisterVisit_(sh, headerIndex, userIdRaw, dateStr, visitMode)){
-      return ok_();
+      return json_({ ok:true, status:"skipped", id_visita:visitId });
     }
 
     let coordText = "";
     let mapsUrl = "";
     let distanceMeters = "";
 
-    if (hasCoords){
-      coordText = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+    if (location.hasCoords){
+      coordText = `${location.lat.toFixed(6)},${location.lng.toFixed(6)}`;
       mapsUrl = `https://www.google.com/maps?q=${encodeURIComponent(coordText)}`;
-      distanceMeters = Math.round(haversineMeters_(REF_LAT, REF_LNG, lat, lng));
+      distanceMeters = Math.round(haversineMeters_(REF_LAT, REF_LNG, location.lat, location.lng));
     } else {
       const approximateQuery = [cityVal, departmentVal, countryVal].filter(Boolean).join(", ");
       if (approximateQuery){
-        mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(approximateQuery)}`;
+        mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(approximateQuery.replace(/^'/, ""))}`;
       }
     }
 
     let address = "";
-    if (hasCoords && WRITE_ADDRESS){
-      const geo = reverseGeocodeCached_(lat, lng);
-      address = geo.address || "";
+    if (location.hasCoords && WRITE_ADDRESS){
+      const geo = reverseGeocodeCached_(location.lat, location.lng);
+      address = safeClientText_(geo.address || "", 220);
     } else {
-      address = clientAddress || "";
+      address = clientAddress;
     }
 
     const row = new Array(lastCol).fill("");
-
     if (headerIndex.navegador != null)      row[headerIndex.navegador]      = navegadorVal;
     if (headerIndex.id_navegador != null)   row[headerIndex.id_navegador]   = userIdRaw;
     if (headerIndex.fecha != null)          row[headerIndex.fecha]          = dateStr;
     if (headerIndex.hora != null)           row[headerIndex.hora]           = timeStr;
-    if (headerIndex.fuente != null)         row[headerIndex.fuente]         = fuenteVal;
-    if (headerIndex.precision != null)      row[headerIndex.precision]      = accVal;
+    if (headerIndex.fuente != null)         row[headerIndex.fuente]         = location.fuente;
+    if (headerIndex.precision != null)      row[headerIndex.precision]      = location.accuracy;
     if (headerIndex.direccion != null)      row[headerIndex.direccion]      = address;
     if (headerIndex.distancia_m != null)    row[headerIndex.distancia_m]    = distanceMeters;
     if (headerIndex.coordenadas != null)    row[headerIndex.coordenadas]    = coordText;
-
-    // Estas columnas son opcionales y ya existen en el libro.
-    // No se crean columnas nuevas para los datos exclusivos de Telegram.
     if (headerIndex.ciudad != null)         row[headerIndex.ciudad]         = cityVal;
     if (headerIndex.departamento != null)   row[headerIndex.departamento]   = departmentVal;
     if (headerIndex.pais != null)           row[headerIndex.pais]           = countryVal;
@@ -294,7 +324,7 @@ function handleRequest_(e){
     const nextRow = Math.max(2, sh.getLastRow() + 1);
     sh.getRange(nextRow, 1, 1, lastCol).setValues([row]);
 
-    if (hasCoords && headerIndex.coordenadas != null){
+    if (location.hasCoords && headerIndex.coordenadas != null){
       const cell = sh.getRange(nextRow, headerIndex.coordenadas + 1);
       const rich = SpreadsheetApp.newRichTextValue()
         .setText(coordText)
@@ -302,6 +332,8 @@ function handleRequest_(e){
         .build();
       cell.setRichTextValue(rich);
     }
+
+    markRateLimit_(userIdRaw);
 
     telegramPayload = {
       fecha: dateStr,
@@ -311,13 +343,13 @@ function handleRequest_(e){
       departamento: departmentVal,
       pais: countryVal,
       coordenadas: coordText,
-      precision: accVal,
-      fuente: fuenteVal,
+      precision: location.accuracy,
+      fuente: location.fuente,
       mapsUrl,
-      tieneCoordenadas: hasCoords,
+      tieneCoordenadas: location.hasCoords,
       visitanteTipo: visitStats.tipo,
       visitaNumero: visitStats.numero,
-      nombre: identity.nombre || "",
+      nombre: safeClientText_(identity.nombre || "", 120),
       idNavegador: userIdRaw,
       dispositivo: deviceVal,
       marca: brandVal,
@@ -331,20 +363,24 @@ function handleRequest_(e){
       carritoTotal: cartTotalVal
     };
 
-  }catch(_){
+  }catch(error){
+    console.error("ERROR VISITAS: " + (error && error.stack ? error.stack : error));
+    return json_({
+      ok:false,
+      status:"invalid",
+      message:String(error && error.message ? error.message : error)
+    });
   }finally{
     try{ if (lock) lock.releaseLock(); }catch(_){}
   }
 
   try{
-    if (telegramPayload){
-      sendVisitToTelegram_(telegramPayload);
-    }
+    if (telegramPayload) sendVisitToTelegram_(telegramPayload);
   }catch(error){
     console.error("ERROR TELEGRAM: " + (error && error.stack ? error.stack : error));
   }
 
-  return ok_();
+  return json_({ ok:true, status:"registered" });
 }
 
 // ===================== DISTANCIA (HAVERSINE) =====================
@@ -367,14 +403,26 @@ function haversineMeters_(lat1, lng1, lat2, lng2){
   return R * c;
 }
 
-// ===================== RESPUESTA OK =====================
-function ok_(){
+// ===================== RESPUESTAS Y VALIDACIÓN =====================
+function json_(obj){
   return ContentService
-    .createTextOutput("ok")
-    .setMimeType(ContentService.MimeType.TEXT);
+    .createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
 }
 
-// ===================== PARSEO PARAMS =====================
+function jsonOrJsonp_(obj, callback){
+  if (!callback) return json_(obj);
+  return ContentService
+    .createTextOutput(callback + "(" + JSON.stringify(obj) + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
+
+function safeCallback_(value){
+  const callback = String(value || "").trim();
+  if (!callback) return "";
+  return /^[A-Za-z_$][A-Za-z0-9_$]{0,80}$/.test(callback) ? callback : "";
+}
+
 function parseParams_(e){
   const out = Object.assign({}, (e && e.parameter) || {});
   try{
@@ -385,7 +433,7 @@ function parseParams_(e){
     if (ct.includes("application/json")){
       const j = JSON.parse(raw);
       if (j && typeof j === "object"){
-        Object.keys(j).forEach(k => out[k] = String(j[k]));
+        Object.keys(j).forEach(k => out[k] = String(j[k] == null ? "" : j[k]));
       }
       return out;
     }
@@ -396,13 +444,108 @@ function parseParams_(e){
       const k = kv[0];
       const v = kv.slice(1).join("=");
       if(!k) return;
-      out[decodeURIComponent(k)] = decodeURIComponent(v || "");
+      out[decodeURIComponent(k.replace(/\+/g, " "))] = decodeURIComponent((v || "").replace(/\+/g, " "));
     });
   }catch(_){}
   return out;
 }
 
-// ===================== HEADERS =====================
+function normalizeBrowserId_(value, required){
+  const id = safePlainText_(value, 100);
+  if (!id){
+    if (required) throw new Error("Falta user_id.");
+    return "";
+  }
+  if (!/^[A-Za-z0-9_-]{12,100}$/.test(id)){
+    throw new Error("user_id inválido.");
+  }
+  return id;
+}
+
+function normalizeVisitId_(value, required){
+  const id = safePlainText_(value, 100);
+  if (!id){
+    if (required) throw new Error("Falta load_id.");
+    return "";
+  }
+  if (!/^[A-Za-z0-9_-]{12,100}$/.test(id)){
+    if (required) throw new Error("load_id inválido.");
+    return "";
+  }
+  return id;
+}
+
+function safePlainText_(value, maxLen){
+  let text = String(value == null ? "" : value)
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (maxLen && text.length > maxLen) text = text.slice(0, maxLen);
+  return text;
+}
+
+function safeClientText_(value, maxLen){
+  let text = safePlainText_(value, maxLen).replace(/[<>]/g, "");
+  if (/^[=+\-@]/.test(text)) text = "'" + text;
+  return text;
+}
+
+function boundedWholeNumber_(value, min, max){
+  if (value == null || String(value).trim() === "") return min;
+  const n = Number(value);
+  if (!Number.isInteger(n) || n < min || n > max) throw new Error("Valor entero fuera de rango.");
+  return n;
+}
+
+function boundedNumber_(value, min, max){
+  if (value == null || String(value).trim() === "") return min;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < min || n > max) throw new Error("Valor numérico fuera de rango.");
+  return n;
+}
+
+function normalizeLocation_(p){
+  const latTxt = safePlainText_(p.lat, 40);
+  const lngTxt = safePlainText_(p.lng, 40);
+  const hasLat = latTxt !== "";
+  const hasLng = lngTxt !== "";
+
+  if (hasLat !== hasLng) throw new Error("Latitud y longitud deben enviarse juntas.");
+
+  let hasCoords = false;
+  let lat = NaN;
+  let lng = NaN;
+
+  if (hasLat && hasLng){
+    lat = Number(latTxt);
+    lng = Number(lngTxt);
+    if (!Number.isFinite(lat) || lat < -90 || lat > 90) throw new Error("Latitud inválida.");
+    if (!Number.isFinite(lng) || lng < -180 || lng > 180) throw new Error("Longitud inválida.");
+    hasCoords = true;
+  }
+
+  let fuente = safePlainText_(p.fuente || p.src || "", 30).toUpperCase();
+  if (!fuente) fuente = hasCoords ? "GEO" : "SIN_UBICACION";
+  if (!ALLOWED_SOURCES.has(fuente)) throw new Error("Fuente de ubicación inválida.");
+
+  if (hasCoords && !["GPS", "WI-FI", "CELULAR", "GEO"].includes(fuente)){
+    throw new Error("La fuente indicada no corresponde a coordenadas GPS.");
+  }
+  if (!hasCoords && !["IP", "SIN_UBICACION"].includes(fuente)){
+    throw new Error("La fuente indicada requiere coordenadas.");
+  }
+
+  const accTxt = safePlainText_(p.acc, 40);
+  let accuracy = "";
+  if (accTxt !== ""){
+    const acc = Number(accTxt);
+    if (!Number.isFinite(acc) || acc < 0 || acc > 100000) throw new Error("Precisión inválida.");
+    accuracy = acc;
+  }
+
+  return { hasCoords, lat, lng, accuracy, fuente };
+}
+
 function norm_(s){
   return String(s || "")
     .toLowerCase()
@@ -412,27 +555,26 @@ function norm_(s){
     .replace(/\s+/g, " ");
 }
 
-function ensureHeaders_(sh, required){
+function resolveHeaders_(sh, required){
   const lastCol = Math.max(1, sh.getLastColumn());
-  const headerRow = sh.getRange(1, 1, 1, lastCol).getValues()[0];
-
+  const headerRow = sh.getRange(1, 1, 1, lastCol).getDisplayValues()[0];
   const idx = {};
-  headerRow.forEach((h, i) => idx[norm_(h)] = i);
+  const duplicateKeys = [];
 
-  let changed = false;
-  const extended = headerRow.slice();
-
-  required.forEach(h => {
+  headerRow.forEach((h, i) => {
     const key = norm_(h);
-    if (idx[key] == null){
-      extended.push(h);
-      idx[key] = extended.length - 1;
-      changed = true;
-    }
+    if (!key) return;
+    if (idx[key] != null) duplicateKeys.push(key);
+    else idx[key] = i;
   });
 
-  if (changed){
-    sh.getRange(1, 1, 1, extended.length).setValues([extended]);
+  if (duplicateKeys.length){
+    throw new Error("Hay encabezados duplicados en la hoja de visitas: " + [...new Set(duplicateKeys)].join(", "));
+  }
+
+  const missing = (required || []).filter(h => idx[norm_(h)] == null);
+  if (missing.length){
+    throw new Error("Faltan encabezados requeridos en la hoja de visitas: " + missing.join(", "));
   }
 
   return {
@@ -450,6 +592,51 @@ function ensureHeaders_(sh, required){
     pais:           idx[norm_("pais")],
     id_visita:      idx[norm_("id visita")]
   };
+}
+
+function visitExistsById_(visitId){
+  const normalized = normalizeVisitId_(visitId, false);
+  if (!normalized) return false;
+  try{
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sh = SHEET_NAME ? ss.getSheetByName(SHEET_NAME) : ss.getSheets()[0];
+    if (!sh) return false;
+    const headers = resolveHeaders_(sh, REQUIRED_HEADERS);
+    return visitExistsInSheet_(sh, headers, normalized);
+  }catch(error){
+    console.error("No se pudo comprobar id visita: " + error);
+    return false;
+  }
+}
+
+function visitExistsInSheet_(sh, headerIndex, visitId){
+  if (!visitId || headerIndex.id_visita == null) return false;
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return false;
+  return !!sh
+    .getRange(2, headerIndex.id_visita + 1, lastRow - 1, 1)
+    .createTextFinder(visitId)
+    .matchEntireCell(true)
+    .findNext();
+}
+
+function rateCacheKey_(userId){
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    String(userId || ""),
+    Utilities.Charset.UTF_8
+  );
+  return "visit_rate_" + Utilities.base64EncodeWebSafe(digest).replace(/=+$/g, "").slice(0, 40);
+}
+
+function isRateLimited_(userId){
+  if (!userId) return true;
+  return CacheService.getScriptCache().get(rateCacheKey_(userId)) === "1";
+}
+
+function markRateLimit_(userId){
+  if (!userId) return;
+  CacheService.getScriptCache().put(rateCacheKey_(userId), "1", VISIT_RATE_SECONDS);
 }
 
 // ===================== CONTROL DE VISITAS =====================

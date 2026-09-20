@@ -1,0 +1,95 @@
+name: Restaurar Apps Script Natura temporal
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/restaurar-apps-script-natura-temporal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - run: npm install --global @google/clasp@3.4.1
+
+      - name: Restaurar autorización de Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON"
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Restaurar proyecto desde la papelera
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          clasp list-scripts >/dev/null
+          python3 - "$RUNNER_TEMP/.clasprc.json" <<'PY'
+          import json
+          import sys
+          import urllib.parse
+          import urllib.request
+
+          FILE_ID = "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf"
+          EXPECTED_NAME = "lectura de carpetas en natura"
+
+          with open(sys.argv[1], encoding="utf-8") as fh:
+              auth = json.load(fh)
+
+          credentials = ((auth.get("tokens") or {}).get("default") or auth.get("token") or auth)
+          token = credentials.get("access_token", "") if isinstance(credentials, dict) else ""
+          if not token:
+              raise SystemExit("No se pudo obtener el access_token actualizado de clasp")
+
+          base = "https://www.googleapis.com/drive/v3/files/" + urllib.parse.quote(FILE_ID, safe="")
+          fields = "id,name,mimeType,trashed,parents"
+          get_url = base + "?fields=" + urllib.parse.quote(fields, safe=",") + "&supportsAllDrives=true"
+          headers = {"Authorization": f"Bearer {token}"}
+
+          with urllib.request.urlopen(urllib.request.Request(get_url, headers=headers), timeout=30) as response:
+              before = json.load(response)
+
+          if before.get("id") != FILE_ID:
+              raise SystemExit("El ID verificado no coincide")
+          if before.get("name") != EXPECTED_NAME:
+              raise SystemExit(f"Nombre inesperado: {before.get('name')!r}")
+
+          print("ANTES=" + json.dumps(before, ensure_ascii=False))
+
+          if before.get("trashed") is True:
+              payload = json.dumps({"trashed": False}).encode("utf-8")
+              patch_url = base + "?fields=" + urllib.parse.quote(fields, safe=",") + "&supportsAllDrives=true"
+              req = urllib.request.Request(
+                  patch_url,
+                  data=payload,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Content-Type": "application/json; charset=utf-8",
+                  },
+                  method="PATCH",
+              )
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  after = json.load(response)
+          else:
+              after = before
+
+          print("DESPUES=" + json.dumps(after, ensure_ascii=False))
+
+          if after.get("trashed") is True:
+              raise SystemExit("Google Drive no confirmó la restauración")
+          if after.get("id") != FILE_ID or after.get("name") != EXPECTED_NAME:
+              raise SystemExit("La identidad del proyecto cambió inesperadamente")
+          PY

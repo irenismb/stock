@@ -40,6 +40,7 @@ jobs:
           python3 - "$RUNNER_TEMP/.clasprc.json" <<'PY'
           import json
           import sys
+          import urllib.error
           import urllib.parse
           import urllib.request
 
@@ -81,8 +82,14 @@ jobs:
                   },
                   method="PATCH",
               )
-              with urllib.request.urlopen(req, timeout=30) as response:
-                  after = json.load(response)
+              try:
+                  with urllib.request.urlopen(req, timeout=30) as response:
+                      after = json.load(response)
+              except urllib.error.HTTPError as error:
+                  body = error.read().decode("utf-8", errors="replace")
+                  print("PATCH_ERROR_STATUS=" + str(error.code))
+                  print("PATCH_ERROR_BODY=" + body)
+                  raise SystemExit("Google Drive rechazó la restauración")
           else:
               after = before
 

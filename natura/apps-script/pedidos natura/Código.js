@@ -1,7 +1,12 @@
 const SPREADSHEET_ID = "1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc";
+const INVENTORY_SPREADSHEET_ID = "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs";
+const INVENTORY_SHEET_NAME = "Productos";
 const TZ = "America/Bogota";
 const HEADER_SCAN_MAX_ROWS = 30;
 const HEADER_SCAN_MAX_COLS = 40;
+const REQUEST_REGISTRY_PROPERTY = "recent_order_requests_v1";
+const REQUEST_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const REQUEST_MAX_ENTRIES = 200;
 
 const REQUIRED_HEADERS = [
   "Nombre producto",
@@ -19,6 +24,13 @@ const REQUIRED_HEADERS = [
   "Tipo movimiento"
 ];
 
+const INVENTORY_REQUIRED_HEADERS = [
+  "Código",
+  "Categoría",
+  "Nombre",
+  "Precio"
+];
+
 function normalizeHeader_(value) {
   return String(value == null ? "" : value)
     .trim()
@@ -28,22 +40,27 @@ function normalizeHeader_(value) {
     .replace(/\s+/g, " ");
 }
 
-function canonicalHeaderMap_() {
+function canonicalHeaderMap_(headers) {
   const map = {};
-  REQUIRED_HEADERS.forEach(function(header) {
+  (headers || []).forEach(function(header) {
     map[normalizeHeader_(header)] = header;
   });
   return map;
 }
 
-function resolveSheetContext_() {
-  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
-  const canonical = canonicalHeaderMap_();
+function resolveTableContext_(spreadsheet, requiredHeaders, onlySheetName) {
+  const canonical = canonicalHeaderMap_(requiredHeaders);
   const requiredKeys = Object.keys(canonical);
   const matches = [];
   const duplicateRows = [];
+  const sheets = onlySheetName ? [spreadsheet.getSheetByName(onlySheetName)] : spreadsheet.getSheets();
 
-  spreadsheet.getSheets().forEach(function(sheet) {
+  if (onlySheetName && !sheets[0]) {
+    throw new Error("No existe la pestaña requerida: " + onlySheetName);
+  }
+
+  sheets.forEach(function(sheet) {
+    if (!sheet) return;
     const rowCount = Math.min(sheet.getMaxRows(), HEADER_SCAN_MAX_ROWS);
     const colCount = Math.min(sheet.getMaxColumns(), HEADER_SCAN_MAX_COLS);
     if (rowCount < 1 || colCount < 1) return;
@@ -87,103 +104,244 @@ function resolveSheetContext_() {
   if (matches.length !== 1) {
     const duplicateDetail = duplicateRows.length ? " Encabezados duplicados: " + duplicateRows.join(" | ") : "";
     throw new Error(
-      "No se pudo identificar de forma única la tabla de pedidos por sus encabezados. Coincidencias: " + matches.length + "." + duplicateDetail
+      "No se pudo identificar de forma única la tabla por sus encabezados. Coincidencias: " + matches.length + "." + duplicateDetail
     );
   }
 
   return matches[0];
 }
 
+function resolveSheetContext_() {
+  return resolveTableContext_(SpreadsheetApp.openById(SPREADSHEET_ID), REQUIRED_HEADERS, "");
+}
+
+function resolveInventoryContext_() {
+  return resolveTableContext_(
+    SpreadsheetApp.openById(INVENTORY_SPREADSHEET_ID),
+    INVENTORY_REQUIRED_HEADERS,
+    INVENTORY_SHEET_NAME
+  );
+}
+
 function movementType_(body) {
   const raw = safe_(body && (body.tipoMovimiento || body.tipo_movimiento || body.movimiento));
   const normalized = normalizeHeader_(raw);
   if (normalized === "venta") return "Venta";
-  if (normalized === "pedido") return "Pedido";
   return "Pedido";
 }
 
 function doGet(e) {
   const q = e && e.parameter ? e.parameter : {};
+  const requestId = normalizeClientRequestId_(q.request_id || q.client_request_id || "", false);
 
-  if (q.test === "1") {
-    const context = resolveSheetContext_();
-    const payload = {
-      tipoMovimiento: "Pedido",
-      totalPedido: 1000,
-      cliente: {
-        nombre: "CLIENTE PRUEBA",
-        celular: "3000000000",
-        direccion: "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros",
-        direccionBase: "Calle 10A #20A-06, Santa Marta, Magdalena"
-      },
-      items: [{
-        nombreProducto: "PRODUCTO PRUEBA",
-        valorUnitario: 1000,
-        cantidadSolicitada: 1,
-        totalPedido: 1000,
-        marca: "MARCA PRUEBA",
-        categoria: "CATEGORIA PRUEBA",
-        codigo: "COD-PRUEBA"
-      }]
-    };
-    const result = appendMovement_(context, payload, payload.items);
-    result.modo = "test_get";
-    return json_(result);
+  if (requestId) {
+    const registry = cleanupRequestRegistry_(readRequestRegistry_());
+    const entry = registry[requestId] || null;
+    const result = entry
+      ? Object.assign({ client_request_id: requestId }, entry.publicResult || {})
+      : { ok: false, status: "not_found", client_request_id: requestId };
+    return jsonOrJsonp_(result, q.prefix || "");
   }
 
-  return json_({
+  return jsonOrJsonp_({
     ok: true,
-    message: "Web app activa. Registra pedidos y ventas según Tipo movimiento."
-  });
+    message: "Web app activa. Registra pedidos validando los productos contra el inventario oficial."
+  }, q.prefix || "");
 }
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000);
+  let requestId = "";
 
   try {
-    const context = resolveSheetContext_();
     const raw = (e && e.postData && e.postData.contents) ? e.postData.contents : "{}";
     const body = JSON.parse(raw);
-    const items = Array.isArray(body.items) ? body.items : [];
+    requestId = normalizeClientRequestId_(body && body.client_request_id, true) || generateRequestId_();
 
-    if (!items.length) {
-      return json_({ ok: false, message: "No hay productos para registrar." });
+    let registry = cleanupRequestRegistry_(readRequestRegistry_());
+    if (registry[requestId] && registry[requestId].publicResult) {
+      const previous = Object.assign({}, registry[requestId].publicResult, {
+        client_request_id: requestId,
+        duplicate: true
+      });
+      return json_(previous);
     }
 
-    return json_(appendMovement_(context, body, items));
+    const requestedItems = normalizeRequestedItems_(body && body.items);
+    const resolvedItems = resolveInventoryItems_(requestedItems);
+    const context = resolveSheetContext_();
+    const pricing = calculateOrderPricing_(body, resolvedItems);
+    const result = appendMovement_(context, body, resolvedItems, pricing);
+
+    const publicResult = Object.assign({}, result, {
+      status: "registered",
+      client_request_id: requestId,
+      precioPendiente: pricing.hasPendingPrice
+    });
+
+    registry[requestId] = {
+      ts: Date.now(),
+      publicResult: publicResult
+    };
+    writeRequestRegistry_(registry);
+    return json_(publicResult);
   } catch (err) {
+    const message = String(err && err.message ? err.message : err);
+
+    if (requestId) {
+      const registry = cleanupRequestRegistry_(readRequestRegistry_());
+      registry[requestId] = {
+        ts: Date.now(),
+        publicResult: {
+          ok: false,
+          status: "error",
+          client_request_id: requestId,
+          message: message
+        }
+      };
+      writeRequestRegistry_(registry);
+    }
+
     return json_({
       ok: false,
-      message: String(err)
+      status: "error",
+      client_request_id: requestId || "",
+      message: message
     });
   } finally {
     lock.releaseLock();
   }
 }
 
-function appendMovement_(context, body, items) {
+function normalizeRequestedItems_(items) {
+  if (!Array.isArray(items) || !items.length) {
+    throw new Error("No hay productos para registrar.");
+  }
+  if (items.length > 50) {
+    throw new Error("El pedido supera el máximo de productos permitido.");
+  }
+
+  const grouped = {};
+  items.forEach(function(item) {
+    const code = normalizeProductCode_(item && item.codigo);
+    const qty = positiveInteger_(item && item.cantidadSolicitada, "Cantidad solicitada");
+    const brand = safeClientCell_(item && item.marca, 80);
+
+    if (!grouped[code]) {
+      grouped[code] = { codigo: code, cantidadSolicitada: 0, marca: brand };
+    }
+    grouped[code].cantidadSolicitada += qty;
+    if (grouped[code].cantidadSolicitada > 9999) {
+      throw new Error("Cantidad solicitada fuera de rango para el código " + code + ".");
+    }
+  });
+
+  return Object.keys(grouped).map(function(code) { return grouped[code]; });
+}
+
+function resolveInventoryItems_(requestedItems) {
+  const context = resolveInventoryContext_();
+  const sheet = context.sheet;
+  const columns = context.columnByHeader;
+  const lastRow = sheet.getLastRow();
+
+  if (lastRow <= context.headerRow) {
+    throw new Error("El inventario oficial no contiene productos.");
+  }
+
+  const maxCol = Math.max.apply(null, Object.keys(columns).map(function(header) { return columns[header]; }));
+  const numRows = lastRow - context.headerRow;
+  const range = sheet.getRange(context.headerRow + 1, 1, numRows, maxCol);
+  const rawValues = range.getValues();
+  const displayValues = range.getDisplayValues();
+  const requestedCodes = {};
+  requestedItems.forEach(function(item) { requestedCodes[item.codigo] = true; });
+  const matchesByCode = {};
+
+  displayValues.forEach(function(row, rowIndex) {
+    const code = safe_(row[columns["Código"] - 1]);
+    if (!requestedCodes[code]) return;
+    if (!matchesByCode[code]) matchesByCode[code] = [];
+    matchesByCode[code].push(rowIndex);
+  });
+
+  return requestedItems.map(function(requested) {
+    const matches = matchesByCode[requested.codigo] || [];
+    if (matches.length !== 1) {
+      throw new Error(
+        "El código " + requested.codigo + " debe identificar un único producto vigente. Coincidencias: " + matches.length + "."
+      );
+    }
+
+    const rowIndex = matches[0];
+    const display = displayValues[rowIndex];
+    const raw = rawValues[rowIndex];
+    const nombre = safe_(display[columns["Nombre"] - 1]);
+    const categoria = safe_(display[columns["Categoría"] - 1]);
+    const precio = optionalNonNegativeNumber_(raw[columns["Precio"] - 1], "Precio", requested.codigo);
+
+    if (!nombre) throw new Error("El producto " + requested.codigo + " no tiene Nombre válido en el inventario.");
+    if (!categoria) throw new Error("El producto " + requested.codigo + " no tiene Categoría válida en el inventario.");
+
+    return {
+      codigo: requested.codigo,
+      cantidadSolicitada: requested.cantidadSolicitada,
+      marca: requested.marca,
+      nombreProducto: nombre,
+      categoria: categoria,
+      valorUnitario: precio
+    };
+  });
+}
+
+function calculateOrderPricing_(body, items) {
+  const hasPendingPrice = items.some(function(item) { return item.valorUnitario == null; });
+  const subtotal = items.reduce(function(sum, item) {
+    if (item.valorUnitario == null) return sum;
+    return sum + (item.valorUnitario * item.cantidadSolicitada);
+  }, 0);
+
+  let shipping = optionalRequestAmount_(body && body.envio, "Envío");
+
+  // Compatibilidad temporal con catálogos antiguos que todavía envían totalPedido.
+  if (shipping == null && !hasPendingPrice) {
+    const legacyTotal = optionalRequestAmount_(body && body.totalPedido, "Total pedido");
+    if (legacyTotal != null) shipping = Math.max(0, legacyTotal - subtotal);
+  }
+
+  if (shipping == null) shipping = 0;
+  if (shipping > 1000000) throw new Error("El valor de envío está fuera del rango permitido.");
+
+  return {
+    hasPendingPrice: hasPendingPrice,
+    subtotal: subtotal,
+    shipping: shipping,
+    totalPedido: hasPendingPrice ? "" : subtotal + shipping
+  };
+}
+
+function appendMovement_(context, body, items, pricing) {
   const sheet = context.sheet;
   const columns = context.columnByHeader;
   const numeroPedido = nextOrderNumber_(context);
   const fechaPedido = Utilities.formatDate(new Date(), TZ, "yyyy-MM-dd HH:mm");
   const tipoMovimiento = movementType_(body);
 
-  const nombreCliente = safe_(body && body.cliente && body.cliente.nombre);
-  const celularCliente = safe_(body && body.cliente && body.cliente.celular);
+  const nombreCliente = safeClientCell_(body && body.cliente && body.cliente.nombre, 120);
+  const celularCliente = safeClientCell_(body && body.cliente && body.cliente.celular, 50);
   const direccionClienteVisible = buildDireccionClienteVisible_(body);
   const direccionClienteMapa = buildDireccionClienteMapa_(body);
-  const totalPedidoGeneral = num_(body && body.totalPedido);
 
   const records = items.map(function(item) {
     return {
-      "Nombre producto": safe_(item && item.nombreProducto),
-      "Valor unitario": num_(item && item.valorUnitario),
-      "Cantidad solicitada": num_(item && item.cantidadSolicitada),
-      "Total pedido": totalPedidoGeneral || num_(item && item.totalPedido),
-      "Marca": safe_(item && item.marca),
-      "Categoria": safe_(item && item.categoria),
-      "Codigo": safe_(item && item.codigo),
+      "Nombre producto": item.nombreProducto,
+      "Valor unitario": item.valorUnitario == null ? "" : item.valorUnitario,
+      "Cantidad solicitada": item.cantidadSolicitada,
+      "Total pedido": pricing.totalPedido,
+      "Marca": item.marca,
+      "Categoria": item.categoria,
+      "Codigo": item.codigo,
       "Numero pedido": numeroPedido,
       "Fecha pedido": fechaPedido,
       "Nombre cliente": nombreCliente,
@@ -215,30 +373,6 @@ function appendMovement_(context, body, items) {
   };
 }
 
-function probarRegistroManual_() {
-  const context = resolveSheetContext_();
-  const payload = {
-    tipoMovimiento: "Pedido",
-    totalPedido: 10000,
-    cliente: {
-      nombre: "MARTIN PRUEBA",
-      celular: "3001112233",
-      direccion: "Calle 10A #20A-06, Santa Marta, Magdalena, Barrio Los Almendros",
-      direccionBase: "Calle 10A #20A-06, Santa Marta, Magdalena"
-    },
-    items: [{
-      nombreProducto: "MANUAL PRUEBA",
-      valorUnitario: 5000,
-      cantidadSolicitada: 2,
-      totalPedido: 10000,
-      marca: "NATURA",
-      categoria: "PRUEBA",
-      codigo: "MAN-001"
-    }]
-  };
-  return appendMovement_(context, payload, payload.items);
-}
-
 function nextOrderNumber_(context) {
   const props = PropertiesService.getScriptProperties();
   let last = Number(props.getProperty("ultimo_numero_pedido") || "0");
@@ -266,12 +400,11 @@ function nextOrderNumber_(context) {
 
 function buildDireccionClienteVisible_(body) {
   const cliente = body && body.cliente ? body.cliente : {};
-  const direccionVisible = safe_(cliente.direccion);
-
+  const direccionVisible = safeClientCell_(cliente.direccion, 300);
   if (direccionVisible) return direccionVisible;
 
-  const direccionBase = safe_(cliente.direccionBase);
-  const barrio = safe_(cliente.barrio);
+  const direccionBase = safeClientCell_(cliente.direccionBase, 240);
+  const barrio = safeClientCell_(cliente.barrio, 100);
   return joinParts_([
     direccionBase,
     barrio ? "Barrio " + barrio : ""
@@ -280,14 +413,9 @@ function buildDireccionClienteVisible_(body) {
 
 function buildDireccionClienteMapa_(body) {
   const cliente = body && body.cliente ? body.cliente : {};
-  const direccionMapa = safe_(cliente.direccionMapa);
-  if (direccionMapa) return direccionMapa;
-
-  const direccionBase = safe_(cliente.direccionBase);
-  if (direccionBase) {
-    return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent_(direccionBase);
-  }
-  return "";
+  const direccionBase = safeClientCell_(cliente.direccionBase, 240);
+  if (!direccionBase) return "";
+  return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent_(direccionBase.replace(/^'/, ""));
 }
 
 function setDireccionClienteRichText_(context, startRow, numRows, visibleText, linkUrl) {
@@ -305,6 +433,94 @@ function setDireccionClienteRichText_(context, startRow, numRows, visibleText, l
   context.sheet.getRange(startRow, colDireccionCliente, numRows, 1).setRichTextValues(values);
 }
 
+function readRequestRegistry_() {
+  const raw = PropertiesService.getScriptProperties().getProperty(REQUEST_REGISTRY_PROPERTY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch (_) {
+    return {};
+  }
+}
+
+function cleanupRequestRegistry_(registry) {
+  const now = Date.now();
+  const valid = [];
+  Object.keys(registry || {}).forEach(function(key) {
+    const entry = registry[key];
+    const ts = Number(entry && entry.ts) || 0;
+    if (ts && now - ts <= REQUEST_TTL_MS) valid.push([key, entry]);
+  });
+
+  valid.sort(function(a, b) { return Number(b[1].ts) - Number(a[1].ts); });
+  const cleaned = {};
+  valid.slice(0, REQUEST_MAX_ENTRIES).forEach(function(pair) {
+    cleaned[pair[0]] = pair[1];
+  });
+  return cleaned;
+}
+
+function writeRequestRegistry_(registry) {
+  const cleaned = cleanupRequestRegistry_(registry || {});
+  PropertiesService.getScriptProperties().setProperty(REQUEST_REGISTRY_PROPERTY, JSON.stringify(cleaned));
+}
+
+function normalizeClientRequestId_(value, rejectInvalid) {
+  const id = safe_(value);
+  if (!id) return "";
+  if (/^[A-Za-z0-9_-]{16,120}$/.test(id)) return id;
+  if (rejectInvalid) throw new Error("client_request_id inválido.");
+  return "";
+}
+
+function generateRequestId_() {
+  return "legacy_" + Utilities.getUuid().replace(/-/g, "");
+}
+
+function normalizeProductCode_(value) {
+  const code = safe_(value);
+  if (!/^\d{4}$/.test(code)) {
+    throw new Error("Cada producto debe enviar un Código válido de cuatro dígitos.");
+  }
+  return code;
+}
+
+function positiveInteger_(value, label) {
+  const n = Number(value);
+  if (!Number.isInteger(n) || n <= 0) {
+    throw new Error((label || "Cantidad") + " debe ser un entero mayor que cero.");
+  }
+  return n;
+}
+
+function optionalNonNegativeNumber_(value, label, code) {
+  if (value === "" || value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error((label || "Valor") + " inválido en el inventario" + (code ? " para " + code : "") + ".");
+  }
+  return n;
+}
+
+function optionalRequestAmount_(value, label) {
+  if (value === "" || value == null) return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error((label || "Valor") + " inválido.");
+  }
+  return Math.round(n);
+}
+
+function safeClientCell_(value, maxLen) {
+  let text = safe_(value)
+    .replace(/[\u0000-\u001F\u007F]/g, " ")
+    .replace(/\s+/g, " ");
+  if (maxLen && text.length > maxLen) text = text.slice(0, maxLen);
+  if (/^[=+\-@]/.test(text)) text = "'" + text;
+  return text;
+}
+
 function joinParts_(parts, sep) {
   return (parts || [])
     .filter(function(part) { return !!part; })
@@ -317,10 +533,6 @@ function safe_(value) {
   return String(value == null ? "" : value).trim();
 }
 
-function num_(value) {
-  return Number(value) || 0;
-}
-
 function encodeURIComponent_(text) {
   return encodeURIComponent(String(text == null ? "" : text));
 }
@@ -329,4 +541,15 @@ function json_(obj) {
   return ContentService
     .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
+}
+
+function jsonOrJsonp_(obj, prefix) {
+  const callback = safe_(prefix);
+  if (!callback) return json_(obj);
+  if (!/^[A-Za-z_$][A-Za-z0-9_$]{0,80}$/.test(callback)) {
+    return json_({ ok: false, status: "error", message: "Callback JSONP inválido." });
+  }
+  return ContentService
+    .createTextOutput(callback + "(" + JSON.stringify(obj) + ");")
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }

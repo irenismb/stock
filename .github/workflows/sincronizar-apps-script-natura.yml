@@ -228,7 +228,7 @@ jobs:
             echo "Trayendo desde Google: $remote_name"
             (
               cd "$target_dir"
-              clasp pull --deleteUnusedFiles --force
+              clasp pull --force
             )
           done < "$RUNNER_TEMP/google-projects.tsv"
 

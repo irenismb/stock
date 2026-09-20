@@ -8,7 +8,7 @@ on:
       - ".github/triggers/reforzar-visitantes-natura.txt"
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: reforzar-visitantes-natura
@@ -20,11 +20,8 @@ jobs:
     timeout-minutes: 30
     env:
       SCRIPT_ID: "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN"
-      PROJECT_NAME: "coordenadas de visitantes natura"
       PROJECT_DIR: "natura/apps-script/coordenadas de visitantes natura"
       DEPLOYMENT_ID: "AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO"
-      DRIVE_CODE_FILE_ID: "1m4aIdT61_H1rnQqRIzjj8aMxwP87Rq_F"
-      DRIVE_CLIENT_FILE_ID: "1lCxN23dtM_HuYXX0z_VHEj6hwHHFq9Mm"
 
     steps:
       - name: Descargar repositorio
@@ -33,18 +30,16 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Leer fase
-        id: phase
+      - name: Validar fase
         run: |
           phase="$(sed -n 's/^FASE=//p' .github/triggers/reforzar-visitantes-natura.txt | head -n1)"
           case "$phase" in
-            servidor_transicion|cliente|servidor_final) ;;
+            servidor_transicion|servidor_final) ;;
             *)
               echo "::error::Fase no autorizada: $phase"
               exit 1
               ;;
           esac
-          echo "value=$phase" >> "$GITHUB_OUTPUT"
 
       - name: Preparar Node.js
         uses: actions/setup-node@v7
@@ -68,94 +63,28 @@ jobs:
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
           clasp list-scripts >/dev/null
 
-      - name: Traer archivo maestro desde Drive
-        env:
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-          PHASE: ${{ steps.phase.outputs.value }}
-        run: |
-          python3 - "$RUNNER_TEMP/.clasprc.json" "$PHASE" "$DRIVE_CODE_FILE_ID" "$DRIVE_CLIENT_FILE_ID" "$PROJECT_DIR" <<'PY'
-          import json
-          import pathlib
-          import sys
-          import urllib.parse
-          import urllib.request
-
-          auth_path, phase, code_id, client_id, project_dir = sys.argv[1:6]
-          with open(auth_path, encoding="utf-8") as fh:
-              auth = json.load(fh)
-          credentials = ((auth.get("tokens") or {}).get("default") or auth.get("token") or auth)
-          token = credentials.get("access_token", "") if isinstance(credentials, dict) else ""
-          if not token:
-              raise SystemExit("No se pudo obtener access_token")
-
-          if phase == "cliente":
-              file_id = client_id
-              target = pathlib.Path("natura/analytics-visitas.js")
-          else:
-              file_id = code_id
-              target = pathlib.Path(project_dir) / "Código.js"
-
-          url = "https://www.googleapis.com/drive/v3/files/" + urllib.parse.quote(file_id, safe="") + "?alt=media"
-          request = urllib.request.Request(url, headers={"Authorization": "Bearer " + token})
-          with urllib.request.urlopen(request, timeout=60) as response:
-              data = response.read()
-
-          target.parent.mkdir(parents=True, exist_ok=True)
-          target.write_bytes(data)
-          print(f"Drive -> {target}: {len(data)} bytes")
-          PY
-
-      - name: Validar sintaxis
-        env:
-          PHASE: ${{ steps.phase.outputs.value }}
-        run: |
-          if [ "$PHASE" = "cliente" ]; then
-            node --check natura/analytics-visitas.js
-          else
-            node --check "$PROJECT_DIR/Código.js"
-          fi
-
-      - name: Guardar en GitHub
-        env:
-          PHASE: ${{ steps.phase.outputs.value }}
-        run: |
-          if [ "$PHASE" = "cliente" ]; then
-            git add natura/analytics-visitas.js
-            message="Reforzar cliente de visitantes Natura"
-          else
-            git add "$PROJECT_DIR/Código.js"
-            message="Reforzar servidor de visitantes Natura ($PHASE)"
-          fi
-
-          if git diff --cached --quiet; then
-            echo "GitHub ya coincide con Drive para esta fase."
-          else
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git commit -m "$message"
-            git push origin HEAD:main
-          fi
-
-      - name: Publicar mismo Apps Script
-        if: steps.phase.outputs.value != 'cliente'
+      - name: Validar código e identidad
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
+          node --check "$PROJECT_DIR/Código.js"
           actual_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$PROJECT_DIR/.clasp.json")"
           if [ "$actual_id" != "$SCRIPT_ID" ]; then
             echo "::error::scriptId inesperado: $actual_id"
             exit 1
           fi
-
-          if ! clasp deployments --project "$PROJECT_DIR/.clasp.json" 2>/dev/null | grep -Fq "$DEPLOYMENT_ID"; then
+          (
             cd "$PROJECT_DIR"
             if ! clasp deployments | grep -Fq "$DEPLOYMENT_ID"; then
               echo "::error::No existe el deployment oficial esperado."
               exit 1
             fi
-            cd - >/dev/null
-          fi
+          )
 
+      - name: Publicar mismo Apps Script
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
           (
             cd "$PROJECT_DIR"
             clasp push --force
@@ -163,7 +92,6 @@ jobs:
           )
 
       - name: Comprobar endpoint
-        if: steps.phase.outputs.value != 'cliente'
         run: |
           endpoint="https://script.google.com/macros/s/$DEPLOYMENT_ID/exec?health=$(date +%s)"
           for attempt in 1 2 3 4 5; do

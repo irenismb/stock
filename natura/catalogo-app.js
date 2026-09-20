@@ -51,12 +51,16 @@
 	const INTERRUPTORES = {
 	  MOSTRAR_CANTIDAD_STOCK: false,
 	  MOSTRAR_PRECIOS_PRODUCTO: true,
+	  MOSTRAR_SPRE: false,
+	  MOSTRAR_FOLLETO: false,
 	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp"
     };
     window.INTERRUPTORES = INTERRUPTORES;
     const REMOTE_BOOLEAN_CONTROL_KEYS = new Set([
       "MOSTRAR_CANTIDAD_STOCK",
-      "MOSTRAR_PRECIOS_PRODUCTO"
+      "MOSTRAR_PRECIOS_PRODUCTO",
+      "MOSTRAR_SPRE",
+      "MOSTRAR_FOLLETO"
     ]);
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
 
@@ -68,6 +72,12 @@
     }
     function shouldShowProductPrices(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_PRECIOS_PRODUCTO !== false);
+    }
+    function shouldShowAdministrativeSPRE(){
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_SPRE === true);
+    }
+    function shouldShowAdministrativeFolleto(){
+      return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_FOLLETO === true);
     }
     function shouldShowProductCodes(){
       return true;
@@ -458,6 +468,8 @@
         wordSuggestionsVisible = shouldShowSuggestionsInitially();
         syncWordToggleButton();
       }
+
+      syncAdministrativeToolVisibility();
 
       if(changed && rebuild && allLoadedProducts.length){
         rebuildCatalogVisibility();
@@ -4331,9 +4343,22 @@ async function spreCopyCurrentLevel(){
 function syncSPREButtonVisibility(){
   const btn=document.getElementById("spreBtn");
   if(!btn) return;
-  const visible=Array.isArray(all) && all.length>0;
+  const visible=shouldShowAdministrativeSPRE() && Array.isArray(all) && all.length>0;
   btn.hidden=!visible;
   btn.disabled=!visible;
+}
+
+function syncFolletoButtonVisibility(){
+  const btn=document.getElementById("collageBtn");
+  if(!btn) return;
+  const visible=shouldShowAdministrativeFolleto();
+  btn.hidden=!visible;
+  btn.disabled=!visible;
+}
+
+function syncAdministrativeToolVisibility(){
+  syncSPREButtonVisibility();
+  syncFolletoButtonVisibility();
 }
 
 function initSPREFeature(){
@@ -4484,6 +4509,7 @@ function initCollageFeature(){
   }
   btn.textContent="Folleto";
   btn.setAttribute("aria-label","Mostrar folleto de los productos de la vista actual");
+  syncFolletoButtonVisibility();
 
   if(document.getElementById("collageModal")) return;
 

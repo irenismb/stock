@@ -25,22 +25,20 @@ jobs:
       DEPLOYMENT_ID: "AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP"
 
     steps:
-      - name: Confirmar solicitud única
-        run: |
-          expected="RESTAURAR_DESDE_GITHUB
-proyecto=pedidos natura
-scriptId=12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt"
-          actual="$(cat .github/triggers/restaurar-pedidos-natura-una-vez.txt 2>/dev/null || true)"
-          if [ "$actual" != "$expected" ]; then
-            echo "::error::Confirmación única inválida."
-            exit 1
-          fi
-
       - name: Descargar repositorio
         uses: actions/checkout@v7
         with:
           ref: main
           fetch-depth: 0
+
+      - name: Confirmar solicitud única
+        run: |
+          expected=$'RESTAURAR_DESDE_GITHUB\nproyecto=pedidos natura\nscriptId=12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt\nrun=2'
+          actual="$(cat .github/triggers/restaurar-pedidos-natura-una-vez.txt 2>/dev/null || true)"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Confirmación única inválida."
+            exit 1
+          fi
 
       - name: Preparar Node.js
         uses: actions/setup-node@v7

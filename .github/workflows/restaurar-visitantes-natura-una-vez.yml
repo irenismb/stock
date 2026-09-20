@@ -33,7 +33,7 @@ jobs:
 
       - name: Confirmar solicitud única
         run: |
-          expected=$'RESTAURAR_DESDE_GITHUB\nproyecto=coordenadas de visitantes natura\nscriptId=1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN\nrun=1'
+          expected=$'RESTAURAR_DESDE_GITHUB\nproyecto=coordenadas de visitantes natura\nscriptId=1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN\nrun=2'
           actual="$(cat .github/triggers/restaurar-visitantes-natura-una-vez.txt 2>/dev/null || true)"
           if [ "$actual" != "$expected" ]; then
             echo "::error::Confirmación única inválida."
@@ -108,7 +108,7 @@ jobs:
             echo "::error::No existe el deployment oficial esperado."
             exit 1
           fi
-          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "Visitantes Natura reforzado ${GITHUB_SHA}"
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "Visitantes Natura final ${GITHUB_SHA}"
 
       - name: Comprobar endpoint sin registrar visitas
         run: |

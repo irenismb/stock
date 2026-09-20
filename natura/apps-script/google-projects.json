@@ -1,5 +1,5 @@
 {
-  "source": "Google Apps Script",
+  "source": "Google Drive stock/natura/apps-script",
   "selection": "explicit production allowlist",
   "projects": [
     {
@@ -22,5 +22,6 @@
       "name": "coordenadas de visitantes natura",
       "gitPath": "coordenadas de visitantes natura"
     }
-  ]
+  ],
+  "flow": "Google Drive -> GitHub -> Google Apps Script"
 }

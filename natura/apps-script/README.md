@@ -1,6 +1,6 @@
 # Apps Script de Natura
 
-Esta carpeta conserva en GitHub el espejo versionado de los proyectos oficiales de Google Apps Script usados por Natura.
+Esta carpeta de Google Drive es la fuente de trabajo del código Apps Script de Natura. GitHub conserva el historial y realiza la publicación automática hacia los proyectos reales de Google Apps Script.
 
 ## Proyectos oficiales
 
@@ -11,14 +11,13 @@ Esta carpeta conserva en GitHub el espejo versionado de los proyectos oficiales 
 
 ## Fuente maestra y sincronización
 
-- **Google Apps Script es la fuente maestra del código que se ejecuta.**
-- **Google Apps Script → GitHub** es el sentido normal de sincronización. El workflow **Traer Apps Script Natura desde Google** usa `clasp pull` y actualiza únicamente `natura/apps-script/`.
-- Un Commit o Push normal en GitHub **no publica automáticamente** código hacia Google Apps Script.
-- **GitHub → Google Apps Script** queda reservado para restauraciones o publicaciones excepcionales solicitadas expresamente.
-- El workflow **Restaurar Apps Script Natura desde GitHub (manual)** exige seleccionar un proyecto oficial y escribir la confirmación `RESTAURAR_DESDE_GITHUB`.
-- El workflow del administrador de precios también es manual y exige `PUBLICAR_ADMIN_DESDE_GITHUB`; no crea un proyecto nuevo si falta la identificación oficial.
-
-Antes de una restauración desde GitHub se valida el `scriptId`, el nombre del proyecto y que el recurso de Google no esté en la papelera. No se renombra ni se sustituye un proyecto por otro de nombre parecido.
+- **Google Drive `stock/natura/apps-script` es la fuente de trabajo del código Apps Script del proyecto.**
+- El flujo normal y obligatorio es **Google Drive → GitHub → Google Apps Script**.
+- Primero se modifica en Google Drive. Después se sincronizan a GitHub exactamente los mismos archivos. Finalmente GitHub Actions publica automáticamente en el mismo proyecto y deployment oficial de Apps Script.
+- El proyecto real de Google Apps Script es un destino de ejecución y despliegue, no la fuente normal de edición.
+- No se usa `clasp pull` para sobrescribir GitHub o Google Drive desde Apps Script dentro del flujo normal.
+- La publicación automática valida el `scriptId`, el nombre del proyecto y el deployment oficial antes de ejecutar `clasp push --force`.
+- La automatización no puede crear ni renombrar proyectos, cambiar `scriptId`, crear deployments sustitutos ni cambiar endpoints. Si una validación falla, la publicación afectada se detiene.
 
 ## Administración de precios
 

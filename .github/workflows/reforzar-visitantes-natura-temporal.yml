@@ -1,106 +1,14 @@
-name: Desplegar refuerzo visitantes Natura (temporal)
+name: Despliegue temporal visitantes Natura (inactivo)
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/triggers/reforzar-visitantes-natura.txt"
+  workflow_dispatch:
 
 permissions:
   contents: read
 
-concurrency:
-  group: reforzar-visitantes-natura
-  cancel-in-progress: false
-
 jobs:
-  desplegar:
+  inactivo:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    env:
-      SCRIPT_ID: "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN"
-      PROJECT_DIR: "natura/apps-script/coordenadas de visitantes natura"
-      DEPLOYMENT_ID: "AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO"
-
     steps:
-      - name: Descargar repositorio
-        uses: actions/checkout@v7
-        with:
-          ref: main
-          fetch-depth: 0
-
-      - name: Validar fase
-        run: |
-          phase="$(sed -n 's/^FASE=//p' .github/triggers/reforzar-visitantes-natura.txt | head -n1)"
-          case "$phase" in
-            servidor_transicion|servidor_final) ;;
-            *)
-              echo "::error::Fase no autorizada: $phase"
-              exit 1
-              ;;
-          esac
-
-      - name: Preparar Node.js
-        uses: actions/setup-node@v7
-        with:
-          node-version: "24"
-          package-manager-cache: false
-
-      - name: Instalar clasp
-        run: npm install --global @google/clasp@3.4.1
-
-      - name: Restaurar autorización de Google
-        env:
-          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-        run: |
-          if [ -z "$CLASPRC_JSON" ]; then
-            echo "::error::Falta CLASPRC_JSON"
-            exit 1
-          fi
-          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
-          chmod 600 "$RUNNER_TEMP/.clasprc.json"
-          clasp list-scripts >/dev/null
-
-      - name: Validar código e identidad
-        env:
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-        run: |
-          node --check "$PROJECT_DIR/Código.js"
-          actual_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$PROJECT_DIR/.clasp.json")"
-          if [ "$actual_id" != "$SCRIPT_ID" ]; then
-            echo "::error::scriptId inesperado: $actual_id"
-            exit 1
-          fi
-          (
-            cd "$PROJECT_DIR"
-            if ! clasp deployments | grep -Fq "$DEPLOYMENT_ID"; then
-              echo "::error::No existe el deployment oficial esperado."
-              exit 1
-            fi
-          )
-
-      - name: Publicar mismo Apps Script
-        env:
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-        run: |
-          (
-            cd "$PROJECT_DIR"
-            clasp push --force
-            clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "Refuerzo visitantes Natura ${GITHUB_SHA}"
-          )
-
-      - name: Comprobar endpoint
-        run: |
-          endpoint="https://script.google.com/macros/s/$DEPLOYMENT_ID/exec?health=$(date +%s)"
-          for attempt in 1 2 3 4 5; do
-            body="$(curl -LsS --max-time 20 "$endpoint" || true)"
-            echo "$body"
-            if printf '%s' "$body" | grep -Fq "Registra visitas por POST"; then
-              exit 0
-            fi
-            sleep 3
-          done
-          echo "::error::El endpoint no confirmó la versión reforzada."
-          exit 1
+      - name: Estado
+        run: echo "Este despliegue temporal está inactivo. Usar el flujo oficial para futuros cambios de Apps Script Natura."

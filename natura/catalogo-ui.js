@@ -532,16 +532,33 @@
   syncLoadingUi();
 })();
 
-// En móvil el carrito ocupa una fila completa de la barra.
+// En móvil, Administrar queda a la izquierda y WhatsApp/carrito a la derecha.
+// Este refuerzo se inyecta al final para neutralizar reglas antiguas de ancho completo.
 (() => {
   const style = document.createElement("style");
-  style.id = "mobile-cart-full-row-style";
+  style.id = "mobile-admin-cart-pair-style";
   style.textContent = `
     @media (max-width:760px){
-      .bar #btn-cart{
-        grid-column:1 / -1!important;
+      .bar[role="search"]{
+        display:grid!important;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+      }
+      .bar[role="search"] > #priceAdminBtn{
+        grid-column:1 / 2!important;
         width:100%!important;
+        min-width:0!important;
         max-width:none!important;
+        margin:0!important;
+        justify-self:stretch!important;
+      }
+      .bar[role="search"] > #btn-cart{
+        grid-column:2 / 3!important;
+        width:100%!important;
+        min-width:0!important;
+        max-width:none!important;
+        margin:0!important;
+        padding-inline:14px!important;
+        justify-self:stretch!important;
       }
     }
   `;

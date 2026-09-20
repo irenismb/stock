@@ -4323,11 +4323,40 @@ main,
     margin:0!important;
     justify-self:stretch!important;
   }
+  .bar > #priceAdminBtn{
+    grid-column:1!important;
+  }
   .bar > #btn-cart{
+    grid-column:2!important;
     padding-inline:14px!important;
   }
   .bar > .count-slot{
     grid-column:1 / -1!important;
     order:1;
+  }
+}
+
+/* AJUSTE FINAL MÓVIL: Administrar y WhatsApp comparten siempre la misma fila. */
+@media (max-width:760px){
+  .bar[role="search"]{
+    display:grid!important;
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  }
+  .bar[role="search"] > #priceAdminBtn{
+    grid-column:1 / 2!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    justify-self:stretch!important;
+  }
+  .bar[role="search"] > #btn-cart{
+    grid-column:2 / 3!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:none!important;
+    margin:0!important;
+    padding-inline:14px!important;
+    justify-self:stretch!important;
   }
 }

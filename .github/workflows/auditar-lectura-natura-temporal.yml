@@ -1,4 +1,4 @@
-name: Auditoría temporal lectura Natura
+name: Auditoría temporal Apps Script Natura
 
 on:
   push:
@@ -32,8 +32,11 @@ jobs:
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
-          echo "=== PROYECTO_ANTIGUO ==="
-          clasp deployments "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf" --json || true
-          echo "=== PROYECTO_NUEVO ==="
-          clasp deployments "18mcrXT-APcn0EooHZOYOEHLQavWJtgFkEwH7xpJ4q2FEvmtMnYMZiG8g" --json || true
+          for row in             "ADMIN|1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4"             "PEDIDOS|12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt"             "LECTURA_PRODUCCION|1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf"             "LECTURA_COPIA|18mcrXT-APcn0EooHZOYOEHLQavWJtgFkEwH7xpJ4q2FEvmtMnYMZiG8g"             "VISITANTES|1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN"
+          do
+            name="${row%%|*}"
+            id="${row#*|}"
+            echo "=== ${name} ==="
+            clasp deployments "$id" --json || true
+          done
           echo "=== FIN ==="

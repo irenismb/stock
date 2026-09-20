@@ -1,27 +1,27 @@
 # Apps Script de Natura
 
-Esta carpeta contiene exclusivamente los proyectos de Google Apps Script relacionados con la página Natura.
+Esta carpeta conserva en GitHub el espejo versionado de los proyectos oficiales de Google Apps Script usados por Natura.
 
-## Proyectos registrados
+## Proyectos oficiales
 
-- `coordenadas-natura`
-- `coordenadas-de-visitantes-natura`
-- `coordenadas-de-visitantes-natura-2`
-- `pedidos-natura`
-- `pedidos-natura-2`
-- `ventas-natura`
-- `administrar precios natura` — panel privado que localiza Código, Nombre y Precio por sus encabezados vigentes
+- `administrar precios natura`
+- `pedidos natura`
+- `lectura de carpetas en natura`
+- `coordenadas de visitantes natura`
 
-## Sincronización bidireccional
+## Fuente maestra y sincronización
 
-- **Google Apps Script → GitHub:** el workflow manual **Sincronizar Apps Script de Natura** ejecuta `clasp pull` y solo crea commits dentro de `natura/apps-script/`.
-- **PC → GitHub → Google Apps Script:** al hacer **Commit** y **Push origin** desde GitHub Desktop, GitHub identifica los proyectos modificados dentro de esta carpeta y ejecuta `clasp push` automáticamente.
-- **Publicación manual alternativa:** el workflow **Publicar Apps Script de Natura** permite elegir y publicar un proyecto concreto.
+- **Google Apps Script es la fuente maestra del código que se ejecuta.**
+- **Google Apps Script → GitHub** es el sentido normal de sincronización. El workflow **Traer Apps Script Natura desde Google** usa `clasp pull` y actualiza únicamente `natura/apps-script/`.
+- Un Commit o Push normal en GitHub **no publica automáticamente** código hacia Google Apps Script.
+- **GitHub → Google Apps Script** queda reservado para restauraciones o publicaciones excepcionales solicitadas expresamente.
+- El workflow **Restaurar Apps Script Natura desde GitHub (manual)** exige seleccionar un proyecto oficial y escribir la confirmación `RESTAURAR_DESDE_GITHUB`.
+- El workflow del administrador de precios también es manual y exige `PUBLICAR_ADMIN_DESDE_GITHUB`; no crea un proyecto nuevo si falta la identificación oficial.
 
-La publicación valida que cada proyecto tenga `appsscript.json` y archivos de código. Los commits creados por la descarga se ignoran para evitar ciclos. Ningún archivo situado fuera de `natura/apps-script/` se envía a Google Apps Script.
+Antes de una restauración desde GitHub se valida el `scriptId`, el nombre del proyecto y que el recurso de Google no esté en la papelera. No se renombra ni se sustituye un proyecto por otro de nombre parecido.
 
 ## Administración de precios
 
-El workflow **Crear y publicar administrador de precios Natura** crea o actualiza una implementación independiente. En el nivel de productos, el catálogo muestra el botón `Precios`; la edición se ejecuta como la cuenta de Google que accede y requiere que esa cuenta tenga permiso de edición sobre el inventario oficial.
+El proyecto `administrar precios natura` publica el servicio autenticado que permite administrar el catálogo. La edición se ejecuta como la cuenta de Google que accede y requiere que esa cuenta tenga permiso sobre el inventario oficial.
 
-La escritura resuelve los campos por el texto actual de los encabezados, exige una coincidencia única del código, compara el precio anterior y modifica solamente la celda de Precio sin alterar su formato.
+La escritura resuelve los campos por el texto actual de los encabezados, exige una coincidencia única del código y conserva el formato de las celdas.

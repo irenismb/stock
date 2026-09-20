@@ -1,2 +1,1 @@
-FASE=servidor_final
-RUN=3
+INACTIVO

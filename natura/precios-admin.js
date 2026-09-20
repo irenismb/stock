@@ -12,7 +12,9 @@
   const CONFIG_ITEMS=[
     {key:"REGISTRAR_VISITAS_PROPIAS",label:"Registrar mis propias visitas",help:"Incluye o excluye tus navegadores conocidos del registro de visitas y avisos."},
     {key:"MOSTRAR_CANTIDAD_STOCK",label:"Mostrar cantidad de stock",help:"Muestra al público la cantidad exacta cuando el stock es conocido."},
-    {key:"MOSTRAR_PRECIOS_PRODUCTO",label:"Mostrar precios",help:"Muestra u oculta los precios de los productos en el catálogo."}
+    {key:"MOSTRAR_PRECIOS_PRODUCTO",label:"Mostrar precios",help:"Muestra u oculta los precios de los productos en el catálogo."},
+    {key:"MOSTRAR_SPRE",label:"Mostrar SPRE",help:"Muestra u oculta la herramienta administrativa SPRE."},
+    {key:"MOSTRAR_FOLLETO",label:"Mostrar Folleto",help:"Muestra u oculta la herramienta administrativa Folleto."}
   ];
 
   const css=document.createElement("style");
@@ -91,7 +93,7 @@
     panel=document.createElement("section");panel.id="catalogAdminConfig";panel.className="catalog-admin-config";panel.setAttribute("aria-label","Configuración del catálogo");
     const rows=CONFIG_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-config-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-config-toggle="${item.key}">Cargando…</button></div>`).join("");
     const adminFilter=`<div class="catalog-admin-config-row" data-admin-filter="sin-precio"><div><span class="catalog-admin-config-label">Ver productos sin precio</span><span class="catalog-admin-config-help">Filtro exclusivo del modo administrador. Muestra únicamente productos del inventario cuyo Precio está vacío.</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-missing-price-toggle>DESACTIVADO</button></div>`;
-    panel.innerHTML=`<div class="catalog-admin-config-head"><button type="button" class="catalog-admin-config-collapse" data-admin-config-collapse aria-expanded="false" aria-controls="catalogAdminConfigBody"><span>⚙ Configuración del catálogo</span><span class="catalog-admin-config-collapse-state">Mostrar</span></button></div><div class="catalog-admin-config-body" id="catalogAdminConfigBody" hidden><p class="catalog-admin-config-note">Los controles públicos se guardan en Google automáticamente. El filtro de administración solo afecta esta sesión.</p><div class="catalog-admin-config-list">${rows}${adminFilter}</div><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
+    panel.innerHTML=`<div class="catalog-admin-config-head"><button type="button" class="catalog-admin-config-collapse" data-admin-config-collapse aria-expanded="false" aria-controls="catalogAdminConfigBody"><span>⚙ Configuración del catálogo</span><span class="catalog-admin-config-collapse-state">Mostrar</span></button></div><div class="catalog-admin-config-body" id="catalogAdminConfigBody" hidden><p class="catalog-admin-config-note">Los controles públicos se guardan en el administrador de Google y no dependen de una pestaña Configuracion. Los filtros locales solo afectan este navegador.</p><div class="catalog-admin-config-list">${rows}${adminFilter}</div><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
     panel.addEventListener("click",e=>{const collapse=e.target.closest("[data-admin-config-collapse]");if(collapse){const body=panel.querySelector("#catalogAdminConfigBody"),expanded=collapse.getAttribute("aria-expanded")==="true";collapse.setAttribute("aria-expanded",expanded?"false":"true");if(body)body.hidden=expanded;const state=collapse.querySelector(".catalog-admin-config-collapse-state");if(state)state.textContent=expanded?"Mostrar":"Ocultar";return}const local=e.target.closest("[data-admin-missing-price-toggle]");if(local&&!local.disabled){toggleAdminMissingPrice(local);return}const b=e.target.closest("[data-config-toggle]");if(b&&!b.disabled)saveConfigToggle(b)});
     grid.insertAdjacentElement("beforebegin",panel);renderAdminMissingPriceToggle();return panel;
   }
@@ -105,8 +107,9 @@
   function applyConfigValues(values,shouldRebuild=true){
     if(!values||typeof values!=="object")return;
     window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
-    for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if((k==="MOSTRAR_CANTIDAD_STOCK"||k==="MOSTRAR_PRECIOS_PRODUCTO")&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState)}
+    for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO","MOSTRAR_SPRE","MOSTRAR_FOLLETO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState)}
     renderConfigValues(values);
+    try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}
     if(shouldRebuild){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();else if(typeof render==="function")render();if(typeof renderCartModal==="function"&&document.getElementById("cartModal")?.classList.contains("open"))renderCartModal()}catch(e){console.info(e)}}
   }
   async function loadAdminConfig(){

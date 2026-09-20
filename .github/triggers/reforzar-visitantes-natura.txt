@@ -1,2 +1,2 @@
 FASE=servidor_transicion
-RUN=1
+RUN=2

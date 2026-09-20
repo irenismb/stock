@@ -1,12 +1,12 @@
-name: Crear y publicar administrador de precios Natura
+name: Publicar administrador de precios Natura (manual excepcional)
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - ".github/triggers/crear-administracion-precios-natura.txt"
+    inputs:
+      confirmacion:
+        description: "Escribe exactamente PUBLICAR_ADMIN_DESDE_GITHUB"
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -21,6 +21,15 @@ jobs:
     timeout-minutes: 20
 
     steps:
+      - name: Confirmar operación excepcional
+        env:
+          CONFIRMACION: ${{ inputs.confirmacion }}
+        run: |
+          if [ "$CONFIRMACION" != "PUBLICAR_ADMIN_DESDE_GITHUB" ]; then
+            echo "::error::Confirmación inválida. Google es la fuente maestra y esta operación escribe desde GitHub."
+            exit 1
+          fi
+
       - name: Descargar repositorio
         uses: actions/checkout@v7
         with:
@@ -47,23 +56,20 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Crear o reutilizar el proyecto Apps Script
+      - name: Validar proyecto Apps Script oficial existente
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
           project_dir="natura/apps-script/administrar precios natura"
           if [ ! -f "$project_dir/.clasp.json" ]; then
-            temp_dir="$(mktemp -d)"
-            (
-              cd "$temp_dir"
-              clasp create --type webapp --title "administrar precios natura"
-            )
-            cp "$temp_dir/.clasp.json" "$project_dir/.clasp.json"
+            echo "::error::Falta .clasp.json. Este workflow no crea proyectos en Google automáticamente."
+            exit 1
           fi
 
-          script_id="$(python3 -c 'import json; print(json.load(open("natura/apps-script/administrar precios natura/.clasp.json", encoding="utf-8"))["scriptId"])')"
-          if [ -z "$script_id" ]; then
-            echo "::error::No se obtuvo un scriptId válido"
+          script_id="$(python3 -c 'import json; print(json.load(open("natura/apps-script/administrar precios natura/.clasp.json", encoding="utf-8")).get("scriptId", ""))')"
+          expected_id="1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4"
+          if [ "$script_id" != "$expected_id" ]; then
+            echo "::error::El scriptId no coincide con el administrador oficial de Natura."
             exit 1
           fi
 

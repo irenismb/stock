@@ -1,4 +1,4 @@
-name: Auditoría temporal Apps Script Natura
+name: Auditoría temporal código Apps Script Natura
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 jobs:
   auditar:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -28,15 +28,53 @@ jobs:
           test -n "$CLASPRC_JSON"
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
-      - name: Auditar deployments
+      - name: Comparar código Google contra GitHub sin modificar
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
-          for row in             "ADMIN|1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4"             "PEDIDOS|12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt"             "LECTURA_PRODUCCION|1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf"             "LECTURA_COPIA|18mcrXT-APcn0EooHZOYOEHLQavWJtgFkEwH7xpJ4q2FEvmtMnYMZiG8g"             "VISITANTES|1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN"
-          do
-            name="${row%%|*}"
-            id="${row#*|}"
-            echo "=== ${name} ==="
-            clasp deployments "$id" --json || true
-          done
-          echo "=== FIN ==="
+          set -u
+          while IFS='|' read -r label script_id git_path; do
+            [ -n "$label" ] || continue
+            tmp="$RUNNER_TEMP/pull-$label"
+            mkdir -p "$tmp"
+            printf '{\n  "scriptId": "%s",\n  "rootDir": "."\n}\n' "$script_id" > "$tmp/.clasp.json"
+            echo "=== $label ==="
+            if (cd "$tmp" && clasp pull --force); then
+              echo "PULL|$label|OK"
+              while IFS= read -r -d '' remote; do
+                name="$(basename "$remote")"
+                [ "$name" = ".clasp.json" ] && continue
+                repo="natura/apps-script/$git_path/$name"
+                remote_sha="$(sha256sum "$remote" | awk '{print $1}')"
+                if [ -f "$repo" ]; then
+                  repo_sha="$(sha256sum "$repo" | awk '{print $1}')"
+                  if [ "$remote_sha" = "$repo_sha" ]; then
+                    status="SAME"
+                  else
+                    status="DIFF"
+                  fi
+                  echo "CMP|$label|$name|$status|$remote_sha|$repo_sha"
+                else
+                  echo "CMP|$label|$name|MISSING_REPO|$remote_sha|-"
+                fi
+              done < <(find "$tmp" -maxdepth 1 -type f -print0 | sort -z)
+
+              while IFS= read -r -d '' repo; do
+                name="$(basename "$repo")"
+                case "$name" in
+                  .clasp.json|README.md|deployment.json) continue ;;
+                esac
+                if [ ! -f "$tmp/$name" ]; then
+                  repo_sha="$(sha256sum "$repo" | awk '{print $1}')"
+                  echo "CMP|$label|$name|ONLY_REPO|-|$repo_sha"
+                fi
+              done < <(find "natura/apps-script/$git_path" -maxdepth 1 -type f -print0 | sort -z)
+            else
+              echo "PULL|$label|FAILED"
+            fi
+          done <<'PROJECTS'
+          ADMIN|1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4|administrar precios natura
+          PEDIDOS|12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt|pedidos natura
+          LECTURA|1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf|lectura de carpetas en natura
+          VISITANTES|1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN|coordenadas de visitantes natura
+          PROJECTS

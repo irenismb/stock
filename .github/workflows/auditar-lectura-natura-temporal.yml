@@ -1,0 +1,39 @@
+name: Auditoría temporal lectura Natura
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/auditar-lectura-natura-temporal.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  auditar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+      - run: npm install --global @google/clasp@3.4.1
+      - name: Restaurar autorización
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON"
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+      - name: Auditar deployments
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          echo "=== PROYECTO_ANTIGUO ==="
+          clasp deployments "1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf" --json || true
+          echo "=== PROYECTO_NUEVO ==="
+          clasp deployments "18mcrXT-APcn0EooHZOYOEHLQavWJtgFkEwH7xpJ4q2FEvmtMnYMZiG8g" --json || true
+          echo "=== FIN ==="

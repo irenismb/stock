@@ -1,2 +1,2 @@
-FASE=servidor_transicion
-RUN=2
+FASE=servidor_final
+RUN=3

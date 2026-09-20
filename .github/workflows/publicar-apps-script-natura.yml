@@ -1,80 +1,34 @@
-name: Restaurar Apps Script Natura desde GitHub (manual)
+name: Publicar Apps Script Natura automáticamente
 
 on:
-  workflow_dispatch:
-    inputs:
-      proyecto:
-        description: "Proyecto oficial que se restaurará desde GitHub hacia Google Apps Script"
-        required: true
-        type: choice
-        options:
-          - administrar precios natura
-          - pedidos natura
-          - lectura de carpetas en natura
-          - coordenadas de visitantes natura
-      confirmacion:
-        description: "Escribe exactamente RESTAURAR_DESDE_GITHUB"
-        required: true
-        type: string
+  push:
+    branches:
+      - main
+    paths:
+      - "natura/apps-script/administrar precios natura/**"
+      - "natura/apps-script/pedidos natura/**"
+      - "natura/apps-script/lectura de carpetas en natura/**"
+      - "natura/apps-script/coordenadas de visitantes natura/**"
+      - ".github/triggers/publicar-apps-script-natura-auto.txt"
 
 permissions:
   contents: read
 
 concurrency:
-  group: restaurar-apps-script-natura-desde-github
+  group: publicar-apps-script-natura-automaticamente
   cancel-in-progress: false
 
 jobs:
-  restaurar:
+  publicar:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
-      - name: Confirmar operación excepcional
-        env:
-          CONFIRMACION: ${{ inputs.confirmacion }}
-        run: |
-          if [ "$CONFIRMACION" != "RESTAURAR_DESDE_GITHUB" ]; then
-            echo "::error::Confirmación inválida. Esta operación puede sobrescribir Google Apps Script."
-            exit 1
-          fi
-
       - name: Descargar repositorio
         uses: actions/checkout@v7
         with:
           ref: main
-          fetch-depth: 0
-
-      - name: Resolver proyecto oficial
-        id: project
-        env:
-          PROJECT_NAME: ${{ inputs.proyecto }}
-        run: |
-          case "$PROJECT_NAME" in
-            "administrar precios natura")
-              script_id="1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4"
-              git_path="administrar precios natura"
-              ;;
-            "pedidos natura")
-              script_id="12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt"
-              git_path="pedidos natura"
-              ;;
-            "lectura de carpetas en natura")
-              script_id="1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf"
-              git_path="lectura de carpetas en natura"
-              ;;
-            "coordenadas de visitantes natura")
-              script_id="1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN"
-              git_path="coordenadas de visitantes natura"
-              ;;
-            *)
-              echo "::error::Proyecto no autorizado: $PROJECT_NAME"
-              exit 1
-              ;;
-          esac
-
-          echo "script_id=$script_id" >> "$GITHUB_OUTPUT"
-          echo "git_path=$git_path" >> "$GITHUB_OUTPUT"
+          fetch-depth: 2
 
       - name: Preparar Node.js
         uses: actions/setup-node@v7
@@ -96,41 +50,65 @@ jobs:
           printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
 
-      - name: Validar identidad en GitHub y Google
+      - name: Resolver proyectos modificados
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
+        run: |
+          cat > "$RUNNER_TEMP/projects.tsv" <<'EOF'
+          administrar precios natura	natura/apps-script/administrar precios natura	1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4	AKfycbwAUk8ysr-3k_T5iRxFpbp8KxmvPpYeGRNbL156lp9CsVjNFjQQgg5v7ySaxO7dcP_X
+          pedidos natura	natura/apps-script/pedidos natura	12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt	AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP
+          lectura de carpetas en natura	natura/apps-script/lectura de carpetas en natura	1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf	AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w
+          coordenadas de visitantes natura	natura/apps-script/coordenadas de visitantes natura	1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN	AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO
+          EOF
+
+          : > "$RUNNER_TEMP/selected.tsv"
+          changed="$(git diff --name-only "$BEFORE_SHA" "$AFTER_SHA" 2>/dev/null || true)"
+
+          if printf '%s\n' "$changed" | grep -Fqx ".github/triggers/publicar-apps-script-natura-auto.txt"; then
+            cp "$RUNNER_TEMP/projects.tsv" "$RUNNER_TEMP/selected.tsv"
+          else
+            while IFS=$'\t' read -r name dir script_id deployment_id; do
+              if printf '%s\n' "$changed" | grep -Fq "$dir/"; then
+                printf '%s\t%s\t%s\t%s\n' "$name" "$dir" "$script_id" "$deployment_id" >> "$RUNNER_TEMP/selected.tsv"
+              fi
+            done < "$RUNNER_TEMP/projects.tsv"
+          fi
+
+          if [ ! -s "$RUNNER_TEMP/selected.tsv" ]; then
+            echo "No hay proyectos Apps Script oficiales que publicar."
+            exit 0
+          fi
+
+          echo "Proyectos que se publicarán automáticamente:"
+          cut -f1 "$RUNNER_TEMP/selected.tsv" | sed 's/^/- /'
+
+      - name: Validar identidad y publicar
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-          SCRIPT_ID: ${{ steps.project.outputs.script_id }}
-          GIT_PATH: ${{ steps.project.outputs.git_path }}
-          PROJECT_NAME: ${{ inputs.proyecto }}
         run: |
-          project_dir="natura/apps-script/$GIT_PATH"
-
-          if [ ! -f "$project_dir/.clasp.json" ]; then
-            echo "::error::Falta .clasp.json en $project_dir"
-            exit 1
-          fi
-          if [ ! -f "$project_dir/appsscript.json" ]; then
-            echo "::error::Falta appsscript.json en $project_dir"
-            exit 1
-          fi
-
-          repo_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$project_dir/.clasp.json")"
-          if [ "$repo_id" != "$SCRIPT_ID" ]; then
-            echo "::error::El scriptId de GitHub no coincide con el proyecto oficial."
-            exit 1
+          if [ ! -s "$RUNNER_TEMP/selected.tsv" ]; then
+            exit 0
           fi
 
           clasp list-scripts >/dev/null
 
-          python3 - "$RUNNER_TEMP/.clasprc.json" "$SCRIPT_ID" "$PROJECT_NAME" <<'PY'
-          import json
-          import sys
-          import urllib.error
-          import urllib.parse
-          import urllib.request
+          while IFS=$'\t' read -r project_name project_dir script_id deployment_id; do
+            echo "==> $project_name"
+
+            test -f "$project_dir/.clasp.json" || { echo "::error::Falta .clasp.json en $project_dir"; exit 1; }
+            test -f "$project_dir/appsscript.json" || { echo "::error::Falta appsscript.json en $project_dir"; exit 1; }
+
+            repo_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$project_dir/.clasp.json")"
+            if [ "$repo_id" != "$script_id" ]; then
+              echo "::error::El scriptId del espejo no coincide con el proyecto oficial $project_name."
+              exit 1
+            fi
+
+            python3 - "$RUNNER_TEMP/.clasprc.json" "$script_id" "$project_name" <<'PY'
+          import json, sys, urllib.error, urllib.parse, urllib.request
 
           auth_path, script_id, expected_name = sys.argv[1:4]
-
           with open(auth_path, encoding="utf-8") as fh:
               auth = json.load(fh)
           credentials = ((auth.get("tokens") or {}).get("default") or auth.get("token") or auth)
@@ -143,71 +121,39 @@ jobs:
               f"https://www.googleapis.com/drive/v3/files/{encoded}"
               "?fields=id,name,mimeType,trashed&supportsAllDrives=true"
           )
-          request = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+          req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
           try:
-              with urllib.request.urlopen(request, timeout=30) as response:
+              with urllib.request.urlopen(req, timeout=30) as response:
                   metadata = json.load(response)
           except urllib.error.HTTPError as error:
               body = error.read().decode("utf-8", errors="replace")
-              raise SystemExit(f"No se pudo verificar el proyecto en Google: HTTP {error.code}: {body}")
+              raise SystemExit(f"No se pudo verificar {expected_name}: HTTP {error.code}: {body}")
 
           if metadata.get("id") != script_id:
               raise SystemExit("Google devolvió un ID inesperado")
           if metadata.get("mimeType") != "application/vnd.google-apps.script":
-              raise SystemExit("El recurso de Google no es un proyecto Apps Script")
+              raise SystemExit("El recurso remoto no es Apps Script")
           if metadata.get("trashed") is True:
-              raise SystemExit("El proyecto está en la papelera; no se restaurará automáticamente")
+              raise SystemExit("El proyecto está en la papelera")
           if str(metadata.get("name") or "").strip() != expected_name:
               raise SystemExit(
-                  f"Nombre inesperado en Google: {metadata.get('name')!r}; esperado {expected_name!r}"
+                  f"Nombre inesperado: {metadata.get('name')!r}; esperado {expected_name!r}"
               )
-
-          print(f"Identidad verificada: {expected_name} [{script_id}]")
           PY
 
-      - name: Restaurar código desde GitHub y actualizar implementación
-        env:
-          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
-          SCRIPT_ID: ${{ steps.project.outputs.script_id }}
-          GIT_PATH: ${{ steps.project.outputs.git_path }}
-          PROJECT_NAME: ${{ inputs.proyecto }}
-        run: |
-          repo_root="$(git rev-parse --show-toplevel)"
-          project_dir="natura/apps-script/$GIT_PATH"
+            (
+              cd "$project_dir"
+              clasp push --force
 
-          echo "Restaurando desde GitHub hacia Google Apps Script: $PROJECT_NAME"
-          (
-            cd "$project_dir"
-            clasp push --force
-
-            mapfile -t deployment_ids < <(
-              clasp deployments 2>/dev/null |
-                awk '/^- / && $3 != "@HEAD" {print $2}'
-            )
-
-            if [ "${#deployment_ids[@]}" -eq 0 ]; then
-              echo "Creando primera implementación versionada."
-              clasp deploy --description "Restauración GitHub ${GITHUB_SHA}"
-            elif [ "${#deployment_ids[@]}" -eq 1 ]; then
-              echo "Actualizando implementación ${deployment_ids[0]}"
-              clasp deploy --deploymentId "${deployment_ids[0]}" --description "Restauración GitHub ${GITHUB_SHA}"
-            else
-              referenced_ids=()
-              for deployment_id in "${deployment_ids[@]}"; do
-                if grep -R -F -q                   --exclude-dir=.git                   --exclude-dir=.github                   --exclude-dir=apps-script                   -- "$deployment_id" "$repo_root/natura"; then
-                  referenced_ids+=("$deployment_id")
-                fi
-              done
-
-              if [ "${#referenced_ids[@]}" -eq 1 ]; then
-                echo "Actualizando la implementación usada por el catálogo: ${referenced_ids[0]}"
-                clasp deploy --deploymentId "${referenced_ids[0]}" --description "Restauración GitHub ${GITHUB_SHA}"
-              else
-                echo "::error::Hay varias implementaciones y no se identificó una única implementación activa."
-                printf -- '- %s\n' "${deployment_ids[@]}"
+              if ! clasp deployments 2>/dev/null | grep -Fq "$deployment_id"; then
+                echo "::error::No existe el deployment oficial esperado $deployment_id para $project_name."
                 exit 1
               fi
-            fi
-          )
 
-          echo "Restauración manual terminada. No se renombró ni creó ningún proyecto Apps Script."
+              clasp deploy \
+                --deploymentId "$deployment_id" \
+                --description "Publicación automática ${GITHUB_SHA}"
+            )
+
+            echo "Publicado automáticamente: $project_name -> $deployment_id"
+          done < "$RUNNER_TEMP/selected.tsv"

@@ -56,13 +56,6 @@ const REQUIRED_HEADERS = [
 // ===================== ENDPOINTS =====================
 function doGet(e) {
   const p = parseParams_(e);
-
-  // Compatibilidad temporal durante la transición del catálogo de GET a POST.
-  // Se retira en el despliegue final, una vez publicado el cliente nuevo.
-  if (p.user_id || p.navegador) {
-    return handleWriteRequest_(e);
-  }
-
   const callback = safeCallback_(p.prefix || "");
   const visitId = normalizeVisitId_(p.load_id || p.visit_id || "", false);
 

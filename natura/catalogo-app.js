@@ -15,12 +15,12 @@
       gid: "893686273"
     };
 
-    // Control global remoto. La hoja debe estar en el mismo archivo de Google Sheets.
-    // Configuracion: A=Control, B=Estado, C=Qué hace, D=Recomendación, E=Clave técnica.
+    // Configuración pública remota. Se guarda en Propiedades del Apps Script
+    // administrativo y no depende de que exista una pestaña Configuracion.
+    const REMOTE_CONFIG_ENDPOINT = String(window.PRECIOS_ADMIN_CONFIG?.endpoint || "").trim();
     const REMOTE_CONTROL_SOURCE = {
-      enabled: true,
-      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
-      controlsSheetName: "Configuracion",
+      enabled: /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(REMOTE_CONFIG_ENDPOINT),
+      endpoint: REMOTE_CONFIG_ENDPOINT,
       refreshMs: 60000
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -62,7 +62,19 @@
       "MOSTRAR_SPRE",
       "MOSTRAR_FOLLETO"
     ]);
+    const REMOTE_CONTROL_DEFAULTS = Object.freeze({
+      REGISTRAR_VISITAS_PROPIAS: "DESACTIVADO",
+      MOSTRAR_CANTIDAD_STOCK: "DESACTIVADO",
+      MOSTRAR_PRECIOS_PRODUCTO: "ACTIVADO",
+      MOSTRAR_SPRE: "DESACTIVADO",
+      MOSTRAR_FOLLETO: "DESACTIVADO"
+    });
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
+    for(const [key, value] of Object.entries(REMOTE_CONTROL_DEFAULTS)){
+      if(!Object.prototype.hasOwnProperty.call(window.REMOTE_CONTROL_VALUES, key)){
+        window.REMOTE_CONTROL_VALUES[key] = value;
+      }
+    }
 
     function shouldEnforceStockLimits(){
       return false;
@@ -343,22 +355,13 @@
     }
 
 
-    function googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(REMOTE_CONTROL_SOURCE.spreadsheetId)}/gviz/tq`;
-      const query = new URLSearchParams({
-        sheet: sheetName,
-        headers: "1",
-        range,
-        tq,
-        tqx: `out:json;responseHandler:${callbackName}`,
-        // La configuración y las rutas también deben consultarse sin caché.
-        _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
-      });
-      return `${base}?${query.toString()}`;
-    }
-
-    function loadGoogleSheetRemoteMatrix(sheetName, range, tq, callbackPrefix){
+    function loadRemoteCatalogConfiguration(callbackPrefix){
       return new Promise((resolve, reject)=>{
+        if(!REMOTE_CONTROL_SOURCE.enabled || !REMOTE_CONTROL_SOURCE.endpoint){
+          resolve({ ...REMOTE_CONTROL_DEFAULTS });
+          return;
+        }
+
         const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         const script = document.createElement("script");
         let settled = false;
@@ -372,7 +375,7 @@
           if(settled) return;
           settled = true;
           cleanup();
-          reject(new Error(`Tiempo de espera agotado al consultar la hoja ${sheetName}.`));
+          reject(new Error("Tiempo de espera agotado al consultar la configuración administrativa."));
         }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
 
         window[callbackName] = (payload)=>{
@@ -381,24 +384,11 @@
           window.clearTimeout(timer);
           cleanup();
 
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
-            const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
-            const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || `No se pudo leer la hoja ${sheetName}.`));
+          if(!payload || payload.ok !== true || !payload.valores || typeof payload.valores !== "object"){
+            reject(new Error(String(payload?.error || "El administrador devolvió una configuración no válida.")));
             return;
           }
-
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-          resolve(payload.table.rows.map(row=>{
-            const cells = Array.isArray(row && row.c) ? row.c : [];
-            return cells.map(cellValue);
-          }));
+          resolve(payload.valores);
         };
 
         script.onerror = ()=>{
@@ -406,10 +396,14 @@
           settled = true;
           window.clearTimeout(timer);
           cleanup();
-          reject(new Error(`No se pudo conectar con la hoja ${sheetName}.`));
+          reject(new Error("No se pudo conectar con la configuración administrativa."));
         };
 
-        script.src = googleSheetRemoteQueryUrl(sheetName, range, tq, callbackName);
+        const url = new URL(REMOTE_CONTROL_SOURCE.endpoint);
+        url.searchParams.set("modo", "config");
+        url.searchParams.set("callback", callbackName);
+        url.searchParams.set("_", `${Date.now()}_${Math.random().toString(36).slice(2)}`);
+        script.src = url.toString();
         script.async = true;
         document.head.appendChild(script);
       });
@@ -422,13 +416,14 @@
       return null;
     }
 
-    function applyRemoteControlRows(rows){
+    function applyRemoteControlValues(values){
       let changed = false;
-      for(const row of (Array.isArray(rows) ? rows : [])){
-        const key = String(row?.[4] || "").trim().toUpperCase();
+      const source = values && typeof values === "object" ? values : {};
+      for(const [rawKey, rawValue] of Object.entries(source)){
+        const key = String(rawKey || "").trim().toUpperCase();
         if(!key) continue;
 
-        const rawState = String(row?.[1] || "").trim();
+        const rawState = String(rawValue ?? "").trim();
         window.REMOTE_CONTROL_VALUES[key] = rawState;
 
         const state = parseRemoteBoolean(rawState);
@@ -448,20 +443,15 @@
       if(!REMOTE_CONTROL_SOURCE.enabled) return false;
 
       const controlsResult = await Promise.allSettled([
-        loadGoogleSheetRemoteMatrix(
-          REMOTE_CONTROL_SOURCE.controlsSheetName,
-          "A:E",
-          "select A,B,C,D,E",
-          "__remoteCatalogControls"
-        )
+        loadRemoteCatalogConfiguration("__remoteCatalogControls")
       ]).then(results => results[0]);
 
       let changed = false;
 
       if(controlsResult.status === "fulfilled"){
-        changed = applyRemoteControlRows(controlsResult.value) || changed;
+        changed = applyRemoteControlValues(controlsResult.value) || changed;
       }else{
-        console.info("Configuración remota no disponible; se conservan los interruptores locales.", controlsResult.reason);
+        console.info("Configuración administrativa no disponible; se conservan los valores locales.", controlsResult.reason);
       }
 
       if(initial){

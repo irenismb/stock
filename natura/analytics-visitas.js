@@ -3,7 +3,6 @@
   const USER_ID_KEY = "irenismb_user_id";
   const VISITOR_SHEET_ID = "1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g";
   const VISITOR_ID_SHEET = "id_navegador";
-  const VISIT_LOG_SHEET = "Hoja 1";
   const OWN_VISITS_KEY = "REGISTRAR_VISITAS_PROPIAS";
   const OWN_BROWSER_IDS_FALLBACK = new Set([
     "461e0283-5358-4400-a31e-d8d74866d660",
@@ -351,11 +350,15 @@
         cb: Math.random().toString(36).slice(2)
       });
 
-      await fetch(`${GPS_LOG_ENDPOINT}?${payload.toString()}`, {
-        method: "GET",
+      await fetch(GPS_LOG_ENDPOINT, {
+        method: "POST",
         mode: "no-cors",
         cache: "no-store",
-        keepalive: true
+        keepalive: true,
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8"
+        },
+        body: payload.toString()
       });
       return await confirmarRegistroVisita(loadId);
     } catch (_) {
@@ -386,15 +389,7 @@
         settled = true;
         clearTimeout(timer);
         cleanup();
-
-        const rows = payload && payload.status === "ok" && payload.table && Array.isArray(payload.table.rows)
-          ? payload.table.rows
-          : [];
-        const found = rows.some(row => {
-          const cells = Array.isArray(row && row.c) ? row.c : [];
-          return valorCelda(cells[0]).trim() === loadId;
-        });
-        resolve(found);
+        resolve(Boolean(payload && payload.ok === true && payload.status === "registered"));
       };
 
       script.onerror = () => {
@@ -405,14 +400,12 @@
         reject(new Error("No se pudo consultar la confirmación del registro de visita."));
       };
 
-      const safeLoadId = String(loadId || "").replace(/'/g, "\\'");
       const params = new URLSearchParams({
-        sheet: VISIT_LOG_SHEET,
-        range: "N:N",
-        tq: `select N where N = '${safeLoadId}' limit 1`,
-        tqx: `out:json;responseHandler:${callbackName}`
+        load_id: String(loadId || ""),
+        prefix: callbackName,
+        _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
       });
-      script.src = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(VISITOR_SHEET_ID)}/gviz/tq?${params.toString()}`;
+      script.src = `${GPS_LOG_ENDPOINT}?${params.toString()}`;
       script.async = true;
       document.head.appendChild(script);
     });

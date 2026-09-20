@@ -6,11 +6,21 @@ const VISIBILIDAD_HEADERS = ["Tipo", "Identificador", "Oculto", "Etiqueta", "Act
 const VISIBILIDAD_TIPOS = ["producto", "seccion", "categoria", "subcategoria", "familia"];
 
 const CONFIG_SHEET_NAME = "Configuracion";
+const CONFIG_PROPERTY_PREFIX = "CATALOGO_CONFIG_";
 const CONFIG_KEYS = [
   "REGISTRAR_VISITAS_PROPIAS",
   "MOSTRAR_CANTIDAD_STOCK",
-  "MOSTRAR_PRECIOS_PRODUCTO"
+  "MOSTRAR_PRECIOS_PRODUCTO",
+  "MOSTRAR_SPRE",
+  "MOSTRAR_FOLLETO"
 ];
+const CONFIG_DEFAULTS = Object.freeze({
+  REGISTRAR_VISITAS_PROPIAS: "DESACTIVADO",
+  MOSTRAR_CANTIDAD_STOCK: "DESACTIVADO",
+  MOSTRAR_PRECIOS_PRODUCTO: "ACTIVADO",
+  MOSTRAR_SPRE: "DESACTIVADO",
+  MOSTRAR_FOLLETO: "DESACTIVADO"
+});
 
 function doGet(evento) {
   const parametros = evento && evento.parameter ? evento.parameter : {};
@@ -56,11 +66,9 @@ function responderConfiguracionPublica_(callback) {
 }
 
 function obtenerConfiguracionWeb() {
-  const contexto = obtenerContextoConfiguracion_();
-  const valores = leerValoresConfiguracion_(contexto);
   return {
     ok: true,
-    valores: valores,
+    valores: leerValoresConfiguracion_(),
     actualizadoEn: new Date().toISOString()
   };
 }
@@ -79,29 +87,23 @@ function actualizarConfiguracionWeb(clave, activado) {
   const bloqueo = LockService.getScriptLock();
   bloqueo.waitLock(30000);
   try {
-    const contexto = obtenerContextoConfiguracion_();
-    const coincidencias = contexto.filas.filter(function(item) {
-      return item.clave === claveSegura;
-    });
-    if (coincidencias.length !== 1) {
-      throw new Error(
-        "La clave " + claveSegura + " debe existir exactamente una vez en la pestaña Configuracion."
-      );
-    }
-
-    const fila = coincidencias[0].fila;
     const estadoTexto = estado ? "ACTIVADO" : "DESACTIVADO";
-    contexto.hoja.getRange(fila, contexto.columnas.estado + 1).setValue(estadoTexto);
-    SpreadsheetApp.flush();
+    const propiedades = PropertiesService.getScriptProperties();
+    const nombrePropiedad = CONFIG_PROPERTY_PREFIX + claveSegura;
+    propiedades.setProperty(nombrePropiedad, estadoTexto);
 
-    const guardado = normalizarEstadoConfiguracion_(
-      contexto.hoja.getRange(fila, contexto.columnas.estado + 1).getDisplayValue()
-    );
+    const guardado = normalizarEstadoConfiguracion_(propiedades.getProperty(nombrePropiedad));
     if (guardado !== estadoTexto) {
-      throw new Error("Google Sheets no confirmó el estado de configuración esperado.");
+      throw new Error("Apps Script no confirmó el estado de configuración esperado.");
     }
 
-    const valores = leerValoresConfiguracion_(contexto);
+    try {
+      reflejarConfiguracionEnHojaOpcional_(claveSegura, estadoTexto);
+    } catch (error) {
+      console.log("No se pudo actualizar el espejo opcional Configuracion: " + error);
+    }
+
+    const valores = leerValoresConfiguracion_();
     return {
       ok: true,
       clave: claveSegura,
@@ -115,12 +117,22 @@ function actualizarConfiguracionWeb(clave, activado) {
   }
 }
 
-function obtenerContextoConfiguracion_() {
+function leerValoresConfiguracion_() {
+  const propiedades = PropertiesService.getScriptProperties();
+  const valores = {};
+  CONFIG_KEYS.forEach(function(clave) {
+    const guardado = normalizarEstadoConfiguracion_(
+      propiedades.getProperty(CONFIG_PROPERTY_PREFIX + clave)
+    );
+    valores[clave] = guardado || CONFIG_DEFAULTS[clave];
+  });
+  return valores;
+}
+
+function reflejarConfiguracionEnHojaOpcional_(clave, estadoTexto) {
   const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
   const hoja = libro.getSheetByName(CONFIG_SHEET_NAME);
-  if (!hoja) {
-    throw new Error("No existe la pestaña Configuracion en el inventario oficial.");
-  }
+  if (!hoja) return false;
 
   const filasALeer = Math.min(Math.max(hoja.getLastRow(), 1), 100);
   const columnasALeer = Math.min(Math.max(hoja.getLastColumn(), 1), 30);
@@ -140,45 +152,18 @@ function obtenerContextoConfiguracion_() {
     }
   });
 
-  if (candidatos.length !== 1) {
-    throw new Error(
-      "Los encabezados Estado y Clave técnica deben identificar una única tabla en Configuracion."
-    );
-  }
+  if (candidatos.length !== 1) return false;
 
   const encabezado = candidatos[0];
-  const filas = [];
+  const coincidencias = [];
   for (let indiceFila = encabezado.fila + 1; indiceFila < valores.length; indiceFila++) {
-    const clave = String(valores[indiceFila][encabezado.clave] || "").trim().toUpperCase();
-    if (!clave) continue;
-    filas.push({ fila: indiceFila + 1, clave: clave });
+    const claveFila = String(valores[indiceFila][encabezado.clave] || "").trim().toUpperCase();
+    if (claveFila === clave) coincidencias.push(indiceFila + 1);
   }
+  if (coincidencias.length !== 1) return false;
 
-  return {
-    hoja: hoja,
-    columnas: { estado: encabezado.estado, clave: encabezado.clave },
-    filas: filas
-  };
-}
-
-function leerValoresConfiguracion_(contexto) {
-  const valores = {};
-  CONFIG_KEYS.forEach(function(clave) {
-    const coincidencias = contexto.filas.filter(function(item) { return item.clave === clave; });
-    if (coincidencias.length !== 1) {
-      throw new Error(
-        "La clave " + clave + " debe existir exactamente una vez en la pestaña Configuracion."
-      );
-    }
-    const estado = normalizarEstadoConfiguracion_(
-      contexto.hoja.getRange(coincidencias[0].fila, contexto.columnas.estado + 1).getDisplayValue()
-    );
-    if (!estado) {
-      throw new Error("La clave " + clave + " no tiene un estado válido en Configuracion.");
-    }
-    valores[clave] = estado;
-  });
-  return valores;
+  hoja.getRange(coincidencias[0], encabezado.estado + 1).setValue(estadoTexto);
+  return true;
 }
 
 function normalizarEstadoConfiguracion_(valor) {

@@ -1,0 +1,124 @@
+name: Restaurar visitantes Natura una vez
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/triggers/restaurar-visitantes-natura-una-vez.txt"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restaurar-visitantes-natura-una-vez
+  cancel-in-progress: false
+
+jobs:
+  restaurar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      SCRIPT_ID: "1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN"
+      PROJECT_NAME: "coordenadas de visitantes natura"
+      PROJECT_DIR: "natura/apps-script/coordenadas de visitantes natura"
+      DEPLOYMENT_ID: "AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO"
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v7
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Confirmar solicitud única
+        run: |
+          expected=$'RESTAURAR_DESDE_GITHUB\nproyecto=coordenadas de visitantes natura\nscriptId=1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN\nrun=1'
+          actual="$(cat .github/triggers/restaurar-visitantes-natura-una-vez.txt 2>/dev/null || true)"
+          if [ "$actual" != "$expected" ]; then
+            echo "::error::Confirmación única inválida."
+            exit 1
+          fi
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Instalar clasp
+        run: npm install --global @google/clasp@3.4.1
+
+      - name: Restaurar autorización de Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo "::error::Falta el secreto CLASPRC_JSON"
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+
+      - name: Validar identidad del proyecto
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          test -f "$PROJECT_DIR/.clasp.json"
+          actual_id="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8")).get("scriptId", ""))' "$PROJECT_DIR/.clasp.json")"
+          if [ "$actual_id" != "$SCRIPT_ID" ]; then
+            echo "::error::El scriptId local no coincide con coordenadas de visitantes natura."
+            exit 1
+          fi
+
+          clasp list-scripts >/dev/null
+
+          python3 - "$RUNNER_TEMP/.clasprc.json" "$SCRIPT_ID" "$PROJECT_NAME" <<'PY'
+          import json, sys, urllib.parse, urllib.request
+          auth_path, script_id, expected_name = sys.argv[1:4]
+          with open(auth_path, encoding="utf-8") as fh:
+              auth = json.load(fh)
+          credentials = ((auth.get("tokens") or {}).get("default") or auth.get("token") or auth)
+          token = credentials.get("access_token", "") if isinstance(credentials, dict) else ""
+          if not token:
+              raise SystemExit("No se pudo obtener access_token de clasp")
+          encoded = urllib.parse.quote(script_id, safe="")
+          url = f"https://www.googleapis.com/drive/v3/files/{encoded}?fields=id,name,mimeType,trashed&supportsAllDrives=true"
+          req = urllib.request.Request(url, headers={"Authorization": f"Bearer {token}"})
+          with urllib.request.urlopen(req, timeout=30) as response:
+              meta = json.load(response)
+          if meta.get("id") != script_id:
+              raise SystemExit("ID remoto inesperado")
+          if meta.get("mimeType") != "application/vnd.google-apps.script":
+              raise SystemExit("El recurso remoto no es Apps Script")
+          if meta.get("trashed") is True:
+              raise SystemExit("El proyecto está en la papelera")
+          if str(meta.get("name") or "").strip() != expected_name:
+              raise SystemExit(f"Nombre remoto inesperado: {meta.get('name')!r}")
+          print(f"Proyecto verificado: {expected_name} [{script_id}]")
+          PY
+
+      - name: Publicar código en el mismo Apps Script
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          cd "$PROJECT_DIR"
+          clasp push --force
+          if ! clasp deployments | grep -Fq "$DEPLOYMENT_ID"; then
+            echo "::error::No existe el deployment oficial esperado."
+            exit 1
+          fi
+          clasp deploy --deploymentId "$DEPLOYMENT_ID" --description "Visitantes Natura reforzado ${GITHUB_SHA}"
+
+      - name: Comprobar endpoint sin registrar visitas
+        run: |
+          endpoint="https://script.google.com/macros/s/$DEPLOYMENT_ID/exec?health=$(date +%s)"
+          curl --fail --silent --show-error --location --retry 4 --retry-delay 2 --max-time 45 "$endpoint" > "$RUNNER_TEMP/health.json"
+          python3 - "$RUNNER_TEMP/health.json" <<'PY'
+          import json, sys
+          with open(sys.argv[1], encoding="utf-8") as fh:
+              data = json.load(fh)
+          if data.get("ok") is not True or data.get("status") != "ready":
+              raise SystemExit(f"Endpoint no confirmó estado activo: {data}")
+          print(data.get("message") or "Endpoint activo")
+          PY

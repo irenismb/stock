@@ -2625,14 +2625,12 @@
 	  return lines.join("\n");
 	}
 
-    function buildOrderPayload(tipoMovimiento="Pedido"){
+    function buildOrderPayload(tipoMovimiento="Pedido", requestId=""){
       const items = cartItemsArray();
       const client = getClientDataCurrent();
       const atribucion = contextoAtribucionVisita();
       const addr = getAddressDataCurrent();
-      const subtotal = cartTotalValue();
       const envio = getShippingCop();
-      const totalPedido = subtotal + envio;
       const direccionClienteVisible = joinParts([addr.addressLine || "", addr.barrio ? `Barrio ${addr.barrio}` : ""], ", ");
 
       tipoMovimiento = normalizeText(tipoMovimiento) === "venta" ? "Venta" : "Pedido";
@@ -2640,14 +2638,13 @@
       return {
         source: tipoMovimiento === "Venta" ? "catalogo-factura" : "catalogo-whatsapp",
         tipoMovimiento,
-        client_request_id: `${Date.now()}-${Math.random().toString(36).slice(2,10)}`,
-        totalPedido,
+        client_request_id: requestId || "",
+        envio,
         cliente: {
           nombre: client.name || "",
           celular: client.phone || "",
           direccion: direccionClienteVisible || "",
           direccionBase: addr.addressLine || "",
-          direccionMapa: addr.mapLink || "",
           barrio: addr.barrio || ""
         },
         atribucion: {
@@ -2661,17 +2658,10 @@
         },
         items: items.map(it => {
           const p = productById.get(String(it.id)) || {};
-          const valorUnitario = Number(it.price) || 0;
-          const cantidadSolicitada = Number(it.qty) || 0;
           return {
-            nombreProducto: it.name || "",
-            valorUnitario,
-            precioPendiente: it.hasPrice === false,
-            cantidadSolicitada,
-            totalPedido,
-            marca: p.brand || "",
-            categoria: p.category || "",
-            codigo: shouldSendProductCodesByWhatsApp() ? String(it.id || "") : ""
+            codigo: String(it.id || ""),
+            cantidadSolicitada: Number(it.qty) || 0,
+            marca: p.brand || ""
           };
         })
       };
@@ -2692,24 +2682,134 @@
       });
     }
 
-    async function registerOrderInSheet(tipoMovimiento="Pedido"){
-      const payload = buildOrderPayload(tipoMovimiento);
-      if(!Array.isArray(payload.items) || !payload.items.length) return { ok:false, skipped:true };
+    function createOrderRequestId(){
+      const randomPart = (window.crypto && typeof window.crypto.randomUUID === "function")
+        ? window.crypto.randomUUID().replace(/-/g, "")
+        : `${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
+      return `ord_${Date.now()}_${randomPart}`;
+    }
 
+    function orderRequestFingerprint(payload){
+      return JSON.stringify({
+        tipoMovimiento: payload.tipoMovimiento,
+        envio: Number(payload.envio) || 0,
+        cliente: payload.cliente || {},
+        items: (payload.items || []).map(item => ({
+          codigo: String(item.codigo || ""),
+          cantidadSolicitada: Number(item.cantidadSolicitada) || 0,
+          marca: String(item.marca || "")
+        }))
+      });
+    }
+
+    function getPendingOrderRequest(payload){
+      const key = "irenismb_pending_order_request_v1";
+      const fingerprint = orderRequestFingerprint(payload);
+      const saved = readJsonLS(key, null);
+      if(saved && saved.id && saved.fingerprint === fingerprint){
+        return { key, id: String(saved.id), fingerprint };
+      }
+      const id = createOrderRequestId();
+      writeJsonLS(key, { id, fingerprint, createdAt: Date.now() });
+      return { key, id, fingerprint };
+    }
+
+    function clearPendingOrderRequest(key, requestId){
+      try{
+        const saved = readJsonLS(key, null);
+        if(saved && String(saved.id || "") === String(requestId || "")){
+          localStorage.removeItem(key);
+        }
+      }catch(_){ }
+    }
+
+    function delayMs(ms){
+      return new Promise(resolve => setTimeout(resolve, Math.max(0, Number(ms) || 0)));
+    }
+
+    function fetchOrderStatusJsonp(requestId, timeoutMs = 3500){
+      return new Promise((resolve, reject) => {
+        const callbackName = `__naturaOrderStatus_${Date.now()}_${Math.random().toString(36).slice(2,9)}`;
+        const script = document.createElement("script");
+        let settled = false;
+        const cleanup = () => {
+          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
+          if(script.parentNode) script.parentNode.removeChild(script);
+        };
+        const finish = (fn, value) => {
+          if(settled) return;
+          settled = true;
+          clearTimeout(timer);
+          cleanup();
+          fn(value);
+        };
+        const timer = setTimeout(() => finish(reject, new Error("No se pudo confirmar el registro del pedido.")), timeoutMs);
+
+        window[callbackName] = (data) => finish(resolve, data || {});
+        script.async = true;
+        script.onerror = () => finish(reject, new Error("No se pudo consultar el estado del pedido."));
+        const query = new URLSearchParams({
+          request_id: String(requestId || ""),
+          prefix: callbackName,
+          _: String(Date.now())
+        });
+        script.src = `${ORDER_LOG_ENDPOINT}?${query.toString()}`;
+        document.head.appendChild(script);
+      });
+    }
+
+    async function confirmOrderRegistration(requestId){
+      const deadline = Date.now() + 10000;
+      let lastError = null;
+
+      while(Date.now() < deadline){
+        try{
+          const status = await fetchOrderStatusJsonp(requestId, 3000);
+          if(status && status.status === "registered" && status.ok === true) return status;
+          if(status && status.status === "error"){
+            throw new Error(status.message || "El servidor rechazó el pedido.");
+          }
+        }catch(err){
+          lastError = err;
+          if(err && /rechazó el pedido|inválid|no hay productos|código|precio|categoría/i.test(String(err.message || err))){
+            throw err;
+          }
+        }
+        await delayMs(450);
+      }
+
+      throw lastError || new Error("El pedido se envió, pero no fue posible confirmar su registro.");
+    }
+
+    async function registerOrderInSheet(tipoMovimiento="Pedido"){
+      const basePayload = buildOrderPayload(tipoMovimiento);
+      if(!Array.isArray(basePayload.items) || !basePayload.items.length) return { ok:false, skipped:true };
+
+      const pending = getPendingOrderRequest(basePayload);
+      const payload = Object.assign({}, basePayload, { client_request_id: pending.id });
       const body = JSON.stringify(payload);
 
-      await fetchWithTimeout(ORDER_LOG_ENDPOINT, {
-        method: "POST",
-        mode: "no-cors",
-        cache: "no-store",
-        keepalive: true,
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8"
-        },
-        body
-      }, ORDER_LOG_TIMEOUT_MS);
+      try{
+        await fetchWithTimeout(ORDER_LOG_ENDPOINT, {
+          method: "POST",
+          mode: "no-cors",
+          cache: "no-store",
+          keepalive: true,
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8"
+          },
+          body
+        }, ORDER_LOG_TIMEOUT_MS);
 
-      return { ok:true, skipped:false };
+        const confirmation = await confirmOrderRegistration(pending.id);
+        clearPendingOrderRequest(pending.key, pending.id);
+        return Object.assign({ skipped:false }, confirmation);
+      }catch(err){
+        if(err && /rechazó el pedido|inválid|no hay productos|código|precio|categoría/i.test(String(err.message || err))){
+          clearPendingOrderRequest(pending.key, pending.id);
+        }
+        throw err;
+      }
     }
 
     let orderSending = false;

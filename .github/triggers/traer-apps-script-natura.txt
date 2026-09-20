@@ -2,3 +2,4 @@ Control manual para traer Apps Script Natura desde Google a GitHub.
 No editar salvo para solicitar una sincronización manual.
 
 Solicitud de sincronización verificada: 2026-09-19
+Verificación de arquitectura: Google → GitHub

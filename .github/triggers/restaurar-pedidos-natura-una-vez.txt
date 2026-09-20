@@ -1,4 +1,1 @@
-RESTAURAR_DESDE_GITHUB
-proyecto=pedidos natura
-scriptId=12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt
-run=2
+INACTIVO

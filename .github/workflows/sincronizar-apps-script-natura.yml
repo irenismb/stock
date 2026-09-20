@@ -1,7 +1,8 @@
 name: Traer Apps Script Natura desde Google
 
 on:
-  workflow_dispatch:
+  schedule:
+    - cron: "*/15 * * * *"
   push:
     branches:
       - main

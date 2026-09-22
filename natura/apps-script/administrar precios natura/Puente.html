@@ -25,6 +25,7 @@
 
   <script>
     const estado = document.getElementById("estado");
+    const CATALOG_ORIGIN = "https://irenismb.github.io";
     let puerto = null;
 
     google.script.url.getLocation(function(ubicacion){
@@ -34,14 +35,18 @@
         return;
       }
 
-      let apertura = null;
+      let destino = null;
       try{
-        apertura = window.top && window.top.opener ? window.top.opener : window.opener;
-      }catch(_){
-        apertura = window.opener;
+        if(window.top && window.top.opener) destino = window.top.opener;
+      }catch(_){}
+      if(!destino){
+        try{ if(window.opener) destino = window.opener; }catch(_){}
+      }
+      if(!destino){
+        try{ if(window.top && window.top !== window) destino = window.top; }catch(_){}
       }
 
-      if(!apertura){
+      if(!destino){
         mostrarError("Abre esta conexión desde el botón Administrar del catálogo.");
         return;
       }
@@ -51,18 +56,14 @@
       puerto.onmessage = procesarSolicitud;
       puerto.start();
 
-      apertura.postMessage(
+      destino.postMessage(
         {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad","configuracion"]},
-        "*",
+        CATALOG_ORIGIN,
         [canalMensajes.port2]
       );
 
       estado.className = "ok";
-      estado.textContent = "Conexión activa. Vuelve al catálogo y mantén esta ventana abierta mientras administras precios, visibilidad y configuración.";
-      try{
-        apertura.focus();
-        window.top.blur();
-      }catch(_){}
+      estado.textContent = "Conexión segura activa con el catálogo.";
     });
 
     function procesarSolicitud(evento){

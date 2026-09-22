@@ -6,7 +6,7 @@
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
   const SHEET_ID=(()=>{try{return String(GOOGLE_SHEET_SOURCE?.spreadsheetId||"").trim()}catch(_){return "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs"}})();
   const rules=new Set();
-  let admin=false, adminMissingPriceOnly=false, connecting=false, popup=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false;
+  let admin=false, adminMissingPriceOnly=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
   let capabilities=new Set(["precio"]);
   const requests=new Map();
   const CONFIG_ITEMS=[
@@ -78,11 +78,29 @@
   function rebuild(){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();if(typeof refreshFilterOptionsForScope==="function")refreshFilterOptionsForScope();if(typeof render==="function")render()}catch(e){console.info(e)}requestAnimationFrame(syncUI)}
   function syncUI(){btn.hidden=false;btn.disabled=connecting;btn.title=admin?"Salir del modo administrador":"Administrar catálogo";if(!admin)return;installVisibility();installPrices();if(capabilities.has("configuracion"))ensureConfigPanel()}
 
-  function toggleAdmin(){if(admin){stopAdmin();return} if(port&&popup&&!popup.closed){startAdmin();return} connect()}
-  function connect(){if(connecting)return;connecting=true;openAfterConnect=true;btn.textContent="Conectando…";pendingChannel=randomChannel();const u=new URL(endpoint);u.searchParams.set("modo","puente");u.searchParams.set("canal",pendingChannel);popup=window.open(u,"irenismbAdminGoogle","popup=yes,width=520,height=320,resizable=yes,scrollbars=yes");if(!popup){connecting=false;btn.textContent="Administrar";alert("Permite ventanas emergentes para conectar con Google.")}}
+  function toggleAdmin(){if(admin){stopAdmin();return} if(port&&bridgeFrame?.isConnected){startAdmin();return} connect()}
+  function connect(){
+    if(connecting)return;
+    connecting=true;openAfterConnect=true;btn.textContent="Conectando…";pendingChannel=randomChannel();
+    closeBridge({keepButton:true,keepConnecting:true,keepPending:true});
+    const u=new URL(endpoint);u.searchParams.set("modo","puente");u.searchParams.set("canal",pendingChannel);
+    bridgeFrame=document.createElement("iframe");
+    bridgeFrame.title="Conexión segura con Google";
+    bridgeFrame.tabIndex=-1;
+    bridgeFrame.setAttribute("aria-hidden","true");
+    bridgeFrame.style.cssText="position:fixed!important;left:-10000px!important;top:-10000px!important;width:1px!important;height:1px!important;border:0!important;opacity:0!important;pointer-events:none!important;";
+    bridgeFrame.src=u.toString();
+    document.body.appendChild(bridgeFrame);
+    clearTimeout(connectTimer);
+    connectTimer=setTimeout(()=>{
+      if(!connecting)return;
+      connecting=false;openAfterConnect=false;pendingChannel="";btn.textContent="Administrar";closeBridge({keepButton:true});
+      alert("No fue posible validar la administración con Google en segundo plano. Comprueba que tienes la sesión de Google iniciada y que esta aplicación ya está autorizada.");
+    },15000);
+  }
   function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
   function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
-  function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);pendingChannel="";connecting=false;btn.textContent="Administrar";if(openAfterConnect)startAdmin();openAfterConnect=false}
+  function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);pendingChannel="";connecting=false;btn.textContent="Administrar";if(openAfterConnect)startAdmin();openAfterConnect=false}
   function startAdmin(){admin=true;adminMissingPriceOnly=false;window.CATALOG_ADMIN_MODE_ACTIVE=true;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");rebuild();if(capabilities.has("configuracion"))loadAdminConfig()}
   function stopAdmin(){admin=false;adminMissingPriceOnly=false;window.CATALOG_ADMIN_MODE_ACTIVE=false;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");removeAdminUI();rebuild()}
   function removeAdminUI(){document.getElementById("catalogAdminConfig")?.remove();grid.querySelectorAll(".catalog-admin-vis").forEach(x=>x.remove());grid.querySelectorAll(".catalog-admin-has-vis").forEach(x=>x.classList.remove("catalog-admin-has-vis"));grid.querySelectorAll(".catalog-admin-hidden,.catalog-admin-inherited").forEach(x=>x.classList.remove("catalog-admin-hidden","catalog-admin-inherited"));grid.querySelectorAll(".card").forEach(removePrice)}
@@ -138,7 +156,7 @@
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
   function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}
 
-  function request(data){return new Promise((resolve,reject)=>{if(!port||!popup||popup.closed){reject(new Error("La conexión con Google se cerró."));return}const prefix=data.tipo==="actualizar-visibilidad"?"vis":data.tipo?.includes("configuracion")?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
+  function request(data){return new Promise((resolve,reject)=>{if(!port||!bridgeFrame?.isConnected){reject(new Error("La conexión con Google se cerró."));return}const prefix=data.tipo==="actualizar-visibilidad"?"vis":data.tipo?.includes("configuracion")?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
   function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
-  function closeBridge(){try{port?.close()}catch(_){}try{if(popup&&!popup.closed)popup.close()}catch(_){}}
+  function closeBridge(options={}){clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;try{bridgeFrame?.remove()}catch(_){}bridgeFrame=null;if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton&&!admin)btn.textContent="Administrar"}
 })();

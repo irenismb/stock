@@ -10,15 +10,16 @@ Este proyecto publica el servicio autenticado de Google Apps Script usado por el
 - `admin-visibilidad.js`: lectura y actualización de reglas de la pestaña `Visibilidad`.
 - `admin-contextos.js`: resolución de hojas, encabezados y normalizaciones compartidas.
 - `Admin.html`: interfaz autenticada de administración de precios.
-- `Puente.html`: puente usado por el catálogo para precios, visibilidad y configuración.
+- `Puente.html`: puente autenticado que el catálogo carga de forma invisible para precios, visibilidad y configuración, sin abrir una ventana auxiliar durante el uso normal.
 
 Las funciones públicas llamadas desde los HTML conservan exactamente sus nombres: `obtenerProductosPrecios`, `actualizarPrecioWeb`, `obtenerConfiguracionWeb`, `actualizarConfiguracionWeb`, `obtenerVisibilidadWeb` y `actualizarVisibilidadWeb`.
 
 ## Seguridad y consistencia
 
 - la implementación se ejecuta como el usuario que accede;
-- Google exige iniciar sesión y autorizar el script;
+- Google exige iniciar sesión y autorizar el script; el catálogo reutiliza esa sesión mediante un iframe invisible;
 - la cuenta debe tener permiso de edición sobre el inventario oficial;
+- el puente solo entrega el canal de administración al origen oficial `https://irenismb.github.io`;
 - los campos se localizan por el texto de los encabezados, no por letras ni posiciones;
 - el código del producto debe tener una coincidencia única;
 - `LockService` evita escrituras simultáneas;

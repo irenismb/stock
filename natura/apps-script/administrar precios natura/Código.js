@@ -32,9 +32,14 @@ function doGet(evento) {
   }
 
   const archivo = modo === "puente" ? "Puente" : "Admin";
-  return HtmlService
+  const salida = HtmlService
     .createHtmlOutputFromFile(archivo)
     .setTitle("Administrar catálogo · Irenismb Stock Natura");
+
+  if (modo === "puente") {
+    salida.setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+  return salida;
 }
 function responderConfiguracionPublica_(callback) {
   let payload;

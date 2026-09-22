@@ -2122,7 +2122,31 @@
     }
 
     let _urlTimer = null;
-    function writeStateToUrl(){
+    const CATALOG_HISTORY_KEY = "irenismbCatalogNavigation";
+    let lastCatalogHistoryIndex = 0;
+
+    function currentCatalogHistoryIndex(){
+      const state = history.state;
+      const catalogState = state && typeof state === "object" ? state[CATALOG_HISTORY_KEY] : null;
+      const index = Number(catalogState && catalogState.index);
+      return Number.isInteger(index) && index >= 0 ? index : 0;
+    }
+
+    function makeCatalogHistoryState(index = currentCatalogHistoryIndex()){
+      const base = history.state && typeof history.state === "object" ? history.state : {};
+      const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
+      return {
+        ...base,
+        [CATALOG_HISTORY_KEY]:{
+          index:safeIndex,
+          audience:selectedAudience || "",
+          category:selectedCategory || "",
+          family:selectedFamily || ""
+        }
+      };
+    }
+
+    function writeStateToUrl({push=false,index=currentCatalogHistoryIndex()}={}){
       const u = new URL(location.href);
       const q = qInp.value.trim();
       const cat = catSel.value;
@@ -2140,11 +2164,60 @@
       u.searchParams.delete("album");
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
-      history.replaceState(null, "", u.toString());
+      const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
+      const state = makeCatalogHistoryState(safeIndex);
+      if(push) history.pushState(state, "", u.toString());
+      else history.replaceState(state, "", u.toString());
+      lastCatalogHistoryIndex = safeIndex;
     }
+
+    function pushNavigationStateToUrl(){
+      clearTimeout(_urlTimer);
+      _urlTimer = null;
+      writeStateToUrl({push:true,index:currentCatalogHistoryIndex()+1});
+    }
+
     function scheduleWriteStateToUrl(){
       clearTimeout(_urlTimer);
-      _urlTimer = setTimeout(writeStateToUrl, 180);
+      _urlTimer = setTimeout(()=>writeStateToUrl(), 180);
+    }
+
+    function validateNavigationStateAgainstProducts(){
+      if(selectedCategory){
+        const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
+        if(!hasCategory){
+          selectedCategory = "";
+          selectedFamily = "";
+        }
+      }
+      if(selectedFamily){
+        const hasFamily = all.some(p => {
+          if(!productMatchesAudience(p, selectedAudience)) return false;
+          if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(selectedCategory)) return false;
+          if(cleanNavKey(selectedFamily) === cleanNavKey("General")) return !navigationFamilyForProduct(p);
+          return cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily);
+        });
+        if(!hasFamily) selectedFamily = "";
+      }
+    }
+
+    function restoreCatalogStateFromHistory(){
+      clearTimeout(_urlTimer);
+      _urlTimer = null;
+      const nextIndex = currentCatalogHistoryIndex();
+      const goingBack = nextIndex < lastCatalogHistoryIndex;
+      const restore = goingBack ? uxScrollStack().pop() : null;
+      lastCatalogHistoryIndex = nextIndex;
+      readStateFromUrl();
+      validateNavigationStateAgainstProducts();
+      refreshNavigationAlbums();
+      refreshFilterOptionsForScope();
+      render();
+      if(restore && Number.isFinite(restore.scrollY)){
+        requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
+      }else{
+        requestAnimationFrame(()=>uxScrollToCatalogStart());
+      }
     }
 
     function resetDiscoveryFilters(){
@@ -2396,22 +2469,7 @@
       try{
         productById = new Map(all.map(p => [String(p.id), p]));
         readStateFromUrl();
-        if(selectedCategory){
-          const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
-          if(!hasCategory){
-            selectedCategory = "";
-            selectedFamily = "";
-          }
-        }
-        if(selectedFamily){
-          const hasFamily = all.some(p => {
-            if(!productMatchesAudience(p, selectedAudience)) return false;
-            if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(selectedCategory)) return false;
-            if(cleanNavKey(selectedFamily) === cleanNavKey("General")) return !navigationFamilyForProduct(p);
-            return cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily);
-          });
-          if(!hasFamily) selectedFamily = "";
-        }
+        validateNavigationStateAgainstProducts();
         refreshNavigationAlbums();
       }catch(err){
         console.warn("Los productos se cargaron, pero no se pudo reconstruir toda la navegación. Se restablece la vista principal.", err);
@@ -2834,6 +2892,7 @@ function makeEmptyState(message){
 function openAlbum(key,opts={}){
   const target=albumByKey.get(String(key||""));
   if(!target) return;
+  writeStateToUrl();
   uxScrollStack().push({scrollY:window.scrollY||0});
   if(target.navType==="audience"){selectedAudience=target.navValue;selectedCategory="";selectedFamily="";}
   else if(target.navType==="category"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.navValue;selectedFamily="";}
@@ -2841,11 +2900,16 @@ function openAlbum(key,opts={}){
   if(!opts.keepFilters) resetDiscoveryFilters();
   refreshNavigationAlbums();
   refreshFilterOptionsForScope();
+  pushNavigationStateToUrl();
   render();
   uxScrollToCatalogStart();
 }
 
 function closeAlbum(opts={}){
+  if(currentCatalogHistoryIndex()>0){
+    history.back();
+    return;
+  }
   const restore=uxScrollStack().pop();
   if(selectedFamily) selectedFamily="";
   else if(selectedCategory) selectedCategory="";
@@ -2853,6 +2917,7 @@ function closeAlbum(opts={}){
   if(!opts.keepFilters) resetDiscoveryFilters();
   refreshNavigationAlbums();
   refreshFilterOptionsForScope();
+  writeStateToUrl();
   render();
   if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
 }
@@ -3013,6 +3078,7 @@ async function init(){
   initShipping();
   bindFilters();
   bindGridActions();
+  window.addEventListener("popstate",restoreCatalogStateFromHistory);
   initKeyboardAccessibility();
   initCollageFeature();
   initSPREFeature();

@@ -2123,7 +2123,13 @@
 
     let _urlTimer = null;
     const CATALOG_HISTORY_KEY = "irenismbCatalogNavigation";
+    const CATALOG_EXIT_GUARD_KEY = "irenismbCatalogExitGuard";
     let lastCatalogHistoryIndex = 0;
+
+    function catalogExitGuardType(state = history.state){
+      const guard = state && typeof state === "object" ? state[CATALOG_EXIT_GUARD_KEY] : null;
+      return guard && typeof guard === "object" ? String(guard.type || "") : "";
+    }
 
     function currentCatalogHistoryIndex(){
       const state = history.state;
@@ -2132,8 +2138,9 @@
       return Number.isInteger(index) && index >= 0 ? index : 0;
     }
 
-    function makeCatalogHistoryState(index = currentCatalogHistoryIndex()){
-      const base = history.state && typeof history.state === "object" ? history.state : {};
+    function makeCatalogHistoryState(index = currentCatalogHistoryIndex(), {preserveExitGuard=true}={}){
+      const base = history.state && typeof history.state === "object" ? { ...history.state } : {};
+      if(!preserveExitGuard) delete base[CATALOG_EXIT_GUARD_KEY];
       const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
       return {
         ...base,
@@ -2144,6 +2151,36 @@
           family:selectedFamily || ""
         }
       };
+    }
+
+    function isCatalogRootNavigation(){
+      return !selectedAudience && !selectedCategory && !selectedFamily;
+    }
+
+    function catalogStateWithExitGuard(type){
+      return {
+        ...makeCatalogHistoryState(0,{preserveExitGuard:false}),
+        [CATALOG_EXIT_GUARD_KEY]:{ type:String(type || "") }
+      };
+    }
+
+    function installCatalogExitGuardIfAtRoot(){
+      if(!isCatalogRootNavigation()) return;
+      const guardType = catalogExitGuardType();
+      if(guardType === "guard") return;
+      if(guardType === "sentinel") {
+        history.pushState(catalogStateWithExitGuard("guard"), "", location.href);
+        lastCatalogHistoryIndex = 0;
+        return;
+      }
+      history.replaceState(catalogStateWithExitGuard("sentinel"), "", location.href);
+      history.pushState(catalogStateWithExitGuard("guard"), "", location.href);
+      lastCatalogHistoryIndex = 0;
+    }
+
+    function rearmCatalogExitGuard(){
+      history.pushState(catalogStateWithExitGuard("guard"), "", location.href);
+      lastCatalogHistoryIndex = 0;
     }
 
     function writeStateToUrl({push=false,index=currentCatalogHistoryIndex()}={}){
@@ -2165,7 +2202,7 @@
       if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
 
       const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
-      const state = makeCatalogHistoryState(safeIndex);
+      const state = makeCatalogHistoryState(safeIndex,{preserveExitGuard:!push});
       if(push) history.pushState(state, "", u.toString());
       else history.replaceState(state, "", u.toString());
       lastCatalogHistoryIndex = safeIndex;
@@ -2201,9 +2238,27 @@
       }
     }
 
-    function restoreCatalogStateFromHistory(){
+    function restoreCatalogStateFromHistory(event){
       clearTimeout(_urlTimer);
       _urlTimer = null;
+
+      const poppedState = event && typeof event === "object" ? event.state : history.state;
+      const poppedGuardType = catalogExitGuardType(poppedState);
+      const poppedCatalogState = poppedState && typeof poppedState === "object" ? poppedState[CATALOG_HISTORY_KEY] : null;
+      const poppedAtRoot = !String(poppedCatalogState?.audience || "").trim()
+        && !String(poppedCatalogState?.category || "").trim()
+        && !String(poppedCatalogState?.family || "").trim();
+
+      if(poppedGuardType === "sentinel" && poppedAtRoot){
+        const shouldExit = window.confirm("¿Quieres salir del catálogo?");
+        if(shouldExit){
+          history.back();
+        }else{
+          rearmCatalogExitGuard();
+        }
+        return;
+      }
+
       const nextIndex = currentCatalogHistoryIndex();
       const goingBack = nextIndex < lastCatalogHistoryIndex;
       const restore = goingBack ? uxScrollStack().pop() : null;
@@ -2918,6 +2973,7 @@ function closeAlbum(opts={}){
   refreshNavigationAlbums();
   refreshFilterOptionsForScope();
   writeStateToUrl();
+  installCatalogExitGuardIfAtRoot();
   render();
   if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
 }
@@ -3091,6 +3147,7 @@ async function init(){
   loadAddressFromLS();
   await initializeRemoteCatalogConfiguration();
   await loadProducts();
+  installCatalogExitGuardIfAtRoot();
   startInventoryAutoRefresh();
   uxRestoreScrollPosition();
 }

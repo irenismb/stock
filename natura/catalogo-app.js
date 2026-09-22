@@ -2124,7 +2124,113 @@
     let _urlTimer = null;
     const CATALOG_HISTORY_KEY = "irenismbCatalogNavigation";
     const CATALOG_EXIT_GUARD_KEY = "irenismbCatalogExitGuard";
+    const CATALOG_RELOAD_VIEW_KEY = "irenismb_catalog_reload_view_v1";
     let lastCatalogHistoryIndex = 0;
+
+    function catalogNavigationIsReload(){
+      try{
+        const navEntry = performance.getEntriesByType?.("navigation")?.[0];
+        if(navEntry && navEntry.type) return navEntry.type === "reload";
+        return Number(performance.navigation?.type) === 1;
+      }catch(_){
+        return false;
+      }
+    }
+
+    function captureCatalogReloadViewState(){
+      try{
+        const collapse = document.querySelector("[data-admin-config-collapse]");
+        const snapshot = {
+          version:1,
+          pathname:location.pathname,
+          q:qInp ? String(qInp.value || "") : "",
+          sort:sortSel ? String(sortSel.value || "") : "",
+          tags:uniqueTerms(selectedSuggestionTerms || []),
+          audience:String(selectedAudience || ""),
+          category:String(selectedCategory || ""),
+          family:String(selectedFamily || ""),
+          admin:window.CATALOG_ADMIN_MODE_ACTIVE === true,
+          adminConfigExpanded:collapse?.getAttribute("aria-expanded") === "true",
+          scrollY:Math.max(0,Math.round(window.scrollY || 0)),
+          savedAt:Date.now()
+        };
+        sessionStorage.setItem(CATALOG_RELOAD_VIEW_KEY,JSON.stringify(snapshot));
+        sessionStorage.setItem("irenismb_catalog_scroll_position",String(snapshot.scrollY));
+      }catch(_){ }
+    }
+
+    function readCatalogReloadViewState(){
+      if(!catalogNavigationIsReload()) return null;
+      try{
+        const raw=sessionStorage.getItem(CATALOG_RELOAD_VIEW_KEY);
+        if(!raw) return null;
+        const snapshot=JSON.parse(raw);
+        if(!snapshot || snapshot.version!==1 || snapshot.pathname!==location.pathname) return null;
+        return snapshot;
+      }catch(_){
+        return null;
+      }
+    }
+
+    function applyCatalogReloadViewState(snapshot){
+      if(!snapshot) return;
+      if(qInp) qInp.value=String(snapshot.q || "");
+      if(sortSel) sortSel.value=String(snapshot.sort || "");
+      selectedSuggestionTerms=uniqueTerms(Array.isArray(snapshot.tags)?snapshot.tags:[]);
+      selectedAudience=String(snapshot.audience || "");
+      selectedCategory=String(snapshot.category || "");
+      selectedFamily=String(snapshot.family || "");
+
+      const u=new URL(location.href);
+      const q=String(snapshot.q || "").trim();
+      const sort=String(snapshot.sort || "").trim();
+      const tags=uniqueTerms(Array.isArray(snapshot.tags)?snapshot.tags:[]).join(",");
+      const audience=String(snapshot.audience || "").trim();
+      const category=String(snapshot.category || "").trim();
+      const family=String(snapshot.family || "").trim();
+      if(q)u.searchParams.set("q",q);else u.searchParams.delete("q");
+      if(sort)u.searchParams.set("sort",sort);else u.searchParams.delete("sort");
+      if(tags)u.searchParams.set("tags",tags);else u.searchParams.delete("tags");
+      if(audience)u.searchParams.set("audience",audience);else u.searchParams.delete("audience");
+      if(category)u.searchParams.set("category",category);else u.searchParams.delete("category");
+      if(family)u.searchParams.set("family",family);else u.searchParams.delete("family");
+      u.searchParams.delete("album");
+
+      const atRoot=!audience&&!category&&!family;
+      const state=makeCatalogHistoryState(currentCatalogHistoryIndex(),{preserveExitGuard:atRoot});
+      history.replaceState(state,"",u.toString());
+      lastCatalogHistoryIndex=currentCatalogHistoryIndex();
+      if(Number.isFinite(Number(snapshot.scrollY))){
+        sessionStorage.setItem("irenismb_catalog_scroll_position",String(Math.max(0,Math.round(Number(snapshot.scrollY)))));
+      }
+    }
+
+    function waitForCatalogCondition(test,timeoutMs=16000,intervalMs=100){
+      return new Promise(resolve=>{
+        const started=Date.now();
+        const check=()=>{
+          let value=null;
+          try{value=test()}catch(_){value=null}
+          if(value){resolve(value);return}
+          if(Date.now()-started>=timeoutMs){resolve(null);return}
+          setTimeout(check,intervalMs);
+        };
+        check();
+      });
+    }
+
+    async function restoreCatalogAdminAfterReload(snapshot){
+      if(!snapshot?.admin) return;
+      const adminButton=document.getElementById("priceAdminBtn");
+      if(!adminButton) return;
+      if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) adminButton.click();
+      const started=await waitForCatalogCondition(()=>window.CATALOG_ADMIN_MODE_ACTIVE===true,16500,100);
+      if(!started) return;
+      if(snapshot.adminConfigExpanded){
+        const collapse=await waitForCatalogCondition(()=>document.querySelector("[data-admin-config-collapse]"),4000,80);
+        if(collapse && collapse.getAttribute("aria-expanded")!=="true") collapse.click();
+      }
+    }
 
     function catalogExitGuardType(state = history.state){
       const guard = state && typeof state === "object" ? state[CATALOG_EXIT_GUARD_KEY] : null;
@@ -3126,6 +3232,9 @@ function bindFilters(){
   qInp.addEventListener("blur",updateTickerVisibility);
   window.addEventListener("resize",()=>{rebuildSearchTicker();updateTickerVisibility();},{passive:true});
   window.addEventListener("scroll",uxSaveScrollPosition,{passive:true});
+  window.addEventListener("pagehide",captureCatalogReloadViewState);
+  window.addEventListener("beforeunload",captureCatalogReloadViewState);
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="hidden")captureCatalogReloadViewState()});
 }
 
 async function init(){
@@ -3145,9 +3254,12 @@ async function init(){
   updateCountAttention();
   loadClientFromLS();
   loadAddressFromLS();
+  const reloadViewState=readCatalogReloadViewState();
+  applyCatalogReloadViewState(reloadViewState);
   await initializeRemoteCatalogConfiguration();
   await loadProducts();
   installCatalogExitGuardIfAtRoot();
   startInventoryAutoRefresh();
+  await restoreCatalogAdminAfterReload(reloadViewState);
   uxRestoreScrollPosition();
 }

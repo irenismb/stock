@@ -2567,8 +2567,14 @@
       }
     }
 
-    function updateCountTextLoading(){
-      if(countEl) countEl.textContent = "Cargando productos…";
+    function updateCountTextLoading(label="Cargando productos…", percent=35){
+      if(!countEl) return;
+      const pct = Math.max(0, Math.min(100, Number(percent) || 0));
+      countEl.textContent = `${label} ${pct}%`;
+    }
+
+    function updateCountTextReady(){
+      if(countEl) countEl.textContent = "Listo · 100%";
     }
 
     function updateCountTextError(msg){
@@ -2606,7 +2612,7 @@
     async function loadProducts(options = {}){
       const silent = options.silent === true;
       const refreshImages = options.refreshImages !== false;
-      if(!silent) updateCountTextLoading();
+      if(!silent) updateCountTextLoading("Cargando productos…", 35);
       clearLegacyProductCaches();
 
       try{
@@ -2623,6 +2629,8 @@
         if(!silent) updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
         return;
       }
+
+      if(!silent) updateCountTextLoading("Preparando catálogo…", 70);
 
       let sheetProducts = [];
       try{
@@ -2675,6 +2683,10 @@
       try{ sanitizeCartWithStock(); }catch(err){ console.warn("No se pudo validar el carrito contra el stock.", err); }
 
       try{
+        if(!silent){
+          updateCountTextReady();
+          await new Promise(resolve=>window.setTimeout(resolve, 220));
+        }
         render();
       }catch(err){
         console.error("Los productos se cargaron, pero ocurrió un error al renderizar el catálogo.", err);

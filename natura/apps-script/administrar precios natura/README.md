@@ -27,3 +27,5 @@ Las funciones públicas llamadas desde los HTML conservan exactamente sus nombre
 - la edición de precios no modifica el formato de las celdas ni otros campos del producto.
 
 En el nivel de productos, el catálogo puede habilitar la edición autenticada de precios. El mismo proyecto también expone las operaciones administrativas de visibilidad y configuración utilizadas por el puente del catálogo.
+
+Los filtros administrativos `Ver productos sin precio` y `No mostrar ocultos` permiten elegir alcance por dispositivo: `Solo este dispositivo` guarda el estado en el navegador y `Todos los administradores` lo persiste en las propiedades del Apps Script para compartirlo entre dispositivos autorizados.

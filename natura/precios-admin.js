@@ -6,7 +6,7 @@
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
   const SHEET_ID=(()=>{try{return String(GOOGLE_SHEET_SOURCE?.spreadsheetId||"").trim()}catch(_){return "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs"}})();
   const rules=new Set();
-  let admin=false, adminMissingPriceOnly=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
+  let admin=false, adminMissingPriceOnly=false, adminHideHidden=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
   let capabilities=new Set(["precio"]);
   const requests=new Map();
   const CONFIG_ITEMS=[
@@ -16,6 +16,14 @@
     {key:"MOSTRAR_SPRE",label:"Mostrar SPRE",help:"Muestra u oculta la herramienta administrativa SPRE."},
     {key:"MOSTRAR_FOLLETO",label:"Mostrar Folleto",help:"Muestra u oculta la herramienta administrativa Folleto."}
   ];
+  const ADMIN_FILTER_ITEMS=[
+    {key:"ADMIN_VER_PRODUCTOS_SIN_PRECIO",id:"sin-precio",label:"Ver productos sin precio",help:"Muestra únicamente productos del inventario cuyo Precio está vacío."},
+    {key:"ADMIN_NO_MOSTRAR_OCULTOS",id:"no-ocultos",label:"No mostrar ocultos",help:"No muestra secciones, categorías, subcategorías, líneas ni productos marcados como ocultos. No cambia ni elimina su estado de visibilidad."}
+  ];
+  const adminFilterScopes=new Map();
+  const adminLocalStates=new Map();
+  const adminGlobalStates=new Map();
+  const ADMIN_SCOPE_LOCAL="local", ADMIN_SCOPE_GLOBAL="global";
 
   const css=document.createElement("style");
   css.textContent=`
@@ -35,19 +43,25 @@
   .catalog-admin-config-list{display:grid;gap:9px}.catalog-admin-config-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:11px 12px;border:1px solid #eadfdd;border-radius:13px;background:#fff}
   .catalog-admin-config-label{display:block;color:#352b2c;font:850 14px/1.25 Arial}.catalog-admin-config-help{display:block;margin-top:3px;color:#827477;font:12px/1.3 Arial}
   .catalog-admin-switch{min-width:112px;border:1px solid #d8c9c6;border-radius:999px;padding:8px 12px;background:#fdebec;color:#9a2e43;font:900 11px Arial;cursor:pointer}.catalog-admin-switch[aria-checked="true"]{background:#e7f7ed;border-color:#a9d6b8;color:#176b3a}.catalog-admin-switch:disabled{opacity:.62;cursor:wait}
+  .catalog-admin-filter-controls{display:flex;align-items:center;justify-content:flex-end;gap:9px;flex-wrap:wrap}.catalog-admin-scope{display:inline-flex;padding:3px;border:1px solid #dfd0cd;border-radius:999px;background:#f8f3f1}.catalog-admin-scope-btn{border:0;border-radius:999px;padding:7px 10px;background:transparent;color:#746568;font:800 10px Arial;cursor:pointer;white-space:nowrap}.catalog-admin-scope-btn[aria-pressed="true"]{background:#fff;color:#7f3e50;box-shadow:0 1px 5px #4b2f3520}.catalog-admin-scope-btn:disabled{opacity:.55;cursor:wait}
   .catalog-admin-config-status{margin:9px 1px 0;color:#78696b;font:12px/1.3 Arial}.catalog-admin-config-status.ok{color:#176b3a}.catalog-admin-config-status.err{color:#a02323}
-  @media(max-width:640px){.catalog-admin-config-row{grid-template-columns:1fr}.catalog-admin-switch{width:100%}}
+  body.catalog-admin-hide-hidden-active #grid > .catalog-admin-hidden,body.catalog-admin-hide-hidden-active #grid > .catalog-admin-inherited{display:none!important}
+  @media(max-width:760px){.catalog-admin-config-row{grid-template-columns:1fr}.catalog-admin-filter-controls{justify-content:stretch}.catalog-admin-scope{display:grid;grid-template-columns:1fr 1fr;flex:1 1 220px}.catalog-admin-switch{width:100%}}
   @media(max-width:380px){.price-admin-editor{grid-template-columns:1fr}.price-admin-save{width:100%}}
   `;
   document.head.appendChild(css);
 
+  initializeAdminFilterPreferences();
   window.CATALOG_ADMIN_MODE_ACTIVE=false;
   window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;
+  window.CATALOG_ADMIN_HIDE_HIDDEN=false;
   window.CATALOG_VISIBILITY_RULES=rules;
   window.filterVisibleProducts=list=>{
     const a=Array.isArray(list)?list:[];
     if(window.CATALOG_ADMIN_MODE_ACTIVE){
-      return adminMissingPriceOnly?a.filter(p=>p&&!p.isGiftGalleryImage&&p.hasPrice===false):a.slice();
+      let out=adminMissingPriceOnly?a.filter(p=>p&&!p.isGiftGalleryImage&&p.hasPrice===false):a.slice();
+      if(adminHideHidden) out=out.filter(p=>!isHidden(p));
+      return out;
     }
     return a.filter(p=>!isHidden(p));
   };
@@ -67,6 +81,35 @@
   function isDirectProduct(p){return rules.has(key("producto",p?.id||p?.code||""))}
   function cell(c){return !c?"":c.f!=null?String(c.f):c.v!=null?String(c.v):""}
   function stateBool(v){return ["activado","activo","true","verdadero","si","1","on"].includes(norm(v))}
+
+  function storageGet(key){try{return localStorage.getItem(key)}catch(_){return null}}
+  function storageSet(key,value){try{localStorage.setItem(key,value)}catch(_){}}
+  function adminScopeKey(item){return `irenismb_admin_scope_${item.key.toLowerCase()}_v1`}
+  function adminLocalKey(item){return `irenismb_admin_local_${item.key.toLowerCase()}_v1`}
+  function initializeAdminFilterPreferences(){
+    for(const item of ADMIN_FILTER_ITEMS){
+      let scope=storageGet(adminScopeKey(item));
+      let localRaw=storageGet(adminLocalKey(item));
+      if(item.key==="ADMIN_NO_MOSTRAR_OCULTOS"&&scope===null){
+        const legacy=storageGet("irenismb_admin_no_mostrar_ocultos_v1");
+        if(legacy!==null){scope=ADMIN_SCOPE_LOCAL;localRaw=legacy;storageSet(adminScopeKey(item),scope);storageSet(adminLocalKey(item),legacy==="1"?"1":"0")}
+      }
+      adminFilterScopes.set(item.key,scope===ADMIN_SCOPE_LOCAL?ADMIN_SCOPE_LOCAL:ADMIN_SCOPE_GLOBAL);
+      adminLocalStates.set(item.key,localRaw==="1");
+      adminGlobalStates.set(item.key,false);
+    }
+  }
+  function filterItem(key){return ADMIN_FILTER_ITEMS.find(item=>item.key===key)||null}
+  function filterScope(item){return adminFilterScopes.get(item.key)===ADMIN_SCOPE_LOCAL?ADMIN_SCOPE_LOCAL:ADMIN_SCOPE_GLOBAL}
+  function filterStateForScope(item){return filterScope(item)===ADMIN_SCOPE_LOCAL?!!adminLocalStates.get(item.key):!!adminGlobalStates.get(item.key)}
+  function syncEffectiveAdminFilters(){
+    const missing=filterItem("ADMIN_VER_PRODUCTOS_SIN_PRECIO"),hidden=filterItem("ADMIN_NO_MOSTRAR_OCULTOS");
+    adminMissingPriceOnly=missing?filterStateForScope(missing):false;
+    adminHideHidden=hidden?filterStateForScope(hidden):false;
+    window.CATALOG_ADMIN_MISSING_PRICE_ONLY=adminMissingPriceOnly;
+    window.CATALOG_ADMIN_HIDE_HIDDEN=adminHideHidden;
+    document.body?.classList.toggle("catalog-admin-hide-hidden-active",!!admin&&adminHideHidden);
+  }
 
   function loadRules(){return new Promise(resolve=>{
     if(!SHEET_ID){resolve();return} const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
@@ -101,22 +144,45 @@
   function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
   function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
   function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);pendingChannel="";connecting=false;btn.textContent="Administrar";if(openAfterConnect)startAdmin();openAfterConnect=false}
-  function startAdmin(){admin=true;adminMissingPriceOnly=false;window.CATALOG_ADMIN_MODE_ACTIVE=true;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");rebuild();if(capabilities.has("configuracion"))loadAdminConfig()}
-  function stopAdmin(){admin=false;adminMissingPriceOnly=false;window.CATALOG_ADMIN_MODE_ACTIVE=false;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");removeAdminUI();rebuild()}
+  function startAdmin(){admin=true;window.CATALOG_ADMIN_MODE_ACTIVE=true;syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");rebuild();if(capabilities.has("configuracion"))loadAdminConfig()}
+  function stopAdmin(){admin=false;window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");removeAdminUI();rebuild()}
   function removeAdminUI(){document.getElementById("catalogAdminConfig")?.remove();grid.querySelectorAll(".catalog-admin-vis").forEach(x=>x.remove());grid.querySelectorAll(".catalog-admin-has-vis").forEach(x=>x.classList.remove("catalog-admin-has-vis"));grid.querySelectorAll(".catalog-admin-hidden,.catalog-admin-inherited").forEach(x=>x.classList.remove("catalog-admin-hidden","catalog-admin-inherited"));grid.querySelectorAll(".card").forEach(removePrice)}
 
   function ensureConfigPanel(){
     let panel=document.getElementById("catalogAdminConfig");
-    if(panel){renderAdminMissingPriceToggle();return panel}
+    if(panel){renderAdminFilterRows();return panel}
     panel=document.createElement("section");panel.id="catalogAdminConfig";panel.className="catalog-admin-config";panel.setAttribute("aria-label","Configuración del catálogo");
     const rows=CONFIG_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-config-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-config-toggle="${item.key}">Cargando…</button></div>`).join("");
-    const adminFilter=`<div class="catalog-admin-config-row" data-admin-filter="sin-precio"><div><span class="catalog-admin-config-label">Ver productos sin precio</span><span class="catalog-admin-config-help">Filtro exclusivo del modo administrador. Muestra únicamente productos del inventario cuyo Precio está vacío.</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-missing-price-toggle>DESACTIVADO</button></div>`;
-    panel.innerHTML=`<div class="catalog-admin-config-head"><button type="button" class="catalog-admin-config-collapse" data-admin-config-collapse aria-expanded="false" aria-controls="catalogAdminConfigBody"><span>⚙ Configuración del catálogo</span><span class="catalog-admin-config-collapse-state">Mostrar</span></button></div><div class="catalog-admin-config-body" id="catalogAdminConfigBody" hidden><p class="catalog-admin-config-note">Los controles públicos se guardan en el administrador de Google y no dependen de una pestaña Configuracion. Los filtros locales solo afectan este navegador.</p><div class="catalog-admin-config-list">${rows}${adminFilter}</div><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
-    panel.addEventListener("click",e=>{const collapse=e.target.closest("[data-admin-config-collapse]");if(collapse){const body=panel.querySelector("#catalogAdminConfigBody"),expanded=collapse.getAttribute("aria-expanded")==="true";collapse.setAttribute("aria-expanded",expanded?"false":"true");if(body)body.hidden=expanded;const state=collapse.querySelector(".catalog-admin-config-collapse-state");if(state)state.textContent=expanded?"Mostrar":"Ocultar";return}const local=e.target.closest("[data-admin-missing-price-toggle]");if(local&&!local.disabled){toggleAdminMissingPrice(local);return}const b=e.target.closest("[data-config-toggle]");if(b&&!b.disabled)saveConfigToggle(b)});
-    grid.insertAdjacentElement("beforebegin",panel);renderAdminMissingPriceToggle();return panel;
+    const adminRows=ADMIN_FILTER_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-admin-filter-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><div class="catalog-admin-filter-controls"><div class="catalog-admin-scope" role="group" aria-label="Alcance de ${item.label}"><button type="button" class="catalog-admin-scope-btn" data-admin-filter-scope="local" data-admin-filter-key="${item.key}" aria-pressed="false">Solo este dispositivo</button><button type="button" class="catalog-admin-scope-btn" data-admin-filter-scope="global" data-admin-filter-key="${item.key}" aria-pressed="false">Todos los administradores</button></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-filter-toggle="${item.key}">DESACTIVADO</button></div></div>`).join("");
+    panel.innerHTML=`<div class="catalog-admin-config-head"><button type="button" class="catalog-admin-config-collapse" data-admin-config-collapse aria-expanded="false" aria-controls="catalogAdminConfigBody"><span>⚙ Configuración del catálogo</span><span class="catalog-admin-config-collapse-state">Mostrar</span></button></div><div class="catalog-admin-config-body" id="catalogAdminConfigBody" hidden><p class="catalog-admin-config-note">Los controles públicos se guardan en Google. En los filtros administrativos puedes elegir si la preferencia se guarda solo en este dispositivo o se comparte con todos los administradores.</p><div class="catalog-admin-config-list">${rows}${adminRows}</div><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
+    panel.addEventListener("click",e=>{
+      const collapse=e.target.closest("[data-admin-config-collapse]");
+      if(collapse){const body=panel.querySelector("#catalogAdminConfigBody"),expanded=collapse.getAttribute("aria-expanded")==="true";collapse.setAttribute("aria-expanded",expanded?"false":"true");if(body)body.hidden=expanded;const state=collapse.querySelector(".catalog-admin-config-collapse-state");if(state)state.textContent=expanded?"Mostrar":"Ocultar";return}
+      const scope=e.target.closest("[data-admin-filter-scope]");if(scope&&!scope.disabled){setAdminFilterScope(scope);return}
+      const filterToggle=e.target.closest("[data-admin-filter-toggle]");if(filterToggle&&!filterToggle.disabled){toggleAdminFilter(filterToggle);return}
+      const b=e.target.closest("[data-config-toggle]");if(b&&!b.disabled)saveConfigToggle(b)
+    });
+    grid.insertAdjacentElement("beforebegin",panel);renderAdminFilterRows();return panel;
   }
-  function renderAdminMissingPriceToggle(){const b=document.querySelector("[data-admin-missing-price-toggle]");if(!b)return;b.disabled=false;b.setAttribute("aria-checked",adminMissingPriceOnly?"true":"false");b.textContent=adminMissingPriceOnly?"ACTIVADO":"DESACTIVADO"}
-  function toggleAdminMissingPrice(button){adminMissingPriceOnly=!adminMissingPriceOnly;window.CATALOG_ADMIN_MISSING_PRICE_ONLY=adminMissingPriceOnly;renderAdminMissingPriceToggle();rebuild()}
+  function renderAdminFilterRows(){
+    for(const item of ADMIN_FILTER_ITEMS){
+      const row=document.querySelector(`[data-admin-filter-key="${item.key}"]`);if(!row)continue;
+      const scope=filterScope(item),toggle=row.querySelector(`[data-admin-filter-toggle="${item.key}"]`);
+      row.querySelectorAll(`[data-admin-filter-scope][data-admin-filter-key="${item.key}"]`).forEach(b=>{const active=b.dataset.adminFilterScope===scope;b.setAttribute("aria-pressed",active?"true":"false");b.disabled=false});
+      if(toggle){const active=filterStateForScope(item);toggle.disabled=scope===ADMIN_SCOPE_GLOBAL&&configLoading;toggle.setAttribute("aria-checked",active?"true":"false");toggle.textContent=toggle.disabled?"Cargando…":(active?"ACTIVADO":"DESACTIVADO")}
+    }
+  }
+  function setAdminFilterScope(button){
+    const item=filterItem(String(button.dataset.adminFilterKey||"").trim().toUpperCase());if(!item)return;
+    const scope=button.dataset.adminFilterScope===ADMIN_SCOPE_LOCAL?ADMIN_SCOPE_LOCAL:ADMIN_SCOPE_GLOBAL;adminFilterScopes.set(item.key,scope);storageSet(adminScopeKey(item),scope);syncEffectiveAdminFilters();renderAdminFilterRows();rebuild();
+  }
+  async function toggleAdminFilter(button){
+    const item=filterItem(String(button.dataset.adminFilterToggle||"").trim().toUpperCase());if(!item)return;
+    const scope=filterScope(item),next=!filterStateForScope(item);
+    if(scope===ADMIN_SCOPE_LOCAL){adminLocalStates.set(item.key,next);storageSet(adminLocalKey(item),next?"1":"0");syncEffectiveAdminFilters();renderAdminFilterRows();rebuild();return}
+    button.disabled=true;const old=button.textContent;button.textContent="Guardando…";setConfigStatus("");
+    try{const r=await request({tipo:"actualizar-configuracion",clave:item.key,activado:next});applyConfigValues(r?.valores||{[item.key]:r?.estado||(next?"ACTIVADO":"DESACTIVADO")},true);setConfigStatus("Preferencia compartida guardada.","ok")}catch(e){button.disabled=false;button.textContent=old;setConfigStatus(e.message||"No se pudo guardar la preferencia compartida.","err")}
+  }
   function setConfigStatus(text,cls=""){const el=document.getElementById("catalogAdminConfigStatus");if(!el)return;el.textContent=text||"";el.className="catalog-admin-config-status"+(cls?" "+cls:"")}
   function renderConfigValues(values){
     const source=values&&typeof values==="object"?values:{};
@@ -125,14 +191,14 @@
   function applyConfigValues(values,shouldRebuild=true){
     if(!values||typeof values!=="object")return;
     window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
-    for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO","MOSTRAR_SPRE","MOSTRAR_FOLLETO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState)}
-    renderConfigValues(values);
+    for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO","MOSTRAR_SPRE","MOSTRAR_FOLLETO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState);if(ADMIN_FILTER_ITEMS.some(item=>item.key===k))adminGlobalStates.set(k,stateBool(rawState))}
+    syncEffectiveAdminFilters();renderConfigValues(values);renderAdminFilterRows();
     try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}
     if(shouldRebuild){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();else if(typeof render==="function")render();if(typeof renderCartModal==="function"&&document.getElementById("cartModal")?.classList.contains("open"))renderCartModal()}catch(e){console.info(e)}}
   }
   async function loadAdminConfig(){
-    if(configLoading||!admin||!capabilities.has("configuracion"))return;configLoading=true;ensureConfigPanel();setConfigStatus("Cargando configuración…");document.querySelectorAll("[data-config-toggle]").forEach(b=>b.disabled=true);
-    try{const r=await request({tipo:"obtener-configuracion"});applyConfigValues(r?.valores||{},false);setConfigStatus("Configuración actualizada desde Google.","ok")}catch(e){renderConfigValues(window.REMOTE_CONTROL_VALUES||{});setConfigStatus(e.message||"No se pudo cargar la configuración.","err")}finally{configLoading=false}
+    if(configLoading||!admin||!capabilities.has("configuracion"))return;configLoading=true;ensureConfigPanel();setConfigStatus("Cargando configuración…");document.querySelectorAll("[data-config-toggle]").forEach(b=>b.disabled=true);renderAdminFilterRows();
+    try{const r=await request({tipo:"obtener-configuracion"});applyConfigValues(r?.valores||{},false);setConfigStatus("Configuración actualizada desde Google.","ok")}catch(e){renderConfigValues(window.REMOTE_CONTROL_VALUES||{});setConfigStatus(e.message||"No se pudo cargar la configuración.","err")}finally{configLoading=false;renderAdminFilterRows()}
   }
   async function saveConfigToggle(button){
     const k=String(button.dataset.configToggle||"").trim().toUpperCase(),current=button.getAttribute("aria-checked")==="true",next=!current;button.disabled=true;const old=button.textContent;button.textContent="Guardando…";setConfigStatus("");

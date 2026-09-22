@@ -7,19 +7,26 @@ const VISIBILIDAD_TIPOS = ["producto", "seccion", "categoria", "subcategoria", "
 
 const CONFIG_SHEET_NAME = "Configuracion";
 const CONFIG_PROPERTY_PREFIX = "CATALOGO_CONFIG_";
-const CONFIG_KEYS = [
+const CONFIG_PUBLIC_KEYS = [
   "REGISTRAR_VISITAS_PROPIAS",
   "MOSTRAR_CANTIDAD_STOCK",
   "MOSTRAR_PRECIOS_PRODUCTO",
   "MOSTRAR_SPRE",
   "MOSTRAR_FOLLETO"
 ];
+const CONFIG_ADMIN_KEYS = [
+  "ADMIN_VER_PRODUCTOS_SIN_PRECIO",
+  "ADMIN_NO_MOSTRAR_OCULTOS"
+];
+const CONFIG_KEYS = CONFIG_PUBLIC_KEYS.concat(CONFIG_ADMIN_KEYS);
 const CONFIG_DEFAULTS = Object.freeze({
   REGISTRAR_VISITAS_PROPIAS: "DESACTIVADO",
   MOSTRAR_CANTIDAD_STOCK: "DESACTIVADO",
   MOSTRAR_PRECIOS_PRODUCTO: "ACTIVADO",
   MOSTRAR_SPRE: "DESACTIVADO",
-  MOSTRAR_FOLLETO: "DESACTIVADO"
+  MOSTRAR_FOLLETO: "DESACTIVADO",
+  ADMIN_VER_PRODUCTOS_SIN_PRECIO: "DESACTIVADO",
+  ADMIN_NO_MOSTRAR_OCULTOS: "DESACTIVADO"
 });
 
 // ===================== ENDPOINT PRINCIPAL =====================
@@ -44,7 +51,7 @@ function doGet(evento) {
 function responderConfiguracionPublica_(callback) {
   let payload;
   try {
-    payload = obtenerConfiguracionWeb();
+    payload = obtenerConfiguracionPublicaWeb();
   } catch (error) {
     payload = {
       ok: false,

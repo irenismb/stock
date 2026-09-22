@@ -1,9 +1,21 @@
-// Configuración pública y persistencia de controles del catálogo.
+// Configuración pública y administrativa persistida del catálogo.
 
 function obtenerConfiguracionWeb() {
   return {
     ok: true,
     valores: leerValoresConfiguracion_(),
+    actualizadoEn: new Date().toISOString()
+  };
+}
+function obtenerConfiguracionPublicaWeb() {
+  const todos = leerValoresConfiguracion_();
+  const valores = {};
+  CONFIG_PUBLIC_KEYS.forEach(function(clave) {
+    valores[clave] = todos[clave];
+  });
+  return {
+    ok: true,
+    valores: valores,
     actualizadoEn: new Date().toISOString()
   };
 }
@@ -62,6 +74,7 @@ function leerValoresConfiguracion_() {
   return valores;
 }
 function reflejarConfiguracionEnHojaOpcional_(clave, estadoTexto) {
+  if (CONFIG_ADMIN_KEYS.indexOf(clave) !== -1) return false;
   const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
   const hoja = libro.getSheetByName(CONFIG_SHEET_NAME);
   if (!hoja) return false;

@@ -2125,6 +2125,7 @@
     const CATALOG_HISTORY_KEY = "irenismbCatalogNavigation";
     const CATALOG_EXIT_GUARD_KEY = "irenismbCatalogExitGuard";
     const CATALOG_RELOAD_VIEW_KEY = "irenismb_catalog_reload_view_v1";
+    const CATALOG_PERSISTENT_VIEW_KEY = "irenismb_catalog_last_view_v1";
     let lastCatalogHistoryIndex = 0;
 
     function catalogNavigationIsReload(){
@@ -2156,7 +2157,32 @@
         };
         sessionStorage.setItem(CATALOG_RELOAD_VIEW_KEY,JSON.stringify(snapshot));
         sessionStorage.setItem("irenismb_catalog_scroll_position",String(snapshot.scrollY));
+
+        localStorage.setItem(CATALOG_PERSISTENT_VIEW_KEY,JSON.stringify(snapshot));
       }catch(_){ }
+    }
+
+    function catalogUrlHasExplicitViewState(){
+      try{
+        const params=new URL(location.href).searchParams;
+        return ["q","sort","tags","audience","category","family","cat","brand","album"]
+          .some(key=>params.has(key));
+      }catch(_){
+        return false;
+      }
+    }
+
+    function readCatalogPersistentViewState(){
+      if(catalogNavigationIsReload()) return null;
+      try{
+        const raw=localStorage.getItem(CATALOG_PERSISTENT_VIEW_KEY);
+        if(!raw) return null;
+        const snapshot=JSON.parse(raw);
+        if(!snapshot || snapshot.version!==1 || snapshot.pathname!==location.pathname) return null;
+        return snapshot;
+      }catch(_){
+        return null;
+      }
     }
 
     function readCatalogReloadViewState(){
@@ -3255,11 +3281,14 @@ async function init(){
   loadClientFromLS();
   loadAddressFromLS();
   const reloadViewState=readCatalogReloadViewState();
-  applyCatalogReloadViewState(reloadViewState);
+  const persistentViewState=reloadViewState ? null : readCatalogPersistentViewState();
+  const startupViewState=reloadViewState || (catalogUrlHasExplicitViewState() ? null : persistentViewState);
+  const startupAdminState=reloadViewState || persistentViewState;
+  applyCatalogReloadViewState(startupViewState);
   await initializeRemoteCatalogConfiguration();
   await loadProducts();
   installCatalogExitGuardIfAtRoot();
   startInventoryAutoRefresh();
-  await restoreCatalogAdminAfterReload(reloadViewState);
+  await restoreCatalogAdminAfterReload(startupAdminState);
   uxRestoreScrollPosition();
 }

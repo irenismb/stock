@@ -62,7 +62,7 @@
   function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}
   function visibilityId(t,id){const type=norm(t),raw=String(id??"").trim();if(type==="producto"&&/^\d{1,4}$/.test(raw))return raw.padStart(4,"0");return norm(raw)}
   function key(t,id){return `${norm(t)}::${visibilityId(t,id)}`}
-  function ids(p){const c=norm(p?.category),s=norm(p?.subcategory),f=norm(p?.fragranceFamily),sec=norm(p?.section);return{sec,c,s:c&&s?`${c}|${s}`:"",f:c&&s&&f?`${c}|${s}|${f}`:""}}
+  function ids(p){const c=norm(p?.category),s=norm(p?.subcategory),f=norm(p?.line||p?.fragranceFamily),sec=norm(p?.section);return{sec,c,s:c&&s?`${c}|${s}`:"",f:c&&s&&f?`${c}|${s}|${f}`:""}}
   function isHidden(p){if(!p)return false;const i=ids(p),code=visibilityId("producto",p.id||p.code||"");return (code&&rules.has(key("producto",code)))||(i.sec&&rules.has(key("seccion",i.sec)))||(i.c&&rules.has(key("categoria",i.c)))||(i.s&&rules.has(key("subcategoria",i.s)))||(i.f&&rules.has(key("familia",i.f)))}
   function isDirectProduct(p){return rules.has(key("producto",p?.id||p?.code||""))}
   function cell(c){return !c?"":c.f!=null?String(c.f):c.v!=null?String(c.v):""}

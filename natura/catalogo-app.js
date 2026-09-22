@@ -8,7 +8,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:L: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa y Descripción.
+    // Hoja Productos, estructura A:N: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura y Línea.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -259,8 +259,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:L",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L",
+        range: "A:N",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N",
         tqx: `out:json;responseHandler:${callbackName}`,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
         // Cada apertura del catálogo consulta la versión más reciente de Productos.
@@ -326,7 +326,8 @@
               stockText: value(9),
               referenceExternal: value(10),
               description: value(11),
-              codeNatura: "",
+              codeNatura: value(12),
+              line: value(13),
               fullTxtRecord: [
                 value(6),
                 "",
@@ -765,6 +766,7 @@
       const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
       const subcategory = String(row.subcategory || "").trim();
       const fragranceFamily = String(row.fragranceFamily || "").trim();
+      const line = String(row.line || "").trim();
       const condition = String(row.condition || "").trim();
       if(!/^\d{4}$/.test(code) || !name) return null;
 
@@ -791,6 +793,7 @@
         category,
         subcategory,
         fragranceFamily,
+        line,
         condition,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
         price: parseOptionalWholeNumber(priceText) ?? 0,
@@ -810,7 +813,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, fragranceFamily, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, line, fragranceFamily, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -828,6 +831,7 @@
             category: "Regalos",
             subcategory: "",
             fragranceFamily: "",
+            line: "",
             condition: "",
             brand: "",
             price: 0,
@@ -873,6 +877,7 @@
         String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
         String(a?.category || "").localeCompare(String(b?.category || ""), "es", { sensitivity:"base" }) ||
         String(a?.subcategory || "").localeCompare(String(b?.subcategory || ""), "es", { sensitivity:"base" }) ||
+        String(a?.line || "").localeCompare(String(b?.line || ""), "es", { sensitivity:"base" }) ||
         String(a?.fragranceFamily || "").localeCompare(String(b?.fragranceFamily || ""), "es", { sensitivity:"base" }) ||
         String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" })
       );
@@ -1247,7 +1252,7 @@
 
     function navigationFamilyForProduct(p){
       if(!p) return "";
-      return String(p.fragranceFamily || "").trim();
+      return String(p.line || "").trim();
     }
 
     function productsForNavigationGroup(audienceLabel, list = all){
@@ -1392,10 +1397,10 @@
         byFamily.set(key,found);
       }
       return Array.from(byFamily.values())
-        .sort((a,b)=>a.label.localeCompare(b.label,"es",{sensitivity:"base"}))
+        .map(album=>({ ...album, count:album.products.length }))
+        .sort((a,b)=>b.count-a.count || a.label.localeCompare(b.label,"es",{sensitivity:"base"}))
         .map((album,index)=>({
           ...album,
-          count:album.products.length,
           onlyUnstructured:false,
           colorIndex:index % ALBUM_COLORS.length
         }));
@@ -1523,7 +1528,7 @@
             "@type":"Product",
             "name":String(p.name || ""),
             "description":String(p.description || ""),
-            "category":[p.category, p.subcategory, p.fragranceFamily]
+            "category":[p.category, p.subcategory, p.line]
               .filter(Boolean)
               .join(" > ")
           };
@@ -1598,7 +1603,8 @@
       const subcategory = navigationCategoryForProduct(p);
       if(mainGroup) parts.push(mainGroup);
       if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) parts.push(subcategory);
-      if(p.fragranceFamily) parts.push(p.fragranceFamily);
+      if(p.line) parts.push(p.line);
+      if(p.fragranceFamily && cleanNavKey(p.fragranceFamily) !== cleanNavKey(p.line)) parts.push(p.fragranceFamily);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         parts.push(hasKnownStock ? `Stock: ${stockVal}` : "Stock: Por confirmar");
@@ -2702,7 +2708,7 @@ function syncFilterVisibility(){
   if(grid){
     grid.classList.toggle("album-grid-mode",showAlbumGrid);
     grid.classList.toggle("root-nav-mode",showAlbumGrid&&!selectedAudience);
-    const label=!selectedAudience?"Secciones principales":(directSelected?"Productos":(!selectedCategory?"Subcategorías":(albums.length>0&&!selectedFamily?"Familias olfativas":"Productos")));
+    const label=!selectedAudience?"Categorías principales":(directSelected?"Productos":(!selectedCategory?"Subcategorías":(albums.length>0&&!selectedFamily?"Líneas":"Productos")));
     grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
   }
   if(catalogEntryIntro){

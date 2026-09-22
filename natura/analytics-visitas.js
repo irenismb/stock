@@ -166,19 +166,22 @@
         url: "https://ipapi.co/json/",
         ciudad: d => d.city,
         departamento: d => d.region || d.region_code,
-        pais: d => d.country_name || d.country
+        pais: d => d.country_name || d.country,
+        ip: d => d.ip
       },
       {
         url: "https://api.db-ip.com/v2/free/self",
         ciudad: d => d.city,
         departamento: d => d.stateProv,
-        pais: d => d.countryName || d.countryCode
+        pais: d => d.countryName || d.countryCode,
+        ip: d => d.ipAddress
       },
       {
         url: "https://ipwho.is/",
         ciudad: d => d.city,
         departamento: d => d.region,
         pais: d => d.country || d.country_code,
+        ip: d => d.ip,
         fallo: d => d && d.success === false
       }
     ];
@@ -194,6 +197,7 @@
         const ciudad = normalizarTexto(servicio.ciudad(datos) || "");
         const departamento = normalizarTexto(servicio.departamento(datos) || "");
         const pais = normalizarTexto(servicio.pais(datos) || "");
+        const ipExterna = normalizarIpExterna(servicio.ip ? servicio.ip(datos) : "");
 
         if (ciudad || pais) {
           return {
@@ -204,7 +208,8 @@
             fuente: "IP",
             lat: "",
             lng: "",
-            acc: ""
+            acc: "",
+            ipExterna
           };
         }
       } catch (error) {
@@ -223,6 +228,33 @@
     } finally {
       clearTimeout(temporizador);
     }
+  }
+
+
+  function normalizarIpExterna(value) {
+    const ip = String(value || "").trim();
+    if (!ip || ip.length > 64 || /\s/.test(ip)) return "";
+    return /^[0-9a-f:.]+$/i.test(ip) ? ip : "";
+  }
+
+  async function obtenerIpExterna() {
+    const servicios = [
+      { url: "https://ipapi.co/json/", ip: d => d.ip },
+      { url: "https://api.db-ip.com/v2/free/self", ip: d => d.ipAddress },
+      { url: "https://ipwho.is/", ip: d => d.ip, fallo: d => d && d.success === false }
+    ];
+
+    for (const servicio of servicios) {
+      try {
+        const respuesta = await fetchConTiempo(servicio.url, 5000);
+        if (!respuesta.ok) continue;
+        const datos = await respuesta.json();
+        if (servicio.fallo && servicio.fallo(datos)) continue;
+        const ip = normalizarIpExterna(servicio.ip(datos));
+        if (ip) return ip;
+      } catch (_) {}
+    }
+    return "";
   }
 
   function esIpLocalNumerica(value) {
@@ -294,9 +326,10 @@
           ])
         : Promise.resolve({});
 
-      const [contexto, ipLocal] = await Promise.all([
+      const [contexto, ipLocal, ipExterna] = await Promise.all([
         contextoPromise,
-        obtenerIpLocalNumerica()
+        obtenerIpLocalNumerica(),
+        ubicacion.ipExterna ? Promise.resolve(ubicacion.ipExterna) : obtenerIpExterna()
       ]);
       const direccion = normalizarDireccion(
         ubicacion.direccion || [ubicacion.ciudad, ubicacion.departamento, ubicacion.pais].filter(Boolean).join(", ")
@@ -333,6 +366,7 @@
         marca: String(contexto.marca || ""),
         modelo: String(contexto.modelo || ""),
         ip_local: String(ipLocal || ""),
+        ip_externa: String(ipExterna || ""),
         origen: origenTelegram,
         origen_actual: origenActual,
         primer_origen: primerOrigen,

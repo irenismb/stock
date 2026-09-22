@@ -60,6 +60,7 @@ function sendVisitToTelegram_(data){
     "🔔 Nueva visita al catálogo Natura",
     `👤 Visitante: ${visibleName} · ${visitLabel}`,
     data.idNavegador ? `🆔 ID navegador: ${data.idNavegador}` : "",
+    data.ipExterna ? `🌐 IP externa: ${data.ipExterna}` : "",
     data.ipLocal ? `🏠 IP local: ${data.ipLocal}` : "",
     `📍 Ubicación: ${locationText}`,
     `🎯 GPS: ${gpsText}`,

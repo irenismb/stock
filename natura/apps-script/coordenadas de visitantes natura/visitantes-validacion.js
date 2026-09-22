@@ -87,6 +87,21 @@ function safeClientText_(value, maxLen){
   return text;
 }
 
+
+function normalizeExternalIp_(value){
+  const ip = safePlainText_(value, 64);
+  if (!ip || /\s/.test(ip)) return "";
+
+  const ipv4 = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (ipv4){
+    const parts = ipv4.slice(1).map(Number);
+    if (parts.some(part => part < 0 || part > 255)) return "";
+    return ip;
+  }
+
+  return /^[0-9a-f:]+$/i.test(ip) && ip.includes(":") ? ip : "";
+}
+
 function boundedWholeNumber_(value, min, max){
   if (value == null || String(value).trim() === "") return min;
   const n = Number(value);

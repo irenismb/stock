@@ -158,6 +158,7 @@ function handleWriteRequest_(e){
     const modelVal = safeClientText_(p.modelo, 120);
     const ipLocalRaw = safePlainText_(p.ip_local, 64);
     const ipLocalVal = isPrivateIpv4_(ipLocalRaw) ? ipLocalRaw : "";
+    const ipExternaVal = normalizeExternalIp_(p.ip_externa);
     const originVal = safeClientText_(p.origen, 300);
     const categoryVal = safeClientText_(p.categoria, 120);
     const productVal = safeClientText_(p.producto, 180);
@@ -267,6 +268,7 @@ function handleWriteRequest_(e){
       marca: brandVal,
       modelo: modelVal,
       ipLocal: ipLocalVal,
+      ipExterna: ipExternaVal,
       origen: originVal,
       categoria: categoryVal,
       producto: productVal,

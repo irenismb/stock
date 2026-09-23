@@ -159,6 +159,11 @@
     grid.classList.remove("quick-image-search");
     if(!active) return;
 
+    if(window.CATALOG_INITIAL_LOAD_READY !== true){
+      count.hidden = true;
+      return;
+    }
+
     const products = directProducts();
     if(products === null) return;
 
@@ -195,8 +200,8 @@
     }
 
     if(count){
-      count.hidden = false;
       count.textContent = `${products.length} ${products.length === 1 ? "producto" : "productos"}`;
+      if(window.CATALOG_INITIAL_LOAD_READY === true) count.hidden = false;
     }
   }
 
@@ -506,9 +511,9 @@
 
   function syncLoadingUi(){
     const text = String(count.textContent || "").trim();
-    const hasCatalogCards = !!grid.querySelector(".card,.album-card");
+    const catalogReady = window.CATALOG_INITIAL_LOAD_READY === true;
 
-    if(initialLoading && (hasCatalogCards || isHardError(text))) initialLoading = false;
+    if(initialLoading && (catalogReady || isHardError(text))) initialLoading = false;
 
     if(initialLoading){
       count.hidden = true;
@@ -530,6 +535,7 @@
   const observer = new MutationObserver(queueSync);
   observer.observe(count, {childList:true, characterData:true,subtree:true});
   observer.observe(grid, {childList:true, subtree:true});
+  window.addEventListener("catalog-initial-load-ready", queueSync, {once:true});
   syncLoadingUi();
 })();
 

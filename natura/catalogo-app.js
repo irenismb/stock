@@ -107,12 +107,6 @@
     function shouldShowProductImageInNavigationPanels(){
       return true;
     }
-    const _hasIdle = ("requestIdleCallback" in window);
-    function runIdle(fn, timeout=1200){
-      if(_hasIdle) return requestIdleCallback(fn, { timeout });
-      return setTimeout(fn, Math.min(250, timeout));
-    }
-
     const LOGOS_DIR = "logos";
 
     const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
@@ -463,8 +457,6 @@
       if(changed && rebuild && allLoadedProducts.length){
         rebuildCatalogVisibility();
         syncWordToggleButton();
-        rebuildSearchTicker();
-        updateTickerVisibility();
         if(cartModal && cartModal.classList.contains("open")) renderCartModal();
       }
 
@@ -587,17 +579,6 @@
         .join("/");
     }
 
-    function publishedGitHubAssetUrl(relativePath){
-      const clean = String(relativePath || "").replace(/^\/+/, "");
-      return `${SITE_BASE}${encodeRepoPath(clean)}`;
-    }
-
-    function extractGlobalProductCode(filename){
-      const name = String(filename || "").trim();
-      const match = name.match(/^(\d{4})(?=$|[_.\s-])/);
-      return match ? match[1] : "";
-    }
-
     function extensionOfFilename(filename){
       const name = String(filename || "");
       const dot = name.lastIndexOf(".");
@@ -696,64 +677,6 @@
       if(!digits) return null;
       const parsed = Number(digits);
       return Number.isSafeInteger(parsed) ? parsed : null;
-    }
-
-    function parseOfficialInventoryRecord(item){
-      const rawName = String((item && item.name) || "").trim();
-      const rawDescription = String((item && item.description) || "").trim();
-      const officialRecordPattern = /^([\s\S]+?)\.\s*Precio:\s*([\d.\s]*)\s*Costo:\s*([\d.\s]*)\s*Stock:\s*([\d\s]*)\s*Referencia externa:\s*([\s\S]*)$/i;
-
-      let match = null;
-      for(const candidate of [rawDescription, rawName]){
-        match = candidate.match(officialRecordPattern);
-        if(match) break;
-      }
-
-      if(!match){
-        const fallbackPrice = parseOptionalWholeNumber(item && item.priceMineText);
-        const numericPrice = Number(item && item.priceMine);
-        const explicitStock = parseOptionalWholeNumber(item && item.stock);
-        return {
-          matched: false,
-          name: rawName,
-          description: rawDescription,
-          price: fallbackPrice ?? (numericPrice > 0 ? numericPrice : 0),
-          hasPrice: fallbackPrice !== null || numericPrice > 0,
-          stock: explicitStock,
-          referenceExternal: ""
-        };
-      }
-
-      const priceText = match[2].trim();
-      const stockText = match[4].trim();
-      const referenceAndDescription = match[5].trim();
-      let referenceExternal = "";
-      let description = referenceAndDescription;
-      const firstSentenceEnd = referenceAndDescription.indexOf(". ");
-      if(firstSentenceEnd > 0){
-        const possibleReference = referenceAndDescription.slice(0, firstSentenceEnd).trim();
-        const remainingDescription = referenceAndDescription.slice(firstSentenceEnd + 2).trim();
-        const words = possibleReference.split(/\s+/).filter(Boolean);
-        const connectors = new Set(["a", "al", "de", "del", "el", "en", "la", "las", "los", "para", "y"]);
-        const looksLikeSourceLabel = words.length > 0
-          && words.length <= 8
-          && possibleReference.length <= 80
-          && words.every(word => connectors.has(normalizeText(word)) || /^[A-ZÁÉÍÓÚÜÑ0-9]/.test(word));
-        if(looksLikeSourceLabel && remainingDescription){
-          referenceExternal = possibleReference;
-          description = remainingDescription;
-        }
-      }
-
-      return {
-        matched: true,
-        name: match[1].trim(),
-        description,
-        price: parseOptionalWholeNumber(priceText) ?? 0,
-        hasPrice: Boolean(priceText),
-        stock: parseOptionalWholeNumber(stockText),
-        referenceExternal
-      };
     }
 
     function makeProductFromGoogleSheet(entry){
@@ -858,51 +781,6 @@
           };
         })
         .filter(Boolean);
-    }
-
-    function clearLegacyProductCaches(){
-      return;
-    }
-
-    function updateCatalogFooterProducts(products){
-      const list = document.getElementById("beautyProductsList");
-      const count = document.querySelector(".beauty-products-count");
-      const source = Array.isArray(products) ? products : [];
-      const namedProducts = source.filter(product => product && String(product.name || "").trim());
-
-      if(count){
-        count.textContent = `${namedProducts.length} ${namedProducts.length === 1 ? "producto" : "productos"}`;
-      }
-      if(!list) return;
-
-      const sorted = source.slice().sort((a,b)=>
-        String(a?.section || "").localeCompare(String(b?.section || ""), "es", { sensitivity:"base" }) ||
-        String(a?.category || "").localeCompare(String(b?.category || ""), "es", { sensitivity:"base" }) ||
-        String(a?.subcategory || "").localeCompare(String(b?.subcategory || ""), "es", { sensitivity:"base" }) ||
-        String(a?.line || "").localeCompare(String(b?.line || ""), "es", { sensitivity:"base" }) ||
-        String(a?.fragranceFamily || "").localeCompare(String(b?.fragranceFamily || ""), "es", { sensitivity:"base" }) ||
-        String(a?.name || "").localeCompare(String(b?.name || ""), "es", { sensitivity:"base" })
-      );
-      const fragment = document.createDocumentFragment();
-      for(const product of sorted){
-        const name = String(product?.name || "").trim();
-        if(!name) continue;
-
-        const item = document.createElement("li");
-        item.dataset.productCode = String(product?.id || "").trim();
-
-        const title = document.createElement("strong");
-        title.className = "beauty-product-name";
-        title.textContent = name;
-
-        const meta = document.createElement("span");
-        meta.className = "beauty-product-meta";
-        meta.textContent = `Código ${String(product?.id || "").trim()}`;
-
-        item.append(title, meta);
-        fragment.appendChild(item);
-      }
-      list.replaceChildren(fragment);
     }
 
     const imgModal = document.getElementById("imgModal");
@@ -1084,7 +962,6 @@
     let all = [];
     let productById = new Map();
 
-    const ROOT_ALBUM_KEY = "__root__";
     const ALBUM_COLORS = [
       { top:"#f3a7b9", base:"#e790ab", tab:"#eb99b1", shadow:"rgba(203, 112, 145, .32)" },
       { top:"#82ace8", base:"#5f8fda", tab:"#6f9ee1", shadow:"rgba(77, 123, 205, .30)" },
@@ -1269,11 +1146,6 @@
       return !products.some(p => String(p && p.subcategory || "").trim());
     }
 
-    function isDirectProductSection(sectionLabel){
-      const products = (Array.isArray(all) ? all : []).filter(p => cleanNavKey(p && p.section) === cleanNavKey(sectionLabel));
-      return products.length > 0 && !products.some(p => String(p && p.subcategory || "").trim());
-    }
-
     function collectAlbumPreview(found, p){
       if(!found.cover) found.cover = p;
       const previewImage = String((p && p.docsImageUrl) || (p && p.imgFilename) || "").trim();
@@ -1434,17 +1306,6 @@
       }else{
         selectedAlbumKey = selectedAudience ? `audience::${cleanNavKey(selectedAudience)}` : "";
       }
-    }
-
-    function getProductAlbumKey(p){
-      return cleanNavKey(navigationCategoryForProduct(p) || "General") || ROOT_ALBUM_KEY;
-    }
-
-    function albumLabelFromKey(key){
-      const found = albumByKey.get(String(key || ""));
-      if(found) return found.label;
-      if(key === ROOT_ALBUM_KEY) return "General";
-      return categoryDisplayLabel(key);
     }
 
     function filterVisibleProducts(list){
@@ -1767,13 +1628,8 @@
     const albumNavHost = document.getElementById("albumNavHost");
     const albumBackBtn = document.getElementById("albumBackBtn");
     const albumPath = document.getElementById("albumPath");
-    const catalogEntryIntro = document.getElementById("catalogEntryIntro");
-    const catalogEntryTitle = document.getElementById("catalogEntryTitle");
-    const catalogEntryText = document.getElementById("catalogEntryText");
 
     const searchWrap = document.getElementById("searchWrap");
-    const searchTicker = document.getElementById("searchTicker");
-    const tickerInner = document.getElementById("tickerInner");
 
     const countSlot = document.getElementById("countSlot");
     const topline = document.getElementById("topline");
@@ -2093,14 +1949,6 @@
       }
     }
 
-    function fillSelect(sel, values){
-      clearSelectButKeepFirst(sel);
-      for(const v of values){
-        const opt = document.createElement("option");
-        opt.value = v; opt.textContent = v;
-        sel.appendChild(opt);
-      }
-    }
     function readStateFromUrl(){
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
@@ -2564,7 +2412,6 @@
 
       syncFilterVisibility();
       syncWordToggleButton();
-      updateTickerVisibility();
       renderWordSuggestions();
       updateCountAttention();
       scheduleWriteStateToUrl();
@@ -2709,25 +2556,11 @@
       stopCatalogLoadingProgress();
       if(countEl) countEl.textContent = msg || "Error al cargar productos.";
     }
-   function buildCategoriesAndBrands(list){
-      const cats = new Set();
-      const brands = new Set();
-      for(const p of list){
-        if(p.category) cats.add(p.category);
-        if(p.brand) brands.add(p.brand);
-      }
-      return {
-        cats: Array.from(cats).sort((a,b)=> a.localeCompare(b,"es",{sensitivity:"base"})),
-        brands: Array.from(brands).sort((a,b)=> a.localeCompare(b,"es",{sensitivity:"base"}))
-      };
-    }
-
     function rebuildCatalogVisibility(){
       all = filterVisibleProducts(allLoadedProducts);
       productById = new Map(all.map(p => [String(p.id), p]));
       refreshNavigationAlbums();
 
-      updateCatalogFooterProducts(all);
       scheduleJsonLdUpdate();
       refreshFilterOptionsForScope();
       sanitizeCartWithStock();
@@ -2745,7 +2578,6 @@
         window.CATALOG_INITIAL_LOAD_READY = false;
         startCatalogLoadingProgress();
       }
-      clearLegacyProductCaches();
 
       try{
         await warmupPlaceholderOnce();
@@ -2809,7 +2641,6 @@
         productById = new Map(all.map(p => [String(p.id), p]));
       }
 
-      try{ updateCatalogFooterProducts(all); }catch(err){ console.warn("No se pudo actualizar el pie del catálogo.", err); }
       try{ scheduleJsonLdUpdate(); }catch(err){ console.warn("No se pudo actualizar JSON-LD.", err); }
       try{ refreshFilterOptionsForScope(); }catch(err){ console.warn("No se pudieron actualizar todos los filtros.", err); }
       try{ sanitizeCartWithStock(); }catch(err){ console.warn("No se pudo validar el carrito contra el stock.", err); }
@@ -2996,15 +2827,6 @@ function uxFlashAdded(card,p){
   },850);
 }
 
-function rebuildSearchTicker(){
-  if(tickerInner) tickerInner.innerHTML="";
-  if(searchWrap) searchWrap.classList.remove("show-ticker");
-}
-
-function updateTickerVisibility(){
-  if(searchWrap) searchWrap.classList.remove("show-ticker");
-}
-
 function syncWordToggleButton(){
   if(!toggleWordPanelBtn) return;
   const canToggle=shouldAllowSuggestionToggle();
@@ -3104,14 +2926,6 @@ function syncFilterVisibility(){
     const label=!selectedAudience?"Categorías principales":(directSelected?"Productos":(!selectedCategory?"Subcategorías":(albums.length>0&&!selectedFamily?"Líneas":"Productos")));
     grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
   }
-  if(catalogEntryIntro){
-    const hasTerms=getCombinedWordTerms().length>0;
-    catalogEntryIntro.hidden=hasTerms||!!selectedCategory||directSelected;
-    if(catalogEntryTitle) catalogEntryTitle.textContent=selectedAudience||"¿Qué estás buscando?";
-    if(catalogEntryText) catalogEntryText.textContent=selectedAudience?(directSelected?"Explora los productos disponibles.":"Elige una categoría para ver los productos disponibles."):"Elige una categoría para comenzar.";
-  }
-  rebuildSearchTicker();
-  updateTickerVisibility();
   uxRenderFilterSummary();
 }
 
@@ -3402,9 +3216,6 @@ function bindFilters(){
     render();
     uxScrollToCatalogStart();
   });
-  qInp.addEventListener("focus",updateTickerVisibility);
-  qInp.addEventListener("blur",updateTickerVisibility);
-  window.addEventListener("resize",()=>{rebuildSearchTicker();updateTickerVisibility();},{passive:true});
   window.addEventListener("scroll",uxSaveScrollPosition,{passive:true});
   window.addEventListener("pagehide",captureCatalogReloadViewState);
   window.addEventListener("beforeunload",captureCatalogReloadViewState);
@@ -3423,8 +3234,6 @@ async function init(){
   initSPREFeature();
   if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
   syncWordToggleButton();
-  rebuildSearchTicker();
-  updateTickerVisibility();
   updateCountAttention();
   loadClientFromLS();
   loadAddressFromLS();

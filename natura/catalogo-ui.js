@@ -483,11 +483,12 @@
     return /error|no se pudieron cargar|no se pudo cargar|reintenta más tarde/i.test(String(text || ""));
   }
 
-  function ensureLoadingState(){
+  function ensureLoadingState(message="Cargando productos…"){
+    const loadingText = String(message || "Cargando productos…").trim() || "Cargando productos…";
     const existing = grid.querySelector(".empty-state");
     if(existing){
       const title = existing.querySelector(".empty-state-title");
-      if(title && title.textContent !== "Cargando productos…") title.textContent = "Cargando productos…";
+      if(title && title.textContent !== loadingText) title.textContent = loadingText;
       existing.querySelector(".empty-state-text")?.remove();
       existing.querySelector(".empty-state-actions")?.remove();
       return;
@@ -498,7 +499,7 @@
     state.className = "empty-state catalog-loading-state";
     const title = document.createElement("strong");
     title.className = "empty-state-title";
-    title.textContent = "Cargando productos…";
+    title.textContent = loadingText;
     state.appendChild(title);
     grid.replaceChildren(state);
   }
@@ -511,7 +512,7 @@
 
     if(initialLoading){
       count.hidden = true;
-      ensureLoadingState();
+      ensureLoadingState(text);
     }else if(count.hidden){
       count.hidden = false;
     }

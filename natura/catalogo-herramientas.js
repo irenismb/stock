@@ -283,26 +283,6 @@ function initCollageFeature(){
     .collage-download:disabled,.collage-share:disabled{opacity:.6;cursor:wait}
     .collage-selection-hint{width:min(590px,100%);margin:0;padding:13px 14px;border-radius:14px;background:rgba(185,149,79,.10);border:1px solid rgba(185,149,79,.28);color:#f3dfab;font-size:13px;line-height:1.4;font-weight:800;text-align:center}
     .card .description{text-align:justify!important;text-align-last:left!important;text-justify:inter-word!important;hyphens:auto!important;-webkit-hyphens:auto!important}
-    .marketplace-preview-modal{position:fixed;inset:0;z-index:2210;display:none;align-items:center;justify-content:center;padding:18px}
-    .marketplace-preview-modal.open{display:flex}
-    .marketplace-preview-backdrop{position:absolute;inset:0;background:rgba(35,26,28,.62);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-    .marketplace-preview-shell{position:relative;z-index:1;width:min(860px,94vw);max-height:92vh;overflow:auto;background:#fffdfb;border:1px solid #eadfda;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.28);padding:22px}
-    .marketplace-preview-close{position:sticky;top:0;float:right;z-index:3;width:42px;height:42px;border-radius:999px;border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360;font-size:22px;line-height:1;cursor:pointer}
-    .marketplace-preview-heading{padding:4px 56px 12px 2px;text-align:center}
-    .marketplace-preview-title{margin:0;color:#352b2c;font-size:clamp(23px,3vw,34px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
-    .marketplace-preview-subtitle{margin:8px 0 0;color:#78696b;font-size:14px;line-height:1.35;font-weight:700}
-    .marketplace-preview-stage{clear:both;display:flex;justify-content:center;padding:2px 0 8px}
-    .marketplace-preview-image{display:block;width:min(100%,720px);height:auto;border-radius:18px;border:1px solid #eadfda;background:linear-gradient(180deg,#fffdfa 0%,#f4eee9 100%);box-shadow:0 10px 24px rgba(141,83,96,.12)}
-    .marketplace-preview-status{margin:12px auto 2px;text-align:center;color:#78696b;font-size:14px;line-height:1.35;font-weight:700;max-width:680px}
-    .marketplace-preview-actions{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}
-    .marketplace-preview-download,.marketplace-preview-share,.marketplace-preview-secondary{min-height:44px;min-width:200px;padding:10px 20px;border-radius:13px;font-weight:950;cursor:pointer}
-    .marketplace-preview-download{border:1px solid #a55f70;background:#a55f70;color:#fff;box-shadow:0 8px 22px rgba(165,95,112,.22)}
-    .marketplace-preview-download:hover{background:#8f4f60;border-color:#8f4f60}
-    .marketplace-preview-share{border:1px solid #b9954f;background:#fff7ea;color:#8d5360;box-shadow:0 8px 22px rgba(185,149,79,.14)}
-    .marketplace-preview-share:hover{background:#fff0cf;border-color:#b9954f}
-    .marketplace-preview-secondary{border:1px solid #d9c9c1;background:#fff8f6;color:#8d5360}
-    .marketplace-preview-secondary:hover{background:#fff2ee;border-color:#b9954f}
-    .marketplace-preview-download:disabled,.marketplace-preview-share:disabled,.marketplace-preview-secondary:disabled{opacity:.62;cursor:wait}
     .collage-tree{clear:both}
     .collage-branch{margin-top:20px;border-left:2px solid rgba(125,211,252,.28);padding-left:14px}
     .collage-branch .collage-branch{margin-left:26px;margin-top:18px;border-left-color:rgba(34,211,168,.28)}
@@ -341,11 +321,6 @@ function initCollageFeature(){
       .collage-format-choices{grid-template-columns:1fr}
       .collage-type-option,.collage-format-option,.collage-download,.collage-share,.collage-social-btn{width:100%;max-width:320px}
       .collage-social-actions{grid-template-columns:1fr;max-width:320px}
-      .marketplace-preview-modal{padding:10px}
-      .marketplace-preview-shell{width:min(96vw,96vh);max-height:96vh;border-radius:18px;padding:14px}
-      .marketplace-preview-heading{padding-right:44px}
-      .marketplace-preview-actions{flex-direction:column}
-      .marketplace-preview-download,.marketplace-preview-share,.marketplace-preview-secondary{width:100%;max-width:320px}
       .collage-branch{padding-left:10px;margin-top:16px}
       .collage-branch .collage-branch{margin-left:14px;margin-top:14px}
       #collageBtn{padding-inline:12px}
@@ -929,131 +904,6 @@ function initCollageFeature(){
     ctx.drawImage(img,x+(w-dw)/2,y+(h-dh)/2,dw,dh);
   }
 
-  function marketplacePresentationLocalAssetUrl(relativePath){
-    if(String(location.protocol||"").toLowerCase()!=="file:") return "";
-    const clean=String(relativePath||"").replace(/^\/+/,"");
-    if(!clean) return "";
-    try{
-      return new URL(encodeRepoPath(clean),location.href).href;
-    }catch(_){
-      return "";
-    }
-  }
-
-  function marketplacePresentationRawGitHubUrl(relativePath){
-    const clean=String(relativePath||"").replace(/^\/+/,"");
-    if(!clean) return "";
-    const owner=encodeURIComponent(String(GITHUB_CATALOG_SOURCE.owner||""));
-    const repo=encodeURIComponent(String(GITHUB_CATALOG_SOURCE.repo||""));
-    const branch=encodeURIComponent(String(GITHUB_CATALOG_SOURCE.branch||"main"));
-    const basePath=encodeRepoPath(`${GITHUB_CATALOG_SOURCE.catalogDir}/${clean}`);
-    return `https://raw.githubusercontent.com/${owner}/${repo}/${branch}/${basePath}`;
-  }
-
-  function marketplacePresentationProductCandidates(p){
-    const dynamicImages=Array.isArray(p?.imageUrls)?p.imageUrls:[];
-    const preferred=String(p?.docsImageUrl||"").trim();
-    return [
-      preferred,
-      ...dynamicImages,
-      collageExportImageUrl(p),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.webp`),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.png`),
-      productPlaceholderAbsoluteUrl(),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.webp`),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.png`),
-      ...COMPANY_LOGOS
-    ];
-  }
-
-  function marketplacePresentationLogoCandidates(){
-    const isLocalFile=String(location.protocol||"").toLowerCase()==="file:";
-    return [
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.webp`),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/logo_empresa.png`),
-      ...COMPANY_LOGOS,
-      ...(isLocalFile?[]:[
-        marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.webp`),
-        marketplacePresentationLocalAssetUrl(`${LOGOS_DIR}/logo_empresa.png`)
-      ]),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.webp`),
-      marketplacePresentationRawGitHubUrl(`${LOGOS_DIR}/suplente.png`),
-      productPlaceholderAbsoluteUrl()
-    ];
-  }
-
-  function marketplacePresentationSafeReadyDomImage(img){
-    if(String(location.protocol||"").toLowerCase()==="file:") return null;
-    if(!img || !img.complete || !img.naturalWidth || !img.naturalHeight) return null;
-    try{
-      const src=img.currentSrc||img.src||"";
-      const parsed=new URL(src,location.href);
-      if(parsed.origin!==location.origin && img.crossOrigin!=="anonymous") return null;
-    }catch(_){}
-    return img;
-  }
-
-  function marketplacePresentationLoadImageCandidates(candidates,timeoutMs=6000){
-    const urls=[...new Set((Array.isArray(candidates)?candidates:[candidates])
-      .map(value=>String(value||"").trim())
-      .filter(Boolean))];
-    return new Promise(resolve=>{
-      let index=0;
-      let settled=false;
-      let activeImg=null;
-      const finish=value=>{
-        if(settled) return;
-        settled=true;
-        clearTimeout(timer);
-        if(activeImg){ activeImg.onload=null; activeImg.onerror=null; }
-        resolve(value||null);
-      };
-      const timer=setTimeout(()=>finish(null),Math.max(1500,Number(timeoutMs)||6000));
-      const tryNext=()=>{
-        if(settled) return;
-        if(index>=urls.length){ finish(null); return; }
-        const img=new Image();
-        activeImg=img;
-        const url=urls[index++];
-        try{
-          const parsed=new URL(url,location.href);
-          if(parsed.origin!==location.origin) img.crossOrigin="anonymous";
-        }catch(_){}
-        img.onload=()=>finish(img);
-        img.onerror=tryNext;
-        img.src=url;
-      };
-      tryNext();
-    });
-  }
-
-  function marketplacePresentationOpenDownloadWindow(){
-    try{
-      const popup=window.open("about:blank","irenismb_ficha_png");
-      if(!popup) return null;
-      try{ popup.opener=null; }catch(_){}
-      try{
-        popup.document.open();
-        popup.document.write('<!doctype html><meta charset="utf-8"><title>Generando ficha</title><body style="font-family:system-ui,Arial,sans-serif;padding:28px;color:#352b2c;background:#fffdfb"><p style="font-weight:800">Generando ficha PNG…</p><p>Esta pestaña se usa solo como respaldo de descarga.</p></body>');
-        popup.document.close();
-      }catch(_){}
-      return popup;
-    }catch(_){
-      return null;
-    }
-  }
-
-  function marketplacePresentationTriggerDataDownload(dataUrl,fileName,targetDocument=document){
-    const a=targetDocument.createElement("a");
-    a.href=dataUrl;
-    a.download=fileName;
-    a.rel="noopener";
-    a.style.display="none";
-    targetDocument.body.appendChild(a);
-    a.click();
-    a.remove();
-  }
-
   function marketplacePresentationCanvasSafeImage(img,label="imagen"){
     if(!img || !img.naturalWidth || !img.naturalHeight) return null;
     try{
@@ -1071,26 +921,6 @@ function initCollageFeature(){
     }
   }
 
-  function canNativeSharePng(file){
-    if(!(navigator && typeof navigator.share === "function")) return false;
-    if(typeof navigator.canShare === "function"){
-      try{ return navigator.canShare({ files:[file] }); }catch(_){ return false; }
-    }
-    return true;
-  }
-
-  function sharePreparedPngFile(file){
-    if(!(window.File && navigator && typeof navigator.share === "function")){
-      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
-    }
-    if(!file || file.type!=="image/png" || !canNativeSharePng(file)){
-      throw new Error("Este navegador no permite compartir archivos PNG directamente.");
-    }
-    // navigator.share debe ejecutarse inmediatamente dentro del clic del usuario.
-    // El PNG se prepara antes para conservar la activación necesaria en móviles.
-    return navigator.share({ files:[file] });
-  }
-
   function canvasToPngBlob(canvas){
     if(!canvas) return Promise.reject(new Error("No hay contenido listo para exportar."));
     return new Promise((resolve,reject)=>{
@@ -1104,165 +934,6 @@ function initCollageFeature(){
     const blob=await canvasToPngBlob(canvas);
     const file=window.File ? new File([blob],fileName||"imagen.png",{type:"image/png"}) : null;
     return {blob,file};
-  }
-
-  let marketplacePreviewState=null;
-
-  function ensureMarketplacePresentationModal(){
-    if(marketplacePreviewState) return marketplacePreviewState;
-
-    const modal=document.createElement("div");
-    modal.className="marketplace-preview-modal";
-    modal.id="marketplacePresentationModal";
-    modal.setAttribute("aria-hidden","true");
-    modal.setAttribute("aria-modal","true");
-    modal.setAttribute("role","dialog");
-    modal.innerHTML=`
-      <div class="marketplace-preview-backdrop" data-marketplace-preview-close></div>
-      <section class="marketplace-preview-shell" role="document" aria-labelledby="marketplacePreviewTitle">
-        <button class="marketplace-preview-close" type="button" aria-label="Cerrar" data-marketplace-preview-close>✕</button>
-        <header class="marketplace-preview-heading">
-          <h2 class="marketplace-preview-title" id="marketplacePreviewTitle">Ficha del producto</h2>
-          <p class="marketplace-preview-subtitle" id="marketplacePreviewSubtitle" hidden></p>
-        </header>
-        <div class="marketplace-preview-stage">
-          <img class="marketplace-preview-image" id="marketplacePreviewImage" alt="Vista previa de la ficha del producto" />
-        </div>
-        <p class="marketplace-preview-status" id="marketplacePreviewStatus">Pulsa Ficha para preparar la vista previa.</p>
-        <div class="marketplace-preview-actions">
-          <button class="marketplace-preview-download" id="marketplacePreviewDownloadBtn" type="button" disabled>Descargar PNG</button>
-          <button class="marketplace-preview-share" id="marketplacePreviewShareBtn" type="button" disabled>Compartir PNG</button>
-          <button class="marketplace-preview-secondary" id="marketplacePreviewCloseBtn" type="button" data-marketplace-preview-close>Cerrar</button>
-        </div>
-      </section>
-    `;
-    document.body.appendChild(modal);
-
-    const state={
-      modal,
-      titleEl:modal.querySelector('#marketplacePreviewTitle'),
-      subtitleEl:modal.querySelector('#marketplacePreviewSubtitle'),
-      imageEl:modal.querySelector('#marketplacePreviewImage'),
-      statusEl:modal.querySelector('#marketplacePreviewStatus'),
-      downloadBtn:modal.querySelector('#marketplacePreviewDownloadBtn'),
-      shareBtn:modal.querySelector('#marketplacePreviewShareBtn'),
-      canvas:null,
-      shareFile:null,
-      fileName:'',
-      product:null,
-      opener:null,
-      busy:false
-    };
-
-    const close=()=>{
-      if(!state.modal.classList.contains('open')) return;
-      state.modal.classList.remove('open');
-      state.modal.setAttribute('aria-hidden','true');
-      const collageModal=document.getElementById('collageModal');
-      if(!(collageModal && collageModal.classList.contains('open'))){
-        document.body.classList.remove('collage-open');
-      }
-      if(state.opener && typeof state.opener.focus==='function'){
-        try{ state.opener.focus({preventScroll:true}); }catch(_){ try{ state.opener.focus(); }catch(_e){} }
-      }
-    };
-
-    modal.addEventListener('click',event=>{
-      if(event.target && event.target.closest('[data-marketplace-preview-close]')) close();
-    });
-    modal.addEventListener('keydown',event=>{
-      if(event.key==='Escape'){
-        event.preventDefault();
-        close();
-      }
-    });
-
-    state.downloadBtn.addEventListener('click',async ()=>{
-      if(!state.canvas || state.busy) return;
-      const original=state.downloadBtn.textContent;
-      state.busy=true;
-      state.downloadBtn.disabled=true;
-      if(state.shareBtn) state.shareBtn.disabled=true;
-      state.downloadBtn.textContent='Generando PNG…';
-      try{
-        const blob=await new Promise((resolve,reject)=>{
-          try{
-            state.canvas.toBlob(value=>value?resolve(value):reject(new Error('No se pudo crear el archivo PNG.')),'image/png',1);
-          }catch(error){ reject(error); }
-        });
-        const objectUrl=URL.createObjectURL(blob);
-        const a=document.createElement('a');
-        a.href=objectUrl;
-        a.download=state.fileName || 'ficha_marketplace.png';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(()=>URL.revokeObjectURL(objectUrl),1500);
-        state.statusEl.textContent='PNG listo. Si tu navegador no lo guardó automáticamente, revisa la carpeta Descargas.';
-        state.downloadBtn.textContent='Descargada';
-        setTimeout(()=>{
-          if(state.downloadBtn){
-            state.downloadBtn.textContent='Descargar PNG';
-            state.downloadBtn.disabled=false;
-          }
-          if(state.shareBtn) state.shareBtn.disabled=!state.canvas;
-        },1100);
-      }catch(error){
-        console.error('No se pudo descargar la ficha Marketplace.',error);
-        state.statusEl.textContent='No se pudo descargar el PNG. Abre la consola del navegador (F12) para ver el error exacto.';
-        state.downloadBtn.textContent=original;
-        state.downloadBtn.disabled=false;
-        if(state.shareBtn) state.shareBtn.disabled=!state.canvas;
-      }finally{
-        state.busy=false;
-      }
-    });
-
-    state.shareBtn?.addEventListener('click',async ()=>{
-      if(!state.shareFile || state.busy) return;
-      const original=state.shareBtn.textContent;
-      state.busy=true;
-      state.shareBtn.disabled=true;
-      state.downloadBtn.disabled=true;
-      state.shareBtn.textContent='Compartiendo…';
-      try{
-        const sharePromise=sharePreparedPngFile(state.shareFile);
-        await sharePromise;
-        state.statusEl.textContent='';
-        state.shareBtn.textContent='Compartida';
-        setTimeout(()=>{
-          if(state.shareBtn){
-            state.shareBtn.textContent='Compartir PNG';
-            state.shareBtn.disabled=!state.shareFile;
-          }
-          if(state.downloadBtn) state.downloadBtn.disabled=!state.canvas;
-        },1100);
-      }catch(error){
-        if(error && error.name==='AbortError'){
-          state.statusEl.textContent='';
-        }else{
-          console.error('No se pudo compartir la ficha Marketplace.',error);
-          state.statusEl.textContent='Este navegador no permite compartir archivos PNG directamente.';
-        }
-        state.shareBtn.textContent=original;
-        state.shareBtn.disabled=!state.shareFile;
-        state.downloadBtn.disabled=!state.canvas;
-      }finally{
-        state.busy=false;
-      }
-    });
-
-    marketplacePreviewState=state;
-    return state;
-  }
-
-  function openMarketplacePresentationModal(opener){
-    const state=ensureMarketplacePresentationModal();
-    state.opener=opener || null;
-    state.modal.classList.add('open');
-    state.modal.setAttribute('aria-hidden','false');
-    document.body.classList.add('collage-open');
-    return state;
   }
 
   function presentationDrawBotanicalAccent(ctx,x,y,scale=1,direction=1,color="rgba(194,143,129,.20)"){
@@ -1322,9 +993,7 @@ function initCollageFeature(){
     const W=canvas.width;
     const H=canvas.height;
 
-    const cream='#fffdfb';
     const dark='#2f282a';
-    const mauve='#a65f72';
     const mauveDark='#8f3f59';
     const muted='#6f6365';
     const gold='#b9954f';
@@ -1505,60 +1174,6 @@ function initCollageFeature(){
     const fileName=`${code?`${code}_`:''}${safeName}_ficha.png`;
     return {canvas,fileName};
   }
-
-  async function downloadMarketplacePresentationCard(p,triggerBtn){
-    if(!p) return;
-    const state=openMarketplacePresentationModal(triggerBtn);
-    const originalText=triggerBtn?.textContent||'Ficha';
-    state.titleEl.textContent=String(p.name||'Ficha del producto').trim() || 'Ficha del producto';
-    state.subtitleEl.textContent='';
-    state.statusEl.textContent='Preparando la ficha…';
-    state.downloadBtn.disabled=true;
-    if(state.shareBtn) state.shareBtn.disabled=true;
-    state.canvas=null;
-    state.shareFile=null;
-    state.fileName='';
-    state.product=p;
-    state.imageEl.removeAttribute('src');
-
-    if(triggerBtn){
-      triggerBtn.disabled=true;
-      triggerBtn.textContent='Preparando…';
-    }
-
-    try{
-      const {canvas,fileName}=await buildMarketplacePresentationCanvas(p);
-      const prepared=await prepareCanvasPngFile(canvas,fileName);
-      state.canvas=canvas;
-      state.fileName=fileName;
-      state.shareFile=(prepared.file && canNativeSharePng(prepared.file)) ? prepared.file : null;
-      state.imageEl.src=canvas.toDataURL('image/png');
-      state.statusEl.textContent='';
-      state.downloadBtn.disabled=false;
-      if(state.shareBtn){
-        state.shareBtn.disabled=!state.shareFile;
-        state.shareBtn.textContent=state.shareFile?'Compartir PNG':'Compartir no disponible';
-        state.shareBtn.title=state.shareFile?'':'Este navegador no permite compartir archivos PNG directamente.';
-      }
-      if(triggerBtn){
-        triggerBtn.textContent='Ficha';
-      }
-    }catch(error){
-      console.error('No se pudo preparar la ficha Marketplace del producto.',error);
-      state.statusEl.textContent='No se pudo preparar la ficha. Abre la consola del navegador (F12) para ver el error exacto.';
-      state.downloadBtn.disabled=true;
-      if(state.shareBtn) state.shareBtn.disabled=true;
-      if(triggerBtn){
-        triggerBtn.textContent=originalText;
-      }
-    }finally{
-      if(triggerBtn){
-        triggerBtn.disabled=false;
-        if(triggerBtn.textContent!=='Ficha') triggerBtn.textContent=originalText;
-      }
-    }
-  }
-
 
   async function downloadCollageImage(action="download",options={}){
     const snapshot=collageCurrentSnapshot();

@@ -455,13 +455,47 @@
   </div>
 
   <script src="precios-admin-config.js?actualizacion=alcance-filtros-admin-2026-09-22-1"></script>
-  <script src="catalogo-app.js?actualizacion=carga-porcentaje-2026-09-22-1"></script>
+  <script src="catalogo-app.js?actualizacion=historial-restaurado-2026-09-22-1"></script>
   <script src="catalogo-carrito-pedido.js?actualizacion=2026-09-20-2"></script>
   <script src="catalogo-herramientas.js?actualizacion=2026-09-20-bootstrap-2"></script>
   <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>
   <script src="catalogo-ui.js?actualizacion=2026-09-20-movil-admin-whatsapp-2"></script>
   <script src="precios-admin.js?actualizacion=alcance-filtros-admin-2026-09-22-2"></script>
   <script>
+    // Durante la carga inicial, el contador superior permanece oculto aunque
+    // algún módulo intente escribir temporalmente "0 productos".
+    (() => {
+      const count = document.getElementById("count");
+      const grid = document.getElementById("grid");
+      if(!count || !grid) return;
+
+      count.hidden = true;
+
+      const catalogIsReady = () => !!grid.querySelector(".card,.album-card");
+      const catalogHasHardError = () =>
+        /error|no se pudieron cargar|no se pudo cargar|reintenta más tarde/i.test(
+          String(count.textContent || "")
+        );
+
+      const guard = new MutationObserver(() => {
+        if(catalogIsReady() || catalogHasHardError()){
+          count.hidden = false;
+          guard.disconnect();
+          return;
+        }
+        if(!count.hidden) count.hidden = true;
+      });
+
+      guard.observe(count, {
+        attributes:true,
+        attributeFilter:["hidden"],
+        childList:true,
+        characterData:true,
+        subtree:true
+      });
+      guard.observe(grid, {childList:true, subtree:true});
+    })();
+
     // catalogo.html es el punto de entrada: inicia el catálogo cuando todos los módulos ya están cargados.
     init().catch(error=>{
       console.error("No se pudo iniciar el catálogo.", error);

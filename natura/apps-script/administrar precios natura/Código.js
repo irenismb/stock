@@ -3,7 +3,7 @@ const INVENTARIO_SHEET_NAME = "Productos";
 const INVENTARIO_HEADER_ROW = 1;
 const VISIBILIDAD_SHEET_NAME = "Visibilidad";
 const VISIBILIDAD_HEADERS = ["Tipo", "Identificador", "Oculto", "Etiqueta", "Actualizado"];
-const VISIBILIDAD_TIPOS = ["producto", "seccion", "categoria", "subcategoria", "familia"];
+const VISIBILIDAD_TIPOS = ["producto", "seccion", "categoria", "subcategoria", "publico", "linea", "familia"];
 
 const CONFIG_SHEET_NAME = "Configuracion";
 const CONFIG_PROPERTY_PREFIX = "CATALOGO_CONFIG_";

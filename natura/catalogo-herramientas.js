@@ -20,6 +20,8 @@ function collageProductRoute(p){
   const route=[
     mainNavigationGroupForProduct(p),
     navigationCategoryForProduct(p),
+    navigationSubcategoryForProduct(p),
+    navigationGenderForProduct(p),
     navigationFamilyForProduct(p)
   ]
     .map(value=>String(value||"").trim())
@@ -34,7 +36,7 @@ function collageProductRoute(p){
 }
 
 function collageCurrentTitleParts(){
-  return [selectedAudience,selectedCategory,selectedFamily]
+  return [selectedAudience,selectedCategory,selectedSubcategory,selectedGender,selectedFamily]
     .map(value=>String(value||"").trim())
     .filter(Boolean);
 }

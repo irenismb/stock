@@ -8,7 +8,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:N: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura y Línea.
+    // Hoja Productos, estructura A:P: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, Línea, Público y Estado comercial.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -241,8 +241,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:N",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N",
+        range: "A:P",
+        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P",
         tqx: `out:json;responseHandler:${callbackName}`,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
         // Cada apertura del catálogo consulta la versión más reciente de Productos.
@@ -310,6 +310,8 @@
               description: value(11),
               codeNatura: value(12),
               line: value(13),
+              public: value(14),
+              commercialStatus: value(15),
               fullTxtRecord: [
                 value(6),
                 "",
@@ -676,10 +678,12 @@
       const name = String(row.name || "").trim();
       const section = String(row.section || "").trim();
       const rawCategory = String(row.category || "").trim();
-      const category = section === "Regalos para toda ocasión" ? rawCategory : (rawCategory || "General");
+      const category = rawCategory;
       const subcategory = String(row.subcategory || "").trim();
       const fragranceFamily = String(row.fragranceFamily || "").trim();
       const line = String(row.line || "").trim();
+      const publicLabel = String(row.public || "").trim();
+      const commercialStatus = String(row.commercialStatus || "").trim();
       const condition = String(row.condition || "").trim();
       if(!/^\d{4}$/.test(code) || !name) return null;
 
@@ -707,6 +711,8 @@
         subcategory,
         fragranceFamily,
         line,
+        public: publicLabel,
+        commercialStatus,
         condition,
         brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
         price: parseOptionalWholeNumber(priceText) ?? 0,
@@ -726,7 +732,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, line, fragranceFamily, condition, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, publicLabel, line, fragranceFamily, condition, commercialStatus, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -745,6 +751,8 @@
             subcategory: "",
             fragranceFamily: "",
             line: "",
+            public: "",
+            commercialStatus: "",
             condition: "",
             brand: "",
             price: 0,
@@ -974,55 +982,23 @@
 
     const NAV_AUDIENCES = [
       {
-        label:"Perfumes y fragancias",
-        section:"Belleza y cuidado",
-        subtitle:"Perfumería femenina, perfumería masculina y perfumes.",
-        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria perfumes fragancia floral rosa.webp"),
-        theme:"perfumes"
+        label:"Belleza y cuidado",
+        subtitle:"Perfumes, cabello, cuidado personal, maquillaje, kits y combos.",
+        iconImage:ROOT_ICON_IMAGES.ella,
+        theme:"belleza"
       },
       {
-        label:"Cabello",
-        section:"Belleza y cuidado",
-        subtitle:"Reparación, nutrición, hidratación, rizos, anticaída, color, limpieza y protección.",
-        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cabello mechon brillante capilar.webp"),
-        theme:"cabello"
-      },
-      {
-        label:"Cuidado personal",
-        section:"Belleza y cuidado",
-        subtitle:"Cuidado facial y corporal, higiene, desodorantes, manos, pies y protección solar.",
-        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria cuidado corporal locion vegetal.webp"),
-        theme:"personal"
-      },
-      {
-        label:"Maquillaje",
-        section:"Belleza y cuidado",
-        subtitle:"Productos de maquillaje.",
-        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria maquillaje brocha labial rosa.webp"),
-        theme:"maquillaje"
-      },
-      {
-        label:"Kits y combos",
-        section:"Belleza y cuidado",
-        subtitle:"Combinaciones de distintas familias de productos.",
-        iconImage:githubPagesAssetUrl("iconos/2026-09-06_icono subcategoria kits combos regalo cosmeticos.webp"),
-        theme:"kits",
-        directProducts:true
+        label:"Otros productos",
+        subtitle:"Tecnología y hogar, juguetes, papelería, medicamentos y más.",
+        iconImage:ROOT_ICON_IMAGES.otros,
+        theme:"otros"
       },
       {
         label:"Regalos",
-        section:"Regalos para toda ocasión",
         subtitle:"Detalles y arreglos listos para regalar en cualquier ocasión.",
         iconImage:ROOT_ICON_IMAGES.regalos,
         theme:"regalos",
         directProducts:true
-      },
-      {
-        label:"Otros productos",
-        section:"Otros productos",
-        subtitle:"Electrodomésticos, juguetes, papelería, medicamentos y más.",
-        iconImage:ROOT_ICON_IMAGES.otros,
-        theme:"otros"
       }
     ];
 
@@ -1093,9 +1069,11 @@
 
     let albums = [];
     let albumByKey = new Map();
-    let selectedAudience = "";
-    let selectedCategory = "";
-    let selectedFamily = "";
+    let selectedAudience = "";      // Sección
+    let selectedCategory = "";      // Categoría
+    let selectedSubcategory = "";   // Subcategoría
+    let selectedGender = "";        // Público (nombre interno conservado por compatibilidad)
+    let selectedFamily = "";        // Línea (nombre interno conservado por compatibilidad)
     let selectedAlbumKey = "";
 
     function cleanNavKey(value){
@@ -1105,7 +1083,7 @@
     function mainNavigationGroupForProduct(p){
       if(!p) return "";
       if(p.section === "Regalos para toda ocasión") return "Regalos";
-      return String(p.category || "").trim();
+      return String(p.section || "").trim();
     }
 
     function productMatchesAudience(p, audienceLabel){
@@ -1113,8 +1091,18 @@
     }
 
     function navigationCategoryForProduct(p){
-      if(!p) return "General";
-      return String(p.subcategory || "General").trim() || "General";
+      if(!p) return "";
+      return String(p.category || "").trim();
+    }
+
+    function navigationSubcategoryForProduct(p){
+      if(!p) return "";
+      return String(p.subcategory || "").trim();
+    }
+
+    function navigationGenderForProduct(p){
+      if(!p) return "";
+      return String(p.public || "").trim();
     }
 
     function navigationFamilyForProduct(p){
@@ -1127,11 +1115,10 @@
     }
 
     function isDirectProductAudience(audienceLabel){
+      if(cleanNavKey(audienceLabel) === cleanNavKey("Regalos")) return true;
       const products = productsForNavigationGroup(audienceLabel);
       if(!products.length) return false;
-      // Si la hoja define al menos una subcategoría, la navegación la muestra automáticamente.
-      // Solo se entra directo a productos cuando ninguna fila del grupo tiene subcategoría.
-      return !products.some(p => String(p && p.subcategory || "").trim());
+      return !products.some(p => navigationCategoryForProduct(p));
     }
 
     function collectAlbumPreview(found, p){
@@ -1143,162 +1130,174 @@
       }
     }
 
-    function buildRootAlbums(list){
-      const source = Array.isArray(list) ? list : [];
-      const byGroup = new Map();
-
-      for(const p of source){
-        const label = String(mainNavigationGroupForProduct(p) || "").trim();
-        if(!label) continue;
-        const key = cleanNavKey(label);
-        const existing = byGroup.get(key) || { label, products:[] };
-        existing.products.push(p);
-        byGroup.set(key, existing);
-      }
-
-      const preferredOrder = new Map(NAV_AUDIENCES.map((item,index)=>[cleanNavKey(item.label), index]));
-      const groups = Array.from(byGroup.values()).sort((a,b)=>{
-        const aRank = preferredOrder.has(cleanNavKey(a.label)) ? preferredOrder.get(cleanNavKey(a.label)) : Number.MAX_SAFE_INTEGER;
-        const bRank = preferredOrder.has(cleanNavKey(b.label)) ? preferredOrder.get(cleanNavKey(b.label)) : Number.MAX_SAFE_INTEGER;
-        return aRank - bRank || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
-      });
-
-      return groups.map((dynamicGroup,index)=>{
-        const group = NAV_AUDIENCES.find(item => cleanNavKey(item.label) === cleanNavKey(dynamicGroup.label)) || {};
-        const visual = CATEGORY_VISUALS[cleanNavKey(dynamicGroup.label)] || {};
-        const subtitle = String(group.subtitle || `Productos disponibles en ${dynamicGroup.label}.`).trim();
-        const album = {
-          key:`audience::${cleanNavKey(dynamicGroup.label)}`,
-          navType:"audience",
-          navValue:dynamicGroup.label,
-          label:dynamicGroup.label,
-          subtitle,
-          icon:group.icon || visual.icon || "•",
-          iconSvg:group.iconSvg || "",
-          iconImage:group.iconImage || visual.iconImage || "",
-          theme:group.theme || "",
-          products:dynamicGroup.products,
-          cover:null,
-          previewImages:[],
-          searchKey:normalizeText(`${dynamicGroup.label} ${subtitle}`),
-          hasStructuredProducts:true,
-          hasUnstructuredProducts:false,
-          onlyUnstructured:false,
-          count:dynamicGroup.products.length,
-          colorIndex:index % ALBUM_COLORS.length
-        };
-        for(const p of dynamicGroup.products) collectAlbumPreview(album,p);
-        return album;
-      });
+    function navAlbumBase({key,navType,navValue,label,subtitle="",icon="•",iconImage="",products=[],extra={}}){
+      const album={
+        key,navType,navValue,label,subtitle,icon,iconImage,
+        products,cover:null,previewImages:[],
+        searchKey:normalizeText([label,subtitle,...Object.values(extra)].filter(Boolean).join(" ")),
+        hasStructuredProducts:true,hasUnstructuredProducts:false,onlyUnstructured:false,
+        ...extra
+      };
+      for(const p of products) collectAlbumPreview(album,p);
+      return album;
     }
 
-    function buildCategoryAlbums(list, audienceLabel){
-      const byCategory = new Map();
-      for(const p of (Array.isArray(list) ? list : [])){
-        if(!productMatchesAudience(p, audienceLabel)) continue;
-        const category = navigationCategoryForProduct(p);
-        const key = cleanNavKey(category);
-        const visual = CATEGORY_VISUALS[cleanNavKey(category)] || { icon:"•" };
-        const found = byCategory.get(key) || {
-          key:`category::${cleanNavKey(audienceLabel)}::${key}`,
-          navType:"category",
-          navValue:category,
-          audience:audienceLabel,
-          label:categoryDisplayLabel(category),
-          subtitle:"",
-          icon:visual.icon || "•",
-          iconImage:visual.iconImage || "",
-          products:[],
-          cover:null,
-          previewImages:[],
-          searchKey:normalizeText(`${category} ${audienceLabel}`),
-          hasStructuredProducts:true,
-          hasUnstructuredProducts:false
-        };
-        found.products.push(p);
-        collectAlbumPreview(found,p);
-        byCategory.set(key,found);
-      }
-      return Array.from(byCategory.values())
-        .sort((a,b)=>a.label.localeCompare(b.label,"es",{sensitivity:"base"}))
-        .map((album,index)=>({
-          ...album,
-          count:album.products.length,
-          onlyUnstructured:false,
-          colorIndex:index % ALBUM_COLORS.length
-        }));
-    }
-
-    function buildFamilyAlbums(list, audienceLabel, categoryLabel){
-      const byFamily = new Map();
-      for(const p of (Array.isArray(list) ? list : [])){
-        if(!productMatchesAudience(p, audienceLabel)) continue;
-        if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(categoryLabel)) continue;
-        const family = navigationFamilyForProduct(p) || "General";
-        const key = cleanNavKey(family);
-        const visual = CATEGORY_VISUALS[key] || { icon:"•" };
-        const found = byFamily.get(key) || {
-          key:`family::${cleanNavKey(audienceLabel)}::${cleanNavKey(categoryLabel)}::${key}`,
-          navType:"family",
-          navValue:family,
-          audience:audienceLabel,
-          category:categoryLabel,
-          label:categoryDisplayLabel(family),
-          subtitle:"",
-          icon:visual.icon || "•",
-          iconImage:visual.iconImage || "",
-          products:[],
-          cover:null,
-          previewImages:[],
-          searchKey:normalizeText(`${family} ${categoryLabel} ${audienceLabel}`),
-          hasStructuredProducts:true,
-          hasUnstructuredProducts:false
-        };
-        found.products.push(p);
-        collectAlbumPreview(found,p);
-        byFamily.set(key,found);
-      }
-      return Array.from(byFamily.values())
+    function finalizeAlbums(values, orderMap=null){
+      return values
         .map(album=>({ ...album, count:album.products.length }))
-        .sort((a,b)=>b.count-a.count || a.label.localeCompare(b.label,"es",{sensitivity:"base"}))
-        .map((album,index)=>({
-          ...album,
-          onlyUnstructured:false,
-          colorIndex:index % ALBUM_COLORS.length
-        }));
+        .sort((a,b)=>{
+          if(orderMap){
+            const ar=orderMap.get(cleanNavKey(a.label)) ?? 999;
+            const br=orderMap.get(cleanNavKey(b.label)) ?? 999;
+            if(ar!==br) return ar-br;
+          }
+          return a.label.localeCompare(b.label,"es",{sensitivity:"base"});
+        })
+        .map((album,index)=>({ ...album, colorIndex:index % ALBUM_COLORS.length }));
+    }
+
+    function buildRootAlbums(list){
+      const byGroup=new Map();
+      for(const p of (Array.isArray(list)?list:[])){
+        const label=String(mainNavigationGroupForProduct(p)||"").trim();
+        if(!label) continue;
+        const key=cleanNavKey(label);
+        const item=byGroup.get(key)||{label,products:[]};
+        item.products.push(p);byGroup.set(key,item);
+      }
+      const preferredOrder=new Map(NAV_AUDIENCES.map((item,index)=>[cleanNavKey(item.label),index]));
+      const rootAlbums=Array.from(byGroup.values()).map(group=>{
+        const config=NAV_AUDIENCES.find(item=>cleanNavKey(item.label)===cleanNavKey(group.label))||{};
+        return navAlbumBase({
+          key:`audience::${cleanNavKey(group.label)}`,navType:"audience",navValue:group.label,
+          label:group.label,subtitle:String(config.subtitle||`Productos disponibles en ${group.label}.`).trim(),
+          icon:config.icon||"•",iconImage:config.iconImage||"",products:group.products,
+          extra:{theme:config.theme||""}
+        });
+      });
+      return finalizeAlbums(rootAlbums,preferredOrder);
+    }
+
+    function buildCategoryAlbums(list,audienceLabel){
+      const byValue=new Map();
+      for(const p of (Array.isArray(list)?list:[])){
+        if(!productMatchesAudience(p,audienceLabel)) continue;
+        const value=navigationCategoryForProduct(p); if(!value) continue;
+        const key=cleanNavKey(value); const visual=CATEGORY_VISUALS[key]||{icon:"•"};
+        const found=byValue.get(key)||navAlbumBase({
+          key:`category::${cleanNavKey(audienceLabel)}::${key}`,navType:"category",navValue:value,label:categoryDisplayLabel(value),
+          icon:visual.icon||"•",iconImage:visual.iconImage||"",products:[],extra:{audience:audienceLabel}
+        });
+        found.products.push(p); collectAlbumPreview(found,p); byValue.set(key,found);
+      }
+      return finalizeAlbums(Array.from(byValue.values()));
+    }
+
+    function buildSubcategoryAlbums(list,audienceLabel,categoryLabel){
+      const byValue=new Map();
+      for(const p of (Array.isArray(list)?list:[])){
+        if(!productMatchesAudience(p,audienceLabel)) continue;
+        if(cleanNavKey(navigationCategoryForProduct(p))!==cleanNavKey(categoryLabel)) continue;
+        const value=navigationSubcategoryForProduct(p); if(!value) continue;
+        const key=cleanNavKey(value); const visual=CATEGORY_VISUALS[key]||{icon:"•"};
+        const found=byValue.get(key)||navAlbumBase({
+          key:`subcategory::${cleanNavKey(audienceLabel)}::${cleanNavKey(categoryLabel)}::${key}`,
+          navType:"subcategory",navValue:value,label:categoryDisplayLabel(value),icon:visual.icon||"•",iconImage:visual.iconImage||"",products:[],
+          extra:{audience:audienceLabel,category:categoryLabel}
+        });
+        found.products.push(p); collectAlbumPreview(found,p); byValue.set(key,found);
+      }
+      return finalizeAlbums(Array.from(byValue.values()));
+    }
+
+    function buildGenderAlbums(list,audienceLabel,categoryLabel,subcategoryLabel=""){
+      const byValue=new Map();
+      for(const p of (Array.isArray(list)?list:[])){
+        if(!productMatchesAudience(p,audienceLabel)) continue;
+        if(cleanNavKey(navigationCategoryForProduct(p))!==cleanNavKey(categoryLabel)) continue;
+        if(subcategoryLabel && cleanNavKey(navigationSubcategoryForProduct(p))!==cleanNavKey(subcategoryLabel)) continue;
+        const value=navigationGenderForProduct(p); if(!value) continue;
+        const key=cleanNavKey(value);
+        const found=byValue.get(key)||navAlbumBase({
+          key:`gender::${cleanNavKey(audienceLabel)}::${cleanNavKey(categoryLabel)}::${cleanNavKey(subcategoryLabel)}::${key}`,
+          navType:"gender",navValue:value,label:value,
+          icon:key===cleanNavKey("Femeninos")?"♀":(key===cleanNavKey("Masculinos")?"♂":"•"),products:[],
+          extra:{audience:audienceLabel,category:categoryLabel,subcategory:subcategoryLabel}
+        });
+        found.products.push(p); collectAlbumPreview(found,p); byValue.set(key,found);
+      }
+      const order=new Map([[cleanNavKey("Femeninos"),0],[cleanNavKey("Masculinos"),1],[cleanNavKey("Unisex"),2]]);
+      return finalizeAlbums(Array.from(byValue.values()),order);
+    }
+
+    function buildFamilyAlbums(list,audienceLabel,categoryLabel,subcategoryLabel="",genderLabel=""){
+      const byValue=new Map();
+      for(const p of (Array.isArray(list)?list:[])){
+        if(!productMatchesAudience(p,audienceLabel)) continue;
+        if(cleanNavKey(navigationCategoryForProduct(p))!==cleanNavKey(categoryLabel)) continue;
+        if(subcategoryLabel && cleanNavKey(navigationSubcategoryForProduct(p))!==cleanNavKey(subcategoryLabel)) continue;
+        if(genderLabel && cleanNavKey(navigationGenderForProduct(p))!==cleanNavKey(genderLabel)) continue;
+        const value=navigationFamilyForProduct(p); if(!value) continue;
+        const key=cleanNavKey(value); const visual=CATEGORY_VISUALS[key]||{icon:"•"};
+        const found=byValue.get(key)||navAlbumBase({
+          key:`family::${cleanNavKey(audienceLabel)}::${cleanNavKey(categoryLabel)}::${cleanNavKey(subcategoryLabel)}::${cleanNavKey(genderLabel)}::${key}`,
+          navType:"family",navValue:value,label:categoryDisplayLabel(value),icon:visual.icon||"•",iconImage:visual.iconImage||"",products:[],
+          extra:{audience:audienceLabel,category:categoryLabel,subcategory:subcategoryLabel,gender:genderLabel}
+        });
+        found.products.push(p); collectAlbumPreview(found,p); byValue.set(key,found);
+      }
+      return finalizeAlbums(Array.from(byValue.values()));
+    }
+
+    function scopedProductsForCurrentNavigation(list=all){
+      let source=(Array.isArray(list)?list:[]).slice();
+      if(selectedAudience) source=source.filter(p=>productMatchesAudience(p,selectedAudience));
+      if(selectedCategory) source=source.filter(p=>cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory));
+      if(selectedSubcategory) source=source.filter(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory));
+      if(selectedGender) source=source.filter(p=>cleanNavKey(navigationGenderForProduct(p))===cleanNavKey(selectedGender));
+      if(selectedFamily) source=source.filter(p=>cleanNavKey(navigationFamilyForProduct(p))===cleanNavKey(selectedFamily));
+      return source;
     }
 
     function buildAlbums(list){
-      if(selectedAudience && selectedCategory){
-        const scoped = (Array.isArray(list) ? list : []).filter(p =>
-          productMatchesAudience(p, selectedAudience) &&
-          cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory)
-        );
-        const hasFamilies = scoped.some(p => Boolean(navigationFamilyForProduct(p)));
-        return hasFamilies ? buildFamilyAlbums(list, selectedAudience, selectedCategory) : [];
-      }
-      return selectedAudience ? buildCategoryAlbums(list, selectedAudience) : buildRootAlbums(list);
+      if(!selectedAudience) return buildRootAlbums(list);
+      if(isDirectProductAudience(selectedAudience)) return [];
+      if(!selectedCategory) return buildCategoryAlbums(list,selectedAudience);
+
+      let scoped=(Array.isArray(list)?list:[]).filter(p=>
+        productMatchesAudience(p,selectedAudience) &&
+        cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory)
+      );
+      const hasSubcategories=scoped.some(p=>Boolean(navigationSubcategoryForProduct(p)));
+      if(hasSubcategories && !selectedSubcategory) return buildSubcategoryAlbums(list,selectedAudience,selectedCategory);
+      if(selectedSubcategory) scoped=scoped.filter(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory));
+
+      const hasPublic=scoped.some(p=>Boolean(navigationGenderForProduct(p)));
+      if(hasPublic && !selectedGender) return buildGenderAlbums(list,selectedAudience,selectedCategory,selectedSubcategory);
+      if(selectedGender) scoped=scoped.filter(p=>cleanNavKey(navigationGenderForProduct(p))===cleanNavKey(selectedGender));
+
+      const hasLines=scoped.some(p=>Boolean(navigationFamilyForProduct(p)));
+      if(hasLines && !selectedFamily) return buildFamilyAlbums(list,selectedAudience,selectedCategory,selectedSubcategory,selectedGender);
+      return [];
     }
 
     function refreshNavigationAlbums(){
       if(selectedFamily){
-        albums = [];
-        albumByKey = new Map();
-        selectedAlbumKey = `family::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedFamily)}`;
+        albums=[]; albumByKey=new Map();
+        selectedAlbumKey=`family::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedSubcategory)}::${cleanNavKey(selectedGender)}::${cleanNavKey(selectedFamily)}`;
         return;
       }
-      albums = buildAlbums(all);
-      albumByKey = new Map(albums.map(album => [album.key, album]));
-      if(selectedCategory){
-        selectedAlbumKey = `category::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}`;
-      }else{
-        selectedAlbumKey = selectedAudience ? `audience::${cleanNavKey(selectedAudience)}` : "";
-      }
+      albums=buildAlbums(all);
+      albumByKey=new Map(albums.map(album=>[album.key,album]));
+      if(selectedGender) selectedAlbumKey=`gender::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedSubcategory)}::${cleanNavKey(selectedGender)}`;
+      else if(selectedSubcategory) selectedAlbumKey=`subcategory::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedSubcategory)}`;
+      else if(selectedCategory) selectedAlbumKey=`category::${cleanNavKey(selectedAudience)}::${cleanNavKey(selectedCategory)}`;
+      else selectedAlbumKey=selectedAudience?`audience::${cleanNavKey(selectedAudience)}`:"";
     }
 
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
-      return source.slice();
+      return source.filter(p => cleanNavKey(p?.commercialStatus) !== cleanNavKey("No a la venta"));
     }
 
     function filterSearchExcludedProducts(list){
@@ -1315,38 +1314,20 @@
     }
 
     function shouldShowAlbumGrid(){
-      return albumModeEnabled() && albums.length > 0 && !selectedFamily && !isDirectProductAudience(selectedAudience);
+      return albumModeEnabled() && albums.length > 0 && !isDirectProductAudience(selectedAudience);
     }
 
     function getSelectedAlbum(){
-      if(selectedFamily){
-        return { label:selectedFamily, navType:"family", audience:selectedAudience, category:selectedCategory };
-      }
-      if(selectedCategory){
-        return { label:selectedCategory, navType:"category", audience:selectedAudience };
-      }
-      if(selectedAudience){
-        return { label:selectedAudience, navType:"audience" };
-      }
+      if(selectedFamily) return {label:selectedFamily,navType:"family",audience:selectedAudience,category:selectedCategory,subcategory:selectedSubcategory,gender:selectedGender};
+      if(selectedGender) return {label:selectedGender,navType:"gender",audience:selectedAudience,category:selectedCategory,subcategory:selectedSubcategory};
+      if(selectedSubcategory) return {label:selectedSubcategory,navType:"subcategory",audience:selectedAudience,category:selectedCategory};
+      if(selectedCategory) return {label:selectedCategory,navType:"category",audience:selectedAudience};
+      if(selectedAudience) return {label:selectedAudience,navType:"audience"};
       return null;
     }
 
     function currentProductSourceList(){
-      let source = all.slice();
-      if(selectedAudience){
-        source = source.filter(p => productMatchesAudience(p, selectedAudience));
-      }
-      if(selectedCategory){
-        source = source.filter(p => cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
-      }
-      if(selectedFamily){
-        if(cleanNavKey(selectedFamily) === cleanNavKey("General")){
-          source = source.filter(p => !navigationFamilyForProduct(p));
-        }else{
-          source = source.filter(p => cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily));
-        }
-      }
-      return source;
+      return scopedProductsForCurrentNavigation(all);
     }
 
     function refreshFilterOptionsForScope(){
@@ -1379,7 +1360,7 @@
             "@type":"Product",
             "name":String(p.name || ""),
             "description":String(p.description || ""),
-            "category":[p.category, p.subcategory, p.line]
+            "category":[p.category, p.subcategory, navigationGenderForProduct(p), p.line]
               .filter(Boolean)
               .join(" > ")
           };
@@ -1450,12 +1431,17 @@
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
       const stockVal = hasKnownStock ? p.stock : 0;
       const parts = [];
-      const mainGroup = mainNavigationGroupForProduct(p);
-      const subcategory = navigationCategoryForProduct(p);
-      if(mainGroup) parts.push(mainGroup);
-      if(subcategory && cleanNavKey(subcategory) !== cleanNavKey(mainGroup)) parts.push(subcategory);
-      if(p.line) parts.push(p.line);
-      if(p.fragranceFamily && cleanNavKey(p.fragranceFamily) !== cleanNavKey(p.line)) parts.push(p.fragranceFamily);
+      const pathParts=[
+        mainNavigationGroupForProduct(p),
+        navigationCategoryForProduct(p),
+        navigationSubcategoryForProduct(p),
+        navigationGenderForProduct(p),
+        navigationFamilyForProduct(p)
+      ].filter(Boolean);
+      for(const value of pathParts){
+        if(!parts.some(existing=>cleanNavKey(existing)===cleanNavKey(value))) parts.push(value);
+      }
+      if(p.fragranceFamily && !parts.some(existing=>cleanNavKey(existing)===cleanNavKey(p.fragranceFamily))) parts.push(p.fragranceFamily);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         parts.push(hasKnownStock ? `Stock: ${stockVal}` : "Stock: Por confirmar");
@@ -1937,25 +1923,62 @@
       }
     }
 
+    function normalizePublicLabel(value){
+      const key=cleanNavKey(value);
+      if(["femeninos","femenino","fragancias femeninas"].includes(key)) return "Femeninos";
+      if(["masculinos","masculino","fragancias masculinas"].includes(key)) return "Masculinos";
+      if(["unisex","fragancias unisex"].includes(key)) return "Unisex";
+      return String(value || "").trim();
+    }
+
+    function setNavigationFromRawState({audience="",category="",subcategory="",gender="",family=""}={}){
+      const source=Array.isArray(all)?all:[];
+      const sections=[...new Set(source.map(mainNavigationGroupForProduct).map(v=>String(v||"").trim()).filter(Boolean))];
+      const validSection=sections.find(label=>cleanNavKey(label)===cleanNavKey(audience));
+      if(validSection){
+        selectedAudience=validSection;
+        selectedCategory=category;
+        selectedSubcategory=subcategory;
+        selectedGender=normalizePublicLabel(gender);
+        selectedFamily=family;
+        return;
+      }
+
+      // Compatibilidad con URLs/estado anterior: audience era Categoría y category era Subcategoría.
+      const legacyProduct=source.find(p=>cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(audience));
+      if(legacyProduct){
+        selectedAudience=mainNavigationGroupForProduct(legacyProduct);
+        selectedCategory=navigationCategoryForProduct(legacyProduct);
+        const legacyMiddle=String(category||"").trim();
+        const categoryProducts=source.filter(p=>
+          productMatchesAudience(p,selectedAudience) &&
+          cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory)
+        );
+        const matchingSub=categoryProducts.find(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(legacyMiddle));
+        selectedSubcategory=matchingSub?navigationSubcategoryForProduct(matchingSub):"";
+        selectedGender=normalizePublicLabel(gender || (!matchingSub ? legacyMiddle : ""));
+        selectedFamily=family;
+        return;
+      }
+
+      selectedAudience=""; selectedCategory=""; selectedSubcategory=""; selectedGender=""; selectedFamily="";
+    }
+
     function readStateFromUrl(){
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
       const audience = (u.searchParams.get("audience") || "").trim();
       const category = (u.searchParams.get("category") || "").trim();
+      const subcategory = (u.searchParams.get("subcategory") || "").trim();
+      const gender = (u.searchParams.get("gender") || "").trim();
       const family = (u.searchParams.get("family") || "").trim();
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
-      const liveAudienceLabels = [...new Set((Array.isArray(all) ? all : [])
-        .map(mainNavigationGroupForProduct)
-        .map(value => String(value || "").trim())
-        .filter(Boolean))];
-      const validAudience = liveAudienceLabels.find(label => cleanNavKey(label) === cleanNavKey(audience));
-      selectedAudience = validAudience || "";
-      selectedCategory = selectedAudience && category && !isDirectProductAudience(selectedAudience) ? category : "";
-      selectedFamily = selectedCategory && family ? family : "";
+      setNavigationFromRawState({audience,category,subcategory,gender,family});
+      validateNavigationStateAgainstProducts();
       if(sort && sortSel) sortSel.value = sort;
     }
 
@@ -1980,13 +2003,15 @@
       try{
         const collapse = document.querySelector("[data-admin-config-collapse]");
         const snapshot = {
-          version:1,
+          version:2,
           pathname:location.pathname,
           q:qInp ? String(qInp.value || "") : "",
           sort:sortSel ? String(sortSel.value || "") : "",
           tags:uniqueTerms(selectedSuggestionTerms || []),
           audience:String(selectedAudience || ""),
           category:String(selectedCategory || ""),
+          subcategory:String(selectedSubcategory || ""),
+          gender:String(selectedGender || ""),
           family:String(selectedFamily || ""),
           admin:window.CATALOG_ADMIN_MODE_ACTIVE === true,
           adminConfigExpanded:collapse?.getAttribute("aria-expanded") === "true",
@@ -1995,7 +2020,6 @@
         };
         sessionStorage.setItem(CATALOG_RELOAD_VIEW_KEY,JSON.stringify(snapshot));
         sessionStorage.setItem("irenismb_catalog_scroll_position",String(snapshot.scrollY));
-
         localStorage.setItem(CATALOG_PERSISTENT_VIEW_KEY,JSON.stringify(snapshot));
       }catch(_){ }
     }
@@ -2003,7 +2027,7 @@
     function catalogUrlHasExplicitViewState(){
       try{
         const params=new URL(location.href).searchParams;
-        return ["q","sort","tags","audience","category","family","cat","brand","album"]
+        return ["q","sort","tags","audience","category","subcategory","gender","family","cat","brand","album"]
           .some(key=>params.has(key));
       }catch(_){
         return false;
@@ -2016,7 +2040,7 @@
         const raw=localStorage.getItem(CATALOG_PERSISTENT_VIEW_KEY);
         if(!raw) return null;
         const snapshot=JSON.parse(raw);
-        if(!snapshot || snapshot.version!==1 || snapshot.pathname!==location.pathname) return null;
+        if(!snapshot || ![1,2].includes(snapshot.version) || snapshot.pathname!==location.pathname) return null;
         return snapshot;
       }catch(_){
         return null;
@@ -2029,7 +2053,7 @@
         const raw=sessionStorage.getItem(CATALOG_RELOAD_VIEW_KEY);
         if(!raw) return null;
         const snapshot=JSON.parse(raw);
-        if(!snapshot || snapshot.version!==1 || snapshot.pathname!==location.pathname) return null;
+        if(!snapshot || ![1,2].includes(snapshot.version) || snapshot.pathname!==location.pathname) return null;
         return snapshot;
       }catch(_){
         return null;
@@ -2041,26 +2065,30 @@
       if(qInp) qInp.value=String(snapshot.q || "");
       if(sortSel) sortSel.value=String(snapshot.sort || "");
       selectedSuggestionTerms=uniqueTerms(Array.isArray(snapshot.tags)?snapshot.tags:[]);
-      selectedAudience=String(snapshot.audience || "");
-      selectedCategory=String(snapshot.category || "");
-      selectedFamily=String(snapshot.family || "");
+      setNavigationFromRawState({
+        audience:String(snapshot.audience || ""),
+        category:String(snapshot.category || ""),
+        subcategory:String(snapshot.subcategory || ""),
+        gender:String(snapshot.gender || ""),
+        family:String(snapshot.family || "")
+      });
+      validateNavigationStateAgainstProducts();
 
       const u=new URL(location.href);
       const q=String(snapshot.q || "").trim();
       const sort=String(snapshot.sort || "").trim();
       const tags=uniqueTerms(Array.isArray(snapshot.tags)?snapshot.tags:[]).join(",");
-      const audience=String(snapshot.audience || "").trim();
-      const category=String(snapshot.category || "").trim();
-      const family=String(snapshot.family || "").trim();
       if(q)u.searchParams.set("q",q);else u.searchParams.delete("q");
       if(sort)u.searchParams.set("sort",sort);else u.searchParams.delete("sort");
       if(tags)u.searchParams.set("tags",tags);else u.searchParams.delete("tags");
-      if(audience)u.searchParams.set("audience",audience);else u.searchParams.delete("audience");
-      if(category)u.searchParams.set("category",category);else u.searchParams.delete("category");
-      if(family)u.searchParams.set("family",family);else u.searchParams.delete("family");
+      if(selectedAudience)u.searchParams.set("audience",selectedAudience);else u.searchParams.delete("audience");
+      if(selectedCategory)u.searchParams.set("category",selectedCategory);else u.searchParams.delete("category");
+      if(selectedSubcategory)u.searchParams.set("subcategory",selectedSubcategory);else u.searchParams.delete("subcategory");
+      if(selectedGender)u.searchParams.set("gender",selectedGender);else u.searchParams.delete("gender");
+      if(selectedFamily)u.searchParams.set("family",selectedFamily);else u.searchParams.delete("family");
       u.searchParams.delete("album");
 
-      const atRoot=!audience&&!category&&!family;
+      const atRoot=isCatalogRootNavigation();
       const state=makeCatalogHistoryState(currentCatalogHistoryIndex(),{preserveExitGuard:atRoot});
       history.replaceState(state,"",u.toString());
       lastCatalogHistoryIndex=currentCatalogHistoryIndex();
@@ -2118,13 +2146,15 @@
           index:safeIndex,
           audience:selectedAudience || "",
           category:selectedCategory || "",
+          subcategory:selectedSubcategory || "",
+          gender:selectedGender || "",
           family:selectedFamily || ""
         }
       };
     }
 
     function isCatalogRootNavigation(){
-      return !selectedAudience && !selectedCategory && !selectedFamily;
+      return !selectedAudience && !selectedCategory && !selectedSubcategory && !selectedGender && !selectedFamily;
     }
 
     function catalogStateWithExitGuard(type){
@@ -2153,7 +2183,7 @@
       lastCatalogHistoryIndex = 0;
     }
 
-    function makeCatalogHistoryStateForNavigation(index, audience="", category="", family="", exitGuardType=""){
+    function makeCatalogHistoryStateForNavigation(index, audience="", category="", subcategory="", gender="", family="", exitGuardType=""){
       const base = history.state && typeof history.state === "object" ? { ...history.state } : {};
       delete base[CATALOG_EXIT_GUARD_KEY];
       const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
@@ -2163,26 +2193,24 @@
           index:safeIndex,
           audience:String(audience || ""),
           category:String(category || ""),
+          subcategory:String(subcategory || ""),
+          gender:String(gender || ""),
           family:String(family || "")
         }
       };
-      if(exitGuardType){
-        state[CATALOG_EXIT_GUARD_KEY] = { type:String(exitGuardType) };
-      }
+      if(exitGuardType) state[CATALOG_EXIT_GUARD_KEY] = { type:String(exitGuardType) };
       return state;
     }
 
-    function catalogUrlForRestoredNavigation(audience="", category="", family="", {preserveDiscovery=false,baseHref=location.href}={}){
+    function catalogUrlForRestoredNavigation(audience="", category="", subcategory="", gender="", family="", {preserveDiscovery=false,baseHref=location.href}={}){
       const u = new URL(baseHref, location.href);
       if(!preserveDiscovery){
-        for(const key of ["q","cat","brand","sort","tags","album"]){
-          u.searchParams.delete(key);
-        }
-      }else{
-        u.searchParams.delete("album");
-      }
+        for(const key of ["q","cat","brand","sort","tags","album"]) u.searchParams.delete(key);
+      }else u.searchParams.delete("album");
       if(audience) u.searchParams.set("audience", audience); else u.searchParams.delete("audience");
       if(category) u.searchParams.set("category", category); else u.searchParams.delete("category");
+      if(subcategory) u.searchParams.set("subcategory", subcategory); else u.searchParams.delete("subcategory");
+      if(gender) u.searchParams.set("gender", gender); else u.searchParams.delete("gender");
       if(family) u.searchParams.set("family", family); else u.searchParams.delete("family");
       return u.toString();
     }
@@ -2190,47 +2218,34 @@
     function rebuildCatalogHistoryForRestoredNavigation({force=false}={}){
       validateNavigationStateAgainstProducts();
       if(isCatalogRootNavigation()) return false;
-
-      // En una carga normal con historial interno vigente no se duplica la cadena.
-      // Cuando la vista viene de una sesión persistida se fuerza la reconstrucción:
-      // algunos navegadores restauran history.state, pero no todas las entradas previas.
       if(!force && currentCatalogHistoryIndex() > 0) return false;
 
-      const audience = String(selectedAudience || "");
-      const category = String(selectedCategory || "");
-      const family = String(selectedFamily || "");
+      const audience=String(selectedAudience||"");
+      const category=String(selectedCategory||"");
+      const subcategory=String(selectedSubcategory||"");
+      const gender=String(selectedGender||"");
+      const family=String(selectedFamily||"");
       if(!audience) return false;
 
-      const restoredUrl = location.href;
-      const steps = [
-        { audience, category:"", family:"" }
-      ];
-      if(category) steps.push({ audience, category, family:"" });
-      if(family) steps.push({ audience, category, family });
+      const restoredUrl=location.href;
+      const steps=[{audience,category:"",subcategory:"",gender:"",family:""}];
+      if(category) steps.push({audience,category,subcategory:"",gender:"",family:""});
+      if(subcategory) steps.push({audience,category,subcategory,gender:"",family:""});
+      if(gender) steps.push({audience,category,subcategory,gender,family:""});
+      if(family) steps.push({audience,category,subcategory,gender,family});
 
-      const rootUrl = catalogUrlForRestoredNavigation("", "", "", {preserveDiscovery:false,baseHref:restoredUrl});
-      history.replaceState(
-        makeCatalogHistoryStateForNavigation(0, "", "", "", "sentinel"),
-        "",
-        rootUrl
-      );
-      history.pushState(
-        makeCatalogHistoryStateForNavigation(0, "", "", "", "guard"),
-        "",
-        rootUrl
-      );
-
-      steps.forEach((step, idx)=>{
-        const index = idx + 1;
-        const isCurrent = idx === steps.length - 1;
+      const rootUrl=catalogUrlForRestoredNavigation("","","","","",{preserveDiscovery:false,baseHref:restoredUrl});
+      history.replaceState(makeCatalogHistoryStateForNavigation(0,"","","","","","sentinel"),"",rootUrl);
+      history.pushState(makeCatalogHistoryStateForNavigation(0,"","","","","","guard"),"",rootUrl);
+      steps.forEach((step,idx)=>{
+        const index=idx+1; const isCurrent=idx===steps.length-1;
         history.pushState(
-          makeCatalogHistoryStateForNavigation(index, step.audience, step.category, step.family),
+          makeCatalogHistoryStateForNavigation(index,step.audience,step.category,step.subcategory,step.gender,step.family),
           "",
-          catalogUrlForRestoredNavigation(step.audience, step.category, step.family, {preserveDiscovery:isCurrent,baseHref:restoredUrl})
+          catalogUrlForRestoredNavigation(step.audience,step.category,step.subcategory,step.gender,step.family,{preserveDiscovery:isCurrent,baseHref:restoredUrl})
         );
       });
-
-      lastCatalogHistoryIndex = steps.length;
+      lastCatalogHistoryIndex=steps.length;
       return true;
     }
 
@@ -2242,21 +2257,22 @@
       const sort = sortSel ? sortSel.value : "";
       const tags = uniqueTerms(selectedSuggestionTerms || []).join(",");
 
-      if (q) u.searchParams.set("q", q); else u.searchParams.delete("q");
-      if (cat) u.searchParams.set("cat", cat); else u.searchParams.delete("cat");
-      if (br) u.searchParams.set("brand", br); else u.searchParams.delete("brand");
-      if (sort) u.searchParams.set("sort", sort); else u.searchParams.delete("sort");
-      if (selectedAudience) u.searchParams.set("audience", selectedAudience); else u.searchParams.delete("audience");
-      if (selectedCategory) u.searchParams.set("category", selectedCategory); else u.searchParams.delete("category");
-      if (selectedFamily) u.searchParams.set("family", selectedFamily); else u.searchParams.delete("family");
+      if(q) u.searchParams.set("q",q); else u.searchParams.delete("q");
+      if(cat) u.searchParams.set("cat",cat); else u.searchParams.delete("cat");
+      if(br) u.searchParams.set("brand",br); else u.searchParams.delete("brand");
+      if(sort) u.searchParams.set("sort",sort); else u.searchParams.delete("sort");
+      if(selectedAudience) u.searchParams.set("audience",selectedAudience); else u.searchParams.delete("audience");
+      if(selectedCategory) u.searchParams.set("category",selectedCategory); else u.searchParams.delete("category");
+      if(selectedSubcategory) u.searchParams.set("subcategory",selectedSubcategory); else u.searchParams.delete("subcategory");
+      if(selectedGender) u.searchParams.set("gender",selectedGender); else u.searchParams.delete("gender");
+      if(selectedFamily) u.searchParams.set("family",selectedFamily); else u.searchParams.delete("family");
       u.searchParams.delete("album");
-      if (tags) u.searchParams.set("tags", tags); else u.searchParams.delete("tags");
+      if(tags) u.searchParams.set("tags",tags); else u.searchParams.delete("tags");
 
-      const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
-      const state = makeCatalogHistoryState(safeIndex,{preserveExitGuard:!push});
-      if(push) history.pushState(state, "", u.toString());
-      else history.replaceState(state, "", u.toString());
-      lastCatalogHistoryIndex = safeIndex;
+      const safeIndex=Number.isInteger(index)&&index>=0?index:0;
+      const state=makeCatalogHistoryState(safeIndex,{preserveExitGuard:!push});
+      if(push) history.pushState(state,"",u.toString()); else history.replaceState(state,"",u.toString());
+      lastCatalogHistoryIndex=safeIndex;
     }
 
     function pushNavigationStateToUrl(){
@@ -2271,21 +2287,35 @@
     }
 
     function validateNavigationStateAgainstProducts(){
+      if(selectedAudience && !all.some(p=>productMatchesAudience(p,selectedAudience))){
+        selectedAudience=""; selectedCategory=""; selectedSubcategory=""; selectedGender=""; selectedFamily=""; return;
+      }
       if(selectedCategory){
-        const hasCategory = all.some(p => productMatchesAudience(p, selectedAudience) && cleanNavKey(navigationCategoryForProduct(p)) === cleanNavKey(selectedCategory));
-        if(!hasCategory){
-          selectedCategory = "";
-          selectedFamily = "";
-        }
+        const ok=all.some(p=>productMatchesAudience(p,selectedAudience)&&cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory));
+        if(!ok){selectedCategory="";selectedSubcategory="";selectedGender="";selectedFamily="";}
+      }
+      if(selectedSubcategory){
+        const ok=all.some(p=>productMatchesAudience(p,selectedAudience)&&cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory)&&cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory));
+        if(!ok){selectedSubcategory="";selectedGender="";selectedFamily="";}
+      }
+      if(selectedGender){
+        const ok=all.some(p=>
+          productMatchesAudience(p,selectedAudience) &&
+          cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory) &&
+          (!selectedSubcategory || cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory)) &&
+          cleanNavKey(navigationGenderForProduct(p))===cleanNavKey(selectedGender)
+        );
+        if(!ok){selectedGender="";selectedFamily="";}
       }
       if(selectedFamily){
-        const hasFamily = all.some(p => {
-          if(!productMatchesAudience(p, selectedAudience)) return false;
-          if(cleanNavKey(navigationCategoryForProduct(p)) !== cleanNavKey(selectedCategory)) return false;
-          if(cleanNavKey(selectedFamily) === cleanNavKey("General")) return !navigationFamilyForProduct(p);
-          return cleanNavKey(navigationFamilyForProduct(p)) === cleanNavKey(selectedFamily);
-        });
-        if(!hasFamily) selectedFamily = "";
+        const ok=all.some(p=>
+          productMatchesAudience(p,selectedAudience) &&
+          cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory) &&
+          (!selectedSubcategory || cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory)) &&
+          (!selectedGender || cleanNavKey(navigationGenderForProduct(p))===cleanNavKey(selectedGender)) &&
+          cleanNavKey(navigationFamilyForProduct(p))===cleanNavKey(selectedFamily)
+        );
+        if(!ok) selectedFamily="";
       }
     }
 
@@ -2298,6 +2328,8 @@
       const poppedCatalogState = poppedState && typeof poppedState === "object" ? poppedState[CATALOG_HISTORY_KEY] : null;
       const poppedAtRoot = !String(poppedCatalogState?.audience || "").trim()
         && !String(poppedCatalogState?.category || "").trim()
+        && !String(poppedCatalogState?.subcategory || "").trim()
+        && !String(poppedCatalogState?.gender || "").trim()
         && !String(poppedCatalogState?.family || "").trim();
 
       if(poppedGuardType === "sentinel" && poppedAtRoot){
@@ -2626,6 +2658,8 @@
         console.warn("Los productos se cargaron, pero no se pudo reconstruir toda la navegación. Se restablece la vista principal.", err);
         selectedAudience = "";
         selectedCategory = "";
+        selectedSubcategory = "";
+        selectedGender = "";
         selectedFamily = "";
         selectedAlbumKey = "";
         albums = [];
@@ -2733,30 +2767,14 @@ function uxRenderBreadcrumb(){
   if(!selectedAudience) return;
   const crumbs=[{level:"root",label:"Inicio"},{level:"audience",label:selectedAudience}];
   if(selectedCategory) crumbs.push({level:"category",label:selectedCategory});
+  if(selectedSubcategory) crumbs.push({level:"subcategory",label:selectedSubcategory});
+  if(selectedGender) crumbs.push({level:"gender",label:selectedGender});
   if(selectedFamily) crumbs.push({level:"family",label:selectedFamily});
   crumbs.forEach((crumb,index)=>{
-    if(index){
-      const sep=document.createElement("span");
-      sep.className="breadcrumb-separator";
-      sep.textContent="›";
-      sep.setAttribute("aria-hidden","true");
-      albumPath.appendChild(sep);
-    }
+    if(index){const sep=document.createElement("span");sep.className="breadcrumb-separator";sep.textContent="›";sep.setAttribute("aria-hidden","true");albumPath.appendChild(sep);}
     const current=index===crumbs.length-1;
-    if(current){
-      const span=document.createElement("span");
-      span.className="breadcrumb-current";
-      span.textContent=crumb.label;
-      span.setAttribute("aria-current","page");
-      albumPath.appendChild(span);
-    }else{
-      const btn=document.createElement("button");
-      btn.type="button";
-      btn.className="breadcrumb-link";
-      btn.dataset.breadcrumbLevel=crumb.level;
-      btn.textContent=crumb.label;
-      albumPath.appendChild(btn);
-    }
+    if(current){const span=document.createElement("span");span.className="breadcrumb-current";span.textContent=crumb.label;span.setAttribute("aria-current","page");albumPath.appendChild(span);}
+    else{const btn=document.createElement("button");btn.type="button";btn.className="breadcrumb-link";btn.dataset.breadcrumbLevel=crumb.level;btn.textContent=crumb.label;albumPath.appendChild(btn);}
   });
 }
 
@@ -2902,19 +2920,29 @@ function syncFilterVisibility(){
   if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
   if(albumNav) albumNav.hidden=!selectedAudience;
   if(albumBackBtn){
-    albumBackBtn.textContent=selectedFamily?`← Volver a ${selectedCategory}`:(selectedCategory?`← Volver a ${selectedAudience}`:"← Volver al inicio");
+    const parent=selectedFamily?(selectedGender||selectedSubcategory||selectedCategory||selectedAudience):
+      selectedGender?(selectedSubcategory||selectedCategory||selectedAudience):
+      selectedSubcategory?(selectedCategory||selectedAudience):
+      selectedCategory?selectedAudience:"inicio";
+    albumBackBtn.textContent=`← Volver a ${parent}`;
   }
   uxRenderBreadcrumb();
   placeResponsiveHeaderMeta();
   if(qInp){
-    const scope=selectedFamily||selectedCategory||selectedAudience;
+    const scope=selectedFamily||selectedGender||selectedSubcategory||selectedCategory||selectedAudience;
     qInp.placeholder=selectedAudience?`Buscar en ${scope}`:"Buscar producto, línea o categoría";
     qInp.setAttribute("aria-label",selectedAudience?`Buscar dentro de ${scope}`:"Buscar producto, línea o categoría");
   }
   if(grid){
     grid.classList.toggle("album-grid-mode",showAlbumGrid);
     grid.classList.toggle("root-nav-mode",showAlbumGrid&&!selectedAudience);
-    const label=!selectedAudience?"Categorías principales":(directSelected?"Productos":(!selectedCategory?"Subcategorías":(albums.length>0&&!selectedFamily?"Líneas":"Productos")));
+    let label="Productos";
+    if(!selectedAudience) label="Secciones principales";
+    else if(directSelected) label="Productos";
+    else if(albums.length){
+      const type=albums[0]?.navType;
+      label=type==="category"?"Categorías":type==="subcategory"?"Subcategorías":type==="gender"?"Público":type==="family"?"Líneas":"Secciones";
+    }
     grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
   }
   uxRenderFilterSummary();
@@ -3034,32 +3062,31 @@ function openAlbum(key,opts={}){
   if(!target) return;
   writeStateToUrl();
   uxScrollStack().push({scrollY:window.scrollY||0});
-  if(target.navType==="audience"){selectedAudience=target.navValue;selectedCategory="";selectedFamily="";}
-  else if(target.navType==="category"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.navValue;selectedFamily="";}
-  else if(target.navType==="family"){selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedFamily=target.navValue;}
+  if(target.navType==="audience"){
+    selectedAudience=target.navValue;selectedCategory="";selectedSubcategory="";selectedGender="";selectedFamily="";
+  }else if(target.navType==="category"){
+    selectedAudience=target.audience||selectedAudience;selectedCategory=target.navValue;selectedSubcategory="";selectedGender="";selectedFamily="";
+  }else if(target.navType==="subcategory"){
+    selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedSubcategory=target.navValue;selectedGender="";selectedFamily="";
+  }else if(target.navType==="gender"){
+    selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedSubcategory=target.subcategory||selectedSubcategory;selectedGender=target.navValue;selectedFamily="";
+  }else if(target.navType==="family"){
+    selectedAudience=target.audience||selectedAudience;selectedCategory=target.category||selectedCategory;selectedSubcategory=target.subcategory||selectedSubcategory;selectedGender=target.gender||selectedGender;selectedFamily=target.navValue;
+  }
   if(!opts.keepFilters) resetDiscoveryFilters();
-  refreshNavigationAlbums();
-  refreshFilterOptionsForScope();
-  pushNavigationStateToUrl();
-  render();
-  uxScrollToCatalogStart();
+  refreshNavigationAlbums();refreshFilterOptionsForScope();pushNavigationStateToUrl();render();uxScrollToCatalogStart();
 }
 
 function closeAlbum(opts={}){
-  if(currentCatalogHistoryIndex()>0){
-    history.back();
-    return;
-  }
+  if(currentCatalogHistoryIndex()>0){history.back();return;}
   const restore=uxScrollStack().pop();
   if(selectedFamily) selectedFamily="";
+  else if(selectedGender) selectedGender="";
+  else if(selectedSubcategory) selectedSubcategory="";
   else if(selectedCategory) selectedCategory="";
   else selectedAudience="";
   if(!opts.keepFilters) resetDiscoveryFilters();
-  refreshNavigationAlbums();
-  refreshFilterOptionsForScope();
-  writeStateToUrl();
-  installCatalogExitGuardIfAtRoot();
-  render();
+  refreshNavigationAlbums();refreshFilterOptionsForScope();writeStateToUrl();installCatalogExitGuardIfAtRoot();render();
   if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
 }
 
@@ -3198,9 +3225,11 @@ function bindFilters(){
     if(!btn) return;
     const level=btn.dataset.breadcrumbLevel;
     uxScrollStack().length=0;
-    if(level==="root"){selectedAudience="";selectedCategory="";selectedFamily="";}
-    else if(level==="audience"){selectedCategory="";selectedFamily="";}
-    else if(level==="category") selectedFamily="";
+    if(level==="root"){selectedAudience="";selectedCategory="";selectedSubcategory="";selectedGender="";selectedFamily="";}
+    else if(level==="audience"){selectedCategory="";selectedSubcategory="";selectedGender="";selectedFamily="";}
+    else if(level==="category"){selectedSubcategory="";selectedGender="";selectedFamily="";}
+    else if(level==="subcategory"){selectedGender="";selectedFamily="";}
+    else if(level==="gender") selectedFamily="";
     resetDiscoveryFilters();
     refreshNavigationAlbums();
     refreshFilterOptionsForScope();

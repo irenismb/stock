@@ -17,7 +17,7 @@
   ];
   const ADMIN_FILTER_ITEMS=[
     {key:"ADMIN_VER_PRODUCTOS_SIN_PRECIO",id:"sin-precio",label:"Ver productos sin precio",help:"Muestra únicamente productos del inventario cuyo Precio está vacío."},
-    {key:"ADMIN_NO_MOSTRAR_OCULTOS",id:"no-ocultos",label:"No mostrar ocultos",help:"No muestra secciones, categorías, subcategorías, líneas ni productos marcados como ocultos. No cambia ni elimina su estado de visibilidad."}
+    {key:"ADMIN_NO_MOSTRAR_OCULTOS",id:"no-ocultos",label:"No mostrar ocultos",help:"No muestra secciones, categorías, subcategorías, públicos, líneas ni productos marcados como ocultos. No cambia ni elimina su estado de visibilidad."}
   ];
   const adminFilterScopes=new Map();
   const adminLocalStates=new Map();
@@ -62,7 +62,7 @@
       if(adminHideHidden) out=out.filter(p=>!isHidden(p));
       return out;
     }
-    return a.filter(p=>!isHidden(p));
+    return a.filter(p=>norm(p?.commercialStatus)!=="no a la venta"&&!isHidden(p));
   };
 
   btn.hidden=false; btn.textContent="Administrar"; btn.setAttribute("aria-pressed","false"); btn.setAttribute("aria-label","Administrar catálogo");
@@ -78,8 +78,36 @@
   function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}
   function visibilityId(t,id){const type=norm(t),raw=String(id??"").trim();if(type==="producto"&&/^\d{1,4}$/.test(raw))return raw.padStart(4,"0");return norm(raw)}
   function key(t,id){return `${norm(t)}::${visibilityId(t,id)}`}
-  function ids(p){const c=norm(p?.category),s=norm(p?.subcategory),f=norm(p?.line||p?.fragranceFamily),sec=norm(p?.section);return{sec,c,s:c&&s?`${c}|${s}`:"",f:c&&s&&f?`${c}|${s}|${f}`:""}}
-  function isHidden(p){if(!p)return false;const i=ids(p),code=visibilityId("producto",p.id||p.code||"");return (code&&rules.has(key("producto",code)))||(i.sec&&rules.has(key("seccion",i.sec)))||(i.c&&rules.has(key("categoria",i.c)))||(i.s&&rules.has(key("subcategoria",i.s)))||(i.f&&rules.has(key("familia",i.f)))}
+  function joinVisibilityPath(...parts){return parts.map(norm).filter(Boolean).join("|")}
+  function ids(p){
+    const sec=norm(p?.section),c=norm(p?.category),s=norm(p?.subcategory),pub=norm(p?.public),line=norm(p?.line||p?.fragranceFamily);
+    return{
+      sec,
+      c:c?joinVisibilityPath(sec,c):"",
+      s:s?joinVisibilityPath(sec,c,s):"",
+      pub:pub?joinVisibilityPath(sec,c,s,pub):"",
+      line:line?joinVisibilityPath(sec,c,s,pub,line):"",
+      legacyCategory:c?norm(p?.category):"",
+      legacySubcategory:sec&&c?joinVisibilityPath(sec,norm(p?.category)):"",
+      legacyFamily:c&&s&&line?joinVisibilityPath(norm(p?.category),s,line):""
+    }
+  }
+  function hasRule(type,id){return Boolean(id)&&rules.has(key(type,id))}
+  function isHidden(p){
+    if(!p)return false;
+    const i=ids(p),code=visibilityId("producto",p.id||p.code||"");
+    return (code&&hasRule("producto",code))||
+      hasRule("seccion",i.sec)||
+      hasRule("categoria",i.c)||
+      hasRule("subcategoria",i.s)||
+      hasRule("publico",i.pub)||
+      hasRule("linea",i.line)||
+      hasRule("familia",i.line)||
+      hasRule("categoria",i.sec)||
+      hasRule("categoria",i.legacyCategory)||
+      hasRule("subcategoria",i.legacySubcategory)||
+      hasRule("familia",i.legacyFamily);
+  }
   function isDirectProduct(p){return rules.has(key("producto",p?.id||p?.code||""))}
   function cell(c){return !c?"":c.f!=null?String(c.f):c.v!=null?String(c.v):""}
   function stateBool(v){return ["activado","activo","true","verdadero","si","1","on"].includes(norm(v))}
@@ -213,7 +241,27 @@
   function productObj(code){try{return productById?.get?.(code)||allLoadedProducts?.find?.(p=>String(p?.id||"")===code)||null}catch(_){return null}}
   function mark(card,direct,inherited){card.classList.toggle("catalog-admin-hidden",!!direct);card.classList.toggle("catalog-admin-inherited",!!inherited)}
   function productVis(card){if(card.querySelector(".catalog-admin-vis"))return;const code=visibilityId("producto",card.dataset.id||""),p=productObj(code);if(!/^\d{4}$/.test(code)||!p)return;const direct=isDirectProduct(p),inherited=isHidden(p)&&!direct;mark(card,direct,inherited);addVisButton(card,inherited?null:{tipo:"producto",id:code,label:String(p.name||code),hidden:direct},inherited)}
-  function albumInfo(card){const b=card.querySelector("[data-album-open]");if(!b)return null;const p=String(b.dataset.albumOpen||"").split("::").map(norm),label=String(card.querySelector(".album-label")?.textContent||"").trim();if(p[0]==="audience"&&p[1])return{tipo:"categoria",id:p[1],label:label||p[1],parents:[]};if(p[0]==="category"&&p[1]&&p[2])return{tipo:"subcategoria",id:`${p[1]}|${p[2]}`,label:label||p[2],parents:[key("categoria",p[1])]};if(p[0]==="family"&&p[1]&&p[2]&&p[3])return{tipo:"familia",id:`${p[1]}|${p[2]}|${p[3]}`,label:label||p[3],parents:[key("categoria",p[1]),key("subcategoria",`${p[1]}|${p[2]}`)]};return null}
+  function albumInfo(card){
+    const b=card.querySelector("[data-album-open]");if(!b)return null;
+    const p=String(b.dataset.albumOpen||"").split("::").map(norm),label=String(card.querySelector(".album-label")?.textContent||"").trim();
+    if(p[0]==="audience"&&p[1])return{tipo:"seccion",id:p[1],label:label||p[1],parents:[]};
+    if(p[0]==="category"&&p[1]&&p[2])return{tipo:"categoria",id:joinVisibilityPath(p[1],p[2]),label:label||p[2],parents:[key("seccion",p[1])]};
+    if(p[0]==="subcategory"&&p[1]&&p[2]&&p[3])return{tipo:"subcategoria",id:joinVisibilityPath(p[1],p[2],p[3]),label:label||p[3],parents:[key("seccion",p[1]),key("categoria",joinVisibilityPath(p[1],p[2]))]};
+    if(p[0]==="gender"&&p[1]&&p[2]&&p[4]){
+      const sub=p[3]||"",id=joinVisibilityPath(p[1],p[2],sub,p[4]);
+      const parents=[key("seccion",p[1]),key("categoria",joinVisibilityPath(p[1],p[2]))];
+      if(sub)parents.push(key("subcategoria",joinVisibilityPath(p[1],p[2],sub)));
+      return{tipo:"publico",id,label:label||p[4],parents};
+    }
+    if(p[0]==="family"&&p[1]&&p[2]&&p[5]){
+      const sub=p[3]||"",pub=p[4]||"",id=joinVisibilityPath(p[1],p[2],sub,pub,p[5]);
+      const parents=[key("seccion",p[1]),key("categoria",joinVisibilityPath(p[1],p[2]))];
+      if(sub)parents.push(key("subcategoria",joinVisibilityPath(p[1],p[2],sub)));
+      if(pub)parents.push(key("publico",joinVisibilityPath(p[1],p[2],sub,pub)));
+      return{tipo:"linea",id,label:label||p[5],parents};
+    }
+    return null;
+  }
   function albumVis(card){if(card.querySelector(".catalog-admin-vis"))return;const i=albumInfo(card);if(!i)return;const direct=rules.has(key(i.tipo,i.id)),inherited=!direct&&i.parents.some(x=>rules.has(x));mark(card,direct,inherited);addVisButton(card,inherited?null:{...i,hidden:direct},inherited)}
   function addVisButton(card,info,inherited){const w=document.createElement("div"),b=document.createElement("button");w.className="catalog-admin-vis";b.type="button";if(inherited){b.textContent="Oculto por nivel superior";b.className="inherited";b.disabled=true}else{b.textContent=info.hidden?"Oculto":"Visible";b.className=info.hidden?"hidden":"";b.title=info.hidden?`Mostrar ${info.label}`:`Ocultar ${info.label}`;b.onclick=e=>{e.preventDefault();e.stopPropagation();saveVisibility(info,b)}}w.appendChild(b);if(card.classList.contains("album-card")){card.classList.add("catalog-admin-has-vis");const top=card.querySelector(".album-card-top");(top||card).appendChild(w)}else{card.appendChild(w)}}
   async function saveVisibility(info,b){b.disabled=true;const old=b.textContent;b.textContent="Guardando…";try{const r=await request({tipo:"actualizar-visibilidad",tipoRegla:info.tipo,identificador:info.id,etiqueta:info.label,ocultoNuevo:!info.hidden});const k=key(info.tipo,r?.identificador||info.id);r?.oculto?rules.add(k):rules.delete(k);rebuild()}catch(e){b.disabled=false;b.textContent=old;alert(e.message||"No se pudo guardar la visibilidad.")}}

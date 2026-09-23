@@ -37,10 +37,8 @@
   }catch(_){ }
 })();
 
-// Ajustes del pie del catálogo: texto comercial/SEO y retiro del listado completo de productos.
+// Ajustes del pie del catálogo: texto comercial/SEO.
 (() => {
-  document.querySelector(".beauty-products-details")?.remove();
-
   const footerText = document.querySelector(".footer-card p");
   if(!footerText) return;
 
@@ -475,8 +473,6 @@
 
 // Inicio compacto y estado de carga sin mensajes contradictorios.
 (() => {
-  document.getElementById("catalogEntryIntro")?.remove();
-
   const count = document.getElementById("count");
   const grid = document.getElementById("grid");
   if(!count || !grid) return;

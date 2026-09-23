@@ -2398,6 +2398,10 @@
     function render(){
       const token = ++_renderToken;
 
+      // Mientras termina la carga inicial, el progreso es la única vista válida.
+      // Evita renders prematuros, incluso al restaurar automáticamente el modo administrador.
+      if(window.CATALOG_INITIAL_LOAD_READY !== true) return;
+
       syncFilterVisibility();
       syncWordToggleButton();
       renderWordSuggestions();
@@ -2637,10 +2641,10 @@
         if(!silent){
           updateCountTextReady();
           await new Promise(resolve=>window.setTimeout(resolve, 220));
+          window.CATALOG_INITIAL_LOAD_READY = true;
         }
         render();
         if(!silent){
-          window.CATALOG_INITIAL_LOAD_READY = true;
           window.dispatchEvent(new CustomEvent("catalog-initial-load-ready"));
         }
       }catch(err){

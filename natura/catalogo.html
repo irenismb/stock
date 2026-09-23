@@ -271,7 +271,7 @@
       <p class="catalog-entry-text" id="catalogEntryText">Elige una categoría para comenzar.</p>
     </section>
     <div class="topline" id="topline">
-      <div class="count" id="count" aria-live="polite">Cargando productos… 35%</div>
+      <div class="count" id="count" aria-live="polite" hidden>Cargando productos…</div>
     </div>
     <div id="albumNavHost">
       <div class="album-nav" id="albumNav" hidden>
@@ -455,11 +455,11 @@
   </div>
 
   <script src="precios-admin-config.js?actualizacion=alcance-filtros-admin-2026-09-22-1"></script>
-  <script src="catalogo-app.js?actualizacion=historial-restaurado-2026-09-22-1"></script>
+  <script src="catalogo-app.js?actualizacion=restauracion-atras-segura-2026-09-22-1"></script>
   <script src="catalogo-carrito-pedido.js?actualizacion=2026-09-20-2"></script>
   <script src="catalogo-herramientas.js?actualizacion=2026-09-20-bootstrap-2"></script>
   <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>
-  <script src="catalogo-ui.js?actualizacion=2026-09-20-movil-admin-whatsapp-2"></script>
+  <script src="catalogo-ui.js?actualizacion=contador-carga-seguro-2026-09-22-1"></script>
   <script src="precios-admin.js?actualizacion=alcance-filtros-admin-2026-09-22-2"></script>
   <script>
     // Durante la carga inicial, el contador superior permanece oculto aunque
@@ -471,7 +471,7 @@
 
       count.hidden = true;
 
-      const catalogIsReady = () => !!grid.querySelector(".card,.album-card");
+      const catalogIsReady = () => window.CATALOG_INITIAL_LOAD_READY === true;
       const catalogHasHardError = () =>
         /error|no se pudieron cargar|no se pudo cargar|reintenta más tarde/i.test(
           String(count.textContent || "")
@@ -494,6 +494,10 @@
         subtree:true
       });
       guard.observe(grid, {childList:true, subtree:true});
+      window.addEventListener("catalog-initial-load-ready", () => {
+        count.hidden = false;
+        guard.disconnect();
+      }, {once:true});
     })();
 
     // catalogo.html es el punto de entrada: inicia el catálogo cuando todos los módulos ya están cargados.

@@ -650,9 +650,11 @@
 
     async function loadGoogleSheetCatalog(options = {}){
       const refreshImages = options.refreshImages !== false;
+      const progressEnabled = options.progressEnabled === true;
       let rows = [];
       try{
         rows = await loadGoogleSheetRows();
+        if(progressEnabled) setCatalogLoadingStage("Cargando productos…", 35, 69);
       }catch(error){
         const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el Google Sheet."));
         sheetError.catalogStage = "sheet";
@@ -2315,6 +2317,85 @@
       lastCatalogHistoryIndex = 0;
     }
 
+    function makeCatalogHistoryStateForNavigation(index, audience="", category="", family="", exitGuardType=""){
+      const base = history.state && typeof history.state === "object" ? { ...history.state } : {};
+      delete base[CATALOG_EXIT_GUARD_KEY];
+      const safeIndex = Number.isInteger(index) && index >= 0 ? index : 0;
+      const state = {
+        ...base,
+        [CATALOG_HISTORY_KEY]:{
+          index:safeIndex,
+          audience:String(audience || ""),
+          category:String(category || ""),
+          family:String(family || "")
+        }
+      };
+      if(exitGuardType){
+        state[CATALOG_EXIT_GUARD_KEY] = { type:String(exitGuardType) };
+      }
+      return state;
+    }
+
+    function catalogUrlForRestoredNavigation(audience="", category="", family="", {preserveDiscovery=false,baseHref=location.href}={}){
+      const u = new URL(baseHref, location.href);
+      if(!preserveDiscovery){
+        for(const key of ["q","cat","brand","sort","tags","album"]){
+          u.searchParams.delete(key);
+        }
+      }else{
+        u.searchParams.delete("album");
+      }
+      if(audience) u.searchParams.set("audience", audience); else u.searchParams.delete("audience");
+      if(category) u.searchParams.set("category", category); else u.searchParams.delete("category");
+      if(family) u.searchParams.set("family", family); else u.searchParams.delete("family");
+      return u.toString();
+    }
+
+    function rebuildCatalogHistoryForRestoredNavigation(){
+      validateNavigationStateAgainstProducts();
+      if(isCatalogRootNavigation()) return false;
+
+      // Si la entrada actual ya pertenece a una navegación interna real, no la dupliques.
+      if(currentCatalogHistoryIndex() > 0) return false;
+
+      const audience = String(selectedAudience || "");
+      const category = String(selectedCategory || "");
+      const family = String(selectedFamily || "");
+      if(!audience) return false;
+
+      const restoredUrl = location.href;
+      const steps = [
+        { audience, category:"", family:"" }
+      ];
+      if(category) steps.push({ audience, category, family:"" });
+      if(family) steps.push({ audience, category, family });
+
+      const rootUrl = catalogUrlForRestoredNavigation("", "", "", {preserveDiscovery:false,baseHref:restoredUrl});
+      history.replaceState(
+        makeCatalogHistoryStateForNavigation(0, "", "", "", "sentinel"),
+        "",
+        rootUrl
+      );
+      history.pushState(
+        makeCatalogHistoryStateForNavigation(0, "", "", "", "guard"),
+        "",
+        rootUrl
+      );
+
+      steps.forEach((step, idx)=>{
+        const index = idx + 1;
+        const isCurrent = idx === steps.length - 1;
+        history.pushState(
+          makeCatalogHistoryStateForNavigation(index, step.audience, step.category, step.family),
+          "",
+          catalogUrlForRestoredNavigation(step.audience, step.category, step.family, {preserveDiscovery:isCurrent,baseHref:restoredUrl})
+        );
+      });
+
+      lastCatalogHistoryIndex = steps.length;
+      return true;
+    }
+
     function writeStateToUrl({push=false,index=currentCatalogHistoryIndex()}={}){
       const u = new URL(location.href);
       const q = qInp.value.trim();
@@ -2567,17 +2648,62 @@
       }
     }
 
-    function updateCountTextLoading(label="Cargando productos…", percent=35){
+    let catalogLoadingProgress = 0;
+    let catalogLoadingCeiling = 0;
+    let catalogLoadingLabel = "Cargando productos…";
+    let catalogLoadingTimer = 0;
+
+    function renderCatalogLoadingProgress(){
       if(!countEl) return;
-      const pct = Math.max(0, Math.min(100, Number(percent) || 0));
-      countEl.textContent = `${label} ${pct}%`;
+      const pct = Math.max(0, Math.min(99, Math.round(catalogLoadingProgress)));
+      countEl.textContent = `${catalogLoadingLabel} ${pct}%`;
+    }
+
+    function stopCatalogLoadingProgress(){
+      if(catalogLoadingTimer){
+        window.clearInterval(catalogLoadingTimer);
+        catalogLoadingTimer = 0;
+      }
+    }
+
+    function ensureCatalogLoadingTimer(){
+      if(catalogLoadingTimer) return;
+      catalogLoadingTimer = window.setInterval(()=>{
+        if(catalogLoadingProgress >= catalogLoadingCeiling) return;
+        const gap = catalogLoadingCeiling - catalogLoadingProgress;
+        const step = gap > 24 ? 2 : 1;
+        catalogLoadingProgress = Math.min(catalogLoadingCeiling, catalogLoadingProgress + step);
+        renderCatalogLoadingProgress();
+      }, 140);
+    }
+
+    function setCatalogLoadingStage(label, floor, ceiling){
+      catalogLoadingLabel = String(label || catalogLoadingLabel || "Cargando productos…");
+      const safeFloor = Math.max(0, Math.min(99, Number(floor) || 0));
+      const safeCeiling = Math.max(safeFloor, Math.min(99, Number(ceiling) || safeFloor));
+      catalogLoadingProgress = Math.max(catalogLoadingProgress, safeFloor);
+      catalogLoadingCeiling = safeCeiling;
+      renderCatalogLoadingProgress();
+      ensureCatalogLoadingTimer();
+    }
+
+    function startCatalogLoadingProgress(){
+      stopCatalogLoadingProgress();
+      catalogLoadingProgress = 1;
+      catalogLoadingCeiling = 34;
+      catalogLoadingLabel = "Cargando productos…";
+      renderCatalogLoadingProgress();
+      ensureCatalogLoadingTimer();
     }
 
     function updateCountTextReady(){
+      stopCatalogLoadingProgress();
+      catalogLoadingProgress = 100;
       if(countEl) countEl.textContent = "Listo · 100%";
     }
 
     function updateCountTextError(msg){
+      stopCatalogLoadingProgress();
       if(countEl) countEl.textContent = msg || "Error al cargar productos.";
     }
    function buildCategoriesAndBrands(list){
@@ -2612,7 +2738,7 @@
     async function loadProducts(options = {}){
       const silent = options.silent === true;
       const refreshImages = options.refreshImages !== false;
-      if(!silent) updateCountTextLoading("Cargando productos…", 35);
+      if(!silent) startCatalogLoadingProgress();
       clearLegacyProductCaches();
 
       try{
@@ -2623,14 +2749,14 @@
 
       let catalogSource;
       try{
-        catalogSource = await loadGoogleSheetCatalog({ refreshImages });
+        catalogSource = await loadGoogleSheetCatalog({ refreshImages, progressEnabled:!silent });
       }catch(err){
         console.error("Error al cargar el Google Sheet oficial.", err);
         if(!silent) updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
         return;
       }
 
-      if(!silent) updateCountTextLoading("Preparando catálogo…", 70);
+      if(!silent) setCatalogLoadingStage("Preparando catálogo…", 70, 98);
 
       let sheetProducts = [];
       try{
@@ -3299,6 +3425,7 @@ async function init(){
   applyCatalogReloadViewState(startupViewState);
   await initializeRemoteCatalogConfiguration();
   await loadProducts();
+  rebuildCatalogHistoryForRestoredNavigation();
   installCatalogExitGuardIfAtRoot();
   startInventoryAutoRefresh();
   await restoreCatalogAdminAfterReload(startupAdminState);

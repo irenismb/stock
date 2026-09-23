@@ -2900,7 +2900,6 @@ function syncFilterVisibility(){
   if(catSel){catSel.hidden=true;catSel.disabled=true;catSel.value="";}
   if(brandSel){brandSel.hidden=true;brandSel.disabled=true;brandSel.value="";}
   if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
-  syncSPREButtonVisibility();
   if(albumNav) albumNav.hidden=!selectedAudience;
   if(albumBackBtn){
     albumBackBtn.textContent=selectedFamily?`← Volver a ${selectedCategory}`:(selectedCategory?`← Volver a ${selectedAudience}`:"← Volver al inicio");

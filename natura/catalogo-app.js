@@ -2351,12 +2351,14 @@
       return u.toString();
     }
 
-    function rebuildCatalogHistoryForRestoredNavigation(){
+    function rebuildCatalogHistoryForRestoredNavigation({force=false}={}){
       validateNavigationStateAgainstProducts();
       if(isCatalogRootNavigation()) return false;
 
-      // Si la entrada actual ya pertenece a una navegación interna real, no la dupliques.
-      if(currentCatalogHistoryIndex() > 0) return false;
+      // En una carga normal con historial interno vigente no se duplica la cadena.
+      // Cuando la vista viene de una sesión persistida se fuerza la reconstrucción:
+      // algunos navegadores restauran history.state, pero no todas las entradas previas.
+      if(!force && currentCatalogHistoryIndex() > 0) return false;
 
       const audience = String(selectedAudience || "");
       const category = String(selectedCategory || "");
@@ -2652,6 +2654,7 @@
     let catalogLoadingCeiling = 0;
     let catalogLoadingLabel = "Cargando productos…";
     let catalogLoadingTimer = 0;
+    window.CATALOG_INITIAL_LOAD_READY = false;
 
     function renderCatalogLoadingProgress(){
       if(!countEl) return;
@@ -2738,7 +2741,10 @@
     async function loadProducts(options = {}){
       const silent = options.silent === true;
       const refreshImages = options.refreshImages !== false;
-      if(!silent) startCatalogLoadingProgress();
+      if(!silent){
+        window.CATALOG_INITIAL_LOAD_READY = false;
+        startCatalogLoadingProgress();
+      }
       clearLegacyProductCaches();
 
       try{
@@ -2814,6 +2820,10 @@
           await new Promise(resolve=>window.setTimeout(resolve, 220));
         }
         render();
+        if(!silent){
+          window.CATALOG_INITIAL_LOAD_READY = true;
+          window.dispatchEvent(new CustomEvent("catalog-initial-load-ready"));
+        }
       }catch(err){
         console.error("Los productos se cargaron, pero ocurrió un error al renderizar el catálogo.", err);
         if(!silent) updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
@@ -3422,10 +3432,11 @@ async function init(){
   const persistentViewState=reloadViewState ? null : readCatalogPersistentViewState();
   const startupViewState=reloadViewState || (catalogUrlHasExplicitViewState() ? null : persistentViewState);
   const startupAdminState=reloadViewState || persistentViewState;
+  const shouldForceRestoredHistory=!!persistentViewState && !catalogNavigationIsReload();
   applyCatalogReloadViewState(startupViewState);
   await initializeRemoteCatalogConfiguration();
   await loadProducts();
-  rebuildCatalogHistoryForRestoredNavigation();
+  rebuildCatalogHistoryForRestoredNavigation({force:shouldForceRestoredHistory});
   installCatalogExitGuardIfAtRoot();
   startInventoryAutoRefresh();
   await restoreCatalogAdminAfterReload(startupAdminState);

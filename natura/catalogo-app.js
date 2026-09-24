@@ -635,7 +635,7 @@
       let rows = [];
       try{
         rows = await loadGoogleSheetRows();
-        if(progressEnabled) setCatalogLoadingStage("Cargando productos…", 35, 69);
+        if(progressEnabled) setCatalogLoadingStage("Cargando imágenes…", 31, 94);
       }catch(error){
         const sheetError = error instanceof Error ? error : new Error(String(error || "No se pudo leer el Google Sheet."));
         sheetError.catalogStage = "sheet";
@@ -2725,10 +2725,10 @@
       catalogLoadingTimer = window.setInterval(()=>{
         if(catalogLoadingProgress >= catalogLoadingCeiling) return;
         const gap = catalogLoadingCeiling - catalogLoadingProgress;
-        const step = gap > 24 ? 2 : 1;
-        catalogLoadingProgress = Math.min(catalogLoadingCeiling, catalogLoadingProgress + step);
+        if(gap <= 0) return;
+        catalogLoadingProgress = Math.min(catalogLoadingCeiling, catalogLoadingProgress + 1);
         renderCatalogLoadingProgress();
-      }, 140);
+      }, 450);
     }
 
     function setCatalogLoadingStage(label, floor, ceiling){
@@ -2744,7 +2744,7 @@
     function startCatalogLoadingProgress(){
       stopCatalogLoadingProgress();
       catalogLoadingProgress = 1;
-      catalogLoadingCeiling = 34;
+      catalogLoadingCeiling = 30;
       catalogLoadingLabel = "Cargando productos…";
       renderCatalogLoadingProgress();
       ensureCatalogLoadingTimer();
@@ -2799,7 +2799,7 @@
         return;
       }
 
-      if(!silent) setCatalogLoadingStage("Preparando catálogo…", 70, 98);
+      if(!silent) setCatalogLoadingStage("Preparando catálogo…", 95, 99);
 
       let sheetProducts = [];
       try{

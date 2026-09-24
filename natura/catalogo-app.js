@@ -45,7 +45,8 @@
     // Galería visual exclusiva de "Regalos para toda ocasión".
     // Vive en la subcarpeta regalos de Google Drive y se sirve mediante el mismo Apps Script.
     const GIFT_IMAGE_SOURCE = {
-      section: "Regalos para toda ocasión"
+      section: "Belleza y cuidado",
+      category: "Regalos"
     };
 
 	const INTERRUPTORES = {
@@ -757,7 +758,7 @@
             id: `regalo-galeria-${String(index + 1).padStart(2,"0")}`,
             name: "",
             section: GIFT_IMAGE_SOURCE.section,
-            category: "Regalos",
+            category: GIFT_IMAGE_SOURCE.category,
             subcategory: "",
             fragranceFamily: "",
             line: "",
@@ -1002,13 +1003,6 @@
         subtitle:"Tecnología y hogar, juguetes, papelería, medicamentos y más.",
         iconImage:ROOT_ICON_IMAGES.otros,
         theme:"otros"
-      },
-      {
-        label:"Regalos",
-        subtitle:"Detalles y arreglos listos para regalar en cualquier ocasión.",
-        iconImage:ROOT_ICON_IMAGES.regalos,
-        theme:"regalos",
-        directProducts:true
       }
     ];
 
@@ -1147,7 +1141,6 @@
 
     function navigationSectionForProduct(p){
       if(!p) return "";
-      if(p.section === "Regalos para toda ocasión") return "Regalos";
       return String(p.section || "").trim();
     }
 
@@ -1245,7 +1238,6 @@
     }
 
     function isDirectProductSection(sectionLabel){
-      if(cleanNavKey(sectionLabel) === cleanNavKey("Regalos")) return true;
       const products = productsForSection(sectionLabel);
       if(!products.length) return false;
       return !products.some(p => navigationOrderedLevels().some(level=>Boolean(navigationValueForProduct(p,level))));
@@ -2115,6 +2107,11 @@
       section=String(section || audience || "").trim();
       publicValue=String(publicValue || gender || "").trim();
       line=String(line || family || "").trim();
+      const legacyGiftSection=cleanNavKey(section);
+      if([cleanNavKey("Regalos"),cleanNavKey("Regalos para toda ocasión")].includes(legacyGiftSection)){
+        section="Belleza y cuidado";
+        if(!String(category||"").trim()) category="Regalos";
+      }
       const source=Array.isArray(all)?all:[];
       const sections=[...new Set(source.map(navigationSectionForProduct).map(v=>String(v||"").trim()).filter(Boolean))];
       const validSection=sections.find(label=>cleanNavKey(label)===cleanNavKey(section));

@@ -54,6 +54,10 @@
 	  IMAGEN_SUPLENTE_PRODUCTO: "suplente.webp"
     };
     window.INTERRUPTORES = INTERRUPTORES;
+    const NAVIGATION_ORDER_CONFIG_KEY = "ORDEN_NAVEGACION";
+    const DEFAULT_NAVIGATION_ORDER = Object.freeze(["category","subcategory","public","line"]);
+    let CATALOG_NAVIGATION_ORDER = DEFAULT_NAVIGATION_ORDER.slice();
+    window.CATALOG_NAVIGATION_ORDER = CATALOG_NAVIGATION_ORDER.slice();
     const REMOTE_BOOLEAN_CONTROL_KEYS = new Set([
       "MOSTRAR_CANTIDAD_STOCK",
       "MOSTRAR_PRECIOS_PRODUCTO"
@@ -61,7 +65,8 @@
     const REMOTE_CONTROL_DEFAULTS = Object.freeze({
       REGISTRAR_VISITAS_PROPIAS: "DESACTIVADO",
       MOSTRAR_CANTIDAD_STOCK: "DESACTIVADO",
-      MOSTRAR_PRECIOS_PRODUCTO: "ACTIVADO"
+      MOSTRAR_PRECIOS_PRODUCTO: "ACTIVADO",
+      ORDEN_NAVEGACION: DEFAULT_NAVIGATION_ORDER.join(",")
     });
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
     for(const [key, value] of Object.entries(REMOTE_CONTROL_DEFAULTS)){
@@ -408,6 +413,11 @@
 
         const rawState = String(rawValue ?? "").trim();
         window.REMOTE_CONTROL_VALUES[key] = rawState;
+
+        if(key===NAVIGATION_ORDER_CONFIG_KEY){
+          changed=setCatalogNavigationOrder(rawState)||changed;
+          continue;
+        }
 
         const state = parseRemoteBoolean(rawState);
         if(state === null || !REMOTE_BOOLEAN_CONTROL_KEYS.has(key)) continue;
@@ -1077,20 +1087,62 @@
     let selectedAlbumKey = "";
 
     const NAV_LEVELS = Object.freeze({
-      section:{depth:1,label:"Sección"},
-      category:{depth:2,label:"Categoría"},
-      subcategory:{depth:3,label:"Subcategoría"},
-      public:{depth:4,label:"Público"},
-      line:{depth:5,label:"Línea"},
-      product:{depth:6,label:"Producto"}
+      section:{label:"Sección"},
+      category:{label:"Categoría"},
+      subcategory:{label:"Subcategoría"},
+      public:{label:"Público"},
+      line:{label:"Línea"},
+      product:{label:"Producto"}
     });
-
-    function navigationDepthForType(type){
-      return Number(NAV_LEVELS[String(type || "")]?.depth || 0);
-    }
 
     function cleanNavKey(value){
       return normalizeText(value).replace(/\s+/g, " ");
+    }
+
+    function normalizeNavigationOrder(value){
+      const alias={
+        category:"category",categoria:"category",
+        subcategory:"subcategory",subcategoria:"subcategory",
+        public:"public",publico:"public",
+        line:"line",linea:"line"
+      };
+      const source=Array.isArray(value)?value:String(value||"").split(",");
+      const normalized=source
+        .map(item=>alias[cleanNavKey(item).replace(/\s+/g,"")]||"")
+        .filter(Boolean);
+      if(normalized.length!==DEFAULT_NAVIGATION_ORDER.length) return DEFAULT_NAVIGATION_ORDER.slice();
+      if(new Set(normalized).size!==DEFAULT_NAVIGATION_ORDER.length) return DEFAULT_NAVIGATION_ORDER.slice();
+      if(!DEFAULT_NAVIGATION_ORDER.every(level=>normalized.includes(level))) return DEFAULT_NAVIGATION_ORDER.slice();
+      return normalized;
+    }
+
+    function setCatalogNavigationOrder(value){
+      const next=normalizeNavigationOrder(value);
+      const changed=next.join("|")!==CATALOG_NAVIGATION_ORDER.join("|");
+      CATALOG_NAVIGATION_ORDER=next.slice();
+      window.CATALOG_NAVIGATION_ORDER=CATALOG_NAVIGATION_ORDER.slice();
+      window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
+      window.REMOTE_CONTROL_VALUES[NAVIGATION_ORDER_CONFIG_KEY]=CATALOG_NAVIGATION_ORDER.join(",");
+      return changed;
+    }
+
+    function navigationOrderedLevels(){
+      return CATALOG_NAVIGATION_ORDER.slice();
+    }
+
+    function navigationDepthForType(type){
+      const level=String(type||"");
+      if(level==="section") return 1;
+      if(level==="product") return 6;
+      const index=CATALOG_NAVIGATION_ORDER.indexOf(level);
+      return index>=0?index+2:0;
+    }
+
+    function navigationLevelLabel(type,plural=false){
+      const level=String(type||"");
+      if(!plural) return NAV_LEVELS[level]?.label||"Nivel";
+      const labels={section:"Secciones",category:"Categorías",subcategory:"Subcategorías",public:"Públicos",line:"Líneas",product:"Productos"};
+      return labels[level]||"Opciones";
     }
 
     function navigationSectionForProduct(p){
@@ -1123,6 +1175,71 @@
       return String(p.line || "").trim();
     }
 
+    function navigationValueForProduct(p,level){
+      if(level==="category") return navigationCategoryForProduct(p);
+      if(level==="subcategory") return navigationSubcategoryForProduct(p);
+      if(level==="public") return navigationPublicForProduct(p);
+      if(level==="line") return navigationLineForProduct(p);
+      return "";
+    }
+
+    function selectedNavigationValue(level){
+      if(level==="category") return selectedCategory;
+      if(level==="subcategory") return selectedSubcategory;
+      if(level==="public") return selectedPublic;
+      if(level==="line") return selectedLine;
+      return "";
+    }
+
+    function setSelectedNavigationValue(level,value){
+      const clean=String(value||"").trim();
+      if(level==="category") selectedCategory=clean;
+      else if(level==="subcategory") selectedSubcategory=clean;
+      else if(level==="public") selectedPublic=clean;
+      else if(level==="line") selectedLine=clean;
+    }
+
+    function clearSelectedNavigationValues(){
+      selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";
+    }
+
+    function clearNavigationLevelsAfter(level){
+      const order=navigationOrderedLevels();
+      const index=order.indexOf(level);
+      if(index<0) return;
+      for(const next of order.slice(index+1)) setSelectedNavigationValue(next,"");
+    }
+
+    function navigationSelectionContext(){
+      return {
+        section:selectedSection,
+        category:selectedCategory,
+        subcategory:selectedSubcategory,
+        public:selectedPublic,
+        line:selectedLine
+      };
+    }
+
+    function selectedNavigationTrail(){
+      const trail=[];
+      if(selectedSection) trail.push({level:"section",label:selectedSection,depth:1});
+      for(const level of navigationOrderedLevels()){
+        const label=selectedNavigationValue(level);
+        if(label) trail.push({level,label,depth:navigationDepthForType(level)});
+      }
+      return trail;
+    }
+
+    window.getCatalogNavigationOrder=()=>navigationOrderedLevels();
+    window.applyCatalogNavigationOrder=(value,options={})=>{
+      const changed=setCatalogNavigationOrder(value);
+      if(changed&&options.rebuild!==false&&Array.isArray(allLoadedProducts)&&allLoadedProducts.length){
+        validateNavigationStateAgainstProducts();
+        rebuildCatalogVisibility();
+      }
+      return {changed,order:navigationOrderedLevels()};
+    };
+
     function productsForSection(sectionLabel, list = all){
       return (Array.isArray(list) ? list : []).filter(p => productMatchesSection(p, sectionLabel));
     }
@@ -1131,7 +1248,7 @@
       if(cleanNavKey(sectionLabel) === cleanNavKey("Regalos")) return true;
       const products = productsForSection(sectionLabel);
       if(!products.length) return false;
-      return !products.some(p => navigationCategoryForProduct(p));
+      return !products.some(p => navigationOrderedLevels().some(level=>Boolean(navigationValueForProduct(p,level))));
     }
 
     function collectAlbumPreview(found, p){
@@ -1263,51 +1380,100 @@
       return finalizeAlbums(Array.from(byValue.values()));
     }
 
+    function navigationLastSelectedIndex(){
+      const order=navigationOrderedLevels();
+      let last=-1;
+      for(let index=0;index<order.length;index++){
+        if(selectedNavigationValue(order[index])) last=index;
+      }
+      return last;
+    }
+
     function scopedProductsForCurrentNavigation(list=all){
       let source=(Array.isArray(list)?list:[]).slice();
       if(selectedSection) source=source.filter(p=>productMatchesSection(p,selectedSection));
-      if(selectedCategory) source=source.filter(p=>cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory));
-      if(selectedSubcategory) source=source.filter(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory));
-      if(selectedPublic) source=source.filter(p=>cleanNavKey(navigationPublicForProduct(p))===cleanNavKey(selectedPublic));
-      if(selectedLine) source=source.filter(p=>cleanNavKey(navigationLineForProduct(p))===cleanNavKey(selectedLine));
+      const order=navigationOrderedLevels();
+      const lastSelected=navigationLastSelectedIndex();
+      for(let index=0;index<=lastSelected;index++){
+        const level=order[index];
+        const selected=selectedNavigationValue(level);
+        if(selected){
+          source=source.filter(p=>cleanNavKey(navigationValueForProduct(p,level))===cleanNavKey(selected));
+        }else{
+          // Un nivel opcional omitido antes de una selección posterior representa la rama vacía,
+          // no un nivel pendiente por escoger.
+          source=source.filter(p=>!String(navigationValueForProduct(p,level)||"").trim());
+        }
+      }
       return source;
+    }
+
+    function buildLevelAlbums(scoped,level){
+      const byValue=new Map();
+      const context=navigationSelectionContext();
+      for(const p of (Array.isArray(scoped)?scoped:[])){
+        const value=navigationValueForProduct(p,level);
+        if(!value) continue;
+        const keyValue=cleanNavKey(value);
+        const visual=CATEGORY_VISUALS[keyValue]||{icon:"•"};
+        const key=[
+          level,
+          context.section,
+          context.category,
+          context.subcategory,
+          context.public,
+          context.line,
+          value
+        ].map(cleanNavKey).join("::");
+        const label=level==="public"?value:categoryDisplayLabel(value);
+        const icon=level==="public"
+          ? (keyValue===cleanNavKey("Femeninos")?"♀":(keyValue===cleanNavKey("Masculinos")?"♂":"•"))
+          : (visual.icon||"•");
+        const found=byValue.get(keyValue)||navAlbumBase({
+          key,navType:level,navValue:value,label,icon,iconImage:visual.iconImage||"",products:[],
+          extra:{...context}
+        });
+        found.products.push(p);
+        collectAlbumPreview(found,p);
+        byValue.set(keyValue,found);
+      }
+      const order=level==="public"
+        ? new Map([[cleanNavKey("Femeninos"),0],[cleanNavKey("Masculinos"),1],[cleanNavKey("Unisex"),2]])
+        : null;
+      return finalizeAlbums(Array.from(byValue.values()),order);
+    }
+
+    function buildAlbumsFromOrder(scoped,startIndex=0){
+      const order=navigationOrderedLevels();
+      if(startIndex>=order.length || !scoped.length) return [];
+      const level=order[startIndex];
+      const withValue=[];
+      const withoutValue=[];
+      for(const p of scoped){
+        String(navigationValueForProduct(p,level)||"").trim()?withValue.push(p):withoutValue.push(p);
+      }
+      const out=[];
+      if(withValue.length) out.push(...buildLevelAlbums(withValue,level));
+      if(withoutValue.length) out.push(...buildAlbumsFromOrder(withoutValue,startIndex+1));
+      return out.sort((a,b)=>(Number(a.navDepth)||99)-(Number(b.navDepth)||99)||a.label.localeCompare(b.label,"es",{sensitivity:"base"}));
     }
 
     function buildAlbums(list){
       if(!selectedSection) return buildRootAlbums(list);
       if(isDirectProductSection(selectedSection)) return [];
-      if(!selectedCategory) return buildCategoryAlbums(list,selectedSection);
-
-      let scoped=(Array.isArray(list)?list:[]).filter(p=>
-        productMatchesSection(p,selectedSection) &&
-        cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory)
-      );
-      const hasSubcategories=scoped.some(p=>Boolean(navigationSubcategoryForProduct(p)));
-      if(hasSubcategories && !selectedSubcategory) return buildSubcategoryAlbums(list,selectedSection,selectedCategory);
-      if(selectedSubcategory) scoped=scoped.filter(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory));
-
-      const hasPublic=scoped.some(p=>Boolean(navigationPublicForProduct(p)));
-      if(hasPublic && !selectedPublic) return buildPublicAlbums(list,selectedSection,selectedCategory,selectedSubcategory);
-      if(selectedPublic) scoped=scoped.filter(p=>cleanNavKey(navigationPublicForProduct(p))===cleanNavKey(selectedPublic));
-
-      const hasLines=scoped.some(p=>Boolean(navigationLineForProduct(p)));
-      if(hasLines && !selectedLine) return buildLineAlbums(list,selectedSection,selectedCategory,selectedSubcategory,selectedPublic);
-      return [];
+      const scoped=scopedProductsForCurrentNavigation(list);
+      return buildAlbumsFromOrder(scoped,navigationLastSelectedIndex()+1);
     }
 
     function refreshNavigationAlbums(){
-      if(selectedLine){
-        albums=[]; albumByKey=new Map();
-        selectedAlbumKey=`line::${cleanNavKey(selectedSection)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedSubcategory)}::${cleanNavKey(selectedPublic)}::${cleanNavKey(selectedLine)}`;
-        return;
-      }
       albums=buildAlbums(all);
       albumByKey=new Map(albums.map(album=>[album.key,album]));
-      if(selectedPublic) selectedAlbumKey=`public::${cleanNavKey(selectedSection)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedSubcategory)}::${cleanNavKey(selectedPublic)}`;
-      else if(selectedSubcategory) selectedAlbumKey=`subcategory::${cleanNavKey(selectedSection)}::${cleanNavKey(selectedCategory)}::${cleanNavKey(selectedSubcategory)}`;
-      else if(selectedCategory) selectedAlbumKey=`category::${cleanNavKey(selectedSection)}::${cleanNavKey(selectedCategory)}`;
-      else selectedAlbumKey=selectedSection?`section::${cleanNavKey(selectedSection)}`:"";
+      const trail=selectedNavigationTrail();
+      const current=trail.at(-1);
+      selectedAlbumKey=current?`${current.level}::${cleanNavKey(current.label)}`:"";
     }
+
+    window.getCatalogAlbumByKey=key=>albumByKey.get(String(key||""))||null;
 
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
@@ -1332,12 +1498,10 @@
     }
 
     function getSelectedAlbum(){
-      if(selectedLine) return {label:selectedLine,navType:"line",section:selectedSection,category:selectedCategory,subcategory:selectedSubcategory,public:selectedPublic};
-      if(selectedPublic) return {label:selectedPublic,navType:"public",section:selectedSection,category:selectedCategory,subcategory:selectedSubcategory};
-      if(selectedSubcategory) return {label:selectedSubcategory,navType:"subcategory",section:selectedSection,category:selectedCategory};
-      if(selectedCategory) return {label:selectedCategory,navType:"category",section:selectedSection};
-      if(selectedSection) return {label:selectedSection,navType:"section"};
-      return null;
+      const trail=selectedNavigationTrail();
+      const current=trail.at(-1);
+      if(!current) return null;
+      return {label:current.label,navType:current.level,...navigationSelectionContext()};
     }
 
     function currentProductSourceList(){
@@ -2023,7 +2187,7 @@
       try{
         const collapse = document.querySelector("[data-admin-config-collapse]");
         const snapshot = {
-          version:3,
+          version:4,
           pathname:location.pathname,
           q:qInp ? String(qInp.value || "") : "",
           sort:sortSel ? String(sortSel.value || "") : "",
@@ -2034,6 +2198,7 @@
           public:String(selectedPublic || ""),
           line:String(selectedLine || ""),
           admin:window.CATALOG_ADMIN_MODE_ACTIVE === true,
+          adminSection:String(window.CATALOG_ADMIN_SECTION || "catalogo"),
           adminConfigExpanded:collapse?.getAttribute("aria-expanded") === "true",
           scrollY:Math.max(0,Math.round(window.scrollY || 0)),
           savedAt:Date.now()
@@ -2060,7 +2225,7 @@
         const raw=localStorage.getItem(CATALOG_PERSISTENT_VIEW_KEY);
         if(!raw) return null;
         const snapshot=JSON.parse(raw);
-        if(!snapshot || ![1,2,3].includes(snapshot.version) || snapshot.pathname!==location.pathname) return null;
+        if(!snapshot || ![1,2,3,4].includes(snapshot.version) || snapshot.pathname!==location.pathname) return null;
         return snapshot;
       }catch(_){
         return null;
@@ -2073,7 +2238,7 @@
         const raw=sessionStorage.getItem(CATALOG_RELOAD_VIEW_KEY);
         if(!raw) return null;
         const snapshot=JSON.parse(raw);
-        if(!snapshot || ![1,2,3].includes(snapshot.version) || snapshot.pathname!==location.pathname) return null;
+        if(!snapshot || ![1,2,3,4].includes(snapshot.version) || snapshot.pathname!==location.pathname) return null;
         return snapshot;
       }catch(_){
         return null;
@@ -2139,6 +2304,8 @@
       if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) adminButton.click();
       const started=await waitForCatalogCondition(()=>window.CATALOG_ADMIN_MODE_ACTIVE===true,16500,100);
       if(!started) return;
+      const section=String(snapshot.adminSection||"catalogo");
+      try{window.setCatalogAdminSection?.(section)}catch(_){ }
       if(snapshot.adminConfigExpanded){
         const collapse=await waitForCatalogCondition(()=>document.querySelector("[data-admin-config-collapse]"),4000,80);
         if(collapse && collapse.getAttribute("aria-expanded")!=="true") collapse.click();
@@ -2310,34 +2477,25 @@
 
     function validateNavigationStateAgainstProducts(){
       if(selectedSection && !all.some(p=>productMatchesSection(p,selectedSection))){
-        selectedSection=""; selectedCategory=""; selectedSubcategory=""; selectedPublic=""; selectedLine=""; return;
+        selectedSection="";clearSelectedNavigationValues();return;
       }
-      if(selectedCategory){
-        const ok=all.some(p=>productMatchesSection(p,selectedSection)&&cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory));
-        if(!ok){selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";}
-      }
-      if(selectedSubcategory){
-        const ok=all.some(p=>productMatchesSection(p,selectedSection)&&cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory)&&cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory));
-        if(!ok){selectedSubcategory="";selectedPublic="";selectedLine="";}
-      }
-      if(selectedPublic){
-        const ok=all.some(p=>
-          productMatchesSection(p,selectedSection) &&
-          cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory) &&
-          (!selectedSubcategory || cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory)) &&
-          cleanNavKey(navigationPublicForProduct(p))===cleanNavKey(selectedPublic)
-        );
-        if(!ok){selectedPublic="";selectedLine="";}
-      }
-      if(selectedLine){
-        const ok=all.some(p=>
-          productMatchesSection(p,selectedSection) &&
-          cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory) &&
-          (!selectedSubcategory || cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(selectedSubcategory)) &&
-          (!selectedPublic || cleanNavKey(navigationPublicForProduct(p))===cleanNavKey(selectedPublic)) &&
-          cleanNavKey(navigationLineForProduct(p))===cleanNavKey(selectedLine)
-        );
-        if(!ok) selectedLine="";
+      if(!selectedSection){clearSelectedNavigationValues();return;}
+
+      let scoped=all.filter(p=>productMatchesSection(p,selectedSection));
+      const order=navigationOrderedLevels();
+      const lastSelected=navigationLastSelectedIndex();
+      for(let index=0;index<=lastSelected;index++){
+        const level=order[index];
+        const selected=selectedNavigationValue(level);
+        const matching=selected
+          ? scoped.filter(p=>cleanNavKey(navigationValueForProduct(p,level))===cleanNavKey(selected))
+          : scoped.filter(p=>!String(navigationValueForProduct(p,level)||"").trim());
+        if(!matching.length){
+          if(selected) setSelectedNavigationValue(level,"");
+          for(const later of order.slice(index+1)) setSelectedNavigationValue(later,"");
+          return;
+        }
+        scoped=matching;
       }
     }
 
@@ -2443,7 +2601,7 @@
           const bRank = order.has(cleanNavKey(b.label)) ? order.get(cleanNavKey(b.label)) : Number.MAX_SAFE_INTEGER;
           return aRank - bRank || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
         }
-        return a.label.localeCompare(b.label, "es", { sensitivity:"base" });
+        return (Number(a.navDepth)||99)-(Number(b.navDepth)||99) || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
       });
       return filtered;
     }
@@ -2475,17 +2633,16 @@
         if(countEl){
           const totalProducts = filteredAlbums.reduce((sum,album)=>sum + (Number(album.count) || 0), 0);
           const activeCards = filteredAlbums.filter(album => (Number(album.count) || 0) > 0).length;
+          const navTypes=[...new Set(filteredAlbums.map(album=>album.navType).filter(Boolean))];
+          const groupType=navTypes[0]||(selectedSection?"category":"section");
+          const mixedTypes=navTypes.length>1;
           if(qHas){
             const productWord = totalProducts === 1 ? "producto encontrado" : "productos encontrados";
-            const groupWord = selectedSection
-              ? (activeCards === 1 ? "categoría" : "categorías")
-              : (activeCards === 1 ? "sección" : "secciones");
+            const groupWord=mixedTypes?"grupos de navegación":(activeCards===1?navigationLevelLabel(groupType,false).toLowerCase():navigationLevelLabel(groupType,true).toLowerCase());
             countEl.textContent = `${totalProducts} ${productWord} en ${activeCards} ${groupWord}`;
           }else{
             const productWord = totalProducts === 1 ? "producto" : "productos";
-            const groupWord = selectedSection
-              ? (filteredAlbums.length === 1 ? "categoría" : "categorías")
-              : (filteredAlbums.length === 1 ? "opción" : "opciones");
+            const groupWord=mixedTypes?"grupos de navegación":(filteredAlbums.length===1?navigationLevelLabel(groupType,false).toLowerCase():navigationLevelLabel(groupType,true).toLowerCase());
             countEl.textContent = `${totalProducts} ${productWord} · ${filteredAlbums.length} ${groupWord}`;
           }
           countEl.classList.toggle("search-active", qHas);
@@ -2497,7 +2654,8 @@
 
         const frag = document.createDocumentFragment();
         if(!filteredAlbums.length){
-          frag.appendChild(makeEmptyState(!selectedSection ? "No se encontraron secciones con ese nombre." : "No se encontraron categorías con ese nombre."));
+          const emptyType=filteredAlbums[0]?.navType||albums[0]?.navType;
+          frag.appendChild(makeEmptyState(!selectedSection ? "No se encontraron secciones con ese nombre." : `No se encontraron ${navigationLevelLabel(emptyType||"category",true).toLowerCase()} con ese nombre.`));
         }else{
           for(const album of filteredAlbums){
             frag.appendChild(makeAlbumCard(album));
@@ -2605,6 +2763,7 @@
     function rebuildCatalogVisibility(){
       all = filterVisibleProducts(allLoadedProducts);
       productById = new Map(all.map(p => [String(p.id), p]));
+      validateNavigationStateAgainstProducts();
       refreshNavigationAlbums();
 
       scheduleJsonLdUpdate();
@@ -2791,10 +2950,11 @@ function uxRenderBreadcrumb(){
   const slots=[
     {level:"root",label:"Inicio",column:1},
     {level:"section",label:selectedSection,column:2},
-    {level:"category",label:selectedCategory,column:3},
-    {level:"subcategory",label:selectedSubcategory,column:4},
-    {level:"public",label:selectedPublic,column:5},
-    {level:"line",label:selectedLine,column:6}
+    ...navigationOrderedLevels().map(level=>({
+      level,
+      label:selectedNavigationValue(level),
+      column:navigationDepthForType(level)+1
+    }))
   ].filter(item=>item.level==="root"||String(item.label||"").trim());
   const currentLevel=slots.at(-1)?.level||"root";
   for(const crumb of slots){
@@ -2971,16 +3131,15 @@ function syncFilterVisibility(){
   if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
   if(albumNav) albumNav.hidden=!selectedSection;
   if(albumBackBtn){
-    const parent=selectedLine?(selectedPublic||selectedSubcategory||selectedCategory||selectedSection):
-      selectedPublic?(selectedSubcategory||selectedCategory||selectedSection):
-      selectedSubcategory?(selectedCategory||selectedSection):
-      selectedCategory?selectedSection:"inicio";
+    const trail=selectedNavigationTrail();
+    const parent=trail.length>1?trail[trail.length-2].label:"inicio";
     albumBackBtn.textContent=`← Volver a ${parent}`;
   }
   uxRenderBreadcrumb();
   placeResponsiveHeaderMeta();
   if(qInp){
-    const scope=selectedLine||selectedPublic||selectedSubcategory||selectedCategory||selectedSection;
+    const trail=selectedNavigationTrail();
+    const scope=trail.at(-1)?.label||"";
     qInp.placeholder=selectedSection?`Buscar en ${scope}`:"Buscar producto, línea o categoría";
     qInp.setAttribute("aria-label",selectedSection?`Buscar dentro de ${scope}`:"Buscar producto, línea o categoría");
   }
@@ -2991,8 +3150,8 @@ function syncFilterVisibility(){
     if(!selectedSection) label="Secciones principales";
     else if(directSelected) label="Productos";
     else if(albums.length){
-      const type=albums[0]?.navType;
-      label=type==="category"?"Categorías":type==="subcategory"?"Subcategorías":type==="public"?"Público":type==="line"?"Líneas":"Secciones";
+      const types=[...new Set(albums.map(album=>album.navType).filter(Boolean))];
+      label=types.length>1?"Niveles de navegación":navigationLevelLabel(types[0]||"category",true);
     }
     grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
   }
@@ -3114,15 +3273,10 @@ function openAlbum(key,opts={}){
   writeStateToUrl();
   uxScrollStack().push({scrollY:window.scrollY||0});
   if(target.navType==="section"){
-    selectedSection=target.navValue;selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";
-  }else if(target.navType==="category"){
-    selectedSection=target.section||selectedSection;selectedCategory=target.navValue;selectedSubcategory="";selectedPublic="";selectedLine="";
-  }else if(target.navType==="subcategory"){
-    selectedSection=target.section||selectedSection;selectedCategory=target.category||selectedCategory;selectedSubcategory=target.navValue;selectedPublic="";selectedLine="";
-  }else if(target.navType==="public"){
-    selectedSection=target.section||selectedSection;selectedCategory=target.category||selectedCategory;selectedSubcategory=target.subcategory||selectedSubcategory;selectedPublic=target.navValue;selectedLine="";
-  }else if(target.navType==="line"){
-    selectedSection=target.section||selectedSection;selectedCategory=target.category||selectedCategory;selectedSubcategory=target.subcategory||selectedSubcategory;selectedPublic=target.public||selectedPublic;selectedLine=target.navValue;
+    selectedSection=target.navValue;clearSelectedNavigationValues();
+  }else if(navigationOrderedLevels().includes(target.navType)){
+    setSelectedNavigationValue(target.navType,target.navValue);
+    clearNavigationLevelsAfter(target.navType);
   }
   if(!opts.keepFilters) resetDiscoveryFilters();
   refreshNavigationAlbums();refreshFilterOptionsForScope();pushNavigationStateToUrl();render();uxScrollToCatalogStart();
@@ -3131,10 +3285,8 @@ function openAlbum(key,opts={}){
 function closeAlbum(opts={}){
   if(currentCatalogHistoryIndex()>0){history.back();return;}
   const restore=uxScrollStack().pop();
-  if(selectedLine) selectedLine="";
-  else if(selectedPublic) selectedPublic="";
-  else if(selectedSubcategory) selectedSubcategory="";
-  else if(selectedCategory) selectedCategory="";
+  const selectedLevels=navigationOrderedLevels().filter(level=>Boolean(selectedNavigationValue(level)));
+  if(selectedLevels.length) setSelectedNavigationValue(selectedLevels.at(-1),"");
   else selectedSection="";
   if(!opts.keepFilters) resetDiscoveryFilters();
   refreshNavigationAlbums();refreshFilterOptionsForScope();writeStateToUrl();installCatalogExitGuardIfAtRoot();render();
@@ -3276,11 +3428,9 @@ function bindFilters(){
     if(!btn) return;
     const level=btn.dataset.breadcrumbLevel;
     uxScrollStack().length=0;
-    if(level==="root"){selectedSection="";selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";}
-    else if(level==="section"){selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";}
-    else if(level==="category"){selectedSubcategory="";selectedPublic="";selectedLine="";}
-    else if(level==="subcategory"){selectedPublic="";selectedLine="";}
-    else if(level==="public") selectedLine="";
+    if(level==="root"){selectedSection="";clearSelectedNavigationValues();}
+    else if(level==="section") clearSelectedNavigationValues();
+    else if(navigationOrderedLevels().includes(level)) clearNavigationLevelsAfter(level);
     resetDiscoveryFilters();
     refreshNavigationAlbums();
     refreshFilterOptionsForScope();

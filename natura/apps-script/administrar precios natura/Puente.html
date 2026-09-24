@@ -25,13 +25,19 @@
 
   <script>
     const estado = document.getElementById("estado");
-    const CATALOG_ORIGIN = "https://irenismb.github.io";
+    const PRODUCTION_CATALOG_ORIGIN = "https://irenismb.github.io";
     let puerto = null;
 
     google.script.url.getLocation(function(ubicacion){
-      const canal = String(ubicacion && ubicacion.parameter && ubicacion.parameter.canal || "").trim();
+      const parametros = ubicacion && ubicacion.parameter ? ubicacion.parameter : {};
+      const canal = String(parametros.canal || "").trim();
+      const catalogOrigin = normalizarOrigenCatalogo(parametros.origen);
       if(!/^[A-Za-z0-9_-]{16,120}$/.test(canal)){
         mostrarError("La solicitud de conexión no es válida.");
+        return;
+      }
+      if(!catalogOrigin){
+        mostrarError("El origen del catálogo no está autorizado. Usa la versión publicada o localhost/127.0.0.1 para desarrollo.");
         return;
       }
 
@@ -58,13 +64,29 @@
 
       destino.postMessage(
         {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad","configuracion"]},
-        CATALOG_ORIGIN,
+        catalogOrigin,
         [canalMensajes.port2]
       );
 
       estado.className = "ok";
       estado.textContent = "Conexión segura activa con el catálogo.";
     });
+
+    function normalizarOrigenCatalogo(valor){
+      const raw = String(valor || "").trim();
+      if(!raw) return "";
+      try{
+        const url = new URL(raw);
+        const origin = url.origin;
+        if(origin === PRODUCTION_CATALOG_ORIGIN) return origin;
+        if(url.protocol !== "http:") return "";
+        const host = String(url.hostname || "").toLowerCase();
+        if(host !== "localhost" && host !== "127.0.0.1" && host !== "[::1]" && host !== "::1") return "";
+        return origin;
+      }catch(_){
+        return "";
+      }
+    }
 
     function procesarSolicitud(evento){
       const mensaje = evento && evento.data || {};
@@ -120,6 +142,22 @@
             });
           })
           .obtenerConfiguracionWeb();
+        return;
+      }
+
+      if(mensaje.tipo === "actualizar-orden-navegacion"){
+        google.script.run
+          .withSuccessHandler(function(resultado){
+            responder({tipo:"orden-navegacion-actualizado", solicitudId:mensaje.solicitudId, resultado:resultado});
+          })
+          .withFailureHandler(function(error){
+            responder({
+              tipo:"configuracion-error",
+              solicitudId:mensaje.solicitudId,
+              error:error && error.message ? error.message : String(error || "No se pudo guardar el orden de navegación.")
+            });
+          })
+          .actualizarOrdenNavegacionWeb(mensaje.orden);
         return;
       }
 

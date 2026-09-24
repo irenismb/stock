@@ -71,7 +71,62 @@ function leerValoresConfiguracion_() {
     );
     valores[clave] = guardado || CONFIG_DEFAULTS[clave];
   });
+  valores[NAVIGATION_ORDER_KEY] = normalizarOrdenNavegacion_(
+    propiedades.getProperty(CONFIG_PROPERTY_PREFIX + NAVIGATION_ORDER_KEY)
+  ) || NAVIGATION_ORDER_DEFAULT;
   return valores;
+}
+function actualizarOrdenNavegacionWeb(orden) {
+  const ordenSeguro = normalizarOrdenNavegacion_(orden);
+  if (!ordenSeguro) {
+    throw new Error("El orden de navegación no es válido.");
+  }
+
+  const bloqueo = LockService.getScriptLock();
+  bloqueo.waitLock(30000);
+  try {
+    const propiedades = PropertiesService.getScriptProperties();
+    const nombrePropiedad = CONFIG_PROPERTY_PREFIX + NAVIGATION_ORDER_KEY;
+    propiedades.setProperty(nombrePropiedad, ordenSeguro);
+
+    const guardado = normalizarOrdenNavegacion_(propiedades.getProperty(nombrePropiedad));
+    if (guardado !== ordenSeguro) {
+      throw new Error("Apps Script no confirmó el orden de navegación esperado.");
+    }
+
+    const valores = leerValoresConfiguracion_();
+    return {
+      ok: true,
+      clave: NAVIGATION_ORDER_KEY,
+      orden: valores[NAVIGATION_ORDER_KEY],
+      valores: valores,
+      actualizadoEn: new Date().toISOString()
+    };
+  } finally {
+    bloqueo.releaseLock();
+  }
+}
+function normalizarOrdenNavegacion_(valor) {
+  const esperados = ["category", "subcategory", "public", "line"];
+  const alias = {
+    category: "category", categoria: "category",
+    subcategory: "subcategory", subcategoria: "subcategory",
+    public: "public", publico: "public",
+    line: "line", linea: "line"
+  };
+  const partes = Array.isArray(valor)
+    ? valor
+    : String(valor == null ? "" : valor).split(",");
+  const normalizado = partes
+    .map(function(item) {
+      const clave = normalizarEncabezado_(item).replace(/\s+/g, "");
+      return alias[clave] || "";
+    })
+    .filter(Boolean);
+  if (normalizado.length !== esperados.length) return "";
+  if (new Set(normalizado).size !== esperados.length) return "";
+  if (!esperados.every(function(item) { return normalizado.indexOf(item) !== -1; })) return "";
+  return normalizado.join(",");
 }
 function reflejarConfiguracionEnHojaOpcional_(clave, estadoTexto) {
   if (CONFIG_ADMIN_KEYS.indexOf(clave) !== -1) return false;

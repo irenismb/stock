@@ -19,10 +19,11 @@ function collageUniqueProducts(products){
 function collageRouteSlotsForProduct(p){
   return [
     {level:"section",depth:1,label:navigationSectionForProduct(p)},
-    {level:"category",depth:2,label:navigationCategoryForProduct(p)},
-    {level:"subcategory",depth:3,label:navigationSubcategoryForProduct(p)},
-    {level:"public",depth:4,label:navigationPublicForProduct(p)},
-    {level:"line",depth:5,label:navigationLineForProduct(p)}
+    ...navigationOrderedLevels().map(level=>({
+      level,
+      depth:navigationDepthForType(level),
+      label:navigationValueForProduct(p,level)
+    }))
   ].map(slot=>({ ...slot, label:String(slot.label||"").trim() }));
 }
 
@@ -33,10 +34,11 @@ function collageProductRoute(p){
 function collageCurrentTitleSlots(){
   return [
     {level:"section",depth:1,label:selectedSection},
-    {level:"category",depth:2,label:selectedCategory},
-    {level:"subcategory",depth:3,label:selectedSubcategory},
-    {level:"public",depth:4,label:selectedPublic},
-    {level:"line",depth:5,label:selectedLine}
+    ...navigationOrderedLevels().map(level=>({
+      level,
+      depth:navigationDepthForType(level),
+      label:selectedNavigationValue(level)
+    }))
   ]
     .map(slot=>({ ...slot, label:String(slot.label||"").trim() }))
     .filter(slot=>slot.label);
@@ -149,11 +151,13 @@ function collagePriceText(p){
 function syncFolletoButtonVisibility(){
   const btn=document.getElementById("collageBtn");
   if(!btn) return;
-  const visible=window.CATALOG_ADMIN_MODE_ACTIVE===true;
+  const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;
+  const sidebar=Boolean(document.getElementById("catalogAdminSidebar"));
+  const visible=admin&&!sidebar;
   btn.hidden=!visible;
-  btn.disabled=!visible;
+  btn.disabled=!admin;
 
-  if(!visible){
+  if(!admin){
     const modal=document.getElementById("collageModal");
     if(modal?.classList.contains("open")){
       modal.classList.remove("open");
@@ -179,6 +183,15 @@ function initCollageFeature(){
   style.textContent=`
     .collage-modal{position:fixed;inset:0;z-index:2200;display:none;align-items:center;justify-content:center;padding:18px}
     .collage-modal.open{display:flex}
+    .collage-modal.admin-embedded{position:static;inset:auto;z-index:auto;display:block;padding:0;width:100%;background:transparent}
+    .collage-modal.admin-embedded .collage-backdrop,.collage-modal.admin-embedded .collage-close{display:none!important}
+    .collage-modal.admin-embedded .collage-shell{width:100%;max-width:none;max-height:none;aspect-ratio:auto;overflow:visible;border-radius:20px;box-shadow:0 12px 34px rgba(30,42,58,.10);background:#fff;border-color:#dfe5e1;color:#17312b}
+    .collage-modal.admin-embedded .collage-route,.collage-modal.admin-embedded .collage-control-label{color:#182f2a}
+    .collage-modal.admin-embedded .collage-route-separator{color:#7b8582}
+    .collage-modal.admin-embedded .collage-selection-hint{background:#fff7e8;border-color:#ead4a2;color:#765719}
+    .collage-modal.admin-embedded .collage-tree{color:#17312b}
+    .collage-modal.admin-embedded .collage-subtitle{color:#6f7d78}
+    .collage-modal.admin-embedded .collage-depth-4>.collage-subtitle,.collage-modal.admin-embedded .collage-depth-5>.collage-subtitle{color:#7a8682}
     .collage-backdrop{position:absolute;inset:0;background:rgba(3,8,18,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
     .collage-shell{position:relative;z-index:1;width:min(1080px,92vw,92vh);aspect-ratio:1/1;max-width:92vw;max-height:92vh;overflow:auto;background:#0f1726;border:1px solid #29354a;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:22px}
     .collage-close{position:sticky;top:0;float:right;z-index:3;width:42px;height:42px;border-radius:999px;border:1px solid #334155;background:#172033;color:#fff;font-size:22px;line-height:1;cursor:pointer}
@@ -220,6 +233,8 @@ function initCollageFeature(){
     .collage-depth-1>.collage-subtitle{font-size:clamp(18px,2.1vw,24px)}
     .collage-depth-2>.collage-subtitle{font-size:clamp(16px,1.8vw,20px);color:#dce7f4}
     .collage-depth-3>.collage-subtitle{font-size:15px;color:#c8d4e4}
+    .collage-depth-4>.collage-subtitle{font-size:14px;color:#bcc9da}
+    .collage-depth-5>.collage-subtitle{font-size:13px;color:#b0bfd2}
     .collage-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;align-items:stretch}
     .collage-root-grid{margin-top:4px}
     .collage-item{min-width:0;background:#151e2e;border:1px solid #28354a;border-radius:18px;overflow:hidden;box-shadow:0 8px 24px rgba(0,0,0,.16);position:relative}
@@ -587,6 +602,10 @@ function initCollageFeature(){
 
   function closeCollage(){
     if(!modal.classList.contains("open")) return;
+    if(modal.classList.contains("admin-embedded")){
+      if(typeof window.setCatalogAdminSection==="function") window.setCatalogAdminSection("catalogo");
+      return;
+    }
     modal.classList.remove("open");
     modal.setAttribute("aria-hidden","true");
     document.body.classList.remove("collage-open");
@@ -1613,14 +1632,57 @@ function initCollageFeature(){
     }
   }
 
-  btn.addEventListener("click",()=>{
-    if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) return;
+  function openCollageModal(){
     renderCollage();
+    modal.classList.remove("admin-embedded");
+    if(modal.parentNode!==document.body) document.body.appendChild(modal);
     modal.classList.add("open");
     modal.setAttribute("aria-hidden","false");
     document.body.classList.add("collage-open");
     setCollageExportMode("collage");
     requestAnimationFrame(()=>closeBtn?.focus({preventScroll:true}));
+  }
+
+  function embedCollageInAdminHost(host){
+    if(!host) return;
+    renderCollage();
+    document.body.classList.remove("collage-open");
+    modal.classList.add("open","admin-embedded");
+    modal.setAttribute("aria-hidden","false");
+    host.replaceChildren(modal);
+    setCollageExportMode("collage");
+  }
+
+  function releaseEmbeddedCollage(){
+    if(!modal.classList.contains("admin-embedded")) return;
+    modal.classList.remove("open","admin-embedded");
+    modal.setAttribute("aria-hidden","true");
+    document.body.appendChild(modal);
+  }
+
+  window.openCatalogFolletoPanel=()=>{
+    const host=document.getElementById("catalogAdminFolletoHost");
+    if(host) embedCollageInAdminHost(host);
+    else openCollageModal();
+  };
+
+  btn.addEventListener("click",()=>{
+    if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) return;
+    if(typeof window.setCatalogAdminSection==="function"){
+      window.setCatalogAdminSection("folleto");
+      return;
+    }
+    openCollageModal();
+  });
+
+  window.addEventListener("irenismb:admin-section-change",event=>{
+    const section=String(event?.detail?.section||"").trim().toLowerCase();
+    if(section==="folleto"&&window.CATALOG_ADMIN_MODE_ACTIVE===true){
+      const host=document.getElementById("catalogAdminFolletoHost");
+      if(host) embedCollageInAdminHost(host);
+      return;
+    }
+    releaseEmbeddedCollage();
   });
 
   for(const button of formatButtons){

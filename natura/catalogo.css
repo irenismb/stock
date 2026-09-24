@@ -3794,3 +3794,25 @@ main,
     justify-self:stretch!important;
   }
 }
+
+/* Ruta con posiciones lógicas fijas: Inicio | Sección | Categoría | Subcategoría | Público | Línea. */
+.album-path.fixed-route{
+  display:grid!important;
+  grid-template-columns:repeat(6,max-content)!important;
+  align-items:center!important;
+  justify-content:start!important;
+  gap:4px 12px!important;
+  max-width:100%!important;
+  overflow-x:auto!important;
+  padding-bottom:3px!important;
+  scrollbar-width:thin;
+}
+.album-path.fixed-route .breadcrumb-slot{
+  grid-column:var(--route-column);
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  min-width:0;
+  white-space:nowrap;
+}
+.album-path.fixed-route .breadcrumb-separator{margin:0 2px 0 0}

@@ -16,55 +16,60 @@ function collageUniqueProducts(products){
   return out;
 }
 
-function collageProductRoute(p){
-  const route=[
-    mainNavigationGroupForProduct(p),
-    navigationCategoryForProduct(p),
-    navigationSubcategoryForProduct(p),
-    navigationGenderForProduct(p),
-    navigationFamilyForProduct(p)
-  ]
-    .map(value=>String(value||"").trim())
-    .filter(Boolean);
+function collageRouteSlotsForProduct(p){
+  return [
+    {level:"section",depth:1,label:navigationSectionForProduct(p)},
+    {level:"category",depth:2,label:navigationCategoryForProduct(p)},
+    {level:"subcategory",depth:3,label:navigationSubcategoryForProduct(p)},
+    {level:"public",depth:4,label:navigationPublicForProduct(p)},
+    {level:"line",depth:5,label:navigationLineForProduct(p)}
+  ].map(slot=>({ ...slot, label:String(slot.label||"").trim() }));
+}
 
-  const out=[];
-  for(const segment of route){
-    if(out.length&&cleanNavKey(out[out.length-1])===cleanNavKey(segment)) continue;
-    out.push(segment);
-  }
-  return out;
+function collageProductRoute(p){
+  return collageRouteSlotsForProduct(p).filter(slot=>slot.label);
+}
+
+function collageCurrentTitleSlots(){
+  return [
+    {level:"section",depth:1,label:selectedSection},
+    {level:"category",depth:2,label:selectedCategory},
+    {level:"subcategory",depth:3,label:selectedSubcategory},
+    {level:"public",depth:4,label:selectedPublic},
+    {level:"line",depth:5,label:selectedLine}
+  ]
+    .map(slot=>({ ...slot, label:String(slot.label||"").trim() }))
+    .filter(slot=>slot.label);
 }
 
 function collageCurrentTitleParts(){
-  return [selectedAudience,selectedCategory,selectedSubcategory,selectedGender,selectedFamily]
-    .map(value=>String(value||"").trim())
-    .filter(Boolean);
+  return collageCurrentTitleSlots().map(slot=>slot.label);
 }
 
-function collageRemainingRoute(p,titleParts){
+function collageRemainingRoute(p,titleSlots){
   const fullRoute=collageProductRoute(p);
-  let common=0;
-  while(
-    common<titleParts.length&&
-    common<fullRoute.length&&
-    cleanNavKey(titleParts[common])===cleanNavKey(fullRoute[common])
-  ){
-    common++;
-  }
-  return fullRoute.slice(common);
+  const current=Array.isArray(titleSlots)?titleSlots:[];
+  const maxDepth=current.reduce((max,slot)=>Math.max(max,Number(slot?.depth)||0),0);
+  return fullRoute.filter(slot=>slot.depth>maxDepth);
 }
 
-function collageBuildRouteTree(products,titleParts){
-  const root={ label:"", products:[], children:new Map() };
+function collageBuildRouteTree(products,titleSlots){
+  const root={ label:"", depth:0, level:"root", products:[], children:new Map() };
 
   for(const p of (Array.isArray(products)?products:[])){
-    const route=collageRemainingRoute(p,titleParts);
+    const route=collageRemainingRoute(p,titleSlots);
     let node=root;
 
     for(const segment of route){
-      const key=cleanNavKey(segment)||String(segment||"").trim();
+      const key=`${segment.depth}:${cleanNavKey(segment.label)||segment.label}`;
       if(!node.children.has(key)){
-        node.children.set(key,{ label:String(segment||"").trim(), products:[], children:new Map() });
+        node.children.set(key,{
+          label:segment.label,
+          depth:segment.depth,
+          level:segment.level,
+          products:[],
+          children:new Map()
+        });
       }
       node=node.children.get(key);
     }
@@ -94,14 +99,46 @@ function collageCurrentSnapshot(){
     products=collageUniqueProducts(buildFilteredList());
   }
 
-  const titleParts=collageCurrentTitleParts();
+  const titleSlots=collageCurrentTitleSlots();
+  const titleParts=titleSlots.map(slot=>slot.label);
 
   return {
     title:titleParts.length?titleParts.join(" › "):"Catálogo",
     titleParts,
+    titleSlots,
     products,
-    tree:collageBuildRouteTree(products,titleParts)
+    tree:collageBuildRouteTree(products,titleSlots)
   };
+}
+
+function renderCollageRouteHeading(routeEl,titleSlots){
+  if(!routeEl) return;
+  routeEl.innerHTML="";
+  routeEl.classList.add("fixed-route");
+  const slots=Array.isArray(titleSlots)?titleSlots:[];
+  if(!slots.length){
+    routeEl.textContent="Catálogo";
+    routeEl.classList.remove("fixed-route");
+    return;
+  }
+  for(const slotData of slots){
+    const slot=document.createElement("span");
+    slot.className="collage-route-slot";
+    slot.dataset.navLevel=slotData.level;
+    slot.dataset.navDepth=String(slotData.depth);
+    slot.style.setProperty("--route-column",String(slotData.depth));
+    if(slotData.depth>1){
+      const sep=document.createElement("span");
+      sep.className="collage-route-separator";
+      sep.textContent="›";
+      sep.setAttribute("aria-hidden","true");
+      slot.appendChild(sep);
+    }
+    const label=document.createElement("span");
+    label.textContent=slotData.label;
+    slot.appendChild(label);
+    routeEl.appendChild(slot);
+  }
 }
 
 function collagePriceText(p){
@@ -147,6 +184,9 @@ function initCollageFeature(){
     .collage-close{position:sticky;top:0;float:right;z-index:3;width:42px;height:42px;border-radius:999px;border:1px solid #334155;background:#172033;color:#fff;font-size:22px;line-height:1;cursor:pointer}
     .collage-heading{padding:4px 56px 14px 2px;text-align:center}
     .collage-route{margin:0;color:#f8fafc;font-size:clamp(23px,3vw,38px);line-height:1.1;font-weight:950;letter-spacing:-.025em}
+    .collage-route.fixed-route{display:grid;grid-template-columns:repeat(5,max-content);align-items:center;justify-content:center;gap:6px 14px;overflow-x:auto;max-width:100%;padding-bottom:2px}
+    .collage-route-slot{grid-column:var(--route-column);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+    .collage-route-separator{opacity:.55;font-weight:700}
     .collage-actions{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:12px;margin:0 0 18px}
     .collage-output-actions{display:flex;justify-content:center;align-items:center;width:min(590px,100%)}
     .collage-output-actions[hidden],.collage-social-actions[hidden]{display:none!important}
@@ -611,10 +651,11 @@ function initCollageFeature(){
   function appendTreeChildren(parentEl,node,depth){
     for(const child of node.children.values()){
       const branch=document.createElement("section");
-      const safeDepth=Math.min(Math.max(depth,1),3);
+      const absoluteDepth=Number(child.depth)||depth;
+      const safeDepth=Math.min(Math.max(absoluteDepth,1),5);
       branch.className=`collage-branch collage-depth-${safeDepth}`;
 
-      const heading=document.createElement(depth===1?"h3":"h4");
+      const heading=document.createElement(absoluteDepth===1?"h3":"h4");
       heading.className="collage-subtitle";
       heading.textContent=child.label;
       branch.appendChild(heading);
@@ -623,7 +664,7 @@ function initCollageFeature(){
         branch.appendChild(makeCollageGrid(child.products));
       }
 
-      appendTreeChildren(branch,child,depth+1);
+      appendTreeChildren(branch,child,absoluteDepth+1);
       parentEl.appendChild(branch);
     }
   }
@@ -634,9 +675,10 @@ function initCollageFeature(){
 
     function walk(node,depth){
       for(const child of node.children.values()){
-        blocks.push({type:"heading",depth,label:child.label});
-        if(child.products.length) blocks.push({type:"grid",depth,products:child.products});
-        walk(child,depth+1);
+        const absoluteDepth=Number(child.depth)||depth;
+        blocks.push({type:"heading",depth:absoluteDepth,label:child.label});
+        if(child.products.length) blocks.push({type:"grid",depth:absoluteDepth,products:child.products});
+        walk(child,absoluteDepth+1);
       }
     }
 
@@ -992,7 +1034,7 @@ function initCollageFeature(){
     if(p.id) metaParts.push(`Código ${p.id}`);
     if(p.category) metaParts.push(String(p.category).trim());
     if(p.subcategory) metaParts.push(String(p.subcategory).trim());
-    if(p.family) metaParts.push(String(p.family).trim());
+    if(p.line) metaParts.push(String(p.line).trim());
     ctx.fillStyle=muted;
     ctx.font='500 21px Calibri, "Segoe UI", Arial, sans-serif';
     const metaLines=marketplacePresentationWrapLines(ctx,metaParts.filter(Boolean).join(' · '),textW,3);
@@ -1544,7 +1586,7 @@ function initCollageFeature(){
 
   function renderCollage(){
     const snapshot=collageCurrentSnapshot();
-    routeEl.textContent=snapshot.title;
+    renderCollageRouteHeading(routeEl,snapshot.titleSlots);
     collageTree.innerHTML="";
     invalidateCollageSharePreparation();
     setCollageSelectedProduct(null,null);

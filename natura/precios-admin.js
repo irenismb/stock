@@ -78,18 +78,18 @@
   function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}
   function visibilityId(t,id){const type=norm(t),raw=String(id??"").trim();if(type==="producto"&&/^\d{1,4}$/.test(raw))return raw.padStart(4,"0");return norm(raw)}
   function key(t,id){return `${norm(t)}::${visibilityId(t,id)}`}
-  function joinVisibilityPath(...parts){return parts.map(norm).filter(Boolean).join("|")}
+  function visibilityPathAtDepth(depth,...parts){return parts.slice(0,depth).map(norm).join("|")}
   function ids(p){
-    const sec=norm(p?.section),c=norm(p?.category),s=norm(p?.subcategory),pub=norm(p?.public),line=norm(p?.line||p?.fragranceFamily);
+    const sec=norm(p?.section),c=norm(p?.category),s=norm(p?.subcategory),pub=norm(p?.public),line=norm(p?.line);
     return{
       sec,
-      c:c?joinVisibilityPath(sec,c):"",
-      s:s?joinVisibilityPath(sec,c,s):"",
-      pub:pub?joinVisibilityPath(sec,c,s,pub):"",
-      line:line?joinVisibilityPath(sec,c,s,pub,line):"",
+      c:c?visibilityPathAtDepth(2,sec,c):"",
+      s:s?visibilityPathAtDepth(3,sec,c,s):"",
+      pub:pub?visibilityPathAtDepth(4,sec,c,s,pub):"",
+      line:line?visibilityPathAtDepth(5,sec,c,s,pub,line):"",
       legacyCategory:c?norm(p?.category):"",
-      legacySubcategory:sec&&c?joinVisibilityPath(sec,norm(p?.category)):"",
-      legacyFamily:c&&s&&line?joinVisibilityPath(norm(p?.category),s,line):""
+      legacySubcategory:sec&&c?visibilityPathAtDepth(2,sec,norm(p?.category)):"",
+      legacyFamily:c&&s&&line?[norm(p?.category),s,line].join("|"):""
     }
   }
   function hasRule(type,id){return Boolean(id)&&rules.has(key(type,id))}
@@ -102,7 +102,6 @@
       hasRule("subcategoria",i.s)||
       hasRule("publico",i.pub)||
       hasRule("linea",i.line)||
-      hasRule("familia",i.line)||
       hasRule("categoria",i.sec)||
       hasRule("categoria",i.legacyCategory)||
       hasRule("subcategoria",i.legacySubcategory)||
@@ -244,20 +243,20 @@
   function albumInfo(card){
     const b=card.querySelector("[data-album-open]");if(!b)return null;
     const p=String(b.dataset.albumOpen||"").split("::").map(norm),label=String(card.querySelector(".album-label")?.textContent||"").trim();
-    if(p[0]==="audience"&&p[1])return{tipo:"seccion",id:p[1],label:label||p[1],parents:[]};
-    if(p[0]==="category"&&p[1]&&p[2])return{tipo:"categoria",id:joinVisibilityPath(p[1],p[2]),label:label||p[2],parents:[key("seccion",p[1])]};
-    if(p[0]==="subcategory"&&p[1]&&p[2]&&p[3])return{tipo:"subcategoria",id:joinVisibilityPath(p[1],p[2],p[3]),label:label||p[3],parents:[key("seccion",p[1]),key("categoria",joinVisibilityPath(p[1],p[2]))]};
-    if(p[0]==="gender"&&p[1]&&p[2]&&p[4]){
-      const sub=p[3]||"",id=joinVisibilityPath(p[1],p[2],sub,p[4]);
-      const parents=[key("seccion",p[1]),key("categoria",joinVisibilityPath(p[1],p[2]))];
-      if(sub)parents.push(key("subcategoria",joinVisibilityPath(p[1],p[2],sub)));
+    if(p[0]==="section"&&p[1])return{tipo:"seccion",id:p[1],label:label||p[1],parents:[]};
+    if(p[0]==="category"&&p[1]&&p[2])return{tipo:"categoria",id:visibilityPathAtDepth(2,p[1],p[2]),label:label||p[2],parents:[key("seccion",p[1])]};
+    if(p[0]==="subcategory"&&p[1]&&p[2]&&p[3])return{tipo:"subcategoria",id:visibilityPathAtDepth(3,p[1],p[2],p[3]),label:label||p[3],parents:[key("seccion",p[1]),key("categoria",visibilityPathAtDepth(2,p[1],p[2]))]};
+    if(p[0]==="public"&&p[1]&&p[2]&&p[4]){
+      const sub=p[3]||"",id=visibilityPathAtDepth(4,p[1],p[2],sub,p[4]);
+      const parents=[key("seccion",p[1]),key("categoria",visibilityPathAtDepth(2,p[1],p[2]))];
+      if(sub)parents.push(key("subcategoria",visibilityPathAtDepth(3,p[1],p[2],sub)));
       return{tipo:"publico",id,label:label||p[4],parents};
     }
-    if(p[0]==="family"&&p[1]&&p[2]&&p[5]){
-      const sub=p[3]||"",pub=p[4]||"",id=joinVisibilityPath(p[1],p[2],sub,pub,p[5]);
-      const parents=[key("seccion",p[1]),key("categoria",joinVisibilityPath(p[1],p[2]))];
-      if(sub)parents.push(key("subcategoria",joinVisibilityPath(p[1],p[2],sub)));
-      if(pub)parents.push(key("publico",joinVisibilityPath(p[1],p[2],sub,pub)));
+    if(p[0]==="line"&&p[1]&&p[2]&&p[5]){
+      const sub=p[3]||"",pub=p[4]||"",id=visibilityPathAtDepth(5,p[1],p[2],sub,pub,p[5]);
+      const parents=[key("seccion",p[1]),key("categoria",visibilityPathAtDepth(2,p[1],p[2]))];
+      if(sub)parents.push(key("subcategoria",visibilityPathAtDepth(3,p[1],p[2],sub)));
+      if(pub)parents.push(key("publico",visibilityPathAtDepth(4,p[1],p[2],sub,pub)));
       return{tipo:"linea",id,label:label||p[5],parents};
     }
     return null;

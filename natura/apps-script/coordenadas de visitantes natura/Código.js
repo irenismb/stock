@@ -264,6 +264,7 @@ function handleWriteRequest_(e){
       fuente: location.fuente,
       mapsUrl,
       tieneCoordenadas: location.hasCoords,
+      distanciaMetros: distanceMeters,
       visitanteTipo: visitStats.tipo,
       visitaNumero: visitStats.numero,
       nombre: safeClientText_(identity.nombre || "", 120),

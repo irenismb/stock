@@ -55,6 +55,7 @@ function sendVisitToTelegram_(data){
     .filter(Boolean);
 
   const visibleName = String(data.nombre || "").trim() || "Sin identificar";
+  const straightLineDistance = formatDistance_(data.distanciaMetros);
 
   const parts = [
     "🔔 Nueva visita al catálogo Natura",
@@ -67,6 +68,9 @@ function sendVisitToTelegram_(data){
     data.ipLocal ? `🏠 IP local: ${data.ipLocal}` : "",
     `📍 Ubicación: ${locationText}`,
     `🎯 GPS: ${gpsText}`,
+    straightLineDistance
+      ? `📏 Distancia en línea recta al punto de referencia: ${straightLineDistance}`
+      : "",
     [data.marca, data.modelo, data.dispositivo]
       .map(value => String(value || "").trim())
       .filter(Boolean)
@@ -85,6 +89,17 @@ function sendVisitToTelegram_(data){
   ].filter(Boolean);
 
   sendTelegramMessage_(token, chatId, parts.join("\n"), data.mapsUrl || "");
+}
+
+function formatDistance_(value){
+  if (value == null || String(value).trim() === "") return "";
+  const meters = Number(value);
+  if (!Number.isFinite(meters) || meters < 0) return "";
+  if (meters < 1000){
+    return `${Math.round(meters).toLocaleString("es-CO")} m`;
+  }
+  const kilometers = Math.round((meters / 1000) * 100) / 100;
+  return `${kilometers.toLocaleString("es-CO", { maximumFractionDigits: 2 })} km`;
 }
 
 function formatCop_(value){

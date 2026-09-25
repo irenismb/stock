@@ -50,7 +50,8 @@ const REQUIRED_HEADERS = [
   "direccion",
   "fecha",
   "hora",
-  "id visita"
+  "id visita",
+  "ip externa"
 ];
 
 // ===================== ENDPOINTS =====================
@@ -196,6 +197,8 @@ function handleWriteRequest_(e){
       return json_({ ok:true, status:"skipped", id_visita:visitId });
     }
 
+    const externalIpVisitNumber = getExternalIpVisitNumber_(sh, headerIndex, ipExternaVal);
+
     let coordText = "";
     let mapsUrl = "";
     let distanceMeters = "";
@@ -233,6 +236,7 @@ function handleWriteRequest_(e){
     if (headerIndex.departamento != null)   row[headerIndex.departamento]   = departmentVal;
     if (headerIndex.pais != null)           row[headerIndex.pais]           = countryVal;
     if (headerIndex.id_visita != null)      row[headerIndex.id_visita]      = visitId;
+    if (headerIndex.ip_externa != null)      row[headerIndex.ip_externa]      = ipExternaVal;
 
     const nextRow = Math.max(2, sh.getLastRow() + 1);
     sh.getRange(nextRow, 1, 1, lastCol).setValues([row]);
@@ -269,6 +273,7 @@ function handleWriteRequest_(e){
       modelo: modelVal,
       ipLocal: ipLocalVal,
       ipExterna: ipExternaVal,
+      visitasIpExterna: externalIpVisitNumber,
       origen: originVal,
       categoria: categoryVal,
       producto: productVal,
@@ -295,4 +300,22 @@ function handleWriteRequest_(e){
   }
 
   return json_({ ok:true, status:"registered" });
+}
+
+function getExternalIpVisitNumber_(sh, headerIndex, ipExterna){
+  const ip = normalizeExternalIp_(ipExterna);
+  if (!ip || headerIndex.ip_externa == null) return "";
+
+  const lastRow = sh.getLastRow();
+  if (lastRow < 2) return 1;
+
+  const previous = sh
+    .getRange(2, headerIndex.ip_externa + 1, lastRow - 1, 1)
+    .createTextFinder(ip)
+    .matchCase(false)
+    .matchEntireCell(true)
+    .findAll()
+    .length;
+
+  return previous + 1;
 }

@@ -202,7 +202,8 @@ function resolveHeaders_(sh, required){
     ciudad:         idx[norm_("ciudad")],
     departamento:   idx[norm_("departamento")],
     pais:           idx[norm_("pais")],
-    id_visita:      idx[norm_("id visita")]
+    id_visita:      idx[norm_("id visita")],
+    ip_externa:     idx[norm_("ip externa")]
   };
 }
 

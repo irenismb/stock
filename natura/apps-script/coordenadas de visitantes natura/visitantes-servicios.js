@@ -56,39 +56,68 @@ function sendVisitToTelegram_(data){
 
   const visibleName = String(data.nombre || "").trim() || "Sin identificar";
   const straightLineDistance = formatDistance_(data.distanciaMetros);
+  const dateTime = [data.fecha, data.hora]
+    .map(value => String(value || "").trim())
+    .filter(Boolean)
+    .join(" · ");
 
-  const parts = [
-    "🔔 Nueva visita al catálogo Natura",
-    `👤 Visitante: ${visibleName} · ${visitLabel}`,
-    data.idNavegador ? `🆔 ID navegador: ${data.idNavegador}` : "",
-    data.ipExterna ? `🌐 IP externa: ${data.ipExterna}` : "",
-    data.ipExterna && data.visitasIpExterna
-      ? `🔁 Visitas registradas desde esta IP: ${data.visitasIpExterna}`
-      : "",
-    data.ipLocal ? `🏠 IP local: ${data.ipLocal}` : "",
-    `📍 Ubicación: ${locationText}`,
-    `🎯 GPS: ${gpsText}`,
-    straightLineDistance
-      ? `📏 Distancia en línea recta al punto de referencia: ${straightLineDistance}`
-      : "",
-    [data.marca, data.modelo, data.dispositivo]
-      .map(value => String(value || "").trim())
-      .filter(Boolean)
-      .length
-        ? `📱 Dispositivo: ${[data.marca, data.modelo, data.dispositivo]
-            .map(value => String(value || "").trim())
-            .filter(Boolean)
-            .join(" · ")}`
-        : "",
-    data.origen ? `🌐 Origen: ${data.origen}` : "",
-    interestParts.length ? `🛍️ Interés: ${interestParts.join(" · ")}` : "",
+  const deviceParts = [data.marca, data.modelo, data.dispositivo]
+    .map(value => String(value || "").trim())
+    .filter(Boolean);
+
+  const activityLines = [
+    interestParts.length ? `🎯 Interés: ${interestParts.join(" · ")}` : "",
     data.carritoProductos > 0
       ? `🛒 Carrito: ${data.carritoProductos} producto${data.carritoProductos === 1 ? "" : "s"} · ${data.carritoUnidades} unidad${data.carritoUnidades === 1 ? "" : "es"} · ${formatCop_(data.carritoTotal)}`
-      : "",
-    `📅 Fecha y hora: ${data.fecha || ""} · ${data.hora || ""}`
+      : ""
   ].filter(Boolean);
 
-  sendTelegramMessage_(token, chatId, parts.join("\n"), data.mapsUrl || "");
+  const deviceLines = [
+    deviceParts.length ? deviceParts.join(" · ") : "",
+    data.origen ? `🌐 Origen: ${data.origen}` : ""
+  ].filter(Boolean);
+
+  const externalIpVisitCount = Number(data.visitasIpExterna) || 0;
+  const externalIpLine = data.ipExterna
+    ? `🌐 IP externa: ${data.ipExterna}${externalIpVisitCount
+        ? ` · ${externalIpVisitCount} visita${externalIpVisitCount === 1 ? "" : "s"}`
+        : ""}`
+    : "";
+
+  const technicalLines = [
+    externalIpLine,
+    data.ipLocal ? `🏠 IP local: ${data.ipLocal}` : "",
+    data.idNavegador ? `🆔 Navegador: ${data.idNavegador}` : ""
+  ].filter(Boolean);
+
+  const blocks = [
+    [
+      "🔔 Nueva visita · Catálogo Natura",
+      `👤 Visitante: ${visibleName} · ${visitLabel}`,
+      dateTime ? `🕒 ${dateTime}` : ""
+    ].filter(Boolean).join("\n"),
+
+    [
+      "📍 UBICACIÓN",
+      locationText,
+      `🎯 GPS: ${gpsText}`,
+      straightLineDistance ? `📏 A ${straightLineDistance} del punto de referencia` : ""
+    ].filter(Boolean).join("\n"),
+
+    activityLines.length
+      ? ["🛍️ ACTIVIDAD"].concat(activityLines).join("\n")
+      : "",
+
+    deviceLines.length
+      ? ["📱 DISPOSITIVO"].concat(deviceLines).join("\n")
+      : "",
+
+    technicalLines.length
+      ? ["🔎 DATOS TÉCNICOS"].concat(technicalLines).join("\n")
+      : ""
+  ].filter(Boolean);
+
+  sendTelegramMessage_(token, chatId, blocks.join("\n\n"), data.mapsUrl || "");
 }
 
 function formatDistance_(value){

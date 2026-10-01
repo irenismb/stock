@@ -17,14 +17,11 @@ function collageUniqueProducts(products){
 }
 
 function collageRouteSlotsForProduct(p){
-  return [
-    {level:"section",depth:1,label:navigationSectionForProduct(p)},
-    ...navigationOrderedLevels().map(level=>({
-      level,
-      depth:navigationDepthForType(level),
-      label:navigationValueForProduct(p,level)
-    }))
-  ].map(slot=>({ ...slot, label:String(slot.label||"").trim() }));
+  return navigationOrderedLevels().map(level=>({
+    level,
+    depth:navigationDepthForType(level),
+    label:navigationValueForProduct(p,level)
+  })).map(slot=>({ ...slot, label:String(slot.label||"").trim() }));
 }
 
 function collageProductRoute(p){
@@ -32,14 +29,11 @@ function collageProductRoute(p){
 }
 
 function collageCurrentTitleSlots(){
-  return [
-    {level:"section",depth:1,label:selectedSection},
-    ...navigationOrderedLevels().map(level=>({
-      level,
-      depth:navigationDepthForType(level),
-      label:selectedNavigationValue(level)
-    }))
-  ]
+  return navigationOrderedLevels().map(level=>({
+    level,
+    depth:navigationDepthForType(level),
+    label:selectedNavigationValue(level)
+  }))
     .map(slot=>({ ...slot, label:String(slot.label||"").trim() }))
     .filter(slot=>slot.label);
 }
@@ -318,10 +312,6 @@ function initCollageFeature(){
         <div class="collage-output-actions" id="collageGenericActions">
           <button class="collage-share" id="collageShareBtn" type="button" disabled>Preparando imagen…</button>
         </div>
-        <div class="collage-social-actions" id="collageSocialActions" hidden>
-          <button class="collage-social-btn" id="collageMessengerBtn" type="button" data-channel-label="Messenger" disabled>Messenger</button>
-          <button class="collage-social-btn" id="collageFacebookBtn" type="button" data-channel-label="Facebook" disabled>Facebook</button>
-        </div>
       </div>
       <div class="collage-tree" id="collageTree" role="listbox" aria-label="Productos del collage; selecciona uno para crear su ficha"></div>
     </section>
@@ -338,15 +328,11 @@ function initCollageFeature(){
   const downloadBtn=null;
   const shareBtn=modal.querySelector("#collageShareBtn");
   const genericActions=modal.querySelector("#collageGenericActions");
-  const socialActions=modal.querySelector("#collageSocialActions");
-  const messengerBtn=modal.querySelector("#collageMessengerBtn");
-  const facebookBtn=modal.querySelector("#collageFacebookBtn");
-  const socialButtons=[messengerBtn,facebookBtn].filter(Boolean);
   const formatButtons=[...modal.querySelectorAll("[data-collage-format]")];
   let collageSelectedProduct=null;
   let collageExportMode="collage";
-  let collagePreparedShareFile=null;
-  let collagePreparedShareKey="";
+  const collagePreparedShareFiles=new Map();
+  const collagePreparingShareKeys=new Set();
   let collagePrepareSequence=0;
   let fichaPreparedFile=null;
   let fichaPreparedKey="";
@@ -377,6 +363,10 @@ function initCollageFeature(){
     const active=formatButtons.find(button=>button.classList.contains("is-active"));
     const selected=String(active?.dataset?.collageFormat||"instagram").trim().toLowerCase();
     return COLLAGE_EXPORT_FORMATS[selected]||COLLAGE_EXPORT_FORMATS.instagram;
+  }
+
+  function collageFormatButtonLabel(format){
+    return `${format.label} · ${format.pageW} × ${format.pageH}`;
   }
 
   function collageShareCacheKey(snapshot,format){
@@ -410,11 +400,16 @@ function initCollageFeature(){
 
   function setActionPreparing(){
     if(collageExportMode==="collage"){
-      for(const button of socialButtons){
-        const label=button.dataset.channelLabel||button.textContent||"Red social";
-        button.disabled=true;
-        button.textContent=`${label} · preparando…`;
-        button.title="";
+      const snapshot=collageCurrentSnapshot();
+      for(const button of formatButtons){
+        const format=COLLAGE_EXPORT_FORMATS[button.dataset.collageFormat]||COLLAGE_EXPORT_FORMATS.instagram;
+        const key=collageShareCacheKey(snapshot,format);
+        const ready=!!collagePreparedShareFiles.get(key);
+        button.disabled=!ready;
+        button.textContent=ready?collageFormatButtonLabel(format):`${format.label} · preparando…`;
+        button.title=ready
+          ? (canClipboardPng()?`${format.label}: copiar imagen al portapapeles y descargar PNG`:`${format.label}: descargar PNG; el navegador podría impedir copiar al portapapeles`)
+          : "Preparando imagen…";
       }
     }else if(shareBtn){
       shareBtn.disabled=true;
@@ -428,60 +423,63 @@ function initCollageFeature(){
   }
 
   function setActionReady(){
-    const ready=collageExportMode==="ficha" ? !!fichaPreparedFile : !!collagePreparedShareFile;
     if(collageExportMode==="collage"){
-      for(const button of socialButtons){
-        const label=button.dataset.channelLabel||"Red social";
+      const snapshot=collageCurrentSnapshot();
+      for(const button of formatButtons){
+        const format=COLLAGE_EXPORT_FORMATS[button.dataset.collageFormat]||COLLAGE_EXPORT_FORMATS.instagram;
+        const key=collageShareCacheKey(snapshot,format);
+        const ready=!!collagePreparedShareFiles.get(key);
+        const preparing=collagePreparingShareKeys.has(key);
         button.disabled=!ready;
-        button.textContent=label;
-        button.title=canClipboardPng()?`${label}: copiar imagen al portapapeles y descargar PNG`:`${label}: descargar PNG; el navegador podría impedir copiar al portapapeles`;
+        button.textContent=ready?collageFormatButtonLabel(format):`${format.label} · ${preparing?"preparando…":"no disponible"}`;
+        button.title=ready
+          ? (canClipboardPng()?`${format.label}: copiar imagen al portapapeles y descargar PNG`:`${format.label}: descargar PNG; el navegador podría impedir copiar al portapapeles`)
+          : (preparing?"Preparando imagen…":"No se pudo preparar la imagen.");
       }
     }else if(shareBtn){
+      const ready=!!fichaPreparedFile;
       shareBtn.disabled=!ready;
       shareBtn.textContent="Copiar y descargar";
       shareBtn.title=canClipboardPng()?"":"Tu navegador podría no permitir copiar imágenes al portapapeles.";
     }
     if(downloadBtn){
-      downloadBtn.disabled=!ready;
+      downloadBtn.disabled=false;
       downloadBtn.textContent="Descargar PNG";
     }
   }
 
   function invalidateCollageSharePreparation(){
-    collagePreparedShareFile=null;
-    collagePreparedShareKey="";
+    collagePreparedShareFiles.clear();
+    collagePreparingShareKeys.clear();
     collagePrepareSequence++;
     if(collageExportMode==="collage") setActionPreparing();
   }
 
-  function queueCollageSharePreparation(){
+  function queueCollageSharePreparation(formatKey=null){
     const snapshot=collageCurrentSnapshot();
     if(!snapshot.products.length){
-      collagePreparedShareFile=null;
-      collagePreparedShareKey="";
-      if(collageExportMode==="collage"){
-        if(shareBtn){
-          shareBtn.disabled=true;
-          shareBtn.textContent="Copiar y descargar";
-        }
-        if(downloadBtn){
-          downloadBtn.disabled=true;
-          downloadBtn.textContent="Descargar PNG";
-        }
-      }
+      collagePreparedShareFiles.clear();
+      collagePreparingShareKeys.clear();
+      if(collageExportMode==="collage") setActionReady();
       return;
     }
-    const format=getCollageExportFormat();
-    const key=collageShareCacheKey(snapshot,format);
-    const token=++collagePrepareSequence;
-    collagePreparedShareFile=null;
-    collagePreparedShareKey="";
-    if(collageExportMode==="collage") setActionPreparing();
-    window.setTimeout(()=>{
-      downloadCollageImage("prepare",{token,key}).catch(error=>{
-        console.info("No se pudo preparar el PNG del collage.",error);
-      });
-    },0);
+
+    const formats=formatKey
+      ? [COLLAGE_EXPORT_FORMATS[formatKey]||COLLAGE_EXPORT_FORMATS.instagram]
+      : Object.values(COLLAGE_EXPORT_FORMATS);
+    const token=collagePrepareSequence;
+
+    for(const format of formats){
+      const key=collageShareCacheKey(snapshot,format);
+      if(collagePreparedShareFiles.has(key) || collagePreparingShareKeys.has(key)) continue;
+      collagePreparingShareKeys.add(key);
+      if(collageExportMode==="collage") setActionPreparing();
+      window.setTimeout(()=>{
+        downloadCollageImage("prepare",{token,key,formatKey:format.key}).catch(error=>{
+          console.info(`No se pudo preparar el PNG del collage para ${format.label}.`,error);
+        });
+      },0);
+    }
   }
 
   function fichaPreparationKey(product){
@@ -555,14 +553,12 @@ function initCollageFeature(){
       button.classList.toggle("is-active",active);
       button.setAttribute("aria-pressed",active?"true":"false");
     }
-    if(modal.classList.contains("open") && collageExportMode==="collage") queueCollageSharePreparation();
   }
 
   function setCollageExportMode(mode){
     collageExportMode=mode==="ficha"?"ficha":"collage";
     const isFicha=collageExportMode==="ficha";
     if(genericActions) genericActions.hidden=!isFicha;
-    if(socialActions) socialActions.hidden=isFicha;
     modal.classList.toggle("is-ficha-mode",isFicha);
     collageTypeBtn?.classList.toggle("is-active",!isFicha);
     collageTypeBtn?.setAttribute("aria-pressed",isFicha?"false":"true");
@@ -575,8 +571,8 @@ function initCollageFeature(){
       if(fichaPreparedFile && fichaPreparedKey===fichaPreparationKey(collageSelectedProduct)) setActionReady();
       else queueFichaPreparation();
     }else{
-      if(collagePreparedShareFile && collagePreparedShareKey===collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat())) setActionReady();
-      else queueCollageSharePreparation();
+      queueCollageSharePreparation();
+      setActionReady();
     }
   }
 
@@ -1132,14 +1128,15 @@ function initCollageFeature(){
       return;
     }
 
-    const format=getCollageExportFormat();
+    const format=COLLAGE_EXPORT_FORMATS[String(options.formatKey||"").trim().toLowerCase()]||getCollageExportFormat();
     const shareKey=collageShareCacheKey(snapshot,format);
     const isCopyAction=action==="copy";
     const isPrepareAction=action==="prepare";
 
     if(isCopyAction){
-      if(!collagePreparedShareFile || collagePreparedShareKey!==shareKey){
-        queueCollageSharePreparation();
+      const preparedFile=collagePreparedShareFiles.get(shareKey)||null;
+      if(!preparedFile){
+        queueCollageSharePreparation(format.key);
         return;
       }
       if(shareBtn){
@@ -1147,7 +1144,7 @@ function initCollageFeature(){
         shareBtn.textContent="Copiando…";
       }
       try{
-        await copyPreparedPngFile(collagePreparedShareFile);
+        await copyPreparedPngFile(preparedFile);
         if(shareBtn) shareBtn.textContent="Copiada";
         window.setTimeout(()=>{
           if(shareBtn && collageExportMode==="collage"){
@@ -1547,9 +1544,10 @@ function initCollageFeature(){
       if(isPrepareAction){
         const file=window.File ? new File([blob],format.downloadName,{type:"image/png"}) : null;
         const stillCurrent=options.token===collagePrepareSequence && options.key===shareKey;
+        collagePreparingShareKeys.delete(shareKey);
         if(stillCurrent){
-          collagePreparedShareFile=file;
-          collagePreparedShareKey=file?shareKey:"";
+          if(file) collagePreparedShareFiles.set(shareKey,file);
+          else collagePreparedShareFiles.delete(shareKey);
           if(collageExportMode==="collage") setActionReady();
         }
       }else{
@@ -1565,20 +1563,10 @@ function initCollageFeature(){
     }catch(error){
       if(isPrepareAction){
         const stillCurrent=options.token===collagePrepareSequence;
+        collagePreparingShareKeys.delete(shareKey);
         if(stillCurrent){
-          collagePreparedShareFile=null;
-          collagePreparedShareKey="";
-          if(collageExportMode==="collage"){
-            if(shareBtn){
-              shareBtn.disabled=true;
-              shareBtn.textContent="Copiar y descargar";
-              shareBtn.title="No se pudo preparar la imagen.";
-            }
-            if(downloadBtn){
-              downloadBtn.disabled=true;
-              downloadBtn.textContent="Descargar PNG";
-            }
-          }
+          collagePreparedShareFiles.delete(shareKey);
+          if(collageExportMode==="collage") setActionReady();
         }
         console.info(`No se pudo preparar el PNG del collage para ${format.label}.`,error);
       }else{
@@ -1593,10 +1581,8 @@ function initCollageFeature(){
           downloadBtn.textContent="Descargar PNG";
         }
         if(collageExportMode==="collage"){
-          const currentKey=collageShareCacheKey(collageCurrentSnapshot(),getCollageExportFormat());
-          const ready=!!collagePreparedShareFile && collagePreparedShareKey===currentKey;
-          if(ready) setActionReady();
-          else queueCollageSharePreparation();
+          queueCollageSharePreparation();
+          setActionReady();
         }
       }
     }
@@ -1686,7 +1672,10 @@ function initCollageFeature(){
   });
 
   for(const button of formatButtons){
-    button.addEventListener("click",()=>setCollageExportFormat(button.dataset.collageFormat));
+    button.addEventListener("click",()=>{
+      setCollageExportFormat(button.dataset.collageFormat);
+      void copyAndDownloadForChannel(button);
+    });
   }
   setCollageExportFormat("instagram");
   collageTypeBtn?.addEventListener("click",()=>setCollageExportMode("collage"));
@@ -1695,13 +1684,16 @@ function initCollageFeature(){
     setCollageExportMode("ficha");
   });
   async function copyAndDownloadForChannel(button){
-    const file=collagePreparedShareFile;
+    const format=COLLAGE_EXPORT_FORMATS[String(button?.dataset?.collageFormat||"").trim().toLowerCase()]||getCollageExportFormat();
+    const snapshot=collageCurrentSnapshot();
+    const key=collageShareCacheKey(snapshot,format);
+    const file=collagePreparedShareFiles.get(key)||null;
     if(!file){
-      queueCollageSharePreparation();
+      queueCollageSharePreparation(format.key);
       return {copied:false,downloaded:false,pending:true};
     }
-    const label=button?.dataset?.channelLabel||"Red social";
-    for(const current of socialButtons) current.disabled=true;
+    const label=format.label;
+    for(const current of formatButtons) current.disabled=true;
     if(button) button.textContent=`${label} · copiando y descargando…`;
 
     let copyPromise=null;
@@ -1743,8 +1735,6 @@ function initCollageFeature(){
   }
 
   window.catalogoCopyAndDownloadCollageForChannel=copyAndDownloadForChannel;
-  messengerBtn?.addEventListener("click",()=>{ void copyAndDownloadForChannel(messengerBtn); });
-  facebookBtn?.addEventListener("click",()=>{ void copyAndDownloadForChannel(facebookBtn); });
 
   shareBtn?.addEventListener("click",async()=>{
     if(collageExportMode!=="ficha") return;

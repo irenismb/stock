@@ -56,8 +56,11 @@
     };
     window.INTERRUPTORES = INTERRUPTORES;
     const NAVIGATION_ORDER_CONFIG_KEY = "ORDEN_NAVEGACION";
-    const DEFAULT_NAVIGATION_ORDER = Object.freeze(["category","subcategory","public","line"]);
-    let CATALOG_NAVIGATION_ORDER = DEFAULT_NAVIGATION_ORDER.slice();
+    const ALL_NAVIGATION_LEVELS = Object.freeze(["section","category","subcategory","public","line","product"]);
+    const DEFAULT_NAVIGATION_CONFIG = Object.freeze(ALL_NAVIGATION_LEVELS.map(level=>Object.freeze({level,enabled:true})));
+    let CATALOG_NAVIGATION_CONFIG = DEFAULT_NAVIGATION_CONFIG.map(item=>({...item}));
+    let CATALOG_NAVIGATION_ORDER = ALL_NAVIGATION_LEVELS.slice();
+    window.CATALOG_NAVIGATION_CONFIG = CATALOG_NAVIGATION_CONFIG.map(item=>({...item}));
     window.CATALOG_NAVIGATION_ORDER = CATALOG_NAVIGATION_ORDER.slice();
     const REMOTE_BOOLEAN_CONTROL_KEYS = new Set([
       "MOSTRAR_CANTIDAD_STOCK",
@@ -67,7 +70,7 @@
       REGISTRAR_VISITAS_PROPIAS: "DESACTIVADO",
       MOSTRAR_CANTIDAD_STOCK: "DESACTIVADO",
       MOSTRAR_PRECIOS_PRODUCTO: "ACTIVADO",
-      ORDEN_NAVEGACION: DEFAULT_NAVIGATION_ORDER.join(",")
+      ORDEN_NAVEGACION: ALL_NAVIGATION_LEVELS.join(",")
     });
     window.REMOTE_CONTROL_VALUES = window.REMOTE_CONTROL_VALUES || {};
     for(const [key, value] of Object.entries(REMOTE_CONTROL_DEFAULTS)){
@@ -1093,30 +1096,51 @@
       return normalizeText(value).replace(/\s+/g, " ");
     }
 
-    function normalizeNavigationOrder(value){
+    function normalizeNavigationConfig(value){
       const alias={
+        section:"section",seccion:"section",
         category:"category",categoria:"category",
         subcategory:"subcategory",subcategoria:"subcategory",
         public:"public",publico:"public",
-        line:"line",linea:"line"
+        line:"line",linea:"line",
+        product:"product",producto:"product"
       };
-      const source=Array.isArray(value)?value:String(value||"").split(",");
-      const normalized=source
-        .map(item=>alias[cleanNavKey(item).replace(/\s+/g,"")]||"")
-        .filter(Boolean);
-      if(normalized.length!==DEFAULT_NAVIGATION_ORDER.length) return DEFAULT_NAVIGATION_ORDER.slice();
-      if(new Set(normalized).size!==DEFAULT_NAVIGATION_ORDER.length) return DEFAULT_NAVIGATION_ORDER.slice();
-      if(!DEFAULT_NAVIGATION_ORDER.every(level=>normalized.includes(level))) return DEFAULT_NAVIGATION_ORDER.slice();
-      return normalized;
+      const source=Array.isArray(value)?value:String(value??"").split(",");
+      const parsed=[];
+      const seen=new Set();
+      let hasExplicitState=false;
+      for(const rawItem of source){
+        let raw=typeof rawItem==="object"&&rawItem ? String(rawItem.level||"").trim() : String(rawItem??"").trim();
+        let enabled=typeof rawItem==="object"&&rawItem ? rawItem.enabled!==false : true;
+        if(raw.startsWith("!")){hasExplicitState=true;enabled=false;raw=raw.slice(1).trim();}
+        const level=alias[cleanNavKey(raw).replace(/\s+/g,"")]||"";
+        if(!level||seen.has(level)) continue;
+        seen.add(level); parsed.push({level,enabled});
+      }
+      const parsedLevels=parsed.map(item=>item.level);
+      const legacyMiddleOnly=!hasExplicitState && parsed.length===4 && !parsedLevels.includes("section") && !parsedLevels.includes("product") && ["category","subcategory","public","line"].every(level=>parsedLevels.includes(level));
+      if(legacyMiddleOnly) return [{level:"section",enabled:true},...parsed.map(item=>({level:item.level,enabled:true})),{level:"product",enabled:true}];
+      if(!parsed.length) return DEFAULT_NAVIGATION_CONFIG.map(item=>({...item}));
+      for(const level of ALL_NAVIGATION_LEVELS) if(!seen.has(level)) parsed.push({level,enabled:false});
+      return parsed;
+    }
+
+    function serializeNavigationConfig(value){
+      return normalizeNavigationConfig(value).map(item=>`${item.enabled===false?"!":""}${item.level}`).join(",");
     }
 
     function setCatalogNavigationOrder(value){
-      const next=normalizeNavigationOrder(value);
-      const changed=next.join("|")!==CATALOG_NAVIGATION_ORDER.join("|");
-      CATALOG_NAVIGATION_ORDER=next.slice();
+      const nextConfig=normalizeNavigationConfig(value);
+      const nextOrder=nextConfig.filter(item=>item.enabled!==false).map(item=>item.level);
+      const nextSerialized=serializeNavigationConfig(nextConfig);
+      const previousSerialized=serializeNavigationConfig(CATALOG_NAVIGATION_CONFIG);
+      const changed=nextSerialized!==previousSerialized;
+      CATALOG_NAVIGATION_CONFIG=nextConfig.map(item=>({...item}));
+      CATALOG_NAVIGATION_ORDER=nextOrder.slice();
+      window.CATALOG_NAVIGATION_CONFIG=CATALOG_NAVIGATION_CONFIG.map(item=>({...item}));
       window.CATALOG_NAVIGATION_ORDER=CATALOG_NAVIGATION_ORDER.slice();
       window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
-      window.REMOTE_CONTROL_VALUES[NAVIGATION_ORDER_CONFIG_KEY]=CATALOG_NAVIGATION_ORDER.join(",");
+      window.REMOTE_CONTROL_VALUES[NAVIGATION_ORDER_CONFIG_KEY]=nextSerialized;
       return changed;
     }
 
@@ -1125,11 +1149,8 @@
     }
 
     function navigationDepthForType(type){
-      const level=String(type||"");
-      if(level==="section") return 1;
-      if(level==="product") return 6;
-      const index=CATALOG_NAVIGATION_ORDER.indexOf(level);
-      return index>=0?index+2:0;
+      const index=CATALOG_NAVIGATION_ORDER.indexOf(String(type||""));
+      return index>=0?index+1:0;
     }
 
     function navigationLevelLabel(type,plural=false){
@@ -1169,14 +1190,17 @@
     }
 
     function navigationValueForProduct(p,level){
+      if(level==="section") return navigationSectionForProduct(p);
       if(level==="category") return navigationCategoryForProduct(p);
       if(level==="subcategory") return navigationSubcategoryForProduct(p);
       if(level==="public") return navigationPublicForProduct(p);
       if(level==="line") return navigationLineForProduct(p);
+      if(level==="product") return String(p?.name||"").trim();
       return "";
     }
 
     function selectedNavigationValue(level){
+      if(level==="section") return selectedSection;
       if(level==="category") return selectedCategory;
       if(level==="subcategory") return selectedSubcategory;
       if(level==="public") return selectedPublic;
@@ -1186,14 +1210,15 @@
 
     function setSelectedNavigationValue(level,value){
       const clean=String(value||"").trim();
-      if(level==="category") selectedCategory=clean;
+      if(level==="section") selectedSection=clean;
+      else if(level==="category") selectedCategory=clean;
       else if(level==="subcategory") selectedSubcategory=clean;
       else if(level==="public") selectedPublic=clean;
       else if(level==="line") selectedLine=clean;
     }
 
     function clearSelectedNavigationValues(){
-      selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";
+      selectedSection="";selectedCategory="";selectedSubcategory="";selectedPublic="";selectedLine="";
     }
 
     function clearNavigationLevelsAfter(level){
@@ -1215,14 +1240,15 @@
 
     function selectedNavigationTrail(){
       const trail=[];
-      if(selectedSection) trail.push({level:"section",label:selectedSection,depth:1});
       for(const level of navigationOrderedLevels()){
+        if(level==="product") break;
         const label=selectedNavigationValue(level);
         if(label) trail.push({level,label,depth:navigationDepthForType(level)});
       }
       return trail;
     }
 
+    window.getCatalogNavigationConfig=()=>CATALOG_NAVIGATION_CONFIG.map(item=>({...item}));
     window.getCatalogNavigationOrder=()=>navigationOrderedLevels();
     window.applyCatalogNavigationOrder=(value,options={})=>{
       const changed=setCatalogNavigationOrder(value);
@@ -1230,7 +1256,7 @@
         validateNavigationStateAgainstProducts();
         rebuildCatalogVisibility();
       }
-      return {changed,order:navigationOrderedLevels()};
+      return {changed,order:navigationOrderedLevels(),config:window.getCatalogNavigationConfig()};
     };
 
     function productsForSection(sectionLabel, list = all){
@@ -1376,6 +1402,7 @@
       const order=navigationOrderedLevels();
       let last=-1;
       for(let index=0;index<order.length;index++){
+        if(order[index]==="product") break;
         if(selectedNavigationValue(order[index])) last=index;
       }
       return last;
@@ -1383,19 +1410,14 @@
 
     function scopedProductsForCurrentNavigation(list=all){
       let source=(Array.isArray(list)?list:[]).slice();
-      if(selectedSection) source=source.filter(p=>productMatchesSection(p,selectedSection));
       const order=navigationOrderedLevels();
       const lastSelected=navigationLastSelectedIndex();
       for(let index=0;index<=lastSelected;index++){
         const level=order[index];
+        if(level==="product") break;
         const selected=selectedNavigationValue(level);
-        if(selected){
-          source=source.filter(p=>cleanNavKey(navigationValueForProduct(p,level))===cleanNavKey(selected));
-        }else{
-          // Un nivel opcional omitido antes de una selección posterior representa la rama vacía,
-          // no un nivel pendiente por escoger.
-          source=source.filter(p=>!String(navigationValueForProduct(p,level)||"").trim());
-        }
+        if(selected) source=source.filter(p=>cleanNavKey(navigationValueForProduct(p,level))===cleanNavKey(selected));
+        else source=source.filter(p=>!String(navigationValueForProduct(p,level)||"").trim());
       }
       return source;
     }
@@ -1404,57 +1426,61 @@
       const byValue=new Map();
       const context=navigationSelectionContext();
       for(const p of (Array.isArray(scoped)?scoped:[])){
-        const value=navigationValueForProduct(p,level);
-        if(!value) continue;
+        const value=navigationValueForProduct(p,level); if(!value) continue;
         const keyValue=cleanNavKey(value);
-        const visual=CATEGORY_VISUALS[keyValue]||{icon:"•"};
-        const key=[
-          level,
-          context.section,
-          context.category,
-          context.subcategory,
-          context.public,
-          context.line,
-          value
-        ].map(cleanNavKey).join("::");
+        const visual=level==="section"?(NAV_SECTIONS.find(item=>cleanNavKey(item.label)===keyValue)||{}):(CATEGORY_VISUALS[keyValue]||{icon:"•"});
+        const key=[level,context.section,context.category,context.subcategory,context.public,context.line,value].map(cleanNavKey).join("::");
         const label=level==="public"?value:categoryDisplayLabel(value);
-        const icon=level==="public"
-          ? (keyValue===cleanNavKey("Femeninos")?"♀":(keyValue===cleanNavKey("Masculinos")?"♂":"•"))
-          : (visual.icon||"•");
+        const icon=level==="public" ? (keyValue===cleanNavKey("Femeninos")?"♀":(keyValue===cleanNavKey("Masculinos")?"♂":"•")) : (visual.icon||"•");
         const found=byValue.get(keyValue)||navAlbumBase({
           key,navType:level,navValue:value,label,icon,iconImage:visual.iconImage||"",products:[],
-          extra:{...context}
+          subtitle:level==="section"?String(visual.subtitle||"").trim():"",
+          extra:{...context,theme:level==="section"?(visual.theme||""):""}
         });
-        found.products.push(p);
-        collectAlbumPreview(found,p);
-        byValue.set(keyValue,found);
+        found.products.push(p); collectAlbumPreview(found,p); byValue.set(keyValue,found);
       }
-      const order=level==="public"
-        ? new Map([[cleanNavKey("Femeninos"),0],[cleanNavKey("Masculinos"),1],[cleanNavKey("Unisex"),2]])
-        : null;
-      return finalizeAlbums(Array.from(byValue.values()),order);
+      let preferredOrder=null;
+      if(level==="public") preferredOrder=new Map([[cleanNavKey("Femeninos"),0],[cleanNavKey("Masculinos"),1],[cleanNavKey("Unisex"),2]]);
+      else if(level==="section") preferredOrder=new Map(NAV_SECTIONS.map((item,index)=>[cleanNavKey(item.label),index]));
+      return finalizeAlbums(Array.from(byValue.values()),preferredOrder);
     }
 
     function buildAlbumsFromOrder(scoped,startIndex=0){
       const order=navigationOrderedLevels();
       if(startIndex>=order.length || !scoped.length) return [];
       const level=order[startIndex];
-      const withValue=[];
-      const withoutValue=[];
-      for(const p of scoped){
-        String(navigationValueForProduct(p,level)||"").trim()?withValue.push(p):withoutValue.push(p);
-      }
+      if(level==="product") return [];
+      const withValue=[],withoutValue=[];
+      for(const p of scoped) String(navigationValueForProduct(p,level)||"").trim()?withValue.push(p):withoutValue.push(p);
       const out=[];
       if(withValue.length) out.push(...buildLevelAlbums(withValue,level));
       if(withoutValue.length) out.push(...buildAlbumsFromOrder(withoutValue,startIndex+1));
       return out.sort((a,b)=>(Number(a.navDepth)||99)-(Number(b.navDepth)||99)||a.label.localeCompare(b.label,"es",{sensitivity:"base"}));
     }
 
+    function navigationViewModeForProducts(scoped,startIndex=navigationLastSelectedIndex()+1){
+      const order=navigationOrderedLevels();
+      if(!order.length) return {mode:"empty",level:"",index:-1};
+      const source=Array.isArray(scoped)?scoped:[];
+      for(let index=Math.max(0,startIndex);index<order.length;index++){
+        const level=order[index];
+        if(level==="product") return {mode:"products",level,index};
+        if(source.some(p=>String(navigationValueForProduct(p,level)||"").trim())) return {mode:"albums",level,index};
+      }
+      return {mode:"terminal",level:"",index:order.length};
+    }
+
+    function navigationViewMode(){
+      return navigationViewModeForProducts(scopedProductsForCurrentNavigation(all));
+    }
+
     function buildAlbums(list){
-      if(!selectedSection) return buildRootAlbums(list);
-      if(isDirectProductSection(selectedSection)) return [];
+      const order=navigationOrderedLevels();
+      if(!order.length) return [];
       const scoped=scopedProductsForCurrentNavigation(list);
-      return buildAlbumsFromOrder(scoped,navigationLastSelectedIndex()+1);
+      const view=navigationViewModeForProducts(scoped);
+      if(view.mode!=="albums") return [];
+      return buildAlbumsFromOrder(scoped,view.index);
     }
 
     function refreshNavigationAlbums(){
@@ -1486,7 +1512,7 @@
     }
 
     function shouldShowAlbumGrid(){
-      return albumModeEnabled() && albums.length > 0 && !isDirectProductSection(selectedSection);
+      return albumModeEnabled() && navigationViewMode().mode==="albums" && albums.length > 0;
     }
 
     function getSelectedAlbum(){
@@ -2105,44 +2131,32 @@
 
     function setNavigationFromRawState({section="",category="",subcategory="",public:publicValue="",line="",audience="",gender="",family=""}={}){
       section=String(section || audience || "").trim();
-      publicValue=String(publicValue || gender || "").trim();
+      category=String(category || "").trim();
+      subcategory=String(subcategory || "").trim();
+      publicValue=normalizePublicLabel(publicValue || gender || "");
       line=String(line || family || "").trim();
       const legacyGiftSection=cleanNavKey(section);
       if([cleanNavKey("Regalos"),cleanNavKey("Regalos para toda ocasión")].includes(legacyGiftSection)){
-        section="Belleza y cuidado";
-        if(!String(category||"").trim()) category="Regalos";
+        section="Belleza y cuidado"; if(!category) category="Regalos";
       }
+      clearSelectedNavigationValues();
       const source=Array.isArray(all)?all:[];
-      const sections=[...new Set(source.map(navigationSectionForProduct).map(v=>String(v||"").trim()).filter(Boolean))];
-      const validSection=sections.find(label=>cleanNavKey(label)===cleanNavKey(section));
-      if(validSection){
-        selectedSection=validSection;
-        selectedCategory=category;
-        selectedSubcategory=subcategory;
-        selectedPublic=normalizePublicLabel(publicValue);
-        selectedLine=line;
-        return;
+      if(section){
+        const sections=[...new Set(source.map(navigationSectionForProduct).map(v=>String(v||"").trim()).filter(Boolean))];
+        const validSection=sections.find(label=>cleanNavKey(label)===cleanNavKey(section));
+        if(validSection) section=validSection;
+        else{
+          const legacyProduct=source.find(p=>cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(section));
+          if(legacyProduct){
+            const legacyMiddle=category; section=navigationSectionForProduct(legacyProduct); category=navigationCategoryForProduct(legacyProduct);
+            const categoryProducts=source.filter(p=>productMatchesSection(p,section)&&cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(category));
+            const matchingSub=categoryProducts.find(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(legacyMiddle));
+            subcategory=matchingSub?navigationSubcategoryForProduct(matchingSub):subcategory;
+            if(!matchingSub&&legacyMiddle&&!publicValue) publicValue=normalizePublicLabel(legacyMiddle);
+          }else section="";
+        }
       }
-
-      // Compatibilidad con la navegación histórica: antes el primer nivel se guardaba como audience
-      // y algunas rutas antiguas usaban category como segundo nivel.
-      const legacyProduct=source.find(p=>cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(section));
-      if(legacyProduct){
-        selectedSection=navigationSectionForProduct(legacyProduct);
-        selectedCategory=navigationCategoryForProduct(legacyProduct);
-        const legacyMiddle=String(category||"").trim();
-        const categoryProducts=source.filter(p=>
-          productMatchesSection(p,selectedSection) &&
-          cleanNavKey(navigationCategoryForProduct(p))===cleanNavKey(selectedCategory)
-        );
-        const matchingSub=categoryProducts.find(p=>cleanNavKey(navigationSubcategoryForProduct(p))===cleanNavKey(legacyMiddle));
-        selectedSubcategory=matchingSub?navigationSubcategoryForProduct(matchingSub):"";
-        selectedPublic=normalizePublicLabel(publicValue || (!matchingSub ? legacyMiddle : ""));
-        selectedLine=line;
-        return;
-      }
-
-      selectedSection=""; selectedCategory=""; selectedSubcategory=""; selectedPublic=""; selectedLine="";
+      selectedSection=section; selectedCategory=category; selectedSubcategory=subcategory; selectedPublic=publicValue; selectedLine=line;
     }
 
     function readStateFromUrl(){
@@ -2402,36 +2416,22 @@
 
     function rebuildCatalogHistoryForRestoredNavigation({force=false}={}){
       validateNavigationStateAgainstProducts();
-      if(isCatalogRootNavigation()) return false;
+      const trail=selectedNavigationTrail();
+      if(!trail.length) return false;
       if(!force && currentCatalogHistoryIndex() > 0) return false;
-
-      const section=String(selectedSection||"");
-      const category=String(selectedCategory||"");
-      const subcategory=String(selectedSubcategory||"");
-      const publicValue=String(selectedPublic||"");
-      const line=String(selectedLine||"");
-      if(!section) return false;
-
       const restoredUrl=location.href;
-      const steps=[{section,category:"",subcategory:"",publicValue:"",line:""}];
-      if(category) steps.push({section,category,subcategory:"",publicValue:"",line:""});
-      if(subcategory) steps.push({section,category,subcategory,publicValue:"",line:""});
-      if(publicValue) steps.push({section,category,subcategory,publicValue,line:""});
-      if(line) steps.push({section,category,subcategory,publicValue,line});
-
+      const steps=[],current={section:"",category:"",subcategory:"",publicValue:"",line:""};
+      const fieldByLevel={section:"section",category:"category",subcategory:"subcategory",public:"publicValue",line:"line"};
+      for(const crumb of trail){const field=fieldByLevel[crumb.level];if(!field) continue;current[field]=crumb.label;steps.push({...current});}
+      if(!steps.length) return false;
       const rootUrl=catalogUrlForRestoredNavigation("","","","","",{preserveDiscovery:false,baseHref:restoredUrl});
       history.replaceState(makeCatalogHistoryStateForNavigation(0,"","","","","","sentinel"),"",rootUrl);
       history.pushState(makeCatalogHistoryStateForNavigation(0,"","","","","","guard"),"",rootUrl);
       steps.forEach((step,idx)=>{
-        const index=idx+1; const isCurrent=idx===steps.length-1;
-        history.pushState(
-          makeCatalogHistoryStateForNavigation(index,step.section,step.category,step.subcategory,step.publicValue,step.line),
-          "",
-          catalogUrlForRestoredNavigation(step.section,step.category,step.subcategory,step.publicValue,step.line,{preserveDiscovery:isCurrent,baseHref:restoredUrl})
-        );
+        const index=idx+1,isCurrent=idx===steps.length-1;
+        history.pushState(makeCatalogHistoryStateForNavigation(index,step.section,step.category,step.subcategory,step.publicValue,step.line),"",catalogUrlForRestoredNavigation(step.section,step.category,step.subcategory,step.publicValue,step.line,{preserveDiscovery:isCurrent,baseHref:restoredUrl}));
       });
-      lastCatalogHistoryIndex=steps.length;
-      return true;
+      lastCatalogHistoryIndex=steps.length; return true;
     }
 
     function writeStateToUrl({push=false,index=currentCatalogHistoryIndex()}={}){
@@ -2473,20 +2473,17 @@
     }
 
     function validateNavigationStateAgainstProducts(){
-      if(selectedSection && !all.some(p=>productMatchesSection(p,selectedSection))){
-        selectedSection="";clearSelectedNavigationValues();return;
-      }
-      if(!selectedSection){clearSelectedNavigationValues();return;}
-
-      let scoped=all.filter(p=>productMatchesSection(p,selectedSection));
       const order=navigationOrderedLevels();
+      const activeGroups=new Set(order.filter(level=>level!=="product"));
+      for(const level of ["section","category","subcategory","public","line"]) if(!activeGroups.has(level)) setSelectedNavigationValue(level,"");
+      const productIndex=order.indexOf("product");
+      if(productIndex>=0) for(const level of order.slice(productIndex+1)) setSelectedNavigationValue(level,"");
+      let scoped=Array.isArray(all)?all.slice():[];
       const lastSelected=navigationLastSelectedIndex();
       for(let index=0;index<=lastSelected;index++){
-        const level=order[index];
+        const level=order[index]; if(level==="product") break;
         const selected=selectedNavigationValue(level);
-        const matching=selected
-          ? scoped.filter(p=>cleanNavKey(navigationValueForProduct(p,level))===cleanNavKey(selected))
-          : scoped.filter(p=>!String(navigationValueForProduct(p,level)||"").trim());
+        const matching=selected ? scoped.filter(p=>cleanNavKey(navigationValueForProduct(p,level))===cleanNavKey(selected)) : scoped.filter(p=>!String(navigationValueForProduct(p,level)||"").trim());
         if(!matching.length){
           if(selected) setSelectedNavigationValue(level,"");
           for(const later of order.slice(index+1)) setSelectedNavigationValue(later,"");
@@ -2579,26 +2576,22 @@
     }
 
     function buildFilteredAlbums(){
-      const terms = getCombinedWordTerms();
-      let filtered = albums.map(album => {
+      const terms=getCombinedWordTerms();
+      let filtered=albums.map(album=>{
         if(!terms.length) return album;
-        const searchableProducts = filterSearchExcludedProducts(album.products || []);
-        const matchingProducts = searchableProducts.filter(p => terms.every(t => p.searchKey.includes(t)));
-        return {
-          ...album,
-          count:matchingProducts.length,
-          matchingProducts
-        };
+        const searchableProducts=filterSearchExcludedProducts(album.products||[]);
+        const matchingProducts=searchableProducts.filter(p=>terms.every(t=>p.searchKey.includes(t)));
+        return {...album,count:matchingProducts.length,matchingProducts};
       });
-
       filtered.sort((a,b)=>{
-        if(!selectedSection){
-          const order = new Map(NAV_SECTIONS.map((item,index)=>[cleanNavKey(item.label),index]));
-          const aRank = order.has(cleanNavKey(a.label)) ? order.get(cleanNavKey(a.label)) : Number.MAX_SAFE_INTEGER;
-          const bRank = order.has(cleanNavKey(b.label)) ? order.get(cleanNavKey(b.label)) : Number.MAX_SAFE_INTEGER;
-          return aRank - bRank || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
+        const sectionOnly=filtered.length>0&&filtered.every(album=>album.navType==="section");
+        if(sectionOnly){
+          const order=new Map(NAV_SECTIONS.map((item,index)=>[cleanNavKey(item.label),index]));
+          const aRank=order.has(cleanNavKey(a.label))?order.get(cleanNavKey(a.label)):Number.MAX_SAFE_INTEGER;
+          const bRank=order.has(cleanNavKey(b.label))?order.get(cleanNavKey(b.label)):Number.MAX_SAFE_INTEGER;
+          return aRank-bRank||a.label.localeCompare(b.label,"es",{sensitivity:"base"});
         }
-        return (Number(a.navDepth)||99)-(Number(b.navDepth)||99) || a.label.localeCompare(b.label, "es", { sensitivity:"base" });
+        return (Number(a.navDepth)||99)-(Number(b.navDepth)||99)||a.label.localeCompare(b.label,"es",{sensitivity:"base"});
       });
       return filtered;
     }
@@ -2618,6 +2611,14 @@
       scheduleWriteStateToUrl();
 
       const qHas = getCombinedWordTerms().length > 0;
+      const viewMode=navigationViewMode();
+
+      if(viewMode.mode==="empty"){
+        if(grid){grid.classList.remove("album-three-column-layout");grid.innerHTML="";grid.appendChild(makeEmptyState("No hay niveles de navegación activos."));}
+        if(countEl){countEl.textContent="0 niveles activos";countEl.classList.remove("search-active");}
+        scheduleJsonLdUpdate([]);
+        return;
+      }
 
       if(shouldShowAlbumGrid()){
         const filteredAlbums = buildFilteredAlbums();
@@ -2631,7 +2632,7 @@
           const totalProducts = filteredAlbums.reduce((sum,album)=>sum + (Number(album.count) || 0), 0);
           const activeCards = filteredAlbums.filter(album => (Number(album.count) || 0) > 0).length;
           const navTypes=[...new Set(filteredAlbums.map(album=>album.navType).filter(Boolean))];
-          const groupType=navTypes[0]||(selectedSection?"category":"section");
+          const groupType=navTypes[0]||viewMode.level||"section";
           const mixedTypes=navTypes.length>1;
           if(qHas){
             const productWord = totalProducts === 1 ? "producto encontrado" : "productos encontrados";
@@ -2652,7 +2653,7 @@
         const frag = document.createDocumentFragment();
         if(!filteredAlbums.length){
           const emptyType=filteredAlbums[0]?.navType||albums[0]?.navType;
-          frag.appendChild(makeEmptyState(!selectedSection ? "No se encontraron secciones con ese nombre." : `No se encontraron ${navigationLevelLabel(emptyType||"category",true).toLowerCase()} con ese nombre.`));
+          frag.appendChild(makeEmptyState(`No se encontraron ${navigationLevelLabel(emptyType||viewMode.level||"category",true).toLowerCase()} con ese nombre.`));
         }else{
           for(const album of filteredAlbums){
             frag.appendChild(makeAlbumCard(album));
@@ -2664,8 +2665,13 @@
         return;
       }
 
-      if(grid){
-        grid.classList.remove("album-three-column-layout");
+      if(grid){grid.classList.remove("album-three-column-layout");}
+
+      if(viewMode.mode==="terminal"){
+        if(grid){grid.innerHTML="";grid.appendChild(makeEmptyState("No hay un nivel posterior configurado para esta vista."));}
+        if(countEl){countEl.textContent="";countEl.classList.remove("search-active");}
+        scheduleJsonLdUpdate([]);
+        return;
       }
 
       const filtered = buildFilteredList();
@@ -2943,45 +2949,16 @@ function uxRenderBreadcrumb(){
   if(!albumPath) return;
   albumPath.innerHTML="";
   albumPath.classList.add("fixed-route");
-  if(!selectedSection) return;
-  const slots=[
-    {level:"root",label:"Inicio",column:1},
-    {level:"section",label:selectedSection,column:2},
-    ...navigationOrderedLevels().map(level=>({
-      level,
-      label:selectedNavigationValue(level),
-      column:navigationDepthForType(level)+1
-    }))
-  ].filter(item=>item.level==="root"||String(item.label||"").trim());
+  const trail=selectedNavigationTrail();
+  if(!trail.length) return;
+  const slots=[{level:"root",label:"Inicio",column:1},...trail.map((item,index)=>({level:item.level,label:item.label,column:index+2}))];
   const currentLevel=slots.at(-1)?.level||"root";
   for(const crumb of slots){
-    const slot=document.createElement("span");
-    slot.className="breadcrumb-slot";
-    slot.dataset.navLevel=crumb.level;
-    slot.dataset.navDepth=String(Math.max(0,crumb.column-1));
-    slot.style.setProperty("--route-column",String(crumb.column));
-    if(crumb.level!=="root"){
-      const sep=document.createElement("span");
-      sep.className="breadcrumb-separator";
-      sep.textContent="›";
-      sep.setAttribute("aria-hidden","true");
-      slot.appendChild(sep);
-    }
+    const slot=document.createElement("span"); slot.className="breadcrumb-slot"; slot.dataset.navLevel=crumb.level; slot.dataset.navDepth=String(Math.max(0,crumb.column-1)); slot.style.setProperty("--route-column",String(crumb.column));
+    if(crumb.level!=="root"){const sep=document.createElement("span");sep.className="breadcrumb-separator";sep.textContent="›";sep.setAttribute("aria-hidden","true");slot.appendChild(sep);}
     const current=crumb.level===currentLevel;
-    if(current){
-      const span=document.createElement("span");
-      span.className="breadcrumb-current";
-      span.textContent=crumb.label;
-      span.setAttribute("aria-current","page");
-      slot.appendChild(span);
-    }else{
-      const btn=document.createElement("button");
-      btn.type="button";
-      btn.className="breadcrumb-link";
-      btn.dataset.breadcrumbLevel=crumb.level;
-      btn.textContent=crumb.label;
-      slot.appendChild(btn);
-    }
+    if(current){const span=document.createElement("span");span.className="breadcrumb-current";span.textContent=crumb.label;span.setAttribute("aria-current","page");slot.appendChild(span);}
+    else{const btn=document.createElement("button");btn.type="button";btn.className="breadcrumb-link";btn.dataset.breadcrumbLevel=crumb.level;btn.textContent=crumb.label;slot.appendChild(btn);}
     albumPath.appendChild(slot);
   }
 }
@@ -3122,35 +3099,22 @@ function renderWordSuggestions(){
 
 function syncFilterVisibility(){
   const showAlbumGrid=shouldShowAlbumGrid();
-  const directSelected=isDirectProductSection(selectedSection);
+  const trail=selectedNavigationTrail();
+  const view=navigationViewMode();
   if(catSel){catSel.hidden=true;catSel.disabled=true;catSel.value="";}
   if(brandSel){brandSel.hidden=true;brandSel.disabled=true;brandSel.value="";}
-  if(sortSel){sortSel.hidden=showAlbumGrid;sortSel.disabled=showAlbumGrid;}
-  if(albumNav) albumNav.hidden=!selectedSection;
-  if(albumBackBtn){
-    const trail=selectedNavigationTrail();
-    const parent=trail.length>1?trail[trail.length-2].label:"inicio";
-    albumBackBtn.textContent=`← Volver a ${parent}`;
-  }
-  uxRenderBreadcrumb();
-  placeResponsiveHeaderMeta();
-  if(qInp){
-    const trail=selectedNavigationTrail();
-    const scope=trail.at(-1)?.label||"";
-    qInp.placeholder=selectedSection?`Buscar en ${scope}`:"Buscar producto, línea o categoría";
-    qInp.setAttribute("aria-label",selectedSection?`Buscar dentro de ${scope}`:"Buscar producto, línea o categoría");
-  }
+  if(sortSel){sortSel.hidden=view.mode!=="products";sortSel.disabled=view.mode!=="products";}
+  if(albumNav) albumNav.hidden=!trail.length;
+  if(albumBackBtn){const parent=trail.length>1?trail[trail.length-2].label:"inicio";albumBackBtn.textContent=`← Volver a ${parent}`;}
+  uxRenderBreadcrumb(); placeResponsiveHeaderMeta();
+  if(qInp){const scope=trail.at(-1)?.label||"";qInp.placeholder=trail.length?`Buscar en ${scope}`:"Buscar producto, línea o categoría";qInp.setAttribute("aria-label",trail.length?`Buscar dentro de ${scope}`:"Buscar producto, línea o categoría");}
   if(grid){
-    grid.classList.toggle("album-grid-mode",showAlbumGrid);
-    grid.classList.toggle("root-nav-mode",showAlbumGrid&&!selectedSection);
+    grid.classList.toggle("album-grid-mode",showAlbumGrid); grid.classList.toggle("root-nav-mode",showAlbumGrid&&trail.length===0);
     let label="Productos";
-    if(!selectedSection) label="Secciones principales";
-    else if(directSelected) label="Productos";
-    else if(albums.length){
-      const types=[...new Set(albums.map(album=>album.navType).filter(Boolean))];
-      label=types.length>1?"Niveles de navegación":navigationLevelLabel(types[0]||"category",true);
-    }
-    grid.setAttribute("aria-label",showAlbumGrid?label:"Productos");
+    if(view.mode==="empty") label="Sin niveles de navegación activos";
+    else if(showAlbumGrid){const types=[...new Set(albums.map(album=>album.navType).filter(Boolean))];label=types.length>1?"Niveles de navegación":navigationLevelLabel(types[0]||view.level||"category",true);}
+    else if(view.mode==="terminal") label=trail.at(-1)?.label||"Navegación";
+    grid.setAttribute("aria-label",label);
   }
   uxRenderFilterSummary();
 }
@@ -3267,14 +3231,14 @@ function makeEmptyState(message){
 function openAlbum(key,opts={}){
   const target=albumByKey.get(String(key||""));
   if(!target) return;
+  const order=navigationOrderedLevels();
+  const index=order.indexOf(target.navType);
+  const nextView=navigationViewModeForProducts(target.products||[],index>=0?index+1:order.length);
+  // Si este es el último nivel activo y no conduce a Producto, el clic no navega.
+  if(nextView.mode==="terminal"||nextView.mode==="empty") return;
   writeStateToUrl();
   uxScrollStack().push({scrollY:window.scrollY||0});
-  if(target.navType==="section"){
-    selectedSection=target.navValue;clearSelectedNavigationValues();
-  }else if(navigationOrderedLevels().includes(target.navType)){
-    setSelectedNavigationValue(target.navType,target.navValue);
-    clearNavigationLevelsAfter(target.navType);
-  }
+  if(index>=0){setSelectedNavigationValue(target.navType,target.navValue);clearNavigationLevelsAfter(target.navType);}
   if(!opts.keepFilters) resetDiscoveryFilters();
   refreshNavigationAlbums();refreshFilterOptionsForScope();pushNavigationStateToUrl();render();uxScrollToCatalogStart();
 }
@@ -3282,9 +3246,9 @@ function openAlbum(key,opts={}){
 function closeAlbum(opts={}){
   if(currentCatalogHistoryIndex()>0){history.back();return;}
   const restore=uxScrollStack().pop();
-  const selectedLevels=navigationOrderedLevels().filter(level=>Boolean(selectedNavigationValue(level)));
+  const selectedLevels=navigationOrderedLevels().filter(level=>level!=="product"&&Boolean(selectedNavigationValue(level)));
   if(selectedLevels.length) setSelectedNavigationValue(selectedLevels.at(-1),"");
-  else selectedSection="";
+  else clearSelectedNavigationValues();
   if(!opts.keepFilters) resetDiscoveryFilters();
   refreshNavigationAlbums();refreshFilterOptionsForScope();writeStateToUrl();installCatalogExitGuardIfAtRoot();render();
   if(restore&&Number.isFinite(restore.scrollY)) requestAnimationFrame(()=>window.scrollTo({top:restore.scrollY,left:0,behavior:"smooth"}));
@@ -3425,8 +3389,7 @@ function bindFilters(){
     if(!btn) return;
     const level=btn.dataset.breadcrumbLevel;
     uxScrollStack().length=0;
-    if(level==="root"){selectedSection="";clearSelectedNavigationValues();}
-    else if(level==="section") clearSelectedNavigationValues();
+    if(level==="root") clearSelectedNavigationValues();
     else if(navigationOrderedLevels().includes(level)) clearNavigationLevelsAfter(level);
     resetDiscoveryFilters();
     refreshNavigationAlbums();

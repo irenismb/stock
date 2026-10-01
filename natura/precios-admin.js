@@ -25,8 +25,9 @@
   const adminGlobalStates=new Map();
   const ADMIN_SCOPE_LOCAL="local", ADMIN_SCOPE_GLOBAL="global";
   const NAVIGATION_ORDER_KEY="ORDEN_NAVEGACION";
-  const NAVIGATION_ORDER_DEFAULT=["category","subcategory","public","line"];
-  const NAVIGATION_LABELS={category:"Categoría",subcategory:"Subcategoría",public:"Público",line:"Línea"};
+  const NAVIGATION_LEVELS=["section","category","subcategory","public","line","product"];
+  const NAVIGATION_ORDER_DEFAULT=NAVIGATION_LEVELS.map(level=>({level,enabled:true}));
+  const NAVIGATION_LABELS={section:"Sección",category:"Categoría",subcategory:"Subcategoría",public:"Público",line:"Línea",product:"Producto"};
   const ADMIN_SECTIONS=[
     {id:"catalogo",label:"Catálogo",icon:"⌂"},
     {id:"visibilidad",label:"Visibilidad",icon:"◉"},
@@ -66,11 +67,11 @@
   .catalog-admin-card{margin:0 0 16px;padding:20px;border:1px solid var(--admin-panel-line);border-radius:20px;background:var(--admin-panel-card);box-shadow:0 12px 30px rgba(28,45,40,.08);color:var(--admin-panel-ink)}
   .catalog-admin-card h3{margin:0 0 6px;color:#182f2a;font:950 21px/1.2 Arial}.catalog-admin-card-copy{margin:0 0 16px;color:#6c7774;font:13px/1.5 Arial}
   .catalog-admin-config-list{display:grid;gap:9px}.catalog-admin-config-row{background:#fff;border-color:#e2e6e3}.catalog-admin-config-label{color:#213b34}.catalog-admin-config-help{color:#72807b}
-  .catalog-admin-order-list{display:grid;gap:8px}.catalog-admin-order-row{display:grid;grid-template-columns:34px 38px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:50px;padding:8px 12px;border:1px solid #dfe5e1;border-radius:12px;background:#fff;color:#203934;font:850 14px Arial}.catalog-admin-order-row.is-fixed{background:var(--admin-panel-green);color:#466158}.catalog-admin-order-handle{cursor:grab;color:#52645f;font-size:19px;line-height:1;user-select:none}.catalog-admin-order-row.dragging{opacity:.55}.catalog-admin-order-lock{color:#6c7d77;font-size:15px}.catalog-admin-order-actions{display:flex;gap:5px}.catalog-admin-order-move{width:31px;height:31px;padding:0;border:1px solid #d9dfdc;border-radius:9px;background:#fff;color:#4e5f5a;font:900 14px Arial}.catalog-admin-order-move:disabled{opacity:.3;cursor:not-allowed}
-  .catalog-admin-order-help{display:flex;align-items:center;gap:7px;margin:10px 2px 0;color:#707a77;font:12px/1.35 Arial}.catalog-admin-order-preview-title{margin:18px 0 9px;padding-top:16px;border-top:1px solid #e8ece9;color:#1d3530;font:900 15px Arial}.catalog-admin-order-preview{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.catalog-admin-order-pill{padding:9px 12px;border-radius:11px;background:#f0ecfa;color:#403b53;font:800 12px Arial}.catalog-admin-order-pill.is-fixed{background:#eaf2ed;color:#304b43}.catalog-admin-order-arrow{color:#7f8986;font-weight:900}.catalog-admin-order-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.catalog-admin-primary,.catalog-admin-secondary{min-height:42px;padding:9px 15px;border-radius:11px;font:900 12px Arial;cursor:pointer}.catalog-admin-primary{border:1px solid #6d45b8;background:#6d45b8;color:#fff}.catalog-admin-secondary{border:1px solid #ccd4d0;background:#fff;color:#334740}.catalog-admin-primary:disabled,.catalog-admin-secondary:disabled{opacity:.55;cursor:wait}
+  .catalog-admin-order-list{display:grid;gap:8px}.catalog-admin-order-row{display:grid;grid-template-columns:34px 38px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:50px;padding:8px 12px;border:1px solid #dfe5e1;border-radius:12px;background:#fff;color:#203934;font:850 14px Arial}.catalog-admin-order-row.is-omitted{background:#f7f7f5;color:#7f8885}.catalog-admin-order-handle{cursor:grab;color:#52645f;font-size:19px;line-height:1;user-select:none}.catalog-admin-order-row.dragging{opacity:.55}.catalog-admin-order-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}.catalog-admin-order-toggle{min-width:78px;height:31px;padding:0 9px;border:1px solid #b9d5c5;border-radius:999px;background:#e7f7ed;color:#176b3a;font:900 10px Arial;cursor:pointer}.catalog-admin-order-toggle[aria-pressed="false"]{border-color:#d8c9c6;background:#fdebec;color:#9a2e43}.catalog-admin-order-move{width:31px;height:31px;padding:0;border:1px solid #d9dfdc;border-radius:9px;background:#fff;color:#4e5f5a;font:900 14px Arial}.catalog-admin-order-move:disabled{opacity:.3;cursor:not-allowed}
+  .catalog-admin-order-help{display:flex;align-items:flex-start;gap:7px;margin:10px 2px 0;color:#707a77;font:12px/1.35 Arial}.catalog-admin-order-preview-title{margin:18px 0 9px;padding-top:16px;border-top:1px solid #e8ece9;color:#1d3530;font:900 15px Arial}.catalog-admin-order-preview{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:36px}.catalog-admin-order-pill{padding:9px 12px;border-radius:11px;background:#f0ecfa;color:#403b53;font:800 12px Arial}.catalog-admin-order-arrow{color:#7f8986;font-weight:900}.catalog-admin-order-empty{color:#7b8582;font:800 12px/1.35 Arial}.catalog-admin-order-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.catalog-admin-primary,.catalog-admin-secondary{min-height:42px;padding:9px 15px;border-radius:11px;font:900 12px Arial;cursor:pointer}.catalog-admin-primary{border:1px solid #6d45b8;background:#6d45b8;color:#fff}.catalog-admin-secondary{border:1px solid #ccd4d0;background:#fff;color:#334740}.catalog-admin-primary:disabled,.catalog-admin-secondary:disabled{opacity:.55;cursor:wait}
   .catalog-admin-folleto-host{margin:0 0 22px}.catalog-admin-folleto-intro{margin:0 0 14px;padding:14px 16px;border:1px solid #dfe5e1;border-radius:16px;background:#fff;color:#5f6d69;font:13px/1.45 Arial;box-shadow:0 8px 24px rgba(28,45,40,.06)}
   @media(max-width:900px){body.catalog-admin-mode main.wrap{padding-left:0}.catalog-admin-sidebar{position:sticky;top:8px;left:auto;width:auto;margin:8px 10px 12px;z-index:1450}.catalog-admin-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.catalog-admin-nav-btn{grid-template-columns:1fr;text-align:center;gap:3px;padding:8px 4px}.catalog-admin-sidebar-title,.catalog-admin-sidebar-note{display:none}}
-  @media(max-width:760px){.catalog-admin-config-row{grid-template-columns:1fr}.catalog-admin-filter-controls{justify-content:stretch}.catalog-admin-scope{display:grid;grid-template-columns:1fr 1fr;flex:1 1 220px}.catalog-admin-switch{width:100%}.catalog-admin-card{padding:15px}.catalog-admin-order-row{grid-template-columns:28px 30px minmax(0,1fr) auto;padding:7px 9px}.catalog-admin-page-heading{font-size:25px}}
+  @media(max-width:760px){.catalog-admin-config-row{grid-template-columns:1fr}.catalog-admin-filter-controls{justify-content:stretch}.catalog-admin-scope{display:grid;grid-template-columns:1fr 1fr;flex:1 1 220px}.catalog-admin-switch{width:100%}.catalog-admin-card{padding:15px}.catalog-admin-order-row{grid-template-columns:28px 30px minmax(0,1fr);padding:7px 9px}.catalog-admin-order-actions{grid-column:1/-1;justify-content:flex-end}.catalog-admin-page-heading{font-size:25px}}
   @media(max-width:380px){.price-admin-editor{grid-template-columns:1fr}.price-admin-save{width:100%}}
   `;
   document.head.appendChild(css);
@@ -266,53 +267,118 @@
   function syncAdminTools(){try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}}
   function removeAdminUI(){clearAdminDecorations();document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
 
-  function normalizeNavigationOrder(value){
-    const alias={category:"category",categoria:"category",subcategory:"subcategory",subcategoria:"subcategory",public:"public",publico:"public",line:"line",linea:"line"};
-    const source=Array.isArray(value)?value:String(value||"").split(",");
-    const normalized=source.map(item=>alias[norm(item).replace(/\s+/g,"")]||"").filter(Boolean);
-    if(normalized.length!==NAVIGATION_ORDER_DEFAULT.length||new Set(normalized).size!==NAVIGATION_ORDER_DEFAULT.length)return NAVIGATION_ORDER_DEFAULT.slice();
-    if(!NAVIGATION_ORDER_DEFAULT.every(level=>normalized.includes(level)))return NAVIGATION_ORDER_DEFAULT.slice();
-    return normalized;
+  function normalizeNavigationConfig(value){
+    const alias={
+      section:"section",seccion:"section",
+      category:"category",categoria:"category",
+      subcategory:"subcategory",subcategoria:"subcategory",
+      public:"public",publico:"public",
+      line:"line",linea:"line",
+      product:"product",producto:"product"
+    };
+    const source=Array.isArray(value)
+      ? value
+      : String(value??"").split(",");
+    const parsed=[];
+    const seen=new Set();
+    let hasExplicitState=false;
+    for(const rawItem of source){
+      let raw=typeof rawItem==="object"&&rawItem
+        ? String(rawItem.level||"").trim()
+        : String(rawItem??"").trim();
+      let enabled=typeof rawItem==="object"&&rawItem
+        ? rawItem.enabled!==false
+        : true;
+      if(raw.startsWith("!")){
+        hasExplicitState=true;
+        enabled=false;
+        raw=raw.slice(1).trim();
+      }
+      const level=alias[norm(raw).replace(/\s+/g,"")]||"";
+      if(!level||seen.has(level)) continue;
+      seen.add(level);
+      parsed.push({level,enabled});
+    }
+
+    const parsedLevels=parsed.map(item=>item.level);
+    const legacyMiddleOnly=!hasExplicitState
+      && parsed.length===4
+      && !parsedLevels.includes("section")
+      && !parsedLevels.includes("product")
+      && ["category","subcategory","public","line"].every(level=>parsedLevels.includes(level));
+    if(legacyMiddleOnly){
+      return [
+        {level:"section",enabled:true},
+        ...parsed.map(item=>({level:item.level,enabled:true})),
+        {level:"product",enabled:true}
+      ];
+    }
+
+    if(!parsed.length) return NAVIGATION_ORDER_DEFAULT.map(item=>({...item}));
+    for(const level of NAVIGATION_LEVELS){
+      if(!seen.has(level)) parsed.push({level,enabled:false});
+    }
+    return parsed;
   }
-  function effectiveNavigationOrder(values=null){
+  function serializeNavigationConfig(value){
+    return normalizeNavigationConfig(value)
+      .map(item=>`${item.enabled===false?"!":""}${item.level}`)
+      .join(",");
+  }
+  function effectiveNavigationConfig(values=null){
     const raw=values&&typeof values==="object"?values[NAVIGATION_ORDER_KEY]:null;
-    if(raw)return normalizeNavigationOrder(raw);
-    if(typeof window.getCatalogNavigationOrder==="function")return normalizeNavigationOrder(window.getCatalogNavigationOrder());
-    return normalizeNavigationOrder(window.REMOTE_CONTROL_VALUES?.[NAVIGATION_ORDER_KEY]||NAVIGATION_ORDER_DEFAULT);
+    if(raw!=null&&String(raw).trim()) return normalizeNavigationConfig(raw);
+    if(typeof window.getCatalogNavigationConfig==="function"){
+      const config=window.getCatalogNavigationConfig();
+      if(Array.isArray(config)&&config.length) return normalizeNavigationConfig(config);
+    }
+    const remote=window.REMOTE_CONTROL_VALUES?.[NAVIGATION_ORDER_KEY];
+    return normalizeNavigationConfig(remote||NAVIGATION_ORDER_DEFAULT);
   }
   function renderNavigationOrderEditor(){
     const list=document.getElementById("catalogAdminOrderList"),preview=document.getElementById("catalogAdminOrderPreview");
     if(!list||!preview)return;
-    const order=normalizeNavigationOrder(navigationOrderDraft.length?navigationOrderDraft:effectiveNavigationOrder());
-    navigationOrderDraft=order.slice();
-    const rows=[
-      `<div class="catalog-admin-order-row is-fixed"><span class="catalog-admin-order-lock" aria-hidden="true">🔒</span><span>1.</span><span>Sección</span><span></span></div>`,
-      ...order.map((level,index)=>`<div class="catalog-admin-order-row" draggable="true" data-nav-order-item="${level}"><span class="catalog-admin-order-handle" aria-hidden="true">⋮⋮</span><span>${index+2}.</span><span>${NAVIGATION_LABELS[level]}</span><span class="catalog-admin-order-actions"><button type="button" class="catalog-admin-order-move" data-nav-order-move="up" data-nav-order-level="${level}" aria-label="Subir ${NAVIGATION_LABELS[level]}" ${index===0?"disabled":""}>↑</button><button type="button" class="catalog-admin-order-move" data-nav-order-move="down" data-nav-order-level="${level}" aria-label="Bajar ${NAVIGATION_LABELS[level]}" ${index===order.length-1?"disabled":""}>↓</button></span></div>`),
-      `<div class="catalog-admin-order-row is-fixed"><span class="catalog-admin-order-lock" aria-hidden="true">🔒</span><span>6.</span><span>Producto</span><span></span></div>`
-    ];
-    list.innerHTML=rows.join("");
-    const previewItems=["Sección",...order.map(level=>NAVIGATION_LABELS[level]),"Producto"];
-    preview.innerHTML=previewItems.map((label,index)=>`${index?'<span class="catalog-admin-order-arrow" aria-hidden="true">→</span>':''}<span class="catalog-admin-order-pill ${index===0||index===previewItems.length-1?'is-fixed':''}">${label}</span>`).join("");
+    const config=normalizeNavigationConfig(navigationOrderDraft.length?navigationOrderDraft:effectiveNavigationConfig());
+    navigationOrderDraft=config.map(item=>({...item}));
+    list.innerHTML=config.map((item,index)=>{
+      const label=NAVIGATION_LABELS[item.level]||item.level;
+      const enabled=item.enabled!==false;
+      return `<div class="catalog-admin-order-row ${enabled?"":"is-omitted"}" draggable="true" data-nav-order-item="${item.level}"><span class="catalog-admin-order-handle" aria-hidden="true">⋮⋮</span><span>${index+1}.</span><span>${label}</span><span class="catalog-admin-order-actions"><button type="button" class="catalog-admin-order-toggle" data-nav-order-toggle="${item.level}" aria-pressed="${enabled?"true":"false"}" aria-label="${enabled?"Omitir":"Mostrar"} ${label}">${enabled?"ACTIVO":"OMITIDO"}</button><button type="button" class="catalog-admin-order-move" data-nav-order-move="up" data-nav-order-level="${item.level}" aria-label="Subir ${label}" ${index===0?"disabled":""}>↑</button><button type="button" class="catalog-admin-order-move" data-nav-order-move="down" data-nav-order-level="${item.level}" aria-label="Bajar ${label}" ${index===config.length-1?"disabled":""}>↓</button></span></div>`;
+    }).join("");
+    const active=config.filter(item=>item.enabled!==false);
+    preview.innerHTML=active.length
+      ? active.map((item,index)=>`${index?'<span class="catalog-admin-order-arrow" aria-hidden="true">→</span>':''}<span class="catalog-admin-order-pill">${NAVIGATION_LABELS[item.level]||item.level}</span>`).join("")
+      : '<span class="catalog-admin-order-empty">Sin niveles activos: el catálogo no mostrará niveles ni productos.</span>';
   }
   function moveNavigationOrder(level,direction){
-    const order=normalizeNavigationOrder(navigationOrderDraft);
-    const index=order.indexOf(level),next=index+(direction==="up"?-1:1);
-    if(index<0||next<0||next>=order.length)return;
-    [order[index],order[next]]=[order[next],order[index]];
-    navigationOrderDraft=order;renderNavigationOrderEditor();setConfigStatus("Orden modificado. Pulsa Guardar orden para aplicarlo.");
+    const config=normalizeNavigationConfig(navigationOrderDraft);
+    const index=config.findIndex(item=>item.level===level),next=index+(direction==="up"?-1:1);
+    if(index<0||next<0||next>=config.length)return;
+    [config[index],config[next]]=[config[next],config[index]];
+    navigationOrderDraft=config;renderNavigationOrderEditor();setConfigStatus("Orden modificado. Pulsa Guardar orden para aplicarlo.");
+  }
+  function toggleNavigationLevel(level){
+    const config=normalizeNavigationConfig(navigationOrderDraft);
+    const item=config.find(entry=>entry.level===level);
+    if(!item)return;
+    item.enabled=item.enabled===false;
+    navigationOrderDraft=config;
+    renderNavigationOrderEditor();
+    setConfigStatus(item.enabled?"Nivel activado. Pulsa Guardar orden para aplicarlo.":"Nivel omitido. Pulsa Guardar orden para aplicarlo.");
   }
   async function saveNavigationOrder(){
     const save=document.getElementById("catalogAdminOrderSave"),reset=document.getElementById("catalogAdminOrderReset");
-    if(save)save.disabled=true;if(reset)reset.disabled=true;setConfigStatus("Guardando orden de navegación…");
+    if(save)save.disabled=true;if(reset)reset.disabled=true;setConfigStatus("Guardando configuración de navegación…");
     try{
-      const order=normalizeNavigationOrder(navigationOrderDraft);
-      const r=await request({tipo:"actualizar-orden-navegacion",orden:order.join(",")});
-      applyConfigValues(r?.valores||{[NAVIGATION_ORDER_KEY]:r?.orden||order.join(",")},true);
-      setConfigStatus("Orden de navegación guardado en Google y aplicado al catálogo.","ok");
-    }catch(e){setConfigStatus(e.message||"No se pudo guardar el orden de navegación.","err")}
+      const config=normalizeNavigationConfig(navigationOrderDraft);
+      const serialized=serializeNavigationConfig(config);
+      const r=await request({tipo:"actualizar-orden-navegacion",orden:serialized});
+      applyConfigValues(r?.valores||{[NAVIGATION_ORDER_KEY]:r?.orden||serialized},true);
+      setConfigStatus("Navegación guardada en Google y aplicada al catálogo.","ok");
+    }catch(e){setConfigStatus(e.message||"No se pudo guardar la navegación.","err")}
     finally{if(save)save.disabled=false;if(reset)reset.disabled=false}
   }
-  function resetNavigationOrderDraft(){navigationOrderDraft=NAVIGATION_ORDER_DEFAULT.slice();renderNavigationOrderEditor();setConfigStatus("Orden predeterminado preparado. Pulsa Guardar orden para aplicarlo.")}
+  function resetNavigationOrderDraft(){navigationOrderDraft=NAVIGATION_ORDER_DEFAULT.map(item=>({...item}));renderNavigationOrderEditor();setConfigStatus("Configuración predeterminada preparada. Pulsa Guardar orden para aplicarla.");}
 
   function ensureConfigPanel(){
     let panel=document.getElementById("catalogAdminConfig");
@@ -320,9 +386,10 @@
     panel=document.createElement("section");panel.id="catalogAdminConfig";panel.className="catalog-admin-config catalog-admin-page";panel.hidden=true;panel.setAttribute("aria-label","Configuración del catálogo");
     const rows=CONFIG_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-config-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-config-toggle="${item.key}">Cargando…</button></div>`).join("");
     const adminRows=ADMIN_FILTER_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-admin-filter-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><div class="catalog-admin-filter-controls"><div class="catalog-admin-scope" role="group" aria-label="Alcance de ${item.label}"><button type="button" class="catalog-admin-scope-btn" data-admin-filter-scope="local" data-admin-filter-scope-label="Solo este dispositivo" data-admin-filter-key="${item.key}" aria-pressed="false"><span class="catalog-admin-scope-check" aria-hidden="true">✓</span><span class="catalog-admin-scope-text">Solo este dispositivo</span></button><button type="button" class="catalog-admin-scope-btn" data-admin-filter-scope="global" data-admin-filter-scope-label="Todos los administradores" data-admin-filter-key="${item.key}" aria-pressed="false"><span class="catalog-admin-scope-check" aria-hidden="true">✓</span><span class="catalog-admin-scope-text">Todos los administradores</span></button></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-filter-toggle="${item.key}">DESACTIVADO</button></div></div>`).join("");
-    panel.innerHTML=`<button type="button" data-admin-config-collapse aria-expanded="true" hidden></button><h2 class="catalog-admin-page-heading">Configuración</h2><div class="catalog-admin-config-body" id="catalogAdminConfigBody"><section class="catalog-admin-card"><h3>Orden de navegación</h3><p class="catalog-admin-card-copy">Define el orden de los niveles del catálogo. Sección permanece fija al inicio y Producto al final. Arrastra las filas intermedias o usa las flechas para cambiar su posición.</p><div class="catalog-admin-order-list" id="catalogAdminOrderList"></div><p class="catalog-admin-order-help"><span aria-hidden="true">ⓘ</span><span>El mismo orden se aplica al catálogo, Visibilidad y Folleto.</span></p><div class="catalog-admin-order-preview-title">Vista previa del árbol</div><div class="catalog-admin-order-preview" id="catalogAdminOrderPreview"></div><div class="catalog-admin-order-buttons"><button type="button" class="catalog-admin-primary" id="catalogAdminOrderSave">Guardar orden</button><button type="button" class="catalog-admin-secondary" id="catalogAdminOrderReset">Restablecer orden predeterminado</button></div></section><section class="catalog-admin-card"><h3>Preferencias del catálogo</h3><p class="catalog-admin-card-copy">Los controles públicos se guardan en Google. Los filtros administrativos pueden ser locales para este dispositivo o globales para todos los administradores.</p><div class="catalog-admin-config-list">${rows}${adminRows}</div></section><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
+    panel.innerHTML=`<button type="button" data-admin-config-collapse aria-expanded="true" hidden></button><h2 class="catalog-admin-page-heading">Configuración</h2><div class="catalog-admin-config-body" id="catalogAdminConfigBody"><section class="catalog-admin-card"><h3>Orden de navegación</h3><p class="catalog-admin-card-copy">Define qué niveles aparecen y en qué orden. Puedes mover u omitir cualquiera, incluidos Sección y Producto. Si no dejas ningún nivel activo, el catálogo no mostrará niveles ni productos.</p><div class="catalog-admin-order-list" id="catalogAdminOrderList"></div><p class="catalog-admin-order-help"><span aria-hidden="true">ⓘ</span><span>El mismo orden se aplica al catálogo, Visibilidad y Folleto. Si el último nivel activo no es Producto, al pulsarlo se mantiene esa misma vista.</span></p><div class="catalog-admin-order-preview-title">Vista previa del árbol</div><div class="catalog-admin-order-preview" id="catalogAdminOrderPreview"></div><div class="catalog-admin-order-buttons"><button type="button" class="catalog-admin-primary" id="catalogAdminOrderSave">Guardar orden</button><button type="button" class="catalog-admin-secondary" id="catalogAdminOrderReset">Restablecer orden predeterminado</button></div></section><section class="catalog-admin-card"><h3>Preferencias del catálogo</h3><p class="catalog-admin-card-copy">Los controles públicos se guardan en Google. Los filtros administrativos pueden ser locales para este dispositivo o globales para todos los administradores.</p><div class="catalog-admin-config-list">${rows}${adminRows}</div></section><p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
     panel.addEventListener("click",e=>{
       const move=e.target.closest("[data-nav-order-move]");if(move&&!move.disabled){moveNavigationOrder(move.dataset.navOrderLevel,move.dataset.navOrderMove);return}
+      const levelToggle=e.target.closest("[data-nav-order-toggle]");if(levelToggle){toggleNavigationLevel(levelToggle.dataset.navOrderToggle);return}
       if(e.target.closest("#catalogAdminOrderSave")){saveNavigationOrder();return}
       if(e.target.closest("#catalogAdminOrderReset")){resetNavigationOrderDraft();return}
       const scope=e.target.closest("[data-admin-filter-scope]");if(scope&&!scope.disabled){setAdminFilterScope(scope);return}
@@ -332,8 +399,8 @@
     panel.addEventListener("dragstart",e=>{const row=e.target.closest("[data-nav-order-item]");if(!row)return;navigationDragLevel=row.dataset.navOrderItem||"";row.classList.add("dragging");if(e.dataTransfer)e.dataTransfer.effectAllowed="move"});
     panel.addEventListener("dragend",e=>{e.target.closest("[data-nav-order-item]")?.classList.remove("dragging");navigationDragLevel=""});
     panel.addEventListener("dragover",e=>{if(navigationDragLevel&&e.target.closest("[data-nav-order-item]")){e.preventDefault();if(e.dataTransfer)e.dataTransfer.dropEffect="move"}});
-    panel.addEventListener("drop",e=>{const row=e.target.closest("[data-nav-order-item]");if(!row||!navigationDragLevel)return;e.preventDefault();const target=row.dataset.navOrderItem;if(!target||target===navigationDragLevel)return;const order=normalizeNavigationOrder(navigationOrderDraft),from=order.indexOf(navigationDragLevel),to=order.indexOf(target);if(from<0||to<0)return;order.splice(to,0,order.splice(from,1)[0]);navigationOrderDraft=order;renderNavigationOrderEditor();setConfigStatus("Orden modificado. Pulsa Guardar orden para aplicarlo.")});
-    grid.insertAdjacentElement("beforebegin",panel);navigationOrderDraft=effectiveNavigationOrder();renderNavigationOrderEditor();renderAdminFilterRows();return panel;
+    panel.addEventListener("drop",e=>{const row=e.target.closest("[data-nav-order-item]");if(!row||!navigationDragLevel)return;e.preventDefault();const target=row.dataset.navOrderItem;if(!target||target===navigationDragLevel)return;const config=normalizeNavigationConfig(navigationOrderDraft),from=config.findIndex(item=>item.level===navigationDragLevel),to=config.findIndex(item=>item.level===target);if(from<0||to<0)return;config.splice(to,0,config.splice(from,1)[0]);navigationOrderDraft=config;renderNavigationOrderEditor();setConfigStatus("Orden modificado. Pulsa Guardar orden para aplicarlo.")});
+    grid.insertAdjacentElement("beforebegin",panel);navigationOrderDraft=effectiveNavigationConfig();renderNavigationOrderEditor();renderAdminFilterRows();return panel;
   }
   function renderAdminFilterRows(){
     for(const item of ADMIN_FILTER_ITEMS){
@@ -358,12 +425,12 @@
   function renderConfigValues(values){
     const source=values&&typeof values==="object"?values:{};
     for(const item of CONFIG_ITEMS){const button=document.querySelector(`[data-config-toggle="${item.key}"]`);if(!button)continue;const raw=String(source[item.key]??window.REMOTE_CONTROL_VALUES?.[item.key]??"");const active=stateBool(raw);button.disabled=false;button.setAttribute("aria-checked",active?"true":"false");button.textContent=active?"ACTIVADO":"DESACTIVADO"}
-    navigationOrderDraft=effectiveNavigationOrder(source);renderNavigationOrderEditor();
+    navigationOrderDraft=effectiveNavigationConfig(source);renderNavigationOrderEditor();
   }
   function applyConfigValues(values,shouldRebuild=true){
     if(!values||typeof values!=="object")return;
     window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
-    for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(k===NAVIGATION_ORDER_KEY){navigationOrderDraft=normalizeNavigationOrder(rawState);try{window.applyCatalogNavigationOrder?.(navigationOrderDraft,{rebuild:false})}catch(e){console.info(e)}continue}if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState);if(ADMIN_FILTER_ITEMS.some(item=>item.key===k))adminGlobalStates.set(k,stateBool(rawState))}
+    for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(k===NAVIGATION_ORDER_KEY){navigationOrderDraft=normalizeNavigationConfig(rawState);try{window.applyCatalogNavigationOrder?.(serializeNavigationConfig(navigationOrderDraft),{rebuild:false})}catch(e){console.info(e)}continue}if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState);if(ADMIN_FILTER_ITEMS.some(item=>item.key===k))adminGlobalStates.set(k,stateBool(rawState))}
     syncEffectiveAdminFilters();renderConfigValues(values);renderAdminFilterRows();
     try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}
     if(shouldRebuild){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();else if(typeof render==="function")render();if(typeof renderCartModal==="function"&&document.getElementById("cartModal")?.classList.contains("open"))renderCartModal();requestAnimationFrame(()=>syncAdminSectionUI(false))}catch(e){console.info(e)}}

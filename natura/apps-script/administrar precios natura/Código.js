@@ -8,7 +8,7 @@ const VISIBILIDAD_TIPOS = ["producto", "seccion", "categoria", "subcategoria", "
 const CONFIG_SHEET_NAME = "Configuracion";
 const CONFIG_PROPERTY_PREFIX = "CATALOGO_CONFIG_";
 const NAVIGATION_ORDER_KEY = "ORDEN_NAVEGACION";
-const NAVIGATION_ORDER_DEFAULT = "category,subcategory,public,line";
+const NAVIGATION_ORDER_DEFAULT = "section,category,subcategory,public,line,product";
 const CONFIG_BOOLEAN_PUBLIC_KEYS = [
   "REGISTRAR_VISITAS_PROPIAS",
   "MOSTRAR_CANTIDAD_STOCK",

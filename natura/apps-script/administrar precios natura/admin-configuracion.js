@@ -107,25 +107,53 @@ function actualizarOrdenNavegacionWeb(orden) {
   }
 }
 function normalizarOrdenNavegacion_(valor) {
-  const esperados = ["category", "subcategory", "public", "line"];
+  const niveles = ["section", "category", "subcategory", "public", "line", "product"];
   const alias = {
+    section: "section", seccion: "section",
     category: "category", categoria: "category",
     subcategory: "subcategory", subcategoria: "subcategory",
     public: "public", publico: "public",
-    line: "line", linea: "line"
+    line: "line", linea: "line",
+    product: "product", producto: "product"
   };
   const partes = Array.isArray(valor)
     ? valor
     : String(valor == null ? "" : valor).split(",");
-  const normalizado = partes
-    .map(function(item) {
-      const clave = normalizarEncabezado_(item).replace(/\s+/g, "");
-      return alias[clave] || "";
-    })
-    .filter(Boolean);
-  if (normalizado.length !== esperados.length) return "";
-  if (new Set(normalizado).size !== esperados.length) return "";
-  if (!esperados.every(function(item) { return normalizado.indexOf(item) !== -1; })) return "";
+  const vistos = new Set();
+  const normalizado = [];
+  let tieneEstadoExplicito = false;
+
+  partes.forEach(function(item) {
+    let texto = String(item == null ? "" : item).trim();
+    let activo = true;
+    if (texto.charAt(0) === "!") {
+      tieneEstadoExplicito = true;
+      activo = false;
+      texto = texto.slice(1).trim();
+    }
+    const clave = normalizarEncabezado_(texto).replace(/\s+/g, "");
+    const nivel = alias[clave] || "";
+    if (!nivel || vistos.has(nivel)) return;
+    vistos.add(nivel);
+    normalizado.push((activo ? "" : "!") + nivel);
+  });
+
+  const nivelesLeidos = normalizado.map(function(item) { return item.replace(/^!/, ""); });
+  const esFormatoAnterior = !tieneEstadoExplicito
+    && nivelesLeidos.length === 4
+    && nivelesLeidos.indexOf("section") === -1
+    && nivelesLeidos.indexOf("product") === -1
+    && ["category", "subcategory", "public", "line"].every(function(item) {
+      return nivelesLeidos.indexOf(item) !== -1;
+    });
+  if (esFormatoAnterior) {
+    return ["section"].concat(nivelesLeidos, ["product"]).join(",");
+  }
+
+  if (!normalizado.length) return "";
+  niveles.forEach(function(nivel) {
+    if (!vistos.has(nivel)) normalizado.push("!" + nivel);
+  });
   return normalizado.join(",");
 }
 function reflejarConfiguracionEnHojaOpcional_(clave, estadoTexto) {

@@ -48,6 +48,7 @@
   .catalog-admin-hidden{outline:2px dashed #c75b72!important;outline-offset:-2px;opacity:.72}.catalog-admin-inherited{outline:2px dashed #9d9698!important;outline-offset:-2px;opacity:.72}
   .price-admin-editor{display:grid;grid-template-columns:minmax(0,1fr) auto;column-gap:10px;row-gap:7px;flex:1 1 220px;min-width:0;width:100%}.price-admin-input{box-sizing:border-box;min-width:0;width:100%;height:40px;padding:8px;border:1px solid #d8c9c6;border-radius:10px;text-align:right;font:750 15px Arial}.price-admin-save{box-sizing:border-box;min-width:88px}.price-admin-status{grid-column:1/-1;font-size:11px;font-weight:750}.price-admin-status.ok{color:#176b3a}.price-admin-status.err{color:#a02323}
   .card .row.price-admin-active{align-items:flex-start;flex-wrap:wrap;gap:8px}#priceAdminBtn[aria-pressed="true"]{color:#8d5360!important;border-color:#cfa8b0!important;background:#f5e5e8!important}
+  .catalog-admin-copy-description{display:inline-flex;align-items:center;justify-content:center;align-self:flex-start;margin:8px 0 2px;padding:8px 12px;border:1px solid #d8c9c6;border-radius:10px;background:#fff;color:#4c3b3e;font:850 11px Arial;cursor:pointer;transition:background .16s ease,border-color .16s ease,color .16s ease}.catalog-admin-copy-description:hover{background:#f8f1f3;border-color:#cfa8b0}.catalog-admin-copy-description.copied{background:#e7f7ed;border-color:#a9d6b8;color:#176b3a}
   .catalog-admin-config{margin:14px 0 20px;padding:10px 12px;border:1px solid #e3d5d2;border-radius:18px;background:#fffaf9;box-shadow:0 8px 24px #5d35400d}
   .catalog-admin-config-head{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0}.catalog-admin-config-collapse{width:100%;display:flex;align-items:center;justify-content:space-between;gap:12px;border:0;background:transparent;color:#352b2c;font:900 14px/1.2 Arial;cursor:pointer;padding:2px 0;text-align:left}.catalog-admin-config-collapse-state{color:#8d5360;font:800 11px Arial}.catalog-admin-config-body{padding-top:12px}.catalog-admin-config-body[hidden]{display:none!important}.catalog-admin-config-note{margin:0 0 12px;color:#78696b;font:13px/1.35 Arial}
   .catalog-admin-config-list{display:grid;gap:9px}.catalog-admin-config-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:14px;padding:11px 12px;border:1px solid #eadfdd;border-radius:13px;background:#fff}
@@ -507,9 +508,60 @@
     }catch(e){b.disabled=false;b.textContent=old;alert(e.message||"No se pudo guardar la visibilidad.")}
   }
 
-  function installPrices(){grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(addPrice)}
+  function installPrices(){grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(card=>{addPrice(card);addDescriptionCopy(card)})}
   function addPrice(card){if(card.querySelector(".price-admin-editor"))return;const price=card.querySelector(".price"),row=card.querySelector(".row"),code=visibilityId("producto",card.dataset.id||"");if(!price||!row||!/^\d{4}$/.test(code))return;const p=productObj(code),prev=p&&p.hasPrice!==false?String(Number(p.price)||""):priceValue(price.textContent),ed=document.createElement("div"),inp=document.createElement("input"),save=document.createElement("button"),st=document.createElement("span");ed.className="price-admin-editor";ed.dataset.prev=prev;inp.className="price-admin-input";inp.inputMode="numeric";inp.value=editable(prev);save.className="btn-acc price-admin-save";save.textContent="Guardar";save.disabled=true;st.className="price-admin-status";inp.oninput=()=>save.disabled=!validPrice(inp.value)||priceValue(inp.value)===ed.dataset.prev;inp.onkeydown=e=>{if(e.key!=="Enter"||e.isComposing)return;e.preventDefault();if(inp.disabled)return;if(!validPrice(inp.value)){status(st,"Precio inválido","err");return}if(priceValue(inp.value)===ed.dataset.prev)return;savePrice(card,price,ed,inp,save,st)};save.onclick=()=>savePrice(card,price,ed,inp,save,st);ed.append(inp,save,st);price.hidden=true;row.classList.add("price-admin-active");price.insertAdjacentElement("afterend",ed)}
-  function removePrice(card){const p=card.querySelector(".price"),r=card.querySelector(".row");card.querySelector(".price-admin-editor")?.remove();if(p)p.hidden=false;r?.classList.remove("price-admin-active")}
+  function addDescriptionCopy(card){
+    if(card.querySelector(".catalog-admin-copy-description")) return;
+    const description=card.querySelector(".description");
+    const text=String(description?.textContent||"").trim();
+    if(!description||!text) return;
+    const copy=document.createElement("button");
+    copy.type="button";
+    copy.className="catalog-admin-copy-description";
+    copy.textContent="Copiar descripción";
+    copy.setAttribute("aria-label","Copiar descripción del producto al portapapeles");
+    copy.onclick=async event=>{
+      event.preventDefault();
+      event.stopPropagation();
+      const current=String(description.textContent||"").trim();
+      if(!current) return;
+      const original=copy.textContent;
+      try{
+        await copyText(current);
+        copy.textContent="Copiada ✓";
+        copy.classList.add("copied");
+        copy.setAttribute("aria-label","Descripción copiada al portapapeles");
+        setTimeout(()=>{
+          if(!copy.isConnected) return;
+          copy.textContent=original;
+          copy.classList.remove("copied");
+          copy.setAttribute("aria-label","Copiar descripción del producto al portapapeles");
+        },1600);
+      }catch(error){
+        console.error("No se pudo copiar la descripción.",error);
+        alert("No se pudo copiar la descripción al portapapeles.");
+      }
+    };
+    description.insertAdjacentElement("afterend",copy);
+  }
+  async function copyText(text){
+    if(navigator.clipboard?.writeText){
+      try{await navigator.clipboard.writeText(text);return}catch(_){}
+    }
+    const area=document.createElement("textarea");
+    area.value=text;
+    area.setAttribute("readonly","");
+    area.style.position="fixed";
+    area.style.left="-9999px";
+    area.style.top="0";
+    document.body.appendChild(area);
+    area.focus();
+    area.select();
+    let ok=false;
+    try{ok=document.execCommand("copy")}finally{area.remove()}
+    if(!ok) throw new Error("El navegador no permitió copiar al portapapeles.");
+  }
+  function removePrice(card){const p=card.querySelector(".price"),r=card.querySelector(".row");card.querySelector(".price-admin-editor")?.remove();card.querySelector(".catalog-admin-copy-description")?.remove();if(p)p.hidden=false;r?.classList.remove("price-admin-active")}
   async function savePrice(card,price,ed,inp,save,st){const v=priceValue(inp.value);if(inp.value.trim()&&!validPrice(inp.value)){status(st,"Precio inválido","err");return}inp.disabled=save.disabled=true;save.textContent="Guardando…";try{const code=visibilityId("producto",card.dataset.id||""),r=await request({tipo:"actualizar-precio",codigo:code,precioNuevo:v,precioAnterior:ed.dataset.prev});const g=priceValue(r?.precioGuardado);ed.dataset.prev=g;inp.value=editable(g);const p=productObj(code);if(p){p.price=g?Number(g):0;p.hasPrice=!!g}price.textContent=window.INTERRUPTORES?.MOSTRAR_PRECIOS_PRODUCTO!==false?(g?"$ "+new Intl.NumberFormat("es-CO").format(Number(g)):"Consultar precio"):"";status(st,"Precio guardado","ok");if(adminMissingPriceOnly&&p?.hasPrice)setTimeout(rebuild,0)}catch(e){status(st,e.message||"No se pudo guardar","err")}finally{inp.disabled=false;save.textContent="Guardar";save.disabled=priceValue(inp.value)===ed.dataset.prev}}
   function validPrice(v){const t=String(v??"").trim();if(!t)return true;if(!/^(?:\d+|\d{1,3}(?:[.\s]\d{3})+)$/.test(t))return false;const n=Number(t.replace(/[.\s]/g,""));return Number.isSafeInteger(n)&&n>0}
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}

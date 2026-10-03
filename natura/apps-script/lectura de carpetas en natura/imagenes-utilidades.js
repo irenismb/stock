@@ -18,17 +18,30 @@ function normalizeFolderName_(name) {
 
 function fileInfo(file) {
   const id = file.getId();
+  const modifiedTime = file.getLastUpdated();
+  const version = modifiedTime instanceof Date
+    ? String(modifiedTime.getTime())
+    : String(Date.now());
 
   return {
     id: id,
     name: file.getName(),
+    modifiedTime:
+      modifiedTime instanceof Date
+        ? modifiedTime.toISOString()
+        : '',
+    version: version,
 
     /*
      * URL utilizada por el catálogo.
+     * La versión cambia automáticamente cuando Drive actualiza el archivo,
+     * evitando que el navegador o Google reutilicen una imagen anterior.
      */
     url:
       'https://lh3.googleusercontent.com/d/' +
-      encodeURIComponent(id)
+      encodeURIComponent(id) +
+      '?v=' +
+      encodeURIComponent(version)
   };
 }
 

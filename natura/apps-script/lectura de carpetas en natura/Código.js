@@ -25,7 +25,7 @@ const CONFIG = {
   // de CacheService.
   CACHE_CHUNK_SIZE: 20000,
 
-  CACHE_KEY_PREFIX: 'image_index_v1'
+  CACHE_KEY_PREFIX: 'image_index_v2'
 };
 
 

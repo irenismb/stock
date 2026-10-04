@@ -1,4 +1,4 @@
-// Herramienta administrativa Folleto/collage.
+// Herramienta pública Folleto/collage.
 
 // ==========================================
 // VISTA DE COLLAGE SEGÚN LA VISTA Y FILTROS ACTUALES
@@ -145,20 +145,8 @@ function collagePriceText(p){
 function syncFolletoButtonVisibility(){
   const btn=document.getElementById("collageBtn");
   if(!btn) return;
-  const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;
-  const sidebar=Boolean(document.getElementById("catalogAdminSidebar"));
-  const visible=admin&&!sidebar;
-  btn.hidden=!visible;
-  btn.disabled=!admin;
-
-  if(!admin){
-    const modal=document.getElementById("collageModal");
-    if(modal?.classList.contains("open")){
-      modal.classList.remove("open");
-      modal.setAttribute("aria-hidden","true");
-      document.body.classList.remove("collage-open");
-    }
-  }
+  btn.hidden=false;
+  btn.disabled=false;
 }
 
 function syncAdministrativeToolVisibility(){
@@ -271,7 +259,7 @@ function initCollageFeature(){
     btn.className="btn-ghost";
     btn.id="collageBtn";
     btn.type="button";
-    if(cartButton) toolbar.insertBefore(btn,cartButton);
+    if(cartButton) cartButton.insertAdjacentElement("afterend",btn);
     else toolbar.appendChild(btn);
   }
   btn.textContent="Folleto";
@@ -1652,14 +1640,7 @@ function initCollageFeature(){
     else openCollageModal();
   };
 
-  btn.addEventListener("click",()=>{
-    if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) return;
-    if(typeof window.setCatalogAdminSection==="function"){
-      window.setCatalogAdminSection("folleto");
-      return;
-    }
-    openCollageModal();
-  });
+  btn.addEventListener("click",openCollageModal);
 
   window.addEventListener("irenismb:admin-section-change",event=>{
     const section=String(event?.detail?.section||"").trim().toLowerCase();

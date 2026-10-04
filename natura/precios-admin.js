@@ -31,7 +31,6 @@
   const ADMIN_SECTIONS=[
     {id:"catalogo",label:"Catálogo",icon:"⌂"},
     {id:"visibilidad",label:"Visibilidad",icon:"◉"},
-    {id:"folleto",label:"Folleto",icon:"▤"},
     {id:"configuracion",label:"Configuración",icon:"⚙"}
   ];
 
@@ -206,14 +205,12 @@
     document.body.classList.add("catalog-admin-mode");
     const aside=ensureAdminSidebar();
     const config=capabilities.has("configuracion")?ensureConfigPanel():null;
-    const folleto=ensureFolletoPage();
     aside.querySelectorAll("[data-admin-section]").forEach(b=>b.setAttribute("aria-current",b.dataset.adminSection===adminSection?"page":"false"));
     const showGrid=adminSection==="catalogo"||adminSection==="visibilidad";
     grid.hidden=!showGrid;
     const topline=document.getElementById("topline");if(topline)topline.hidden=!showGrid;
     const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=!showGrid;
     if(config) config.hidden=adminSection!=="configuracion";
-    folleto.hidden=adminSection!=="folleto";
     clearAdminDecorations();
     if(adminSection==="catalogo") installPrices();
     else if(adminSection==="visibilidad") installVisibility();

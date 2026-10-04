@@ -254,6 +254,9 @@
   window.setCatalogShowAllProductsDirectEnabled = setShowAllEnabled;
   window.isCatalogShowAllProductsDirectEnabled = () => showAllEnabled;
 
+  document.getElementById("showProductsBtn")?.addEventListener("click", () => {
+    setShowAllEnabled(!showAllEnabled);
+  });
   searchInput.addEventListener("input", syncView);
   searchInput.addEventListener("search", syncView);
 
@@ -268,7 +271,15 @@
 
   function syncAdminToggles(){
     syncSwitch(document.querySelector("[data-admin-quick-images-toggle]"), searchDirectEnabled);
-    syncSwitch(document.querySelector("[data-admin-show-all-products-toggle]"), showAllEnabled);
+    const button = document.getElementById("showProductsBtn");
+    if(button){
+      const label = showAllEnabled ? "Ver paletas" : "Ver productos";
+      if(button.textContent !== label) button.textContent = label;
+      button.setAttribute("aria-pressed", showAllEnabled ? "true" : "false");
+      button.setAttribute("aria-label", showAllEnabled
+        ? "Volver a las paletas del nivel actual"
+        : "Ver todos los productos del nivel actual y sus niveles inferiores");
+    }
   }
 
   function installAdminToggles(){
@@ -295,25 +306,6 @@
       });
     }
 
-    if(!list.querySelector("[data-admin-show-all-products-row]")){
-      const allRow = document.createElement("div");
-      allRow.className = "catalog-admin-config-row";
-      allRow.dataset.adminShowAllProductsRow = "";
-      allRow.innerHTML = `
-        <div>
-          <span class="catalog-admin-config-label">Mostrar todos los productos desde este nivel</span>
-          <span class="catalog-admin-config-help">Muestra las tarjetas completas de todos los productos incluidos en el nivel actual y en sus niveles inferiores, sin tener que entrar en cada paleta. Al cambiar de nivel, la vista se adapta a la nueva ubicación. Permite ver precios y agregar o quitar productos directamente. Al escribir en el buscador, esta opción deja actuar a la búsqueda normal o a la opción de búsqueda directa si también está activada. Esta preferencia queda guardada en este navegador.</span>
-        </div>
-        <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-show-all-products-toggle>DESACTIVADO</button>
-      `;
-      list.appendChild(allRow);
-
-      allRow.querySelector("[data-admin-show-all-products-toggle]")?.addEventListener("click", event => {
-        event.preventDefault();
-        event.stopPropagation();
-        setShowAllEnabled(!showAllEnabled);
-      });
-    }
 
     syncAdminToggles();
   }
@@ -329,6 +321,7 @@
   });
   observer.observe(document.body, {childList:true, subtree:true});
   installAdminToggles();
+  syncAdminToggles();
   syncView();
 })();
 
@@ -565,6 +558,34 @@
         padding-inline:14px!important;
         justify-self:stretch!important;
       }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// Controles públicos: Administrar, WhatsApp, Folleto y Ver productos.
+(() => {
+  const style = document.createElement("style");
+  style.id = "public-catalog-toolbar-style";
+  style.textContent = `
+    .bar[role="search"] > #priceAdminBtn{order:10!important}
+    .bar[role="search"] > #btn-cart{order:20!important}
+    .bar[role="search"] > #collageBtn{order:30!important}
+    .bar[role="search"] > #showProductsBtn{order:40!important}
+    .bar[role="search"] > .count-slot{order:50!important}
+    #showProductsBtn[aria-pressed="true"]{background:#f5e5e8;border-color:#cfa8b0;color:#8d5360}
+    @media(min-width:761px){
+      .bar[role="search"] > #showProductsBtn{flex:1 1 105px!important;width:auto!important;min-width:100px!important;max-width:170px!important;margin:0!important}
+    }
+    @media(max-width:760px){
+      .bar[role="search"] > .search-wrap{grid-column:1 / -1!important;grid-row:1!important}
+      .bar[role="search"] > #priceAdminBtn{grid-column:1!important;grid-row:2!important}
+      .bar[role="search"] > #btn-cart{grid-column:2!important;grid-row:2!important}
+      .bar[role="search"]:has(> #priceAdminBtn[hidden]) > #btn-cart{grid-column:1 / -1!important}
+      .bar[role="search"] > #collageBtn{grid-column:1!important;grid-row:3!important}
+      .bar[role="search"] > #showProductsBtn{grid-column:2!important;grid-row:3!important}
+      .bar[role="search"] > #collageBtn,.bar[role="search"] > #showProductsBtn{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;justify-self:stretch!important}
+      .bar[role="search"] > .count-slot{grid-column:1 / -1!important;grid-row:4!important}
     }
   `;
   document.head.appendChild(style);

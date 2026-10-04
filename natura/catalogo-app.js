@@ -534,7 +534,7 @@
         const normalized = normalizeImageServiceFile(file, true);
         if(normalized) ads.push(normalized);
       }
-      ads.sort((a,b)=>String(a.name || "").localeCompare(String(b.name || ""), "es", { numeric:true, sensitivity:"base" }));
+      ads.sort((a,b)=>String(a.name || "").localeCompare(String(b.name || ""), "es", { numeric:false, sensitivity:"base" }));
 
       return {
         ok:true,
@@ -2740,18 +2740,19 @@
         if(token !== _renderToken) return;
 
         const frag = document.createDocumentFragment();
+        // Los anuncios encabezan esta zona, en orden alfabético de archivo.
+        if(shouldShowAdPalettes(viewMode)){
+          adImageEntries.forEach((entry,index)=>{
+            const adCard=makeAdPaletteCard(entry,index);
+            if(adCard) frag.appendChild(adCard);
+          });
+        }
         if(!filteredAlbums.length){
           const emptyType=filteredAlbums[0]?.navType||albums[0]?.navType;
           frag.appendChild(makeEmptyState(`No se encontraron ${navigationLevelLabel(emptyType||viewMode.level||"category",true).toLowerCase()} con ese nombre.`));
         }else{
           for(const album of filteredAlbums){
             frag.appendChild(makeAlbumCard(album));
-          }
-          if(shouldShowAdPalettes(viewMode)){
-            adImageEntries.forEach((entry,index)=>{
-              const adCard=makeAdPaletteCard(entry,index);
-              if(adCard) frag.appendChild(adCard);
-            });
           }
         }
 

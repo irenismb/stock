@@ -86,7 +86,7 @@
 })();
 
 // Vistas directas de productos. Las dos opciones de administrador son independientes:
-// 1) mostrar tarjetas completas al buscar; 2) mostrar todo el catálogo cuando el buscador está vacío.
+// 1) mostrar tarjetas completas al buscar; 2) mostrar los productos del nivel actual y sus descendientes cuando el buscador está vacío.
 (() => {
   const SEARCH_DIRECT_STORAGE_KEY = "irenismb_quick_image_search_v1";
   const SHOW_ALL_STORAGE_KEY = "irenismb_show_all_products_direct_v1";
@@ -120,11 +120,14 @@
 
   function allCatalogProducts(){
     try{
-      if(typeof all !== "undefined" && Array.isArray(all)){
-        return all.filter(product => product && !product.isGiftGalleryImage);
+      if(typeof currentProductSourceList === "function"){
+        const products = currentProductSourceList();
+        return Array.isArray(products)
+          ? products.filter(product => product && !product.isGiftGalleryImage)
+          : [];
       }
     }catch(error){
-      console.warn("No se pudo leer el catálogo completo para la vista directa.", error);
+      console.warn("No se pudieron leer los productos del nivel actual para la vista directa.", error);
     }
     return [];
   }
@@ -298,8 +301,8 @@
       allRow.dataset.adminShowAllProductsRow = "";
       allRow.innerHTML = `
         <div>
-          <span class="catalog-admin-config-label">Mostrar todos los productos directamente</span>
-          <span class="catalog-admin-config-help">Muestra todas las tarjetas completas del catálogo sin tener que entrar a las categorías. Permite ver precios y agregar o quitar productos directamente. Al escribir en el buscador, esta opción deja actuar a la búsqueda normal o a la opción de búsqueda directa si también está activada. Esta preferencia queda guardada en este navegador.</span>
+          <span class="catalog-admin-config-label">Mostrar todos los productos desde este nivel</span>
+          <span class="catalog-admin-config-help">Muestra las tarjetas completas de todos los productos incluidos en el nivel actual y en sus niveles inferiores, sin tener que entrar en cada paleta. Al cambiar de nivel, la vista se adapta a la nueva ubicación. Permite ver precios y agregar o quitar productos directamente. Al escribir en el buscador, esta opción deja actuar a la búsqueda normal o a la opción de búsqueda directa si también está activada. Esta preferencia queda guardada en este navegador.</span>
         </div>
         <button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-show-all-products-toggle>DESACTIVADO</button>
       `;

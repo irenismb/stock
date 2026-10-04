@@ -35,10 +35,10 @@
     };
 
     // Servicio público vigente que indexa directamente la carpeta productos de Google Drive.
-    // Devuelve products, gifts y assets con id, name y url para cada imagen.
+    // Devuelve products, gifts, ads y assets con id, name y url para cada imagen.
     const APPS_SCRIPT_IMAGE_SOURCE = {
       endpoint: "https://script.google.com/macros/s/AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w/exec",
-      cacheKey: "irenismb_apps_script_image_index_v1",
+      cacheKey: "irenismb_apps_script_image_index_v2",
       timeoutMs: 25000
     };
 
@@ -495,13 +495,16 @@
       }
     }
 
-    function normalizeImageServiceFile(file){
+    function normalizeImageServiceFile(file, acceptImageMimeType = false){
       if(!file || typeof file !== "object") return null;
       const id = String(file.id || "").trim();
       const name = String(file.name || "").trim();
       const url = String(file.url || "").trim();
-      if(!name || !url || !PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(name))) return null;
-      return { id, name, url, path:name, type:"drive-image" };
+      const mimeType = String(file.mimeType || "").trim();
+      const isImage = PRODUCT_IMAGE_EXTENSIONS.has(extensionOfFilename(name))
+        || (acceptImageMimeType && /^image\//i.test(mimeType));
+      if(!name || !url || !isImage) return null;
+      return { id, name, url, path:name, type:"drive-image", mimeType };
     }
 
     function normalizeImageServicePayload(payload){
@@ -525,11 +528,20 @@
       }
       gifts.sort((a,b)=>String(a.name || "").localeCompare(String(b.name || ""), "es", { numeric:true, sensitivity:"base" }));
 
+      const ads = [];
+      const rawAds = payload.ads && typeof payload.ads === "object" ? payload.ads : {};
+      for(const file of Object.values(rawAds)){
+        const normalized = normalizeImageServiceFile(file, true);
+        if(normalized) ads.push(normalized);
+      }
+      ads.sort((a,b)=>String(a.name || "").localeCompare(String(b.name || ""), "es", { numeric:true, sensitivity:"base" }));
+
       return {
         ok:true,
         generatedAt:String(payload.generatedAt || ""),
         products,
-        gifts
+        gifts,
+        ads
       };
     }
 
@@ -549,7 +561,18 @@
       }catch(_){}
     }
 
-    async function loadAppsScriptImageIndex(){
+    // Comparte las solicitudes concurrentes del catálogo y de los anuncios.
+    let imageIndexInFlight = null;
+    function loadAppsScriptImageIndex(){
+      if(!imageIndexInFlight){
+        imageIndexInFlight = fetchAppsScriptImageIndex().finally(()=>{
+          imageIndexInFlight = null;
+        });
+      }
+      return imageIndexInFlight;
+    }
+
+    async function fetchAppsScriptImageIndex(){
       const controller = new AbortController();
       const timer = window.setTimeout(()=>controller.abort(), APPS_SCRIPT_IMAGE_SOURCE.timeoutMs);
       try{
@@ -569,7 +592,7 @@
           return cached;
         }
         console.warn("No se pudo cargar el índice de imágenes desde Apps Script; se usarán imágenes suplentes.", error);
-        return { ok:false, products:{}, gifts:[] };
+        return { ok:false, products:{}, gifts:[], ads:[] };
       }finally{
         window.clearTimeout(timer);
       }
@@ -971,6 +994,36 @@
     let allLoadedProducts = [];
     let all = [];
     let productById = new Map();
+    let adImageEntries = [];
+    let adRefreshInFlight = null;
+    let adRefreshTimer = 0;
+    const AD_IMAGE_REFRESH_MS = 60000;
+
+    // Los anuncios se leen y actualizan sin consultar hojas ni reconstruir productos.
+    function refreshAdPalettes(){
+      if(adRefreshInFlight) return adRefreshInFlight;
+      adRefreshInFlight = (async ()=>{
+        const payload = await loadAppsScriptImageIndex();
+        if(payload?.ok !== true) return;
+        const nextEntries = Array.isArray(payload.ads) ? payload.ads.slice() : [];
+        if(JSON.stringify(nextEntries) === JSON.stringify(adImageEntries)) return;
+        adImageEntries = nextEntries;
+        render();
+      })().catch(error=>{
+        console.info("No se pudieron actualizar los anuncios; se conserva el último índice válido.", error);
+      }).finally(()=>{ adRefreshInFlight = null; });
+      return adRefreshInFlight;
+    }
+
+    function startAdPaletteAutoRefresh(){
+      if(adRefreshTimer) return;
+      adRefreshTimer = window.setInterval(()=>{
+        if(!document.hidden) refreshAdPalettes();
+      }, AD_IMAGE_REFRESH_MS);
+      document.addEventListener("visibilitychange",()=>{
+        if(!document.hidden) refreshAdPalettes();
+      });
+    }
 
     const ALBUM_COLORS = [
       { top:"#f3a7b9", base:"#e790ab", tab:"#eb99b1", shadow:"rgba(203, 112, 145, .32)" },
@@ -1622,6 +1675,42 @@
         </button>
       </article>
     `;
+
+    function makeAdPaletteCard(entry,index){
+      const src=String(entry && entry.url || "").trim();
+      if(!/^https:\/\//i.test(src)) return null;
+
+      const card=document.createElement("article");
+      card.className="album-card album-category-card ad-palette-card";
+
+      const button=document.createElement("button");
+      button.type="button";
+      button.className="album-folder ad-palette-button";
+      button.dataset.adOpen=src;
+
+      const label=`Abrir anuncio ${index + 1}`;
+      button.setAttribute("aria-label",label);
+      button.title="Abrir anuncio";
+
+      const img=document.createElement("img");
+      img.className="ad-palette-image";
+      img.src=src;
+      img.alt=`Anuncio ${index + 1}`;
+      img.loading="lazy";
+      img.decoding="async";
+      img.onerror=()=>card.remove();
+
+      button.appendChild(img);
+      card.appendChild(button);
+      return card;
+    }
+
+    function shouldShowAdPalettes(viewMode){
+      if(!Array.isArray(adImageEntries) || !adImageEntries.length) return false;
+      if(getCombinedWordTerms().length) return false;
+      return viewMode && viewMode.mode==="albums" && viewMode.level==="category"
+        && (!selectedSection || cleanNavKey(selectedSection)===cleanNavKey(GIFT_IMAGE_SOURCE.section));
+    }
 
     function stockMetaText(p){
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
@@ -2626,7 +2715,7 @@
           ? filteredAlbums.filter(album => (Number(album.count) || 0) > 0).length
           : filteredAlbums.length;
         if(grid){
-          grid.classList.toggle("album-three-column-layout", visibleAlbumCount >= 5);
+          grid.classList.toggle("album-three-column-layout", visibleAlbumCount + (shouldShowAdPalettes(viewMode) ? adImageEntries.length : 0) >= 5);
         }
         if(countEl){
           const totalProducts = filteredAlbums.reduce((sum,album)=>sum + (Number(album.count) || 0), 0);
@@ -2657,6 +2746,12 @@
         }else{
           for(const album of filteredAlbums){
             frag.appendChild(makeAlbumCard(album));
+          }
+          if(shouldShowAdPalettes(viewMode)){
+            adImageEntries.forEach((entry,index)=>{
+              const adCard=makeAdPaletteCard(entry,index);
+              if(adCard) frag.appendChild(adCard);
+            });
           }
         }
 
@@ -3333,6 +3428,13 @@ function bindGridActions(){
       desc.setAttribute("aria-expanded",expanded?"true":"false");
       return;
     }
+    const adBtn=e.target.closest("[data-ad-open]");
+    if(adBtn){
+      const src=String(adBtn.getAttribute("data-ad-open")||"").trim();
+      const img=adBtn.querySelector("img");
+      if(src) openImgModal(src,img?.alt||"Anuncio");
+      return;
+    }
     const albumBtn=e.target.closest("[data-album-open]");
     if(albumBtn){
       const key=albumBtn.getAttribute("data-album-open")||"";
@@ -3424,10 +3526,11 @@ async function init(){
   const shouldForceRestoredHistory=!!persistentViewState && !catalogNavigationIsReload();
   applyCatalogReloadViewState(startupViewState);
   await initializeRemoteCatalogConfiguration();
-  await loadProducts();
+  await Promise.all([refreshAdPalettes(), loadProducts()]);
   rebuildCatalogHistoryForRestoredNavigation({force:shouldForceRestoredHistory});
   installCatalogExitGuardIfAtRoot();
   startInventoryAutoRefresh();
+  startAdPaletteAutoRefresh();
   await restoreCatalogAdminAfterReload(startupAdminState);
   uxRestoreScrollPosition();
 }

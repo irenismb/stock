@@ -2,6 +2,8 @@ const CONFIG = {
   PRODUCTS_FOLDER_ID: '133WAYlDKSt3r8KIObttDcv86eHPmPQ5b',
 
   GIFTS_FOLDER_NAME: 'regalos',
+  // Carpeta independiente ubicada en la raíz de Natura.
+  ADS_FOLDER_ID: '1QitBAhBjw_tik-qacrAmmx7cKMRJhIoM',
   RESOURCES_FOLDER_NAME: 'recursos-web',
 
   // Carpetas dentro de recursos-web que NO deben indexarse.
@@ -25,7 +27,7 @@ const CONFIG = {
   // de CacheService.
   CACHE_CHUNK_SIZE: 20000,
 
-  CACHE_KEY_PREFIX: 'image_index_v2'
+  CACHE_KEY_PREFIX: 'image_index_v4'
 };
 
 
@@ -35,6 +37,7 @@ const CONFIG = {
  * Devuelve un JSON de solo lectura con:
  * - productos
  * - regalos
+ * - anuncios
  * - recursos-web
  *
  * No modifica, mueve ni elimina ningún archivo.

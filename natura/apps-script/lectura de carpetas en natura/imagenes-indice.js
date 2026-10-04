@@ -53,6 +53,7 @@ function buildImageIndex() {
 
     products: {},
     gifts: {},
+    ads: {},
     assets: {}
   };
 
@@ -192,6 +193,11 @@ function buildImageIndex() {
   }
 
 
+  // Solo los archivos directamente dentro de anuncios; sin recorrer subcarpetas.
+  const adsFolder = DriveApp.getFolderById(CONFIG.ADS_FOLDER_ID);
+  result.source.adsFolderId = adsFolder.getId();
+  indexAdFolder(adsFolder, result.ads);
+
   /*
    * Estadísticas.
    */
@@ -209,6 +215,9 @@ function buildImageIndex() {
 
     gifts:
       Object.keys(result.gifts).length,
+
+    ads:
+      Object.keys(result.ads).length,
 
     assets:
       Object.keys(result.assets).length
@@ -230,6 +239,21 @@ function indexGiftFolder(folder, target) {
 
     target[file.getName()] =
       fileInfo(file);
+  }
+}
+
+function indexAdFolder(folder, target) {
+  const files = folder.getFiles();
+
+  while (files.hasNext()) {
+    const file = files.next();
+
+    if (!isImage(file) && !/^image\//i.test(String(file.getMimeType() || ''))) {
+      continue;
+    }
+
+    target[file.getId()] =
+      Object.assign(fileInfo(file), { mimeType: file.getMimeType() });
   }
 }
 
@@ -296,3 +320,4 @@ function indexResourcesFolder(
     );
   }
 }
+

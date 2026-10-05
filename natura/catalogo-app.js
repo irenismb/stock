@@ -3347,6 +3347,11 @@ function closeAlbum(opts={}){
 }
 
 function renderCartModal(){
+  const cartEmpty=cartItemsArray().length===0;
+  for(const id of ["cartCollageBtn","cartFichaBtn"]){
+    const button=document.getElementById(id);
+    if(button) button.disabled=cartEmpty;
+  }
   const items=cartItemsArray();
   const subtotalValue=cartTotalValue();
   const shippingValue=getShippingCop();
@@ -3370,7 +3375,7 @@ function renderCartModal(){
   if(shippingEl) shippingEl.textContent=fmtCOP.format(shippingValue);
   cartTotalEl.textContent=(!showPrices||hasUnpricedItems)?"Total: Por confirmar":"Total: "+fmtCOP.format(total);
   if(!items.length){
-    cartItemsEl.innerHTML='<div class="cart-empty"><strong>Tu carrito está vacío.</strong><span>Agrega productos para preparar el pedido por WhatsApp.</span></div>';
+    cartItemsEl.innerHTML="";
     return;
   }
   const frag=document.createDocumentFragment();

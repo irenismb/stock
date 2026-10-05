@@ -216,7 +216,7 @@
           <span id="cartCount" class="pill">0</span>
         </button>
 
-        <button class="btn-ghost" id="collageBtn" type="button" aria-label="Mostrar folleto de los productos de la vista actual">Folleto</button>
+        <button class="btn-ghost" id="collageBtn" type="button" aria-label="Agregar todos los productos de la vista actual al carrito">Agregar todos</button>
         <button class="btn-ghost" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Ver todos los productos del nivel actual y sus niveles inferiores">Ver productos</button>
         <button class="btn-ghost" id="productOrderBtn" type="button" popovertarget="productOrderMenu" aria-label="Ordenar: Nombre A–Z">Nombre A–Z</button>
         <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar palabras sugeridas" aria-controls="wordPanel" aria-expanded="false" aria-pressed="false">Filtrar</button>
@@ -264,6 +264,7 @@
     <div class="topline" id="topline">
       <div class="count" id="count" aria-live="polite" hidden>Cargando productos…</div>
     </div>
+    <p id="bulkAddStatus" role="status" aria-live="polite"></p>
     <div id="albumNavHost">
       <div class="album-nav" id="albumNav" hidden>
         <button class="btn-ghost album-back" id="albumBackBtn" type="button">← Volver a la categoría</button>
@@ -324,6 +325,8 @@
         </div>
 
         <div class="cart-footer-actions">
+          <button class="btn-ghost" id="cartCollageBtn" type="button" disabled>Crear collage</button>
+          <button class="btn-ghost" id="cartFichaBtn" type="button" disabled>Crear ficha</button>
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Datos del pedido</button>
@@ -443,9 +446,9 @@
   </div>
 
   <script src="precios-admin-config.js?actualizacion=alcance-filtros-admin-2026-09-22-1"></script>
-  <script src="catalogo-app.js?actualizacion=orden-integral-2026-10-04-1"></script>
+  <script src="catalogo-app.js?actualizacion=agregar-todos-imagenes-carrito-2026-10-04-1"></script>
   <script src="catalogo-carrito-pedido.js?actualizacion=2026-09-20-2"></script>
-  <script src="catalogo-herramientas.js?actualizacion=controles-publicos-2026-10-04-1"></script>
+  <script src="catalogo-herramientas.js?actualizacion=agregar-todos-imagenes-carrito-2026-10-04-1"></script>
   <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>
   <script src="catalogo-ui.js?actualizacion=orden-integral-2026-10-04-1"></script>
   <script src="precios-admin.js?actualizacion=controles-publicos-2026-10-04-1"></script>

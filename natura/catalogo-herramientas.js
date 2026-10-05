@@ -77,26 +77,9 @@ function collageBuildRouteTree(products,titleSlots){
 }
 
 function collageCurrentSnapshot(){
-  const searchActive=getCombinedWordTerms().length>0;
-  let products=[];
-
-  if(shouldShowAlbumGrid()){
-    const filteredAlbums=buildFilteredAlbums();
-    const visibleAlbums=filteredAlbums.filter(album=>!searchActive||(Number(album.count)||0)>0);
-
-    for(const album of visibleAlbums){
-      const source=searchActive&&Array.isArray(album.matchingProducts)
-        ? album.matchingProducts
-        : (Array.isArray(album.products)?album.products:[]);
-      products.push(...source);
-    }
-    products=collageUniqueProducts(products);
-  }else{
-    products=collageUniqueProducts(buildFilteredList());
-  }
-
-  const titleSlots=collageCurrentTitleSlots();
-  const titleParts=titleSlots.map(slot=>slot.label);
+  const products=collageUniqueProducts(cartItemsArray().map(item=>productById.get(String(item.id))).filter(product=>product && !product.isGiftGalleryImage));
+  const titleSlots=[];
+  const titleParts=["Carrito"];
 
   return {
     title:titleParts.length?titleParts.join(" › "):"Catálogo",
@@ -262,8 +245,8 @@ function initCollageFeature(){
     if(cartButton) cartButton.insertAdjacentElement("afterend",btn);
     else toolbar.appendChild(btn);
   }
-  btn.textContent="Folleto";
-  btn.setAttribute("aria-label","Mostrar folleto de los productos de la vista actual");
+  btn.textContent="Agregar todos";
+  btn.setAttribute("aria-label","Agregar todos los productos de la vista actual al carrito");
   syncFolletoButtonVisibility();
 
   if(document.getElementById("collageModal")) return;
@@ -1606,14 +1589,14 @@ function initCollageFeature(){
     }
   }
 
-  function openCollageModal(){
+  function openCollageModal(mode="collage"){
     renderCollage();
     modal.classList.remove("admin-embedded");
     if(modal.parentNode!==document.body) document.body.appendChild(modal);
     modal.classList.add("open");
     modal.setAttribute("aria-hidden","false");
     document.body.classList.add("collage-open");
-    setCollageExportMode("collage");
+    setCollageExportMode(mode);
     requestAnimationFrame(()=>closeBtn?.focus({preventScroll:true}));
   }
 
@@ -1640,7 +1623,33 @@ function initCollageFeature(){
     else openCollageModal();
   };
 
-  btn.addEventListener("click",openCollageModal);
+  btn.addEventListener("click",()=>{
+    const products=buildFilteredList().filter(product=>product && !product.isGiftGalleryImage);
+    const seen=new Set();
+    let added=0,existing=0,unavailable=0;
+    for(const product of products){
+      const id=String(product.id||"");
+      if(!id || seen.has(id)) continue;
+      seen.add(id);
+      if((Number(cart[id]?.qty)||0)>0){existing++;continue;}
+      const knownStock=Number.isFinite(product.stock) && product.stock>=0;
+      if(shouldEnforceStockLimits() && (!knownStock || product.stock<1)){unavailable++;continue;}
+      cart[id]={id:product.id,name:product.name,price:product.price,hasPrice:product.hasPrice!==false,qty:1,stock:product.stock,imgFilename:product.imgFilename||null};
+      added++;
+    }
+    saveCart();
+    render();
+    if(typeof renderCartModal==="function") renderCartModal();
+    const status=document.getElementById("bulkAddStatus");
+    if(status) status.textContent=`Se agregaron ${added} productos; ${existing} ya estaban en el carrito; ${unavailable} sin stock disponible.`;
+  });
+  for(const [id,mode] of [["cartCollageBtn","collage"],["cartFichaBtn","ficha"]]){
+    document.getElementById(id)?.addEventListener("click",()=>{
+      if(!cartItemsArray().length) return;
+      closeCartModal();
+      openCollageModal(mode);
+    });
+  }
 
   window.addEventListener("irenismb:admin-section-change",event=>{
     const section=String(event?.detail?.section||"").trim().toLowerCase();

@@ -1831,17 +1831,23 @@
 
       if(preview) preview.hidden = true;
       if(icon){
-        const matchingPreviewSources = searchActive
-          ? matchingProducts
-              .map(product => String(product?.docsImageUrl || "").trim())
-              .filter(Boolean)
-          : [];
-        const normalPreviewSources = Array.isArray(album.previewImages)
-          ? album.previewImages
-          : [];
-        const productPreviewSources = matchingPreviewSources.length
-          ? matchingPreviewSources
-          : normalPreviewSources;
+        const previewProducts = (searchActive ? matchingProducts : (album.products || [])).slice();
+        const previewSortMode = sortSel ? sortSel.value : "";
+        previewProducts.sort((a,b)=>{
+          const byName = String(a.name || "").localeCompare(String(b.name || ""), "es", {sensitivity:"base"})
+            || String(a.id || "").localeCompare(String(b.id || ""));
+          if(previewSortMode === "price_asc" || previewSortMode === "price_desc"){
+            if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
+            const byPrice = (Number(a.price) || 0) - (Number(b.price) || 0);
+            return (previewSortMode === "price_desc" ? -byPrice : byPrice) || byName;
+          }
+          return byName;
+        });
+        const productPreviewSources = previewProducts
+          .filter(product => product && (product.hasImage || product.docsImageUrl))
+          .map(product => String(product.docsImageUrl || product.imgFilename || "").trim())
+          .filter(source => /^https:\/\//i.test(source));
+        const matchingPreviewSources = searchActive ? productPreviewSources : [];
         const useProductPreview =
           shouldShowProductImageInNavigationPanels() &&
           productPreviewSources.length > 0;

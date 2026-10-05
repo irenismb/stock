@@ -77,7 +77,6 @@
         const parsed = JSON.parse(rawCart || "{}");
         return (parsed && typeof parsed === "object") ? parsed : {};
       }catch(_){
-        localStorage.removeItem("cart");
         return {};
       }
     })();
@@ -86,7 +85,7 @@
 
     function cartItemsArray(){
       return Object.values(cart)
-        .filter(it => it && it.qty > 0 && it.id && productById.has(String(it.id)));
+        .filter(it => it && it.qty > 0 && it.id);
     }
     function cartTotalValue(){
       return cartItemsArray().reduce((s,it)=> s + ((Number(it.price)||0) * (Number(it.qty)||0)), 0);
@@ -484,49 +483,22 @@
     };
 
     function sanitizeCartWithStock(){
-      const enforce = shouldEnforceStockLimits();
-      let changed = false;
-
+      // Actualizar los datos disponibles nunca elimina productos ni cambia cantidades.
       for(const key of Object.keys(cart)){
-        const it = cart[key];
-        if(!it || !it.id){
-          delete cart[key];
-          changed = true;
-          continue;
-        }
-        const id = String(it.id);
-        const p = productById.get(id);
-        if(!p){
-          delete cart[key];
-          changed = true;
-          continue;
-        }
-
-        const hasKnownStock = Number.isFinite(p.stock) && p.stock >= 0;
-        const maxStock = hasKnownStock ? p.stock : null;
-        const qty = Math.max(0, safeInt(it.qty, 0));
-
-        const newQty = enforce
-          ? (hasKnownStock ? Math.min(qty, maxStock) : 0)
-          : qty;
-
-        const newObj = {
-          id: p.id,
-          name: p.name,
-          price: p.price,
-          hasPrice: p.hasPrice !== false,
-          qty: newQty,
-          stock: p.stock,
-          imgFilename: p.imgFilename || null
+        const item=cart[key];
+        if(!item || !item.id) continue;
+        const product=productById.get(String(item.id));
+        if(!product) continue;
+        cart[key]={
+          ...item,
+          name:product.name,
+          price:product.price,
+          hasPrice:product.hasPrice!==false,
+          stock:product.stock,
+          imgFilename:product.imgFilename || item.imgFilename || null
         };
-
-        cart[id] = newObj;
-        if(id !== key) delete cart[key];
-
-        if(newQty !== qty) changed = true;
       }
-
-      if(changed) saveCart(); else refreshCartCount();
+      saveCart();
     }
 
     const shippingCopInp = document.getElementById("shippingCop");

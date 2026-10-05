@@ -2130,10 +2130,6 @@
     }
 
     function buildSuggestionEntries(){
-      if(shouldShowAlbumGrid()){
-        return [];
-      }
-
       const scopeProducts = getSuggestionScopeProducts();
       const matchedProducts = getSuggestionMatchedProducts();
       const typedTerms = parseSearchTerms(qInp ? qInp.value : "");
@@ -3124,10 +3120,11 @@ function syncWordToggleButton(){
   const activeCount=uxActiveFilterEntries().length;
   toggleWordPanelBtn.hidden=!canToggle;
   toggleWordPanelBtn.disabled=!canToggle;
-  toggleWordPanelBtn.textContent=activeCount?`Filtros (${activeCount})`:"Filtros";
-  toggleWordPanelBtn.title=wordSuggestionsVisible?"Ocultar filtros":"Mostrar filtros";
+  toggleWordPanelBtn.textContent=activeCount?`Filtrar (${activeCount})`:"Filtrar";
+  toggleWordPanelBtn.title=wordSuggestionsVisible?"Ocultar palabras sugeridas":"Mostrar palabras sugeridas";
   toggleWordPanelBtn.setAttribute("aria-label",toggleWordPanelBtn.title);
   toggleWordPanelBtn.setAttribute("aria-pressed",wordSuggestionsVisible?"true":"false");
+  toggleWordPanelBtn.setAttribute("aria-expanded",wordSuggestionsVisible?"true":"false");
   toggleWordPanelBtn.classList.toggle("is-active",wordSuggestionsVisible||activeCount>0);
 }
 
@@ -3146,7 +3143,7 @@ function renderWordSuggestions(){
   }
   wordPanel.hidden=false;
   const showAlbumGrid=shouldShowAlbumGrid();
-  const entries=showAlbumGrid?[]:buildSuggestionEntries();
+  const entries=buildSuggestionEntries();
   const activeTermsList=uniqueTerms(selectedSuggestionTerms||[]);
   const rawQuery=qInp?String(qInp.value||""):"";
   const typedTerms=parseSearchTerms(rawQuery);
@@ -3169,12 +3166,7 @@ function renderWordSuggestions(){
     }
   }
 
-  if(showAlbumGrid){
-    const note=document.createElement("div");
-    note.className="word-empty";
-    note.textContent=typedTerms.length?"La búsqueda está filtrando las categorías visibles.":"Abre una categoría para ver filtros y palabras más específicas.";
-    wordChips.appendChild(note);
-  }else if(!entries.length){
+  if(!entries.length){
     const empty=document.createElement("div");
     empty.className="word-empty";
     empty.textContent="No hay palabras adicionales para esta vista.";

@@ -203,9 +203,7 @@
           <option value="name_asc">Nombre: A → Z</option>
         </select>
 
-        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar u ocultar filtros" aria-controls="wordPanel" aria-pressed="false">
-          Filtros
-        </button>
+
 
         <button class="btn-ghost" id="priceAdminBtn" type="button" hidden aria-label="Administrar catálogo">
           Administrar
@@ -219,13 +217,15 @@
 
         <button class="btn-ghost" id="collageBtn" type="button" aria-label="Mostrar folleto de los productos de la vista actual">Folleto</button>
         <button class="btn-ghost" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Ver todos los productos del nivel actual y sus niveles inferiores">Ver productos</button>
+        <button class="btn-ghost" id="productOrderBtn" type="button" popovertarget="productOrderMenu" aria-label="Ordenar productos">Ordenar</button>
+        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar palabras sugeridas" aria-controls="wordPanel" aria-expanded="false" aria-pressed="false">Filtrar</button>
       </div>
 
       <section class="word-panel" id="wordPanel" aria-label="Palabras sugeridas del catálogo" hidden>
         <div class="word-panel-head">
           <div>
-            <div class="word-panel-title">Filtros del catálogo</div>
-            <div class="word-panel-subtitle">Combina filtros o palabras para encontrar productos más rápido.</div>
+            <div class="word-panel-title">Palabras sugeridas</div>
+            <div class="word-panel-subtitle">Selecciona palabras para afinar tu búsqueda.</div>
           </div>
           <button class="btn-ghost word-clear" id="clearTermsBtn" type="button" hidden>Limpiar todo</button>
         </div>
@@ -434,12 +434,18 @@
     </div>
   </div>
 
+  <div id="productOrderMenu" popover aria-label="Orden de los productos">
+    <button type="button" data-product-sort="name_asc" aria-pressed="true">Nombre: A–Z</button>
+    <button type="button" data-product-sort="price_asc" aria-pressed="false">Precio: menor a mayor</button>
+    <button type="button" data-product-sort="price_desc" aria-pressed="false">Precio: mayor a menor</button>
+  </div>
+
   <script src="precios-admin-config.js?actualizacion=alcance-filtros-admin-2026-09-22-1"></script>
-  <script src="catalogo-app.js?actualizacion=anuncios-primero-2026-10-04-4"></script>
+  <script src="catalogo-app.js?actualizacion=filtrar-publico-2026-10-04-1"></script>
   <script src="catalogo-carrito-pedido.js?actualizacion=2026-09-20-2"></script>
   <script src="catalogo-herramientas.js?actualizacion=controles-publicos-2026-10-04-1"></script>
   <script src="analytics-visitas.js?actualizacion=integral-2026-09-12"></script>
-  <script src="catalogo-ui.js?actualizacion=controles-publicos-2026-10-04-1"></script>
+  <script src="catalogo-ui.js?actualizacion=filtrar-publico-2026-10-04-1"></script>
   <script src="precios-admin.js?actualizacion=controles-publicos-2026-10-04-1"></script>
   <script>
     // Durante la carga inicial, el contador superior permanece oculto aunque

@@ -3,9 +3,7 @@
   const style = document.createElement("style");
   style.id = "catalog-search-controls-cleanup";
   style.textContent = `
-    #sort,
-    #toggleWordPanelBtn,
-    #wordPanel{display:none!important}
+    #sort{display:none!important}
   `;
   document.head.appendChild(style);
 
@@ -18,14 +16,13 @@
 
   const filterButton = document.getElementById("toggleWordPanelBtn");
   if(filterButton){
-    filterButton.hidden = true;
-    filterButton.disabled = true;
+    filterButton.hidden = false;
+    filterButton.disabled = false;
   }
 
   const panel = document.getElementById("wordPanel");
   if(panel){
     panel.hidden = true;
-    panel.setAttribute("aria-hidden", "true");
   }
 
   try{
@@ -121,7 +118,7 @@
   function allCatalogProducts(){
     try{
       if(typeof currentProductSourceList === "function"){
-        const products = currentProductSourceList();
+        const products = typeof buildFilteredList === "function" ? buildFilteredList() : currentProductSourceList();
         return Array.isArray(products)
           ? products.filter(product => product && !product.isGiftGalleryImage)
           : [];
@@ -586,6 +583,66 @@
       .bar[role="search"] > #showProductsBtn{grid-column:2!important;grid-row:3!important}
       .bar[role="search"] > #collageBtn,.bar[role="search"] > #showProductsBtn{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;justify-self:stretch!important}
       .bar[role="search"] > .count-slot{grid-column:1 / -1!important;grid-row:4!important}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// Orden público de las tarjetas de producto.
+(() => {
+  const button = document.getElementById("productOrderBtn");
+  const menu = document.getElementById("productOrderMenu");
+  const sort = document.getElementById("sort");
+  if(!button || !menu || !sort) return;
+  const choices = [...menu.querySelectorAll("[data-product-sort]")];
+  function syncOrder(){
+    for(const choice of choices){
+      const selected = choice.dataset.productSort === (sort.value || "name_asc");
+      choice.setAttribute("aria-pressed", selected ? "true" : "false");
+      if(selected) button.title = "Ordenar: " + choice.textContent.trim();
+    }
+  }
+  for(const choice of choices){
+    choice.addEventListener("click", () => {
+      sort.value = choice.dataset.productSort;
+      sort.dispatchEvent(new Event("change", {bubbles:true}));
+      syncOrder();
+      menu.hidePopover();
+      button.focus({preventScroll:true});
+    });
+  }
+  sort.addEventListener("change", syncOrder);
+  menu.addEventListener("toggle", syncOrder);
+  syncOrder();
+  const style = document.createElement("style");
+  style.textContent = `
+    .bar[role="search"] > #productOrderBtn{order:45!important;white-space:nowrap}
+    #productOrderMenu{width:min(300px,calc(100vw - 32px));padding:12px;border:1px solid #d9c9c1;border-radius:16px;background:#fffdfb;color:#352b2c;box-shadow:0 12px 35px rgba(60,40,40,.2)}
+    #productOrderMenu::backdrop{background:rgba(0,0,0,.12)}
+    #productOrderMenu button{display:block;width:100%;margin:4px 0;padding:12px;text-align:left;border:1px solid #d9c9c1;border-radius:10px;background:#fff;color:#352b2c;cursor:pointer;font:inherit}
+    #productOrderMenu button[aria-pressed="true"]{background:#f5e5e8;border-color:#a55f70;font-weight:700}
+    #productOrderMenu button[aria-pressed="true"]::before{content:"✓ ";color:#8d5360}
+    @media(min-width:761px){.bar[role="search"] > #productOrderBtn{flex:0 1 95px!important;width:auto!important;min-width:80px!important;margin:0!important}}
+    @media(max-width:760px){
+      .bar[role="search"] > #productOrderBtn{grid-column:1 / -1!important;grid-row:4!important;width:100%!important;margin:0!important}
+      .bar[role="search"] > .count-slot{grid-row:5!important}
+    }
+  `;
+  document.head.appendChild(style);
+})();
+
+// Filtrar está disponible para todos, después de Ordenar.
+(() => {
+  const style = document.createElement("style");
+  style.textContent = `
+    .bar[role="search"] > #toggleWordPanelBtn{order:46!important}
+    @media(min-width:761px){
+      .bar[role="search"]{flex-wrap:wrap!important}
+      .bar[role="search"] > #toggleWordPanelBtn{flex:0 1 95px!important;min-width:80px!important;margin:0!important}
+    }
+    @media(max-width:760px){
+      .bar[role="search"] > #productOrderBtn{grid-column:1!important;grid-row:4!important}
+      .bar[role="search"] > #toggleWordPanelBtn{grid-column:2!important;grid-row:4!important;width:100%!important;margin:0!important}
     }
   `;
   document.head.appendChild(style);

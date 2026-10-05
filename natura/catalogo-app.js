@@ -3348,7 +3348,7 @@ function closeAlbum(opts={}){
 
 function renderCartModal(){
   const cartEmpty=cartItemsArray().length===0;
-  for(const id of ["cartCollageBtn","cartFichaBtn"]){
+  for(const id of ["cartCollageBtn"]){
     const button=document.getElementById(id);
     if(button) button.disabled=cartEmpty;
   }
@@ -3396,6 +3396,17 @@ function renderCartModal(){
     if(shouldShowProductCodes()) meta.push(`Código ${it.id}`);
     meta.push(shouldShowProductPrices()?(it.hasPrice===false?"Precio por confirmar":`${fmtCOP.format(Number(it.price)||0)} c/u`):"Precio por confirmar");
     main.querySelector(".cart-item-sub").textContent=meta.join(" · ");
+    const fichaButton=document.createElement("button");
+    fichaButton.className="btn-ghost";
+    fichaButton.type="button";
+    fichaButton.textContent="Crear ficha";
+    fichaButton.setAttribute("aria-label",`Crear ficha de ${it.name}`);
+    fichaButton.disabled=!p;
+    fichaButton.addEventListener("click",event=>{
+      event.stopPropagation();
+      if(p && typeof window.createCartProductFicha==="function") void window.createCartProductFicha(p,fichaButton);
+    });
+    main.appendChild(fichaButton);
     left.appendChild(main);
     const controls=document.createElement("div");
     controls.className="cart-controls";

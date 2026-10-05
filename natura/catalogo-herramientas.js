@@ -78,8 +78,15 @@ function collageBuildRouteTree(products,titleSlots){
 
 function collageCurrentSnapshot(){
   const products=collageUniqueProducts(cartItemsArray().map(item=>productById.get(String(item.id))).filter(product=>product && !product.isGiftGalleryImage));
+  products.sort(compareCatalogProductOrder);
   const titleSlots=[];
-  const titleParts=["Carrito"];
+  for(const level of navigationOrderedLevels()){
+    if(level==="product") break;
+    const values=[...new Set(products.map(product=>String(navigationValueForProduct(product,level)||"").trim()))];
+    if(values.length!==1) break;
+    if(values[0]) titleSlots.push({label:values[0],depth:navigationDepthForType(level),level});
+  }
+  const titleParts=titleSlots.length ? titleSlots.map(slot=>slot.label) : ["Productos del carrito"];
 
   return {
     title:titleParts.length?titleParts.join(" › "):"Catálogo",
@@ -1157,7 +1164,7 @@ function initCollageFeature(){
       const total=snapshot.products.length;
       const isMarketplace=format.key==="marketplace";
       const columns=
-        total<=4 ? 2 :
+        total<=2 ? total :
         total<=9 ? 3 :
         total<=16 ? 4 :
         total<=25 ? 5 :
@@ -1168,7 +1175,7 @@ function initCollageFeature(){
       const focusTitleFontSize=isMarketplace?37:42;
       const parentTitleLineHeight=Math.round(parentTitleFontSize*1.14);
       const focusTitleLineHeight=Math.round(focusTitleFontSize*1.12);
-      const blocks=collageExportBlocks(snapshot.tree);
+      const blocks=isMarketplace ? [{type:"grid",depth:0,products:snapshot.products}] : collageExportBlocks(snapshot.tree);
       const imageMap=new Map();
       const routeParts=Array.isArray(snapshot.titleParts)?snapshot.titleParts.filter(Boolean):[];
       const focusTitle=String(routeParts.at(-1)||snapshot.title||"Catálogo");
@@ -1643,13 +1650,59 @@ function initCollageFeature(){
     const status=document.getElementById("bulkAddStatus");
     if(status) status.textContent=`Se agregaron ${added} productos; ${existing} ya estaban en el carrito; ${unavailable} sin stock disponible.`;
   });
-  for(const [id,mode] of [["cartCollageBtn","collage"],["cartFichaBtn","ficha"]]){
-    document.getElementById(id)?.addEventListener("click",()=>{
-      if(!cartItemsArray().length) return;
-      closeCartModal();
-      openCollageModal(mode);
-    });
+  let cartExportBusy=false;
+  async function makeCartExportFile(mode,product){
+    if(mode==="ficha"){
+      const {canvas,fileName}=await buildMarketplacePresentationCanvas(product);
+      const prepared=await prepareCanvasPngFile(canvas,fileName);
+      return prepared.file || new File([prepared.blob],fileName || "ficha.png",{type:"image/png"});
+    }
+    const format=COLLAGE_EXPORT_FORMATS.marketplace;
+    const key=collageShareCacheKey(collageCurrentSnapshot(),format);
+    const token=++collagePrepareSequence;
+    await downloadCollageImage("prepare",{token,key,formatKey:"marketplace"});
+    const file=collagePreparedShareFiles.get(key);
+    if(!file) throw new Error("No se pudo generar el collage.");
+    return file;
   }
+  async function exportCartImage(mode,product,button){
+    if(cartExportBusy || !cartItemsArray().length) return;
+    if(mode==="ficha" && (!product || !cart[String(product.id)])) return;
+    cartExportBusy=true;
+    const label=button.textContent;
+    button.disabled=true;
+    button.textContent="Generando…";
+    const status=document.getElementById("cartImageStatus");
+    if(status) status.textContent="Generando imagen cuadrada…";
+    const filePromise=makeCartExportFile(mode,product);
+    let copyPromise;
+    try{
+      if(!navigator.clipboard?.write || !window.ClipboardItem) throw new Error("Portapapeles no disponible");
+      copyPromise=navigator.clipboard.write([new ClipboardItem({"image/png":filePromise.then(file=>file)})])
+        .then(()=>true,()=>false);
+    }catch(_){copyPromise=Promise.resolve(false);}
+    try{
+      const file=await filePromise;
+      let downloaded=true;
+      try{downloadPreparedPngFile(file,file.name);}catch(_){downloaded=false;}
+      const copied=await copyPromise;
+      if(status) status.textContent=copied && downloaded
+        ? "Imagen copiada y descargada."
+        : downloaded ? "Imagen descargada; el navegador no permitió copiarla al portapapeles."
+        : copied ? "Imagen copiada; no se pudo descargar." : "No se pudo copiar ni descargar la imagen.";
+    }catch(error){
+      if(status) status.textContent="No se pudo generar la imagen. Inténtalo nuevamente.";
+      console.error("No se pudo generar la imagen del carrito.",error);
+    }finally{
+      cartExportBusy=false;
+      button.disabled=false;
+      button.textContent=label;
+    }
+  }
+  window.createCartProductFicha=(product,button)=>exportCartImage("ficha",product,button);
+  document.getElementById("cartCollageBtn")?.addEventListener("click",event=>{
+    void exportCartImage("collage",null,event.currentTarget);
+  });
 
   window.addEventListener("irenismb:admin-section-change",event=>{
     const section=String(event?.detail?.section||"").trim().toLowerCase();

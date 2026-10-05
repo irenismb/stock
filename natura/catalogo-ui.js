@@ -599,7 +599,12 @@
     for(const choice of choices){
       const selected = choice.dataset.productSort === (sort.value || "name_asc");
       choice.setAttribute("aria-pressed", selected ? "true" : "false");
-      if(selected) button.title = "Ordenar: " + choice.textContent.trim();
+      if(selected){
+        const labels={name_asc:"Nombre A–Z",name_desc:"Nombre Z–A",price_asc:"Precio ↑",price_desc:"Precio ↓"};
+        button.textContent=labels[choice.dataset.productSort] || "Nombre A–Z";
+        button.title="Ordenar: " + choice.textContent.trim();
+        button.setAttribute("aria-label",button.title);
+      }
     }
   }
   for(const choice of choices){

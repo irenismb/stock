@@ -1831,18 +1831,7 @@
 
       if(preview) preview.hidden = true;
       if(icon){
-        const previewProducts = (searchActive ? matchingProducts : (album.products || [])).slice();
-        const previewSortMode = sortSel ? sortSel.value : "";
-        previewProducts.sort((a,b)=>{
-          const byName = String(a.name || "").localeCompare(String(b.name || ""), "es", {sensitivity:"base"})
-            || String(a.id || "").localeCompare(String(b.id || ""));
-          if(previewSortMode === "price_asc" || previewSortMode === "price_desc"){
-            if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
-            const byPrice = (Number(a.price) || 0) - (Number(b.price) || 0);
-            return (previewSortMode === "price_desc" ? -byPrice : byPrice) || byName;
-          }
-          return byName;
-        });
+        const previewProducts = orderedAlbumPreviewProducts(album,searchActive ? matchingProducts : null);
         const productPreviewSources = previewProducts
           .filter(product => product && (product.hasImage || product.docsImageUrl))
           .map(product => String(product.docsImageUrl || product.imgFilename || "").trim())
@@ -2627,9 +2616,27 @@
       if(qInp) qInp.value = "";
       if(catSel) catSel.value = "";
       if(brandSel) brandSel.value = "";
-      if(sortSel) sortSel.value = "";
       selectedSuggestionTerms = [];
     }
+    function compareCatalogProductOrder(a,b){
+      const mode=sortSel ? sortSel.value : "";
+      const byName=String(a.name||"").localeCompare(String(b.name||""),"es",{sensitivity:"base"});
+      const byId=String(a.id||"").localeCompare(String(b.id||""));
+      if(mode==="price_asc" || mode==="price_desc"){
+        if((a.hasPrice!==false)!==(b.hasPrice!==false)) return a.hasPrice===false ? 1 : -1;
+        const byPrice=(Number(a.price)||0)-(Number(b.price)||0);
+        return (mode==="price_desc" ? -byPrice : byPrice) || byName || byId;
+      }
+      return (mode==="name_desc" ? -byName : byName) || byId;
+    }
+
+    function orderedAlbumPreviewProducts(album,matchingProducts=null){
+      return (matchingProducts || album.products || []).filter(product=>{
+        const source=String(product?.docsImageUrl || product?.imgFilename || "").trim();
+        return product && (product.hasImage || product.docsImageUrl) && /^https:\/\//i.test(source);
+      }).slice().sort(compareCatalogProductOrder);
+    }
+
     function buildFilteredList(){
       const source = currentProductSourceList();
       const sortMode = sortSel ? sortSel.value : "";
@@ -2643,25 +2650,7 @@
         return true;
       });
 
-      filtered.sort((a,b)=>{
-
-        if(sortMode === "price_asc"){
-          if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
-          return (a.price||0) - (b.price||0)
-            || String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
-            || String(a.id).localeCompare(String(b.id));
-        }
-
-        if(sortMode === "price_desc"){
-          if((a.hasPrice !== false) !== (b.hasPrice !== false)) return a.hasPrice === false ? 1 : -1;
-          return (b.price||0) - (a.price||0)
-            || String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
-            || String(a.id).localeCompare(String(b.id));
-        }
-
-        return String(a.name||"").localeCompare(String(b.name||""), "es", { sensitivity:"base" })
-          || String(a.id).localeCompare(String(b.id));
-      });
+      filtered.sort(compareCatalogProductOrder);
 
       return filtered;
     }
@@ -2674,15 +2663,24 @@
         const matchingProducts=searchableProducts.filter(p=>terms.every(t=>p.searchKey.includes(t)));
         return {...album,count:matchingProducts.length,matchingProducts};
       });
+      const mode=sortSel ? sortSel.value : "";
+      const representatives=new Map(filtered.map(album=>[
+        album.key,orderedAlbumPreviewProducts(album,terms.length ? (album.matchingProducts || []) : null)[0] || null
+      ]));
       filtered.sort((a,b)=>{
-        const sectionOnly=filtered.length>0&&filtered.every(album=>album.navType==="section");
-        if(sectionOnly){
-          const order=new Map(NAV_SECTIONS.map((item,index)=>[cleanNavKey(item.label),index]));
-          const aRank=order.has(cleanNavKey(a.label))?order.get(cleanNavKey(a.label)):Number.MAX_SAFE_INTEGER;
-          const bRank=order.has(cleanNavKey(b.label))?order.get(cleanNavKey(b.label)):Number.MAX_SAFE_INTEGER;
-          return aRank-bRank||a.label.localeCompare(b.label,"es",{sensitivity:"base"});
+        const byName=String(a.label||"").localeCompare(String(b.label||""),"es",{sensitivity:"base"});
+        if(mode==="price_asc" || mode==="price_desc"){
+          const ap=representatives.get(a.key),bp=representatives.get(b.key);
+          const aPriced=!!ap && ap.hasPrice!==false;
+          const bPriced=!!bp && bp.hasPrice!==false;
+          if(aPriced!==bPriced) return aPriced ? -1 : 1;
+          if(aPriced && bPriced){
+            const delta=(Number(ap.price)||0)-(Number(bp.price)||0);
+            if(delta) return mode==="price_desc" ? -delta : delta;
+          }
+          return byName;
         }
-        return (Number(a.navDepth)||99)-(Number(b.navDepth)||99)||a.label.localeCompare(b.label,"es",{sensitivity:"base"});
+        return mode==="name_desc" ? -byName : byName;
       });
       return filtered;
     }

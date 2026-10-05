@@ -930,7 +930,7 @@
     }
 
     function invoiceDownloadPng(blob){
-      if(!blob) throw new Error("No fue posible preparar la descarga dla salida de inventario.");
+      if(!blob) throw new Error("No fue posible preparar la descarga de la salida de inventario.");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -944,40 +944,44 @@
 
     async function invoiceGeneratePngFromCart(){
       invoiceValidateInput();
-
-      let copyError = null;
-      let downloadError = null;
-      const buildPromise = invoiceBuildPng();
-      const blobPromise = buildPromise.then(result=>result.blob);
-      let copyPromise = Promise.resolve(false);
-
-      if(navigator.clipboard && typeof navigator.clipboard.write === "function" && typeof ClipboardItem !== "undefined"){
+      const {blob}=await invoiceBuildPng();
+      const dialog=document.createElement("dialog");
+      dialog.setAttribute("aria-label","Vista previa de la salida de inventario");
+      dialog.style.cssText="width:min(92vw,760px);max-height:92vh;padding:18px;border:0;border-radius:18px;background:#fffdfc;color:#352f2f;box-sizing:border-box;";
+      const title=document.createElement("h2");
+      title.textContent="Vista previa de la salida de inventario";
+      title.style.cssText="margin:0 0 12px;font-size:22px;";
+      const image=document.createElement("img");
+      const url=URL.createObjectURL(blob);
+      image.src=url;image.alt="Salida de inventario";
+      image.style.cssText="display:block;width:100%;max-height:65vh;object-fit:contain;";
+      const actions=document.createElement("div");
+      actions.style.cssText="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;";
+      const save=document.createElement("button");
+      save.type="button";save.className="btn";save.textContent="Copiar y descargar";
+      const close=document.createElement("button");
+      close.type="button";close.className="btn-ghost";close.textContent="Cerrar";
+      const status=document.createElement("p");
+      status.setAttribute("role","status");status.style.cssText="margin:10px 0 0;text-align:center;";
+      close.addEventListener("click",()=>dialog.close());
+      dialog.addEventListener("close",()=>{URL.revokeObjectURL(url);dialog.remove();},{once:true});
+      save.addEventListener("click",async()=>{
+        save.disabled=true;
+        let copyPromise;
         try{
-          copyPromise = navigator.clipboard
-            .write([new ClipboardItem({"image/png":blobPromise})])
-            .then(()=>true, error=>{
-              copyError = error;
-              return false;
-            });
-        }catch(error){
-          copyError = error;
-        }
-      }else{
-        copyError = new Error("Este navegador no permite copiar imágenes PNG directamente al portapapeles.");
-      }
-
-      const built = await buildPromise;
-      try{
-        invoiceDownloadPng(built.blob);
-      }catch(error){
-        downloadError = error;
-      }
-
-      const copied = await copyPromise;
-      if(copyError) console.error("No se pudo copiar la salida de inventario PNG.", copyError);
-      if(downloadError) console.error("No se pudo descargar la salida de inventario PNG.", downloadError);
-
-      return {copied, downloaded:!downloadError};
+          if(!navigator.clipboard?.write || !window.ClipboardItem) throw new Error("Portapapeles no disponible");
+          copyPromise=navigator.clipboard.write([new ClipboardItem({"image/png":blob})]).then(()=>true,()=>false);
+        }catch(_){copyPromise=Promise.resolve(false);}
+        let downloaded=true;
+        try{invoiceDownloadPng(blob);}catch(_){downloaded=false;}
+        const copied=await copyPromise;
+        status.textContent=copied && downloaded ? "Imagen copiada y descargada."
+          : downloaded ? "Imagen descargada; el navegador no permitió copiarla al portapapeles."
+          : copied ? "Imagen copiada; no se pudo descargar." : "No se pudo copiar ni descargar la imagen.";
+        save.disabled=false;
+      });
+      actions.append(save,close);dialog.append(title,image,actions,status);
+      document.body.appendChild(dialog);dialog.showModal();
     }
 
     function viaTypeLabel(tipo){
@@ -1382,18 +1386,7 @@
           saveClientToLS();
           saveAddressToLS();
           saveShippingToLS();
-          const result = await invoiceGeneratePngFromCart();
-          if(result.copied && result.downloaded){
-            cartInvoiceBtn.textContent = "Salida generada";
-          }else if(result.downloaded){
-            cartInvoiceBtn.textContent = "Salida descargada";
-            alert("La salida de inventario se descargó, pero este navegador no permitió copiarlo al portapapeles.");
-          }else if(result.copied){
-            cartInvoiceBtn.textContent = "Salida copiada";
-            alert("La salida de inventario se copió, pero el navegador no permitió descargarlo.");
-          }else{
-            throw new Error("No se pudo copiar ni descargar la salida de inventario.");
-          }
+          await invoiceGeneratePngFromCart();
         }catch(err){
           console.error("No se pudo generar la salida de inventario PNG:", err);
           alert(String(err?.message || "No se pudo generar la salida de inventario PNG."));

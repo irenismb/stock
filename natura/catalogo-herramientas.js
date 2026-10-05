@@ -1160,16 +1160,12 @@ function initCollageFeature(){
       const PAGE_H=format.pageH;
       const MARGIN=format.margin;
       const RENDER_SCALE=2;
-      const CONTENT_W=PAGE_W-(MARGIN*2);
+      const cardMargin=format.key==="marketplace" ? 22 : MARGIN;
+      const CONTENT_W=PAGE_W-(cardMargin*2);
       const total=snapshot.products.length;
       const isMarketplace=format.key==="marketplace";
-      const columns=
-        total<=2 ? total :
-        total<=9 ? 3 :
-        total<=16 ? 4 :
-        total<=25 ? 5 :
-        total<=36 ? 6 : 7;
-      const gap=isMarketplace?16:14;
+      const columns=isMarketplace ? Math.min(3,total) : (total<=4 ? 2 : total<=9 ? 3 : total<=16 ? 4 : total<=25 ? 5 : total<=36 ? 6 : 7);
+      const gap=isMarketplace?10:14;
       const headingGap=isMarketplace?18:16;
       const parentTitleFontSize=isMarketplace?31:34;
       const focusTitleFontSize=isMarketplace?37:42;
@@ -1177,6 +1173,31 @@ function initCollageFeature(){
       const focusTitleLineHeight=Math.round(focusTitleFontSize*1.12);
       const blocks=isMarketplace ? [{type:"grid",depth:0,products:snapshot.products}] : collageExportBlocks(snapshot.tree);
       const imageMap=new Map();
+      const imageBounds=new WeakMap();
+      function visibleImageBounds(image){
+        if(imageBounds.has(image)) return imageBounds.get(image);
+        const full={x:0,y:0,w:image.naturalWidth,h:image.naturalHeight};
+        try{
+          const scan=document.createElement("canvas");
+          const ratio=Math.min(1,500/Math.max(full.w,full.h));
+          scan.width=Math.max(1,Math.round(full.w*ratio));scan.height=Math.max(1,Math.round(full.h*ratio));
+          const context=scan.getContext("2d",{willReadFrequently:true});context.drawImage(image,0,0,scan.width,scan.height);
+          const pixels=context.getImageData(0,0,scan.width,scan.height).data;
+          let left=scan.width,top=scan.height,right=-1,bottom=-1;
+          for(let y=0;y<scan.height;y++)for(let x=0;x<scan.width;x++){
+            const i=(y*scan.width+x)*4;
+            if(pixels[i+3]>12 && (pixels[i]<247 || pixels[i+1]<247 || pixels[i+2]<247)){
+              left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);
+            }
+          }
+          if(right>=left && bottom>=top){
+            const x=Math.max(0,(left-3)/ratio),y=Math.max(0,(top-3)/ratio);
+            const box={x,y,w:Math.min(full.w-x,(right-left+7)/ratio),h:Math.min(full.h-y,(bottom-top+7)/ratio)};
+            imageBounds.set(image,box);return box;
+          }
+        }catch(_){ }
+        imageBounds.set(image,full);return full;
+      }
       const routeParts=Array.isArray(snapshot.titleParts)?snapshot.titleParts.filter(Boolean):[];
       const focusTitle=String(routeParts.at(-1)||snapshot.title||"Catálogo");
       const parentTitle=routeParts.length>1?routeParts.slice(0,-1).join(" › "):"";
@@ -1219,13 +1240,15 @@ function initCollageFeature(){
         const cols=Math.min(columns,Math.max(1,block.products.length));
         const cardW=Math.floor((available-gap*(cols-1))/cols);
 
-        const imageH=Math.round(
-          Math.min(isMarketplace?235:250,Math.max(columns<=3?(isMarketplace?178:190):118,cardW*(isMarketplace?.82:.88)))
-        );
-        const nameSize=columns<=2?(isMarketplace?23:25):columns===3?(isMarketplace?18:20):columns===4?16:columns===5?14:columns===6?12:11;
-        const nameLine=Math.round(nameSize*1.28);
+        const rowsCount=Math.ceil(block.products.length/cols);
+        const nameSize=isMarketplace ? 18 : (columns<=2?25:columns===3?20:columns===4?16:columns===5?14:columns===6?12:11);
+        const nameLine=Math.round(nameSize*1.16);
         const priceSize=Math.max(12,nameSize+2);
-        const captionPad=columns<=3?(isMarketplace?12:14):10;
+        const captionPad=isMarketplace?6:10;
+        const reservedCaption=3*nameLine+priceSize+24+captionPad*2;
+        const imageH=isMarketplace
+          ? Math.max(60,Math.min(cardW*.85,Math.floor((PAGE_H-235-gap*(rowsCount-1))/rowsCount)-reservedCaption))
+          : Math.round(Math.min(250,Math.max(190,cardW*.88)));
 
         pctx.font=`800 ${nameSize}px system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
         const items=block.products.map(product=>{
@@ -1373,7 +1396,7 @@ function initCollageFeature(){
         }
 
         const gl=cardLayouts.get(block)||gridLayout(block);
-        const xStart=MARGIN+gl.indent;
+        const xStart=cardMargin+gl.indent;
 
         for(const row of gl.rows){
           const rowWidth=row.items.length*gl.cardW+Math.max(0,row.items.length-1)*gap;
@@ -1397,7 +1420,7 @@ function initCollageFeature(){
             ctx.stroke();
 
             ctx.save();
-            const imageInset=Math.max(9,Math.min(14,gl.cardW*.055));
+            const imageInset=isMarketplace?5:Math.max(9,Math.min(14,gl.cardW*.055));
             collageCanvasRoundRect(ctx,x+imageInset,y+imageInset,gl.cardW-imageInset*2,gl.imageH-imageInset,13);
             ctx.clip();
             const cardImageBg=ctx.createLinearGradient(x,y,x+gl.cardW,y+gl.imageH);
@@ -1409,14 +1432,15 @@ function initCollageFeature(){
 
             const img=imageMap.get(entry.product);
             if(img&&img.naturalWidth&&img.naturalHeight){
-              const pad=Math.max(8,Math.min(15,gl.cardW*.06));
+              const pad=isMarketplace?2:Math.max(8,Math.min(15,gl.cardW*.06));
               const aw=gl.cardW-(imageInset+pad)*2;
               const ah=gl.imageH-imageInset-pad*2;
-              const scale=Math.min(aw/img.naturalWidth,ah/img.naturalHeight);
-              const dw=img.naturalWidth*scale;
-              const dh=img.naturalHeight*scale;
+              const bounds=isMarketplace?visibleImageBounds(img):{x:0,y:0,w:img.naturalWidth,h:img.naturalHeight};
+              const scale=Math.min(aw/bounds.w,ah/bounds.h);
+              const dw=bounds.w*scale;
+              const dh=bounds.h*scale;
               ctx.drawImage(
-                img,
+                img,bounds.x,bounds.y,bounds.w,bounds.h,
                 x+(gl.cardW-dw)/2,
                 y+imageInset+(gl.imageH-imageInset-dh)/2,
                 dw,
@@ -1494,7 +1518,7 @@ function initCollageFeature(){
 
       const usedHeight=Math.max(1,Math.min(naturalLogicalHeight,Math.ceil(y+42)));
       const verticalPadding=isMarketplace?24:18;
-      const horizontalPadding=isMarketplace?24:0;
+      const horizontalPadding=0;
       const scale=Math.min(1,(PAGE_H-verticalPadding)/usedHeight,(PAGE_W-horizontalPadding)/PAGE_W);
       const drawW=PAGE_W*scale;
       const drawH=usedHeight*scale;

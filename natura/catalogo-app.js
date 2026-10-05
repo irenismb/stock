@@ -3297,6 +3297,24 @@ function makeCard(p){
     if(pad) pad.hidden=true;
     imgBox.setAttribute("aria-label","Imagen de regalo para toda ocasión");
   }
+  if(!p.isGiftGalleryImage){
+    imgBox.style.position="relative";
+    const fichaButton=document.createElement("button");
+    fichaButton.type="button";
+    fichaButton.className="btn-ghost product-ficha-btn";
+    fichaButton.textContent="Crear ficha";
+    fichaButton.setAttribute("aria-label","Crear ficha de "+productName);
+    fichaButton.style.cssText="position:absolute;right:8px;bottom:8px;z-index:3;padding:7px 10px;min-height:34px;border-radius:10px;font-size:12px;";
+    const fichaStatus=document.createElement("p");
+    fichaStatus.setAttribute("role","status");
+    fichaStatus.style.cssText="margin:0;padding:0 12px;font-size:12px;";
+    fichaButton.addEventListener("click",event=>{
+      event.preventDefault();event.stopPropagation();
+      window.createProductFicha?.(productById.get(String(p.id))||p,fichaButton,fichaStatus);
+    });
+    imgBox.appendChild(fichaButton);
+    imgBox.insertAdjacentElement("afterend",fichaStatus);
+  }
   refreshCardUI(card,p);
   return card;
 }
@@ -3384,13 +3402,14 @@ function renderCartModal(){
   const hasUnpricedItems=items.some(it=>it&&it.hasPrice===false);
   const subtotalEl=document.getElementById("cartSubtotal");
   const shippingEl=document.getElementById("cartShippingTotal");
+  if(cartInvoiceBtn) cartInvoiceBtn.hidden=window.CATALOG_ADMIN_MODE_ACTIVE!==true;
   if(cartInvoiceBtn && !invoiceCopying){
-    const canGenerateSummary=items.length>0&&showPrices&&!hasUnpricedItems;
+    const canGenerateSummary=window.CATALOG_ADMIN_MODE_ACTIVE===true&&items.length>0&&showPrices&&!hasUnpricedItems;
     cartInvoiceBtn.disabled=!canGenerateSummary;
     cartInvoiceBtn.title=canGenerateSummary
-      ? "Crear un resumen PNG del pedido; no registra una venta"
+      ? "Crear salida de inventario PNG; no descuenta existencias"
       : !items.length
-        ? "Agrega productos para crear el resumen"
+        ? "Agrega productos para crear la salida de inventario"
         : "Todos los productos deben tener un precio visible";
   }
   if(cartBuyBtn && !orderSending) cartBuyBtn.disabled=items.length===0;

@@ -141,6 +141,8 @@ function syncFolletoButtonVisibility(){
 
 function syncAdministrativeToolVisibility(){
   syncFolletoButtonVisibility();
+  const invoiceButton=document.getElementById("cartInvoiceBtn");
+  if(invoiceButton) invoiceButton.hidden=window.CATALOG_ADMIN_MODE_ACTIVE!==true;
 }
 
 function initCollageFeature(){
@@ -1731,14 +1733,15 @@ function initCollageFeature(){
     document.body.appendChild(dialog);
     dialog.showModal();
   }
-  async function exportCartImage(mode,product,button){
-    if(cartExportBusy || !cartItemsArray().length) return;
-    if(mode==="ficha" && (!product || !cart[String(product.id)])) return;
+  async function exportCartImage(mode,product,button,productStatus=null){
+    if(cartExportBusy) return;
+    if(mode==="collage" && !cartItemsArray().length) return;
+    if(mode==="ficha" && (!product || product.isGiftGalleryImage)) return;
     cartExportBusy=true;
     const label=button.textContent;
     button.disabled=true;
     button.textContent="Generando…";
-    const status=document.getElementById("cartImageStatus");
+    const status=productStatus || document.getElementById("cartImageStatus");
     if(status) status.textContent="Generando vista previa…";
     try{
       const file=await makeCartExportFile(mode,product);
@@ -1754,6 +1757,7 @@ function initCollageFeature(){
     }
   }
   window.createCartProductFicha=(product,button)=>exportCartImage("ficha",product,button);
+  window.createProductFicha=(product,button,status)=>exportCartImage("ficha",product,button,status);
   document.getElementById("cartCollageBtn")?.addEventListener("click",event=>{
     void exportCartImage("collage",null,event.currentTarget);
   });

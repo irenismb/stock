@@ -280,7 +280,7 @@
   }
 
   function installAdminToggles(){
-    const list = document.querySelector("#catalogAdminConfig .catalog-admin-config-list");
+    const list = document.getElementById("catalogAdminSharedConfigList") || document.querySelector("#catalogAdminConfig .catalog-admin-config-list");
     if(!list) return;
 
     if(!list.querySelector("[data-admin-quick-images-row]")){

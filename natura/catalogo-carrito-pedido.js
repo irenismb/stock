@@ -588,6 +588,7 @@
     }
 
     function invoiceValidateInput(){
+      if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) throw new Error("La salida de inventario está disponible solo en modo administrador.");
       const cartItems = cartItemsArray();
       if(!cartItems.length) throw new Error("Agrega al menos un producto al carrito antes de generar la salida de inventario.");
       if(!shouldShowProductPrices()){
@@ -944,6 +945,7 @@
     }
 
     async function invoiceGeneratePngFromCart(){
+      if(window.CATALOG_ADMIN_MODE_ACTIVE!==true) return;
       const dialog=document.createElement("div");
       dialog.id="inventoryPreviewDialog";
       dialog.setAttribute("role","dialog");
@@ -1015,6 +1017,7 @@
         return;
       }
       save.addEventListener("click",async()=>{
+        if(window.CATALOG_ADMIN_MODE_ACTIVE!==true){status.textContent="La salida de inventario está disponible solo en modo administrador.";return;}
         save.disabled=true;
         let copyPromise;
         try{
@@ -1424,7 +1427,7 @@
     let invoiceCopying = false;
     if(cartInvoiceBtn){
       cartInvoiceBtn.addEventListener("click", async ()=>{
-        if(invoiceCopying) return;
+        if(invoiceCopying || window.CATALOG_ADMIN_MODE_ACTIVE!==true) return;
         invoiceCopying = true;
         const previousText = cartInvoiceBtn.textContent;
         cartInvoiceBtn.disabled = true;

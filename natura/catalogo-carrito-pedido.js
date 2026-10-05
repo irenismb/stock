@@ -654,8 +654,9 @@
     function invoiceLoadImage(src){
       return new Promise((resolve, reject)=>{
         const img = new Image();
-        img.onload = ()=>resolve(img);
-        img.onerror = reject;
+        const timer = setTimeout(()=>reject(new Error("Tiempo agotado al cargar el logo")), 5000);
+        img.onload = ()=>{clearTimeout(timer);resolve(img);};
+        img.onerror = error=>{clearTimeout(timer);reject(error);};
         img.decoding = "async";
         img.src = src;
       });
@@ -944,7 +945,6 @@
 
     async function invoiceGeneratePngFromCart(){
       invoiceValidateInput();
-      const {blob}=await invoiceBuildPng();
       const dialog=document.createElement("dialog");
       dialog.setAttribute("aria-label","Vista previa de la salida de inventario");
       dialog.style.cssText="width:min(92vw,760px);max-height:92vh;padding:18px;border:0;border-radius:18px;background:#fffdfc;color:#352f2f;box-sizing:border-box;";
@@ -952,8 +952,9 @@
       title.textContent="Vista previa de la salida de inventario";
       title.style.cssText="margin:0 0 12px;font-size:22px;";
       const image=document.createElement("img");
-      const url=URL.createObjectURL(blob);
-      image.src=url;image.alt="Salida de inventario";
+      let url=null;
+      image.alt="Salida de inventario";
+      image.hidden=true;
       image.style.cssText="display:block;width:100%;max-height:65vh;object-fit:contain;";
       const actions=document.createElement("div");
       actions.style.cssText="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;";
@@ -963,8 +964,22 @@
       close.type="button";close.className="btn-ghost";close.textContent="Cerrar";
       const status=document.createElement("p");
       status.setAttribute("role","status");status.style.cssText="margin:10px 0 0;text-align:center;";
+      save.disabled=true;
+      status.textContent="Generando vista previa…";
       close.addEventListener("click",()=>dialog.close());
-      dialog.addEventListener("close",()=>{URL.revokeObjectURL(url);dialog.remove();},{once:true});
+      dialog.addEventListener("close",()=>{if(url) URL.revokeObjectURL(url);dialog.remove();},{once:true});
+      actions.append(save,close);dialog.append(title,image,actions,status);
+      document.body.appendChild(dialog);dialog.showModal();
+      let blob;
+      try{
+        ({blob}=await invoiceBuildPng());
+        if(!dialog.open) return;
+        url=URL.createObjectURL(blob);image.src=url;image.hidden=false;
+        status.textContent="";save.disabled=false;
+      }catch(error){
+        if(dialog.open) status.textContent=String(error?.message || "No se pudo generar la vista previa.");
+        return;
+      }
       save.addEventListener("click",async()=>{
         save.disabled=true;
         let copyPromise;
@@ -980,8 +995,6 @@
           : copied ? "Imagen copiada; no se pudo descargar." : "No se pudo copiar ni descargar la imagen.";
         save.disabled=false;
       });
-      actions.append(save,close);dialog.append(title,image,actions,status);
-      document.body.appendChild(dialog);dialog.showModal();
     }
 
     function viaTypeLabel(tipo){

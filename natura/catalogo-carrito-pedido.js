@@ -944,8 +944,8 @@
     }
 
     async function invoiceGeneratePngFromCart(){
-      invoiceValidateInput();
       const dialog=document.createElement("dialog");
+      dialog.id="inventoryPreviewDialog";
       dialog.setAttribute("aria-label","Vista previa de la salida de inventario");
       dialog.style.cssText="width:min(92vw,760px);max-height:92vh;padding:18px;border:0;border-radius:18px;background:#fffdfc;color:#352f2f;box-sizing:border-box;";
       const title=document.createElement("h2");
@@ -966,10 +966,26 @@
       status.setAttribute("role","status");status.style.cssText="margin:10px 0 0;text-align:center;";
       save.disabled=true;
       status.textContent="Generando vista previa…";
+      const cartWasOpen=cartModal.classList.contains("open");
+      const previousFocus=document.activeElement;
       close.addEventListener("click",()=>dialog.close());
-      dialog.addEventListener("close",()=>{if(url) URL.revokeObjectURL(url);dialog.remove();},{once:true});
+      dialog.addEventListener("close",()=>{
+        if(url) URL.revokeObjectURL(url);
+        dialog.remove();
+        if(cartWasOpen){
+          cartModal.classList.add("open");
+          cartModal.setAttribute("aria-hidden","false");
+          focusElement(previousFocus);
+        }
+      },{once:true});
       actions.append(save,close);dialog.append(title,image,actions,status);
-      document.body.appendChild(dialog);dialog.showModal();
+      document.body.appendChild(dialog);
+      dialog.showModal();
+      if(cartWasOpen){
+        cartModal.classList.remove("open");
+        cartModal.setAttribute("aria-hidden","true");
+      }
+      close.focus();
       let blob;
       try{
         ({blob}=await invoiceBuildPng());
@@ -1636,6 +1652,7 @@
     if(cartClientBtn) cartClientBtn.addEventListener("click", openClientModal);
 
     document.addEventListener("keydown", (e)=>{
+      if(document.querySelector("dialog[open]")) return;
       const activeModal = getOpenModal();
       if(activeModal && e.key === "Tab"){
         trapFocusInModal(activeModal, e);

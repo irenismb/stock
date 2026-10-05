@@ -1689,6 +1689,48 @@ function initCollageFeature(){
     if(!file) throw new Error("No se pudo generar el collage.");
     return file;
   }
+  function showCartImagePreview(file,mode){
+    const dialog=document.createElement("dialog");
+    dialog.setAttribute("aria-label",mode==="ficha" ? "Vista previa de la ficha" : "Vista previa del collage");
+    dialog.style.cssText="width:min(92vw,760px);max-height:92vh;padding:18px;border:0;border-radius:18px;background:#fffdfc;color:#352f2f;box-sizing:border-box;";
+    const title=document.createElement("h2");
+    title.textContent=mode==="ficha" ? "Vista previa de la ficha" : "Vista previa del collage";
+    title.style.cssText="margin:0 0 12px;font-size:22px;";
+    const image=document.createElement("img");
+    const url=URL.createObjectURL(file);
+    image.src=url;
+    image.alt=title.textContent;
+    image.style.cssText="display:block;width:100%;max-height:65vh;object-fit:contain;";
+    const actions=document.createElement("div");
+    actions.style.cssText="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;";
+    const save=document.createElement("button");
+    save.type="button"; save.className="btn"; save.textContent="Copiar y descargar";
+    const close=document.createElement("button");
+    close.type="button"; close.className="btn-ghost"; close.textContent="Cerrar";
+    const message=document.createElement("p");
+    message.setAttribute("role","status");
+    message.style.cssText="margin:10px 0 0;text-align:center;";
+    close.addEventListener("click",()=>dialog.close());
+    dialog.addEventListener("close",()=>{URL.revokeObjectURL(url);dialog.remove();},{once:true});
+    save.addEventListener("click",async()=>{
+      save.disabled=true;
+      let copyPromise;
+      try{copyPromise=copyPreparedPngFile(file).then(()=>true,()=>false);}
+      catch(_){copyPromise=Promise.resolve(false);}
+      let downloaded=true;
+      try{downloadPreparedPngFile(file,file.name);}catch(_){downloaded=false;}
+      const copied=await copyPromise;
+      message.textContent=copied && downloaded
+        ? "Imagen copiada y descargada."
+        : downloaded ? "Imagen descargada; el navegador no permitió copiarla al portapapeles."
+        : copied ? "Imagen copiada; no se pudo descargar." : "No se pudo copiar ni descargar la imagen.";
+      save.disabled=false;
+    });
+    actions.append(save,close);
+    dialog.append(title,image,actions,message);
+    document.body.appendChild(dialog);
+    dialog.showModal();
+  }
   async function exportCartImage(mode,product,button){
     if(cartExportBusy || !cartItemsArray().length) return;
     if(mode==="ficha" && (!product || !cart[String(product.id)])) return;
@@ -1697,23 +1739,11 @@ function initCollageFeature(){
     button.disabled=true;
     button.textContent="Generando…";
     const status=document.getElementById("cartImageStatus");
-    if(status) status.textContent="Generando imagen cuadrada…";
-    const filePromise=makeCartExportFile(mode,product);
-    let copyPromise;
+    if(status) status.textContent="Generando vista previa…";
     try{
-      if(!navigator.clipboard?.write || !window.ClipboardItem) throw new Error("Portapapeles no disponible");
-      copyPromise=navigator.clipboard.write([new ClipboardItem({"image/png":filePromise.then(file=>file)})])
-        .then(()=>true,()=>false);
-    }catch(_){copyPromise=Promise.resolve(false);}
-    try{
-      const file=await filePromise;
-      let downloaded=true;
-      try{downloadPreparedPngFile(file,file.name);}catch(_){downloaded=false;}
-      const copied=await copyPromise;
-      if(status) status.textContent=copied && downloaded
-        ? "Imagen copiada y descargada."
-        : downloaded ? "Imagen descargada; el navegador no permitió copiarla al portapapeles."
-        : copied ? "Imagen copiada; no se pudo descargar." : "No se pudo copiar ni descargar la imagen.";
+      const file=await makeCartExportFile(mode,product);
+      showCartImagePreview(file,mode);
+      if(status) status.textContent="";
     }catch(error){
       if(status) status.textContent="No se pudo generar la imagen. Inténtalo nuevamente.";
       console.error("No se pudo generar la imagen del carrito.",error);

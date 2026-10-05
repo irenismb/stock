@@ -589,9 +589,9 @@
 
     function invoiceValidateInput(){
       const cartItems = cartItemsArray();
-      if(!cartItems.length) throw new Error("Agrega al menos un producto al carrito antes de generar el resumen.");
+      if(!cartItems.length) throw new Error("Agrega al menos un producto al carrito antes de generar la salida de inventario.");
       if(!shouldShowProductPrices()){
-        throw new Error("No se puede generar un resumen de pedido con los precios ocultos.");
+        throw new Error("No se puede generar una salida de inventario con los precios ocultos.");
       }
 
       const items = cartItems.map(it=>{
@@ -691,7 +691,7 @@
       // y las filas cortas ocupan menos espacio, por lo que caben más productos.
       const measureCanvas = document.createElement("canvas");
       const measureCtx = measureCanvas.getContext("2d");
-      if(!measureCtx) throw new Error("No fue posible preparar el resumen PNG.");
+      if(!measureCtx) throw new Error("No fue posible preparar la salida de inventario PNG.");
       measureCtx.font = "600 15px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       const preparedRows = items.map(it=>{
         const nameLines = invoiceWrapLines(measureCtx, String(it.name || ""), articleTextWidth, 4);
@@ -710,7 +710,7 @@
       canvas.width = width;
       canvas.height = height;
       const ctx = canvas.getContext("2d", { alpha:false });
-      if(!ctx) throw new Error("No fue posible preparar el resumen PNG.");
+      if(!ctx) throw new Error("No fue posible preparar la salida de inventario PNG.");
 
       const mauve = "#8f4963";
       const rose = "#c54e73";
@@ -743,10 +743,9 @@
       ctx.fillText("IRENISMB STOCK NATURA", 195, 76);
       ctx.fillStyle = ink;
       ctx.font = "500 21px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Resumen de pedido", 195, 111);
       ctx.fillStyle = mauve;
       ctx.font = "800 20px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("Natura · AVON", 195, 143);
+      ctx.fillText("Natura · AVON", 195, 111);
 
       ctx.fillStyle = softRose;
       ctx.strokeStyle = "#e7a7ba";
@@ -756,7 +755,7 @@
       ctx.fillStyle = rose;
       ctx.font = "900 22px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("RESUMEN DE PEDIDO", 918, 103);
+      ctx.fillText("SALIDA DE INVENTARIO", 918, 103);
       ctx.textAlign = "left";
 
       // Datos generales compactos.
@@ -868,7 +867,7 @@
       ctx.fillStyle = muted;
       ctx.font = "500 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       const noteLines = [
-        "Resumen comercial del pedido.",
+        "Detalle de los productos seleccionados.",
         "Valores expresados en pesos colombianos.",
         "Gracias por confiar en tu consultora de belleza."
       ];
@@ -878,7 +877,7 @@
       invoiceRoundRect(ctx, 565, summaryTop, 482, summaryHeight, 18); ctx.fill(); ctx.stroke();
       ctx.fillStyle = gold;
       ctx.font = "900 16px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
-      ctx.fillText("RESUMEN DEL PEDIDO", 595, summaryTop+36);
+      ctx.fillText("TOTALES", 595, summaryTop+36);
       ctx.font = "600 14px system-ui, -apple-system, Segoe UI, Arial, sans-serif";
       ctx.fillStyle = ink;
       ctx.fillText("Subtotal productos",595,summaryTop+68);
@@ -920,7 +919,7 @@
 
     function invoiceCanvasToBlob(canvas){
       return new Promise((resolve,reject)=>{
-        canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("No fue posible convertir el resumen a PNG.")), "image/png");
+        canvas.toBlob(blob=> blob ? resolve(blob) : reject(new Error("No fue posible convertir la salida de inventario a PNG.")), "image/png");
       });
     }
 
@@ -931,11 +930,11 @@
     }
 
     function invoiceDownloadPng(blob){
-      if(!blob) throw new Error("No fue posible preparar la descarga del resumen.");
+      if(!blob) throw new Error("No fue posible preparar la descarga dla salida de inventario.");
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `resumen-pedido-${invoiceDateColombia()}.png`;
+      link.download = `salida-inventario-${invoiceDateColombia()}.png`;
       link.style.display = "none";
       document.body.appendChild(link);
       link.click();
@@ -975,8 +974,8 @@
       }
 
       const copied = await copyPromise;
-      if(copyError) console.error("No se pudo copiar el resumen PNG.", copyError);
-      if(downloadError) console.error("No se pudo descargar el resumen PNG.", downloadError);
+      if(copyError) console.error("No se pudo copiar la salida de inventario PNG.", copyError);
+      if(downloadError) console.error("No se pudo descargar la salida de inventario PNG.", downloadError);
 
       return {copied, downloaded:!downloadError};
     }
@@ -1378,26 +1377,26 @@
         invoiceCopying = true;
         const previousText = cartInvoiceBtn.textContent;
         cartInvoiceBtn.disabled = true;
-        cartInvoiceBtn.textContent = "Generando resumen...";
+        cartInvoiceBtn.textContent = "Generando salida de inventario...";
         try{
           saveClientToLS();
           saveAddressToLS();
           saveShippingToLS();
           const result = await invoiceGeneratePngFromCart();
           if(result.copied && result.downloaded){
-            cartInvoiceBtn.textContent = "Resumen generado";
+            cartInvoiceBtn.textContent = "Salida generada";
           }else if(result.downloaded){
-            cartInvoiceBtn.textContent = "Resumen descargado";
-            alert("El resumen se descargó, pero este navegador no permitió copiarlo al portapapeles.");
+            cartInvoiceBtn.textContent = "Salida descargada";
+            alert("La salida de inventario se descargó, pero este navegador no permitió copiarlo al portapapeles.");
           }else if(result.copied){
-            cartInvoiceBtn.textContent = "Resumen copiado";
-            alert("El resumen se copió, pero el navegador no permitió descargarlo.");
+            cartInvoiceBtn.textContent = "Salida copiada";
+            alert("La salida de inventario se copió, pero el navegador no permitió descargarlo.");
           }else{
-            throw new Error("No se pudo copiar ni descargar el resumen.");
+            throw new Error("No se pudo copiar ni descargar la salida de inventario.");
           }
         }catch(err){
-          console.error("No se pudo generar el resumen PNG:", err);
-          alert(String(err?.message || "No se pudo generar el resumen PNG."));
+          console.error("No se pudo generar la salida de inventario PNG:", err);
+          alert(String(err?.message || "No se pudo generar la salida de inventario PNG."));
         }finally{
           setTimeout(()=>{
             invoiceCopying = false;

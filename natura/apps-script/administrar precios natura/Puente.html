@@ -173,7 +173,7 @@
               error:error && error.message ? error.message : String(error || "No se pudo guardar la configuración.")
             });
           })
-          .actualizarConfiguracionWeb(mensaje.clave, Boolean(mensaje.activado));
+          .actualizarConfiguracionWeb(mensaje.clave, mensaje.clave === "ORDEN_PRODUCTOS" ? mensaje.activado : Boolean(mensaje.activado));
       }
     }
 

@@ -617,6 +617,7 @@
     });
   }
   sort.addEventListener("change", syncOrder);
+  window.addEventListener("irenismb:product-order-change",syncOrder);
   menu.addEventListener("toggle", syncOrder);
   syncOrder();
   const style = document.createElement("style");

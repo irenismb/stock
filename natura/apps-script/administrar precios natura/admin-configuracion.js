@@ -21,6 +21,7 @@ function obtenerConfiguracionPublicaWeb() {
 }
 function actualizarConfiguracionWeb(clave, activado) {
   const claveSegura = String(clave == null ? "" : clave).trim().toUpperCase();
+  if (claveSegura === "ORDEN_PRODUCTOS") return actualizarOrdenProductosWeb(activado);
   if (CONFIG_KEYS.indexOf(claveSegura) === -1) {
     throw new Error("La clave de configuración no es válida.");
   }
@@ -71,6 +72,7 @@ function leerValoresConfiguracion_() {
     );
     valores[clave] = guardado || CONFIG_DEFAULTS[clave];
   });
+  valores.ORDEN_PRODUCTOS = normalizarOrdenProductos_(propiedades.getProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS")) || "price_asc";
   valores[NAVIGATION_ORDER_KEY] = normalizarOrdenNavegacion_(
     propiedades.getProperty(CONFIG_PROPERTY_PREFIX + NAVIGATION_ORDER_KEY)
   ) || NAVIGATION_ORDER_DEFAULT;
@@ -210,4 +212,21 @@ function normalizarBooleanoConfiguracion_(valor) {
   if (estado === "ACTIVADO") return true;
   if (estado === "DESACTIVADO") return false;
   return null;
+}
+
+function normalizarOrdenProductos_(valor) {
+  const orden = String(valor || "").trim();
+  return ["price_asc", "price_desc", "name_asc", "name_desc"].indexOf(orden) !== -1 ? orden : "";
+}
+function actualizarOrdenProductosWeb(orden) {
+  const seguro = normalizarOrdenProductos_(orden);
+  if (!seguro) throw new Error("El orden de productos no es válido.");
+  const bloqueo = LockService.getScriptLock();
+  bloqueo.waitLock(30000);
+  try {
+    const propiedades = PropertiesService.getScriptProperties();
+    propiedades.setProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS", seguro);
+    if (propiedades.getProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS") !== seguro) throw new Error("No se pudo confirmar el orden.");
+    return {ok:true, clave:"ORDEN_PRODUCTOS", estado:seguro, valores:leerValoresConfiguracion_()};
+  } finally { bloqueo.releaseLock(); }
 }

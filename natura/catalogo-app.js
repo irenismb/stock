@@ -423,6 +423,11 @@
           continue;
         }
 
+        if(key==="ORDEN_PRODUCTOS"){
+          changed=window.applyCatalogDefaultProductOrder?.(rawState)||changed;
+          continue;
+        }
+
         const state = parseRemoteBoolean(rawState);
         if(state === null || !REMOTE_BOOLEAN_CONTROL_KEYS.has(key)) continue;
         if(INTERRUPTORES[key] !== state){
@@ -1877,6 +1882,25 @@
     const catSel = document.getElementById("cat");
     const brandSel = document.getElementById("brand");
     const sortSel = document.getElementById("sort");
+    const PRODUCT_ORDER_STORAGE_KEY="irenismb_product_order_v1";
+    const PRODUCT_ORDER_MODES=["price_asc","price_desc","name_asc","name_desc"];
+    let catalogDefaultProductOrder="price_asc";
+    let productOrderChosen=false;
+    try{
+      const saved=localStorage.getItem(PRODUCT_ORDER_STORAGE_KEY);
+      if(PRODUCT_ORDER_MODES.includes(saved)){sortSel.value=saved;productOrderChosen=true;}
+      else if(sortSel) sortSel.value=catalogDefaultProductOrder;
+    }catch(_){if(sortSel) sortSel.value=catalogDefaultProductOrder;}
+    window.getCatalogDefaultProductOrder=()=>catalogDefaultProductOrder;
+    window.applyCatalogDefaultProductOrder=value=>{
+      if(!PRODUCT_ORDER_MODES.includes(value)) return false;
+      catalogDefaultProductOrder=value;
+      if(productOrderChosen || !sortSel || sortSel.value===value) return false;
+      sortSel.value=value;
+      window.dispatchEvent(new Event("irenismb:product-order-change"));
+      return true;
+    };
+
     const qInp = document.getElementById("q");
     const grid = document.getElementById("grid");
     const countEl = document.getElementById("count");
@@ -2254,7 +2278,7 @@
       selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
       setNavigationFromRawState({section,category,subcategory,public:publicValue,line});
       validateNavigationStateAgainstProducts();
-      if(sort && sortSel) sortSel.value = sort;
+      if(PRODUCT_ORDER_MODES.includes(sort) && sortSel){sortSel.value=sort;productOrderChosen=true;}
     }
 
     let _urlTimer = null;
@@ -2339,7 +2363,7 @@
     function applyCatalogReloadViewState(snapshot){
       if(!snapshot) return;
       if(qInp) qInp.value=String(snapshot.q || "");
-      if(sortSel) sortSel.value=String(snapshot.sort || "");
+      if(sortSel) sortSel.value=PRODUCT_ORDER_MODES.includes(snapshot.sort) ? snapshot.sort : catalogDefaultProductOrder;
       selectedSuggestionTerms=uniqueTerms(Array.isArray(snapshot.tags)?snapshot.tags:[]);
       setNavigationFromRawState({
         section:String(snapshot.section || snapshot.audience || ""),
@@ -3483,7 +3507,11 @@ function bindGridActions(){
 }
 
 function bindFilters(){
-  if(sortSel) sortSel.addEventListener("change",render);
+  if(sortSel) sortSel.addEventListener("change",()=>{
+    productOrderChosen=true;
+    try{localStorage.setItem(PRODUCT_ORDER_STORAGE_KEY,sortSel.value);}catch(_){}
+    render();
+  });
   qInp.addEventListener("input",render);
   wordChips?.addEventListener("click",e=>{
     const btn=e.target.closest("[data-role='toggle-term']");

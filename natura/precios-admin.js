@@ -10,6 +10,7 @@
   let admin=false, adminMissingPriceOnly=false, adminHideHidden=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
   let adminSection="catalogo", navigationOrderDraft=[], navigationDragLevel="";
   let capabilities=new Set(["precio"]);
+  let bridgePopup=null, needsPopup=false;
   const requests=new Map();
   const CONFIG_ITEMS=[
     {key:"REGISTRAR_VISITAS_PROPIAS",label:"Registrar mis propias visitas",help:"Incluye o excluye tus navegadores conocidos del registro de visitas y avisos."},
@@ -237,7 +238,8 @@
   window.CATALOG_ADMIN_SECTION=adminSection;
   function syncUI(){btn.hidden=false;btn.disabled=connecting;btn.title=admin?"Salir del modo administrador":"Administrar catálogo";if(!admin)return;syncAdminSectionUI(false)}
 
-  function toggleAdmin(){if(admin){stopAdmin();return} if(port&&bridgeFrame?.isConnected){startAdmin();return} connect()}
+  function bridgeAvailable(){return Boolean(bridgeFrame?.isConnected||(bridgePopup&&!bridgePopup.closed))}
+  function toggleAdmin(){if(admin){stopAdmin();return} if(port&&bridgeAvailable()){startAdmin();return} connect()}
   function connect(){
     if(connecting)return;
     const catalogOrigin=String(window.location.origin||"").trim();
@@ -253,6 +255,10 @@
     connecting=true;openAfterConnect=true;btn.textContent="Conectando…";pendingChannel=randomChannel();
     closeBridge({keepButton:true,keepConnecting:true,keepPending:true});
     const u=new URL(endpoint);u.searchParams.set("modo","puente");u.searchParams.set("canal",pendingChannel);u.searchParams.set("origen",catalogOrigin);
+    if(needsPopup){
+      bridgePopup=window.open(u.toString(),"natura_admin_google","popup,width=560,height=640");
+      if(!bridgePopup){connecting=false;openAfterConnect=false;pendingChannel="";btn.textContent="Conectar con Google";alert("Permite la ventana de Google para conectar la administración y pulsa Admin de nuevo.");return}
+    }else{
     bridgeFrame=document.createElement("iframe");
     bridgeFrame.title="Conexión segura con Google";
     bridgeFrame.tabIndex=-1;
@@ -260,12 +266,14 @@
     bridgeFrame.style.cssText="position:fixed!important;left:-10000px!important;top:-10000px!important;width:1px!important;height:1px!important;border:0!important;opacity:0!important;pointer-events:none!important;";
     bridgeFrame.src=u.toString();
     document.body.appendChild(bridgeFrame);
+    }
     clearTimeout(connectTimer);
     connectTimer=setTimeout(()=>{
       if(!connecting)return;
-      connecting=false;openAfterConnect=false;pendingChannel="";btn.textContent="Administrar";closeBridge({keepButton:true});
-      alert("No fue posible validar la administración con Google en segundo plano. Si estás en local, verifica que abriste el catálogo desde localhost o 127.0.0.1 (no como file://). También comprueba que tienes la sesión de Google iniciada y que esta aplicación ya está autorizada.");
-    },15000);
+      const wasPopup=Boolean(bridgePopup);
+      connecting=false;openAfterConnect=false;pendingChannel="";needsPopup=true;btn.textContent="Conectar con Google";closeBridge({keepButton:true});
+      alert(wasPopup?"La conexión con Google no se completó. Pulsa Admin y termina el acceso con una cuenta que tenga permisos sobre el inventario y el registro de pedidos.":"Google no pudo conectar la administración en segundo plano. Pulsa Admin de nuevo para conectar en una ventana de Google; mantenla abierta mientras administras.");
+    },needsPopup?120000:15000);
   }
   function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
   function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
@@ -597,9 +605,9 @@
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
   function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}
 
-  function request(data){return new Promise((resolve,reject)=>{if(!port||!bridgeFrame?.isConnected){reject(new Error("La conexión con Google se cerró."));return}const prefix=data.tipo?.includes("prospect")?"pros":data.tipo==="actualizar-visibilidad"?"vis":(data.tipo?.includes("configuracion")||data.tipo?.includes("orden-navegacion"))?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
+  function request(data){return new Promise((resolve,reject)=>{if(!port||!bridgeAvailable()){reject(new Error("La conexión con Google se cerró. Pulsa Admin para reconectar y mantén abierta la ventana de Google."));return}const prefix=data.tipo?.includes("prospect")?"pros":data.tipo==="actualizar-visibilidad"?"vis":(data.tipo?.includes("configuracion")||data.tipo?.includes("orden-navegacion"))?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
   window.CATALOG_ADMIN_REQUEST=request;
   window.CATALOG_ADMIN_CAPABILITIES=capabilities;
   function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado"||m.tipo==="prospectos-obtenidos"||m.tipo==="prospecto-registrado"||m.tipo==="prospecto-actualizado")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
-  function closeBridge(options={}){clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;try{bridgeFrame?.remove()}catch(_){}bridgeFrame=null;if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton&&!admin)btn.textContent="Administrar"}
+  function closeBridge(options={}){clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;try{bridgeFrame?.remove()}catch(_){}bridgeFrame=null;try{bridgePopup?.close()}catch(_){}bridgePopup=null;if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton&&!admin)btn.textContent="Administrar"}
 })();

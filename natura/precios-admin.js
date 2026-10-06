@@ -84,8 +84,9 @@
   window.CATALOG_ADMIN_HIDE_HIDDEN=false;
   window.CATALOG_VISIBILITY_RULES=rules;
   window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED=false;
-  // La exportación comercial siempre usa la visibilidad pública, incluso en Admin.
+  // Lectores de visibilidad para el catálogo y las opciones de exportación.
   window.isCatalogProductPublic=p=>!!p&&norm(p.commercialStatus)!=="no a la venta"&&!isHidden(p);
+  window.isCatalogProductHidden=p=>!!p&&isHidden(p);
   window.filterVisibleProducts=list=>{
     const a=Array.isArray(list)?list:[];
     if(window.CATALOG_ADMIN_MODE_ACTIVE){

@@ -1721,16 +1721,6 @@
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
       const stockVal = hasKnownStock ? p.stock : 0;
       const parts = [];
-      const pathParts=[
-        navigationSectionForProduct(p),
-        navigationCategoryForProduct(p),
-        navigationSubcategoryForProduct(p),
-        navigationPublicForProduct(p),
-        navigationLineForProduct(p)
-      ].filter(Boolean);
-      for(const value of pathParts){
-        if(!parts.some(existing=>cleanNavKey(existing)===cleanNavKey(value))) parts.push(value);
-      }
       if(p.fragranceFamily && !parts.some(existing=>cleanNavKey(existing)===cleanNavKey(p.fragranceFamily))) parts.push(p.fragranceFamily);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
@@ -3239,7 +3229,7 @@ function refreshCardUI(card,p){
   const row=card.querySelector(".row");
   const actions=card.querySelector(".actions");
   const meta=card.querySelector(".meta");
-  if(meta) meta.hidden=false;
+  if(meta) meta.hidden=!String(meta.textContent||"").trim();
   if(row) row.hidden=false;
   if(actions) actions.hidden=false;
   const enforce=shouldEnforceStockLimits();
@@ -3248,7 +3238,7 @@ function refreshCardUI(card,p){
   const qtyPill=card.querySelector('[data-role="qty"]');
   const decBtn=card.querySelector('button[data-act="dec"]');
   const incBtn=card.querySelector('button[data-act="inc"]');
-  if(qtyPill){qtyPill.textContent=q>0?`${q} en carrito`:"No agregado al carrito";qtyPill.classList.toggle("has-items",q>0);}
+  if(qtyPill){qtyPill.hidden=q<=0;qtyPill.textContent=q>0?`${q} en carrito`:"";qtyPill.classList.toggle("has-items",q>0);}
   if(decBtn) decBtn.disabled=q<=0;
   const hasKnownStock=Number.isFinite(p.stock)&&p.stock>=0;
   const maxStock=hasKnownStock?p.stock:null;
@@ -3279,17 +3269,7 @@ function makeCard(p){
   setSearchHighlightedText(metaEl,metaText);
   const description=String(p?.description||"").trim();
   setSearchHighlightedText(descriptionEl,description);
-  descriptionEl.hidden=true;
-  if(description){
-    card.classList.add("description-collapsible");
-    const toggle=document.createElement("button");
-    toggle.type="button";
-    toggle.className="description-toggle";
-    toggle.dataset.descriptionToggle="";
-    toggle.textContent="Descripción";
-    toggle.setAttribute("aria-expanded","false");
-    descriptionEl.insertAdjacentElement("afterend",toggle);
-  }
+  descriptionEl.hidden=!description;
   priceEl.textContent=shouldShowProductPrices()?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"";
   if(p?.isGiftGalleryImage){
     card.classList.add("gift-gallery-card");
@@ -3298,13 +3278,12 @@ function makeCard(p){
     imgBox.setAttribute("aria-label","Imagen de regalo para toda ocasión");
   }
   if(!p.isGiftGalleryImage){
-    imgBox.style.position="relative";
     const fichaButton=document.createElement("button");
     fichaButton.type="button";
     fichaButton.className="btn-ghost product-ficha-btn";
     fichaButton.textContent="Crear ficha";
     fichaButton.setAttribute("aria-label","Crear ficha de "+productName);
-    fichaButton.style.cssText="position:absolute;right:8px;bottom:8px;z-index:3;padding:7px 10px;min-height:34px;border-radius:10px;font-size:12px;";
+
     const fichaStatus=document.createElement("p");
     fichaStatus.setAttribute("role","status");
     fichaStatus.style.cssText="margin:0;padding:0 12px;font-size:12px;";
@@ -3312,8 +3291,11 @@ function makeCard(p){
       event.preventDefault();event.stopPropagation();
       window.createProductFicha?.(productById.get(String(p.id))||p,fichaButton,fichaStatus);
     });
-    imgBox.appendChild(fichaButton);
-    imgBox.insertAdjacentElement("afterend",fichaStatus);
+    const fichaRow=document.createElement("div");
+    fichaRow.className="product-description-actions";
+    descriptionEl.insertAdjacentElement("afterend",fichaRow);
+    fichaRow.appendChild(fichaButton);
+    fichaRow.insertAdjacentElement("afterend",fichaStatus);
   }
   refreshCardUI(card,p);
   return card;
@@ -3473,17 +3455,6 @@ function bindGridActions(){
   grid.addEventListener("click",e=>{
     const clear=e.target.closest("[data-clear-search]");
     if(clear){uxClearAllFilters();return;}
-    const desc=e.target.closest("[data-description-toggle]");
-    if(desc){
-      const card=desc.closest(".card");
-      if(!card) return;
-      const expanded=card.classList.toggle("description-expanded");
-      const descriptionEl=card.querySelector(".description");
-      if(descriptionEl) descriptionEl.hidden=!expanded;
-      desc.textContent=expanded?"Ocultar descripción":"Descripción";
-      desc.setAttribute("aria-expanded",expanded?"true":"false");
-      return;
-    }
     const adBtn=e.target.closest("[data-ad-open]");
     if(adBtn){
       const src=String(adBtn.getAttribute("data-ad-open")||"").trim();

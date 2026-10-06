@@ -1322,200 +1322,88 @@ function initCollageFeature(){
   }
 
   async function buildMarketplacePresentationCanvas(p){
-    const [loadedProductImage,loadedLogoImage]=await Promise.all([
-      collageLoadCanvasImage(p),
-      collageLoadCanvasImage({ docsImageUrl:COMPANY_LOGO })
+    await document.fonts?.ready;
+    const [loadedProductImage,loadedLogoImage,loadedContactIcon]=await Promise.all([
+      collageLoadCanvasImage(p),collageLoadCanvasImage({docsImageUrl:COMPANY_LOGO}),
+      catalogPdfLoadImage("logos/whatsapp.webp")
     ]);
-    const productImage=marketplacePresentationCanvasSafeImage(loadedProductImage,'imagen del producto');
-    const logoImage=marketplacePresentationCanvasSafeImage(loadedLogoImage,'logo');
-
-    const canvas=document.createElement('canvas');
-    canvas.width=1200;
-    canvas.height=1200;
-    const ctx=canvas.getContext('2d');
-    const W=canvas.width;
-    const H=canvas.height;
-
-    const dark='#2f282a';
-    const mauveDark='#8f3f59';
-    const muted='#6f6365';
-    const gold='#b9954f';
-    const border='#ead8d3';
-    const roseSoft='#f9e7e8';
-
-    const bg=ctx.createLinearGradient(0,0,W,H);
-    bg.addColorStop(0,'#fffdf9');
-    bg.addColorStop(.5,'#fffaf7');
-    bg.addColorStop(1,'#f8eeeb');
-    ctx.fillStyle=bg;
-    ctx.fillRect(0,0,W,H);
-    ctx.textBaseline='top';
-
-    ctx.fillStyle='rgba(243,205,207,.28)';
-    ctx.beginPath();
-    ctx.moveTo(W-280,0);
-    ctx.bezierCurveTo(W-185,95,W-112,73,W,204);
-    ctx.lineTo(W,0);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle='rgba(244,215,207,.24)';
-    ctx.beginPath();
-    ctx.moveTo(0,H-210);
-    ctx.bezierCurveTo(135,H-120,165,H-60,330,H);
-    ctx.lineTo(0,H);
-    ctx.closePath();
-    ctx.fill();
-    presentationDrawBotanicalAccent(ctx,14,52,.78,1,'rgba(194,143,129,.14)');
-    presentationDrawBotanicalAccent(ctx,W-14,H-160,.76,-1,'rgba(194,143,129,.14)');
-
-    const drawPanel=(x,y,w,h,r=22)=>{
-      ctx.save();
-      ctx.shadowColor='rgba(113,73,80,.12)';
-      ctx.shadowBlur=18;
-      ctx.shadowOffsetY=7;
-      collageCanvasRoundRect(ctx,x,y,w,h,r);
-      ctx.fillStyle='rgba(255,255,255,.94)';
-      ctx.fill();
-      ctx.restore();
-      collageCanvasRoundRect(ctx,x,y,w,h,r);
-      ctx.strokeStyle=border;
-      ctx.lineWidth=1.4;
-      ctx.stroke();
+    const productImage=marketplacePresentationCanvasSafeImage(loadedProductImage,"imagen del producto");
+    const logoImage=marketplacePresentationCanvasSafeImage(loadedLogoImage,"logo");
+    const contactIcon=marketplacePresentationCanvasSafeImage(loadedContactIcon,"icono de contacto");
+    const canvas=document.createElement("canvas");canvas.width=canvas.height=1200;
+    const ctx=canvas.getContext("2d");
+    if(!ctx)throw new Error("No fue posible preparar la ficha.");
+    const W=1200,H=1200,margin=32,inner=W-margin*2;
+    const dark="#2f282a",mauve="#8f3f59",muted="#6f6365",gold="#b9954f",rose="#f9e7e8";
+    const font=(size,bold=false)=>{ctx.font=`${bold?700:400} ${size}px Calibri, Carlito, Arial, sans-serif`;};
+    const wrap=(text,width,size,bold=false)=>{font(size,bold);return catalogPdfWrap(ctx,text,width).map(line=>line.text);};
+    const draw=(lines,x,y,size,lineHeight,bold=false,color=dark)=>{
+      font(size,bold);ctx.fillStyle=color;
+      for(const line of lines){ctx.fillText(line,x,y);y+=lineHeight;}return y;
     };
+    const rule=y=>{ctx.strokeStyle=gold;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(margin,y);ctx.lineTo(W-margin,y);ctx.stroke();};
+    ctx.fillStyle="#fffdfb";ctx.fillRect(0,0,W,H);ctx.textBaseline="top";
+    marketplacePresentationDrawContainedImage(ctx,logoImage,margin,24,108,108,0);
+    font(38,true);ctx.fillStyle=mauve;ctx.fillText("IRENISMB STOCK NATURA",162,37);
+    font(25);ctx.fillStyle=muted;ctx.fillText("Natura & AVON · Santa Marta",162,88);
+    if(contactIcon){ctx.save();ctx.beginPath();ctx.arc(895,64,17,0,Math.PI*2);ctx.clip();ctx.drawImage(contactIcon,878,47,34,34);ctx.restore();}
+    font(27,true);ctx.fillStyle=mauve;ctx.fillText("304 208 8961",922,51);
+    font(19);ctx.fillStyle=muted;ctx.fillText("Envíos a toda Colombia",878,96);
+    rule(148);
 
-    const header={x:32,y:42,w:W-64,h:164};
-    drawPanel(header.x,header.y,header.w,header.h,22);
-    marketplacePresentationDrawContainedImage(ctx,logoImage,60,63,112,112,2);
-    ctx.fillStyle=mauveDark;
-    ctx.font='900 40px Calibri, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('IRENISMB STOCK NATURA',208,80);
-    ctx.fillStyle=muted;
-    ctx.font='500 25px Calibri, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('Natura & AVON · Santa Marta · Envíos a toda Colombia',208,129);
-    ctx.fillStyle=gold;
-    collageCanvasRoundRect(ctx,60,184,W-120,4,2);
-    ctx.fill();
-
-    const imageCard={x:32,y:228,w:493,h:520};
-    const detailCard={x:540,y:228,w:628,h:520};
-    drawPanel(imageCard.x,imageCard.y,imageCard.w,imageCard.h,22);
-    drawPanel(detailCard.x,detailCard.y,detailCard.w,detailCard.h,22);
-
-    ctx.save();
-    collageCanvasRoundRect(ctx,imageCard.x+22,imageCard.y+22,imageCard.w-44,imageCard.h-44,15);
-    ctx.clip();
-    const imageBg=ctx.createLinearGradient(imageCard.x,imageCard.y,imageCard.x+imageCard.w,imageCard.y+imageCard.h);
-    imageBg.addColorStop(0,'#f2e5d5');
-    imageBg.addColorStop(.52,'#fffaf2');
-    imageBg.addColorStop(1,'#ead7c5');
-    ctx.fillStyle=imageBg;
-    ctx.fillRect(imageCard.x+22,imageCard.y+22,imageCard.w-44,imageCard.h-44);
-    presentationDrawBotanicalAccent(ctx,imageCard.x+34,imageCard.y+300,.92,1,'rgba(191,151,115,.14)');
-    marketplacePresentationDrawContainedImage(ctx,productImage,imageCard.x+22,imageCard.y+22,imageCard.w-44,imageCard.h-44,26);
-    ctx.restore();
-
-    const textX=detailCard.x+28;
-    const textW=detailCard.w-56;
-    let y=detailCard.y+32;
-    collageCanvasRoundRect(ctx,textX,y,318,48,12);
-    ctx.fillStyle=roseSoft;
-    ctx.fill();
-    ctx.fillStyle=mauveDark;
-    ctx.font='900 21px Calibri, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('PRESENTACIÓN DE PRODUCTO',textX+20,y+11);
-    y+=78;
-
-    let titleSize=42;
-    let titleLines=[];
-    do{
-      ctx.font=`900 ${titleSize}px Calibri, "Segoe UI", Arial, sans-serif`;
-      titleLines=marketplacePresentationWrapLines(ctx,String(p.name||'Producto').toUpperCase(),textW,5);
-      if(titleLines.length<=4) break;
-      titleSize-=2;
-    }while(titleSize>=32);
-    ctx.fillStyle=dark;
-    ctx.font=`900 ${titleSize}px Calibri, "Segoe UI", Arial, sans-serif`;
-    const titleLineHeight=Math.round(titleSize*1.08);
-    for(const line of titleLines.slice(0,4)){
-      ctx.fillText(line,textX,y);
-      y+=titleLineHeight;
+    const description=String(p.description||"").trim();
+    const showPrice=shouldShowProductPrices();
+    const priceText=p.hasPrice===false||!(Number(p.price)>0)?"Consultar precio":fmtCOP.format(p.price);
+    let imageSide=680,descSize=54,descLines=[],descHeight=0;
+    const priceHeight=showPrice?86:0,priceGap=showPrice&&description?12:0;
+    // Las descripciones de 10–16 palabras aprovechan el espacio con letra grande.
+    // Los textos más extensos se conservan completos y ajustan el tamaño.
+    if(description){
+      for(;descSize>=18;descSize--){
+        descLines=wrap(description,inner,descSize);descHeight=descLines.length*descSize*1.18;
+        if(priceHeight+priceGap+descHeight<=1168-(170+imageSide+48))break;
+      }
+      if(descSize<18){
+        descSize=18;descLines=wrap(description,inner,descSize);descHeight=descLines.length*descSize*1.18;
+        imageSide=Math.min(680,1168-170-48-priceHeight-priceGap-descHeight);
+        if(imageSide<400)throw new Error("La descripción es demasiado extensa para una ficha cuadrada. Revisa el texto del producto.");
+      }
     }
+    const photo={x:margin,y:170,w:imageSide,h:imageSide};
+    ctx.fillStyle="#fff";ctx.fillRect(photo.x,photo.y,photo.w,photo.h);
+    marketplacePresentationDrawContainedImage(ctx,productImage,photo.x,photo.y,photo.w,photo.h,0);
+    if(!productImage){font(22);ctx.fillStyle=muted;ctx.textAlign="center";ctx.fillText("Imagen no disponible",photo.x+photo.w/2,photo.y+photo.h/2);ctx.textAlign="left";}
+    ctx.strokeStyle="#ead8d3";ctx.lineWidth=1.5;ctx.strokeRect(photo.x,photo.y,photo.w,photo.h);
 
-    y+=14;
-    const metaParts=[];
-    if(p.id) metaParts.push(`Código ${p.id}`);
-    if(p.category) metaParts.push(String(p.category).trim());
-    if(p.subcategory) metaParts.push(String(p.subcategory).trim());
-    if(p.line) metaParts.push(String(p.line).trim());
-    ctx.fillStyle=muted;
-    ctx.font='500 21px Calibri, "Segoe UI", Arial, sans-serif';
-    const metaLines=marketplacePresentationWrapLines(ctx,metaParts.filter(Boolean).join(' · '),textW,3);
-    for(const line of metaLines){
-      ctx.fillText(line,textX,y);
-      y+=28;
+    const textX=photo.x+photo.w+32,textW=W-margin-textX;
+    const name=String(p.name||"Producto").trim();
+    const category=String(p.category||"").trim();
+    const categoryLines=category?wrap(category,textW,25):[];
+    const code=String(p.id||"").trim();
+    const extraHeight=(code?70:0)+(categoryLines.length?categoryLines.length*31+20:0);
+    let titleSize=66,titleLines=[];
+    for(;titleSize>=24;titleSize--){
+      titleLines=wrap(name,textW,titleSize,true);
+      if(titleLines.length*titleSize*1.08+extraHeight<=photo.h-24)break;
     }
-
-    if(shouldShowProductPrices()){
-      const priceText=p.hasPrice===false || !(Number(p.price)>0) ? 'Consultar precio' : fmtCOP.format(p.price);
-      const priceY=Math.min(detailCard.y+detailCard.h-82,y+24);
-      collageCanvasRoundRect(ctx,textX,priceY,270,54,14);
-      ctx.fillStyle=roseSoft;
-      ctx.fill();
-      ctx.fillStyle=mauveDark;
-      ctx.font='900 27px Calibri, "Segoe UI", Arial, sans-serif';
-      ctx.fillText(priceText,textX+20,priceY+11);
+    if(titleSize<24)throw new Error("El nombre es demasiado extenso para una ficha cuadrada. Revisa el producto.");
+    const contentHeight=titleLines.length*titleSize*1.08+extraHeight;
+    let y=photo.y+Math.max(12,(photo.h-contentHeight)/2);
+    y=draw(titleLines,textX,y,titleSize,titleSize*1.08,true,mauve)+20;
+    if(code){
+      font(28,true);const label=`Código ${code}`,badgeWidth=Math.min(textW,ctx.measureText(label).width+32);
+      collageCanvasRoundRect(ctx,textX,y,badgeWidth,48,14);ctx.fillStyle=rose;ctx.fill();ctx.fillStyle=mauve;ctx.fillText(label,textX+16,y+9);y+=70;
     }
+    if(categoryLines.length)draw(categoryLines,textX,y,25,31,false,muted);
 
-    const desc={x:32,y:770,w:W-64,h:324};
-    drawPanel(desc.x,desc.y,desc.w,desc.h,22);
-    collageCanvasRoundRect(ctx,desc.x+28,desc.y+22,180,48,12);
-    ctx.fillStyle=roseSoft;
-    ctx.fill();
-    ctx.fillStyle=mauveDark;
-    ctx.font='900 22px Calibri, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('DESCRIPCIÓN',desc.x+47,desc.y+33);
-
-    const description=String(p.description||'').trim()||'Descripción no disponible.';
-    const descTextX=desc.x+30;
-    const descTextY=desc.y+90;
-    const descTextW=desc.w-60;
-    const maxLines=7;
-    let descSize=23;
-    let descLines=[];
-    do{
-      ctx.font=`500 ${descSize}px Calibri, "Segoe UI", Arial, sans-serif`;
-      descLines=marketplacePresentationWrapLines(ctx,description,descTextW,999);
-      if(descLines.length<=maxLines) break;
-      descSize-=1;
-    }while(descSize>=17);
-    if(descLines.length>maxLines){
-      descLines=descLines.slice(0,maxLines);
-      descLines[maxLines-1]=marketplacePresentationTrimLine(ctx,descLines[maxLines-1],descTextW);
-    }
-    ctx.fillStyle=dark;
-    ctx.font=`500 ${descSize}px Calibri, "Segoe UI", Arial, sans-serif`;
-    marketplacePresentationDrawJustified(ctx,descLines,descTextX,descTextY,descTextW,Math.round(descSize*1.43));
-
-    const footerLineY=1125;
-    ctx.strokeStyle=gold;
-    ctx.lineWidth=2;
-    ctx.beginPath();
-    ctx.moveTo(34,footerLineY);
-    ctx.lineTo(W-34,footerLineY);
-    ctx.stroke();
-    ctx.textAlign='center';
-    ctx.fillStyle=mauveDark;
-    ctx.font='900 20px Calibri, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('IRENISMB STOCK NATURA',W/2,1142);
-    ctx.fillStyle=muted;
-    ctx.font='500 17px Calibri, "Segoe UI", Arial, sans-serif';
-    ctx.fillText('Santa Marta · WhatsApp +57 304 208 8961',W/2,1170);
-    ctx.textAlign='left';
-
-    const code=String(p.id||'').trim();
-    const safeName=marketplacePresentationSanitizeFilename(String(p.name||'')).slice(0,72);
-    const fileName=`${code?`${code}_`:''}${safeName}_ficha.png`;
-    return {canvas,fileName};
+    const dividerY=photo.y+photo.h+24;rule(dividerY);
+    const bandHeight=priceHeight+priceGap+descHeight;
+    let bandY=dividerY+20+Math.max(0,(1168-dividerY-40-bandHeight)/2);
+    if(showPrice){font(72,true);ctx.fillStyle=mauve;ctx.fillText(priceText,margin,bandY);bandY+=priceHeight+priceGap;}
+    if(description)draw(descLines,margin,bandY,descSize,descSize*1.18,false,dark);
+    rule(1168);
+    const safeName=marketplacePresentationSanitizeFilename(name).slice(0,72);
+    return {canvas,fileName:`${code?`${code}_`:""}${safeName}_ficha.png`};
   }
 
   async function downloadCollageImage(action="download",options={}){

@@ -565,7 +565,9 @@
         alert("No se pudo copiar la descripción al portapapeles.");
       }
     };
-    description.insertAdjacentElement("afterend",copy);
+    const row=card.querySelector(".product-description-actions");
+    if(row)row.insertBefore(copy,row.firstChild);
+    else description.insertAdjacentElement("afterend",copy);
   }
   async function copyText(text){
     if(navigator.clipboard?.writeText){

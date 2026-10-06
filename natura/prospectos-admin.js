@@ -122,8 +122,10 @@
           event.stopPropagation();
           openDialog(code, true);
         });
+        const actions = card.querySelector(".product-description-actions");
         const copy = card.querySelector(".catalog-admin-copy-description");
-        if(copy) copy.insertAdjacentElement("afterend", button);
+        if(actions) actions.appendChild(button);
+        else if(copy) copy.insertAdjacentElement("afterend", button);
         else card.appendChild(button);
       }
       updateCardButton(button, code);

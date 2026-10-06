@@ -121,7 +121,7 @@ function catalogPdfMeasureCard(ctx,product,options,width,imageHeight=70){
   const nameLines=catalogPdfWrap(ctx,product.name,width);
   catalogPdfFont(ctx,11);
   const descriptionLines=options.descriptions&&product.description
-    ?catalogPdfWrap(ctx,`Descripción: ${product.description}`,width):[];
+    ?catalogPdfWrap(ctx,product.description,width):[];
   const price=options.prices?product.hasPrice===false?"Consultar precio":`${fmtCOP.format(Number(product.price)||0)} COP`:"";
   const baseHeight=imageHeight+8+18+nameLines.length*13.2+5+(price?21:0)+5;
   return {product,width,imageHeight,nameLines,descriptionLines,price,baseHeight,height:baseHeight+descriptionLines.length*13.2+8};

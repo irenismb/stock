@@ -3252,6 +3252,22 @@ function refreshCardUI(card,p){
   }
 }
 
+async function copyProductText(text){
+  if(navigator.clipboard?.writeText){
+    try{await navigator.clipboard.writeText(text);return}catch(_){}
+  }
+  const area=document.createElement("textarea");
+  area.value=text;
+  area.setAttribute("readonly","");
+  area.style.cssText="position:fixed;left:-9999px;top:0";
+  const focused=document.activeElement;
+  document.body.appendChild(area);
+  area.focus();area.select();
+  let ok=false;
+  try{ok=document.execCommand("copy")}finally{area.remove();focused?.focus?.({preventScroll:true})}
+  if(!ok)throw new Error("El navegador no permitió copiar al portapapeles.");
+}
+
 function makeCard(p){
   const card=cardTemplate.content.firstElementChild.cloneNode(true);
   card.id="p-"+encodeURIComponent(String(p.id));
@@ -3294,6 +3310,31 @@ function makeCard(p){
     const fichaRow=document.createElement("div");
     fichaRow.className="product-description-actions";
     descriptionEl.insertAdjacentElement("afterend",fichaRow);
+    for(const [field,label] of [["name","Copiar nombre"],["description","Copiar descripción"]]){
+      const copy=document.createElement("button");
+      copy.type="button";
+      copy.className="btn-ghost product-copy-"+field;
+      copy.textContent=label;
+      copy.setAttribute("aria-label",label+" del producto al portapapeles");
+      copy.disabled=!String(p[field]||"").trim();
+      copy.addEventListener("click",async event=>{
+        event.preventDefault();event.stopPropagation();
+        const current=productById.get(String(p.id))||p;
+        const text=String(current[field]||"").trim();
+        if(!text)return;
+        copy.disabled=true;
+        try{
+          await copyProductText(text);
+          copy.textContent="Copiado ✓";
+          fichaStatus.textContent=field==="name"?"Nombre copiado.":"Descripción copiada.";
+          setTimeout(()=>{copy.textContent=label;copy.disabled=false},1600);
+        }catch(error){
+          copy.disabled=false;
+          fichaStatus.textContent="No se pudo copiar. Inténtalo de nuevo.";
+        }
+      });
+      fichaRow.appendChild(copy);
+    }
     fichaRow.appendChild(fichaButton);
     fichaRow.insertAdjacentElement("afterend",fichaStatus);
   }

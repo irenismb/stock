@@ -7,7 +7,7 @@ const CATALOG_PDF = Object.freeze({
   gold:"#b8781f",rose:"#c54e73",mauve:"#8f4963",purple:"#6f3aa0",ink:"#282326"
 });
 
-function catalogPdfSnapshot(scope){
+function catalogPdfSnapshot(scope,branchKey=""){
   const order=navigationOrderedLevels();
   if(window.CATALOG_INITIAL_LOAD_READY!==true) throw new Error("Espera a que termine de cargar el catálogo.");
   if(!order.includes("product")) throw new Error("Activa el nivel Producto en la navegación para descargar sus fichas.");
@@ -30,21 +30,47 @@ function catalogPdfSnapshot(scope){
     products.sort(compareCatalogProductOrder);
   }
   const titleSlots=collageCurrentTitleSlots().filter(slot=>order.indexOf(slot.level)<order.indexOf("product"));
-  return {
+  const snapshot={
     scope,title:titleSlots.map(slot=>slot.label).join(" › ")||"Catálogo",
     titleSlots,order:order.slice(),products:collageUniqueProducts(products).map(p=>({...p}))
   };
+  if(scope==="choice"){
+    const choice=catalogPdfBranchChoices(snapshot).find(item=>item.key===branchKey);
+    if(!choice) throw new Error("Escoge una opción disponible del nivel actual.");
+    snapshot.products=snapshot.products.filter(p=>choice.conditions.every(slot=>cleanNavKey(navigationValueForProduct(p,slot.level))===cleanNavKey(slot.label)));
+    snapshot.titleSlots=choice.conditions.filter(slot=>slot.label);
+    snapshot.title=snapshot.titleSlots.map(slot=>slot.label).join(" › ")||"Productos de este nivel";
+  }
+  return snapshot;
+}
+
+// Opciones reales del siguiente nivel disponible. Los huecos se conservan en
+// las condiciones de selección, pero nunca se inventan títulos para el PDF.
+function catalogPdfBranchChoices(snapshot){
+  const levels=snapshot.order.slice(0,snapshot.order.indexOf("product"));
+  const last=snapshot.titleSlots.reduce((max,slot)=>Math.max(max,levels.indexOf(slot.level)),-1);
+  const choices=new Map();
+  for(const p of snapshot.products){
+    let index=last+1;
+    while(index<levels.length&&!String(navigationValueForProduct(p,levels[index])||"").trim())index++;
+    const direct=index===levels.length;
+    const conditions=levels.slice(0,direct?levels.length:index+1).map(level=>({level,label:String(navigationValueForProduct(p,level)||"").trim()}));
+    const key=JSON.stringify(conditions.map(slot=>[slot.level,cleanNavKey(slot.label)]));
+    if(!choices.has(key))choices.set(key,{key,conditions,direct,level:direct?"product":levels[index],label:direct?"Productos de este nivel":conditions.at(-1).label,count:0});
+    choices.get(key).count++;
+  }
+  return [...choices.values()].sort((a,b)=>Number(a.direct)-Number(b.direct)||levels.indexOf(a.level)-levels.indexOf(b.level)||a.label.localeCompare(b.label,"es",{sensitivity:"base"}));
 }
 
 function catalogPdfGroups(snapshot){
-  if(snapshot.scope==="view") return [{title:snapshot.title,products:snapshot.products}];
   const groups=new Map();
-  const levels=snapshot.order.slice(0,snapshot.order.indexOf("product"));
+  const order=snapshot.order||navigationOrderedLevels();
+  const levels=order.slice(0,order.indexOf("product"));
   for(const p of snapshot.products){
-    const parts=levels.map(level=>String(navigationValueForProduct(p,level)||"").trim()).filter(Boolean);
-    const title=parts.join(" › ")||snapshot.title;
-    if(!groups.has(title)) groups.set(title,{title,products:[]});
-    groups.get(title).products.push(p);
+    const slots=levels.map(level=>({level,label:String(navigationValueForProduct(p,level)||"").trim()})).filter(slot=>slot.label);
+    const key=JSON.stringify(slots.map(slot=>[slot.level,cleanNavKey(slot.label)]));
+    if(!groups.has(key))groups.set(key,{title:slots.map(slot=>slot.label).join(" › ")||snapshot.title,slots,products:[]});
+    groups.get(key).products.push(p);
   }
   return [...groups.values()];
 }
@@ -91,12 +117,27 @@ function catalogPdfDrawLines(ctx,lines,x,y,width,lineHeight,justify=false){
   return y;
 }
 
-function catalogPdfHeader(ctx,title){
-  const c=CATALOG_PDF,x=c.margin,bodyX=x+86,width=c.width-x-bodyX;
-  catalogPdfFont(ctx,16,true);
-  const titleLines=catalogPdfWrap(ctx,title,width-16);
-  const boxHeight=Math.max(31,titleLines.length*18+14);
-  return {x,bodyX,width,titleLines,boxHeight,bodyTop:x+52+boxHeight+16};
+function catalogPdfHeader(ctx,slots){
+  const c=CATALOG_PDF,x=c.margin,bodyX=x+86,brandWidth=c.width-x-bodyX,width=c.width-x*2;
+  const titles=Array.isArray(slots)&&slots.length?slots:[{level:"root",label:"Catálogo"}];
+  let y=x+98;
+  const blocks=titles.map((slot,index)=>{
+    const size=[18,16,14,12,11][Math.min(index,4)],lineHeight=size*1.2;
+    catalogPdfFont(ctx,size,true);
+    const lines=catalogPdfWrap(ctx,slot.label,width-16),height=lines.length*lineHeight+12;
+    const block={...slot,size,lineHeight,lines,y,height};y+=height;return block;
+  });
+  return {x,bodyX,brandWidth,width,blocks,bodyTop:y+12};
+}
+
+function catalogPdfGroupHeading(ctx,slots,width){
+  let height=0;
+  const blocks=slots.map(slot=>{
+    catalogPdfFont(ctx,13,true);
+    const lines=catalogPdfWrap(ctx,slot.label,width),block={...slot,lines,height:lines.length*16+12};
+    height+=block.height;return block;
+  });
+  return {blocks,height};
 }
 
 function catalogPdfMeasureCard(ctx,product,options,width,imageHeight=70){
@@ -112,37 +153,42 @@ function catalogPdfMeasureCard(ctx,product,options,width,imageHeight=70){
 
 function catalogPdfPlanPages(ctx,snapshot,options){
   const c=CATALOG_PDF,gap=20,inner=c.width-c.margin*2,column=(inner-gap)/2,pages=[];
+  let page=null;
   for(const group of catalogPdfGroups(snapshot)){
-    const header=catalogPdfHeader(ctx,group.title),available=c.height-c.margin-22-header.bodyTop;
-    let page=null;
-    const startPage=()=>{page={title:group.title,header,rows:[],height:0};pages.push(page);};
+    const parentSlots=group.slots.length>1?group.slots.slice(0,-1):group.slots;
+    const headingSlots=group.slots.length>1?group.slots.slice(-1):[];
+    const parentKey=JSON.stringify(parentSlots),header=catalogPdfHeader(ctx,parentSlots);
+    const available=c.height-c.margin-22-header.bodyTop;
+    const heading=catalogPdfGroupHeading(ctx,headingSlots,inner);
+    const startPage=()=>{page={title:group.title,parentKey,header,rows:[],height:0,lastGroup:null};pages.push(page);};
     for(let index=0;index<group.products.length;){
       let cards=group.products.slice(index,index+2).map(p=>catalogPdfMeasureCard(ctx,p,options,column));
-      let rowHeight=Math.max(...cards.map(card=>card.height));
-      if(rowHeight>available){
-        // Una ficha muy larga usa todo el ancho antes de necesitar una continuación.
-        cards=[catalogPdfMeasureCard(ctx,group.products[index],options,inner)];
-        rowHeight=cards[0].height;
+      if(cards.length===1)cards=[catalogPdfMeasureCard(ctx,cards[0].product,options,inner)];
+      let cardHeight=Math.max(...cards.map(card=>card.height));
+      if(cardHeight+heading.height>available){
+        cards=[catalogPdfMeasureCard(ctx,group.products[index],options,inner)];cardHeight=cards[0].height;
       }
-      if(rowHeight>available){
-        const card=cards[0],capacity=Math.max(1,Math.floor((available-card.baseHeight-8)/13.2));
+      if(cardHeight+heading.height>available){
+        const card=cards[0],capacity=Math.floor((available-heading.height-card.baseHeight-8)/13.2);
+        if(capacity<1)throw new Error("Los títulos de este grupo son demasiado extensos para una página. Revisa sus nombres antes de descargar.");
         for(let offset=0;offset<card.descriptionLines.length;offset+=capacity){
           startPage();
           const chunk={...card,descriptionLines:card.descriptionLines.slice(offset,offset+capacity)};
           chunk.height=chunk.baseHeight+chunk.descriptionLines.length*13.2+8;
-          page.rows.push({cards:[chunk],height:chunk.height});page.height=chunk.height;
-          page=null;
+          const height=heading.height+chunk.height;
+          page.rows.push({cards:[chunk],heading,height});page.height=height;page=null;
         }
         index++;continue;
       }
-      if(!page||page.rows.length===2||page.height+(page.rows.length?16:0)+rowHeight>available) startPage();
-      page.rows.push({cards,height:rowHeight});
-      page.height+=(page.rows.length>1?16:0)+rowHeight;
-      index+=cards.length;
+      let rowHeading=page?.lastGroup===group?{blocks:[],height:0}:heading;
+      let rowHeight=cardHeight+rowHeading.height;
+      if(!page||page.parentKey!==parentKey||page.rows.length===2||page.height+(page.rows.length?16:0)+rowHeight>available){
+        startPage();rowHeading=heading;rowHeight=cardHeight+heading.height;
+      }
+      page.rows.push({cards,heading:rowHeading,height:rowHeight});page.lastGroup=group;
+      page.height+=(page.rows.length>1?16:0)+rowHeight;index+=cards.length;
     }
   }
-  // Aprovecha el espacio disponible con fotografías más grandes cuando una
-  // descripción extensa permite menos fichas en la página.
   for(const page of pages){
     const available=c.height-c.margin-22-page.header.bodyTop;
     const growth=Math.min(150,Math.max(0,(available-page.height)/page.rows.length));
@@ -196,7 +242,7 @@ function catalogPdfDrawCard(ctx,card,image,x,y){
   ctx.fillStyle=c.ink;ctx.fillText(code,x+6,y+3);y+=18;
   catalogPdfFont(ctx,11,true);
   y=catalogPdfDrawLines(ctx,card.nameLines,x,y,card.width,13.2,true)+5;
-  if(card.price){catalogPdfFont(ctx,14,true);ctx.fillStyle=c.gold;ctx.fillText(card.price,x,y);y+=21;}
+  if(card.price){catalogPdfFont(ctx,14,true);ctx.fillStyle=c.mauve;ctx.fillText(card.price,x,y);y+=21;}
   y+=5;catalogPdfFont(ctx,11);ctx.fillStyle=c.ink;
   catalogPdfDrawLines(ctx,card.descriptionLines,x,y,card.width,13.2,true);
 }
@@ -215,22 +261,29 @@ async function catalogPdfDrawPage(plan,pageNumber,logo,signal){
   catalogPdfFont(ctx,18,true);ctx.fillStyle=c.gold;ctx.fillText("IRENISMB STOCK NATURA",head.bodyX,c.margin+16);
   catalogPdfFont(ctx,10);ctx.fillStyle=c.mauve;
   ctx.fillText("Natura & AVON · Santa Marta · Envíos a toda Colombia",head.bodyX,c.margin+39);
-  ctx.fillStyle="#fff6f8";ctx.strokeStyle="#e7a7ba";ctx.lineWidth=.7;
-  catalogPdfRoundRect(ctx,head.bodyX,c.margin+52,head.width,head.boxHeight,6);ctx.fill();ctx.stroke();
-  catalogPdfFont(ctx,16,true);ctx.fillStyle=c.purple;
-  catalogPdfDrawLines(ctx,head.titleLines,head.bodyX+8,c.margin+59,head.width-16,18);
+  for(let index=0;index<head.blocks.length;index++){
+    const block=head.blocks[index];
+    if(index===0){ctx.fillStyle="#fbe8ee";ctx.fillRect(c.margin,block.y,head.width,block.height);}
+    catalogPdfFont(ctx,block.size,true);ctx.fillStyle=index===0?c.purple:c.mauve;
+    catalogPdfDrawLines(ctx,block.lines,c.margin+8,block.y+6,head.width-16,block.lineHeight);
+  }
   let y=head.bodyTop,missing=0;
   for(let rowIndex=0;rowIndex<plan.rows.length;rowIndex++){
     if(signal?.aborted) throw new DOMException("Descarga cancelada.","AbortError");
     const row=plan.rows[rowIndex];
+    for(const block of row.heading.blocks){
+      catalogPdfFont(ctx,13,true);ctx.fillStyle=c.mauve;
+      y=catalogPdfDrawLines(ctx,block.lines,c.margin,y,c.width-c.margin*2,16)+4;
+      ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(c.margin,y);ctx.lineTo(c.width-c.margin,y);ctx.stroke();y+=8;
+    }
     const images=await Promise.all(row.cards.map(card=>catalogPdfLoadImage(shouldShowProductImages()?String(card.product.docsImageUrl||""):"",signal)));
     for(let index=0;index<row.cards.length;index++){
       if(!images[index])missing++;
       catalogPdfDrawCard(ctx,row.cards[index],images[index],c.margin+index*(row.cards[index].width+20),y);
     }
     ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;
-    if(row.cards.length===2){const xx=c.width/2;ctx.beginPath();ctx.moveTo(xx,y);ctx.lineTo(xx,y+row.height);ctx.stroke();}
-    y+=row.height;
+    if(row.cards.length===2){const xx=c.width/2;ctx.beginPath();ctx.moveTo(xx,y);ctx.lineTo(xx,y+row.height-row.heading.height);ctx.stroke();}
+    y+=row.height-row.heading.height;
     if(rowIndex<plan.rows.length-1){ctx.beginPath();ctx.moveTo(c.margin,y+8);ctx.lineTo(c.width-c.margin,y+8);ctx.stroke();y+=16;}
   }
   ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(c.margin,c.height-c.margin-18);ctx.lineTo(c.width-c.margin,c.height-c.margin-18);ctx.stroke();
@@ -291,42 +344,75 @@ function initCatalogPdfFeature(){
   if(!button||document.getElementById("catalogPdfDialog"))return;
   const style=document.createElement("style");style.id="catalog-pdf-controls-style";
   style.textContent=`
-    .bar[role="search"]>#catalogPdfBtn{order:45!important}
+    .bar[role="search"]>#catalogPdfBtn{order:47!important;min-width:0}
     #catalogPdfDialog{width:min(460px,calc(100vw - 40px));max-height:calc(100dvh - 40px);overflow:auto;border:1px solid #eadcda;border-radius:18px;padding:24px;background:#fffdfc;color:#282326;font:16px Calibri,Arial,sans-serif;box-sizing:border-box}
     #catalogPdfDialog::backdrop{background:rgba(20,15,20,.65)}
-    #catalogPdfDialog h2{margin:0 0 14px;color:#8f4963;font-size:24px}
+    #catalogPdfDialog h2{margin:0 0 14px;padding-right:36px;color:#8f4963;font-size:24px}
     #catalogPdfDialog label{display:flex;gap:10px;align-items:flex-start;margin:14px 0;cursor:pointer}
     #catalogPdfDialog input{flex:0 0 auto;width:18px;height:18px;margin:2px 0;accent-color:#8f4963}
     #catalogPdfDialog small{display:block;margin-top:4px;color:#735f65;font-size:14px}
     #catalogPdfDialog fieldset{border:0;padding:0;margin:0}
+    #catalogPdfBranches{display:grid;gap:8px;margin:0 0 16px 26px}
+    #catalogPdfBranches[hidden]{display:none}
+    #catalogPdfBranches label{margin:0;padding:10px;border:1px solid #eadcda;border-radius:8px;overflow-wrap:anywhere}
+    #catalogPdfBranches label:has(input:checked){background:#fff0f5;border-color:#c54e73}
+    #catalogPdfSelection span{display:block;margin:4px 0}
+    #catalogPdfSelection span:first-child{font-weight:700}
     #catalogPdfSelection{padding:12px;background:#fff6f8;border-radius:8px;overflow-wrap:anywhere}
     #catalogPdfStatus{min-height:20px;overflow-wrap:anywhere}
     .catalog-pdf-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}
     #catalogPdfDialog button{font:700 16px Calibri,Arial,sans-serif;min-height:44px;padding:10px 16px;border:1px solid #e7a7ba;border-radius:8px;background:#fff6f8;color:#8f4963;cursor:pointer}
+    #catalogPdfDialog #catalogPdfDismiss{position:absolute;right:12px;top:12px;min-height:36px;width:36px;padding:0;border:0;background:transparent;font-size:26px;color:#735f65}
     #catalogPdfDialog button[type="submit"]{background:#8f4963;color:white}
     #catalogPdfDialog button:disabled{opacity:.5;cursor:wait}
     #catalogPdfDialog :focus-visible{outline:3px solid #b8781f;outline-offset:3px}
-    @media(max-width:760px){.bar[role="search"]>#catalogPdfBtn{grid-column:1 / -1!important;grid-row:4!important;width:100%!important;max-width:none!important}.bar[role="search"]:has(>#catalogPdfBtn)>.count-slot{grid-row:5!important}}
+    @media(max-width:760px){.bar[role="search"]>#catalogPdfBtn{grid-column:1 / -1!important;grid-row:5!important;width:100%!important;max-width:none!important;margin:0!important;justify-self:stretch!important}.bar[role="search"]:has(>#catalogPdfBtn)>.count-slot{grid-row:6!important}}
   `;
   document.head.appendChild(style);
   const dialog=document.createElement("dialog");dialog.id="catalogPdfDialog";dialog.setAttribute("aria-labelledby","catalogPdfTitle");
-  dialog.innerHTML=`<form id="catalogPdfForm"><h2 id="catalogPdfTitle">Descargar catálogo</h2>
-    <fieldset id="catalogPdfOptions"><legend>Qué productos incluir</legend>
-    <label><input type="radio" name="pdfScope" value="branch" checked><span>Desde este nivel<small>Todos los productos públicos de esta rama. Desde Inicio incluye todo el catálogo público.</small></span></label>
+  dialog.innerHTML=`<form id="catalogPdfForm"><button type="button" id="catalogPdfDismiss" aria-label="Cerrar ventana">×</button><h2 id="catalogPdfTitle">Descargar catálogo</h2>
+    <p id="catalogPdfContext"></p><fieldset id="catalogPdfOptions"><legend>Qué productos incluir</legend>
+    <label><input type="radio" name="pdfScope" value="branch" checked><span id="catalogPdfAllLabel">Todo este nivel</span></label>
+    <label><input type="radio" id="catalogPdfChoiceScope" name="pdfScope" value="choice"><span id="catalogPdfChoiceLabel">Elegir una opción de este nivel</span></label>
+    <div id="catalogPdfBranches" role="group" aria-label="Opciones del nivel actual" hidden></div>
+    <small id="catalogPdfHelp">Incluye todos los subniveles de la opción elegida.</small>
     <label><input type="radio" name="pdfScope" value="view"><span>Productos de esta vista<small>Las fichas que muestra la vista actual, con sus filtros y orden.</small></span></label>
     <p id="catalogPdfSelection"></p>
-    <label><input id="catalogPdfPrices" type="checkbox" checked><span>Incluir precios</span></label>
-    <label><input id="catalogPdfDescriptions" type="checkbox" checked><span>Incluir descripciones completas</span></label></fieldset>
+    <label><input id="catalogPdfPrices" type="checkbox" checked><span>Mostrar precios</span></label>
+    <label><input id="catalogPdfDescriptions" type="checkbox" checked><span>Mostrar descripciones completas</span></label></fieldset>
     <p id="catalogPdfStatus" role="status" aria-live="polite"></p>
-    <div class="catalog-pdf-actions"><button type="button" id="catalogPdfClose">Cerrar</button><button type="submit" id="catalogPdfDownload">Descargar PDF</button></div></form>`;
+    <div class="catalog-pdf-actions"><button type="button" id="catalogPdfClose">Cancelar</button><button type="submit" id="catalogPdfDownload">Descargar PDF</button></div></form>`;
   document.body.appendChild(dialog);
   const form=dialog.querySelector("form"),fieldset=dialog.querySelector("fieldset"),status=dialog.querySelector("#catalogPdfStatus"),selection=dialog.querySelector("#catalogPdfSelection"),submit=dialog.querySelector("#catalogPdfDownload"),prices=dialog.querySelector("#catalogPdfPrices"),close=dialog.querySelector("#catalogPdfClose");
-  let controller=null;
+  const branches=dialog.querySelector("#catalogPdfBranches"),context=dialog.querySelector("#catalogPdfContext"),choiceScope=dialog.querySelector("#catalogPdfChoiceScope");
+  let controller=null,choices=[];
+  const branchKey=()=>new FormData(form).get("pdfBranch")||"";
+  function loadChoices(){
+    const snapshot=catalogPdfSnapshot("branch");
+    const current=snapshot.titleSlots.at(-1)?.label||"Inicio";
+    context.textContent=`Estás en ${current}`;
+    dialog.querySelector("#catalogPdfAllLabel").textContent=current==="Inicio"?"Todo el catálogo":`Todo el nivel: ${current}`;
+    dialog.querySelector("#catalogPdfChoiceLabel").textContent=`Elegir una opción de ${current}`;
+    choices=catalogPdfBranchChoices(snapshot);branches.replaceChildren();
+    // Si solo quedan productos directos, no existe una rama inferior para elegir.
+    choiceScope.disabled=!choices.some(choice=>!choice.direct);
+    form.querySelector('input[value="branch"]').checked=choiceScope.disabled;
+    choiceScope.checked=!choiceScope.disabled;
+    choices.forEach((choice,index)=>{
+      const label=document.createElement("label"),input=document.createElement("input"),text=document.createElement("span"),count=document.createElement("small");
+      input.type="radio";input.name="pdfBranch";input.value=choice.key;input.checked=index===0;
+      text.textContent=choice.label;count.textContent=`${choice.count} ${choice.count===1?"producto":"productos"}`;text.appendChild(count);label.append(input,text);branches.appendChild(label);
+    });
+  }
   const scope=()=>new FormData(form).get("pdfScope");
   function refresh(){
     try{
-      const snapshot=catalogPdfSnapshot(scope());
-      selection.textContent=`${snapshot.title} · ${snapshot.products.length} ${snapshot.products.length===1?"producto":"productos"}`;
+      branches.hidden=scope()!=="choice";
+      dialog.querySelector("#catalogPdfHelp").hidden=scope()==="view";
+      const snapshot=catalogPdfSnapshot(scope(),branchKey());
+      selection.replaceChildren();
+      for(const slot of snapshot.titleSlots){const line=document.createElement("span");line.textContent=slot.label;selection.appendChild(line);}
+      const count=document.createElement("small");count.textContent=`${snapshot.products.length} ${snapshot.products.length===1?"producto":"productos"}`;selection.appendChild(count);
       submit.disabled=!snapshot.products.length;
       status.textContent=!snapshot.products.length?scope()==="view"?"Esta vista no muestra fichas de productos. Abre una rama o usa Ver productos.":"No hay productos públicos en este nivel.":"";
       prices.disabled=!shouldShowProductPrices();if(prices.disabled)prices.checked=false;
@@ -334,19 +420,20 @@ function initCatalogPdfFeature(){
   }
   button.addEventListener("click",async()=>{
     button.disabled=true;
-    try{await window.CATALOG_PUBLIC_VISIBILITY_READY;refresh();dialog.showModal();}finally{button.disabled=false;}
+    try{await window.CATALOG_PUBLIC_VISIBILITY_READY;try{loadChoices();}catch(error){status.textContent=error.message;}refresh();dialog.showModal();}finally{button.disabled=false;}
   });
   form.addEventListener("change",refresh);
   close.addEventListener("click",()=>{controller?.abort();dialog.close();});
+  dialog.querySelector("#catalogPdfDismiss").addEventListener("click",()=>{controller?.abort();dialog.close();});
   dialog.addEventListener("cancel",()=>controller?.abort());
   dialog.addEventListener("close",()=>button.focus());
   form.addEventListener("submit",async event=>{
     event.preventDefault();if(controller)return;
-    const selectedScope=scope();
+    const selectedScope=scope(),selectedBranch=branchKey();
     controller=new AbortController();fieldset.disabled=true;submit.disabled=true;close.textContent="Cancelar";
     try{
       await window.CATALOG_PUBLIC_VISIBILITY_READY;
-      const snapshot=catalogPdfSnapshot(selectedScope);
+      const snapshot=catalogPdfSnapshot(selectedScope,selectedBranch);
       const options={prices:prices.checked&&shouldShowProductPrices(),descriptions:dialog.querySelector("#catalogPdfDescriptions").checked};
       const result=await catalogPdfBuild(snapshot,options,text=>status.textContent=text,controller.signal);
       if(controller.signal.aborted)return;
@@ -356,7 +443,7 @@ function initCatalogPdfFeature(){
       setTimeout(()=>URL.revokeObjectURL(url),60000);
       status.textContent=`PDF preparado: ${snapshot.products.length} productos, ${result.pageCount} ${result.pageCount===1?"página":"páginas"}.${result.missing?` ${result.missing} imágenes no pudieron cargarse.`:""}`;
     }catch(error){status.textContent=error.name==="AbortError"?"Descarga cancelada.":error.message||"No fue posible generar el PDF. Intenta nuevamente.";}
-    finally{controller=null;fieldset.disabled=false;submit.disabled=false;close.textContent="Cerrar";}
+    finally{controller=null;fieldset.disabled=false;submit.disabled=false;close.textContent="Cancelar";prices.disabled=!shouldShowProductPrices();choiceScope.disabled=!choices.some(choice=>!choice.direct);}
   });
 }
 

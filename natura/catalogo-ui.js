@@ -582,7 +582,7 @@
       .bar[role="search"] > #collageBtn{grid-column:1!important;grid-row:3!important}
       .bar[role="search"] > #showProductsBtn{grid-column:2!important;grid-row:3!important}
       .bar[role="search"] > #collageBtn,.bar[role="search"] > #showProductsBtn{width:100%!important;min-width:0!important;max-width:none!important;margin:0!important;justify-self:stretch!important}
-      .bar[role="search"] > .count-slot{grid-column:1 / -1!important;grid-row:4!important}
+      .bar[role="search"] > .count-slot{grid-column:1 / -1!important;grid-row:6!important}
     }
   `;
   document.head.appendChild(style);
@@ -631,7 +631,7 @@
     @media(min-width:761px){.bar[role="search"] > #productOrderBtn{flex:0 1 95px!important;width:auto!important;min-width:80px!important;margin:0!important}}
     @media(max-width:760px){
       .bar[role="search"] > #productOrderBtn{grid-column:1 / -1!important;grid-row:4!important;width:100%!important;margin:0!important}
-      .bar[role="search"] > .count-slot{grid-row:5!important}
+      .bar[role="search"] > .count-slot{grid-row:6!important}
     }
   `;
   document.head.appendChild(style);
@@ -642,6 +642,7 @@
   const style = document.createElement("style");
   style.textContent = `
     .bar[role="search"] > #toggleWordPanelBtn{order:46!important}
+    .bar[role="search"] > #catalogPdfBtn{order:47!important}
     @media(min-width:761px){
       .bar[role="search"]{flex-wrap:wrap!important}
       .bar[role="search"] > #toggleWordPanelBtn{flex:0 1 95px!important;min-width:80px!important;margin:0!important}
@@ -649,6 +650,8 @@
     @media(max-width:760px){
       .bar[role="search"] > #productOrderBtn{grid-column:1!important;grid-row:4!important}
       .bar[role="search"] > #toggleWordPanelBtn{grid-column:2!important;grid-row:4!important;width:100%!important;margin:0!important}
+      .bar[role="search"] > #catalogPdfBtn{grid-column:1 / -1!important;grid-row:5!important;width:100%!important;min-width:0!important;max-width:none!important;margin:0!important}
+      .bar[role="search"] > .count-slot{grid-column:1 / -1!important;grid-row:6!important}
     }
   `;
   document.head.appendChild(style);

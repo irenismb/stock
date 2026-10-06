@@ -83,7 +83,7 @@
 })();
 
 // Vistas directas de productos. Las dos opciones de administrador son independientes:
-// 1) mostrar tarjetas completas al buscar; 2) mostrar los productos del nivel actual y sus descendientes cuando el buscador está vacío.
+// 1) mostrar tarjetas completas al buscar; 2) mostrar los productos del nivel actual y sus descendientes, conservando los filtros.
 (() => {
   const SEARCH_DIRECT_STORAGE_KEY = "irenismb_quick_image_search_v1";
   const SHOW_ALL_STORAGE_KEY = "irenismb_show_all_products_direct_v1";
@@ -108,7 +108,7 @@
   }
 
   function isShowAllDirectActive(){
-    return showAllEnabled && !hasSearch();
+    return showAllEnabled;
   }
 
   function isActive(){

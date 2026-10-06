@@ -21,13 +21,15 @@ function catalogPdfSnapshot(options={}){
   const eligible=p=>p&&!p.isGiftGalleryImage&&/^\d{4}$/.test(String(p.id||""))
     &&(includeHidden||!window.isCatalogProductHidden(p))
     &&(includeNotForSale||normalize(p.commercialStatus)!=="no a la venta");
-  const products=scopedProductsForCurrentNavigation(allLoadedProducts.filter(eligible));
+  const filtered=options.scope==="filtered";
+  const matchingIds=filtered?new Set(buildFilteredList().map(p=>String(p.id))):null;
+  const products=scopedProductsForCurrentNavigation(allLoadedProducts.filter(p=>eligible(p)&&(!matchingIds||matchingIds.has(String(p.id)))));
   products.sort(compareCatalogProductOrder);
   const activeOrder=navigationOrderedLevels(),productIndex=activeOrder.indexOf("product");
   const contextLevels=productIndex<0?activeOrder:activeOrder.slice(0,productIndex);
   const titleSlots=contextLevels.map(level=>({level,label:String(selectedNavigationValue(level)||"").trim()})).filter(slot=>slot.label);
   return {
-    scope:"branch",title:titleSlots.map(slot=>slot.label).join(" › ")||"Catálogo",
+    scope:filtered?"filtered":"branch",title:titleSlots.map(slot=>slot.label).join(" › ")||"Catálogo",
     titleSlots,order:CATALOG_PDF_LEVELS.slice(),adminExtras:includeHidden||includeNotForSale,
     products:collageUniqueProducts(products).map(p=>({...p}))
   };
@@ -349,9 +351,11 @@ function initCatalogPdfFeature(){
   const dialog=document.createElement("dialog");dialog.id="catalogPdfDialog";dialog.setAttribute("aria-labelledby","catalogPdfTitle");
   dialog.innerHTML=`<form id="catalogPdfForm"><button type="button" id="catalogPdfDismiss" aria-label="Cerrar ventana">×</button><h2 id="catalogPdfTitle">Descargar catálogo</h2>
     <p id="catalogPdfContext"></p>
-    <small>Incluye todos los productos y subniveles desde tu ubicación actual, también los niveles omitidos en la navegación.</small>
+    <small id="catalogPdfScopeHelp"></small>
     <p id="catalogPdfSelection"></p>
     <fieldset id="catalogPdfOptions"><legend>Opciones del PDF</legend>
+    <label><input id="catalogPdfScopeBranch" name="catalogPdfScope" type="radio" value="branch" checked><span>Todos desde este nivel<small>Incluye sus subniveles, sin limitar por la búsqueda y los filtros actuales.</small></span></label>
+    <label><input id="catalogPdfScopeFiltered" name="catalogPdfScope" type="radio" value="filtered"><span>Solo productos filtrados<small>Respeta la búsqueda, las palabras seleccionadas y los filtros actuales.</small></span></label>
     <label><input id="catalogPdfPrices" type="checkbox" checked><span>Mostrar precios</span></label>
     <label><input id="catalogPdfDescriptions" type="checkbox" checked><span>Mostrar descripciones completas</span></label>
     <div id="catalogPdfAdminOptions" hidden>
@@ -364,7 +368,7 @@ function initCatalogPdfFeature(){
   const form=dialog.querySelector("form"),fieldset=dialog.querySelector("fieldset"),status=dialog.querySelector("#catalogPdfStatus"),selection=dialog.querySelector("#catalogPdfSelection"),submit=dialog.querySelector("#catalogPdfDownload"),prices=dialog.querySelector("#catalogPdfPrices"),close=dialog.querySelector("#catalogPdfClose");
   const context=dialog.querySelector("#catalogPdfContext"),adminOptions=dialog.querySelector("#catalogPdfAdminOptions"),hidden=dialog.querySelector("#catalogPdfHidden"),notForSale=dialog.querySelector("#catalogPdfNotForSale");
   let controller=null;
-  const options=()=>({includeHidden:hidden.checked,includeNotForSale:notForSale.checked,prices:prices.checked&&shouldShowProductPrices(),descriptions:dialog.querySelector("#catalogPdfDescriptions").checked});
+  const options=()=>({scope:dialog.querySelector("#catalogPdfScopeFiltered").checked?"filtered":"branch",includeHidden:hidden.checked,includeNotForSale:notForSale.checked,prices:prices.checked&&shouldShowProductPrices(),descriptions:dialog.querySelector("#catalogPdfDescriptions").checked});
   function syncAdminOptions(){
     const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;
     adminOptions.hidden=!admin;hidden.disabled=notForSale.disabled=!admin;
@@ -375,6 +379,7 @@ function initCatalogPdfFeature(){
     prices.disabled=!shouldShowProductPrices();if(prices.disabled)prices.checked=false;
     try{
       const snapshot=catalogPdfSnapshot(options());
+      dialog.querySelector("#catalogPdfScopeHelp").textContent=snapshot.scope==="filtered"?"Descarga los productos que coinciden con tus filtros en el nivel actual y sus subniveles.":"Incluye todos los productos y subniveles desde tu ubicación actual, también los niveles omitidos en la navegación.";
       context.textContent=snapshot.titleSlots.length?`Desde ${snapshot.titleSlots.at(-1).label}`:"Desde Inicio: todo el catálogo";
       selection.replaceChildren();
       for(const slot of snapshot.titleSlots){const line=document.createElement("span");line.textContent=slot.label;selection.appendChild(line);}
@@ -2182,4 +2187,3 @@ function initCollageFeature(){
     if(event.key==="Escape"&&modal.classList.contains("open")) closeCollage();
   });
 }
-

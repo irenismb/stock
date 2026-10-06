@@ -88,27 +88,32 @@ function catalogPdfDrawLines(ctx,lines,x,y,width,lineHeight,justify=false){
   return y;
 }
 
-function catalogPdfHeader(ctx,slots){
-  const c=CATALOG_PDF,x=c.margin,bodyX=x+86,brandWidth=c.width-x-bodyX,width=c.width-x*2;
-  const titles=Array.isArray(slots)&&slots.length?slots:[{level:"root",label:"Catálogo"}];
-  let y=x+98;
-  const blocks=titles.map((slot,index)=>{
-    const size=[18,16,14,12,11][Math.min(index,4)],lineHeight=size*1.2;
-    catalogPdfFont(ctx,size,true);
-    const lines=catalogPdfWrap(ctx,slot.label,width-16),height=lines.length*lineHeight+12;
-    const block={...slot,size,lineHeight,lines,y,height};y+=height;return block;
-  });
-  return {x,bodyX,brandWidth,width,blocks,bodyTop:y+12};
+function catalogPdfHeader(){
+  const c=CATALOG_PDF,x=c.margin,bodyX=x+86,width=c.width-x*2;
+  // Solo identidad y contacto: la ruta pertenece al grupo, no a cada página.
+  return {x,bodyX,width,bodyTop:x+98};
 }
 
 function catalogPdfGroupHeading(ctx,slots,width){
-  let height=0;
-  const blocks=slots.map(slot=>{
-    catalogPdfFont(ctx,13,true);
-    const lines=catalogPdfWrap(ctx,slot.label,width),block={...slot,lines,height:lines.length*16+12};
-    height+=block.height;return block;
-  });
-  return {blocks,height};
+  const labels=slots.map(slot=>slot.label),route=labels.join(" › ")||"Catálogo";
+  const size=11,lineHeight=13.2,maxWidth=width-16;
+  catalogPdfFont(ctx,size,true);
+  let lines=catalogPdfWrap(ctx,route,maxWidth);
+  if(lines.length>2){
+    // Mantiene todos los nombres en dos renglones, sin truncar la ruta.
+    // Prefiere separar entre niveles; un nombre excepcionalmente largo
+    // se reparte entre palabras. El dibujo ajusta el ancho si hace falta.
+    const parts=labels.length>1?labels:route.split(/\s+/),separator=labels.length>1?" › ":" ";
+    let best=null;
+    for(let index=1;index<parts.length;index++){
+      const first=parts.slice(0,index).join(separator),second=parts.slice(index).join(separator);
+      const score=Math.max(ctx.measureText(first).width,ctx.measureText(second).width);
+      if(!best||score<best.score)best={score,first,second};
+    }
+    lines=best?[{text:best.first,justify:false},{text:best.second,justify:false}]:[{text:route,justify:false}];
+  }
+  const boxHeight=lines.length*lineHeight+12;
+  return {height:boxHeight+10,blocks:[{route,lines,size,lineHeight,maxWidth,boxHeight}]};
 }
 
 function catalogPdfMeasureCard(ctx,product,options,width,imageHeight=70){
@@ -124,44 +129,42 @@ function catalogPdfMeasureCard(ctx,product,options,width,imageHeight=70){
 
 function catalogPdfPlanPages(ctx,snapshot,options){
   const c=CATALOG_PDF,gap=20,inner=c.width-c.margin*2,column=(inner-gap)/2,pages=[];
+  const header=catalogPdfHeader(),available=c.height-c.margin-22-header.bodyTop;
   let page=null;
+  const startPage=title=>{page={title,header,rows:[],height:0};pages.push(page);};
   for(const group of catalogPdfGroups(snapshot)){
-    const parentSlots=group.slots.length>1?group.slots.slice(0,-1):group.slots;
-    const headingSlots=group.slots.length>1?group.slots.slice(-1):[];
-    const parentKey=JSON.stringify(parentSlots),header=catalogPdfHeader(ctx,parentSlots);
-    const available=c.height-c.margin-22-header.bodyTop;
-    const heading=catalogPdfGroupHeading(ctx,headingSlots,inner);
-    const startPage=()=>{page={title:group.title,parentKey,header,rows:[],height:0,lastGroup:null};pages.push(page);};
+    const heading=catalogPdfGroupHeading(ctx,group.slots,inner);
+    let groupStarted=false;
     for(let index=0;index<group.products.length;){
+      let rowHeading=groupStarted?{blocks:[],height:0}:heading;
       let cards=group.products.slice(index,index+2).map(p=>catalogPdfMeasureCard(ctx,p,options,column));
       if(cards.length===1)cards=[catalogPdfMeasureCard(ctx,cards[0].product,options,inner)];
       let cardHeight=Math.max(...cards.map(card=>card.height));
-      if(cardHeight+heading.height>available){
+      if(cardHeight+rowHeading.height>available){
         cards=[catalogPdfMeasureCard(ctx,group.products[index],options,inner)];cardHeight=cards[0].height;
       }
-      if(cardHeight+heading.height>available){
-        const card=cards[0],capacity=Math.floor((available-heading.height-card.baseHeight-8)/13.2);
-        if(capacity<1)throw new Error("Los títulos de este grupo son demasiado extensos para una página. Revisa sus nombres antes de descargar.");
-        for(let offset=0;offset<card.descriptionLines.length;offset+=capacity){
-          startPage();
+      if(cardHeight+rowHeading.height>available){
+        const card=cards[0];let offset=0;
+        while(offset<card.descriptionLines.length){
+          rowHeading=groupStarted?{blocks:[],height:0}:heading;
+          const capacity=Math.floor((available-rowHeading.height-card.baseHeight-8)/13.2);
+          if(capacity<1)throw new Error("El nombre de este producto es demasiado extenso para una página. Revísalo antes de descargar.");
+          startPage(group.title);
           const chunk={...card,descriptionLines:card.descriptionLines.slice(offset,offset+capacity)};
           chunk.height=chunk.baseHeight+chunk.descriptionLines.length*13.2+8;
-          const height=heading.height+chunk.height;
-          page.rows.push({cards:[chunk],heading,height});page.height=height;page=null;
+          const height=rowHeading.height+chunk.height;
+          page.rows.push({cards:[chunk],heading:rowHeading,groupTitle:group.title,height});page.height=height;
+          offset+=capacity;groupStarted=true;page=null;
         }
         index++;continue;
       }
-      let rowHeading=page?.lastGroup===group?{blocks:[],height:0}:heading;
-      let rowHeight=cardHeight+rowHeading.height;
-      if(!page||page.parentKey!==parentKey||page.rows.length===2||page.height+(page.rows.length?16:0)+rowHeight>available){
-        startPage();rowHeading=heading;rowHeight=cardHeight+heading.height;
-      }
-      page.rows.push({cards,heading:rowHeading,height:rowHeight});page.lastGroup=group;
-      page.height+=(page.rows.length>1?16:0)+rowHeight;index+=cards.length;
+      const rowHeight=cardHeight+rowHeading.height;
+      if(!page||page.rows.length===2||page.height+(page.rows.length?16:0)+rowHeight>available)startPage(group.title);
+      page.rows.push({cards,heading:rowHeading,groupTitle:group.title,height:rowHeight});
+      page.height+=(page.rows.length>1?16:0)+rowHeight;index+=cards.length;groupStarted=true;
     }
   }
   for(const page of pages){
-    const available=c.height-c.margin-22-page.header.bodyTop;
     const growth=Math.min(150,Math.max(0,(available-page.height)/page.rows.length));
     for(const row of page.rows){
       for(const card of row.cards){card.imageHeight+=growth;card.baseHeight+=growth;card.height+=growth;}
@@ -218,7 +221,7 @@ function catalogPdfDrawCard(ctx,card,image,x,y){
   catalogPdfDrawLines(ctx,card.descriptionLines,x,y,card.width,13.2,true);
 }
 
-async function catalogPdfDrawPage(plan,pageNumber,logo,signal){
+async function catalogPdfDrawPage(plan,pageNumber,logo,signal,contactIcon){
   const c=CATALOG_PDF,canvas=document.createElement("canvas");
   canvas.width=Math.ceil(c.width*c.scale);canvas.height=Math.ceil(c.height*c.scale);
   const ctx=canvas.getContext("2d");
@@ -232,20 +235,21 @@ async function catalogPdfDrawPage(plan,pageNumber,logo,signal){
   catalogPdfFont(ctx,18,true);ctx.fillStyle=c.gold;ctx.fillText("IRENISMB STOCK NATURA",head.bodyX,c.margin+16);
   catalogPdfFont(ctx,10);ctx.fillStyle=c.mauve;
   ctx.fillText("Natura & AVON · Santa Marta · Envíos a toda Colombia",head.bodyX,c.margin+39);
-  for(let index=0;index<head.blocks.length;index++){
-    const block=head.blocks[index];
-    if(index===0){ctx.fillStyle="#fbe8ee";ctx.fillRect(c.margin,block.y,head.width,block.height);}
-    catalogPdfFont(ctx,block.size,true);ctx.fillStyle=index===0?c.purple:c.mauve;
-    catalogPdfDrawLines(ctx,block.lines,c.margin+8,block.y+6,head.width-16,block.lineHeight);
-  }
+  // El recurso existente tiene esquinas negras; se presenta como icono circular.
+  ctx.save();ctx.beginPath();ctx.arc(head.bodyX+8,c.margin+68,8,0,Math.PI*2);ctx.clip();
+  ctx.drawImage(contactIcon,head.bodyX,c.margin+60,16,16);ctx.restore();
+  catalogPdfFont(ctx,11);ctx.fillStyle=c.mauve;ctx.fillText("304 208 8961",head.bodyX+23,c.margin+62);
   let y=head.bodyTop,missing=0;
   for(let rowIndex=0;rowIndex<plan.rows.length;rowIndex++){
     if(signal?.aborted) throw new DOMException("Descarga cancelada.","AbortError");
     const row=plan.rows[rowIndex];
     for(const block of row.heading.blocks){
-      catalogPdfFont(ctx,13,true);ctx.fillStyle=c.mauve;
-      y=catalogPdfDrawLines(ctx,block.lines,c.margin,y,c.width-c.margin*2,16)+4;
-      ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(c.margin,y);ctx.lineTo(c.width-c.margin,y);ctx.stroke();y+=8;
+      ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(c.margin,y);ctx.lineTo(c.width-c.margin,y);ctx.stroke();
+      ctx.fillStyle="#fbe8ee";ctx.fillRect(c.margin,y+3,c.width-c.margin*2,block.boxHeight);
+      catalogPdfFont(ctx,block.size,true);ctx.fillStyle=c.purple;
+      let textY=y+9;
+      for(const line of block.lines){ctx.fillText(line.text,c.margin+8,textY,block.maxWidth);textY+=block.lineHeight;}
+      y+=row.heading.height;
     }
     const images=await Promise.all(row.cards.map(card=>catalogPdfLoadImage(shouldShowProductImages()?String(card.product.docsImageUrl||""):"",signal)));
     for(let index=0;index<row.cards.length;index++){
@@ -259,7 +263,6 @@ async function catalogPdfDrawPage(plan,pageNumber,logo,signal){
   }
   ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(c.margin,c.height-c.margin-18);ctx.lineTo(c.width-c.margin,c.height-c.margin-18);ctx.stroke();
   catalogPdfFont(ctx,9);ctx.fillStyle=c.ink;
-  ctx.fillText("WhatsApp 304 208 8961",c.margin,c.height-c.margin-11);
   ctx.textAlign="right";ctx.fillText(`Página ${pageNumber}`,c.width-c.margin,c.height-c.margin-11);ctx.textAlign="left";
   const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.94));
   if(!blob)throw new Error("No fue posible preparar una página del PDF.");
@@ -298,6 +301,8 @@ async function catalogPdfBuild(snapshot,options={},progress=()=>{},signal){
   await document.fonts?.ready;
   const logo=await catalogPdfLoadImage(COMPANY_LOGO,signal)||await catalogPdfLoadImage(COMPANY_LOGOS[1],signal);
   if(!logo)throw new Error("No fue posible cargar el logo oficial. Intenta descargar nuevamente.");
+  const contactIcon=await catalogPdfLoadImage("logos/whatsapp.webp",signal);
+  if(!contactIcon)throw new Error("No fue posible cargar el icono de contacto. Intenta descargar nuevamente.");
   const measure=document.createElement("canvas").getContext("2d");
   const plans=catalogPdfPlanPages(measure,snapshot,options),pages=[];
   let missing=0;
@@ -305,7 +310,7 @@ async function catalogPdfBuild(snapshot,options={},progress=()=>{},signal){
     if(signal?.aborted)throw new DOMException("Descarga cancelada.","AbortError");
     if(snapshot.adminExtras&&window.CATALOG_ADMIN_MODE_ACTIVE!==true)throw new Error("La sesión de administrador terminó. Vuelve a abrir la descarga.");
     progress(`Preparando página ${i+1} de ${plans.length}…`);
-    const page=await catalogPdfDrawPage(plans[i],i+1,logo,signal);
+    const page=await catalogPdfDrawPage(plans[i],i+1,logo,signal,contactIcon);
     if(snapshot.adminExtras&&window.CATALOG_ADMIN_MODE_ACTIVE!==true)throw new Error("La sesión de administrador terminó. Vuelve a abrir la descarga.");
     missing+=page.missing;pages.push(page);
     await new Promise(resolve=>setTimeout(resolve,0));

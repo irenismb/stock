@@ -83,6 +83,9 @@
   window.CATALOG_ADMIN_MISSING_PRICE_ONLY=false;
   window.CATALOG_ADMIN_HIDE_HIDDEN=false;
   window.CATALOG_VISIBILITY_RULES=rules;
+  window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED=false;
+  // La exportación comercial siempre usa la visibilidad pública, incluso en Admin.
+  window.isCatalogProductPublic=p=>!!p&&norm(p.commercialStatus)!=="no a la venta"&&!isHidden(p);
   window.filterVisibleProducts=list=>{
     const a=Array.isArray(list)?list:[];
     if(window.CATALOG_ADMIN_MODE_ACTIVE){
@@ -98,7 +101,7 @@
   new MutationObserver(()=>requestAnimationFrame(syncUI)).observe(grid,{childList:true,subtree:true});
   window.addEventListener("message",onBridgeReady); window.addEventListener("beforeunload",closeBridge);
 
-  loadRules().finally(()=>{
+  window.CATALOG_PUBLIC_VISIBILITY_READY=loadRules().finally(()=>{
     rebuild();
     if(storageGet(ADMIN_MODE_STORAGE_KEY)==="1") connect();
   });
@@ -172,7 +175,7 @@
   function loadRules(){return new Promise(resolve=>{
     if(!SHEET_ID){resolve();return} const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
     const finish=rows=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}s.remove();rules.clear();for(const r of rows||[]){if(!r[0]||!r[1])continue;const k=key(r[0],r[1]);["x","si","true","1","oculto"].includes(norm(r[2]))?rules.add(k):rules.delete(k)}resolve()};
-    const timer=setTimeout(()=>finish([]),6000); window[cb]=p=>finish(p?.status==="ok"&&Array.isArray(p?.table?.rows)?p.table.rows.map(r=>(r.c||[]).map(cell)):[]); s.onerror=()=>finish([]);
+    const timer=setTimeout(()=>finish([]),6000); window[cb]=p=>{window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED=p?.status==="ok"&&Array.isArray(p?.table?.rows);finish(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED?p.table.rows.map(r=>(r.c||[]).map(cell)):[])}; s.onerror=()=>finish([]);
     const q=new URLSearchParams({sheet:"Visibilidad",headers:"1",range:"A:E",tq:"select A,B,C,D,E",tqx:`out:json;responseHandler:${cb}`,_:String(Date.now())});
     s.src=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?${q}`;s.async=true;document.head.appendChild(s);
   })}

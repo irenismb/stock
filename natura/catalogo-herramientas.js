@@ -1,5 +1,367 @@
 // Herramienta pública Folleto/collage.
 
+// Descarga comercial del catálogo. No modifica inventario, carrito ni navegación.
+const CATALOG_PDF = Object.freeze({
+  width:595.28,height:841.89,margin:42.52,scale:2,
+  font:"Calibri, Carlito, Arial, sans-serif",
+  gold:"#b8781f",rose:"#c54e73",mauve:"#8f4963",purple:"#6f3aa0",ink:"#282326"
+});
+
+function catalogPdfSnapshot(scope){
+  const order=navigationOrderedLevels();
+  if(window.CATALOG_INITIAL_LOAD_READY!==true) throw new Error("Espera a que termine de cargar el catálogo.");
+  if(!order.includes("product")) throw new Error("Activa el nivel Producto en la navegación para descargar sus fichas.");
+  if(typeof window.isCatalogProductPublic!=="function") throw new Error("Todavía se está preparando la visibilidad del catálogo.");
+  if(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED!==true) throw new Error("No fue posible comprobar la visibilidad pública. Recarga el catálogo antes de descargar.");
+  const publicProduct=p=>p&&!p.isGiftGalleryImage&&/^\d{4}$/.test(String(p.id||""))&&window.isCatalogProductPublic(p);
+  let products;
+  if(scope==="view"){
+    // Lee todas las fichas de la vista, también las que requieren desplazamiento.
+    const grid=document.getElementById("grid");
+    const ids=new Set();
+    if(grid&&!grid.hidden&&getComputedStyle(grid).display!=="none"){
+      for(const card of grid.querySelectorAll(".card:not(.album-card)")){
+        if(!card.hidden&&getComputedStyle(card).display!=="none") ids.add(String(card.dataset.id||""));
+      }
+    }
+    products=buildFilteredList().filter(p=>ids.has(String(p.id))&&publicProduct(p));
+  }else{
+    products=scopedProductsForCurrentNavigation(allLoadedProducts.filter(publicProduct));
+    products.sort(compareCatalogProductOrder);
+  }
+  const titleSlots=collageCurrentTitleSlots().filter(slot=>order.indexOf(slot.level)<order.indexOf("product"));
+  return {
+    scope,title:titleSlots.map(slot=>slot.label).join(" › ")||"Catálogo",
+    titleSlots,order:order.slice(),products:collageUniqueProducts(products).map(p=>({...p}))
+  };
+}
+
+function catalogPdfGroups(snapshot){
+  if(snapshot.scope==="view") return [{title:snapshot.title,products:snapshot.products}];
+  const groups=new Map();
+  const levels=snapshot.order.slice(0,snapshot.order.indexOf("product"));
+  for(const p of snapshot.products){
+    const parts=levels.map(level=>String(navigationValueForProduct(p,level)||"").trim()).filter(Boolean);
+    const title=parts.join(" › ")||snapshot.title;
+    if(!groups.has(title)) groups.set(title,{title,products:[]});
+    groups.get(title).products.push(p);
+  }
+  return [...groups.values()];
+}
+
+function catalogPdfFont(ctx,size,bold=false){
+  ctx.font=`${bold?700:400} ${size}px ${CATALOG_PDF.font}`;
+}
+
+function catalogPdfWrap(ctx,text,width){
+  const lines=[];
+  for(const paragraph of String(text||"").replace(/\r/g,"").split("\n")){
+    const words=paragraph.trim().split(/\s+/).filter(Boolean);
+    let line="";
+    for(const word of words){
+      const next=line?`${line} ${word}`:word;
+      if(line&&ctx.measureText(next).width>width){lines.push({text:line,justify:true});line="";}
+      // Divide palabras o referencias excepcionalmente largas, sin perder caracteres.
+      if(ctx.measureText(word).width>width){
+        if(line){lines.push({text:line,justify:true});line="";}
+        for(const character of word){
+          if(line&&ctx.measureText(line+character).width>width){lines.push({text:line,justify:false});line="";}
+          line+=character;
+        }
+      }else line=line?`${line} ${word}`:word;
+    }
+    if(line) lines.push({text:line,justify:false});
+  }
+  return lines;
+}
+
+function catalogPdfDrawLines(ctx,lines,x,y,width,lineHeight,justify=false){
+  for(const line of lines){
+    const words=line.text.split(" ");
+    if(justify&&line.justify&&words.length>1){
+      const gap=(width-words.reduce((sum,word)=>sum+ctx.measureText(word).width,0))/(words.length-1);
+      // Evita espacios extremos en líneas cortas o referencias partidas.
+      if(gap<=ctx.measureText(" ").width*2.8){
+        let xx=x;
+        for(const word of words){ctx.fillText(word,xx,y);xx+=ctx.measureText(word).width+gap;}
+      }else ctx.fillText(line.text,x,y);
+    }else ctx.fillText(line.text,x,y);
+    y+=lineHeight;
+  }
+  return y;
+}
+
+function catalogPdfHeader(ctx,title){
+  const c=CATALOG_PDF,x=c.margin,bodyX=x+86,width=c.width-x-bodyX;
+  catalogPdfFont(ctx,16,true);
+  const titleLines=catalogPdfWrap(ctx,title,width-16);
+  const boxHeight=Math.max(31,titleLines.length*18+14);
+  return {x,bodyX,width,titleLines,boxHeight,bodyTop:x+52+boxHeight+16};
+}
+
+function catalogPdfMeasureCard(ctx,product,options,width,imageHeight=70){
+  catalogPdfFont(ctx,11,true);
+  const nameLines=catalogPdfWrap(ctx,product.name,width);
+  catalogPdfFont(ctx,11);
+  const descriptionLines=options.descriptions&&product.description
+    ?catalogPdfWrap(ctx,`Descripción: ${product.description}`,width):[];
+  const price=options.prices?product.hasPrice===false?"Consultar precio":`${fmtCOP.format(Number(product.price)||0)} COP`:"";
+  const baseHeight=imageHeight+8+18+nameLines.length*13.2+5+(price?21:0)+5;
+  return {product,width,imageHeight,nameLines,descriptionLines,price,baseHeight,height:baseHeight+descriptionLines.length*13.2+8};
+}
+
+function catalogPdfPlanPages(ctx,snapshot,options){
+  const c=CATALOG_PDF,gap=20,inner=c.width-c.margin*2,column=(inner-gap)/2,pages=[];
+  for(const group of catalogPdfGroups(snapshot)){
+    const header=catalogPdfHeader(ctx,group.title),available=c.height-c.margin-22-header.bodyTop;
+    let page=null;
+    const startPage=()=>{page={title:group.title,header,rows:[],height:0};pages.push(page);};
+    for(let index=0;index<group.products.length;){
+      let cards=group.products.slice(index,index+2).map(p=>catalogPdfMeasureCard(ctx,p,options,column));
+      let rowHeight=Math.max(...cards.map(card=>card.height));
+      if(rowHeight>available){
+        // Una ficha muy larga usa todo el ancho antes de necesitar una continuación.
+        cards=[catalogPdfMeasureCard(ctx,group.products[index],options,inner)];
+        rowHeight=cards[0].height;
+      }
+      if(rowHeight>available){
+        const card=cards[0],capacity=Math.max(1,Math.floor((available-card.baseHeight-8)/13.2));
+        for(let offset=0;offset<card.descriptionLines.length;offset+=capacity){
+          startPage();
+          const chunk={...card,descriptionLines:card.descriptionLines.slice(offset,offset+capacity)};
+          chunk.height=chunk.baseHeight+chunk.descriptionLines.length*13.2+8;
+          page.rows.push({cards:[chunk],height:chunk.height});page.height=chunk.height;
+          page=null;
+        }
+        index++;continue;
+      }
+      if(!page||page.rows.length===2||page.height+(page.rows.length?16:0)+rowHeight>available) startPage();
+      page.rows.push({cards,height:rowHeight});
+      page.height+=(page.rows.length>1?16:0)+rowHeight;
+      index+=cards.length;
+    }
+  }
+  // Aprovecha el espacio disponible con fotografías más grandes cuando una
+  // descripción extensa permite menos fichas en la página.
+  for(const page of pages){
+    const available=c.height-c.margin-22-page.header.bodyTop;
+    const growth=Math.min(150,Math.max(0,(available-page.height)/page.rows.length));
+    for(const row of page.rows){
+      for(const card of row.cards){card.imageHeight+=growth;card.baseHeight+=growth;card.height+=growth;}
+      row.height+=growth;page.height+=growth;
+    }
+  }
+  return pages;
+}
+
+function catalogPdfLoadImage(url,signal){
+  if(!url) return Promise.resolve(null);
+  return new Promise((resolve,reject)=>{
+    const img=new Image();let done=false;
+    const finish=(image,error)=>{
+      if(done)return;done=true;clearTimeout(timer);
+      signal?.removeEventListener("abort",abort);img.onload=img.onerror=null;
+      if(error){img.src="";reject(error);}else resolve(image);
+    };
+    const abort=()=>finish(null,new DOMException("Descarga cancelada.","AbortError"));
+    const timer=setTimeout(()=>finish(null),10000);
+    if(signal?.aborted){abort();return;}
+    signal?.addEventListener("abort",abort,{once:true});
+    img.crossOrigin="anonymous";
+    img.onload=()=>finish(img);img.onerror=()=>finish(null);img.src=url;
+  });
+}
+
+function catalogPdfRoundRect(ctx,x,y,w,h,r=5){
+  ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);
+  ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);
+  ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);
+  ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();
+}
+
+function catalogPdfDrawCard(ctx,card,image,x,y){
+  const c=CATALOG_PDF;
+  if(image){
+    const ratio=Math.min(card.width/image.naturalWidth,card.imageHeight/image.naturalHeight);
+    const w=image.naturalWidth*ratio,h=image.naturalHeight*ratio;
+    ctx.drawImage(image,x+(card.width-w)/2,y+(card.imageHeight-h)/2,w,h);
+  }else{
+    catalogPdfFont(ctx,10);ctx.fillStyle="#735f65";ctx.textAlign="center";
+    ctx.fillText("Imagen no disponible",x+card.width/2,y+card.imageHeight/2);ctx.textAlign="left";
+  }
+  y+=card.imageHeight+8;
+  catalogPdfFont(ctx,11);
+  const code=`Código ${card.product.id}`,codeWidth=ctx.measureText(code).width+12;
+  ctx.fillStyle="#fbe8ee";catalogPdfRoundRect(ctx,x,y,codeWidth,16,4);ctx.fill();
+  ctx.fillStyle=c.ink;ctx.fillText(code,x+6,y+3);y+=18;
+  catalogPdfFont(ctx,11,true);
+  y=catalogPdfDrawLines(ctx,card.nameLines,x,y,card.width,13.2,true)+5;
+  if(card.price){catalogPdfFont(ctx,14,true);ctx.fillStyle=c.gold;ctx.fillText(card.price,x,y);y+=21;}
+  y+=5;catalogPdfFont(ctx,11);ctx.fillStyle=c.ink;
+  catalogPdfDrawLines(ctx,card.descriptionLines,x,y,card.width,13.2,true);
+}
+
+async function catalogPdfDrawPage(plan,pageNumber,logo,signal){
+  const c=CATALOG_PDF,canvas=document.createElement("canvas");
+  canvas.width=Math.ceil(c.width*c.scale);canvas.height=Math.ceil(c.height*c.scale);
+  const ctx=canvas.getContext("2d");
+  if(!ctx) throw new Error("No fue posible preparar las páginas del PDF.");
+  ctx.scale(c.scale,c.scale);ctx.textBaseline="top";ctx.fillStyle="#fffdfc";ctx.fillRect(0,0,c.width,c.height);
+  const gradient=ctx.createLinearGradient(c.margin,0,c.width-c.margin,0);
+  gradient.addColorStop(0,"#c98a31");gradient.addColorStop(.45,"#f0d58e");gradient.addColorStop(1,"#b8701e");
+  ctx.fillStyle=gradient;ctx.fillRect(c.margin,c.margin,c.width-c.margin*2,5);
+  ctx.drawImage(logo,c.margin,c.margin+14,72,72);
+  const head=plan.header;
+  catalogPdfFont(ctx,18,true);ctx.fillStyle=c.gold;ctx.fillText("IRENISMB STOCK NATURA",head.bodyX,c.margin+16);
+  catalogPdfFont(ctx,10);ctx.fillStyle=c.mauve;
+  ctx.fillText("Natura & AVON · Santa Marta · Envíos a toda Colombia",head.bodyX,c.margin+39);
+  ctx.fillStyle="#fff6f8";ctx.strokeStyle="#e7a7ba";ctx.lineWidth=.7;
+  catalogPdfRoundRect(ctx,head.bodyX,c.margin+52,head.width,head.boxHeight,6);ctx.fill();ctx.stroke();
+  catalogPdfFont(ctx,16,true);ctx.fillStyle=c.purple;
+  catalogPdfDrawLines(ctx,head.titleLines,head.bodyX+8,c.margin+59,head.width-16,18);
+  let y=head.bodyTop,missing=0;
+  for(let rowIndex=0;rowIndex<plan.rows.length;rowIndex++){
+    if(signal?.aborted) throw new DOMException("Descarga cancelada.","AbortError");
+    const row=plan.rows[rowIndex];
+    const images=await Promise.all(row.cards.map(card=>catalogPdfLoadImage(shouldShowProductImages()?String(card.product.docsImageUrl||""):"",signal)));
+    for(let index=0;index<row.cards.length;index++){
+      if(!images[index])missing++;
+      catalogPdfDrawCard(ctx,row.cards[index],images[index],c.margin+index*(row.cards[index].width+20),y);
+    }
+    ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;
+    if(row.cards.length===2){const xx=c.width/2;ctx.beginPath();ctx.moveTo(xx,y);ctx.lineTo(xx,y+row.height);ctx.stroke();}
+    y+=row.height;
+    if(rowIndex<plan.rows.length-1){ctx.beginPath();ctx.moveTo(c.margin,y+8);ctx.lineTo(c.width-c.margin,y+8);ctx.stroke();y+=16;}
+  }
+  ctx.strokeStyle="#cf982c";ctx.lineWidth=.7;ctx.beginPath();ctx.moveTo(c.margin,c.height-c.margin-18);ctx.lineTo(c.width-c.margin,c.height-c.margin-18);ctx.stroke();
+  catalogPdfFont(ctx,9);ctx.fillStyle=c.ink;
+  ctx.fillText("WhatsApp 304 208 8961",c.margin,c.height-c.margin-11);
+  ctx.textAlign="right";ctx.fillText(`Página ${pageNumber}`,c.width-c.margin,c.height-c.margin-11);ctx.textAlign="left";
+  const blob=await new Promise(resolve=>canvas.toBlob(resolve,"image/jpeg",.94));
+  if(!blob)throw new Error("No fue posible preparar una página del PDF.");
+  const result={bytes:new Uint8Array(await blob.arrayBuffer()),width:canvas.width,height:canvas.height,missing};
+  canvas.width=canvas.height=1;
+  return result;
+}
+
+// PDF estándar con una imagen por página: descarga directa, sin ventanas de impresión
+// ni bibliotecas externas. Los textos se dibujan completos con tamaño de 11 puntos.
+function catalogPdfDocument(pages){
+  const encoder=new TextEncoder(),parts=[],offsets=[0];let length=0;
+  const add=value=>{const bytes=typeof value==="string"?encoder.encode(value):value;parts.push(bytes);length+=bytes.length;};
+  const object=(id,body)=>{offsets[id]=length;add(`${id} 0 obj\n`);add(body);add("\nendobj\n");};
+  add("%PDF-1.4\n%\u00e2\u00e3\u00cf\u00d3\n");
+  object(1,"<< /Type /Catalog /Pages 2 0 R >>");
+  object(2,`<< /Type /Pages /Count ${pages.length} /Kids [${pages.map((_,i)=>`${3+i*3} 0 R`).join(" ")}] >>`);
+  for(let i=0;i<pages.length;i++){
+    const page=pages[i],id=3+i*3;
+    object(id,`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${CATALOG_PDF.width} ${CATALOG_PDF.height}] /Resources << /XObject << /Im0 ${id+1} 0 R >> >> /Contents ${id+2} 0 R >>`);
+    offsets[id+1]=length;
+    add(`${id+1} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${page.width} /Height ${page.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${page.bytes.length} >>\nstream\n`);
+    add(page.bytes);add("\nendstream\nendobj\n");
+    const stream=`q\n${CATALOG_PDF.width} 0 0 ${CATALOG_PDF.height} 0 0 cm\n/Im0 Do\nQ\n`;
+    object(id+2,`<< /Length ${encoder.encode(stream).length} >>\nstream\n${stream}endstream`);
+  }
+  const xref=length,count=3+pages.length*3;
+  add(`xref\n0 ${count}\n0000000000 65535 f \n`);
+  for(let i=1;i<count;i++)add(`${String(offsets[i]).padStart(10,"0")} 00000 n \n`);
+  add(`trailer\n<< /Size ${count} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(parts,{type:"application/pdf"});
+}
+
+async function catalogPdfBuild(snapshot,options={},progress=()=>{},signal){
+  if(!snapshot.products.length)throw new Error("No hay productos públicos para descargar en esta selección.");
+  await document.fonts?.ready;
+  const logo=await catalogPdfLoadImage(COMPANY_LOGO,signal)||await catalogPdfLoadImage(COMPANY_LOGOS[1],signal);
+  if(!logo)throw new Error("No fue posible cargar el logo oficial. Intenta descargar nuevamente.");
+  const measure=document.createElement("canvas").getContext("2d");
+  const plans=catalogPdfPlanPages(measure,snapshot,options),pages=[];
+  let missing=0;
+  for(let i=0;i<plans.length;i++){
+    if(signal?.aborted)throw new DOMException("Descarga cancelada.","AbortError");
+    progress(`Preparando página ${i+1} de ${plans.length}…`);
+    const page=await catalogPdfDrawPage(plans[i],i+1,logo,signal);missing+=page.missing;pages.push(page);
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return {blob:catalogPdfDocument(pages),pageCount:pages.length,missing};
+}
+
+function initCatalogPdfFeature(){
+  const button=document.getElementById("catalogPdfBtn");
+  if(!button||document.getElementById("catalogPdfDialog"))return;
+  const style=document.createElement("style");style.id="catalog-pdf-controls-style";
+  style.textContent=`
+    .bar[role="search"]>#catalogPdfBtn{order:45!important}
+    #catalogPdfDialog{width:min(460px,calc(100vw - 40px));max-height:calc(100dvh - 40px);overflow:auto;border:1px solid #eadcda;border-radius:18px;padding:24px;background:#fffdfc;color:#282326;font:16px Calibri,Arial,sans-serif;box-sizing:border-box}
+    #catalogPdfDialog::backdrop{background:rgba(20,15,20,.65)}
+    #catalogPdfDialog h2{margin:0 0 14px;color:#8f4963;font-size:24px}
+    #catalogPdfDialog label{display:flex;gap:10px;align-items:flex-start;margin:14px 0;cursor:pointer}
+    #catalogPdfDialog input{flex:0 0 auto;width:18px;height:18px;margin:2px 0;accent-color:#8f4963}
+    #catalogPdfDialog small{display:block;margin-top:4px;color:#735f65;font-size:14px}
+    #catalogPdfDialog fieldset{border:0;padding:0;margin:0}
+    #catalogPdfSelection{padding:12px;background:#fff6f8;border-radius:8px;overflow-wrap:anywhere}
+    #catalogPdfStatus{min-height:20px;overflow-wrap:anywhere}
+    .catalog-pdf-actions{display:flex;justify-content:flex-end;gap:12px;flex-wrap:wrap}
+    #catalogPdfDialog button{font:700 16px Calibri,Arial,sans-serif;min-height:44px;padding:10px 16px;border:1px solid #e7a7ba;border-radius:8px;background:#fff6f8;color:#8f4963;cursor:pointer}
+    #catalogPdfDialog button[type="submit"]{background:#8f4963;color:white}
+    #catalogPdfDialog button:disabled{opacity:.5;cursor:wait}
+    #catalogPdfDialog :focus-visible{outline:3px solid #b8781f;outline-offset:3px}
+    @media(max-width:760px){.bar[role="search"]>#catalogPdfBtn{grid-column:1 / -1!important;grid-row:4!important;width:100%!important;max-width:none!important}.bar[role="search"]:has(>#catalogPdfBtn)>.count-slot{grid-row:5!important}}
+  `;
+  document.head.appendChild(style);
+  const dialog=document.createElement("dialog");dialog.id="catalogPdfDialog";dialog.setAttribute("aria-labelledby","catalogPdfTitle");
+  dialog.innerHTML=`<form id="catalogPdfForm"><h2 id="catalogPdfTitle">Descargar catálogo</h2>
+    <fieldset id="catalogPdfOptions"><legend>Qué productos incluir</legend>
+    <label><input type="radio" name="pdfScope" value="branch" checked><span>Desde este nivel<small>Todos los productos públicos de esta rama. Desde Inicio incluye todo el catálogo público.</small></span></label>
+    <label><input type="radio" name="pdfScope" value="view"><span>Productos de esta vista<small>Las fichas que muestra la vista actual, con sus filtros y orden.</small></span></label>
+    <p id="catalogPdfSelection"></p>
+    <label><input id="catalogPdfPrices" type="checkbox" checked><span>Incluir precios</span></label>
+    <label><input id="catalogPdfDescriptions" type="checkbox" checked><span>Incluir descripciones completas</span></label></fieldset>
+    <p id="catalogPdfStatus" role="status" aria-live="polite"></p>
+    <div class="catalog-pdf-actions"><button type="button" id="catalogPdfClose">Cerrar</button><button type="submit" id="catalogPdfDownload">Descargar PDF</button></div></form>`;
+  document.body.appendChild(dialog);
+  const form=dialog.querySelector("form"),fieldset=dialog.querySelector("fieldset"),status=dialog.querySelector("#catalogPdfStatus"),selection=dialog.querySelector("#catalogPdfSelection"),submit=dialog.querySelector("#catalogPdfDownload"),prices=dialog.querySelector("#catalogPdfPrices"),close=dialog.querySelector("#catalogPdfClose");
+  let controller=null;
+  const scope=()=>new FormData(form).get("pdfScope");
+  function refresh(){
+    try{
+      const snapshot=catalogPdfSnapshot(scope());
+      selection.textContent=`${snapshot.title} · ${snapshot.products.length} ${snapshot.products.length===1?"producto":"productos"}`;
+      submit.disabled=!snapshot.products.length;
+      status.textContent=!snapshot.products.length?scope()==="view"?"Esta vista no muestra fichas de productos. Abre una rama o usa Ver productos.":"No hay productos públicos en este nivel.":"";
+      prices.disabled=!shouldShowProductPrices();if(prices.disabled)prices.checked=false;
+    }catch(error){selection.textContent="";submit.disabled=true;status.textContent=error.message;}
+  }
+  button.addEventListener("click",async()=>{
+    button.disabled=true;
+    try{await window.CATALOG_PUBLIC_VISIBILITY_READY;refresh();dialog.showModal();}finally{button.disabled=false;}
+  });
+  form.addEventListener("change",refresh);
+  close.addEventListener("click",()=>{controller?.abort();dialog.close();});
+  dialog.addEventListener("cancel",()=>controller?.abort());
+  dialog.addEventListener("close",()=>button.focus());
+  form.addEventListener("submit",async event=>{
+    event.preventDefault();if(controller)return;
+    const selectedScope=scope();
+    controller=new AbortController();fieldset.disabled=true;submit.disabled=true;close.textContent="Cancelar";
+    try{
+      await window.CATALOG_PUBLIC_VISIBILITY_READY;
+      const snapshot=catalogPdfSnapshot(selectedScope);
+      const options={prices:prices.checked&&shouldShowProductPrices(),descriptions:dialog.querySelector("#catalogPdfDescriptions").checked};
+      const result=await catalogPdfBuild(snapshot,options,text=>status.textContent=text,controller.signal);
+      if(controller.signal.aborted)return;
+      const url=URL.createObjectURL(result.blob),link=document.createElement("a");
+      const slug=snapshot.title.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"");
+      link.href=url;link.download=`catalogo_${slug||"productos"}.pdf`;document.body.appendChild(link);link.click();link.remove();
+      setTimeout(()=>URL.revokeObjectURL(url),60000);
+      status.textContent=`PDF preparado: ${snapshot.products.length} productos, ${result.pageCount} ${result.pageCount===1?"página":"páginas"}.${result.missing?` ${result.missing} imágenes no pudieron cargarse.`:""}`;
+    }catch(error){status.textContent=error.name==="AbortError"?"Descarga cancelada.":error.message||"No fue posible generar el PDF. Intenta nuevamente.";}
+    finally{controller=null;fieldset.disabled=false;submit.disabled=false;close.textContent="Cerrar";}
+  });
+}
+
+initCatalogPdfFeature();
+
 // ==========================================
 // VISTA DE COLLAGE SEGÚN LA VISTA Y FILTROS ACTUALES
 // ==========================================

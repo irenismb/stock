@@ -31,6 +31,7 @@
   const ADMIN_SECTIONS=[
     {id:"catalogo",label:"Catálogo",icon:"⌂"},
     {id:"visibilidad",label:"Visibilidad",icon:"◉"},
+    {id:"prospectos",label:"Prospectos",icon:"◎"},
     {id:"configuracion",label:"Configuración",icon:"⚙"}
   ];
 
@@ -211,15 +212,18 @@
     document.body.classList.add("catalog-admin-mode");
     const aside=ensureAdminSidebar();
     const config=capabilities.has("configuracion")?ensureConfigPanel():null;
+    const prospects=typeof window.ensureCatalogProspectosAdmin==="function"?window.ensureCatalogProspectosAdmin():document.getElementById("catalogAdminProspectos");
     aside.querySelectorAll("[data-admin-section]").forEach(b=>b.setAttribute("aria-current",b.dataset.adminSection===adminSection?"page":"false"));
     const showGrid=adminSection==="catalogo"||adminSection==="visibilidad";
     grid.hidden=!showGrid;
     const topline=document.getElementById("topline");if(topline)topline.hidden=!showGrid;
     const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=!showGrid;
     if(config) config.hidden=adminSection!=="configuracion";
+    if(prospects) prospects.hidden=adminSection!=="prospectos";
     clearAdminDecorations();
     if(adminSection==="catalogo") installPrices();
     else if(adminSection==="visibilidad") installVisibility();
+    try{window.syncCatalogProspectosAdmin?.(adminSection)}catch(e){console.info(e)}
     if(emit) window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:adminSection}}));
   }
   function setCatalogAdminSection(section){
@@ -265,11 +269,11 @@
   }
   function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
   function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
-  function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);pendingChannel="";connecting=false;btn.textContent="Administrar";if(openAfterConnect)startAdmin();openAfterConnect=false}
-  function startAdmin(){admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection)}
-  function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));syncAdminTools();removeAdminUI();rebuild()}
+  function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);window.CATALOG_ADMIN_CAPABILITIES=capabilities;pendingChannel="";connecting=false;btn.textContent="Administrar";window.dispatchEvent(new CustomEvent("irenismb:admin-bridge-ready",{detail:{capabilities:Array.from(capabilities)}}));if(openAfterConnect)startAdmin();openAfterConnect=false}
+  function startAdmin(){admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection);window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:true}}))}
+  function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild()}
   function syncAdminTools(){try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}}
-  function removeAdminUI(){clearAdminDecorations();document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
+  function removeAdminUI(){clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
 
   function normalizeNavigationConfig(value){
     const alias={
@@ -593,7 +597,9 @@
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
   function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}
 
-  function request(data){return new Promise((resolve,reject)=>{if(!port||!bridgeFrame?.isConnected){reject(new Error("La conexión con Google se cerró."));return}const prefix=data.tipo==="actualizar-visibilidad"?"vis":(data.tipo?.includes("configuracion")||data.tipo?.includes("orden-navegacion"))?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
-  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
+  function request(data){return new Promise((resolve,reject)=>{if(!port||!bridgeFrame?.isConnected){reject(new Error("La conexión con Google se cerró."));return}const prefix=data.tipo?.includes("prospect")?"pros":data.tipo==="actualizar-visibilidad"?"vis":(data.tipo?.includes("configuracion")||data.tipo?.includes("orden-navegacion"))?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
+  window.CATALOG_ADMIN_REQUEST=request;
+  window.CATALOG_ADMIN_CAPABILITIES=capabilities;
+  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado"||m.tipo==="prospectos-obtenidos"||m.tipo==="prospecto-registrado"||m.tipo==="prospecto-actualizado")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
   function closeBridge(options={}){clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;try{bridgeFrame?.remove()}catch(_){}bridgeFrame=null;if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton&&!admin)btn.textContent="Administrar"}
 })();

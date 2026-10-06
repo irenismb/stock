@@ -63,7 +63,7 @@
       puerto.start();
 
       destino.postMessage(
-        {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad","configuracion"]},
+        {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad","configuracion","prospectos"]},
         catalogOrigin,
         [canalMensajes.port2]
       );
@@ -125,6 +125,63 @@
             mensaje.identificador,
             Boolean(mensaje.ocultoNuevo),
             mensaje.etiqueta || ""
+          );
+        return;
+      }
+
+      if(mensaje.tipo === "obtener-prospectos"){
+        google.script.run
+          .withSuccessHandler(function(resultado){
+            responder({tipo:"prospectos-obtenidos", solicitudId:mensaje.solicitudId, resultado:resultado});
+          })
+          .withFailureHandler(function(error){
+            responder({
+              tipo:"prospectos-error",
+              solicitudId:mensaje.solicitudId,
+              error:error && error.message ? error.message : String(error || "No se pudieron leer los prospectos.")
+            });
+          })
+          .obtenerProspectosWeb();
+        return;
+      }
+
+      if(mensaje.tipo === "registrar-prospecto"){
+        google.script.run
+          .withSuccessHandler(function(resultado){
+            responder({tipo:"prospecto-registrado", solicitudId:mensaje.solicitudId, resultado:resultado});
+          })
+          .withFailureHandler(function(error){
+            responder({
+              tipo:"prospectos-error",
+              solicitudId:mensaje.solicitudId,
+              error:error && error.message ? error.message : String(error || "No se pudo registrar el prospecto.")
+            });
+          })
+          .registrarProspectoWeb(
+            mensaje.perfilFacebook || "",
+            mensaje.codigo || "",
+            mensaje.estado || "nuevo",
+            mensaje.nota || ""
+          );
+        return;
+      }
+
+      if(mensaje.tipo === "actualizar-prospecto"){
+        google.script.run
+          .withSuccessHandler(function(resultado){
+            responder({tipo:"prospecto-actualizado", solicitudId:mensaje.solicitudId, resultado:resultado});
+          })
+          .withFailureHandler(function(error){
+            responder({
+              tipo:"prospectos-error",
+              solicitudId:mensaje.solicitudId,
+              error:error && error.message ? error.message : String(error || "No se pudo actualizar el prospecto.")
+            });
+          })
+          .actualizarProspectoWeb(
+            mensaje.id || "",
+            mensaje.estado || "",
+            mensaje.nota || ""
           );
         return;
       }

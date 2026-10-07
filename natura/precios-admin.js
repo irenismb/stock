@@ -122,7 +122,9 @@
 
   window.CATALOG_PUBLIC_VISIBILITY_READY=loadRules().finally(()=>{
     rebuild();
-    if(storageGet(ADMIN_MODE_STORAGE_KEY)==="1") connect();
+    // El acceso a Google debe abrirse desde una pulsación para evitar bloqueos
+    // de ventanas y de autenticación en marcos de terceros al recargar.
+    if(storageGet(ADMIN_MODE_STORAGE_KEY)==="1") setConnectionStatus("Pulsa Conectar con Google para retomar la administración.");
   });
 
   function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}

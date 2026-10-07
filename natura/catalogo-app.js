@@ -20,7 +20,6 @@
       enabled: true,
       spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
       sheetName: "configuracion_publica",
-      refreshMs: 120000,
       cacheKey: "irenismb_public_configuration_v1"
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -28,19 +27,12 @@
       "REGISTRAR_VISITAS_PROPIAS", "MOSTRAR_CANTIDAD_STOCK", "MOSTRAR_PRECIOS_PRODUCTO",
       "ORDEN_NAVEGACION", "ORDEN_PRODUCTOS"
     ]);
-    const BACKGROUND_REFRESH_MS = 120000;
+    // Solo limita intentos duplicados de imágenes; no programa peticiones.
+    const IMAGE_INDEX_MIN_RETRY_MS = 120000;
     function completeRefresh(state, successful){
       state.failures = successful ? 0 : Math.min((state.failures || 0) + 1, 3);
-      state.nextAt = Date.now() + BACKGROUND_REFRESH_MS * Math.pow(2, state.failures);
+      state.nextAt = Date.now() + IMAGE_INDEX_MIN_RETRY_MS * Math.pow(2, state.failures);
     }
-    function startVisibleRefresh(callback, state){
-      const refresh = ()=>{
-        if(!document.hidden && Date.now() >= state.nextAt) callback();
-      };
-      document.addEventListener("visibilitychange", refresh);
-      return window.setInterval(refresh, 30000);
-    }
-
     // GitHub Pages se conserva únicamente para recursos web fijos del sitio (logos, iconos y archivos publicados).
     // Las imágenes dinámicas de productos y regalos NO se obtienen de GitHub.
     const GITHUB_CATALOG_SOURCE = {
@@ -457,8 +449,6 @@
     let remoteConfigInFlight = null;
     let remoteConfigGeneration = 0;
     let remoteConfigRevision = "";
-    let remoteConfigPollingTimer = 0;
-    const remoteConfigRefresh = {nextAt:0, failures:0};
     window.CATALOG_PUBLIC_CONFIG_CONFIRMED = false;
     let remoteConfigReadyResolver = null;
     window.REMOTE_CONFIG_READY = new Promise(resolve=>{ remoteConfigReadyResolver = resolve; });
@@ -501,13 +491,11 @@
           if(generation === remoteConfigGeneration){
             acceptCatalogPublicConfiguration(snapshot.valores, {revision:snapshot.publicadoEn, rebuild:options.rebuild !== false});
           }
-          completeRefresh(remoteConfigRefresh, true);
           return true;
         }catch(error){
-          completeRefresh(remoteConfigRefresh, false);
           setConfigurationNotice(window.CATALOG_PUBLIC_CONFIG_CONFIRMED
             ? "No se pudo actualizar la configuración. Se conserva la última configuración válida."
-            : "No se pudo cargar la configuración del catálogo. Se reintentará automáticamente; también puedes recargar la página.");
+            : "No se pudo cargar la configuración del catálogo. Recarga la página para volver a intentarlo.");
           console.info("Configuración pública no disponible; se conserva únicamente la última configuración válida.", error);
           return false;
         }finally{
@@ -525,9 +513,6 @@
       await refreshRemoteCatalogConfiguration({rebuild:false, initial:true});
       remoteConfigReadyResolver?.(window.CATALOG_PUBLIC_CONFIG_CONFIRMED);
       remoteConfigReadyResolver = null;
-      if(!remoteConfigPollingTimer){
-        remoteConfigPollingTimer = startVisibleRefresh(()=>refreshRemoteCatalogConfiguration(), remoteConfigRefresh);
-      }
     }
 
     function normalizeImageServiceFile(file, acceptImageMimeType = false){
@@ -1036,7 +1021,6 @@
     let productById = new Map();
     let adImageEntries = [];
     let adRefreshInFlight = null;
-    let adRefreshTimer = 0;
 
     // Los anuncios se leen y actualizan sin consultar hojas ni reconstruir productos.
     function refreshAdPalettes(){
@@ -1052,11 +1036,6 @@
         console.info("No se pudieron actualizar los anuncios; se conserva el último índice válido.", error);
       }).finally(()=>{ adRefreshInFlight = null; });
       return adRefreshInFlight;
-    }
-
-    function startAdPaletteAutoRefresh(){
-      if(adRefreshTimer) return;
-      adRefreshTimer = startVisibleRefresh(refreshAdPalettes, imageIndexRefresh);
     }
 
     const ALBUM_COLORS = [
@@ -2920,11 +2899,6 @@
       render();
     }
 
-    let inventoryRefreshInFlight = false;
-    const INVENTORY_REFRESH_MS = BACKGROUND_REFRESH_MS;
-    const inventoryRefreshState = {nextAt:0, failures:0};
-    let inventoryRefreshTimer = 0;
-
     async function loadProducts(options = {}){
       const silent = options.silent === true;
       const refreshImages = options.refreshImages !== false;
@@ -3016,21 +2990,6 @@
         if(!silent) updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
       }
       return true;
-    }
-
-    function startInventoryAutoRefresh(){
-      if(inventoryRefreshTimer) return;
-      inventoryRefreshState.nextAt = Date.now() + INVENTORY_REFRESH_MS;
-      inventoryRefreshTimer = startVisibleRefresh(async ()=>{
-        if(inventoryRefreshInFlight) return;
-        inventoryRefreshInFlight = true;
-        try{
-          completeRefresh(inventoryRefreshState, await loadProducts({silent:true, refreshImages:false}) === true);
-        }catch(error){
-          completeRefresh(inventoryRefreshState, false);
-          console.info("No se pudo actualizar el inventario automáticamente; se conserva la vista actual.", error);
-        }finally{ inventoryRefreshInFlight = false; }
-      }, inventoryRefreshState);
     }
 
     function initCartButton(){
@@ -3636,8 +3595,7 @@ async function init(){
   await Promise.all([refreshAdPalettes(), loadProducts()]);
   rebuildCatalogHistoryForRestoredNavigation({force:shouldForceRestoredHistory});
   installCatalogExitGuardIfAtRoot();
-  startInventoryAutoRefresh();
-  startAdPaletteAutoRefresh();
+  // Los datos se consultan al abrir o recargar; no hay sondeos automáticos.
   await restoreCatalogAdminAfterReload(startupAdminState);
   uxRestoreScrollPosition();
 }

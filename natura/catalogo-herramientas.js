@@ -425,6 +425,12 @@ initCatalogPdfFeature();
 // ==========================================
 // VISTA DE COLLAGE SEGÚN LA VISTA Y FILTROS ACTUALES
 // ==========================================
+function collageProductCode(product){
+  if(product?.isGiftGalleryImage) return "";
+  const value=String(product?.id??product?.code??"").trim();
+  return /^\d{1,4}$/.test(value)?value.padStart(4,"0"):"";
+}
+
 function collageUniqueProducts(products){
   const seen=new Set();
   const out=[];
@@ -587,6 +593,7 @@ function initCollageFeature(){
     .collage-modal.admin-embedded .collage-selection-hint{background:#fff7e8;border-color:#ead4a2;color:#765719}
     .collage-modal.admin-embedded .collage-tree{color:#17312b}
     .collage-modal.admin-embedded .collage-subtitle{color:#6f7d78}
+    .collage-modal.admin-embedded .collage-code{color:#8d5360}
     .collage-modal.admin-embedded .collage-depth-4>.collage-subtitle,.collage-modal.admin-embedded .collage-depth-5>.collage-subtitle{color:#7a8682}
     .collage-backdrop{position:absolute;inset:0;background:rgba(3,8,18,.78);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
     .collage-shell{position:relative;z-index:1;width:min(1080px,92vw,92vh);aspect-ratio:1/1;max-width:92vw;max-height:92vh;overflow:auto;background:#0f1726;border:1px solid #29354a;border-radius:24px;box-shadow:0 24px 70px rgba(0,0,0,.48);padding:22px}
@@ -644,6 +651,7 @@ function initCollageFeature(){
     .collage-image img{display:block;width:100%;height:100%;max-width:100%;max-height:100%;object-fit:contain}
     .collage-caption{padding:12px 12px 14px;text-align:center}
     .collage-name{margin:0;color:#f8fafc;font-size:14px;line-height:1.35;font-weight:850;display:block;white-space:normal;overflow:visible;overflow-wrap:anywhere;min-height:0}
+    .collage-code{margin:7px 0 0;color:#e9bec8;font-size:13px;line-height:1.2;font-weight:850}
     .collage-price{margin:7px 0 0;color:#dce6f5;font-size:15px;line-height:1.2;font-weight:950}
     .collage-empty{padding:38px 18px;text-align:center;color:#b7c2d3;border:1px dashed #344158;border-radius:18px;background:rgba(255,255,255,.025)}
     body.collage-open{overflow:hidden}
@@ -1049,6 +1057,14 @@ function initCollageFeature(){
       name.title=name.textContent;
       caption.appendChild(name);
 
+      const productCode=collageProductCode(p);
+      if(productCode){
+        const code=document.createElement("p");
+        code.className="collage-code";
+        code.textContent=`Código ${productCode}`;
+        caption.appendChild(code);
+      }
+
       const priceText=collagePriceText(p);
       if(priceText){
         const price=document.createElement("p");
@@ -1384,7 +1400,7 @@ function initCollageFeature(){
     const name=String(p.name||"Producto").trim();
     const category=String(p.category||"").trim();
     const categoryLines=category?wrap(category,textW,25):[];
-    const code=String(p.id||"").trim();
+    const code=collageProductCode(p);
     const extraHeight=(code?70:0)+(categoryLines.length?categoryLines.length*31+20:0);
     let titleSize=66,titleLines=[];
     for(;titleSize>=24;titleSize--){
@@ -1556,8 +1572,9 @@ function initCollageFeature(){
         const nameSize=isMarketplace ? 18 : (columns<=2?25:columns===3?20:columns===4?16:columns===5?14:columns===6?12:11);
         const nameLine=Math.round(nameSize*1.16);
         const priceSize=Math.max(12,nameSize+2);
+        const codeSize=Math.max(12,nameSize);
         const captionPad=isMarketplace?6:10;
-        const reservedCaption=3*nameLine+priceSize+24+captionPad*2;
+        const reservedCaption=3*nameLine+codeSize+8+priceSize+24+captionPad*2;
         const imageH=isMarketplace
           ? Math.max(60,Math.min(cardW*.85,Math.floor((PAGE_H-235-gap*(rowsCount-1))/rowsCount)-reservedCaption))
           : Math.round(Math.min(250,Math.max(190,cardW*.88)));
@@ -1572,11 +1589,13 @@ function initCollageFeature(){
           );
           lines=trimWrappedLines(pctx,lines,maxTextW,columns>=5?2:3);
           const price=collagePriceText(product);
+          const code=collageProductCode(product);
           const textH=
             lines.length*nameLine+
+            (code?codeSize+8:0)+
             (price?priceSize+24:0)+
             (captionPad*2);
-          return {product,lines,price,height:imageH+textH};
+          return {product,lines,code,price,height:imageH+textH};
         });
 
         const rows=[];
@@ -1590,7 +1609,7 @@ function initCollageFeature(){
           gap*Math.max(0,rows.length-1);
 
         const layout={
-          indent,available,cols,cardW,imageH,nameSize,nameLine,priceSize,captionPad,rows,height
+          indent,available,cols,cardW,imageH,nameSize,nameLine,codeSize,priceSize,captionPad,rows,height
         };
         cardLayouts.set(block,layout);
         return layout;
@@ -1775,6 +1794,12 @@ function initCollageFeature(){
             for(const line of entry.lines){
               ctx.fillText(line,x+gl.cardW/2,ty);
               ty+=gl.nameLine;
+            }
+
+            if(entry.code){
+              ctx.fillStyle="#8d5360";
+              ctx.font=`800 ${gl.codeSize}px system-ui, -apple-system, Segoe UI, Arial, sans-serif`;
+              ctx.fillText(`Código ${entry.code}`,x+gl.cardW/2,ty+4);
             }
 
             if(entry.price){

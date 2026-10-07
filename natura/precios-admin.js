@@ -6,6 +6,16 @@
   if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)) return;
   const SHEET_ID=(()=>{try{return String(GOOGLE_SHEET_SOURCE?.spreadsheetId||"").trim()}catch(_){return "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs"}})();
   const ADMIN_MODE_STORAGE_KEY="irenismb_admin_mode_active_v1";
+  const DOCUMENTS=Object.freeze({
+    productos:Object.freeze({label:"Productos",help:"Inventario, precios y descripciones del catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=893686273`}),
+    visibilidad:Object.freeze({label:"Visibilidad",help:"Niveles y productos visibles en el catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=226252680`}),
+    pedidos:Object.freeze({label:"Pedidos",help:"Pedidos y salidas registrados desde la página.",group:"Pedidos y prospectos",url:"https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit#gid=0"}),
+    prospectos:Object.freeze({label:"Prospectos",help:"Perfiles de Facebook y seguimiento comercial.",group:"Pedidos y prospectos",url:"https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit#gid=639690806"}),
+    visitas:Object.freeze({label:"Visitas",help:"Actividad y ubicación de los visitantes.",group:"Visitas",url:"https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit#gid=0"}),
+    resumen_visitas:Object.freeze({label:"Resumen de visitas",help:"Estadísticas acumuladas de las visitas.",group:"Visitas",url:"https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit#gid=1300000001"}),
+    navegadores:Object.freeze({label:"Navegadores",help:"Identificación de navegadores y visitas propias.",group:"Visitas",url:"https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit#gid=1246775301"})
+  });
+  window.CATALOG_ADMIN_DOCUMENTS=DOCUMENTS;
   const rules=new Set();
   let admin=false, adminMissingPriceOnly=false, adminHideHidden=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
   let adminSection="catalogo", navigationOrderDraft=[], navigationDragLevel="";
@@ -38,6 +48,11 @@
 
   const css=document.createElement("style");
   css.textContent=`
+  .catalog-admin-documents-dialog{box-sizing:border-box;width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 32px);padding:24px;border:1px solid #dfe5e1;border-radius:20px;background:#fff;color:#17312b;overflow:auto;box-shadow:0 20px 70px #172d2740}
+  .catalog-admin-documents-dialog::backdrop{background:#11182799}
+  .catalog-admin-documents-head{display:flex;justify-content:space-between;align-items:start;gap:16px}.catalog-admin-documents-head h2{margin:0;font:900 24px/1.2 Arial;color:#17312b}
+  .catalog-admin-documents-dialog p{margin:10px 0 18px;color:#6c7774;font:13px/1.5 Arial}.catalog-admin-documents-dialog h3{margin:20px 0 8px;font:850 15px Arial;color:#8d5360}
+  .catalog-admin-document-link{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding:12px 14px;border:1px solid #dfe5e1;border-radius:12px;text-decoration:none;background:#fafbf9;color:#213b34}.catalog-admin-document-link:hover{background:#f1ecfb;border-color:#ddd0f4}.catalog-admin-document-link strong{display:block;font:850 14px Arial}.catalog-admin-document-link small{display:block;margin-top:4px;font:12px/1.4 Arial;color:#6c7774}
   .card,.album-card{position:relative}.catalog-admin-vis{position:absolute;z-index:20;top:8px;right:8px}
   .album-card.catalog-admin-has-vis .album-card-top{display:grid!important;grid-template-columns:auto minmax(0,1fr)!important;grid-template-areas:"icon count" "icon vis";align-items:start!important;column-gap:14px!important;row-gap:7px!important}
   .album-card.catalog-admin-has-vis .album-icon{grid-area:icon}
@@ -281,7 +296,7 @@
   function startAdmin(){admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection);window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:true}}))}
   function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild()}
   function syncAdminTools(){try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}}
-  function removeAdminUI(){clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
+  function removeAdminUI(){document.getElementById("catalogAdminDocumentsDialog")?.remove();clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
 
   function normalizeNavigationConfig(value){
     const alias={
@@ -396,6 +411,30 @@
   }
   function resetNavigationOrderDraft(){navigationOrderDraft=NAVIGATION_ORDER_DEFAULT.map(item=>({...item}));renderNavigationOrderEditor();setConfigStatus("Configuración predeterminada preparada. Pulsa Guardar orden para aplicarla.");}
 
+  function openDocumentsDialog(){
+    if(!admin||!capabilities.has("configuracion")) return;
+    let dialog=document.getElementById("catalogAdminDocumentsDialog");
+    if(!dialog){
+      dialog=document.createElement("dialog");
+      dialog.id="catalogAdminDocumentsDialog";
+      dialog.className="catalog-admin-documents-dialog";
+      dialog.setAttribute("aria-labelledby","catalogAdminDocumentsTitle");
+      dialog.innerHTML='<div class="catalog-admin-documents-head"><h2 id="catalogAdminDocumentsTitle">Documentos de la página</h2><button type="button" class="catalog-admin-secondary" aria-label="Cerrar documentos">Cerrar</button></div><p>Abre el registro que necesitas en una pestaña nueva.</p>';
+      let currentGroup="";
+      for(const item of Object.values(DOCUMENTS)){
+        if(item.group!==currentGroup){
+          const heading=document.createElement("h3");heading.textContent=item.group;dialog.appendChild(heading);currentGroup=item.group;
+        }
+        const link=document.createElement("a");link.className="catalog-admin-document-link";link.href=item.url;link.target="_blank";link.rel="noopener noreferrer";
+        const text=document.createElement("span"),label=document.createElement("strong"),help=document.createElement("small"),arrow=document.createElement("span");
+        label.textContent=item.label;help.textContent=item.help;arrow.textContent="↗";arrow.setAttribute("aria-hidden","true");text.append(label,help);link.append(text,arrow);dialog.appendChild(link);
+      }
+      dialog.querySelector("button").addEventListener("click",()=>dialog.close());
+      document.body.appendChild(dialog);
+    }
+    if(!dialog.open) dialog.showModal();
+  }
+
   function ensureConfigPanel(){
     let panel=document.getElementById("catalogAdminConfig");
     if(panel){renderAdminFilterRows();renderNavigationOrderEditor();return panel}
@@ -405,11 +444,13 @@
     const trackingRows=CONFIG_ITEMS.filter(item=>item.key==="REGISTRAR_VISITAS_PROPIAS").map(configRow).join("");
     const adminRows=ADMIN_FILTER_ITEMS.map(item=>`<div class="catalog-admin-config-row" data-admin-filter-key="${item.key}"><div><span class="catalog-admin-config-label">${item.label}</span><span class="catalog-admin-config-help">${item.help}</span></div><div class="catalog-admin-filter-controls"><div class="catalog-admin-scope" role="group" aria-label="Alcance de ${item.label}"><button type="button" class="catalog-admin-scope-btn" data-admin-filter-scope="local" data-admin-filter-scope-label="Solo este dispositivo" data-admin-filter-key="${item.key}" aria-pressed="false"><span class="catalog-admin-scope-check" aria-hidden="true">✓</span><span class="catalog-admin-scope-text">Solo este dispositivo</span></button><button type="button" class="catalog-admin-scope-btn" data-admin-filter-scope="global" data-admin-filter-scope-label="Todos los administradores" data-admin-filter-key="${item.key}" aria-pressed="false"><span class="catalog-admin-scope-check" aria-hidden="true">✓</span><span class="catalog-admin-scope-text">Todos los administradores</span></button></div><button type="button" class="catalog-admin-switch" role="switch" aria-checked="false" data-admin-filter-toggle="${item.key}">DESACTIVADO</button></div></div>`).join("");
     panel.innerHTML=`<button type="button" data-admin-config-collapse aria-expanded="true" hidden></button><h2 class="catalog-admin-page-heading">Configuración</h2><div class="catalog-admin-config-body" id="catalogAdminConfigBody">
+      <section class="catalog-admin-card" aria-labelledby="catalogAdminDocumentsHeading"><h3 id="catalogAdminDocumentsHeading">Documentos</h3><p class="catalog-admin-card-copy">Accede al inventario, los pedidos, los prospectos y los registros de visitas.</p><button type="button" class="catalog-admin-secondary" id="catalogAdminDocumentsOpen" aria-haspopup="dialog" aria-controls="catalogAdminDocumentsDialog">Abrir documentos</button></section>
       <section class="catalog-admin-card" aria-labelledby="catalogSharedSettingsTitle"><h3 class="catalog-admin-scope-title" id="catalogSharedSettingsTitle">Configuración compartida</h3><p class="catalog-admin-card-copy">Estas opciones afectan al catálogo público y al administrativo.</p><h4>Orden de navegación</h4><p class="catalog-admin-card-copy">Define qué niveles aparecen y en qué orden. Puedes mover u omitir cualquiera, incluidos Sección y Producto. Si no dejas ningún nivel activo, el catálogo no mostrará niveles ni productos.</p><div class="catalog-admin-order-list" id="catalogAdminOrderList"></div><p class="catalog-admin-order-help"><span aria-hidden="true">ⓘ</span><span>El mismo orden se aplica al catálogo, Visibilidad y Folleto. Si el último nivel activo no es Producto, al pulsarlo se mantiene esa misma vista.</span></p><div class="catalog-admin-order-preview-title">Vista previa del árbol</div><div class="catalog-admin-order-preview" id="catalogAdminOrderPreview"></div><div class="catalog-admin-order-buttons"><button type="button" class="catalog-admin-primary" id="catalogAdminOrderSave">Guardar orden</button><button type="button" class="catalog-admin-secondary" id="catalogAdminOrderReset">Restablecer orden predeterminado</button></div><h4>Preferencias compartidas</h4><div class="catalog-admin-config-list" id="catalogAdminSharedConfigList"><div class="catalog-admin-config-row"><div><label class="catalog-admin-config-label" for="catalogDefaultProductOrder">Orden predeterminado de los productos</label><span class="catalog-admin-config-help">Se aplica a productos, paletas y miniaturas. Cada visitante puede elegir otro orden.</span></div><div><select id="catalogDefaultProductOrder"><option value="price_asc">Precio: menor a mayor</option><option value="price_desc">Precio: mayor a menor</option><option value="name_asc">Nombre: A–Z</option><option value="name_desc">Nombre: Z–A</option></select><button type="button" class="catalog-admin-primary" id="catalogDefaultProductOrderSave">Guardar</button></div></div>${sharedRows}</div></section>
       <section class="catalog-admin-card" aria-labelledby="catalogUserSettingsTitle"><h3 class="catalog-admin-scope-title" id="catalogUserSettingsTitle">Vista del usuario</h3><p class="catalog-admin-card-copy">Actualmente no hay ajustes exclusivos de la vista pública. Los controles Ordenar, Filtrar y Ver productos están disponibles directamente en el catálogo. Los ajustes de precios y stock están en Configuración compartida porque afectan ambas vistas.</p></section>
       <section class="catalog-admin-card" aria-labelledby="catalogAdminSettingsTitle"><h3 class="catalog-admin-scope-title" id="catalogAdminSettingsTitle">Vista del administrador</h3><p class="catalog-admin-card-copy">Los filtros afectan únicamente al área administrativa. Pueden guardarse para este dispositivo o para todos los administradores. El registro de tus propias visitas controla la inclusión de tus navegadores conocidos en las estadísticas.</p><div class="catalog-admin-config-list">${trackingRows}${adminRows}</div></section>
       <p class="catalog-admin-config-status" id="catalogAdminConfigStatus" role="status" aria-live="polite"></p></div>`;
     panel.addEventListener("click",e=>{
+      if(e.target.closest("#catalogAdminDocumentsOpen")){openDocumentsDialog();return}
       const move=e.target.closest("[data-nav-order-move]");if(move&&!move.disabled){moveNavigationOrder(move.dataset.navOrderLevel,move.dataset.navOrderMove);return}
       const levelToggle=e.target.closest("[data-nav-order-toggle]");if(levelToggle){toggleNavigationLevel(levelToggle.dataset.navOrderToggle);return}
       if(e.target.closest("#catalogAdminOrderSave")){saveNavigationOrder();return}

@@ -83,6 +83,7 @@
     const style = document.createElement("style");
     style.id = "catalogProspectsStyles";
     style.textContent = `
+      .catalog-prospect-record-link{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;text-decoration:none;align-self:start}
       .catalog-prospect-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;margin:8px 0 2px;padding:8px 12px;border:1px solid #bdd7c8;border-radius:10px;background:#edf8f1;color:#1d6840;font:850 11px Arial;cursor:pointer}
       .catalog-prospect-btn:hover{background:#e2f3e8;border-color:#9fc8af}.catalog-prospect-btn:disabled{opacity:.55;cursor:wait}
       .catalog-prospect-count{display:inline-flex;min-width:20px;height:20px;align-items:center;justify-content:center;padding:0 6px;border-radius:999px;background:#d6ecde;color:#165936;font:900 10px Arial}
@@ -166,6 +167,7 @@
         <p class="catalog-admin-card-copy">Guarda únicamente el enlace del perfil de Facebook y su relación comercial. El producto se toma del inventario cuando se registra desde una tarjeta.</p>
         <div class="catalog-prospects-toolbar">
           <button type="button" class="catalog-admin-primary" id="catalogProspectGeneral">+ Prospecto general</button>
+          <a class="catalog-admin-secondary catalog-prospect-record-link" href="${window.CATALOG_ADMIN_DOCUMENTS.prospectos.url}" target="_blank" rel="noopener noreferrer">Abrir registro</a>
           <input id="catalogProspectSearch" type="search" placeholder="Buscar perfil, código, producto o nota" aria-label="Buscar prospectos">
           <select id="catalogProspectStateFilter" aria-label="Filtrar por estado"><option value="">Todos los estados</option>${STATES.map(s=>`<option value="${s}">${STATE_LABELS[s]}</option>`).join("")}</select>
           <button type="button" class="catalog-admin-secondary" id="catalogProspectReload">Recargar</button>
@@ -189,6 +191,7 @@
     dialog.innerHTML = `
       <form class="catalog-prospect-dialog-form" method="dialog">
         <h3>Registrar prospecto</h3>
+        <a class="catalog-admin-secondary catalog-prospect-record-link" href="${window.CATALOG_ADMIN_DOCUMENTS.prospectos.url}" target="_blank" rel="noopener noreferrer">Abrir registro de prospectos</a>
         <p class="catalog-prospect-dialog-context" id="catalogProspectContext"></p>
         <label>Perfil de Facebook
           <span class="catalog-prospect-url-line"><input id="catalogProspectUrl" type="text" inputmode="url" autocomplete="off" placeholder="https://www.facebook.com/..." required><button type="button" class="catalog-prospect-paste" id="catalogProspectPaste">Pegar enlace</button></span>

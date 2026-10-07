@@ -20,7 +20,7 @@
   let admin=false, adminMissingPriceOnly=false, adminHideHidden=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
   let adminSection="catalogo", navigationOrderDraft=[], navigationDragLevel="";
   let capabilities=new Set(["precio"]);
-  let bridgePopup=null, needsPopup=false;
+  let bridgePopup=null, bridgeCheck=null;
   const requests=new Map();
   const CONFIG_ITEMS=[
     {key:"REGISTRAR_VISITAS_PROPIAS",label:"Registrar mis propias visitas",help:"Incluye o excluye tus navegadores conocidos del registro de visitas y avisos."},
@@ -48,6 +48,7 @@
 
   const css=document.createElement("style");
   css.textContent=`
+  .catalog-admin-connection{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0;padding:14px 16px;border:1px solid #e6bac3;border-radius:14px;background:#fff4f6;color:#8f263c;font:13px/1.45 Arial}.catalog-admin-connection[hidden]{display:none!important}.catalog-admin-connection button{padding:9px 13px;border:1px solid #cfa8b0;border-radius:10px;background:#fff;color:#713c49;font:800 12px Arial;cursor:pointer}
   .catalog-admin-documents-dialog{box-sizing:border-box;width:min(680px,calc(100vw - 24px));max-height:calc(100dvh - 32px);padding:24px;border:1px solid #dfe5e1;border-radius:20px;background:#fff;color:#17312b;overflow:auto;box-shadow:0 20px 70px #172d2740}
   .catalog-admin-documents-dialog::backdrop{background:#11182799}
   .catalog-admin-documents-head{display:flex;justify-content:space-between;align-items:start;gap:16px}.catalog-admin-documents-head h2{margin:0;font:900 24px/1.2 Arial;color:#17312b}
@@ -251,11 +252,27 @@
   }
   window.setCatalogAdminSection=setCatalogAdminSection;
   window.CATALOG_ADMIN_SECTION=adminSection;
-  function syncUI(){btn.hidden=false;btn.disabled=connecting;btn.title=admin?"Salir del modo administrador":"Administrar catálogo";if(!admin)return;syncAdminSectionUI(false)}
-
-  function bridgeAvailable(){return Boolean(bridgeFrame?.isConnected||(bridgePopup&&!bridgePopup.closed))}
-  function toggleAdmin(){if(admin){stopAdmin();return} if(port&&bridgeAvailable()){startAdmin();return} connect()}
-  function connect(){
+  function syncConnectionButton(){
+    btn.hidden=false;btn.disabled=connecting;
+    const label=connecting?"Conectando…":admin?(port?"Salir de administración":"Reconectar administración"):"Administrar";
+    btn.textContent=label;btn.title=label;btn.setAttribute("aria-label",connecting?"Conectando con Google":admin?label:"Administrar catálogo");
+  }
+  function syncUI(){syncConnectionButton();if(!admin)return;syncAdminSectionUI(false)}
+  function setConnectionStatus(message=""){
+    let box=document.getElementById("catalogAdminConnection");
+    if(!box&&message){
+      box=document.createElement("div");box.id="catalogAdminConnection";box.className="catalog-admin-connection";
+      const text=document.createElement("span");text.setAttribute("role","status");text.setAttribute("aria-live","polite");
+      const retry=document.createElement("button");retry.type="button";retry.textContent="Conectar con Google";retry.addEventListener("click",()=>connect(true));
+      box.append(text,retry);grid.insertAdjacentElement("beforebegin",box);
+    }
+    if(box){box.hidden=!message;box.querySelector("span").textContent=message;box.querySelector("button").disabled=connecting}
+  }
+  // La ventana puede parecer cerrada por aislamiento entre sitios aunque el puerto siga activo.
+  // La disponibilidad se verifica con una respuesta del puente, nunca con popup.closed.
+  function bridgeAvailable(){return Boolean(port)}
+  function toggleAdmin(){if(connecting)return;if(admin&&port){stopAdmin();return}if(port){startAdmin();return}connect(true)}
+  function connect(usePopup=false){
     if(connecting)return;
     const catalogOrigin=String(window.location.origin||"").trim();
     if(window.location.protocol==="file:"||!catalogOrigin||catalogOrigin==="null"){
@@ -267,12 +284,12 @@
       alert("Este origen no está autorizado para administrar el catálogo. Usa la versión publicada o un servidor local en localhost/127.0.0.1.");
       return;
     }
-    connecting=true;openAfterConnect=true;btn.textContent="Conectando…";pendingChannel=randomChannel();
-    closeBridge({keepButton:true,keepConnecting:true,keepPending:true});
-    const u=new URL(endpoint);u.searchParams.set("modo","puente");u.searchParams.set("canal",pendingChannel);u.searchParams.set("origen",catalogOrigin);
-    if(needsPopup){
+    closeBridge({keepButton:true});
+    connecting=true;openAfterConnect=true;pendingChannel=randomChannel();syncConnectionButton();setConnectionStatus();
+    const u=new URL(endpoint);u.searchParams.set("modo","puente");u.searchParams.set("canal",pendingChannel);u.searchParams.set("origen",catalogOrigin);u.searchParams.set("transporte",usePopup?"ventana":"iframe");
+    if(usePopup){
       bridgePopup=window.open(u.toString(),"natura_admin_google","popup,width=560,height=640");
-      if(!bridgePopup){connecting=false;openAfterConnect=false;pendingChannel="";btn.textContent="Conectar con Google";alert("Permite la ventana de Google para conectar la administración y pulsa Admin de nuevo.");return}
+      if(!bridgePopup){connecting=false;openAfterConnect=false;pendingChannel="";syncConnectionButton();setConnectionStatus("El navegador bloqueó la ventana de Google. Permite las ventanas emergentes para este catálogo y pulsa Conectar con Google.");return}
     }else{
     bridgeFrame=document.createElement("iframe");
     bridgeFrame.title="Conexión segura con Google";
@@ -285,16 +302,33 @@
     clearTimeout(connectTimer);
     connectTimer=setTimeout(()=>{
       if(!connecting)return;
-      const wasPopup=Boolean(bridgePopup);
-      connecting=false;openAfterConnect=false;pendingChannel="";needsPopup=true;btn.textContent="Conectar con Google";closeBridge({keepButton:true});
-      alert(wasPopup?"La conexión con Google no se completó. Pulsa Admin y termina el acceso con una cuenta que tenga permisos sobre el inventario y el registro de pedidos.":"Google no pudo conectar la administración en segundo plano. Pulsa Admin de nuevo para conectar en una ventana de Google; mantenla abierta mientras administras.");
-    },needsPopup?120000:15000);
+      connecting=false;connectTimer=0;
+      // Conserva la ventana y el canal: el acceso a Google puede terminar después del aviso.
+      if(!usePopup){closeBridge({keepButton:true});openAfterConnect=false}
+      syncConnectionButton();setConnectionStatus(usePopup?"Termina el acceso en la ventana de Google con una cuenta que tenga permisos sobre los documentos. Puedes volver a conectar aquí si hace falta.":"Pulsa Conectar con Google para continuar la administración.");
+    },usePopup?120000:30000);
   }
   function randomChannel(){const b=new Uint8Array(24);crypto.getRandomValues(b);return Array.from(b,x=>x.toString(16).padStart(2,"0")).join("")}
   function trusted(o){return o==="https://script.google.com"||/^https:\/\/[a-z0-9.-]*googleusercontent\.com$/i.test(o)}
-  function onBridgeReady(e){const m=e.data||{};if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||m.canal!==pendingChannel||!e.ports?.[0])return;clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=e.ports[0];port.onmessage=onReply;port.start();capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);window.CATALOG_ADMIN_CAPABILITIES=capabilities;pendingChannel="";connecting=false;btn.textContent="Administrar";window.dispatchEvent(new CustomEvent("irenismb:admin-bridge-ready",{detail:{capabilities:Array.from(capabilities)}}));if(openAfterConnect)startAdmin();openAfterConnect=false}
+  async function onBridgeReady(e){
+    const m=e.data||{};
+    if(m.tipo!=="irenismb-precios-puente-listo"||!trusted(e.origin)||!pendingChannel||m.canal!==pendingChannel||!e.ports?.[0])return;
+    clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}
+    const activePort=e.ports[0];port=activePort;port.onmessage=onReply;port.onmessageerror=()=>loseConnection(activePort);port.start();pendingChannel="";
+    try{
+      await verifyBridge();
+      if(port!==activePort)return;
+      capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);window.CATALOG_ADMIN_CAPABILITIES=capabilities;
+      port.postMessage({tipo:"catalogo-conectado"});connecting=false;setConnectionStatus();
+      const shouldStart=openAfterConnect;openAfterConnect=false;
+      if(shouldStart&&!admin)startAdmin();
+      syncConnectionButton();
+      window.dispatchEvent(new CustomEvent("irenismb:admin-bridge-ready",{detail:{capabilities:Array.from(capabilities)}}));
+      if(admin&&document.getElementById("catalogAdminConfigStatus")?.classList.contains("err"))loadAdminConfig();
+    }catch(_){loseConnection(activePort)}
+  }
   function startAdmin(){admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection);window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:true}}))}
-  function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild()}
+  function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");setConnectionStatus();window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild();syncConnectionButton()}
   function syncAdminTools(){try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}}
   function removeAdminUI(){document.getElementById("catalogAdminDocumentsDialog")?.remove();clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
 
@@ -646,9 +680,34 @@
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
   function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}
 
-  function request(data){return new Promise((resolve,reject)=>{if(!port||!bridgeAvailable()){reject(new Error("La conexión con Google se cerró. Pulsa Admin para reconectar y mantén abierta la ventana de Google."));return}const prefix=data.tipo?.includes("prospect")?"pros":data.tipo==="actualizar-visibilidad"?"vis":(data.tipo?.includes("configuracion")||data.tipo?.includes("orden-navegacion"))?"cfg":"price",id=prefix+"-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error("Google tardó demasiado en responder."))},45000);requests.set(id,{resolve,reject,timer});port.postMessage({...data,solicitudId:id})})}
+  function sendRequest(data,timeout=45000){
+    return new Promise((resolve,reject)=>{
+      if(!bridgeAvailable()){reject(new Error("Conecta con Google para continuar la administración."));return}
+      const id="admin-"+Date.now()+"-"+(++seq),timer=setTimeout(()=>{requests.delete(id);reject(new Error(data.tipo==="verificar-conexion"?"El puente de Google no respondió.":"Google no confirmó la operación a tiempo. Comprueba el documento antes de volver a guardar."))},timeout);
+      requests.set(id,{resolve,reject,timer});
+      try{port.postMessage({...data,solicitudId:id})}catch(error){clearTimeout(timer);requests.delete(id);reject(error)}
+    });
+  }
+  function verifyBridge(){
+    if(bridgeCheck)return bridgeCheck;
+    const activePort=port;
+    const check=sendRequest({tipo:"verificar-conexion"},12000).catch(error=>{loseConnection(activePort);throw error}).finally(()=>{if(bridgeCheck===check)bridgeCheck=null});
+    bridgeCheck=check;return check;
+  }
+  async function request(data){await verifyBridge();return sendRequest(data)}
+  function loseConnection(activePort){
+    if(activePort!==port)return;
+    closeBridge({keepButton:true,keepWindow:true});openAfterConnect=false;syncConnectionButton();
+    setConnectionStatus("La conexión con Google no responde. Pulsa Conectar con Google para continuar; tus cambios sin guardar siguen en la página.");
+    window.dispatchEvent(new CustomEvent("irenismb:admin-bridge-disconnected"));
+  }
   window.CATALOG_ADMIN_REQUEST=request;
   window.CATALOG_ADMIN_CAPABILITIES=capabilities;
-  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado"||m.tipo==="prospectos-obtenidos"||m.tipo==="prospecto-registrado"||m.tipo==="prospecto-actualizado")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
-  function closeBridge(options={}){clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;try{bridgeFrame?.remove()}catch(_){}bridgeFrame=null;try{bridgePopup?.close()}catch(_){}bridgePopup=null;if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton&&!admin)btn.textContent="Administrar"}
+  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="conexion-verificada"||m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado"||m.tipo==="prospectos-obtenidos"||m.tipo==="prospecto-registrado"||m.tipo==="prospecto-actualizado")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
+  function closeBridge(options={}){
+    clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;bridgeCheck=null;
+    for(const pending of requests.values()){clearTimeout(pending.timer);pending.reject(new Error("Se interrumpió la conexión con Google. Comprueba el documento antes de volver a guardar."))}requests.clear();
+    try{bridgeFrame?.remove()}catch(_){}bridgeFrame=null;if(!options.keepWindow){try{bridgePopup?.close()}catch(_){}}bridgePopup=null;
+    if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton)syncConnectionButton();
+  }
 })();

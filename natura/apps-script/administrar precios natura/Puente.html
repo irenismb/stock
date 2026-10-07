@@ -42,11 +42,12 @@
       }
 
       let destino = null;
+      const enIframe = parametros.transporte === "iframe";
       try{
-        if(window.top && window.top.opener) destino = window.top.opener;
+        if(!enIframe && window.top && window.top.opener) destino = window.top.opener;
       }catch(_){}
       if(!destino){
-        try{ if(window.opener) destino = window.opener; }catch(_){}
+        try{ if(!enIframe && window.opener) destino = window.opener; }catch(_){}
       }
       if(!destino){
         try{ if(window.top && window.top !== window) destino = window.top; }catch(_){}
@@ -68,8 +69,7 @@
         [canalMensajes.port2]
       );
 
-      estado.className = "ok";
-      estado.textContent = "Conexión segura activa con el catálogo. Mantén esta ventana abierta mientras administras.";
+      estado.textContent = "Esperando la confirmación del catálogo…";
     });
 
     function normalizarOrigenCatalogo(valor){
@@ -90,7 +90,17 @@
 
     function procesarSolicitud(evento){
       const mensaje = evento && evento.data || {};
+      if(mensaje.tipo === "catalogo-conectado"){
+        estado.className = "ok";
+        estado.textContent = "Conexión segura confirmada con el catálogo. Vuelve al catálogo y mantén esta ventana abierta mientras administras.";
+        return;
+      }
       if(!mensaje.solicitudId) return;
+
+      if(mensaje.tipo === "verificar-conexion"){
+        responder({tipo:"conexion-verificada", solicitudId:mensaje.solicitudId, resultado:{ok:true}});
+        return;
+      }
 
       if(mensaje.tipo === "actualizar-precio"){
         google.script.run

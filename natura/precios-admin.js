@@ -543,9 +543,9 @@
   }
   function applyConfigValues(values,shouldRebuild=true,revision=""){
     if(!values||typeof values!=="object")return;
+    if(revision&&window.acceptCatalogPublicConfiguration&&!window.acceptCatalogPublicConfiguration(values,{revision,rebuild:false}))return;
     window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
     for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(k==="ORDEN_PRODUCTOS"){window.applyCatalogDefaultProductOrder?.(String(rawState));continue}if(k===NAVIGATION_ORDER_KEY){navigationOrderDraft=normalizeNavigationConfig(rawState);try{window.applyCatalogNavigationOrder?.(serializeNavigationConfig(navigationOrderDraft),{rebuild:false})}catch(e){console.info(e)}continue}if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState);if(ADMIN_FILTER_ITEMS.some(item=>item.key===k))adminGlobalStates.set(k,stateBool(rawState))}
-    window.acceptCatalogPublicConfiguration?.(values,{revision,rebuild:shouldRebuild});
     syncEffectiveAdminFilters();renderConfigValues(values);renderAdminFilterRows();
     try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}
     if(shouldRebuild){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();else if(typeof render==="function")render();if(typeof renderCartModal==="function"&&document.getElementById("cartModal")?.classList.contains("open"))renderCartModal();requestAnimationFrame(()=>syncAdminSectionUI(false))}catch(e){console.info(e)}}

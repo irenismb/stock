@@ -698,7 +698,7 @@
   function loseConnection(activePort){
     if(activePort!==port)return;
     closeBridge({keepButton:true,keepWindow:true});openAfterConnect=false;syncConnectionButton();
-    setConnectionStatus("La conexión con Google no responde. Pulsa Conectar con Google para continuar; tus cambios sin guardar siguen en la página.");
+    setConnectionStatus("La conexión con Google no responde. Pulsa Conectar con Google para continuar en esta página.");
     window.dispatchEvent(new CustomEvent("irenismb:admin-bridge-disconnected"));
   }
   window.CATALOG_ADMIN_REQUEST=request;

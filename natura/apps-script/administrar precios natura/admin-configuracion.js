@@ -1,23 +1,14 @@
 // Configuración pública y administrativa persistida del catálogo.
 
 function obtenerConfiguracionWeb() {
-  return {
-    ok: true,
-    valores: leerValoresConfiguracion_(),
-    actualizadoEn: new Date().toISOString()
-  };
+  const publicada = asegurarConfiguracionPublica_();
+  return {ok:true, valores:publicada.valores, publicadoEn:publicada.publicadoEn, actualizadoEn:new Date().toISOString()};
 }
 function obtenerConfiguracionPublicaWeb() {
-  const todos = leerValoresConfiguracion_();
+  const publicada = asegurarConfiguracionPublica_();
   const valores = {};
-  CONFIG_PUBLIC_KEYS.forEach(function(clave) {
-    valores[clave] = todos[clave];
-  });
-  return {
-    ok: true,
-    valores: valores,
-    actualizadoEn: new Date().toISOString()
-  };
+  CONFIG_PUBLIC_KEYS.forEach(function(clave) { valores[clave] = publicada.valores[clave]; });
+  return {ok:true, valores:valores, publicadoEn:publicada.publicadoEn, actualizadoEn:new Date().toISOString()};
 }
 function actualizarConfiguracionWeb(clave, activado) {
   const claveSegura = String(clave == null ? "" : clave).trim().toUpperCase();
@@ -57,6 +48,7 @@ function actualizarConfiguracionWeb(clave, activado) {
       estado: valores[claveSegura],
       activado: valores[claveSegura] === "ACTIVADO",
       valores: valores,
+      publicadoEn: publicarConfiguracionPublica_(valores),
       actualizadoEn: new Date().toISOString()
     };
   } finally {
@@ -66,15 +58,16 @@ function actualizarConfiguracionWeb(clave, activado) {
 function leerValoresConfiguracion_() {
   const propiedades = PropertiesService.getScriptProperties();
   const valores = {};
+  const guardadas = propiedades.getProperties();
   CONFIG_KEYS.forEach(function(clave) {
     const guardado = normalizarEstadoConfiguracion_(
-      propiedades.getProperty(CONFIG_PROPERTY_PREFIX + clave)
+      guardadas[CONFIG_PROPERTY_PREFIX + clave]
     );
     valores[clave] = guardado || CONFIG_DEFAULTS[clave];
   });
-  valores.ORDEN_PRODUCTOS = normalizarOrdenProductos_(propiedades.getProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS")) || "price_asc";
+  valores.ORDEN_PRODUCTOS = normalizarOrdenProductos_(guardadas[CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS"]) || "price_asc";
   valores[NAVIGATION_ORDER_KEY] = normalizarOrdenNavegacion_(
-    propiedades.getProperty(CONFIG_PROPERTY_PREFIX + NAVIGATION_ORDER_KEY)
+    guardadas[CONFIG_PROPERTY_PREFIX + NAVIGATION_ORDER_KEY]
   ) || NAVIGATION_ORDER_DEFAULT;
   return valores;
 }
@@ -102,6 +95,7 @@ function actualizarOrdenNavegacionWeb(orden) {
       clave: NAVIGATION_ORDER_KEY,
       orden: valores[NAVIGATION_ORDER_KEY],
       valores: valores,
+      publicadoEn: publicarConfiguracionPublica_(valores),
       actualizadoEn: new Date().toISOString()
     };
   } finally {
@@ -227,6 +221,52 @@ function actualizarOrdenProductosWeb(orden) {
     const propiedades = PropertiesService.getScriptProperties();
     propiedades.setProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS", seguro);
     if (propiedades.getProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS") !== seguro) throw new Error("No se pudo confirmar el orden.");
-    return {ok:true, clave:"ORDEN_PRODUCTOS", estado:seguro, valores:leerValoresConfiguracion_()};
+    return {ok:true, clave:"ORDEN_PRODUCTOS", estado:seguro, valores:leerValoresConfiguracion_(), publicadoEn:publicarConfiguracionPublica_(leerValoresConfiguracion_())};
   } finally { bloqueo.releaseLock(); }
+}
+
+
+// Solo estos cinco ajustes se publican; los filtros administrativos quedan en Propiedades.
+// Todas las escrituras se ejecutan bajo el mismo bloqueo que protege los ajustes.
+function asegurarConfiguracionPublica_() {
+  const bloqueo = LockService.getScriptLock();
+  bloqueo.waitLock(30000);
+  try {
+    const valores = leerValoresConfiguracion_();
+    return {valores:valores, publicadoEn:publicarConfiguracionPublica_(valores)};
+  }
+  finally { bloqueo.releaseLock(); }
+}
+function publicarConfiguracionPublica_(valores) {
+  const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
+  const nombre = "configuracion_publica";
+  const hoja = libro.getSheetByName(nombre) || libro.insertSheet(nombre);
+  const filas = CONFIG_PUBLIC_KEYS.map(function(clave) { return [clave, String(valores[clave])]; });
+  const existentes = hoja.getRange(1, 1, filas.length + 1, 3).getDisplayValues();
+  const revision = existentes[1] && existentes[1][2];
+  const iguales = existentes[0].join("|") === "Clave|Valor|Actualizado"
+    && /^\d{4}-\d{2}-\d{2}T/.test(revision || "")
+    && filas.every(function(fila, i) {
+      return existentes[i + 1][0] === fila[0] && existentes[i + 1][1] === fila[1]
+        && existentes[i + 1][2] === revision;
+    });
+  if (iguales) return revision;
+  const publicadoEn = new Date().toISOString();
+  const nuevas = [["Clave", "Valor", "Actualizado"]].concat(filas.map(function(fila) {
+    return fila.concat([publicadoEn]);
+  }));
+  const rango = hoja.getRange(1, 1, nuevas.length, 3);
+  rango.setNumberFormat("@").setValues(nuevas);
+  SpreadsheetApp.flush();
+  const leidas = rango.getDisplayValues();
+  if (JSON.stringify(leidas) !== JSON.stringify(nuevas)) {
+    throw new Error("Google no confirmó la publicación de la configuración. Vuelve a cargar Configuración antes de reintentar.");
+  }
+  if (!existentes[0][0]) {
+    rango.setFontFamily("Calibri").setFontSize(11).setVerticalAlignment("middle");
+    hoja.getRange(1, 1, 1, 3).setFontWeight("bold").setBackground("#ead3dd");
+    hoja.setFrozenRows(1); hoja.setFrozenColumns(0);
+    hoja.autoResizeColumns(1, 3);
+  }
+  return publicadoEn;
 }

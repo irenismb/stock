@@ -4,7 +4,7 @@
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
     // ==========================================
     // Los valores locales funcionan como respaldo.
-    // La hoja "Configuracion" conserva únicamente los controles que siguen siendo editables.
+    // La hoja configuracion_publica contiene exclusivamente los ajustes publicados del catálogo.
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
@@ -15,15 +15,31 @@
       gid: "893686273"
     };
 
-    // Configuración pública remota. Se guarda en Propiedades del Apps Script
-    // administrativo y no depende de que exista una pestaña Configuracion.
-    const REMOTE_CONFIG_ENDPOINT = String(window.PRECIOS_ADMIN_CONFIG?.endpoint || "").trim();
+    // Apps Script guarda los ajustes y publica exclusivamente las claves públicas en esta hoja.
     const REMOTE_CONTROL_SOURCE = {
-      enabled: /^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(REMOTE_CONFIG_ENDPOINT),
-      endpoint: REMOTE_CONFIG_ENDPOINT,
-      refreshMs: 60000
+      enabled: true,
+      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
+      sheetName: "configuracion_publica",
+      refreshMs: 120000,
+      cacheKey: "irenismb_public_configuration_v1"
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
+    const PUBLIC_CONFIGURATION_KEYS = Object.freeze([
+      "REGISTRAR_VISITAS_PROPIAS", "MOSTRAR_CANTIDAD_STOCK", "MOSTRAR_PRECIOS_PRODUCTO",
+      "ORDEN_NAVEGACION", "ORDEN_PRODUCTOS"
+    ]);
+    const BACKGROUND_REFRESH_MS = 120000;
+    function completeRefresh(state, successful){
+      state.failures = successful ? 0 : Math.min((state.failures || 0) + 1, 3);
+      state.nextAt = Date.now() + BACKGROUND_REFRESH_MS * Math.pow(2, state.failures);
+    }
+    function startVisibleRefresh(callback, state){
+      const refresh = ()=>{
+        if(!document.hidden && Date.now() >= state.nextAt) callback();
+      };
+      document.addEventListener("visibilitychange", refresh);
+      return window.setInterval(refresh, 30000);
+    }
 
     // GitHub Pages se conserva únicamente para recursos web fijos del sitio (logos, iconos y archivos publicados).
     // Las imágenes dinámicas de productos y regalos NO se obtienen de GitHub.
@@ -347,57 +363,57 @@
     }
 
 
+    function validatePublicConfiguration(values){
+      if(!values || typeof values !== "object") return false;
+      if(!PUBLIC_CONFIGURATION_KEYS.every(key=>typeof values[key] === "string")) return false;
+      if(!PUBLIC_CONFIGURATION_KEYS.slice(0,3).every(key=>parseRemoteBoolean(values[key]) !== null)) return false;
+      if(!["price_asc","price_desc","name_asc","name_desc"].includes(values.ORDEN_PRODUCTOS)) return false;
+      const levels = values.ORDEN_NAVEGACION.split(",").map(item=>item.replace(/^!/, ""));
+      return levels.length === ALL_NAVIGATION_LEVELS.length && new Set(levels).size === levels.length
+        && levels.every(level=>ALL_NAVIGATION_LEVELS.includes(level));
+    }
     function loadRemoteCatalogConfiguration(callbackPrefix){
       return new Promise((resolve, reject)=>{
-        if(!REMOTE_CONTROL_SOURCE.enabled || !REMOTE_CONTROL_SOURCE.endpoint){
-          resolve({ ...REMOTE_CONTROL_DEFAULTS });
-          return;
-        }
-
         const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
         const script = document.createElement("script");
         let settled = false;
-
-        const cleanup = ()=>{
-          try{ delete window[callbackName]; }catch(_){ window[callbackName] = undefined; }
-          if(script.parentNode) script.parentNode.removeChild(script);
-        };
-
-        const timer = window.setTimeout(()=>{
-          if(settled) return;
-          settled = true;
-          cleanup();
-          reject(new Error("Tiempo de espera agotado al consultar la configuración administrativa."));
-        }, GOOGLE_SHEET_QUERY_TIMEOUT_MS);
-
-        window[callbackName] = (payload)=>{
+        const finish = (error, value)=>{
           if(settled) return;
           settled = true;
           window.clearTimeout(timer);
-          cleanup();
-
-          if(!payload || payload.ok !== true || !payload.valores || typeof payload.valores !== "object"){
-            reject(new Error(String(payload?.error || "El administrador devolvió una configuración no válida.")));
-            return;
+          script.remove();
+          // A response arriving just after a timeout must not call a deleted callback.
+          window[callbackName] = ()=>{};
+          window.setTimeout(()=>{ delete window[callbackName]; }, 60000);
+          if(error) reject(error); else resolve(value);
+        };
+        const timer = window.setTimeout(()=>finish(new Error("Google tardó demasiado en responder la configuración pública.")), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
+        window[callbackName] = payload=>{
+          const values = {};
+          let revision = "";
+          const rows = payload?.table?.rows;
+          if(payload?.status !== "ok" || !Array.isArray(rows)){
+            finish(new Error("Google Sheets no devolvió la configuración pública.")); return;
           }
-          resolve(payload.valores);
+          for(const row of rows){
+            const cells = (row.c || []).map(cell=>String(cell?.v ?? cell?.f ?? "").trim());
+            const [key, value, date] = cells;
+            if(!PUBLIC_CONFIGURATION_KEYS.includes(key) || Object.hasOwn(values,key)
+              || !date || !Number.isFinite(Date.parse(date)) || (revision && revision !== date)){
+              finish(new Error("La configuración pública está incompleta o no es válida.")); return;
+            }
+            values[key] = value; revision = date;
+          }
+          if(!validatePublicConfiguration(values)){
+            finish(new Error("La configuración pública está incompleta o no es válida.")); return;
+          }
+          finish(null, {valores:values, publicadoEn:revision});
         };
-
-        script.onerror = ()=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          cleanup();
-          reject(new Error("No se pudo conectar con la configuración administrativa."));
-        };
-
-        const url = new URL(REMOTE_CONTROL_SOURCE.endpoint);
-        url.searchParams.set("modo", "config");
-        url.searchParams.set("callback", callbackName);
-        url.searchParams.set("_", `${Date.now()}_${Math.random().toString(36).slice(2)}`);
-        script.src = url.toString();
-        script.async = true;
-        document.head.appendChild(script);
+        script.onerror = ()=>finish(new Error("No se pudo leer la configuración pública de Google Sheets."));
+        const url = new URL(`https://docs.google.com/spreadsheets/d/${REMOTE_CONTROL_SOURCE.spreadsheetId}/gviz/tq`);
+        url.search = new URLSearchParams({sheet:REMOTE_CONTROL_SOURCE.sheetName, headers:"1", range:"A1:C6",
+          tq:"select A,B,C", tqx:`out:json;responseHandler:${callbackName}`, _:String(Date.now())}).toString();
+        script.src = url.toString(); script.async = true; document.head.appendChild(script);
       });
     }
 
@@ -438,65 +454,79 @@
       return changed;
     }
 
-    async function refreshRemoteCatalogConfiguration(options = {}){
-      const rebuild = options.rebuild !== false;
-      const initial = options.initial === true;
-
-      if(!REMOTE_CONTROL_SOURCE.enabled) return false;
-
-      const controlsResult = await Promise.allSettled([
-        loadRemoteCatalogConfiguration("__remoteCatalogControls")
-      ]).then(results => results[0]);
-
-      let changed = false;
-
-      if(controlsResult.status === "fulfilled"){
-        changed = applyRemoteControlValues(controlsResult.value) || changed;
-      }else{
-        console.info("Configuración administrativa no disponible; se conservan los valores locales.", controlsResult.reason);
-      }
-
-      if(initial){
-        wordSuggestionsVisible = shouldShowSuggestionsInitially();
-        syncWordToggleButton();
-      }
-
-      syncAdministrativeToolVisibility();
-
-      if(changed && rebuild && allLoadedProducts.length){
-        rebuildCatalogVisibility();
-        syncWordToggleButton();
-        if(cartModal && cartModal.classList.contains("open")) renderCartModal();
-      }
-
-      return changed;
-    }
-
+    let remoteConfigInFlight = null;
+    let remoteConfigGeneration = 0;
+    let remoteConfigRevision = "";
     let remoteConfigPollingTimer = 0;
+    const remoteConfigRefresh = {nextAt:0, failures:0};
+    window.CATALOG_PUBLIC_CONFIG_CONFIRMED = false;
     let remoteConfigReadyResolver = null;
-    window.REMOTE_CONFIG_READY = new Promise(resolve => {
-      remoteConfigReadyResolver = resolve;
-    });
+    window.REMOTE_CONFIG_READY = new Promise(resolve=>{ remoteConfigReadyResolver = resolve; });
 
+    function setConfigurationNotice(message){
+      let notice = document.getElementById("catalogConfigurationNotice");
+      if(!notice){
+        notice = document.createElement("p"); notice.id = "catalogConfigurationNotice";
+        notice.setAttribute("role", "status");
+        document.getElementById("grid")?.insertAdjacentElement("beforebegin", notice);
+      }
+      notice.textContent = message; notice.hidden = !message;
+    }
+    function acceptCatalogPublicConfiguration(values, options = {}){
+      if(!validatePublicConfiguration(values)) return false;
+      const revision = String(options.revision || "");
+      if(!Number.isFinite(Date.parse(revision))) return false;
+      if(remoteConfigRevision && Date.parse(revision) < Date.parse(remoteConfigRevision)) return false;
+      const source = Object.fromEntries(PUBLIC_CONFIGURATION_KEYS.map(key=>[key,values[key]]));
+      const first = !window.CATALOG_PUBLIC_CONFIG_CONFIRMED;
+      const changed = applyRemoteControlValues(source);
+      remoteConfigRevision = revision; remoteConfigGeneration++;
+      window.CATALOG_PUBLIC_CONFIG_CONFIRMED = true;
+      try{ localStorage.setItem(REMOTE_CONTROL_SOURCE.cacheKey, JSON.stringify({valores:source, publicadoEn:revision})); }catch(_){}
+      setConfigurationNotice("");
+      if((changed || first) && options.rebuild !== false && allLoadedProducts.length){
+        rebuildCatalogVisibility(); syncWordToggleButton();
+        if(cartModal?.classList.contains("open")) renderCartModal();
+      }
+      return true;
+    }
+    window.acceptCatalogPublicConfiguration = acceptCatalogPublicConfiguration;
+    function refreshRemoteCatalogConfiguration(options = {}){
+      if(remoteConfigInFlight) return remoteConfigInFlight;
+      const generation = remoteConfigGeneration;
+      remoteConfigInFlight = (async ()=>{
+        try{
+          const snapshot = await loadRemoteCatalogConfiguration("__remoteCatalogControls");
+          // An older response cannot replace a configuration just saved by the administrator.
+          if(generation === remoteConfigGeneration){
+            acceptCatalogPublicConfiguration(snapshot.valores, {revision:snapshot.publicadoEn, rebuild:options.rebuild !== false});
+          }
+          completeRefresh(remoteConfigRefresh, true);
+          return true;
+        }catch(error){
+          completeRefresh(remoteConfigRefresh, false);
+          setConfigurationNotice(window.CATALOG_PUBLIC_CONFIG_CONFIRMED
+            ? "No se pudo actualizar la configuración. Se conserva la última configuración válida."
+            : "No se pudo cargar la configuración del catálogo. Se reintentará automáticamente; también puedes recargar la página.");
+          console.info("Configuración pública no disponible; se conserva únicamente la última configuración válida.", error);
+          return false;
+        }finally{
+          if(options.initial){ wordSuggestionsVisible = shouldShowSuggestionsInitially(); syncWordToggleButton(); }
+          syncAdministrativeToolVisibility();
+        }
+      })().finally(()=>{ remoteConfigInFlight = null; });
+      return remoteConfigInFlight;
+    }
     async function initializeRemoteCatalogConfiguration(){
       try{
-        await refreshRemoteCatalogConfiguration({ rebuild:false, initial:true });
-      }catch(error){
-        console.info("No se pudo inicializar la configuración global remota.", error);
-      }finally{
-        if(remoteConfigReadyResolver){
-          remoteConfigReadyResolver(true);
-          remoteConfigReadyResolver = null;
-        }
-      }
-
-      const interval = Math.max(30000, Number(REMOTE_CONTROL_SOURCE.refreshMs) || 60000);
-      if(REMOTE_CONTROL_SOURCE.enabled && !remoteConfigPollingTimer){
-        remoteConfigPollingTimer = window.setInterval(()=>{
-          refreshRemoteCatalogConfiguration({ rebuild:true }).catch(error=>{
-            console.info("No se pudo actualizar la configuración global remota.", error);
-          });
-        }, interval);
+        const cached = JSON.parse(localStorage.getItem(REMOTE_CONTROL_SOURCE.cacheKey) || "null");
+        if(cached) acceptCatalogPublicConfiguration(cached.valores, {revision:cached.publicadoEn, rebuild:false});
+      }catch(_){}
+      await refreshRemoteCatalogConfiguration({rebuild:false, initial:true});
+      remoteConfigReadyResolver?.(window.CATALOG_PUBLIC_CONFIG_CONFIRMED);
+      remoteConfigReadyResolver = null;
+      if(!remoteConfigPollingTimer){
+        remoteConfigPollingTimer = startVisibleRefresh(()=>refreshRemoteCatalogConfiguration(), remoteConfigRefresh);
       }
     }
 
@@ -568,7 +598,10 @@
 
     // Comparte las solicitudes concurrentes del catálogo y de los anuncios.
     let imageIndexInFlight = null;
+    let lastImageIndex = null;
+    const imageIndexRefresh = {nextAt:0, failures:0};
     function loadAppsScriptImageIndex(){
+      if(!imageIndexInFlight && Date.now() < imageIndexRefresh.nextAt) return Promise.resolve(lastImageIndex || readAppsScriptImageIndexCache() || {ok:false, products:{}, gifts:[], ads:[]});
       if(!imageIndexInFlight){
         imageIndexInFlight = fetchAppsScriptImageIndex().finally(()=>{
           imageIndexInFlight = null;
@@ -589,12 +622,14 @@
         const normalized = normalizeImageServicePayload(rawPayload);
         if(!normalized) throw new Error("Apps Script devolvió un índice de imágenes no válido.");
         saveAppsScriptImageIndexCache(rawPayload);
+        completeRefresh(imageIndexRefresh, true); lastImageIndex = normalized;
         return normalized;
       }catch(error){
+        completeRefresh(imageIndexRefresh, false);
         const cached = readAppsScriptImageIndexCache();
         if(cached){
           console.warn("No se pudo actualizar el índice de imágenes desde Apps Script; se conserva el último índice válido guardado en el navegador.", error);
-          return cached;
+          lastImageIndex = cached; return cached;
         }
         console.warn("No se pudo cargar el índice de imágenes desde Apps Script; se usarán imágenes suplentes.", error);
         return { ok:false, products:{}, gifts:[], ads:[] };
@@ -1002,7 +1037,6 @@
     let adImageEntries = [];
     let adRefreshInFlight = null;
     let adRefreshTimer = 0;
-    const AD_IMAGE_REFRESH_MS = 60000;
 
     // Los anuncios se leen y actualizan sin consultar hojas ni reconstruir productos.
     function refreshAdPalettes(){
@@ -1022,12 +1056,7 @@
 
     function startAdPaletteAutoRefresh(){
       if(adRefreshTimer) return;
-      adRefreshTimer = window.setInterval(()=>{
-        if(!document.hidden) refreshAdPalettes();
-      }, AD_IMAGE_REFRESH_MS);
-      document.addEventListener("visibilitychange",()=>{
-        if(!document.hidden) refreshAdPalettes();
-      });
+      adRefreshTimer = startVisibleRefresh(refreshAdPalettes, imageIndexRefresh);
     }
 
     const ALBUM_COLORS = [
@@ -2707,6 +2736,12 @@
       // Evita renders prematuros, incluso al restaurar automáticamente el modo administrador.
       if(window.CATALOG_INITIAL_LOAD_READY !== true) return;
 
+      if(!window.CATALOG_PUBLIC_CONFIG_CONFIRMED){
+        if(grid){grid.classList.remove("album-three-column-layout");grid.replaceChildren(makeEmptyState("Esperando la configuración del catálogo…"));}
+        if(countEl) countEl.textContent = "Configuración pendiente";
+        scheduleJsonLdUpdate([]);
+        return;
+      }
       syncFilterVisibility();
       syncWordToggleButton();
       renderWordSuggestions();
@@ -2886,7 +2921,8 @@
     }
 
     let inventoryRefreshInFlight = false;
-    const INVENTORY_REFRESH_MS = 60000;
+    const INVENTORY_REFRESH_MS = BACKGROUND_REFRESH_MS;
+    const inventoryRefreshState = {nextAt:0, failures:0};
     let inventoryRefreshTimer = 0;
 
     async function loadProducts(options = {}){
@@ -2909,7 +2945,7 @@
       }catch(err){
         console.error("Error al cargar el Google Sheet oficial.", err);
         if(!silent) updateCountTextError("No se pudieron cargar los productos desde el Google Sheet oficial. Reintenta más tarde.");
-        return;
+        return false;
       }
 
       if(!silent) setCatalogLoadingStage("Preparando catálogo…", 95, 99);
@@ -2922,13 +2958,13 @@
       }catch(err){
         console.error("El Google Sheet respondió, pero ocurrió un error al procesar sus productos.", err);
         if(!silent) updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
-        return;
+        return false;
       }
 
       if(!sheetProducts.length){
         console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
         if(!silent) updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
-        return;
+        return false;
       }
 
       let giftProducts = [];
@@ -2979,23 +3015,22 @@
         console.error("Los productos se cargaron, pero ocurrió un error al renderizar el catálogo.", err);
         if(!silent) updateCountTextError("Los productos se cargaron, pero ocurrió un error al mostrar el catálogo. Revisa la consola para el detalle.");
       }
+      return true;
     }
 
     function startInventoryAutoRefresh(){
       if(inventoryRefreshTimer) return;
-      inventoryRefreshTimer = window.setInterval(async ()=>{
-        if(inventoryRefreshInFlight || document.hidden) return;
+      inventoryRefreshState.nextAt = Date.now() + INVENTORY_REFRESH_MS;
+      inventoryRefreshTimer = startVisibleRefresh(async ()=>{
+        if(inventoryRefreshInFlight) return;
         inventoryRefreshInFlight = true;
         try{
-          // La hoja Productos se relee periódicamente. Las imágenes usan el último índice
-          // conocido para evitar consumir innecesariamente la API pública de GitHub.
-          await loadProducts({ silent:true, refreshImages:false });
+          completeRefresh(inventoryRefreshState, await loadProducts({silent:true, refreshImages:false}) === true);
         }catch(error){
+          completeRefresh(inventoryRefreshState, false);
           console.info("No se pudo actualizar el inventario automáticamente; se conserva la vista actual.", error);
-        }finally{
-          inventoryRefreshInFlight = false;
-        }
-      }, INVENTORY_REFRESH_MS);
+        }finally{ inventoryRefreshInFlight = false; }
+      }, inventoryRefreshState);
     }
 
     function initCartButton(){

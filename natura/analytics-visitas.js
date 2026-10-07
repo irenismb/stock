@@ -44,6 +44,7 @@
     try {
       if (!window.REMOTE_CONFIG_READY) return false;
       await window.REMOTE_CONFIG_READY;
+      if(window.CATALOG_PUBLIC_CONFIG_CONFIRMED !== true) return false;
 
       const valores = window.REMOTE_CONTROL_VALUES || {};
       const clavesRequeridas = [OWN_VISITS_KEY];

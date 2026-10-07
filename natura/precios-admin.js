@@ -9,6 +9,7 @@
   const DOCUMENTS=Object.freeze({
     productos:Object.freeze({label:"Productos",help:"Inventario, precios y descripciones del catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=893686273`}),
     visibilidad:Object.freeze({label:"Visibilidad",help:"Niveles y productos visibles en el catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=226252680`}),
+    configuracion_publica:Object.freeze({label:"Configuración pública",help:"Niveles activos, precios, stock y orden del catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=1605449544`}),
     pedidos:Object.freeze({label:"Pedidos",help:"Pedidos y salidas registrados desde la página.",group:"Pedidos y prospectos",url:"https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit#gid=0"}),
     prospectos:Object.freeze({label:"Prospectos",help:"Perfiles de Facebook y seguimiento comercial.",group:"Pedidos y prospectos",url:"https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit#gid=639690806"}),
     visitas:Object.freeze({label:"Visitas",help:"Actividad y ubicación de los visitantes.",group:"Visitas",url:"https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit#gid=0"}),
@@ -440,7 +441,7 @@
       const config=normalizeNavigationConfig(navigationOrderDraft);
       const serialized=serializeNavigationConfig(config);
       const r=await request({tipo:"actualizar-orden-navegacion",orden:serialized});
-      applyConfigValues(r?.valores||{[NAVIGATION_ORDER_KEY]:r?.orden||serialized},true);
+      applyConfigValues(r?.valores||{[NAVIGATION_ORDER_KEY]:r?.orden||serialized},true,r?.publicadoEn);
       setConfigStatus("Navegación guardada en Google y aplicada al catálogo.","ok");
     }catch(e){setConfigStatus(e.message||"No se pudo guardar la navegación.","err")}
     finally{if(save)save.disabled=false;if(reset)reset.disabled=false}
@@ -519,7 +520,7 @@
     const scope=filterScope(item),next=!filterStateForScope(item);
     if(scope===ADMIN_SCOPE_LOCAL){adminLocalStates.set(item.key,next);storageSet(adminLocalKey(item),next?"1":"0");syncEffectiveAdminFilters();renderAdminFilterRows();rebuild();return}
     button.disabled=true;const old=button.textContent;button.textContent="Guardando…";setConfigStatus("");
-    try{const r=await request({tipo:"actualizar-configuracion",clave:item.key,activado:next});applyConfigValues(r?.valores||{[item.key]:r?.estado||(next?"ACTIVADO":"DESACTIVADO")},true);setConfigStatus("Preferencia compartida guardada.","ok")}catch(e){button.disabled=false;button.textContent=old;setConfigStatus(e.message||"No se pudo guardar la preferencia compartida.","err")}
+    try{const r=await request({tipo:"actualizar-configuracion",clave:item.key,activado:next});applyConfigValues(r?.valores||{[item.key]:r?.estado||(next?"ACTIVADO":"DESACTIVADO")},true,r?.publicadoEn);setConfigStatus("Preferencia compartida guardada.","ok")}catch(e){button.disabled=false;button.textContent=old;setConfigStatus(e.message||"No se pudo guardar la preferencia compartida.","err")}
   }
   function setConfigStatus(text,cls=""){const el=document.getElementById("catalogAdminConfigStatus");if(!el)return;el.textContent=text||"";el.className="catalog-admin-config-status"+(cls?" "+cls:"")}
   async function saveDefaultProductOrder(){
@@ -528,7 +529,7 @@
     button.disabled=true;setConfigStatus("Guardando orden predeterminado…");
     try{
       const result=await request({tipo:"actualizar-configuracion",clave:"ORDEN_PRODUCTOS",activado:select.value});
-      applyConfigValues(result?.valores||{ORDEN_PRODUCTOS:select.value},true);
+      applyConfigValues(result?.valores||{ORDEN_PRODUCTOS:select.value},true,result?.publicadoEn);
       setConfigStatus("Orden predeterminado guardado en Google.","ok");
     }catch(error){setConfigStatus(error.message||"No se pudo guardar el orden.","err");}
     finally{button.disabled=false;}
@@ -540,21 +541,22 @@
     if(orderSelect) orderSelect.value=source.ORDEN_PRODUCTOS||window.getCatalogDefaultProductOrder?.()||"price_asc";
     navigationOrderDraft=effectiveNavigationConfig(source);renderNavigationOrderEditor();
   }
-  function applyConfigValues(values,shouldRebuild=true){
+  function applyConfigValues(values,shouldRebuild=true,revision=""){
     if(!values||typeof values!=="object")return;
     window.REMOTE_CONTROL_VALUES=window.REMOTE_CONTROL_VALUES||{};
     for(const [rawKey,rawState] of Object.entries(values)){const k=String(rawKey||"").trim().toUpperCase();if(!k)continue;window.REMOTE_CONTROL_VALUES[k]=String(rawState??"");if(k==="ORDEN_PRODUCTOS"){window.applyCatalogDefaultProductOrder?.(String(rawState));continue}if(k===NAVIGATION_ORDER_KEY){navigationOrderDraft=normalizeNavigationConfig(rawState);try{window.applyCatalogNavigationOrder?.(serializeNavigationConfig(navigationOrderDraft),{rebuild:false})}catch(e){console.info(e)}continue}if(["MOSTRAR_CANTIDAD_STOCK","MOSTRAR_PRECIOS_PRODUCTO"].includes(k)&&window.INTERRUPTORES)window.INTERRUPTORES[k]=stateBool(rawState);if(ADMIN_FILTER_ITEMS.some(item=>item.key===k))adminGlobalStates.set(k,stateBool(rawState))}
+    window.acceptCatalogPublicConfiguration?.(values,{revision,rebuild:shouldRebuild});
     syncEffectiveAdminFilters();renderConfigValues(values);renderAdminFilterRows();
     try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}
     if(shouldRebuild){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();else if(typeof render==="function")render();if(typeof renderCartModal==="function"&&document.getElementById("cartModal")?.classList.contains("open"))renderCartModal();requestAnimationFrame(()=>syncAdminSectionUI(false))}catch(e){console.info(e)}}
   }
   async function loadAdminConfig(){
     if(configLoading||!admin||!capabilities.has("configuracion"))return;configLoading=true;ensureConfigPanel();setConfigStatus("Cargando configuración…");document.querySelectorAll("[data-config-toggle]").forEach(b=>b.disabled=true);renderAdminFilterRows();
-    try{const r=await request({tipo:"obtener-configuracion"});applyConfigValues(r?.valores||{},false);setConfigStatus("Configuración actualizada desde Google.","ok")}catch(e){renderConfigValues(window.REMOTE_CONTROL_VALUES||{});setConfigStatus(e.message||"No se pudo cargar la configuración.","err")}finally{configLoading=false;renderAdminFilterRows()}
+    try{const r=await request({tipo:"obtener-configuracion"});applyConfigValues(r?.valores||{},true,r?.publicadoEn);setConfigStatus("Configuración actualizada desde Google.","ok")}catch(e){renderConfigValues(window.REMOTE_CONTROL_VALUES||{});setConfigStatus(e.message||"No se pudo cargar la configuración.","err")}finally{configLoading=false;renderAdminFilterRows()}
   }
   async function saveConfigToggle(button){
     const k=String(button.dataset.configToggle||"").trim().toUpperCase(),current=button.getAttribute("aria-checked")==="true",next=!current;button.disabled=true;const old=button.textContent;button.textContent="Guardando…";setConfigStatus("");
-    try{const r=await request({tipo:"actualizar-configuracion",clave:k,activado:next});applyConfigValues(r?.valores||{[k]:r?.estado|| (next?"ACTIVADO":"DESACTIVADO")},true);setConfigStatus("Cambio guardado.","ok")}catch(e){button.disabled=false;button.textContent=old;setConfigStatus(e.message||"No se pudo guardar el cambio.","err")}
+    try{const r=await request({tipo:"actualizar-configuracion",clave:k,activado:next});applyConfigValues(r?.valores||{[k]:r?.estado|| (next?"ACTIVADO":"DESACTIVADO")},true,r?.publicadoEn);setConfigStatus("Cambio guardado.","ok")}catch(e){button.disabled=false;button.textContent=old;setConfigStatus(e.message||"No se pudo guardar el cambio.","err")}
   }
 
   function installVisibility(){if(!capabilities.has("visibilidad"))return;grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(productVis);grid.querySelectorAll(":scope > .album-card").forEach(albumVis)}

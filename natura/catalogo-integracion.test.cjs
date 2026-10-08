@@ -59,6 +59,7 @@ function environment(){
     history:{state:null,replaceState(){},pushState(){}},navigator:{},performance:{now:()=>0,getEntriesByType:()=>[]},
     addEventListener:(name,fn)=>events.set(name,fn),dispatchEvent:event=>events.get(event.type)?.(event),
     PRECIOS_ADMIN_CONFIG:{endpoint:'https://script.google.com/macros/s/PRUEBA_SIN_RED/exec'},
+    syncAdministrativeToolVisibility(){},
     fetch(){throw new Error('Las pruebas no permiten solicitudes de red.');}};
   sandbox.window=sandbox;
   context=vm.createContext(sandbox);
@@ -66,7 +67,19 @@ function environment(){
   vm.runInContext(cartSource,context,{filename:'catalogo-carrito-pedido.js'});
   vm.runInContext(adminSource,context,{filename:'precios-admin.js'});
   return {context,sandbox,document,requests,timers,events,run:source=>vm.runInContext(source,context),
-    reply(table,status='ok'){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node,'Debe existir una solicitud JSONP');const cb=new URL(node.src).searchParams.get('tqx').split('responseHandler:')[1];sandbox[cb]({status,table});return cb;},
+    reply(table,status='ok'){
+      const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node,'Debe existir una solicitud JSONP');
+      const url=new URL(node.src);
+      if(url.searchParams.get('modo')==='visibilidad'){
+        const cb=url.searchParams.get('callback');
+        const reglas=Array.isArray(table)?table:(table.rows||[]).map(row=>({
+          tipo:row.c?.[0]?.v,identificador:row.c?.[1]?.v,oculto:row.c?.[2]?.v==='X',etiqueta:row.c?.[3]?.v||''
+        }));
+        sandbox[cb]({ok:status==='ok',reglas});return cb;
+      }
+      const cb=url.searchParams.get('tqx')?.split('responseHandler:')[1];
+      assert.ok(cb,'Falta callback JSONP de productos');sandbox[cb]({status,table});return cb;
+    },
     fail(){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node);node.onerror();},
     timeout(ms){const timer=[...timers.values()].find(item=>item.ms===ms);assert.ok(timer);timer.fn();}};
 }
@@ -210,15 +223,18 @@ test('Fallo posterior conserva reglas y no publica nuevas filas o clasificacione
   assert.equal(env.run('filterVisibleProducts(products).length'),4);
 });
 test('Respuesta tardía tras timeout no altera la confirmación ni publica productos',async()=>{
-  const env=environment(),node=env.requests.at(-1),cb=new URL(node.src).searchParams.get('tqx').split('responseHandler:')[1];
-  env.timeout(6000);await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;env.sandbox[cb]({status:'ok',table:visibility});
+  const env=environment(),node=env.requests.at(-1),cb=new URL(node.src).searchParams.get('callback');
+  env.timeout(6000);await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;
+  env.sandbox[cb]({ok:true,reglas:[{tipo:'seccion',identificador:'otros productos',oculto:true}]});
   assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,false);
 });
-test('Visibilidad reordenada funciona; esquema ambiguo y reglas contradictorias cierran publicación',async()=>{
-  const env=environment(),table=clone(visibility);table.cols.reverse();table.rows.forEach(row=>{while(row.c.length<table.cols.length)row.c.push({v:null});row.c.reverse();});
-  await confirmed(env,table);assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,true);
-  for(const bad of [()=>{const t=clone(visibility);t.cols[3].label='Oculto';return t;},()=>{const t=clone(visibility);t.rows.push({c:[{v:'seccion'},{v:'otros productos'},{v:''}]});return t;}]){
-    const another=environment();await confirmed(another,bad());assert.equal(another.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,false);
+test('Visibilidad persistida admite reglas válidas; tipos inválidos y duplicados cierran publicación',async()=>{
+  const good=[{tipo:'seccion',identificador:'otros productos',oculto:true}];
+  const env=environment();await confirmed(env,good);assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,true);
+  for(const bad of [[{tipo:'seccion',identificador:'otros productos',oculto:'X'}],
+    [{...good[0]},{...good[0],oculto:false}]]){
+    const another=environment();await confirmed(another,bad);
+    assert.equal(another.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,false);
   }
 });
 test('No a la venta conserva exclusión comercial aunque sea compatible técnicamente',async()=>{
@@ -267,11 +283,32 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
   const env=environment(),table=fixture();table.rows[0].c[6]={v:'#REF!'};
   const result=assess(env,table);assert.equal(result.report.pending,1);assert.match(result.report.records[0].causes[0].reason,/Nombre/);
 });
+test('Configuración pública se lee mediante Apps Script sin depender de la pestaña',async()=>{
+  const env=environment();const pending=env.run('initializeRemoteCatalogConfiguration()');
+  const node=env.requests.find(n=>n.parentNode&&new URL(n.src).searchParams.get('modo')==='config');
+  assert.ok(node,'Debe solicitarse configuración al endpoint de Apps Script');
+  const url=new URL(node.src),callback=url.searchParams.get('callback');
+  assert.ok(callback);assert.equal(url.searchParams.has('sheet'),false);
+  env.sandbox[callback]({ok:true,valores:{
+    REGISTRAR_VISITAS_PROPIAS:'DESACTIVADO',MOSTRAR_CANTIDAD_STOCK:'DESACTIVADO',
+    MOSTRAR_PRECIOS_PRODUCTO:'ACTIVADO',ORDEN_NAVEGACION:'!section,category,subcategory,public,!line,product',
+    ORDEN_PRODUCTOS:'price_asc'
+  },publicadoEn:'2026-10-07T23:00:14.772Z'});
+  await pending;await env.sandbox.REMOTE_CONFIG_READY;
+  assert.equal(env.sandbox.CATALOG_PUBLIC_CONFIG_CONFIRMED,true);
+  assert.equal(env.sandbox.REMOTE_CONTROL_VALUES.ORDEN_NAVEGACION,'!section,category,subcategory,public,!line,product');
+});
+test('Fallo de configuración inicial no se confunde con configuración confirmada',async()=>{
+  const env=environment();const pending=env.run('initializeRemoteCatalogConfiguration()');
+  const node=env.requests.find(n=>n.parentNode&&new URL(n.src).searchParams.get('modo')==='config');
+  assert.ok(node);node.onerror();await pending;await env.sandbox.REMOTE_CONFIG_READY;
+  assert.equal(env.sandbox.CATALOG_PUBLIC_CONFIG_CONFIRMED,false);
+});
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=compatibilidad-progresiva-2026-10-08-1'));
-  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=editor-precio-movil-2026-10-08-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=apps-script-propiedades-2026-10-08-1'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=apps-script-propiedades-2026-10-08-1'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{

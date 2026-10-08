@@ -4,7 +4,7 @@
     // AJUSTES LOCALES Y CONFIGURACIÓN GLOBAL
     // ==========================================
     // Los valores locales funcionan como respaldo.
-    // La hoja configuracion_publica contiene exclusivamente los ajustes publicados del catálogo.
+    // La configuración pública se consulta en Google Apps Script; no requiere una pestaña de Sheets.
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
@@ -18,8 +18,7 @@
     // Apps Script guarda los ajustes y publica exclusivamente las claves públicas en esta hoja.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
-      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
-      sheetName: "configuracion_publica",
+      endpoint: "https://script.google.com/macros/s/AKfycbwAUk8ysr-3k_T5iRxFpbp8KxmvPpYeGRNbL156lp9CsVjNFjQQgg5v7ySaxO7dcP_X/exec",
       cacheKey: "irenismb_public_configuration_v1"
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -449,30 +448,17 @@
         };
         const timer = window.setTimeout(()=>finish(new Error("Google tardó demasiado en responder la configuración pública.")), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
         window[callbackName] = payload=>{
-          const values = {};
-          let revision = "";
-          const rows = payload?.table?.rows;
-          if(payload?.status !== "ok" || !Array.isArray(rows)){
-            finish(new Error("Google Sheets no devolvió la configuración pública.")); return;
-          }
-          for(const row of rows){
-            const cells = (row.c || []).map(cell=>String(cell?.v ?? cell?.f ?? "").trim());
-            const [key, value, date] = cells;
-            if(!PUBLIC_CONFIGURATION_KEYS.includes(key) || Object.hasOwn(values,key)
-              || !date || !Number.isFinite(Date.parse(date)) || (revision && revision !== date)){
-              finish(new Error("La configuración pública está incompleta o no es válida.")); return;
-            }
-            values[key] = value; revision = date;
-          }
-          if(!validatePublicConfiguration(values)){
-            finish(new Error("La configuración pública está incompleta o no es válida.")); return;
+          const values = payload?.valores;
+          const revision = String(payload?.publicadoEn || "");
+          if(payload?.ok !== true || !validatePublicConfiguration(values)
+            || !Number.isFinite(Date.parse(revision))){
+            finish(new Error("Apps Script no devolvió una configuración pública válida.")); return;
           }
           finish(null, {valores:values, publicadoEn:revision});
         };
-        script.onerror = ()=>finish(new Error("No se pudo leer la configuración pública de Google Sheets."));
-        const url = new URL(`https://docs.google.com/spreadsheets/d/${REMOTE_CONTROL_SOURCE.spreadsheetId}/gviz/tq`);
-        url.search = new URLSearchParams({sheet:REMOTE_CONTROL_SOURCE.sheetName, headers:"1", range:"A1:C6",
-          tq:"select A,B,C", tqx:`out:json;responseHandler:${callbackName}`, _:String(Date.now())}).toString();
+        script.onerror = ()=>finish(new Error("No se pudo consultar la configuración de Apps Script."));
+        const url = new URL(REMOTE_CONTROL_SOURCE.endpoint);
+        url.search = new URLSearchParams({modo:"config", callback:callbackName, _:String(Date.now())}).toString();
         script.src = url.toString(); script.async = true; document.head.appendChild(script);
       });
     }

@@ -587,3 +587,110 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 @media(max-width:760px){.folleto-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:16px;padding:0}.folleto-heading{padding:18px 16px;gap:10px}.folleto-title-group{gap:10px}.folleto-title-icon{width:40px;height:40px}.folleto-title-icon .ui-icon{width:25px;height:25px}.folleto-heading h2{font-size:22px}.folleto-heading p{font-size:12px}.folleto-body{display:flex;flex-direction:column;gap:20px;padding:17px}.folleto-options{border:0;padding:0}.folleto-dialog fieldset{margin-bottom:18px}.folleto-options fieldset:last-child{margin-bottom:0}.folleto-choice{padding:11px 12px}.folleto-checkboxes{display:grid;grid-template-columns:1fr 1fr;gap:0 7px}.folleto-checkboxes label{font-size:12px}.folleto-format{padding:23px 4px 12px;min-height:144px}.folleto-format strong{font-size:12px}.folleto-format-note{font-size:10px}.folleto-format-grid{gap:7px}.folleto-preview{min-height:310px;padding:12px}.folleto-preview img{max-height:450px}.folleto-preview-heading{flex-wrap:wrap}.folleto-summary{display:flex;gap:0;padding:20px}.folleto-summary h3{margin-bottom:16px}.folleto-summary dl{grid-template-columns:1fr auto 1fr auto;font-size:12px;gap:10px 8px}.folleto-summary-bottom{padding-top:20px}.folleto-generate{min-height:48px}.folleto-preview-hint{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.folleto-preview[aria-busy="true"] .folleto-placeholder>.ui-icon{animation:none}}
 
+
+/* Presentación de accesos sociales: tarjetas compactas y consistentes. */
+.social-icons{
+  gap:10px 8px;
+  align-items:stretch;
+}
+.social-icons a,.social-icons button{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:flex-start;
+  gap:8px;
+  min-height:99px;
+  padding:12px 3px 11px;
+  border:1px solid #eddfdb;
+  border-radius:16px;
+  background:linear-gradient(180deg,#fff 0%,#fffbf9 100%);
+  color:#000;
+  box-shadow:0 3px 10px rgba(67,37,47,.045);
+  text-decoration:none;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
+}
+.social-icons a::before,.social-icons button::before{
+  content:"";
+  position:absolute;
+  top:8px;
+  left:50%;
+  width:47px;
+  height:47px;
+  transform:translateX(-50%);
+  border-radius:16px;
+  background:#f6e9eb;
+  z-index:0;
+}
+.social-icons a[aria-label="Facebook"]::before{background:#e6f0fc}
+.social-icons a[aria-label="Instagram"]::before{background:#fce6ee}
+.social-icons a[aria-label="TikTok"]::before{background:#e9e9ef}
+.social-icons a[aria-label="YouTube"]::before{background:#ffe9e6}
+.social-icons a[aria-label*="Maps"]::before{background:#e8f4e9}
+.social-icons a[aria-label="Google Business"]::before{background:#e7f0fc}
+.social-icons a[aria-label="WhatsApp"]::before{background:#e3f5e8}
+.social-icons button[aria-label="Compartir catálogo"]::before{background:#f2e8f4}
+.social-icons a[aria-label="Llamar"]::before{background:#f5eee1}
+.social-icons picture{
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  width:38px;
+  height:38px;
+}
+.social-icons img,.social-icons svg{
+  position:relative;
+  z-index:1;
+  display:block;
+  width:38px;
+  height:38px;
+  object-fit:contain;
+  border-radius:11px;
+}
+.social-icons svg{
+  width:35px;
+  height:35px;
+  padding:5px;
+  stroke:#000;
+  stroke-width:1.8;
+  fill:none;
+}
+.social-icons .social-label{
+  position:relative;
+  z-index:1;
+  max-width:100%;
+  color:#000;
+  font-size:11.5px;
+  font-weight:700;
+  line-height:1.2;
+  text-align:center;
+  overflow-wrap:anywhere;
+}
+.social-icons a:focus-visible,.social-icons button:focus-visible{
+  outline:3px solid #855a68;
+  outline-offset:2px;
+}
+@media(hover:hover){
+  .social-icons a:hover,.social-icons button:hover{
+    transform:translateY(-3px);
+    border-color:#d9bbc5;
+    background:#fff;
+    box-shadow:0 9px 20px rgba(67,37,47,.12);
+  }
+}
+@media(max-width:760px){
+  .social-icons #waTopLink{
+    min-height:54px;
+    padding:8px;
+    transform:none;
+    border-color:#b9d7c2;
+    background:#fff;
+    box-shadow:0 7px 23px rgba(29,64,39,.2);
+  }
+  .social-icons #waTopLink::before{display:none}
+  .social-icons #waTopLink img{width:38px;height:38px}
+}
+@media(prefers-reduced-motion:reduce){
+  .social-icons a,.social-icons button{transition:none}
+}

@@ -345,15 +345,34 @@ def main():
     args = p.parse_args()
     imagenes = solicitudes(args.manifest)
     token = token_clasp(args.credenciales)
-    comprobar_inventario(token, imagenes)
-    comprobar_destino(token, imagenes)
+    # Diagnostico independiente: no se escribe nada si falla cualquier comprobacion.
+    errores = []
     preparadas = []
     for imagen in imagenes:
-        webp = transformar(descargar(imagen["url"]))
-        preparadas.append((imagen, webp))
-        print(f"VALIDADA {imagen['codigo']}_{imagen['numero']:02d}: WEBP {len(webp)} bytes")
+        try:
+            webp = transformar(descargar(imagen["url"]))
+            preparadas.append((imagen, webp))
+            print(f"FOTO VALIDADA {imagen['codigo']}_{imagen['numero']:02d}: WEBP {len(webp)} bytes", flush=True)
+        except ImportErrorNatura as error:
+            errores.append(f"FOTO {imagen['codigo']}_{imagen['numero']:02d}: {error}")
+            print(f"FOTO NO VALIDA {imagen['codigo']}_{imagen['numero']:02d}: {error}", flush=True)
+
+    for etiqueta, comprobador in (
+        ("DRIVE_CARPETA", lambda: comprobar_destino(token, imagenes)),
+        ("DRIVE_INVENTARIO", lambda: comprobar_inventario(token, imagenes)),
+    ):
+        try:
+            comprobador()
+            print(f"{etiqueta}: acceso y validacion correctos", flush=True)
+        except ImportErrorNatura as error:
+            errores.append(f"{etiqueta}: {error}")
+            print(f"{etiqueta}: BLOQUEADO ({error})", flush=True)
+
+    if errores:
+        raise ImportErrorNatura("Prevalidacion fallida. NO se subio ninguna foto. " + " | ".join(errores))
+
     if args.dry_run:
-        print("Prueba sin escrituras a Drive.")
+        print("Prueba completada sin escrituras a Drive.")
         return
     preparadas.sort(key=lambda item: (item[0]["codigo"], item[0]["numero"]))
     for imagen, webp in preparadas:

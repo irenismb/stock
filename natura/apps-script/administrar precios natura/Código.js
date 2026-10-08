@@ -37,13 +37,6 @@ function doGet(evento) {
     return responderConfiguracionPublica_(parametros.callback);
   }
 
-  if (modo === "visibilidad") {
-    let payload;
-    try { payload = obtenerVisibilidadWeb(); }
-    catch (error) { payload = {ok:false, error:String(error && error.message || error)}; }
-    return responderJsonpPublico_(payload, parametros.callback);
-  }
-
   const archivo = modo === "puente" ? "Puente" : "Admin";
   const salida = HtmlService
     .createHtmlOutputFromFile(archivo)
@@ -65,9 +58,6 @@ function responderConfiguracionPublica_(callback) {
     };
   }
 
-  return responderJsonpPublico_(payload, callback);
-}
-function responderJsonpPublico_(payload, callback) {
   const callbackSeguro = String(callback || "").trim();
   const json = JSON.stringify(payload);
   if (callbackSeguro) {

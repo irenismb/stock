@@ -1,0 +1,88 @@
+name: Importar imagenes aprobadas de Natura a Drive
+
+on:
+  workflow_dispatch:
+    inputs:
+      solicitud_json:
+        description: 'JSON de imagenes aprobadas, con URLs directas'
+        type: string
+        required: true
+  push:
+    branches: [main]
+    paths:
+      - '.github/solicitudes-imagenes/*.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: importar-imagenes-natura
+  cancel-in-progress: false
+
+jobs:
+  importar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Preparar herramientas
+        shell: bash
+        run: |
+          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0' 'requests==2.32.5'
+          npm install --global '@google/clasp@3.4.1'
+
+      - name: Restaurar autorizacion de Google
+        shell: bash
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then
+            echo '::error::Se necesita el secreto CLASPRC_JSON ya usado por el proyecto.'
+            exit 1
+          fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+          clasp list-scripts >/dev/null
+
+      - name: Seleccionar solicitudes nuevas
+        id: solicitudes
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+          AFTER: ${{ github.sha }}
+          JSON_MANUAL: ${{ inputs.solicitud_json }}
+        run: |
+          : > "$RUNNER_TEMP/lista-solicitudes.txt"
+          if [ "$EVENT_NAME" = workflow_dispatch ]; then
+            printf '%s' "$JSON_MANUAL" > "$RUNNER_TEMP/solicitud.json"
+            printf '%s\n' "$RUNNER_TEMP/solicitud.json" >> "$RUNNER_TEMP/lista-solicitudes.txt"
+          else
+            git diff --name-only "$BEFORE" "$AFTER" -- '.github/solicitudes-imagenes/*.json' \
+              | while IFS= read -r archivo; do
+                  if [ -f "$archivo" ]; then
+                    printf '%s\n' "$archivo" >> "$RUNNER_TEMP/lista-solicitudes.txt"
+                  fi
+                done
+          fi
+          if [ ! -s "$RUNNER_TEMP/lista-solicitudes.txt" ]; then
+            echo 'No hay solicitudes nuevas.'
+            exit 0
+          fi
+          echo 'hay_solicitudes=si' >> "$GITHUB_OUTPUT"
+
+      - name: Validar origenes, convertir WEBP y guardar en Drive
+        if: steps.solicitudes.outputs.hay_solicitudes == 'si'
+        shell: bash
+        run: |
+          args=()
+          while IFS= read -r archivo; do
+            args+=(--manifest "$archivo")
+          done < "$RUNNER_TEMP/lista-solicitudes.txt"
+          python3 .github/scripts/importar_imagenes_natura.py \
+            "${args[@]}" --credenciales "$RUNNER_TEMP/.clasprc.json"

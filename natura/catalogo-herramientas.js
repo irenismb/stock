@@ -120,7 +120,6 @@ function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=
 }
 function measureFicha(ctx,ficha){
   const hasImage=Boolean(ficha.imageUrl),textX=hasImage?562:54,textWidth=1080-textX-54;
-  const details=ficha.attributes.map(a=>`${a.label}: ${a.value}`).join("\n");
   let lastError;
   // Ajustar la distribución completa antes de reducir o recortar información.
   for(let descriptionSize=32;descriptionSize>=18;descriptionSize--){
@@ -133,11 +132,40 @@ function measureFicha(ctx,ficha){
       const code=folletoFitText(ctx,ficha.code,textWidth,50,32,24,true);
       const used=name.lines.length*name.lineHeight+presentation.lines.length*presentation.lineHeight
         +code.lines.length*code.lineHeight+68;
-      const attributes=folletoFitText(ctx,details,textWidth,Math.max(30,mainHeight-used),29,18);
+      const attributes=folletoFitAttributes(ctx,ficha.attributes,textWidth,Math.max(30,mainHeight-used),29,18);
       return {name,presentation,description,code,attributes,mainHeight,textX,textWidth};
     }catch(error){lastError=error;}
   }
   throw lastError;
+}
+function folletoAttributeLines(ctx,attributes,width,size){
+  const lines=[];
+  for(const attribute of attributes){
+    const tokens=[...String(attribute.label+":").split(/\s+/).map(text=>({text,bold:true})),
+      ...String(attribute.value).split(/\s+/).map(text=>({text,bold:false}))].filter(token=>token.text);
+    let segments=[],lineWidth=0;
+    const flush=()=>{if(segments.length)lines.push({segments,text:segments.map(s=>s.text).join(""),width:lineWidth});segments=[];lineWidth=0;};
+    for(const token of tokens){
+      folletoFont(ctx,size,token.bold);
+      const pieces=folletoLines(ctx,token.text,width);
+      for(let i=0;i<pieces.length;i++){
+        if(pieces.length>1)flush();
+        let text=(segments.length?" ":"")+pieces[i];
+        if(segments.length&&lineWidth+ctx.measureText(text).width>width){flush();text=pieces[i];}
+        segments.push({text,bold:token.bold});lineWidth+=ctx.measureText(text).width;
+        if(i<pieces.length-1)flush();
+      }
+    }
+    flush();
+  }
+  return lines;
+}
+function folletoFitAttributes(ctx,attributes,width,height,ideal,minSize){
+  for(let size=ideal;size>=minSize;size--){
+    const richLines=folletoAttributeLines(ctx,attributes,width,size),lineHeight=size*1.24;
+    if(richLines.length*lineHeight<=height)return {lines:richLines.map(line=>line.text),richLines,size,lineHeight};
+  }
+  throw new Error("Las características del producto necesitan más espacio para caber completas.");
 }
 
 function folletoRoundRect(ctx,x,y,w,h,r=18){
@@ -234,6 +262,16 @@ function renderFicha(ctx,card,image){
 }
 function folletoDrawText(ctx,measure,x,y,width,bold=false,justify=false){
   folletoFont(ctx,measure.size,bold);ctx.fillStyle="#000";ctx.textAlign="left";
+  if(measure.richLines){
+    for(const line of measure.richLines){
+      let left=x;
+      for(const segment of line.segments){
+        folletoFont(ctx,measure.size,segment.bold);ctx.fillText(segment.text,left,y);left+=ctx.measureText(segment.text).width;
+      }
+      y+=measure.lineHeight;
+    }
+    return y;
+  }
   measure.lines.forEach((line,index)=>{
     const words=line.split(" ");
     if(justify&&index<measure.lines.length-1&&words.length>1){

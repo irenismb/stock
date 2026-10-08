@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Catálogo autónomo con descripciones, JSON-LD y navegación flotante Inicio/Final. -->
+<!-- Catálogo independiente de IRENISMB con datos oficiales, descripciones y JSON-LD. -->
 <!-- Fuente de datos: Google Sheet oficial A:P con Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, Línea, Público y Estado comercial. -->
 <!-- Las imágenes de productos se relacionan por código, se almacenan en Google Drive y se indexan automáticamente mediante el servicio público del catálogo. -->
 <html lang="es-CO">
@@ -52,7 +52,7 @@
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="catalogo.css?actualizacion=acciones-admin-dos-filas-2026-10-06-1" />
+  <link rel="stylesheet" href="catalogo.css?actualizacion=folleto-redisenio-2026-10-08-1" />
 
   <script type="application/ld+json">
   {
@@ -88,111 +88,46 @@
 }
 </script>
 
-  
-
-
-  
-
-  
-
-  
-
-  
-
-
-  <style id="product-description-justified">
-    .card .description{
-      text-align:justify!important;
-      text-align-last:left!important;
-      text-justify:inter-word!important;
-      hyphens:auto!important;
-      -webkit-hyphens:auto!important;
-    }
-  </style>
-
-  <style id="no-fixed-ui">
-    /* La interfaz normal siempre sigue el flujo de la página; nada queda pegado al hacer scroll. */
-    .site-header,.site-header-inner,.bar,.word-panel{position:static!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important}
-    .bar.is-floating-toolbar,.word-panel.is-floating-panel{position:static!important;inset:auto!important;top:auto!important;left:auto!important;right:auto!important;bottom:auto!important;transform:none!important;width:auto!important;max-height:none!important;overflow:visible!important;box-shadow:none!important}
-    .catalog-toolbar-sentinel,.catalog-toolbar-placeholder{display:none!important}
-  </style>
-
 </head>
 
 <body>
+  <a class="skip-link" href="#grid">Ir a los productos</a>
   <header class="site-header">
     <div class="wrap site-header-inner">
-      <div class="brand">
-        <picture>
-          <source srcset="logos/logo_empresa.webp" type="image/webp">
-          <img src="logos/logo_empresa.png" alt="Logo Irenismb Stock Natura" width="52" height="52" />
-        </picture>
-        <div>
-          <h1>IRENISMB STOCK NATURA</h1>
-          <p class="tagline"><span class="dot" aria-hidden="true"></span>Natura &amp; AVON · Santa Marta · Envíos a toda Colombia</p>
-          <p class="experience-line">Consultora Natura · 10 años de experiencia con la marca</p>
-        </div>
-      </div>
-    </div>
-    <div class="wrap intro">
-      <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
-        <div class="social-row social-row-top">
-          <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
-            <img src="logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
-          </a>
-          <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
-            <img src="logos/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
-          </a>
-          <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
-            <img src="logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
-          </a>
-
-          <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
-            <picture>
-              <source srcset="logos/youtube.webp" type="image/webp">
-              <img src="logos/youtube.webp" alt="YouTube" loading="lazy" decoding="async" />
-            </picture>
-          </a>
-
-          <a href="https://www.google.com/maps/search/?api=1&query=Los+Almendros%2C+Santa+Marta%2C+Magdalena%2C+Colombia" target="_blank" rel="noopener noreferrer" aria-label="Barrio Los Almendros en Google Maps">
-            <img src="logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
-          </a>
-        </div>
-
-        <div class="social-row social-row-bottom">
-          <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
-             target="_blank" rel="noopener noreferrer" aria-label="Google Business">
-            <img src="logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
-          </a>
-
-          <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-            <img src="logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
-          </a>
-
-          <button id="shareCatalogBtn" class="social-share-btn" type="button" aria-label="Compartir catálogo" title="Compartir catálogo">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <circle cx="18" cy="5" r="3"></circle>
-              <circle cx="6" cy="12" r="3"></circle>
-              <circle cx="18" cy="19" r="3"></circle>
-              <path d="m8.6 10.7 6.8-4.4M8.6 13.3l6.8 4.4"></path>
-            </svg>
-          </button>
-          <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.02l-2.2 2.2z"/>
-            </svg>
-          </a>
-        </div>
-      </div>
-
-      <div class="bar" role="search" aria-label="Buscar y filtrar productos">
-        <div class="search-wrap" id="searchWrap">
+      <a class="brand" href="catalogo.html" aria-label="IRENISMB STOCK NATURA, inicio">
+        <picture><source srcset="logos/logo_empresa.webp" type="image/webp"><img src="logos/logo_empresa.png" alt="Logo IRENISMB" width="60" height="60"></picture>
+        <div><h1>IRENISMB STOCK NATURA</h1><p class="tagline">Consultores independientes de Natura y AVON</p></div>
+      </a>
+              <div class="search-wrap" id="searchWrap">
           <input id="q" type="search" inputmode="search"
                  placeholder="Buscar producto, línea o categoría"
                  aria-label="Buscar producto, línea o categoría" />
         </div>
+      <div class="header-actions">
+                <button class="btn-ghost" id="priceAdminBtn" type="button" hidden aria-label="Administrar catálogo">
+          Administrar
+        </button>
+        <button class="btn-ghost" id="folletoBtn" type="button" aria-haspopup="dialog" aria-controls="folletoDialog">Folleto</button>
+                <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
+          <span class="btn-cart-label">Carrito</span>
+          
+          <span id="cartCount" class="pill">0</span>
+        </button>
+      </div>
+    </div>
+  </header>
 
-        <div class="count-slot" id="countSlot"></div>
+  <div class="wrap catalog-layout">
+    <aside class="catalog-navigation" aria-label="Navegación del catálogo">
+      <p class="aside-label">Explorar</p>
+      <nav>
+        <button class="nav-button" id="catalogHomeBtn" type="button"><span aria-hidden="true">⌂</span> Inicio</button>
+        <button class="nav-button" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Ver todos los productos del nivel actual y sus niveles inferiores"><span aria-hidden="true">▦</span> Ver productos</button>
+      </nav>
+    </aside>
+    <main class="wrap catalog-main" id="catalogMain">
+    <div class="products-heading"><h2>Productos</h2><div class="count-slot" id="countSlot"></div></div>
+      <div class="bar" role="group" aria-label="Filtros y orden de productos">
 
         <select id="cat" aria-label="Filtrar por categoría" hidden disabled><option value="">Todas las categorías</option></select>
         <select id="brand" aria-label="Filtrar por marca" hidden disabled><option value="">Todas las marcas</option></select>
@@ -204,25 +139,10 @@
           <option value="name_desc">Nombre: Z → A</option>
         </select>
 
-
-
-        <button class="btn-ghost" id="priceAdminBtn" type="button" hidden aria-label="Administrar catálogo">
-          Administrar
-        </button>
-
-        <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
-          <span class="btn-cart-label">Ver carrito WhatsApp</span>
-          <span class="btn-cart-label-short" aria-hidden="true">WhatsApp</span>
-          <span id="cartCount" class="pill">0</span>
-        </button>
-
-        <button class="btn-ghost" id="collageBtn" type="button" aria-label="Agregar todos los productos de la vista actual al carrito">Agregar todos</button>
-        <button class="btn-ghost" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Ver todos los productos del nivel actual y sus niveles inferiores">Ver productos</button>
-        <button class="btn-ghost" id="catalogPdfBtn" type="button" aria-haspopup="dialog" aria-controls="catalogPdfDialog">Descargar PDF</button>
+        <button class="btn-ghost" id="bulkAddBtn" type="button" aria-label="Agregar todos los productos de la vista actual al carrito">Agregar todos</button>
         <button class="btn-ghost" id="productOrderBtn" type="button" popovertarget="productOrderMenu" aria-label="Ordenar: Nombre A–Z">Nombre A–Z</button>
         <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar palabras sugeridas" aria-controls="wordPanel" aria-expanded="false" aria-pressed="false">Filtrar</button>
       </div>
-
       <section class="word-panel" id="wordPanel" aria-label="Palabras sugeridas del catálogo" hidden>
         <div class="word-panel-head">
           <div>
@@ -241,27 +161,6 @@
 
         <div class="word-chips" id="wordChips"></div>
       </section>
-
-
-      <noscript>
-        <div style="margin-top:12px;border:1px solid #22304a;border-radius:14px;padding:12px;background:rgba(18,24,38,.55);">
-          <h2 style="margin:0 0 6px;font-size:16px;">Catálogo Natura en Santa Marta</h2>
-          <p style="margin:0 0 8px;color:#a9b4c2;line-height:1.45;">
-            Activa JavaScript para ver el catálogo completo.
-          </p>
-          <p style="margin:0;">
-            <a href="https://wa.me/573042088961"
-               rel="noopener noreferrer" target="_blank" style="font-weight:900;">
-              Comprar por WhatsApp
-            </a>
-          </p>
-        </div>
-      </noscript>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <h2 class="visually-hidden">Catálogo de productos Irenismb Stock Natura</h2>
     <div class="topline" id="topline">
       <div class="count" id="count" aria-live="polite" hidden>Cargando productos…</div>
     </div>
@@ -274,18 +173,65 @@
     </div>
 
     <section id="grid" class="grid" aria-label="Productos"></section>
-  </main>
+    </main>
+    <aside class="catalog-contact" aria-label="Contacto y páginas de IRENISMB">
+      <section class="contact-card"><h2>Conecta con nosotros</h2>      <div class="social-icons" aria-label="Redes sociales, ubicación, WhatsApp y llamada">
+        <div class="social-row">
+          <a href="https://www.facebook.com/marketplace/profile/100084865295132" target="_blank" rel="noopener noreferrer" aria-label="Facebook">
+            <img src="logos/facebook.webp" alt="Facebook" loading="lazy" decoding="async" />
+          <span class="social-label">Facebook</span></a>
+          <a href="https://www.instagram.com/irenismb_stocknaturasm" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+            <img src="logos/instagram.webp" alt="Instagram" loading="lazy" decoding="async" />
+          <span class="social-label">Instagram</span></a>
+          <a href="https://www.tiktok.com/@irenismbstocknatura" target="_blank" rel="noopener noreferrer" aria-label="TikTok">
+            <img src="logos/tiktok.webp" alt="TikTok" loading="lazy" decoding="async" />
+          <span class="social-label">TikTok</span></a>
+
+          <a href="https://www.youtube.com/@irenismendoza3615" target="_blank" rel="noopener noreferrer" aria-label="YouTube">
+            <picture>
+              <source srcset="logos/youtube.webp" type="image/webp">
+              <img src="logos/youtube.webp" alt="YouTube" loading="lazy" decoding="async" />
+            </picture>
+          <span class="social-label">YouTube</span></a>
+
+          <a href="https://www.google.com/maps/search/?api=1&query=Los+Almendros%2C+Santa+Marta%2C+Magdalena%2C+Colombia" target="_blank" rel="noopener noreferrer" aria-label="Barrio Los Almendros en Google Maps">
+            <img src="logos/maps.webp" alt="Google Maps" loading="lazy" decoding="async" />
+          <span class="social-label">Maps</span></a>
+        </div>
+
+        <div class="social-row">
+          <a href="https://www.google.com/search?q=Vendedora+de+productos+de+belleza+Natura+y+Avon+en+Santa+Marta+-+NaturaStock+-+Consultora&stick=H4sIAAAAAAAA_y2MsQrCMBBAJ8XPOARHoaWJXt1KZ10KguM1uS6GO0kTqX6OX2oElwePB2-z3u6qBXkyk8UGPeLx0LSnamGqnTXGco0GnRk_q9uVxbPXSOAZHlF9dknnn4wcAr8JLpRyyS_onirAAgNJIjhTLNz_85DU3Yv1KnMOqfy-HB1A2oUAAAA&hl=es&mat=Ca0DNKJEuZnvElcBTVDHnhCRNO4f76He0gBHXwhbrob3GAaW6TYVDt7oFfRBvX8RXOdAY80UJzgwnY-lM1rJl0_0MhFuTJLig6PjtZcDFw8inJAS7CO2GHXYDb00SMyaaro&authuser=1&sei=HqiKafiVK4ubwbkPgpqnyAI"
+             target="_blank" rel="noopener noreferrer" aria-label="Google Business">
+            <img src="logos/google_business.webp" alt="Google Business" loading="lazy" decoding="async" />
+          <span class="social-label">Mi negocio</span></a>
+
+          <a id="waTopLink" href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+            <img src="logos/whatsapp.webp" alt="WhatsApp" loading="lazy" decoding="async" />
+          <span class="social-label">WhatsApp</span></a>
+
+          <button id="shareCatalogBtn" class="social-share-btn" type="button" aria-label="Compartir catálogo" title="Compartir catálogo">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="18" cy="5" r="3"></circle>
+              <circle cx="6" cy="12" r="3"></circle>
+              <circle cx="18" cy="19" r="3"></circle>
+              <path d="m8.6 10.7 6.8-4.4M8.6 13.3l6.8 4.4"></path>
+            </svg>
+          <span class="social-label">Compartir</span></button>
+          <a href="tel:+573042088961" rel="nofollow" aria-label="Llamar">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M6.62 10.79a15.05 15.05 0 0 0 6.59 6.59l2.2-2.2a1 1 0 0 1 1.02-.24c1.12.37 2.33.57 3.57.57a1 1 0 0 1 1 1V20a1 1 0 0 1-1 1C10.07 21 3 13.93 3 5a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1c0 1.24.2 2.45.57 3.57a1 1 0 0 1-.24 1.02l-2.2 2.2z"/>
+            </svg>
+          <span class="social-label">Teléfono</span></a>
+        </div>
+      </div></section>
+      <section class="service-card"><h2>A tu lado</h2><p>10 años de experiencia con la marca Natura.</p><p>Asesoría personalizada por WhatsApp, atención telefónica y presencial.</p><p>Envíos nacionales e internacionales.</p></section>
+    </aside>
+  </div>
 
   <footer class="site-footer">
-    <div class="wrap">
-      <section class="footer-card" aria-label="Información de la tienda">
-        <p>
-          Irenismb Stock Natura es una tienda en línea con punto físico en Santa Marta especializada en productos Natura y AVON.
-          Te asesoramos por <a href="https://wa.me/573042088961" target="_blank" rel="noopener noreferrer">WhatsApp</a>, vía telefónica o de manera presencial en el barrio Los Almendros.
-          <strong>Teléfono:</strong> <a href="tel:+573042088961" rel="nofollow">+57 304 208 8961</a>.
-          Realizamos envíos nacionales e internacionales.
-        </p>
-      </section>
+    <div class="wrap footer-card">
+      <div><h2>Visítanos</h2><p>Punto físico en el barrio Los Almendros, Santa Marta.</p><p>Teléfono: +57 304 208 8961</p></div>
+      <div><h2>Productos originales Natura y AVON</h2><p>Natura Tododia, Ekos, Lumina, Chronos, Kaiak, Essencial, Homem, Una y Faces. AVON Care y Far Away.</p><p>Negocio independiente, sin afiliación corporativa a Natura ni a AVON.</p></div>
     </div>
   </footer>
 
@@ -330,7 +276,6 @@
           <button class="btn-ghost" id="cartClientBtn" type="button">🧾 Otros datos</button>
           <button class="btn-ghost" id="cartAddressBtn" type="button">📍 Dirección</button>
           <button class="btn-ghost" id="cartInvoiceBtn" type="button" hidden>Generar salida de inventario</button>
-          <button class="btn-ghost" id="cartCollageBtn" type="button" disabled>Crear collage</button>
           <button class="btn-danger" id="cartClearBtn" type="button">Vaciar carrito</button>
           <button class="btn-acc" id="cartBuyBtn" type="button">Continuar pedido por WhatsApp</button>
         </div>
@@ -446,14 +391,14 @@
     <button type="button" data-product-sort="price_desc" aria-pressed="false">Precio: mayor a menor</button>
   </div>
 
-  <script src="precios-admin-config.js?actualizacion=alcance-filtros-admin-2026-09-22-1"></script>
-  <script src="catalogo-app.js?actualizacion=sin-consultas-periodicas-2026-10-07-1"></script>
-  <script src="catalogo-carrito-pedido.js?actualizacion=ficha-producto-admin-salida-2026-10-04-1"></script>
-  <script src="catalogo-herramientas.js?actualizacion=documentos-codigos-2026-10-06-1"></script>
-  <script src="analytics-visitas.js?actualizacion=configuracion-publica-2026-10-07-1"></script>
-  <script src="catalogo-ui.js?actualizacion=pdf-filtros-vista-productos-2026-10-06-1"></script>
-  <script src="precios-admin.js?actualizacion=configuracion-publica-2026-10-07-1"></script>
-  <script src="prospectos-admin.js?actualizacion=documentos-codigos-2026-10-06-1"></script>
+  <script src="precios-admin-config.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="catalogo-app.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="catalogo-carrito-pedido.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="catalogo-herramientas.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="analytics-visitas.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="catalogo-ui.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="precios-admin.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
+  <script src="prospectos-admin.js?actualizacion=folleto-redisenio-2026-10-08-1"></script>
   <script>
     // Durante la carga inicial, el contador superior permanece oculto aunque
     // algún módulo intente escribir temporalmente "0 productos".

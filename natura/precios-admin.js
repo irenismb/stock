@@ -90,7 +90,6 @@
   .catalog-admin-config-list{display:grid;gap:9px}.catalog-admin-config-row{background:#fff;border-color:#e2e6e3}.catalog-admin-config-label{color:#213b34}.catalog-admin-config-help{color:#72807b}
   .catalog-admin-order-list{display:grid;gap:8px}.catalog-admin-order-row{display:grid;grid-template-columns:34px 38px minmax(0,1fr) auto;align-items:center;gap:8px;min-height:50px;padding:8px 12px;border:1px solid #dfe5e1;border-radius:12px;background:#fff;color:#203934;font:850 14px Arial}.catalog-admin-order-row.is-omitted{background:#f7f7f5;color:#7f8885}.catalog-admin-order-handle{cursor:grab;color:#52645f;font-size:19px;line-height:1;user-select:none}.catalog-admin-order-row.dragging{opacity:.55}.catalog-admin-order-actions{display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end}.catalog-admin-order-toggle{min-width:78px;height:31px;padding:0 9px;border:1px solid #b9d5c5;border-radius:999px;background:#e7f7ed;color:#176b3a;font:900 10px Arial;cursor:pointer}.catalog-admin-order-toggle[aria-pressed="false"]{border-color:#d8c9c6;background:#fdebec;color:#9a2e43}.catalog-admin-order-move{width:31px;height:31px;padding:0;border:1px solid #d9dfdc;border-radius:9px;background:#fff;color:#4e5f5a;font:900 14px Arial}.catalog-admin-order-move:disabled{opacity:.3;cursor:not-allowed}
   .catalog-admin-order-help{display:flex;align-items:flex-start;gap:7px;margin:10px 2px 0;color:#707a77;font:12px/1.35 Arial}.catalog-admin-order-preview-title{margin:18px 0 9px;padding-top:16px;border-top:1px solid #e8ece9;color:#1d3530;font:900 15px Arial}.catalog-admin-order-preview{display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-height:36px}.catalog-admin-order-pill{padding:9px 12px;border-radius:11px;background:#f0ecfa;color:#403b53;font:800 12px Arial}.catalog-admin-order-arrow{color:#7f8986;font-weight:900}.catalog-admin-order-empty{color:#7b8582;font:800 12px/1.35 Arial}.catalog-admin-order-buttons{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.catalog-admin-primary,.catalog-admin-secondary{min-height:42px;padding:9px 15px;border-radius:11px;font:900 12px Arial;cursor:pointer}.catalog-admin-primary{border:1px solid #6d45b8;background:#6d45b8;color:#fff}.catalog-admin-secondary{border:1px solid #ccd4d0;background:#fff;color:#334740}.catalog-admin-primary:disabled,.catalog-admin-secondary:disabled{opacity:.55;cursor:wait}
-  .catalog-admin-folleto-host{margin:0 0 22px}.catalog-admin-folleto-intro{margin:0 0 14px;padding:14px 16px;border:1px solid #dfe5e1;border-radius:16px;background:#fff;color:#5f6d69;font:13px/1.45 Arial;box-shadow:0 8px 24px rgba(28,45,40,.06)}
   @media(max-width:900px){body.catalog-admin-mode main.wrap{padding-left:0}.catalog-admin-sidebar{position:sticky;top:8px;left:auto;width:auto;margin:8px 10px 12px;z-index:1450}.catalog-admin-nav{grid-template-columns:repeat(4,minmax(0,1fr))}.catalog-admin-nav-btn{grid-template-columns:1fr;text-align:center;gap:3px;padding:8px 4px}.catalog-admin-sidebar-title,.catalog-admin-sidebar-note{display:none}}
   @media(max-width:760px){.catalog-admin-config-row{grid-template-columns:1fr}.catalog-admin-filter-controls{justify-content:stretch}.catalog-admin-scope{display:grid;grid-template-columns:1fr 1fr;flex:1 1 220px}.catalog-admin-switch{width:100%}.catalog-admin-card{padding:15px}.catalog-admin-order-row{grid-template-columns:28px 30px minmax(0,1fr);padding:7px 9px}.catalog-admin-order-actions{grid-column:1/-1;justify-content:flex-end}.catalog-admin-page-heading{font-size:25px}}
   @media(max-width:380px){.price-admin-editor{grid-template-columns:1fr}.price-admin-save{width:100%}}
@@ -216,16 +215,8 @@
     aside.id="catalogAdminSidebar";aside.className="catalog-admin-sidebar";aside.setAttribute("aria-label","Administración del catálogo");
     aside.innerHTML=`<div class="catalog-admin-sidebar-title">Administración</div><nav class="catalog-admin-nav">${ADMIN_SECTIONS.map(item=>`<button type="button" class="catalog-admin-nav-btn" data-admin-section="${item.id}"><span class="catalog-admin-nav-icon" aria-hidden="true">${item.icon}</span><span>${item.label}</span></button>`).join("")}</nav><p class="catalog-admin-sidebar-note">Los cambios de Configuración se guardan en Google y se aplican al catálogo administrativo y público.</p>`;
     aside.addEventListener("click",event=>{const b=event.target.closest("[data-admin-section]");if(b)setCatalogAdminSection(b.dataset.adminSection)});
-    document.body.appendChild(aside);
+    document.querySelector(".catalog-navigation").appendChild(aside);
     return aside;
-  }
-  function ensureFolletoPage(){
-    let page=document.getElementById("catalogAdminFolletoPage");
-    if(page) return page;
-    page=document.createElement("section");page.id="catalogAdminFolletoPage";page.className="catalog-admin-page";page.hidden=true;
-    page.innerHTML=`<h2 class="catalog-admin-page-heading">Folleto</h2><p class="catalog-admin-folleto-intro">Crea material comercial a partir de la vista actual del catálogo. El folleto respeta el mismo orden de navegación configurado y permite elegir tipo, formato, productos y opciones para compartir.</p><div class="catalog-admin-folleto-host" id="catalogAdminFolletoHost"></div>`;
-    grid.insertAdjacentElement("beforebegin",page);
-    return page;
   }
   function syncAdminSectionUI(emit=false){
     if(!admin) return;
@@ -250,7 +241,7 @@
     const next=ADMIN_SECTIONS.some(item=>item.id===section)?section:"catalogo";
     const changed=next!==adminSection;
     adminSection=next;window.CATALOG_ADMIN_SECTION=adminSection;
-    syncAdminSectionUI(changed||next==="folleto");
+    syncAdminSectionUI(changed);
     if(next==="configuracion"&&capabilities.has("configuracion")) loadAdminConfig();
   }
   window.setCatalogAdminSection=setCatalogAdminSection;
@@ -333,7 +324,7 @@
   function startAdmin(){admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection);window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:true}}))}
   function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");setConnectionStatus();window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild();syncConnectionButton()}
   function syncAdminTools(){try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}}
-  function removeAdminUI(){document.getElementById("catalogAdminDocumentsDialog")?.remove();clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminFolletoPage")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
+  function removeAdminUI(){document.getElementById("catalogAdminDocumentsDialog")?.remove();clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
 
   function normalizeNavigationConfig(value){
     const alias={

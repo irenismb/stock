@@ -548,20 +548,11 @@
       }
       gifts.sort((a,b)=>String(a.name || "").localeCompare(String(b.name || ""), "es", { numeric:true, sensitivity:"base" }));
 
-      const ads = [];
-      const rawAds = payload.ads && typeof payload.ads === "object" ? payload.ads : {};
-      for(const file of Object.values(rawAds)){
-        const normalized = normalizeImageServiceFile(file, true);
-        if(normalized) ads.push(normalized);
-      }
-      ads.sort((a,b)=>String(a.name || "").localeCompare(String(b.name || ""), "es", { numeric:false, sensitivity:"base" }));
-
       return {
         ok:true,
         generatedAt:String(payload.generatedAt || ""),
         products,
-        gifts,
-        ads
+        gifts
       };
     }
 
@@ -586,7 +577,7 @@
     let lastImageIndex = null;
     const imageIndexRefresh = {nextAt:0, failures:0};
     function loadAppsScriptImageIndex(){
-      if(!imageIndexInFlight && Date.now() < imageIndexRefresh.nextAt) return Promise.resolve(lastImageIndex || readAppsScriptImageIndexCache() || {ok:false, products:{}, gifts:[], ads:[]});
+      if(!imageIndexInFlight && Date.now() < imageIndexRefresh.nextAt) return Promise.resolve(lastImageIndex || readAppsScriptImageIndexCache() || {ok:false, products:{}, gifts:[]});
       if(!imageIndexInFlight){
         imageIndexInFlight = fetchAppsScriptImageIndex().finally(()=>{
           imageIndexInFlight = null;
@@ -617,7 +608,7 @@
           lastImageIndex = cached; return cached;
         }
         console.warn("No se pudo cargar el índice de imágenes desde Apps Script; se usarán imágenes suplentes.", error);
-        return { ok:false, products:{}, gifts:[], ads:[] };
+        return { ok:false, products:{}, gifts:[] };
       }finally{
         window.clearTimeout(timer);
       }
@@ -1019,25 +1010,6 @@
     let allLoadedProducts = [];
     let all = [];
     let productById = new Map();
-    let adImageEntries = [];
-    let adRefreshInFlight = null;
-
-    // Los anuncios se leen y actualizan sin consultar hojas ni reconstruir productos.
-    function refreshAdPalettes(){
-      if(adRefreshInFlight) return adRefreshInFlight;
-      adRefreshInFlight = (async ()=>{
-        const payload = await loadAppsScriptImageIndex();
-        if(payload?.ok !== true) return;
-        const nextEntries = Array.isArray(payload.ads) ? payload.ads.slice() : [];
-        if(JSON.stringify(nextEntries) === JSON.stringify(adImageEntries)) return;
-        adImageEntries = nextEntries;
-        render();
-      })().catch(error=>{
-        console.info("No se pudieron actualizar los anuncios; se conserva el último índice válido.", error);
-      }).finally(()=>{ adRefreshInFlight = null; });
-      return adRefreshInFlight;
-    }
-
     const ALBUM_COLORS = [
       { top:"#f3a7b9", base:"#e790ab", tab:"#eb99b1", shadow:"rgba(203, 112, 145, .32)" },
       { top:"#82ace8", base:"#5f8fda", tab:"#6f9ee1", shadow:"rgba(77, 123, 205, .30)" },
@@ -1689,42 +1661,6 @@
       </article>
     `;
 
-    function makeAdPaletteCard(entry,index){
-      const src=String(entry && entry.url || "").trim();
-      if(!/^https:\/\//i.test(src)) return null;
-
-      const card=document.createElement("article");
-      card.className="album-card album-category-card ad-palette-card";
-
-      const button=document.createElement("button");
-      button.type="button";
-      button.className="album-folder ad-palette-button";
-      button.dataset.adOpen=src;
-
-      const label=`Abrir anuncio ${index + 1}`;
-      button.setAttribute("aria-label",label);
-      button.title="Abrir anuncio";
-
-      const img=document.createElement("img");
-      img.className="ad-palette-image";
-      img.src=src;
-      img.alt=`Anuncio ${index + 1}`;
-      img.loading="lazy";
-      img.decoding="async";
-      img.onerror=()=>card.remove();
-
-      button.appendChild(img);
-      card.appendChild(button);
-      return card;
-    }
-
-    function shouldShowAdPalettes(viewMode){
-      if(!Array.isArray(adImageEntries) || !adImageEntries.length) return false;
-      if(getCombinedWordTerms().length) return false;
-      return viewMode && viewMode.mode==="albums" && viewMode.level==="category"
-        && (!selectedSection || cleanNavKey(selectedSection)===cleanNavKey(GIFT_IMAGE_SOURCE.section));
-    }
-
     function stockMetaText(p){
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
       const stockVal = hasKnownStock ? p.stock : 0;
@@ -1911,7 +1847,6 @@
 
     const countSlot = document.getElementById("countSlot");
     const topline = document.getElementById("topline");
-    const mqCountMobile = window.matchMedia("(max-width:760px)");
 
     const wordPanel = document.getElementById("wordPanel");
     const wordChips = document.getElementById("wordChips");
@@ -1938,36 +1873,10 @@
     }
 
     function placeResponsiveHeaderMeta(){
-      if(!countEl || !countSlot || !topline || !albumNav || !albumNavHost) return;
-
-      if(mqCountMobile.matches){
-        if(countEl.parentElement !== countSlot){
-          countSlot.appendChild(countEl);
-        }
-        if(albumNav.parentElement !== countSlot){
-          countSlot.appendChild(albumNav);
-        }
-        countEl.classList.add("count-mobile");
-        topline.classList.add("hidden");
-      }else{
-        if(countEl.parentElement !== topline){
-          topline.appendChild(countEl);
-        }
-        if(albumNav.parentElement !== albumNavHost){
-          albumNavHost.appendChild(albumNav);
-        }
-        countEl.classList.remove("count-mobile");
-        topline.classList.remove("hidden");
-      }
-
-      countSlot.classList.toggle("has-album-nav", !albumNav.hidden);
+      if(countEl && countSlot && countEl.parentElement!==countSlot)countSlot.appendChild(countEl);
+      if(albumNav && albumNavHost && albumNav.parentElement!==albumNavHost)albumNavHost.appendChild(albumNav);
     }
 
-    if(typeof mqCountMobile.addEventListener === "function"){
-      mqCountMobile.addEventListener("change", placeResponsiveHeaderMeta);
-    }else if(typeof mqCountMobile.addListener === "function"){
-      mqCountMobile.addListener(placeResponsiveHeaderMeta);
-    }
     placeResponsiveHeaderMeta();
     function updateCountAttention(){
       if(!countEl || !qInp) return;
@@ -2743,7 +2652,7 @@
           ? filteredAlbums.filter(album => (Number(album.count) || 0) > 0).length
           : filteredAlbums.length;
         if(grid){
-          grid.classList.toggle("album-three-column-layout", visibleAlbumCount + (shouldShowAdPalettes(viewMode) ? adImageEntries.length : 0) >= 5);
+          grid.classList.toggle("album-three-column-layout", visibleAlbumCount >= 5);
         }
         if(countEl){
           const totalProducts = filteredAlbums.reduce((sum,album)=>sum + (Number(album.count) || 0), 0);
@@ -2768,13 +2677,6 @@
         if(token !== _renderToken) return;
 
         const frag = document.createDocumentFragment();
-        // Los anuncios encabezan esta zona, en orden alfabético de archivo.
-        if(shouldShowAdPalettes(viewMode)){
-          adImageEntries.forEach((entry,index)=>{
-            const adCard=makeAdPaletteCard(entry,index);
-            if(adCard) frag.appendChild(adCard);
-          });
-        }
         if(!filteredAlbums.length){
           const emptyType=filteredAlbums[0]?.navType||albums[0]?.navType;
           frag.appendChild(makeEmptyState(`No se encontraron ${navigationLevelLabel(emptyType||viewMode.level||"category",true).toLowerCase()} con ese nombre.`));
@@ -3004,20 +2906,9 @@
       loadShippingFromLS();
     }
 
-    function initKeyboardAccessibility(){
-      // Cierre de modales ya está en Escape
-    }
+
 
     
-// Detalle auxiliar conservado del bloque clásico original.
-const visitorDetails = document.getElementById("visitorDetails");
-    visitorDetails?.addEventListener("toggle", () => {
-      if (visitorDetails.open) {
-        requestAnimationFrame(() => visitorDetails.scrollIntoView({ block:"start" }));
-      }
-    });
-
-
 // UX visual compatible con el catálogo de referencia (sin cambiar la fuente de datos).
 function uxActiveFilterEntries(){
   const entries=[];
@@ -3288,22 +3179,12 @@ function makeCard(p){
     imgBox.setAttribute("aria-label","Imagen de regalo para toda ocasión");
   }
   if(!p.isGiftGalleryImage){
-    const fichaButton=document.createElement("button");
-    fichaButton.type="button";
-    fichaButton.className="btn-ghost product-ficha-btn";
-    fichaButton.textContent="Crear ficha";
-    fichaButton.setAttribute("aria-label","Crear ficha de "+productName);
-
-    const fichaStatus=document.createElement("p");
-    fichaStatus.setAttribute("role","status");
-    fichaStatus.style.cssText="margin:0;padding:0 12px;font-size:12px;";
-    fichaButton.addEventListener("click",event=>{
-      event.preventDefault();event.stopPropagation();
-      window.createProductFicha?.(productById.get(String(p.id))||p,fichaButton,fichaStatus);
-    });
-    const fichaRow=document.createElement("div");
-    fichaRow.className="product-description-actions";
-    descriptionEl.insertAdjacentElement("afterend",fichaRow);
+    const copyStatus=document.createElement("p");
+    copyStatus.setAttribute("role","status");
+    copyStatus.style.cssText="margin:0;padding:0 12px;font-size:12px;";
+    const copyRow=document.createElement("div");
+    copyRow.className="product-description-actions";
+    descriptionEl.insertAdjacentElement("afterend",copyRow);
     for(const [field,label] of [["name","Copiar nombre"],["description","Copiar descripción"]]){
       const copy=document.createElement("button");
       copy.type="button";
@@ -3320,17 +3201,27 @@ function makeCard(p){
         try{
           await copyProductText(text);
           copy.textContent="Copiado ✓";
-          fichaStatus.textContent=field==="name"?"Nombre copiado.":"Descripción copiada.";
+          copyStatus.textContent=field==="name"?"Nombre copiado.":"Descripción copiada.";
           setTimeout(()=>{copy.textContent=label;copy.disabled=false},1600);
         }catch(error){
           copy.disabled=false;
-          fichaStatus.textContent="No se pudo copiar. Inténtalo de nuevo.";
+          copyStatus.textContent="No se pudo copiar. Inténtalo de nuevo.";
         }
       });
-      fichaRow.appendChild(copy);
+      copyRow.appendChild(copy);
     }
-    fichaRow.appendChild(fichaButton);
-    fichaRow.insertAdjacentElement("afterend",fichaStatus);
+    copyRow.insertAdjacentElement("afterend",copyStatus);
+    const details=document.createElement("details");
+    details.className="product-details";
+    const summary=document.createElement("summary");summary.textContent="Descripción y texto";
+    descriptionEl.insertAdjacentElement("beforebegin",details);
+    details.append(summary,descriptionEl,copyRow,copyStatus);
+    const selection=document.createElement("label");selection.className="product-selection";
+    const check=document.createElement("input");check.type="checkbox";
+    check.checked=FOLLETO_SELECTION.has(String(p.id));check.dataset.folletoSelect=String(p.id);
+    check.setAttribute("aria-label","Seleccionar "+productName+" para el folleto");
+    const label=document.createElement("span");label.textContent="Seleccionar";
+    selection.append(check,label);imgBox.appendChild(selection);
   }
   refreshCardUI(card,p);
   return card;
@@ -3406,11 +3297,6 @@ function closeAlbum(opts={}){
 }
 
 function renderCartModal(){
-  const cartEmpty=cartItemsArray().length===0;
-  for(const id of ["cartCollageBtn"]){
-    const button=document.getElementById(id);
-    if(button) button.disabled=cartEmpty;
-  }
   const items=cartItemsArray();
   const subtotalValue=cartTotalValue();
   const shippingValue=getShippingCop();
@@ -3456,17 +3342,6 @@ function renderCartModal(){
     if(shouldShowProductCodes()) meta.push(`Código ${it.id}`);
     meta.push(shouldShowProductPrices()?(it.hasPrice===false?"Precio por confirmar":`${fmtCOP.format(Number(it.price)||0)} c/u`):"Precio por confirmar");
     main.querySelector(".cart-item-sub").textContent=meta.join(" · ");
-    const fichaButton=document.createElement("button");
-    fichaButton.className="btn-ghost";
-    fichaButton.type="button";
-    fichaButton.textContent="Crear ficha";
-    fichaButton.setAttribute("aria-label",`Crear ficha de ${it.name}`);
-    fichaButton.disabled=!p;
-    fichaButton.addEventListener("click",event=>{
-      event.stopPropagation();
-      if(p && typeof window.createCartProductFicha==="function") void window.createCartProductFicha(p,fichaButton);
-    });
-    main.appendChild(fichaButton);
     left.appendChild(main);
     const controls=document.createElement("div");
     controls.className="cart-controls";
@@ -3490,13 +3365,6 @@ function bindGridActions(){
   grid.addEventListener("click",e=>{
     const clear=e.target.closest("[data-clear-search]");
     if(clear){uxClearAllFilters();return;}
-    const adBtn=e.target.closest("[data-ad-open]");
-    if(adBtn){
-      const src=String(adBtn.getAttribute("data-ad-open")||"").trim();
-      const img=adBtn.querySelector("img");
-      if(src) openImgModal(src,img?.alt||"Anuncio");
-      return;
-    }
     const albumBtn=e.target.closest("[data-album-open]");
     if(albumBtn){
       const key=albumBtn.getAttribute("data-album-open")||"";
@@ -3578,8 +3446,7 @@ async function init(){
   bindFilters();
   bindGridActions();
   window.addEventListener("popstate",restoreCatalogStateFromHistory);
-  initKeyboardAccessibility();
-  initCollageFeature();
+  initFolleto();
   if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
   syncWordToggleButton();
   updateCountAttention();
@@ -3592,7 +3459,7 @@ async function init(){
   const shouldForceRestoredHistory=!!persistentViewState && !catalogNavigationIsReload();
   applyCatalogReloadViewState(startupViewState);
   await initializeRemoteCatalogConfiguration();
-  await Promise.all([refreshAdPalettes(), loadProducts()]);
+  await loadProducts();
   rebuildCatalogHistoryForRestoredNavigation({force:shouldForceRestoredHistory});
   installCatalogExitGuardIfAtRoot();
   // Los datos se consultan al abrir o recargar; no hay sondeos automáticos.

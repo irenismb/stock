@@ -1,6 +1,6 @@
 # Natura — mapa de archivos
 
-Google Drive es la fuente de trabajo. GitHub solo se sincroniza cuando el usuario lo ordena expresamente.
+Google Drive es la fuente de trabajo. Los cambios autorizados se verifican en Drive, se sincronizan con GitHub y se publican en la misma tarea, conforme a las reglas del proyecto.
 
 ## Sitio público
 
@@ -8,7 +8,7 @@ Google Drive es la fuente de trabajo. GitHub solo se sincroniza cuando el usuari
 - `catalogo.css`: estilos generales y responsive.
 - `catalogo-app.js`: núcleo del catálogo: configuración, datos, productos, filtros, navegación y renderizado.
 - `catalogo-carrito-pedido.js`: carrito, cliente, dirección, resumen PNG, registro de pedido y salida por WhatsApp.
-- `catalogo-herramientas.js`: herramienta administrativa Folleto/collage. No controla el arranque del catálogo.
+- `catalogo-herramientas.js`: herramienta única Folleto: snapshot, layout y renderer comunes con salidas PNG y documento PDF. No controla el arranque del catálogo.
 - `catalogo-ui.js`: ajustes de experiencia visual y comportamiento de interfaz.
 - `precios-admin-config.js`: endpoint/configuración del administrador.
 - `precios-admin.js`: interfaz administrativa de precios, visibilidad y controles.
@@ -23,7 +23,7 @@ Google Drive es la fuente de trabajo. GitHub solo se sincroniza cuando el usuari
 
 ## Apps Script
 
-- `apps-script/`: espejo de trabajo del código Apps Script. Flujo autorizado: Drive → GitHub, solo por orden expresa del usuario → Apps Script.
+- `apps-script/`: espejo de trabajo del código Apps Script. Flujo autorizado: Drive → GitHub; actualizar Apps Script y su implementación cuando la funcionalidad del cambio lo requiera.
 - `lectura de carpetas en natura`: proyecto Apps Script real visible en Drive; es destino de ejecución, no fuente normal de edición.
 
 ## Regla de mantenimiento

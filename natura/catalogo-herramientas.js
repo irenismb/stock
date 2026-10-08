@@ -1,4 +1,4 @@
-// Folleto: una fuente, un snapshot, un layout y un renderer para todas las salidas.
+﻿// Folleto: una fuente, un snapshot, un layout y un renderer para todas las salidas.
 const FOLLETO_SELECTION=new Set();
 const FOLLETO_FORMATS=Object.freeze({
   instagram:{width:1080,height:1350,label:"Instagram",extension:"png"},
@@ -6,6 +6,7 @@ const FOLLETO_FORMATS=Object.freeze({
   document:{width:1191,height:1684,label:"Documento",extension:"pdf"}
 });
 const FOLLETO_FONT="Calibri, Carlito, Arial, sans-serif";
+
 
 function buildFolletoSnapshot(options={}){
   if(window.CATALOG_INITIAL_LOAD_READY!==true) throw new Error("Espera a que termine de cargar el catálogo.");
@@ -49,6 +50,7 @@ function buildFolletoSnapshot(options={}){
   return Object.freeze({scope,title,settings,adminExtras:includeHidden||includeNotForSale,products:Object.freeze(products)});
 }
 
+
 function folletoFont(ctx,size,bold=false){ctx.font=`${bold?700:400} ${size}px ${FOLLETO_FONT}`;}
 function folletoLines(ctx,text,width){
   const result=[];
@@ -73,6 +75,7 @@ const FOLLETO_COMPANY=Object.freeze({
   catalog:"irenismb.github.io/stock/natura/catalogo.html"
 });
 const FOLLETO_WHATSAPP_PATH="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
+
 
 function folletoPresentation(p){
   // Tomar únicamente datos literales disponibles; nunca inventar contenidos o tamaños.
@@ -167,6 +170,7 @@ function folletoFitAttributes(ctx,attributes,width,height,ideal,minSize){
   }
   throw new Error("Las características del producto necesitan más espacio para caber completas.");
 }
+
 
 function folletoRoundRect(ctx,x,y,w,h,r=18){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.closePath();
@@ -284,12 +288,14 @@ function renderFolletoPDFHeader(ctx,width,assets){
   ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.stroke();
   ctx.restore();
 }
-function folletoCardPositions(width,height,count,formatKey){
+function folletoCardPositions(width,height,count,formatKey,reserveNextSpace=false){
   // Máximo cuatro fichas completas por lienzo o página A4.
   const pdf=formatKey==="document",margin=pdf?85:46,gap=pdf?34:22;
   const footer=pdf?50:0,top=margin+(pdf?220:0);
+  // En series de tres o más PNG, reservar una franja inferior para no tapar las fichas.
+  const nextGuideSpace=!pdf&&reserveNextSpace?80:0;
   const columns=count===1?1:2,rows=Math.ceil(count/columns);
-  const areaHeight=height-margin-top-footer;
+  const areaHeight=height-margin-top-footer-nextGuideSpace;
   const cardWidth=Math.min((width-2*margin-(columns-1)*gap)/columns,
     (areaHeight-(rows-1)*gap)/rows);
   const cardHeight=cardWidth;
@@ -307,8 +313,9 @@ function layoutCollage(snapshot,formatKey,ctx){
   if(!format)throw new Error("Formato no válido.");
   if(!snapshot.products.length)throw new Error("No hay productos para incluir con estas opciones.");
   const pages=[];
+  const reserveNextSpace=formatKey!=="document"&&Math.ceil(snapshot.products.length/4)>2;
   for(let start=0;start<snapshot.products.length;start+=4){
-    const group=snapshot.products.slice(start,start+4),positions=folletoCardPositions(format.width,format.height,group.length,formatKey);
+    const group=snapshot.products.slice(start,start+4),positions=folletoCardPositions(format.width,format.height,group.length,formatKey,reserveNextSpace);
     pages.push({width:format.width,height:format.height,cards:group.map((p,i)=>{
       const product=buildFichaModel(p);
       return {...positions[i],product,measure:measureFicha(ctx,product)};
@@ -320,6 +327,39 @@ function paginateFichasPDF(snapshot,ctx){return layoutCollage(snapshot,"document
 function layoutFolleto(snapshot,formatKey="instagram",ctx){
   return formatKey==="document"?paginateFichasPDF(snapshot,ctx):layoutCollage(snapshot,formatKey,ctx);
 }
+// Solo en series de tres o más imágenes: se indica continuación en todas salvo la última.
+function folletoShowNextIndicator(plan,pageIndex){
+  return plan.formatKey!=="document"&&plan.pages.length>2&&pageIndex<plan.pages.length-1;
+}
+function folletoDrawNextIndicator(ctx,page){
+  const margin=46,width=218,height=56;
+  const x=page.width-margin-width,y=page.height-margin-height;
+  ctx.save();
+  ctx.fillStyle="#f8c4d2";
+  ctx.shadowColor="rgba(152,59,85,.16)";
+  ctx.shadowBlur=15;
+  ctx.shadowOffsetY=4;
+  folletoRoundRect(ctx,x,y,width,height,28);
+  ctx.fill();
+  ctx.shadowColor="transparent";
+  ctx.shadowBlur=0;
+  ctx.shadowOffsetY=0;
+  ctx.fillStyle="#a1254b";
+  ctx.textAlign="left";
+  ctx.textBaseline="middle";
+  folletoFont(ctx,26,true);
+  ctx.fillText("Siguiente",x+23,y+height/2);
+  // Flecha dibujada como vector para que sea nítida al compartir la imagen.
+  ctx.strokeStyle="#a1254b";
+  ctx.lineWidth=4;
+  ctx.lineJoin="round";
+  ctx.lineCap="round";
+  ctx.beginPath();
+  ctx.moveTo(x+177,y+28);ctx.lineTo(x+198,y+28);
+  ctx.moveTo(x+189,y+19);ctx.lineTo(x+198,y+28);ctx.lineTo(x+189,y+37);
+  ctx.stroke();
+  ctx.restore();
+}
 function renderFolleto(snapshot,plan,pageIndex,assets){
   const page=plan.pages[pageIndex],canvas=document.createElement("canvas");
   canvas.width=page.width;canvas.height=page.height;
@@ -330,6 +370,7 @@ function renderFolleto(snapshot,plan,pageIndex,assets){
   ctx.textBaseline="top";ctx.fillStyle=background;ctx.fillRect(0,0,page.width,page.height);
   if(plan.formatKey==="document")renderFolletoPDFHeader(ctx,page.width,assets);
   for(const card of page.cards)renderFicha(ctx,card,assets.images.get(card.product.id));
+  if(folletoShowNextIndicator(plan,pageIndex))folletoDrawNextIndicator(ctx,page);
   if(plan.formatKey==="document"){
     ctx.fillStyle="#000";folletoFont(ctx,16);
     ctx.textAlign="right";
@@ -409,6 +450,8 @@ async function prepareFolleto(snapshot,formatKey,progress=()=>{},signal,reuse=nu
 }
 
 
+
+
 async function folletoDocumentBlob(result){
   const encoder=new TextEncoder(),parts=[],offsets=[0];let length=0;
   const add=v=>{const b=typeof v==="string"?encoder.encode(v):v;parts.push(b);length+=b.length;};
@@ -445,6 +488,7 @@ async function exportFolleto(preparation,formatKey,signal,clipboardResult=Promis
   }
   return {...result,copied:await clipboardResult};
 }
+
 
 function syncAdministrativeToolVisibility(){
   const invoice=document.getElementById("cartInvoiceBtn");if(invoice)invoice.hidden=window.CATALOG_ADMIN_MODE_ACTIVE!==true;
@@ -623,6 +667,7 @@ function initFolleto(){
   }
   generate.addEventListener("click",()=>generateFolleto(format()));
   for(const output of dialog.querySelectorAll("[data-folleto-export]"))output.addEventListener("click",()=>generateFolleto(output.dataset.folletoExport));
+
 
   document.getElementById("bulkAddBtn")?.addEventListener("click",()=>{
     const products=buildFilteredList().filter(p=>!p.isGiftGalleryImage);let added=0,existing=0,unavailable=0;

@@ -103,36 +103,66 @@ def google(method, url, token, *, params=None, data=None, headers=None, timeout=
 
 
 def comprobar_inventario(token, imagenes):
-    endpoint = f"https://sheets.googleapis.com/v4/spreadsheets/{SPREADSHEET}/values/%27Productos%27%21A1%3AM1000"
-    filas = google("GET", endpoint, token, params={"valueRenderOption": "FORMATTED_VALUE"}).get("values", [])
-    if not filas:
-        raise ImportErrorNatura("No fue posible leer el inventario oficial.")
-    cab = filas[0]
+    """Lee el Sheet oficial desde Drive XLSX, sin necesitar Sheets API habilitada."""
+    from openpyxl import load_workbook
+    export_url = f"https://www.googleapis.com/drive/v3/files/{SPREADSHEET}/export"
+    try:
+        res = requests.get(
+            export_url,
+            params={"mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"},
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=60
+        )
+    except requests.RequestException as exc:
+        raise ImportErrorNatura("No se pudo exportar el inventario desde Drive.") from exc
+    if res.status_code != 200:
+        raise ImportErrorNatura(f"Drive no permite exportar el inventario: HTTP {res.status_code}: {res.text[:180]}")
+    if len(res.content) > 10 * 1024 * 1024:
+        raise ImportErrorNatura("Exportacion del inventario demasiado grande.")
+    try:
+        libro = load_workbook(io.BytesIO(res.content), read_only=True, data_only=True)
+    except Exception as exc:
+        raise ImportErrorNatura("La exportacion XLSX no pudo abrirse.") from exc
+    try:
+        if "Productos" not in libro.sheetnames:
+            raise ImportErrorNatura("No se encontro la hoja Productos del inventario.")
+        filas = libro["Productos"].iter_rows(values_only=True)
+        cab = next(filas, None)
+        if not cab:
+            raise ImportErrorNatura("Inventario oficial vacio.")
 
-    def indice(nombre):
-        indices = [i for i, valor in enumerate(cab) if str(valor).strip() == nombre]
-        if len(indices) != 1:
-            raise ImportErrorNatura(f"Encabezado ausente o ambiguo: {nombre}.")
-        return indices[0]
+        def indice(nombre):
+            indices = [i for i, valor in enumerate(cab) if str(valor or "").strip() == nombre]
+            if len(indices) != 1:
+                raise ImportErrorNatura(f"Encabezado ausente o ambiguo: {nombre}.")
+            return indices[0]
 
-    c, n, cod_externo = indice("Código"), indice("Nombre"), indice("Código Natura")
-    catalogo = {}
-    for fila in filas[1:]:
-        if len(fila) > c and str(fila[c]).strip():
-            catalogo.setdefault(str(fila[c]).strip(), []).append(fila)
-    for item in imagenes:
-        filas_del_codigo = catalogo.get(item["codigo"], [])
-        if len(filas_del_codigo) != 1:
-            raise ImportErrorNatura(f"Codigo {item['codigo']} ausente o duplicado.")
-        fila = filas_del_codigo[0]
-        if item["codigo_comercial"] is not None:
-            codigo = str(fila[cod_externo]).strip() if len(fila) > cod_externo else ""
-            if codigo != item["codigo_comercial"]:
-                raise ImportErrorNatura(f"Codigo comercial diferente: {item['codigo']}.")
-        if item["nombre_contiene"]:
-            nombre = str(fila[n]).casefold() if len(fila) > n else ""
-            if item["nombre_contiene"].casefold() not in nombre:
-                raise ImportErrorNatura(f"El nombre del producto cambio: {item['codigo']}.")
+        c, n, cod_externo = indice("Código"), indice("Nombre"), indice("Código Natura")
+        catalogo = {}
+        for fila in filas:
+            raw = fila[c] if len(fila) > c else None
+            if isinstance(raw, (int, float)) and raw == int(raw) and 0 < raw <= 9999:
+                codigo_interno = f"{int(raw):04d}"
+            else:
+                codigo_interno = str(raw or "").strip()
+            if codigo_interno:
+                catalogo.setdefault(codigo_interno, []).append(fila)
+
+        for item in imagenes:
+            filas_del_codigo = catalogo.get(item["codigo"], [])
+            if len(filas_del_codigo) != 1:
+                raise ImportErrorNatura(f"Codigo {item['codigo']} ausente o duplicado.")
+            fila = filas_del_codigo[0]
+            if item["codigo_comercial"] is not None:
+                externo = str(fila[cod_externo] or "").strip() if len(fila) > cod_externo else ""
+                if externo != item["codigo_comercial"]:
+                    raise ImportErrorNatura(f"Codigo comercial diferente: {item['codigo']}.")
+            if item["nombre_contiene"]:
+                nombre = str(fila[n] or "").casefold() if len(fila) > n else ""
+                if item["nombre_contiene"].casefold() not in nombre:
+                    raise ImportErrorNatura(f"Nombre del producto distinto o sin calcular: {item['codigo']}.")
+    finally:
+        libro.close()
 
 
 def listar_imagenes(token):

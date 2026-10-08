@@ -525,7 +525,7 @@
 
     const STORE_INFO = {
       name: "IRENISMB STOCK NATURA",
-      whatsappDisplay: "+57 304 208 8961",
+      whatsappDisplay: "304 208 8961",
       whatsappDigits: "573042088961",
       direccion: "Calle 10A #20A-06, Santa Marta, Magdalena",
       barrio: "Los Almendros",

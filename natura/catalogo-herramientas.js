@@ -38,9 +38,10 @@ function buildFolletoSnapshot(options={}){
   const products=source.filter(p=>{const id=String(p.id);if(seen.has(id))return false;seen.add(id);return true;}).map(p=>Object.freeze({
     id:String(p.id),name:String(p.name||"").trim(),
     description:settings.descriptions?String(p.description||"").trim():"",
-    price:settings.prices?(p.hasPrice===false?"Consultar precio":fmtCOP.format(Number(p.price)||0)):"",
+    price:settings.prices&&p.hasPrice!==false?fmtCOP.format(Number(p.price)||0):"",
     code:settings.codes?`Código ${p.id}`:"",
     line:String(p.line||"").trim(),
+    presentation:folletoPresentation(p),
     imageUrl:settings.images?String(p.docsImageUrl||"").trim():"",
     route:navigationOrderedLevels().filter(l=>l!=="product").map(l=>String(navigationValueForProduct(p,l)||"").trim()).filter(Boolean).join(" · ")
   }));
@@ -64,114 +65,55 @@ function folletoLines(ctx,text,width){
   }
   return result;
 }
-function folletoTextBlocks(ctx,p,width,hero,compact=false){
-  const blocks=[];
-  const add=(kind,text,size,bold=false,gap=8)=>{
-    if(!text)return;
-    folletoFont(ctx,size,bold);
-    blocks.push({kind,lines:folletoLines(ctx,text,width),size,bold,lineHeight:size*1.24,gap});
-  };
-  add("line",p.line,hero?22:18,true,10);
-  let nameSize=hero?38:compact?22:27;
-  folletoFont(ctx,nameSize,true);
-  while(nameSize>(hero?28:compact?20:24)&&folletoLines(ctx,p.name,width).length>(hero?6:6)){
-    nameSize-=2;folletoFont(ctx,nameSize,true);
-  }
-  add("name",p.name,nameSize,true,14);
-  add("price",p.price,hero?40:compact?28:32,true,14);
-  add("code",p.code,hero?22:18,false,12);
-  add("description",p.description,hero?26:compact?19:22,false,10);
-  return blocks;
+// Una sola ficha vertical de 4:5 se dibuja en Instagram, Marketplace y A4.
+const FICHA_SIZE=Object.freeze({width:1080,height:1350});
+
+function folletoPresentation(p){
+  // Tomar únicamente datos literales disponibles; nunca inventar contenidos o tamaños.
+  const explicit=String(p.presentation||p.presentacion||"" ).trim();
+  if(explicit)return explicit;
+  const text=String(p.description||"");
+  const units=[...text.matchAll(/\b\d+(?:[.,]\d+)?\s*(?:ml|mL|l|L|g|kg|und\.?|unidades)\b/gi)];
+  return [...new Set(units.map(m=>m[0].trim()))].slice(0,3).join(" · ");
 }
-function layoutFolleto(snapshot,formatKey="instagram",ctx){
-  const format=FOLLETO_FORMATS[formatKey];
-  if(!format)throw new Error("Formato no válido.");
-  if(!snapshot.products.length)throw new Error("No hay productos para incluir con estas opciones.");
-  const {width,height}=format,margin=58,gap=22,footer=72;
-  folletoFont(ctx,40,true);
-  const titleLines=folletoLines(ctx,snapshot.title,width-margin*2-160);
-  const header=108+Math.min(titleLines.length,3)*46;
-  const available=height-margin*2-header-footer,bodyWidth=width-margin*2;
-  const hero=snapshot.products.length===1;
-  let columns=hero?1:snapshot.products.length>4?3:2;
-  const compact=snapshot.products.length>4;
-  if(columns===3){
-    const narrowWidth=(bodyWidth-gap*2)/3-36;
-    const tooDense=snapshot.products.some(p=>{
-      const blocks=folletoTextBlocks(ctx,p,narrowWidth,false,true);
-      const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap+(b.kind==="price"?14:0),0);
-      return textHeight+179>(available-gap)/2;
-    });
-    if(tooDense)columns=2;
-  }
-  const cardWidth=(bodyWidth-gap*(columns-1))/columns;
-  const pages=[];let page=null,y=0,row=[];
-  const newPage=()=>{
-    page={width,height,margin,header,footer,title:snapshot.title,titleLines,cards:[]};
-    pages.push(page);y=margin+header;
+function buildFichaModel(product){
+  return {
+    id:String(product.id),name:String(product.name||""),
+    line:String(product.line||""),presentation:String(product.presentation||""),
+    code:String(product.code||""),description:String(product.description||""),
+    price:String(product.price||""),imageUrl:String(product.imageUrl||"")
   };
-  const placeRow=()=>{
-    if(!row.length)return;
-    const rowHeight=Math.max(...row.map(c=>c.height));
-    if(!page||y+rowHeight>height-margin-footer+.01)newPage();
-    row.forEach((c,i)=>page.cards.push({...c,height:rowHeight,x:margin+i*(cardWidth+gap),y}));
-    y+=rowHeight+gap;row=[];
-  };
-  for(const p of snapshot.products){
-    const heroSide=hero&&snapshot.settings.images;
-    const textWidth=heroSide?cardWidth*.49-38:cardWidth-36;
-    const blocks=folletoTextBlocks(ctx,p,textWidth,hero,compact);
-    let imageHeight=snapshot.settings.images?(hero?available-48:compact?210:280):0;
-    const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap+(b.kind==="price"?14:0),0);
-    const base=36+(imageHeight&&!heroSide?imageHeight+18:0);
-    let cardHeight=heroSide?Math.max(imageHeight+48,textHeight+60):base+textHeight;
-    if(!hero&&imageHeight){
-      const desiredRows=snapshot.products.length<=columns?1:snapshot.products.length<=columns*2?2:3;
-      const rowSpace=(available-gap*(desiredRows-1))/desiredRows;
-      imageHeight=Math.max(125,Math.min(imageHeight,rowSpace-textHeight-54));
-      cardHeight=36+(imageHeight?imageHeight+18:0)+textHeight;
-    }
-    if(cardHeight<=available){
-      row.push({product:p,blocks,imageHeight,heroSide,width:cardWidth,height:hero?available:cardHeight});
-      if(row.length===columns)placeRow();
-      continue;
-    }
-    // Keep every measured line, continuing on another page when necessary.
-    placeRow();
-    imageHeight=snapshot.settings.images&&!heroSide?120:0;
-    let current=[],used=36+(imageHeight?imageHeight+18:0),continued=false;
-    const flush=()=>{
-      if(!current.length)return;
-      row=[{product:p,blocks:current,imageHeight:continued?0:heroSide?available-48:imageHeight,heroSide:heroSide&&!continued,
-        width:cardWidth,height:heroSide&&!continued?available:used,continued}];
-      placeRow();current=[];used=66;continued=true;
-    };
-    for(const b of blocks){
-      let chunk=[];
-      for(const line of b.lines){
-        const extra=b.gap+(b.kind==="price"?14:0);
-        if(used+b.lineHeight+extra>available){
-          if(chunk.length){current.push({...b,lines:chunk});chunk=[];used+=extra;}
-          flush();
-        }
-        chunk.push(line);used+=b.lineHeight;
-      }
-      if(chunk.length){current.push({...b,lines:chunk});used+=b.gap+(b.kind==="price"?14:0);}
-    }
-    flush();
+}
+function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=false){
+  const content=String(text||"").trim();
+  if(!content)return {lines:[],size:ideal,lineHeight:ideal*1.24};
+  for(let size=ideal;size>=minSize;size-=1){
+    folletoFont(ctx,size,bold);
+    const lines=folletoLines(ctx,content,width),lineHeight=size*1.24;
+    if(lines.length*lineHeight<=height)return {lines,size,lineHeight};
   }
-  placeRow();
-  for(const p of pages){
-    const bottom=Math.max(...p.cards.map(c=>c.y+c.height));
-    const free=height-margin-footer-bottom;
-    const rows=[...new Set(p.cards.map(c=>c.y))];
-    const growth=Math.min(96,Math.max(0,free/rows.length));
-    if(growth>0)for(const c of p.cards){
-      c.y+=rows.indexOf(c.y)*growth;c.height+=growth;
-      if(c.imageHeight&&!c.heroSide)c.imageHeight+=growth;
-    }
+  folletoFont(ctx,minSize,bold);
+  const lines=folletoLines(ctx,content,width),lineHeight=minSize*1.24;
+  if(!truncate)throw new Error("La ficha del producto "+(text||"").slice(0,65)+" necesita menos texto para caber completa.");
+  const maxLines=Math.max(1,Math.floor(height/lineHeight));
+  if(lines.length>maxLines){
+    const visible=lines.slice(0,maxLines);let last=visible[maxLines-1];
+    while(last.length>1&&ctx.measureText(last+"…").width>width)last=last.slice(0,-1);
+    visible[maxLines-1]=last+"…";
+    return {lines:visible,size:minSize,lineHeight,abbreviated:true};
   }
-  return {formatKey,pages,productCount:snapshot.products.length};
+  return {lines,size:minSize,lineHeight};
+}
+function measureFicha(ctx,ficha){
+  // Todas las medidas se calculan sobre la misma ficha maestra de 1080x1350.
+  const textWidth=972;
+  const name=folletoFitText(ctx,ficha.name,textWidth,166,52,25,true);
+  const line=folletoFitText(ctx,ficha.line,textWidth,50,29,19,true);
+  const presentation=folletoFitText(ctx,ficha.presentation,textWidth,68,30,19);
+  const description=folletoFitText(ctx,ficha.description,textWidth,220,32,18,false,true);
+  const code=folletoFitText(ctx,ficha.code,425,44,30,20,true);
+  const price=folletoFitText(ctx,ficha.price,428,44,33,19,true);
+  return {name,line,presentation,description,code,price};
 }
 function folletoRoundRect(ctx,x,y,w,h,r=18){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.closePath();
@@ -197,48 +139,93 @@ function folletoDrawImage(ctx,image,x,y,w,h){
     ctx.drawImage(image,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
   }else{
     ctx.fillStyle="#f5e9e3";folletoRoundRect(ctx,x,y,w,h,14);ctx.fill();
-    folletoFont(ctx,18);ctx.fillStyle="#000";ctx.textAlign="center";
+    folletoFont(ctx,21);ctx.fillStyle="#000";ctx.textAlign="center";
     ctx.fillText("Imagen no disponible",x+w/2,y+h/2,w-20);ctx.textAlign="left";
   }
 }
-function renderFolletoCard(ctx,card,image){
-  const {x,y,width,height}=card;
-  ctx.save();ctx.shadowColor="#784f3610";ctx.shadowBlur=14;ctx.shadowOffsetY=5;
-  ctx.fillStyle="#fffdfb";folletoRoundRect(ctx,x,y,width,height,20);ctx.fill();ctx.restore();
-  ctx.strokeStyle="#eadbd1";ctx.lineWidth=1.3;ctx.stroke();
-  let top=y+18,textX=x+18,textWidth=width-36;
-  if(card.heroSide){
-    const imageWidth=width*.46;
-    const tint=ctx.createLinearGradient(x,y,x+imageWidth,y+height);
-    tint.addColorStop(0,"#f8e3e4");tint.addColorStop(1,"#f7efdf");
-    ctx.fillStyle=tint;folletoRoundRect(ctx,x+12,y+12,imageWidth,height-24,16);ctx.fill();
-    folletoBotanical(ctx,x+22,y+height-175,.7);
-    folletoDrawImage(ctx,image,x+24,y+36,imageWidth-24,height-72);
-    textX=x+width*.51;textWidth=width*.49-38;
-    const blockHeight=card.blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap+(b.kind==="price"?14:0),0);
-    top=y+Math.max(30,(height-blockHeight)/2);
-  }else if(card.imageHeight){
-    ctx.fillStyle="#fdf5ee";folletoRoundRect(ctx,x+10,top-8,width-20,card.imageHeight+8,14);ctx.fill();
-    folletoDrawImage(ctx,image,x+18,top,width-36,card.imageHeight);
-    top+=card.imageHeight+18;
+function renderFicha(ctx,card,image){
+  const {x,y,width,height,product,measure}=card;
+  const sx=width/FICHA_SIZE.width,sy=height/FICHA_SIZE.height;
+  ctx.save();ctx.translate(x,y);ctx.scale(sx,sy);
+  const bg=ctx.createLinearGradient(0,0,1080,1350);
+  bg.addColorStop(0,"#fffdfb");bg.addColorStop(1,"#fff8f4");
+  ctx.fillStyle=bg;folletoRoundRect(ctx,0,0,1080,1350,32);ctx.fill();
+  ctx.strokeStyle="#e5d4cf";ctx.lineWidth=2;ctx.stroke();
+
+  // Fotografía principal con encuadre completo; no se deforma ni se recorta.
+  const photo=ctx.createLinearGradient(48,46,1032,624);
+  photo.addColorStop(0,"#f6e4eb");photo.addColorStop(.6,"#fbf1e7");photo.addColorStop(1,"#eee9df");
+  ctx.fillStyle=photo;folletoRoundRect(ctx,46,46,988,576,24);ctx.fill();
+  if(image)folletoDrawImage(ctx,image,72,64,936,536);
+  else if(product.imageUrl)folletoDrawImage(ctx,null,72,64,936,536);
+  else{
+    ctx.fillStyle="#f7e9e3";folletoRoundRect(ctx,286,220,508,202,22);ctx.fill();
+    folletoFont(ctx,26);ctx.fillStyle="#000";ctx.textAlign="center";
+    ctx.fillText("Imagen no incluida",540,305);ctx.textAlign="left";
   }
-  if(card.continued){
-    folletoFont(ctx,17,true);ctx.fillStyle="#000";
-    ctx.fillText("Código "+card.product.id+" · continuación",textX,top,textWidth);top+=30;
+  const drawLines=(measure,x,y)=>{
+    if(!measure.lines.length)return;
+    folletoFont(ctx,measure.size,measure.bold||false);
+    for(const text of measure.lines){ctx.fillText(text,x,y);y+=measure.lineHeight;}
+  };
+  ctx.fillStyle="#000";
+  drawLines({...measure.name,bold:true},54,660);
+  drawLines({...measure.line,bold:true},54,833);
+  drawLines(measure.presentation,54,889);
+  // Código y precio son opciones independientes; no ocupar espacio vacío si no existen.
+  const code=measure.code.lines.length>0,price=measure.price.lines.length>0;
+  if(code){
+    ctx.fillStyle="#f2dbe2";folletoRoundRect(ctx,50,966,price?461:520,72,30);ctx.fill();
+    ctx.fillStyle="#000";drawLines({...measure.code,bold:true},75,984);
   }
-  for(const block of card.blocks){
-    folletoFont(ctx,block.size,block.bold);ctx.fillStyle="#000";
-    if(block.kind==="price"){
-      const priceHeight=block.lines.length*block.lineHeight+14;
-      ctx.fillStyle="#f0cdd5";folletoRoundRect(ctx,textX-4,top-4,textWidth+8,priceHeight,priceHeight<90?22:14);ctx.fill();
-      ctx.fillStyle="#000";ctx.textAlign="center";
-      for(const line of block.lines){ctx.fillText(line,textX+textWidth/2,top+3);top+=block.lineHeight;}
-      ctx.textAlign="left";top+=14;
-    }else{
-      for(const line of block.lines){ctx.fillText(line,textX,top);top+=block.lineHeight;}
-    }
-    top+=block.gap;
+  if(price){
+    const priceX=code?554:50;
+    ctx.fillStyle="#f5eae4";folletoRoundRect(ctx,priceX,966,code?474:620,72,30);ctx.fill();
+    ctx.fillStyle="#000";drawLines({...measure.price,bold:true},priceX+23,984);
   }
+  if(measure.description.lines.length){
+    ctx.strokeStyle="#dac3b2";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(54,1059);ctx.lineTo(1026,1059);ctx.stroke();
+    ctx.fillStyle="#000";drawLines(measure.description,54,1081);
+  }
+  ctx.restore();
+}
+function folletoCardPositions(width,height,count,formatKey){
+  // Máximo cuatro fichas completas por lienzo o página A4.
+  const pdf=formatKey==="document",margin=pdf?85:46,gap=pdf?34:22;
+  const footer=pdf?60:0;
+  const columns=count===1?1:2,rows=Math.ceil(count/columns);
+  const areaHeight=height-2*margin-footer;
+  const cardWidth=Math.min((width-2*margin-(columns-1)*gap)/columns,
+    (areaHeight-(rows-1)*gap)/rows*(4/5));
+  const cardHeight=cardWidth*5/4;
+  const gridWidth=columns*cardWidth+(columns-1)*gap;
+  const gridHeight=rows*cardHeight+(rows-1)*gap;
+  const baseX=(width-gridWidth)/2,baseY=margin+(areaHeight-gridHeight)/2;
+  return Array.from({length:count},(_,i)=>{
+    const row=Math.floor(i/columns),itemsHere=Math.min(columns,count-row*columns);
+    const rowWidth=itemsHere*cardWidth+(itemsHere-1)*gap;
+    const startX=(width-rowWidth)/2;
+    return {x:startX+(i%columns)*(cardWidth+gap),y:baseY+row*(cardHeight+gap),width:cardWidth,height:cardHeight};
+  });
+}
+function layoutCollage(snapshot,formatKey,ctx){
+  const format=FOLLETO_FORMATS[formatKey];
+  if(!format)throw new Error("Formato no válido.");
+  if(!snapshot.products.length)throw new Error("No hay productos para incluir con estas opciones.");
+  const pages=[];
+  for(let start=0;start<snapshot.products.length;start+=4){
+    const group=snapshot.products.slice(start,start+4),positions=folletoCardPositions(format.width,format.height,group.length,formatKey);
+    pages.push({width:format.width,height:format.height,cards:group.map((p,i)=>{
+      const product=buildFichaModel(p);
+      return {...positions[i],product,measure:measureFicha(ctx,product)};
+    })});
+  }
+  return {formatKey,pages,productCount:snapshot.products.length};
+}
+function paginateFichasPDF(snapshot,ctx){return layoutCollage(snapshot,"document",ctx);}
+function layoutFolleto(snapshot,formatKey="instagram",ctx){
+  return formatKey==="document"?paginateFichasPDF(snapshot,ctx):layoutCollage(snapshot,formatKey,ctx);
 }
 function renderFolleto(snapshot,plan,pageIndex,assets){
   const page=plan.pages[pageIndex],canvas=document.createElement("canvas");
@@ -246,57 +233,17 @@ function renderFolleto(snapshot,plan,pageIndex,assets){
   const ctx=canvas.getContext("2d");
   if(!ctx)throw new Error("No se pudo preparar el folleto.");
   const background=ctx.createLinearGradient(0,0,page.width,page.height);
-  background.addColorStop(0,"#fff7ee");background.addColorStop(.5,"#f9eddf");background.addColorStop(1,"#fae9e7");
+  background.addColorStop(0,"#fff8f1");background.addColorStop(.6,"#fbefe6");background.addColorStop(1,"#f9eae7");
   ctx.textBaseline="top";ctx.fillStyle=background;ctx.fillRect(0,0,page.width,page.height);
-  folletoBotanical(ctx,12,30,1.05);
-  folletoBotanical(ctx,page.width-10,28,1.05,true);
-  ctx.save();ctx.translate(page.width,page.height);ctx.rotate(Math.PI);
-  folletoBotanical(ctx,5,8,.9);ctx.restore();
-  ctx.strokeStyle="#e5d2bf";ctx.lineWidth=1;ctx.strokeRect(22,22,page.width-44,page.height-44);
-  if(page.cover){
-    if(assets.logo)folletoDrawImage(ctx,assets.logo,(page.width-180)/2,70,180,180);
-    ctx.textAlign="center";ctx.fillStyle="#000";folletoFont(ctx,25,true);
-    ctx.fillText("IRENISMB STOCK NATURA",page.width/2,272);
-    ctx.font='700 78px Georgia, "Times New Roman", serif';ctx.fillText("Catálogo",page.width/2,330);
-    ctx.font='400 40px Georgia, "Times New Roman", serif';
-    let titleY=435;
-    for(const line of page.titleLines.slice(0,3)){ctx.fillText(line,page.width/2,titleY,page.width-160);titleY+=50;}
-    folletoFont(ctx,23);ctx.fillText(snapshot.products.length+" productos · Tu selección",page.width/2,titleY+18);
+  for(const card of page.cards)renderFicha(ctx,card,assets.images.get(card.product.id));
+  if(plan.formatKey==="document"){
+    ctx.fillStyle="#000";folletoFont(ctx,16);
+    ctx.textAlign="right";
+    ctx.fillText("Página "+(pageIndex+1)+" de "+plan.pages.length,page.width-85,page.height-45);
     ctx.textAlign="left";
-    if(snapshot.settings.images){
-      const imageY=Math.max(660,titleY+90),imageHeight=Math.min(650,page.height-page.margin-page.footer-imageY-50);
-      const imageWidth=(page.width-page.margin*2-36)/3;
-      for(let i=0;i<page.coverProducts.length;i++){
-        const x=page.margin+i*(imageWidth+18);
-        ctx.fillStyle=["#f5dfdf","#f9efdc","#eceddc"][i];
-        folletoRoundRect(ctx,x,imageY+(i===1?-30:20),imageWidth,imageHeight,26);ctx.fill();
-        folletoDrawImage(ctx,assets.images.get(page.coverProducts[i].id),x+14,imageY+(i===1?-16:34),imageWidth-28,imageHeight-28);
-      }
-      folletoBotanical(ctx,28,imageY+imageHeight-90,1.2);
-      folletoBotanical(ctx,page.width-20,imageY-15,1.2,true);
-    }
-    folletoFont(ctx,22);ctx.fillStyle="#000";ctx.textAlign="center";
-    ctx.fillText("Consultores independientes de Natura y AVON",page.width/2,page.height-240);
-    ctx.fillText("Asesoría y pedidos · 304 208 8961",page.width/2,page.height-198);
-    folletoFont(ctx,18);ctx.fillText("Página 1 de "+plan.pages.length,page.width/2,page.height-105);
-    ctx.textAlign="left";return canvas;
   }
-  const headX=page.margin+144,headWidth=page.width-page.margin-headX;
-  if(assets.logo)folletoDrawImage(ctx,assets.logo,page.margin,page.margin-8,120,120);
-  ctx.fillStyle="#000";folletoFont(ctx,18,true);ctx.fillText("IRENISMB STOCK NATURA",headX,page.margin,headWidth);
-  ctx.font='700 40px Georgia, "Times New Roman", serif';
-  let titleY=page.margin+30;
-  for(const line of page.titleLines.slice(0,3)){ctx.fillText(line,headX,titleY,headWidth);titleY+=46;}
-  folletoFont(ctx,18);ctx.fillText("Consultores independientes de Natura y AVON",headX,titleY+4,headWidth);
-  for(const card of page.cards)renderFolletoCard(ctx,card,assets.images.get(card.product.id));
-  const footY=page.height-page.margin-page.footer+24;
-  ctx.strokeStyle="#d8c3b1";ctx.beginPath();ctx.moveTo(page.margin,footY-14);ctx.lineTo(page.width-page.margin,footY-14);ctx.stroke();
-  folletoFont(ctx,19);ctx.fillStyle="#000";ctx.fillText("Asesoría y pedidos · 304 208 8961",page.margin,footY);
-  ctx.textAlign="right";ctx.fillText("Página "+(pageIndex+1)+" de "+plan.pages.length,page.width-page.margin,footY);
-  ctx.textAlign="left";return canvas;
+  return canvas;
 }
-
-
 function folletoAssertSession(snapshot,signal){
   if(signal?.aborted)throw new DOMException("Generación cancelada.","AbortError");
   if(snapshot.adminExtras&&window.CATALOG_ADMIN_MODE_ACTIVE!==true)throw new Error("La sesión administrativa terminó. Abre de nuevo Folleto.");
@@ -337,16 +284,13 @@ function folletoPreparationKey(snapshot,formatKey){return formatKey+":"+JSON.str
 async function prepareFolletoPage(snapshot,plan,index,signal){
   folletoAssertSession(snapshot,signal);await document.fonts?.ready;
   const page=plan.pages[index],images=new Map(),missing=new Set();
-  const products=new Map((page.coverProducts||page.cards.map(c=>c.product)).map(p=>[p.id,p]));
-  const [logo]=await Promise.all([
-    folletoCachedImage(COMPANY_LOGO,signal),
-    ...[...products.values()].map(async p=>{
-      const image=await folletoCachedImage(p.imageUrl,signal);
-      images.set(p.id,image);if(snapshot.settings.images&&!image)missing.add(p.id);
-    })
-  ]);
+  const products=new Map(page.cards.map(c=>[c.product.id,c.product]));
+  await Promise.all([...products.values()].map(async p=>{
+    const image=await folletoCachedImage(p.imageUrl,signal);
+    images.set(p.id,image);if(snapshot.settings.images&&!image)missing.add(p.id);
+  }));
   folletoAssertSession(snapshot,signal);
-  const canvas=renderFolleto(snapshot,plan,index,{logo,images});
+  const canvas=renderFolleto(snapshot,plan,index,{images});
   const blob=await folletoCanvasBlob(canvas,plan.formatKey==="document"?"image/jpeg":"image/png");
   const result={blob,width:canvas.width,height:canvas.height,missing};
   canvas.width=canvas.height=1;folletoAssertSession(snapshot,signal);return result;
@@ -488,7 +432,7 @@ function initFolleto(){
     summaryRow("Tamaño",key==="document"?"A4 · PDF":FOLLETO_FORMATS[key].width+" × "+FOLLETO_FORMATS[key].height);
     summaryRow("Páginas",pages);
     for(const [label,key]of [["Precio","prices"],["Descripción","descriptions"],["Código","codes"],["Imágenes","images"]])summaryRow(label,snapshot.settings[key]?"Sí":"No");
-    dialog.querySelector("#folletoDesignHint").textContent=count===1?"Diseño tipo ficha: el producto es el protagonista.":"El diseño distribuye los productos y conserva el texto en las páginas necesarias.";
+    dialog.querySelector("#folletoDesignHint").textContent=count===1?"Ficha individual 4:5: fotografía y datos del producto, sin encabezado.":"Cada collage o página reúne hasta cuatro fichas de producto completas.";
   }
   async function showPage(index,token){
     if(!state||!dialog.open)return;

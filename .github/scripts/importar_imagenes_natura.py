@@ -132,7 +132,7 @@ def comprobar_inventario_publico(imagenes):
         raise ImportErrorNatura("Inventario publico demasiado grande.")
     raw = response.text.strip()
     match = re.fullmatch(
-        r"(?:/\\*.*?\\*/\\s*)?google\\.visualization\\.Query\\.setResponse\\((\\{.*\\})\\);?",
+        r"(?:/\*.*?\*/\s*)?google\.visualization\.Query\.setResponse\((\{.*\})\);?",
         raw, flags=re.DOTALL,
     )
     if match is None:
@@ -177,7 +177,7 @@ def comprobar_inventario_publico(imagenes):
             codigo = f"{raw_code:04d}"
         elif isinstance(raw_code, float) and raw_code.is_integer() and 0 <= raw_code <= 9999:
             codigo = f"{int(raw_code):04d}"
-        elif isinstance(raw_code, str) and re.fullmatch(r"\\d{1,4}", raw_code.strip()):
+        elif isinstance(raw_code, str) and re.fullmatch(r"\d{1,4}", raw_code.strip()):
             codigo = raw_code.strip().zfill(4)
         else:
             codigo = ""

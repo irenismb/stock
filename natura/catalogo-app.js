@@ -8,7 +8,7 @@
 
     // Fuente principal de datos comerciales del catálogo: Google Sheet oficial.
     // Las imágenes se relacionan por el código interno global de cuatro dígitos.
-    // Hoja Productos, estructura A:P: Código, Sección, Categoría, Subcategoría, Familia olfativa, Condición, Nombre, Precio, Costo, Stock, Referencia externa, Descripción, Código Natura, Línea, Público y Estado comercial.
+    // Los campos de Productos se resuelven por sus encabezados, independientemente de su posición.
     const GOOGLE_SHEET_SOURCE = {
       spreadsheetId: "1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs",
       sheetName: "Productos",
@@ -258,7 +258,6 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:Z",
         tq: "select *",
         tqx: `out:json;responseHandler:${callbackName}`,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
@@ -266,6 +265,109 @@
         _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
       });
       return `${base}?${query.toString()}`;
+    }
+
+    function catalogHeaderKey(value){
+      return normalizeText(value).replace(/\s+/g, " ");
+    }
+
+    function catalogHeaderIndices(columns, requiredLabels){
+      const indices = new Map();
+      for(const [index, column] of (Array.isArray(columns) ? columns : []).entries()){
+        const label = catalogHeaderKey(column?.label);
+        if(label) indices.set(label, indices.has(label) ? -1 : index);
+      }
+      for(const label of requiredLabels){
+        const index = indices.get(catalogHeaderKey(label));
+        if(index === undefined || index < 0){
+          throw new Error(`Encabezado indispensable ${index === undefined ? "ausente" : "duplicado"}: ${label}.`);
+        }
+      }
+      return indices;
+    }
+
+    function catalogCellText(cell){
+      return String(cell?.f ?? cell?.v ?? "").trim();
+    }
+
+    function catalogCellNumber(cell){
+      // v conserva el número real; f se utiliza exclusivamente para presentación.
+      if(cell?.v === null || cell?.v === undefined){
+        return {value:null, valid:!catalogCellText(cell), present:!!catalogCellText(cell)};
+      }
+      const valid = typeof cell.v === "number" && Number.isFinite(cell.v) && cell.v >= 0;
+      return {value:valid ? cell.v : null, valid, present:true};
+    }
+
+    function readGoogleSheetProductRows(table){
+      const indices = catalogHeaderIndices(table?.cols, ["Código", "Nombre", "Categoría", "Precio", "Sección", "Estado comercial"]);
+      if(!Array.isArray(table?.rows)) throw new Error("Productos no contiene filas legibles.");
+      const fields = {
+        section:"Sección", category:"Categoría", subcategory:"Subcategoría", fragranceFamily:"Familia olfativa",
+        condition:"Condición", name:"Nombre", priceText:"Precio", costText:"Costo", stockText:"Stock",
+        referenceExternal:"Referencia externa", description:"Descripción", codeNatura:"Código Natura",
+        line:"Línea", public:"Público", commercialStatus:"Estado comercial", brand:"Marca",
+        productType:"Tipo de producto", variant:"Variante", characteristic:"Característica",
+        presentation:"Presentación", content:"Contenido", unit:"Unidad", units:"Cantidad de unidades"
+      };
+      const rows = [];
+      for(const [index, source] of table.rows.entries()){
+        try{
+          if(!Array.isArray(source?.c)) throw new Error("Fila no legible");
+          if(!source.c.some(cell=>cell?.v !== null && cell?.v !== undefined || catalogCellText(cell))) continue;
+          const cell = label => source.c[indices.get(catalogHeaderKey(label))];
+          const row = {sourceRow:index + 2, technicalIssues:[]};
+          for(const [field, label] of Object.entries(fields)) row[field] = catalogCellText(cell(label));
+          const code = cell("Código")?.v;
+          row.code = typeof code === "number" && Number.isSafeInteger(code) && code >= 0 && code <= 9999
+            ? String(code).padStart(4, "0")
+            : (typeof code === "string" && /^\d{1,4}$/.test(code.trim()) ? code.trim().padStart(4, "0") : "");
+          const price = catalogCellNumber(cell("Precio"));
+          row.priceValue = price.value;
+          row.costValue = catalogCellNumber(cell("Costo")).value;
+          row.stockValue = catalogCellNumber(cell("Stock")).value;
+          row.contentValue = catalogCellNumber(cell("Contenido")).value;
+          row.unitsValue = catalogCellNumber(cell("Cantidad de unidades")).value;
+          if(!/^\d{4}$/.test(row.code)) row.technicalIssues.push({reason:"Código ausente o inválido", change:"Informar un Código entero de hasta cuatro dígitos."});
+          if(!row.name || /^#(?:REF!|VALUE!|N\/A|ERROR!|NAME\?|DIV\/0!|NUM!)/i.test(row.name)) row.technicalIssues.push({reason:"Nombre vigente vacío o con error", change:"Corregir el dato o la fórmula de Nombre en el catálogo original."});
+          if(!row.category) row.technicalIssues.push({reason:"Categoría vacía", change:"Completar Categoría para identificar la ficha y registrar pedidos."});
+          if(!row.section) row.technicalIssues.push({reason:"Sección vacía", change:"Completar Sección para aplicar sus reglas de publicación."});
+          if(!price.valid) row.technicalIssues.push({reason:"Precio informado no es un número válido no negativo", change:"Corregir Precio como número real en Sheets o conservarlo vacío si se desconoce."});
+          row.fullTxtRecord = [row.name, "", `Precio: ${row.priceText} Costo: ${row.costText} Stock: ${row.stockText} Referencia externa: ${row.referenceExternal}. ${row.description}`].join("\n");
+          rows.push(row);
+        }catch(_){
+          rows.push({code:"", sourceRow:index + 2, technicalIssues:[{reason:"Fila de Productos no legible", change:"Revisar la estructura de esa fila en el catálogo original."}]});
+        }
+      }
+      return rows;
+    }
+
+    function buildCompatibleGoogleSheetProducts(entries){
+      const source = Array.isArray(entries) ? entries : [];
+      const occurrences = new Map();
+      for(const entry of source){
+        const code = String(entry?.row?.code || "");
+        if(/^\d{4}$/.test(code)) occurrences.set(code, (occurrences.get(code) || 0) + 1);
+      }
+      const products = [], records = [];
+      for(const entry of source){
+        const row = entry?.row;
+        const code = String(row?.code || "");
+        const issues = Array.isArray(row?.technicalIssues) ? row.technicalIssues.slice() : [];
+        if(occurrences.get(code) > 1) issues.push({reason:"Código duplicado", change:"Resolver la identidad duplicada sin elegir arbitrariamente una fila."});
+        let product = null;
+        if(!issues.length){
+          try{
+            product = makeProductFromGoogleSheet(entry);
+            if(!product) issues.push({reason:"Ficha sin identidad o nombre válido", change:"Revisar Código y Nombre vigentes."});
+          }catch(error){
+            issues.push({reason:`No se pudo construir la ficha (${error?.name || "Error"})`, change:"Revisar la lectura de esta fila; las demás continúan disponibles."});
+          }
+        }
+        if(product) products.push(product);
+        records.push({code, sourceRow:row?.sourceRow ?? null, status:product ? "COMPATIBLE" : "PENDIENTE", causes:issues});
+      }
+      return {products, report:{total:records.length, compatible:products.length, pending:records.length - products.length, records}};
     }
 
     function loadGoogleSheetRows(){
@@ -299,58 +401,11 @@
             return;
           }
 
-          const cellValue = (cell)=>{
-            if(!cell) return "";
-            if(cell.f !== undefined && cell.f !== null) return String(cell.f);
-            if(cell.v !== undefined && cell.v !== null) return String(cell.v);
-            return "";
-          };
-
-          // Los atributos de la ficha se resuelven por sus encabezados vigentes.
-          const attributeHeaders = new Map((payload.table.cols || []).map((column,index)=>[
-            String(column.label || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase(),index
-          ]));
-          const rows = payload.table.rows.map(row=>{
-            const c = Array.isArray(row && row.c) ? row.c : [];
-            const value = index => cellValue(c[index]).trim();
-            const attribute = label => attributeHeaders.has(label) ? value(attributeHeaders.get(label)) : "";
-            let code = value(0);
-            if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
-
-            return {
-              code,
-              section: value(1),
-              category: value(2),
-              subcategory: value(3),
-              fragranceFamily: value(4),
-              condition: value(5),
-              name: value(6),
-              priceText: value(7),
-              costText: value(8),
-              stockText: value(9),
-              referenceExternal: value(10),
-              description: value(11),
-              codeNatura: value(12),
-              line: value(13),
-              public: value(14),
-              commercialStatus: value(15),
-              brand: attribute("marca"),
-              productType: attribute("tipo de producto"),
-              variant: attribute("variante"),
-              characteristic: attribute("caracteristica"),
-              presentation: attribute("presentacion"),
-              content: attribute("contenido"),
-              unit: attribute("unidad"),
-              units: attribute("cantidad de unidades"),
-              fullTxtRecord: [
-                value(6),
-                "",
-                `Precio: ${value(7)} Costo: ${value(8)} Stock: ${value(9)} Referencia externa: ${value(10)}. ${value(11)}`
-              ].join("\n")
-            };
-          }).filter(row => /^\d{4}$/.test(row.code) && row.name);
-
-          resolve(rows);
+          try{
+            resolve(readGoogleSheetProductRows(payload.table));
+          }catch(error){
+            reject(error);
+          }
         };
 
         script.onerror = ()=>{
@@ -726,15 +781,6 @@
       };
     }
 
-    function parseOptionalWholeNumber(value){
-      const raw = String(value ?? "").trim();
-      if(!raw) return null;
-      const digits = raw.replace(/[^\d]/g, "");
-      if(!digits) return null;
-      const parsed = Number(digits);
-      return Number.isSafeInteger(parsed) ? parsed : null;
-    }
-
     function makeProductFromGoogleSheet(entry){
       const row = entry && entry.row;
       const imageIndex = entry && entry.imageIndex;
@@ -767,7 +813,6 @@
       const syntheticFilename = imageNames[0] || `${code}.webp`;
 
       const priceText = String(row.priceText || "").trim();
-      const stockText = String(row.stockText || "").trim();
 
       return {
         id: code,
@@ -788,11 +833,12 @@
         content: String(row.content || "").trim(),
         unit: String(row.unit || "").trim(),
         units: String(row.units || "").trim(),
-        price: parseOptionalWholeNumber(priceText) ?? 0,
-        hasPrice: Boolean(priceText),
-        cost: parseOptionalWholeNumber(row.costText),
+        price: row.priceValue ?? 0,
+        priceText,
+        hasPrice: row.priceValue !== null && row.priceValue !== undefined,
+        cost: row.costValue ?? null,
         costText: String(row.costText || ""),
-        stock: parseOptionalWholeNumber(stockText),
+        stock: row.stockValue ?? null,
         referenceExternal: String(row.referenceExternal || "").trim(),
         codeNatura: String(row.codeNatura || "").trim(),
         srcFilename: syntheticFilename,
@@ -1553,7 +1599,7 @@
 
     function filterVisibleProducts(list){
       const source = Array.isArray(list) ? list : [];
-      return source.filter(p => cleanNavKey(p?.commercialStatus) !== cleanNavKey("No a la venta"));
+      return typeof window.isCatalogProductPublic === "function" ? source.filter(window.isCatalogProductPublic) : [];
     }
 
     function filterSearchExcludedProducts(list){
@@ -2651,6 +2697,12 @@
         scheduleJsonLdUpdate([]);
         return;
       }
+      if(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED !== true && !window.CATALOG_ADMIN_MODE_ACTIVE){
+        if(grid){grid.classList.remove("album-three-column-layout");grid.replaceChildren(makeEmptyState("No se pudieron confirmar las reglas de publicación. Recarga el catálogo."));}
+        if(countEl) countEl.textContent = "Publicación pendiente de confirmar";
+        scheduleJsonLdUpdate([]);
+        return;
+      }
       syncFilterVisibility();
       syncWordToggleButton();
       renderWordSuggestions();
@@ -2847,22 +2899,10 @@
 
       if(!silent) setCatalogLoadingStage("Preparando catálogo…", 95, 99);
 
-      let sheetProducts = [];
-      try{
-        sheetProducts = (Array.isArray(catalogSource?.sheetEntries) ? catalogSource.sheetEntries : [])
-          .map(makeProductFromGoogleSheet)
-          .filter(Boolean);
-      }catch(err){
-        console.error("El Google Sheet respondió, pero ocurrió un error al procesar sus productos.", err);
-        if(!silent) updateCountTextError("El Google Sheet respondió, pero no se pudieron procesar los productos. Revisa la consola para el detalle.");
-        return false;
-      }
-
-      if(!sheetProducts.length){
-        console.error("El Google Sheet respondió, pero no produjo productos válidos para mostrar.");
-        if(!silent) updateCountTextError("El Google Sheet respondió, pero no se encontraron productos válidos para mostrar.");
-        return false;
-      }
+      const assessment = buildCompatibleGoogleSheetProducts(catalogSource?.sheetEntries);
+      const sheetProducts = assessment.products;
+      window.CATALOG_COMPATIBILITY_REPORT = assessment.report;
+      window.dispatchEvent(new CustomEvent("irenismb:compatibilidad-actualizada", {detail:assessment.report}));
 
       let giftProducts = [];
       try{
@@ -3500,6 +3540,8 @@ async function init(){
   const shouldForceRestoredHistory=!!persistentViewState && !catalogNavigationIsReload();
   applyCatalogReloadViewState(startupViewState);
   await initializeRemoteCatalogConfiguration();
+  // Las reglas se cargan en paralelo, pero ninguna ficha pública se prepara antes de resolverlas.
+  await window.CATALOG_PUBLIC_VISIBILITY_READY;
   await loadProducts();
   rebuildCatalogHistoryForRestoredNavigation({force:shouldForceRestoredHistory});
   installCatalogExitGuardIfAtRoot();
@@ -3507,3 +3549,4 @@ async function init(){
   await restoreCatalogAdminAfterReload(startupAdminState);
   uxRestoreScrollPosition();
 }
+

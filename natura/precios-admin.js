@@ -18,6 +18,9 @@
   });
   window.CATALOG_ADMIN_DOCUMENTS=DOCUMENTS;
   const rules=new Set();
+  const lastConfirmedPublicSignatures=new Set();
+  let visibilityReadFailed=true;
+  let visibilityInFlight=null;
   let admin=false, adminMissingPriceOnly=false, adminHideHidden=false, connecting=false, bridgeFrame=null, port=null, pendingChannel="", openAfterConnect=false, seq=0, configLoading=false, connectTimer=0;
   let adminSection="catalogo", navigationOrderDraft=[], navigationDragLevel="";
   let capabilities=new Set(["precio"]);
@@ -102,8 +105,10 @@
   window.CATALOG_ADMIN_HIDE_HIDDEN=false;
   window.CATALOG_VISIBILITY_RULES=rules;
   window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED=false;
+  window.CATALOG_PUBLIC_VISIBILITY_ERROR="";
   // Lectores de visibilidad para el catálogo y las opciones de exportación.
-  window.isCatalogProductPublic=p=>!!p&&norm(p.commercialStatus)!=="no a la venta"&&!isHidden(p);
+  function publicVisibilitySignature(p){return JSON.stringify([p?.id||p?.code,p?.section,p?.category,p?.subcategory,p?.public,p?.line,p?.commercialStatus].map(norm))}
+  window.isCatalogProductPublic=p=>!!p&&window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED===true&&norm(p.commercialStatus)!=="no a la venta"&&!isHidden(p)&&(!visibilityReadFailed||lastConfirmedPublicSignatures.has(publicVisibilitySignature(p)));
   window.isCatalogProductHidden=p=>!!p&&isHidden(p);
   window.filterVisibleProducts=list=>{
     const a=Array.isArray(list)?list:[];
@@ -112,7 +117,12 @@
       if(adminHideHidden) out=out.filter(p=>!isHidden(p));
       return out;
     }
-    return a.filter(p=>norm(p?.commercialStatus)!=="no a la venta"&&!isHidden(p));
+    const visible=a.filter(window.isCatalogProductPublic);
+    if(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED===true&&!visibilityReadFailed){
+      lastConfirmedPublicSignatures.clear();
+      for(const product of visible) lastConfirmedPublicSignatures.add(publicVisibilitySignature(product));
+    }
+    return visible;
   };
 
   btn.hidden=false; btn.textContent="Administrar"; btn.setAttribute("aria-pressed","false"); btn.setAttribute("aria-label","Administrar catálogo");
@@ -126,6 +136,10 @@
     // de ventanas y de autenticación en marcos de terceros al recargar.
     if(storageGet(ADMIN_MODE_STORAGE_KEY)==="1") setConnectionStatus("Pulsa Conectar con Google para retomar la administración.");
   });
+  window.refreshCatalogVisibility=()=>{
+    window.CATALOG_PUBLIC_VISIBILITY_READY=loadRules().finally(rebuild);
+    return window.CATALOG_PUBLIC_VISIBILITY_READY;
+  };
 
   function norm(v){return String(v??"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").trim().replace(/\s+/g," ")}
   function visibilityId(t,id){const type=norm(t),raw=String(id??"").trim();if(type==="producto"&&/^\d{1,4}$/.test(raw))return raw.padStart(4,"0");return norm(raw)}
@@ -193,13 +207,56 @@
     document.body?.classList.toggle("catalog-admin-hide-hidden-active",!!admin&&adminHideHidden);
   }
 
-  function loadRules(){return new Promise(resolve=>{
-    if(!SHEET_ID){resolve();return} const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
-    const finish=rows=>{if(done)return;done=true;clearTimeout(timer);try{delete window[cb]}catch(_){window[cb]=undefined}s.remove();rules.clear();for(const r of rows||[]){if(!r[0]||!r[1])continue;const k=key(r[0],r[1]);["x","si","true","1","oculto"].includes(norm(r[2]))?rules.add(k):rules.delete(k)}resolve()};
-    const timer=setTimeout(()=>finish([]),6000); window[cb]=p=>{window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED=p?.status==="ok"&&Array.isArray(p?.table?.rows);finish(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED?p.table.rows.map(r=>(r.c||[]).map(cell)):[])}; s.onerror=()=>finish([]);
-    const q=new URLSearchParams({sheet:"Visibilidad",headers:"1",range:"A:E",tq:"select A,B,C,D,E",tqx:`out:json;responseHandler:${cb}`,_:String(Date.now())});
-    s.src=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?${q}`;s.async=true;document.head.appendChild(s);
-  })}
+  function readVisibilityRules(table){
+    const indices=catalogHeaderIndices(table?.cols,["Tipo","Identificador","Oculto"]);
+    if(!Array.isArray(table?.rows))throw new Error("Visibilidad no contiene filas legibles.");
+    const states=new Map(),types=new Set(["seccion","categoria","subcategoria","publico","linea","producto","familia"]);
+    const hiddenValues=new Set(["x","si","true","1","oculto"]),visibleValues=new Set(["","no","false","0","visible"]);
+    for(const row of table.rows){
+      if(!Array.isArray(row?.c))throw new Error("Fila de Visibilidad no legible.");
+      const value=label=>cell(row.c[indices.get(catalogHeaderKey(label))]);
+      const type=norm(value("Tipo")),id=visibilityId(type,value("Identificador")),state=norm(value("Oculto"));
+      if(!type&&!id&&!state)continue;
+      if(!types.has(type)||!id||(!hiddenValues.has(state)&&!visibleValues.has(state)))throw new Error("Regla de Visibilidad incompleta o no interpretable.");
+      const ruleKey=key(type,id),hidden=hiddenValues.has(state);
+      if(states.has(ruleKey)&&states.get(ruleKey)!==hidden)throw new Error("Reglas de Visibilidad contradictorias para un mismo identificador.");
+      states.set(ruleKey,hidden);
+    }
+    return new Set([...states].filter(([,hidden])=>hidden).map(([ruleKey])=>ruleKey));
+  }
+  function loadRules(){
+    if(visibilityInFlight)return visibilityInFlight;
+    visibilityReadFailed=true;
+    const pending=new Promise(resolve=>{
+      if(!SHEET_ID){window.CATALOG_PUBLIC_VISIBILITY_ERROR="Fuente de Visibilidad no disponible.";resolve(false);return}
+      const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
+      const finish=(next,error="")=>{
+        if(done)return;done=true;clearTimeout(timer);s.remove();
+        // Una respuesta tardía no altera el estado ni llama un callback eliminado.
+        window[cb]=()=>{};setTimeout(()=>{try{delete window[cb]}catch(_){}},60000);
+        if(next){
+          rules.clear();for(const rule of next)rules.add(rule);
+          visibilityReadFailed=false;window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED=true;
+        }
+        window.CATALOG_PUBLIC_VISIBILITY_ERROR=error;
+        if(error)console.warn("Visibilidad pendiente de confirmar:",error);
+        resolve(!error);
+      };
+      const timer=setTimeout(()=>finish(null,"Tiempo de espera agotado al leer Visibilidad."),6000);
+      window[cb]=payload=>{
+        if(done)return;
+        try{
+          if(payload?.status!=="ok")throw new Error("Respuesta de Visibilidad no válida.");
+          finish(readVisibilityRules(payload.table));
+        }catch(error){finish(null,error?.message||"No se pudo interpretar Visibilidad.")}
+      };
+      s.onerror=()=>finish(null,"No se pudo conectar con Visibilidad.");
+      const q=new URLSearchParams({sheet:"Visibilidad",headers:"1",tq:"select *",tqx:`out:json;responseHandler:${cb}`,_:String(Date.now())});
+      s.src=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?${q}`;s.async=true;document.head.appendChild(s);
+    });
+    visibilityInFlight=pending.finally(()=>{visibilityInFlight=null});
+    return visibilityInFlight;
+  }
   function rebuild(){try{if(typeof rebuildCatalogVisibility==="function")rebuildCatalogVisibility();if(typeof refreshFilterOptionsForScope==="function")refreshFilterOptionsForScope();if(typeof render==="function")render()}catch(e){console.info(e)}requestAnimationFrame(syncUI)}
 
   function clearAdminDecorations(){
@@ -614,7 +671,12 @@
   }
 
   function installPrices(){grid.querySelectorAll(":scope > .card:not(.album-card)").forEach(card=>{addPrice(card);addDescriptionCopy(card)})}
-  function addPrice(card){if(card.querySelector(".price-admin-editor"))return;const price=card.querySelector(".price"),row=card.querySelector(".row"),code=visibilityId("producto",card.dataset.id||"");if(!price||!row||!/^\d{4}$/.test(code))return;const p=productObj(code),prev=p&&p.hasPrice!==false?String(Number(p.price)||""):priceValue(price.textContent),ed=document.createElement("div"),inp=document.createElement("input"),save=document.createElement("button"),st=document.createElement("span");ed.className="price-admin-editor";ed.dataset.prev=prev;inp.className="price-admin-input";inp.inputMode="numeric";inp.value=editable(prev);save.className="btn-acc price-admin-save";save.textContent="Guardar";save.disabled=true;st.className="price-admin-status";inp.oninput=()=>save.disabled=!validPrice(inp.value)||priceValue(inp.value)===ed.dataset.prev;inp.onkeydown=e=>{if(e.key!=="Enter"||e.isComposing)return;e.preventDefault();if(inp.disabled)return;if(!validPrice(inp.value)){status(st,"Precio inválido","err");return}if(priceValue(inp.value)===ed.dataset.prev)return;savePrice(card,price,ed,inp,save,st)};save.onclick=()=>savePrice(card,price,ed,inp,save,st);ed.append(inp,save,st);price.hidden=true;row.classList.add("price-admin-active");price.insertAdjacentElement("afterend",ed)}
+  function previousPriceForEditor(product,fallback){
+    if(product?.hasPrice===false)return "";
+    if(product?.priceText!==undefined)return priceValue(product.priceText);
+    return priceValue(fallback);
+  }
+  function addPrice(card){if(card.querySelector(".price-admin-editor"))return;const price=card.querySelector(".price"),row=card.querySelector(".row"),code=visibilityId("producto",card.dataset.id||"");if(!price||!row||!/^\d{4}$/.test(code))return;const p=productObj(code),prev=previousPriceForEditor(p,price.textContent),ed=document.createElement("div"),inp=document.createElement("input"),save=document.createElement("button"),st=document.createElement("span");ed.className="price-admin-editor";ed.dataset.prev=prev;inp.className="price-admin-input";inp.inputMode="numeric";inp.value=editable(prev);save.className="btn-acc price-admin-save";save.textContent="Guardar";save.disabled=true;st.className="price-admin-status";inp.oninput=()=>save.disabled=!validPrice(inp.value)||priceValue(inp.value)===ed.dataset.prev;inp.onkeydown=e=>{if(e.key!=="Enter"||e.isComposing)return;e.preventDefault();if(inp.disabled)return;if(!validPrice(inp.value)){status(st,"Precio inválido","err");return}if(priceValue(inp.value)===ed.dataset.prev)return;savePrice(card,price,ed,inp,save,st)};save.onclick=()=>savePrice(card,price,ed,inp,save,st);ed.append(inp,save,st);price.hidden=true;row.classList.add("price-admin-active");price.insertAdjacentElement("afterend",ed)}
   function addDescriptionCopy(card){
     if(card.querySelector(".product-copy-description")) return;
     if(card.querySelector(".catalog-admin-copy-description")) return;
@@ -670,7 +732,7 @@
     if(!ok) throw new Error("El navegador no permitió copiar al portapapeles.");
   }
   function removePrice(card){const p=card.querySelector(".price"),r=card.querySelector(".row");card.querySelector(".price-admin-editor")?.remove();card.querySelector(".catalog-admin-copy-description")?.remove();if(p)p.hidden=false;r?.classList.remove("price-admin-active")}
-  async function savePrice(card,price,ed,inp,save,st){const v=priceValue(inp.value);if(inp.value.trim()&&!validPrice(inp.value)){status(st,"Precio inválido","err");return}inp.disabled=save.disabled=true;save.textContent="Guardando…";try{const code=visibilityId("producto",card.dataset.id||""),r=await request({tipo:"actualizar-precio",codigo:code,precioNuevo:v,precioAnterior:ed.dataset.prev});const g=priceValue(r?.precioGuardado);ed.dataset.prev=g;inp.value=editable(g);const p=productObj(code);if(p){p.price=g?Number(g):0;p.hasPrice=!!g}price.textContent=window.INTERRUPTORES?.MOSTRAR_PRECIOS_PRODUCTO!==false?(g?"$ "+new Intl.NumberFormat("es-CO").format(Number(g)):"Consultar precio"):"";status(st,"Precio guardado","ok");if(adminMissingPriceOnly&&p?.hasPrice)setTimeout(rebuild,0)}catch(e){status(st,e.message||"No se pudo guardar","err")}finally{inp.disabled=false;save.textContent="Guardar";save.disabled=priceValue(inp.value)===ed.dataset.prev}}
+  async function savePrice(card,price,ed,inp,save,st){const v=priceValue(inp.value);if(inp.value.trim()&&!validPrice(inp.value)){status(st,"Precio inválido","err");return}inp.disabled=save.disabled=true;save.textContent="Guardando…";try{const code=visibilityId("producto",card.dataset.id||""),r=await request({tipo:"actualizar-precio",codigo:code,precioNuevo:v,precioAnterior:ed.dataset.prev});const g=priceValue(r?.precioGuardado);ed.dataset.prev=g;inp.value=editable(g);const p=productObj(code);if(p){p.price=g?Number(g):0;p.priceText=g?new Intl.NumberFormat("es-CO").format(Number(g)):"";p.hasPrice=!!g}price.textContent=window.INTERRUPTORES?.MOSTRAR_PRECIOS_PRODUCTO!==false?(g?"$ "+new Intl.NumberFormat("es-CO").format(Number(g)):"Consultar precio"):"";status(st,"Precio guardado","ok");if(adminMissingPriceOnly&&p?.hasPrice)setTimeout(rebuild,0)}catch(e){status(st,e.message||"No se pudo guardar","err")}finally{inp.disabled=false;save.textContent="Guardar";save.disabled=priceValue(inp.value)===ed.dataset.prev}}
   function validPrice(v){const t=String(v??"").trim();if(!t)return true;if(!/^(?:\d+|\d{1,3}(?:[.\s]\d{3})+)$/.test(t))return false;const n=Number(t.replace(/[.\s]/g,""));return Number.isSafeInteger(n)&&n>0}
   function priceValue(v){const t=String(v??"").trim();if(!t||/^Consultar precio$/i.test(t))return"";const d=t.replace(/[^\d]/g,"");return d?String(Number(d)):""}
   function editable(v){return v?new Intl.NumberFormat("es-CO").format(Number(v)):""} function status(el,t,c){el.textContent=t;el.className="price-admin-status "+(c||"")}
@@ -706,3 +768,4 @@
     if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton)syncConnectionButton();
   }
 })();
+

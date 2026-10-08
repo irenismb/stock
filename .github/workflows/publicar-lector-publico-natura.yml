@@ -1,0 +1,66 @@
+name: Publicar lector publico aislado Natura
+on:
+  push:
+    branches: [main]
+    paths:
+      - "natura/apps-script/lector publico natura/**"
+      - ".github/workflows/publicar-lector-publico-natura.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publicar-apps-script-natura-automaticamente
+  cancel-in-progress: false
+
+jobs:
+  lector:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v7
+      - name: Preparar Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Instalar clasp
+        run: npm install --global @google/clasp@3.4.1
+      - name: Restaurar autorizacion
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then echo "::error::Falta CLASPRC_JSON"; exit 1; fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+      - name: Comprobar codigo y proyecto
+        run: |
+          node --check "natura/apps-script/lector publico natura/Lector.js"
+          python3 - <<'PY'
+          import json
+          project = 'natura/apps-script/lector publico natura/'
+          conf=json.load(open(project+'.clasp.json'))
+          assert conf['scriptId']=='1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4'
+          manifest=json.load(open(project+'appsscript.json'))
+          assert manifest['webapp']=={'executeAs':'USER_DEPLOYING','access':'ANYONE_ANONYMOUS'}
+          PY
+      - name: Publicar version inmutable y restaurar codigo administrativo
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          set -euo pipefail
+          admin="$GITHUB_WORKSPACE/natura/apps-script/administrar precios natura"
+          reader="$GITHUB_WORKSPACE/natura/apps-script/lector publico natura"
+          restore_admin() {
+            echo "Restaurando codigo fuente de Apps Script administrativo"
+            (cd "$admin" && clasp push --force)
+          }
+          trap restore_admin EXIT
+          clasp list-scripts >/dev/null
+          if ! (cd "$admin" && clasp deployments) | grep -Fq 'AKfycbwAUk8ysr-3k_T5iRxFpbp8KxmvPpYeGRNbL156lp9CsVjNFjQQgg5v7ySaxO7dcP_X'; then
+            echo "::error::No se encuentra el despliegue administrativo esperado."
+            exit 1
+          fi
+          (cd "$reader" && clasp push --force && clasp deploy --description "Lector publico aislado de solo lectura ${GITHUB_SHA}") | tee "$RUNNER_TEMP/lector-deploy.log"
+          echo "El lector publico se publico como version independiente."
+          echo "DEPLOY DEL LECTOR: verificar la URL en el registro de esta accion." >> "$GITHUB_STEP_SUMMARY"

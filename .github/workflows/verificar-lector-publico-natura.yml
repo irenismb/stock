@@ -1,0 +1,49 @@
+name: Verificar lector publico Natura anonimo
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/verificar-lector-publico-natura.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verificar lecturas y acceso anonimo real
+        env:
+          LECTOR_PUBLICO_URL: "https://script.google.com/macros/s/AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09/exec"
+        run: |
+          python3 - <<'PY'
+          import json,os,urllib.request,urllib.error,urllib.parse
+          base=os.environ['LECTOR_PUBLICO_URL']
+          def load(mode):
+              url=base+'?'+urllib.parse.urlencode({'modo':mode})
+              req=urllib.request.Request(url,headers={'User-Agent':'CatalogoNaturaPublicReadCheck/1.0'})
+              with urllib.request.urlopen(req,timeout=40) as response:
+                  content=response.read(150000).decode('utf-8')
+                  if 'google.com/accounts' in response.geturl().lower():
+                      raise RuntimeError('Endpoint pide acceso Google')
+              return json.loads(content)
+          visibility=load('visibilidad')
+          assert visibility.get('ok') is True,visibility
+          rules=visibility.get('reglas')
+          assert isinstance(rules,list) and len(rules)>=4,visibility
+          unique={(x['tipo'],x['identificador']) for x in rules}
+          assert len(unique)==len(rules)
+          assert ('seccion','otros productos') in unique
+          assert ('categoria','otros productos|medicamentos') in unique
+          assert next(x for x in rules if x['tipo']=='seccion' and x['identificador']=='otros productos')['oculto'] is True
+          assert next(x for x in rules if x['tipo']=='categoria' and x['identificador']=='otros productos|medicamentos')['oculto'] is True
+          config=load('config')
+          assert config.get('ok') is True,config
+          keys={'REGISTRAR_VISITAS_PROPIAS','MOSTRAR_CANTIDAD_STOCK','MOSTRAR_PRECIOS_PRODUCTO','ORDEN_NAVEGACION','ORDEN_PRODUCTOS'}
+          assert set(config['valores'])==keys
+          assert config['valores']['ORDEN_PRODUCTOS'] in ['price_asc','price_desc','name_asc','name_desc']
+          disabled=load('edicion')
+          assert disabled.get('ok') is False
+          print('OK: lector anonimo, reglas ocultas, 5 ajustes y edicion bloqueada')
+          PY

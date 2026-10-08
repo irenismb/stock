@@ -171,10 +171,6 @@ function layoutFolleto(snapshot,formatKey="instagram",ctx){
       if(c.imageHeight&&!c.heroSide)c.imageHeight+=growth;
     }
   }
-  if(formatKey==="document"&&snapshot.products.length>4){
-    pages.unshift({width,height,margin,header,footer,title:snapshot.title,titleLines,cards:[],cover:true,
-      coverProducts:snapshot.products.slice(0,3)});
-  }
   return {formatKey,pages,productCount:snapshot.products.length};
 }
 function folletoRoundRect(ctx,x,y,w,h,r=18){

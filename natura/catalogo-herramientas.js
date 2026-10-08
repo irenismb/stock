@@ -171,27 +171,6 @@ function folletoFitAttributes(ctx,attributes,width,height,ideal,minSize){
 function folletoRoundRect(ctx,x,y,w,h,r=18){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.closePath();
 }
-function folletoBotanical(ctx,x,y,scale=1,flip=false){
-  ctx.save();ctx.translate(x,y);ctx.scale(flip?-scale:scale,scale);
-  ctx.strokeStyle="#b99555";ctx.lineWidth=2;
-  ctx.beginPath();ctx.moveTo(0,230);ctx.bezierCurveTo(24,155,55,68,104,-26);ctx.stroke();
-  const leaves=[[12,195,-.85,70,"#bdc9aa"],[28,155,.45,85,"#d1d9be"],[46,110,-.65,72,"#aebd9f"],
-    [69,57,.45,68,"#c6d0b4"],[91,8,-.6,55,"#e8c9bc"]];
-  for(const [lx,ly,angle,size,color]of leaves){
-    ctx.save();ctx.translate(lx,ly);ctx.rotate(angle);ctx.fillStyle=color;
-    ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(-size*.8,-size*.2,-size*.7,-size*.9,0,-size);
-    ctx.bezierCurveTo(size*.55,-size*.8,size*.4,-size*.25,0,0);ctx.fill();
-    ctx.strokeStyle="#f8f2df";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-size*.8);ctx.stroke();ctx.restore();
-  }
-  // Flor lineal dorada, discreta y fuera de los bloques de lectura.
-  ctx.save();ctx.translate(30,215);ctx.strokeStyle="#b99555";ctx.lineWidth=1.6;
-  for(let petal=0;petal<5;petal++){
-    ctx.rotate(Math.PI*2/5);ctx.beginPath();ctx.moveTo(0,0);
-    ctx.bezierCurveTo(-24,-18,-22,-55,0,-61);ctx.bezierCurveTo(23,-47,26,-16,0,0);ctx.stroke();
-  }
-  ctx.restore();
-  ctx.restore();
-}
 const FOLLETO_IMAGE_FRAMES=new WeakMap();
 function folletoImageFrame(image){
   if(FOLLETO_IMAGE_FRAMES.has(image))return FOLLETO_IMAGE_FRAMES.get(image);
@@ -237,8 +216,6 @@ function renderFicha(ctx,card,image){
   const wash=ctx.createRadialGradient(280,440,20,280,440,580);
   wash.addColorStop(0,"#f6d5d7");wash.addColorStop(1,"#fff4ee00");
   ctx.fillStyle=wash;ctx.fillRect(0,0,1080,1080);
-  folletoBotanical(ctx,9,130,.7);folletoBotanical(ctx,1071,100,.65,true);
-  ctx.save();ctx.translate(1080,1080);ctx.rotate(Math.PI);folletoBotanical(ctx,8,25,.8);ctx.restore();
   ctx.restore();
   // La foto conserva su proporción y el producto completo. No se usan logos como suplentes.
   if(product.imageUrl){
@@ -290,7 +267,6 @@ function renderFolletoPDFHeader(ctx,width,assets){
   ctx.save();ctx.textBaseline="top";ctx.textAlign="left";
   const bg=ctx.createLinearGradient(x,y,x+w,y+h);bg.addColorStop(0,"#f8e5e3");bg.addColorStop(.5,"#fffaf5");bg.addColorStop(1,"#f8e5e3");
   ctx.fillStyle=bg;folletoRoundRect(ctx,x,y,w,h,16);ctx.fill();
-  folletoBotanical(ctx,x+5,y+14,.34);folletoBotanical(ctx,x+w-5,y+14,.34,true);
   ctx.save();ctx.globalCompositeOperation="multiply";folletoDrawImage(ctx,assets.logo,x+14,y+23,132,132);ctx.restore();
   const companyX=x+164,companyWidth=490,contactX=x+668,contactWidth=w-688;
   const company=folletoFitText(ctx,FOLLETO_COMPANY.name,companyWidth,72,29,25,true);

@@ -588,84 +588,64 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 @media(prefers-reduced-motion:reduce){.folleto-preview[aria-busy="true"] .folleto-placeholder>.ui-icon{animation:none}}
 
 
-/* Presentación de accesos sociales: tarjetas compactas y consistentes. */
-.social-icons{
-  gap:10px 8px;
-  align-items:stretch;
+/* Redes sociales compactas: iconos independientes, sin paletas o tarjetas individuales. */
+.social-contact-region{margin:0 auto 18px}
+.social-contact-card{
+  width:100%;max-width:1040px;margin:0 auto;
+  padding:17px 24px 14px;
+  background:linear-gradient(135deg,#fffdfb,#fff7f4);
 }
+.social-contact-card h2{
+  margin:0 0 12px;
+  font:700 22px/1.2 Georgia,"Times New Roman",serif;
+}
+.social-icons{
+  display:grid;
+  grid-template-columns:repeat(5,minmax(0,1fr));
+  align-items:stretch;
+  gap:6px 10px;
+}
+.social-row{display:contents}
 .social-icons a,.social-icons button{
-  position:relative;
   display:flex;
   flex-direction:column;
   align-items:center;
-  justify-content:flex-start;
-  gap:8px;
-  min-height:99px;
-  padding:12px 3px 11px;
-  border:1px solid #eddfdb;
-  border-radius:16px;
-  background:linear-gradient(180deg,#fff 0%,#fffbf9 100%);
-  color:#000;
-  box-shadow:0 3px 10px rgba(67,37,47,.045);
-  text-decoration:none;
-  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease,background .18s ease;
-}
-.social-icons a::before,.social-icons button::before{
-  content:"";
-  position:absolute;
-  top:8px;
-  left:50%;
-  width:47px;
-  height:47px;
-  transform:translateX(-50%);
-  border-radius:16px;
-  background:#f6e9eb;
-  z-index:0;
-}
-.social-icons a[aria-label="Facebook"]::before{background:#e6f0fc}
-.social-icons a[aria-label="Instagram"]::before{background:#fce6ee}
-.social-icons a[aria-label="TikTok"]::before{background:#e9e9ef}
-.social-icons a[aria-label="YouTube"]::before{background:#ffe9e6}
-.social-icons a[aria-label*="Maps"]::before{background:#e8f4e9}
-.social-icons a[aria-label="Google Business"]::before{background:#e7f0fc}
-.social-icons a[aria-label="WhatsApp"]::before{background:#e3f5e8}
-.social-icons button[aria-label="Compartir catálogo"]::before{background:#f2e8f4}
-.social-icons a[aria-label="Llamar"]::before{background:#f5eee1}
-.social-icons picture{
-  position:relative;
-  z-index:1;
-  display:grid;
-  place-items:center;
-  width:38px;
-  height:38px;
-}
-.social-icons img,.social-icons svg{
-  position:relative;
-  z-index:1;
-  display:block;
-  width:38px;
-  height:38px;
-  object-fit:contain;
+  justify-content:center;
+  gap:6px;
+  min-height:66px;
+  min-width:0;
+  padding:7px 4px;
+  border:0;
   border-radius:11px;
+  background:transparent;
+  box-shadow:none;
+  color:#000;
+  text-decoration:none;
+  transition:background .16s ease,transform .16s ease;
+}
+.social-icons a::before,.social-icons button::before{display:none}
+.social-icons picture{display:grid;place-items:center}
+.social-icons img,.social-icons svg{
+  display:block;
+  width:30px;
+  height:30px;
+  object-fit:contain;
+  border-radius:0;
 }
 .social-icons svg{
-  width:35px;
-  height:35px;
-  padding:5px;
+  padding:0;
+  fill:none;
   stroke:#000;
   stroke-width:1.8;
-  fill:none;
 }
 .social-icons .social-label{
-  position:relative;
-  z-index:1;
   max-width:100%;
-  color:#000;
-  font-size:11.5px;
-  font-weight:700;
-  line-height:1.2;
+  font-size:11px;
+  font-weight:600;
+  line-height:1.15;
   text-align:center;
   overflow-wrap:anywhere;
+  color:#000;
 }
 .social-icons a:focus-visible,.social-icons button:focus-visible{
   outline:3px solid #855a68;
@@ -673,23 +653,30 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 }
 @media(hover:hover){
   .social-icons a:hover,.social-icons button:hover{
-    transform:translateY(-3px);
-    border-color:#d9bbc5;
-    background:#fff;
-    box-shadow:0 9px 20px rgba(67,37,47,.12);
+    background:#f7ebeb;
+    transform:translateY(-2px);
   }
 }
 @media(max-width:760px){
+  .social-contact-card{padding:14px 12px 12px}
+  .social-contact-card h2{font-size:20px;margin-bottom:9px}
+  .social-icons{grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+  .social-icons a,.social-icons button{min-height:60px;padding:5px 2px;gap:5px}
+  .social-icons img,.social-icons svg{width:28px;height:28px}
+  .social-icons .social-label{font-size:10.5px}
   .social-icons #waTopLink{
     min-height:54px;
     padding:8px;
     transform:none;
-    border-color:#b9d7c2;
+    border:1px solid #b9d7c2;
+    border-radius:50%;
     background:#fff;
     box-shadow:0 7px 23px rgba(29,64,39,.2);
   }
-  .social-icons #waTopLink::before{display:none}
   .social-icons #waTopLink img{width:38px;height:38px}
+}
+@media(max-width:520px){
+  .social-icons{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(prefers-reduced-motion:reduce){
   .social-icons a,.social-icons button{transition:none}

@@ -43,7 +43,7 @@ jobs:
         shell: bash
         run: |
           python3 -m py_compile .github/scripts/importar_imagenes_natura.py
-          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0' 'requests==2.32.5'
+          python3 -m pip install --disable-pip-version-check 'Pillow==11.3.0' 'requests==2.32.5' 'openpyxl==3.1.5'
           npm install --global '@google/clasp@3.4.1'
 
       - name: Restaurar autorizacion de Google

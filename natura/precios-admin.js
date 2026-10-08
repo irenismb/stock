@@ -8,8 +8,6 @@
   const ADMIN_MODE_STORAGE_KEY="irenismb_admin_mode_active_v1";
   const DOCUMENTS=Object.freeze({
     productos:Object.freeze({label:"Productos",help:"Inventario, precios y descripciones del catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=893686273`}),
-    visibilidad:Object.freeze({label:"Visibilidad",help:"Niveles y productos visibles en el catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=226252680`}),
-    configuracion_publica:Object.freeze({label:"Configuración pública",help:"Niveles activos, precios, stock y orden del catálogo.",group:"Inventario",url:`https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit#gid=1605449544`}),
     pedidos:Object.freeze({label:"Pedidos",help:"Pedidos y salidas registrados desde la página.",group:"Pedidos y prospectos",url:"https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit#gid=0"}),
     prospectos:Object.freeze({label:"Prospectos",help:"Perfiles de Facebook y seguimiento comercial.",group:"Pedidos y prospectos",url:"https://docs.google.com/spreadsheets/d/1C4SA31dGX-6twdyZki68G4sV7j4Gwc21UuZpO0QPtuc/edit#gid=639690806"}),
     visitas:Object.freeze({label:"Visitas",help:"Actividad y ubicación de los visitantes.",group:"Visitas",url:"https://docs.google.com/spreadsheets/d/1vxxTu4HWcgDm2HcCwPykMXyepVAFQcFsQkHUS6ed81g/edit#gid=0"}),
@@ -207,28 +205,26 @@
     document.body?.classList.toggle("catalog-admin-hide-hidden-active",!!admin&&adminHideHidden);
   }
 
-  function readVisibilityRules(table){
-    const indices=catalogHeaderIndices(table?.cols,["Tipo","Identificador","Oculto"]);
-    if(!Array.isArray(table?.rows))throw new Error("Visibilidad no contiene filas legibles.");
+  function readVisibilityRules(list){
+    if(!Array.isArray(list)||!list.length)throw new Error("No se recibieron reglas de Visibilidad.");
     const states=new Map(),types=new Set(["seccion","categoria","subcategoria","publico","linea","producto","familia"]);
-    const hiddenValues=new Set(["x","si","true","1","oculto"]),visibleValues=new Set(["","no","false","0","visible"]);
-    for(const row of table.rows){
-      if(!Array.isArray(row?.c))throw new Error("Fila de Visibilidad no legible.");
-      const value=label=>cell(row.c[indices.get(catalogHeaderKey(label))]);
-      const type=norm(value("Tipo")),id=visibilityId(type,value("Identificador")),state=norm(value("Oculto"));
-      if(!type&&!id&&!state)continue;
-      if(!types.has(type)||!id||(!hiddenValues.has(state)&&!visibleValues.has(state)))throw new Error("Regla de Visibilidad incompleta o no interpretable.");
-      const ruleKey=key(type,id),hidden=hiddenValues.has(state);
-      if(states.has(ruleKey)&&states.get(ruleKey)!==hidden)throw new Error("Reglas de Visibilidad contradictorias para un mismo identificador.");
-      states.set(ruleKey,hidden);
+    for(const item of list){
+      if(!item||typeof item!=="object"||typeof item.oculto!=="boolean")throw new Error("Regla de Visibilidad inválida.");
+      const type=norm(item.tipo),id=visibilityId(type,item.identificador),k=key(type,id);
+      if(!types.has(type)||!id||(type==="producto"&&!/^\d{4}$/.test(id)))throw new Error("Regla de Visibilidad incompleta.");
+      if(states.has(k))throw new Error("Reglas de Visibilidad duplicadas.");
+      states.set(k,item.oculto);
     }
-    return new Set([...states].filter(([,hidden])=>hidden).map(([ruleKey])=>ruleKey));
+    return new Set([...states].filter(([,hidden])=>hidden).map(([k])=>k));
   }
   function loadRules(){
     if(visibilityInFlight)return visibilityInFlight;
     visibilityReadFailed=true;
     const pending=new Promise(resolve=>{
-      if(!SHEET_ID){window.CATALOG_PUBLIC_VISIBILITY_ERROR="Fuente de Visibilidad no disponible.";resolve(false);return}
+      const reader=String(window.REMOTE_CONTROL_SOURCE?.endpoint||"").trim();
+      if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(reader)){
+        window.CATALOG_PUBLIC_VISIBILITY_ERROR="Lector público de Visibilidad no disponible.";resolve(false);return;
+      }
       const cb="__vis_"+Date.now()+Math.random().toString(36).slice(2),s=document.createElement("script");let done=false;
       const finish=(next,error="")=>{
         if(done)return;done=true;clearTimeout(timer);s.remove();
@@ -242,17 +238,18 @@
         if(error)console.warn("Visibilidad pendiente de confirmar:",error);
         resolve(!error);
       };
-      const timer=setTimeout(()=>finish(null,"Tiempo de espera agotado al leer Visibilidad."),6000);
+      const timer=setTimeout(()=>finish(null,"Tiempo de espera agotado al leer Visibilidad."),25000);
       window[cb]=payload=>{
         if(done)return;
         try{
-          if(payload?.status!=="ok")throw new Error("Respuesta de Visibilidad no válida.");
-          finish(readVisibilityRules(payload.table));
+          if(payload?.ok!==true)throw new Error("Respuesta de Visibilidad no válida.");
+          finish(readVisibilityRules(payload.reglas));
         }catch(error){finish(null,error?.message||"No se pudo interpretar Visibilidad.")}
       };
       s.onerror=()=>finish(null,"No se pudo conectar con Visibilidad.");
-      const q=new URLSearchParams({sheet:"Visibilidad",headers:"1",tq:"select *",tqx:`out:json;responseHandler:${cb}`,_:String(Date.now())});
-      s.src=`https://docs.google.com/spreadsheets/d/${encodeURIComponent(SHEET_ID)}/gviz/tq?${q}`;s.async=true;document.head.appendChild(s);
+      const url=new URL(reader);
+      url.search=new URLSearchParams({modo:"visibilidad",callback:cb,_:String(Date.now())}).toString();
+      s.src=url.toString();s.async=true;document.head.appendChild(s);
     });
     visibilityInFlight=pending.finally(()=>{visibilityInFlight=null});
     return visibilityInFlight;

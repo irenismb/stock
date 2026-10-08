@@ -18,8 +18,7 @@
     // Apps Script guarda los ajustes y publica exclusivamente las claves públicas en esta hoja.
     const REMOTE_CONTROL_SOURCE = {
       enabled: true,
-      spreadsheetId: GOOGLE_SHEET_SOURCE.spreadsheetId,
-      sheetName: "configuracion_publica",
+      endpoint: "https://script.google.com/macros/s/AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09/exec",
       cacheKey: "irenismb_public_configuration_v1"
     };
     window.REMOTE_CONTROL_SOURCE = REMOTE_CONTROL_SOURCE;
@@ -433,47 +432,30 @@
         && levels.every(level=>ALL_NAVIGATION_LEVELS.includes(level));
     }
     function loadRemoteCatalogConfiguration(callbackPrefix){
-      return new Promise((resolve, reject)=>{
-        const callbackName = `${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-        const script = document.createElement("script");
-        let settled = false;
-        const finish = (error, value)=>{
-          if(settled) return;
-          settled = true;
-          window.clearTimeout(timer);
-          script.remove();
-          // A response arriving just after a timeout must not call a deleted callback.
-          window[callbackName] = ()=>{};
-          window.setTimeout(()=>{ delete window[callbackName]; }, 60000);
-          if(error) reject(error); else resolve(value);
+      return new Promise((resolve,reject)=>{
+        const endpoint=String(REMOTE_CONTROL_SOURCE.endpoint||"").trim();
+        if(!/^https:\/\/script\.google\.com\/macros\/s\/[A-Za-z0-9_-]+\/exec$/.test(endpoint)){
+          reject(new Error("Lector público de configuración no disponible."));return;
+        }
+        const cb=`${callbackPrefix}_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+        const node=document.createElement("script");let done=false;
+        const finish=(error,value)=>{
+          if(done)return;done=true;clearTimeout(timer);node.remove();
+          window[cb]=()=>{};setTimeout(()=>{try{delete window[cb]}catch(_){}} ,60000);
+          if(error)reject(error);else resolve(value);
         };
-        const timer = window.setTimeout(()=>finish(new Error("Google tardó demasiado en responder la configuración pública.")), GOOGLE_SHEET_QUERY_TIMEOUT_MS);
-        window[callbackName] = payload=>{
-          const values = {};
-          let revision = "";
-          const rows = payload?.table?.rows;
-          if(payload?.status !== "ok" || !Array.isArray(rows)){
-            finish(new Error("Google Sheets no devolvió la configuración pública.")); return;
+        const timer=setTimeout(()=>finish(new Error("Tiempo de espera agotado en configuración pública.")),25000);
+        window[cb]=data=>{
+          if(data?.ok!==true||!validatePublicConfiguration(data.valores)
+            ||!data.publicadoEn||!Number.isFinite(Date.parse(data.publicadoEn))){
+            finish(new Error("La configuración pública no pudo verificarse."));return;
           }
-          for(const row of rows){
-            const cells = (row.c || []).map(cell=>String(cell?.v ?? cell?.f ?? "").trim());
-            const [key, value, date] = cells;
-            if(!PUBLIC_CONFIGURATION_KEYS.includes(key) || Object.hasOwn(values,key)
-              || !date || !Number.isFinite(Date.parse(date)) || (revision && revision !== date)){
-              finish(new Error("La configuración pública está incompleta o no es válida.")); return;
-            }
-            values[key] = value; revision = date;
-          }
-          if(!validatePublicConfiguration(values)){
-            finish(new Error("La configuración pública está incompleta o no es válida.")); return;
-          }
-          finish(null, {valores:values, publicadoEn:revision});
+          finish(null,{valores:data.valores,publicadoEn:data.publicadoEn});
         };
-        script.onerror = ()=>finish(new Error("No se pudo leer la configuración pública de Google Sheets."));
-        const url = new URL(`https://docs.google.com/spreadsheets/d/${REMOTE_CONTROL_SOURCE.spreadsheetId}/gviz/tq`);
-        url.search = new URLSearchParams({sheet:REMOTE_CONTROL_SOURCE.sheetName, headers:"1", range:"A1:C6",
-          tq:"select A,B,C", tqx:`out:json;responseHandler:${callbackName}`, _:String(Date.now())}).toString();
-        script.src = url.toString(); script.async = true; document.head.appendChild(script);
+        node.onerror=()=>finish(new Error("No se pudo consultar el lector público de configuración."));
+        const url=new URL(endpoint);
+        url.search=new URLSearchParams({modo:"config",callback:cb,_:String(Date.now())}).toString();
+        node.src=url.toString();node.async=true;document.head.appendChild(node);
       });
     }
 

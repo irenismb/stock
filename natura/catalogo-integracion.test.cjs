@@ -17,7 +17,7 @@ const samples = [
   [9998,'Belleza y cuidado','Cabello','','','','Segundo producto ficticio',''],
   [9999,'Otros productos','Medicamentos','','','','Registro ficticio oculto',10]
 ];
-const visibility = {cols:['Tipo','Identificador','Oculto','Etiqueta','Actualizado'].map(label=>({label})),rows:[{c:[{v:'seccion'},{v:'otros productos'},{v:'X'}]}]};
+const visibility = {ok:true,reglas:[{tipo:'seccion',identificador:'otros productos',oculto:true,etiqueta:'Otros productos'}]};
 function tableFromValues(values){
   const [labels,...rows]=values;
   return {cols:labels.map(label=>({label})),rows:rows.map(row=>({c:labels.map((label,i)=>{
@@ -66,7 +66,7 @@ function environment(){
   vm.runInContext(cartSource,context,{filename:'catalogo-carrito-pedido.js'});
   vm.runInContext(adminSource,context,{filename:'precios-admin.js'});
   return {context,sandbox,document,requests,timers,events,run:source=>vm.runInContext(source,context),
-    reply(table,status='ok'){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node,'Debe existir una solicitud JSONP');const cb=new URL(node.src).searchParams.get('tqx').split('responseHandler:')[1];sandbox[cb]({status,table});return cb;},
+    reply(table,status='ok'){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node,'Debe existir una solicitud JSONP');const url=new URL(node.src);const cb=url.searchParams.get('callback')||url.searchParams.get('tqx').split('responseHandler:')[1];sandbox[cb](url.searchParams.has('modo')?table:{status,table});return cb;},
     fail(){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node);node.onerror();},
     timeout(ms){const timer=[...timers.values()].find(item=>item.ms===ms);assert.ok(timer);timer.fn();}};
 }
@@ -193,7 +193,7 @@ test('No depende de A:Z y acepta un campo indispensable ubicado después de Z',(
   assert.equal(query.searchParams.has('range'),false);assert.equal(query.searchParams.get('tq'),'select *');
 });
 test('Fallo o timeout de Visibilidad en primera carga deja cero productos públicos',async()=>{
-  for(const mode of ['error','timeout']){const env=environment();mode==='error'?env.fail():env.timeout(6000);
+  for(const mode of ['error','timeout']){const env=environment();mode==='error'?env.fail():env.timeout(25000);
     await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;env.sandbox.products=assess(env,fixture()).products;
     assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,false);assert.equal(env.run('filterVisibleProducts(products).length'),0);
   }
@@ -210,14 +210,14 @@ test('Fallo posterior conserva reglas y no publica nuevas filas o clasificacione
   assert.equal(env.run('filterVisibleProducts(products).length'),4);
 });
 test('Respuesta tardía tras timeout no altera la confirmación ni publica productos',async()=>{
-  const env=environment(),node=env.requests.at(-1),cb=new URL(node.src).searchParams.get('tqx').split('responseHandler:')[1];
-  env.timeout(6000);await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;env.sandbox[cb]({status:'ok',table:visibility});
+  const env=environment(),node=env.requests.at(-1),cb=new URL(node.src).searchParams.get('callback');
+  env.timeout(25000);await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;env.sandbox[cb](visibility);
   assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,false);
 });
-test('Visibilidad reordenada funciona; esquema ambiguo y reglas contradictorias cierran publicación',async()=>{
-  const env=environment(),table=clone(visibility);table.cols.reverse();table.rows.forEach(row=>{while(row.c.length<table.cols.length)row.c.push({v:null});row.c.reverse();});
-  await confirmed(env,table);assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,true);
-  for(const bad of [()=>{const t=clone(visibility);t.cols[3].label='Oculto';return t;},()=>{const t=clone(visibility);t.rows.push({c:[{v:'seccion'},{v:'otros productos'},{v:''}]});return t;}]){
+test('Visibilidad reordenada funciona; estados inválidos y reglas duplicadas cierran publicación',async()=>{
+  const env=environment(),payload=clone(visibility);payload.reglas.reverse();
+  await confirmed(env,payload);assert.equal(env.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,true);
+  for(const bad of [()=>{const t=clone(visibility);t.reglas[0].oculto='X';return t;},()=>{const t=clone(visibility);t.reglas.push({...t.reglas[0],oculto:false});return t;}]){
     const another=environment();await confirmed(another,bad());assert.equal(another.sandbox.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,false);
   }
 });
@@ -270,8 +270,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=compatibilidad-progresiva-2026-10-08-1'));
-  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=editor-precio-movil-2026-10-08-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=lector-publico-control-2026-10-08-1'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=lector-publico-control-2026-10-08-1'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{
@@ -280,4 +280,15 @@ test('Rango oficial opcional: todos los registros conservan nombre, código y va
   const index=label=>values[0].indexOf(label);
   result.products.forEach((product,i)=>{const row=values[i+1];assert.equal(product.id,String(row[index('Código')]).padStart(4,'0'));assert.equal(product.name,row[index('Nombre')]);assert.equal(product.price,row[index('Precio')]||0);assert.equal(product.hasPrice,typeof row[index('Precio')]==='number');});
   assert.equal(new Set(result.products.map(p=>p.id)).size,result.products.length);
+});
+
+test('La configuración y visibilidad públicas consultan únicamente lector Apps Script de solo lectura',()=>{
+  const env=environment();const node=env.requests.at(-1);const url=new URL(node.src);
+  assert.equal(url.hostname,'script.google.com');assert.equal(url.searchParams.get('modo'),'visibilidad');
+  assert.ok(url.searchParams.get('callback'));
+  const config=env.run('loadRemoteCatalogConfiguration("__testControl")');
+  const request=new URL(env.requests.at(-1).src);
+  assert.equal(request.hostname,'script.google.com');assert.equal(request.searchParams.get('modo'),'config');
+  env.reply({ok:true,valores:{REGISTRAR_VISITAS_PROPIAS:'DESACTIVADO',MOSTRAR_CANTIDAD_STOCK:'DESACTIVADO',MOSTRAR_PRECIOS_PRODUCTO:'ACTIVADO',ORDEN_NAVEGACION:'!section,category,subcategory,public,!line,product',ORDEN_PRODUCTOS:'price_asc'},publicadoEn:'2026-10-07T23:00:14.772Z'});
+  return config.then(x=>assert.equal(x.valores.ORDEN_PRODUCTOS,'price_asc'));
 });

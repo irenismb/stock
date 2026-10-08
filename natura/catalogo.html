@@ -52,7 +52,7 @@
   <link rel="preload" as="image" href="logos/suplente.webp" type="image/webp" fetchpriority="high" />
   <link rel="preload" as="image" href="logos/suplente.png" type="image/png" fetchpriority="high" />
 
-  <link rel="stylesheet" href="catalogo.css?actualizacion=folleto-redisenio-2026-10-08-4" />
+  <link rel="stylesheet" href="catalogo.css?actualizacion=catalogo-pro-2026-10-07" />
 
   <script type="application/ld+json">
   {
@@ -95,10 +95,10 @@
   <header class="site-header">
     <div class="wrap site-header-inner">
       <a class="brand" href="catalogo.html" aria-label="IRENISMB STOCK NATURA, inicio">
-        <picture><source srcset="logos/logo_empresa.webp" type="image/webp"><img src="logos/logo_empresa.png" alt="Logo IRENISMB" width="60" height="60"></picture>
+        <picture><source srcset="logos/logo_empresa.webp" type="image/webp"><img src="logos/logo_empresa.png" alt="Logo IRENISMB" width="94" height="94"></picture>
         <div><h1>IRENISMB STOCK NATURA</h1><p class="tagline">Consultores independientes de Natura y AVON</p></div>
       </a>
-              <div class="search-wrap" id="searchWrap">
+              <div class="search-wrap" id="searchWrap"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M21 21l-6-6M10 3a7 7 0 1 0 0 14 7 7 0 0 0 0-14"/></svg>
           <input id="q" type="search" inputmode="search"
                  placeholder="Buscar producto, línea o categoría"
                  aria-label="Buscar producto, línea o categoría" />
@@ -107,9 +107,9 @@
                 <button class="btn-ghost" id="priceAdminBtn" type="button" hidden aria-label="Administrar catálogo">
           Administrar
         </button>
-        <button class="btn-ghost" id="folletoBtn" type="button" aria-haspopup="dialog" aria-controls="folletoDialog">Folleto</button>
+        <button class="btn-ghost" id="folletoBtn" type="button" aria-haspopup="dialog" aria-controls="folletoDialog"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M12 5v16M12 5C9 3 5 3 2 4v15c3-1 7-1 10 2 3-3 7-3 10-2V4c-3-1-7-1-10 1"/></svg><span>Folleto</span></button>
                 <button class="btn-acc" id="btn-cart" type="button" aria-label="Ver carrito WhatsApp">
-          <span class="btn-cart-label">Carrito</span>
+          <svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M3 3h2l2.4 11.4a2 2 0 0 0 2 1.6H18a2 2 0 0 0 2-1.6L21 7H6M10 21h.01M18 21h.01"/></svg><span class="btn-cart-label">Carrito</span>
           
           <span id="cartCount" class="pill">0</span>
         </button>
@@ -121,12 +121,13 @@
     <aside class="catalog-navigation" aria-label="Navegación del catálogo">
       <p class="aside-label">Explorar</p>
       <nav>
-        <button class="nav-button" id="catalogHomeBtn" type="button"><span aria-hidden="true">⌂</span> Inicio</button>
-        <button class="nav-button" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Ver todos los productos del nivel actual y sus niveles inferiores"><span aria-hidden="true">▦</span> Ver productos</button>
+        <button class="nav-button" id="catalogHomeBtn" type="button"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/></svg><span>Inicio</span></button>
+        <button class="nav-button" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Explorar las categorías del nivel actual"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg><span>Categorías</span></button>
       </nav>
     </aside>
     <main class="wrap catalog-main" id="catalogMain">
     <div class="products-heading"><h2>Productos</h2><div class="count-slot" id="countSlot"></div></div>
+      <nav class="catalog-categories" id="catalogCategories" aria-label="Categorías disponibles" hidden></nav>
       <div class="bar" role="group" aria-label="Filtros y orden de productos">
 
         <select id="cat" aria-label="Filtrar por categoría" hidden disabled><option value="">Todas las categorías</option></select>
@@ -141,7 +142,7 @@
 
         <button class="btn-ghost" id="bulkAddBtn" type="button" aria-label="Agregar todos los productos de la vista actual al carrito">Agregar todos</button>
         <button class="btn-ghost" id="productOrderBtn" type="button" popovertarget="productOrderMenu" aria-label="Ordenar: Nombre A–Z">Nombre A–Z</button>
-        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar palabras sugeridas" aria-controls="wordPanel" aria-expanded="false" aria-pressed="false">Filtrar</button>
+        <button class="btn-ghost" id="toggleWordPanelBtn" type="button" aria-label="Mostrar palabras sugeridas" aria-controls="wordPanel" aria-expanded="false" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M3 5h18M6 12h12M10 19h4"/></svg><span>Filtrar</span></button>
       </div>
       <section class="word-panel" id="wordPanel" aria-label="Palabras sugeridas del catálogo" hidden>
         <div class="word-panel-head">
@@ -224,7 +225,7 @@
           <span class="social-label">Teléfono</span></a>
         </div>
       </div></section>
-      <section class="service-card"><h2>A tu lado</h2><p>10 años de experiencia con la marca Natura.</p><p>Asesoría personalizada por WhatsApp, atención telefónica y presencial.</p><p>Envíos nacionales e internacionales.</p></section>
+      <section class="service-card"><h2>Atención cercana</h2><ul class="service-list"><li><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7zM8 12l3 3 5-6"/></svg><span>10 años de experiencia con la marca Natura.</span></li><li><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M21 11a9 9 0 0 1-9 9H5l-4 3 2-7a9 9 0 1 1 18-5M7 9h10M7 13h7"/></svg><span>Asesoría por WhatsApp, atención telefónica y presencial.</span></li><li><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M2 6h12v12H2zM14 10h4l4 4v4h-8M6 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4M18 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/></svg><span>Envíos nacionales e internacionales.</span></li></ul></section>
     </aside>
   </div>
 
@@ -391,14 +392,14 @@
     <button type="button" data-product-sort="price_desc" aria-pressed="false">Precio: mayor a menor</button>
   </div>
 
-  <script src="precios-admin-config.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="catalogo-app.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="catalogo-carrito-pedido.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="catalogo-herramientas.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="analytics-visitas.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="catalogo-ui.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="precios-admin.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
-  <script src="prospectos-admin.js?actualizacion=folleto-redisenio-2026-10-08-4"></script>
+  <script src="precios-admin-config.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="catalogo-app.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="catalogo-carrito-pedido.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="catalogo-herramientas.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="analytics-visitas.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="catalogo-ui.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="precios-admin.js?actualizacion=catalogo-pro-2026-10-07"></script>
+  <script src="prospectos-admin.js?actualizacion=catalogo-pro-2026-10-07"></script>
   <script>
     // Durante la carga inicial, el contador superior permanece oculto aunque
     // algún módulo intente escribir temporalmente "0 productos".

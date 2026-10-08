@@ -1627,6 +1627,7 @@
       <article class="card">
         <div class="img"></div>
         <div class="pad">
+          <p class="product-line"></p>
           <h3 class="name"></h3>
           <p class="meta"></p>
           <p class="description" lang="es-CO"></p>
@@ -1635,8 +1636,8 @@
             <span class="pill" data-role="qty"></span>
           </div>
           <div class="actions">
-            <button type="button" class="btn-danger" data-act="dec">Quitar</button>
-            <button type="button" class="btn-acc" data-act="inc">Agregar</button>
+            <button type="button" class="btn-danger" data-act="dec" aria-label="Quitar una unidad del carrito">−</button>
+            <button type="button" class="btn-acc" data-act="inc"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M3 3h2l2.4 11.4a2 2 0 0 0 2 1.6H18a2 2 0 0 0 2-1.6L21 7H6M10 21h.01M18 21h.01"/></svg><span class="cart-action-label">Agregar al carrito</span></button>
           </div>
         </div>
       </article>
@@ -3023,7 +3024,8 @@ function syncWordToggleButton(){
   const activeCount=uxActiveFilterEntries().length;
   toggleWordPanelBtn.hidden=!canToggle;
   toggleWordPanelBtn.disabled=!canToggle;
-  toggleWordPanelBtn.textContent=activeCount?`Filtrar (${activeCount})`:"Filtrar";
+  const filterLabel=toggleWordPanelBtn.querySelector("span");
+  if(filterLabel)filterLabel.textContent=activeCount?`Filtrar (${activeCount})`:"Filtrar";
   toggleWordPanelBtn.title=wordSuggestionsVisible?"Ocultar palabras sugeridas":"Mostrar palabras sugeridas";
   toggleWordPanelBtn.setAttribute("aria-label",toggleWordPanelBtn.title);
   toggleWordPanelBtn.setAttribute("aria-pressed",wordSuggestionsVisible?"true":"false");
@@ -3124,16 +3126,16 @@ function refreshCardUI(card,p){
   const decBtn=card.querySelector('button[data-act="dec"]');
   const incBtn=card.querySelector('button[data-act="inc"]');
   if(qtyPill){qtyPill.hidden=q<=0;qtyPill.textContent=q>0?`${q} en carrito`:"";qtyPill.classList.toggle("has-items",q>0);}
-  if(decBtn) decBtn.disabled=q<=0;
+  if(decBtn){decBtn.disabled=q<=0;decBtn.hidden=q<=0;}
+  if(actions) actions.classList.toggle("has-items",q>0);
   const hasKnownStock=Number.isFinite(p.stock)&&p.stock>=0;
   const maxStock=hasKnownStock?p.stock:null;
   const canAdd=!enforce||(hasKnownStock&&maxStock>0&&q<maxStock);
   if(incBtn){
     incBtn.disabled=!canAdd;
     incBtn.classList.toggle("in-cart",q>0);
-    if(enforce&&!hasKnownStock) incBtn.textContent="Stock por confirmar";
-    else if(enforce&&maxStock<=0) incBtn.textContent="Sin stock";
-    else incBtn.textContent=q>0?"Agregar otro":"Agregar";
+    const label=incBtn.querySelector(".cart-action-label");
+    if(label) label.textContent=enforce&&!hasKnownStock?"Stock por confirmar":enforce&&maxStock<=0?"Sin stock":q>0?"Agregar otro":"Agregar al carrito";
   }
 }
 
@@ -3163,6 +3165,9 @@ function makeCard(p){
   const metaEl=card.querySelector(".meta");
   const descriptionEl=card.querySelector(".description");
   const priceEl=card.querySelector(".price");
+  const lineEl=card.querySelector(".product-line");
+  lineEl.textContent=String(p.line||p.brand||"").trim();
+  lineEl.hidden=!lineEl.textContent;
   const productName=String(p.name||"");
   nameEl.title=productName;
   setSearchHighlightedText(nameEl,productName);
@@ -3213,14 +3218,15 @@ function makeCard(p){
     copyRow.insertAdjacentElement("afterend",copyStatus);
     const details=document.createElement("details");
     details.className="product-details";
-    const summary=document.createElement("summary");summary.textContent="Descripción y texto";
+    const summary=document.createElement("summary");summary.textContent="Ver detalles";
     descriptionEl.insertAdjacentElement("beforebegin",details);
     details.append(summary,descriptionEl,copyRow,copyStatus);
     const selection=document.createElement("label");selection.className="product-selection";
     const check=document.createElement("input");check.type="checkbox";
     check.checked=FOLLETO_SELECTION.has(String(p.id));check.dataset.folletoSelect=String(p.id);
     check.setAttribute("aria-label","Seleccionar "+productName+" para el folleto");
-    const label=document.createElement("span");label.textContent="Seleccionar";
+    selection.title="Seleccionar para Folleto";
+    const label=document.createElement("span");label.textContent="Seleccionar para Folleto";label.className="visually-hidden";
     selection.append(check,label);imgBox.appendChild(selection);
   }
   refreshCardUI(card,p);

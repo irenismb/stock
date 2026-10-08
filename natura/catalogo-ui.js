@@ -37,17 +37,17 @@
 // 1) mostrar tarjetas completas al buscar; 2) mostrar los productos del nivel actual y sus descendientes, conservando los filtros.
 (() => {
   const SEARCH_DIRECT_STORAGE_KEY = "irenismb_quick_image_search_v1";
-  const SHOW_ALL_STORAGE_KEY = "irenismb_show_all_products_direct_v1";
+  const SHOW_ALL_STORAGE_KEY = "irenismb_catalog_product_view_v2";
   const searchInput = document.getElementById("q");
   const grid = document.getElementById("grid");
   const count = document.getElementById("count");
   if(!searchInput || !grid) return;
 
   let searchDirectEnabled = false;
-  let showAllEnabled = false;
+  let showAllEnabled = true;
   try{
     searchDirectEnabled = localStorage.getItem(SEARCH_DIRECT_STORAGE_KEY) === "1";
-    showAllEnabled = localStorage.getItem(SHOW_ALL_STORAGE_KEY) === "1";
+    showAllEnabled = localStorage.getItem(SHOW_ALL_STORAGE_KEY) !== "0";
   }catch(_){ }
 
   function hasSearch(){
@@ -116,6 +116,7 @@
     if(products === null) return;
 
     grid.classList.remove("album-grid-mode", "root-nav-mode", "album-three-column-layout");
+    grid.setAttribute("aria-label","Productos");
     const fragment = document.createDocumentFragment();
 
     if(!products.length){
@@ -160,6 +161,7 @@
     requestAnimationFrame(() => {
       directRenderQueued = false;
       renderDirectProducts();
+      syncCategories();
     });
   }
 
@@ -170,7 +172,7 @@
       const baseRender = render;
       const wrappedRender = function(...args){
         const result = baseRender.apply(this, args);
-        if(isActive()) syncView();
+        syncView();
         return result;
       };
       wrappedRender.__directProductSearchWrapped = true;
@@ -178,6 +180,30 @@
     }
   }catch(error){
     console.warn("No se pudo enlazar la vista directa con el render principal.", error);
+  }
+
+  function syncCategories(){
+    const host=document.getElementById("catalogCategories");
+    if(!host) return;
+    const items=typeof albums!=="undefined"&&Array.isArray(albums)?albums:[];
+    host.hidden=!showAllEnabled||!items.length;
+    host.replaceChildren();
+    if(host.hidden)return;
+    const trail=typeof selectedNavigationTrail==="function"?selectedNavigationTrail():[];
+    const allButton=document.createElement("button");
+    allButton.type="button";allButton.textContent="Todos";
+    allButton.setAttribute("aria-current",trail.length?"false":"page");
+    allButton.addEventListener("click",()=>document.getElementById("catalogHomeBtn")?.click());
+    host.appendChild(allButton);
+    for(const album of items){
+      const button=document.createElement("button");
+      button.type="button";button.textContent=album.label;
+      button.addEventListener("click",()=>{
+        if(album.products?.length&&album.products.every(p=>p.isGiftGalleryImage))setShowAllEnabled(false);
+        openAlbum(album.key,{keepFilters:typeof getCombinedWordTerms==="function"&&getCombinedWordTerms().length>0});
+      });
+      host.appendChild(button);
+    }
   }
 
   function setSearchDirectEnabled(next){
@@ -203,7 +229,7 @@
   window.isCatalogShowAllProductsDirectEnabled = () => showAllEnabled;
 
   document.getElementById("showProductsBtn")?.addEventListener("click", () => {
-    setShowAllEnabled(!showAllEnabled);
+    setShowAllEnabled(false);
   });
   searchInput.addEventListener("input", syncView);
   searchInput.addEventListener("search", syncView);
@@ -221,12 +247,9 @@
     syncSwitch(document.querySelector("[data-admin-quick-images-toggle]"), searchDirectEnabled);
     const button = document.getElementById("showProductsBtn");
     if(button){
-      const label = showAllEnabled ? "Ver paletas" : "Ver productos";
-      if(button.textContent !== label) button.textContent = label;
-      button.setAttribute("aria-pressed", showAllEnabled ? "true" : "false");
-      button.setAttribute("aria-label", showAllEnabled
-        ? "Volver a las paletas del nivel actual"
-        : "Ver todos los productos del nivel actual y sus niveles inferiores");
+      button.setAttribute("aria-pressed", showAllEnabled ? "false" : "true");
+      button.setAttribute("aria-label","Explorar las categorías del nivel actual");
+      document.getElementById("catalogHomeBtn")?.setAttribute("aria-current",showAllEnabled?"page":"false");
     }
   }
 
@@ -375,6 +398,6 @@
 // Inicio usa la misma navegación y filtros del catálogo.
 document.getElementById("catalogHomeBtn")?.addEventListener("click",()=>{
   clearSelectedNavigationValues();resetDiscoveryFilters();
-  window.setCatalogShowAllProductsDirectEnabled(false);
+  window.setCatalogShowAllProductsDirectEnabled(true);
   refreshNavigationAlbums();refreshFilterOptionsForScope();writeStateToUrl();render();
 });

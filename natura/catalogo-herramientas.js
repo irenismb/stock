@@ -14,6 +14,14 @@ const FOLLETO_FONT="Calibri, Carlito, Arial, sans-serif";
 
 
 
+
+
+
+
+
+
+
+
 function buildFolletoSnapshot(options={}){
   if(window.CATALOG_INITIAL_LOAD_READY!==true) throw new Error("Espera a que termine de cargar el catálogo.");
   if(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED!==true) throw new Error("No se pudo comprobar la visibilidad. Recarga el catálogo.");
@@ -63,6 +71,14 @@ function buildFolletoSnapshot(options={}){
 
 
 
+
+
+
+
+
+
+
+
 function folletoFont(ctx,size,bold=false){ctx.font=`${bold?700:400} ${size}px ${FOLLETO_FONT}`;}
 function folletoLines(ctx,text,width){
   const result=[];
@@ -87,6 +103,14 @@ const FOLLETO_COMPANY=Object.freeze({
   catalog:"irenismb.github.io/stock/natura/catalogo.html"
 });
 const FOLLETO_WHATSAPP_PATH="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
+
+
+
+
+
+
+
+
 
 
 
@@ -188,6 +212,14 @@ function folletoFitAttributes(ctx,attributes,width,height,ideal,minSize){
   }
   throw new Error("Las características del producto necesitan más espacio para caber completas.");
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -480,6 +512,22 @@ async function prepareFolleto(snapshot,formatKey,progress=()=>{},signal,reuse=nu
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function folletoDocumentBlob(result){
   const encoder=new TextEncoder(),parts=[],offsets=[0];let length=0;
   const add=v=>{const b=typeof v==="string"?encoder.encode(v):v;parts.push(b);length+=b.length;};
@@ -516,6 +564,14 @@ async function exportFolleto(preparation,formatKey,signal){
   }
   return result;
 }
+
+
+
+
+
+
+
+
 
 
 
@@ -686,8 +742,14 @@ function initFolleto(){
     try{
       const snapshot=buildFolletoSnapshot(readOptions());
       const prepared=prepareFolleto(snapshot,formatKey,message=>{if(dialog.open&&!signal.aborted)status.textContent=message;},signal,oldState);
-      // Priorizar la descarga de archivos solicitada por el usuario.
+      // Restaurar la copia automática de la primera imagen, sin cambiar las descargas.
+      let clipboard=Promise.resolve(false);
+      if(formatKey!=="document"&&navigator.clipboard?.write&&typeof ClipboardItem!=="undefined"){
+        const imageBlob=prepared.then(r=>{folletoAssertSession(r.snapshot,signal);return r.pages[0].blob;});
+        try{clipboard=Promise.resolve(navigator.clipboard.write([new ClipboardItem({"image/png":imageBlob})])).then(()=>true,()=>false);}catch(_){clipboard=Promise.resolve(false);}
+      }
       const result=await exportFolleto(prepared,formatKey,signal);
+      const copied=await clipboard;
       if(!dialog.open||signal.aborted)return;
       dialog.querySelector('input[name="format"][value="'+formatKey+'"]').checked=true;
       state={key:folletoPreparationKey(result.snapshot,formatKey),snapshot:result.snapshot,plan:result.plan,
@@ -695,6 +757,7 @@ function initFolleto(){
       updateSummary(result.snapshot,result.plan);await showPage(0,version);
       status.textContent=result.snapshot.products.length+" productos · "+result.pages.length+
         (formatKey==="document"?" · Descarga del PDF iniciada.":" · Descarga de "+result.pages.length+" "+(result.pages.length===1?"imagen":"imágenes")+" iniciada. Si falta alguna, usa «Descargar esta imagen» en su vista previa.")+
+        (formatKey!=="document"&&copied?" Primera imagen copiada al portapapeles.":"")+
         (result.missing?" "+result.missing+" productos con imagen no disponible.":"");
     }catch(e){
       if(dialog.open)status.textContent=e.name==="AbortError"?"Generación cancelada.":e.message||"No se pudo generar el folleto.";
@@ -706,6 +769,14 @@ function initFolleto(){
   }
   generate.addEventListener("click",()=>generateFolleto(format()));
   for(const output of dialog.querySelectorAll("[data-folleto-export]"))output.addEventListener("click",()=>generateFolleto(output.dataset.folletoExport));
+
+
+
+
+
+
+
+
 
 
 

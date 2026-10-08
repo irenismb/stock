@@ -308,7 +308,7 @@ function initFolleto(){
       if(formatKey!=="document"&&navigator.clipboard?.write&&typeof ClipboardItem!=="undefined"){
         // Start the clipboard operation within the click gesture; image bytes may resolve later.
         const imageBlob=prepared.then(r=>{folletoAssertSession(r.snapshot,signal);return r.pages[0].blob;});
-        clipboard=navigator.clipboard.write([new ClipboardItem({"image/png":imageBlob})]).then(()=>true,()=>false);
+        try{clipboard=Promise.resolve(navigator.clipboard.write([new ClipboardItem({"image/png":imageBlob})])).then(()=>true,()=>false);}catch(_){clipboard=Promise.resolve(false);}
       }
       const result=await exportFolleto(prepared,formatKey,signal,clipboard);
       clearPreview();

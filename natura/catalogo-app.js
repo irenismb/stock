@@ -3155,6 +3155,20 @@ async function copyProductText(text){
   if(!ok)throw new Error("El navegador no permitió copiar al portapapeles.");
 }
 
+function catalogProductDisplayName(value){
+  const name=String(value||"");
+  if(name!==name.toLocaleUpperCase("es"))return name;
+  const lower=new Set(["de","del","la","las","el","los","con","para","en","y","al","a","por","un","una","ml","g","kg","l"]);
+  const upper=new Set(["avon","uv","uva","uvb","spf","fps","bb","cc","edt","edp"]);
+  let first=true;
+  return name.toLocaleLowerCase("es").replace(/\p{L}+/gu,word=>{
+    const start=first;first=false;
+    if(upper.has(word))return word.toLocaleUpperCase("es");
+    if(!start&&lower.has(word))return word;
+    return word.charAt(0).toLocaleUpperCase("es")+word.slice(1);
+  });
+}
+
 function makeCard(p){
   const card=cardTemplate.content.firstElementChild.cloneNode(true);
   card.id="p-"+encodeURIComponent(String(p.id));
@@ -3170,7 +3184,7 @@ function makeCard(p){
   lineEl.hidden=!lineEl.textContent;
   const productName=String(p.name||"");
   nameEl.title=productName;
-  setSearchHighlightedText(nameEl,productName);
+  setSearchHighlightedText(nameEl,catalogProductDisplayName(productName));
   const metaText=stockMetaText(p);
   setSearchHighlightedText(metaEl,metaText);
   const description=String(p?.description||"").trim();

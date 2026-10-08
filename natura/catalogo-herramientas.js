@@ -281,7 +281,7 @@ function renderFolleto(snapshot,plan,pageIndex,assets){
     }
     folletoFont(ctx,22);ctx.fillStyle="#000";ctx.textAlign="center";
     ctx.fillText("Consultores independientes de Natura y AVON",page.width/2,page.height-240);
-    ctx.fillText("Asesoría y pedidos · +57 304 208 8961",page.width/2,page.height-198);
+    ctx.fillText("Asesoría y pedidos · 304 208 8961",page.width/2,page.height-198);
     folletoFont(ctx,18);ctx.fillText("Página 1 de "+plan.pages.length,page.width/2,page.height-105);
     ctx.textAlign="left";return canvas;
   }
@@ -295,7 +295,7 @@ function renderFolleto(snapshot,plan,pageIndex,assets){
   for(const card of page.cards)renderFolletoCard(ctx,card,assets.images.get(card.product.id));
   const footY=page.height-page.margin-page.footer+24;
   ctx.strokeStyle="#d8c3b1";ctx.beginPath();ctx.moveTo(page.margin,footY-14);ctx.lineTo(page.width-page.margin,footY-14);ctx.stroke();
-  folletoFont(ctx,19);ctx.fillStyle="#000";ctx.fillText("Asesoría y pedidos · +57 304 208 8961",page.margin,footY);
+  folletoFont(ctx,19);ctx.fillStyle="#000";ctx.fillText("Asesoría y pedidos · 304 208 8961",page.margin,footY);
   ctx.textAlign="right";ctx.fillText("Página "+(pageIndex+1)+" de "+plan.pages.length,page.width-page.margin,footY);
   ctx.textAlign="left";return canvas;
 }

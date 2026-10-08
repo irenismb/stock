@@ -25,6 +25,7 @@ function actualizarConfiguracionWeb(clave, activado) {
   const bloqueo = LockService.getScriptLock();
   bloqueo.waitLock(30000);
   try {
+    migrarConfiguracionPublicaDesdeHoja_();
     const estadoTexto = estado ? "ACTIVADO" : "DESACTIVADO";
     const propiedades = PropertiesService.getScriptProperties();
     const nombrePropiedad = CONFIG_PROPERTY_PREFIX + claveSegura;
@@ -80,6 +81,7 @@ function actualizarOrdenNavegacionWeb(orden) {
   const bloqueo = LockService.getScriptLock();
   bloqueo.waitLock(30000);
   try {
+    migrarConfiguracionPublicaDesdeHoja_();
     const propiedades = PropertiesService.getScriptProperties();
     const nombrePropiedad = CONFIG_PROPERTY_PREFIX + NAVIGATION_ORDER_KEY;
     propiedades.setProperty(nombrePropiedad, ordenSeguro);
@@ -218,6 +220,7 @@ function actualizarOrdenProductosWeb(orden) {
   const bloqueo = LockService.getScriptLock();
   bloqueo.waitLock(30000);
   try {
+    migrarConfiguracionPublicaDesdeHoja_();
     const propiedades = PropertiesService.getScriptProperties();
     propiedades.setProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS", seguro);
     if (propiedades.getProperty(CONFIG_PROPERTY_PREFIX + "ORDEN_PRODUCTOS") !== seguro) throw new Error("No se pudo confirmar el orden.");
@@ -228,45 +231,46 @@ function actualizarOrdenProductosWeb(orden) {
 
 // Solo estos cinco ajustes se publican; los filtros administrativos quedan en Propiedades.
 // Todas las escrituras se ejecutan bajo el mismo bloqueo que protege los ajustes.
-function asegurarConfiguracionPublica_() {
-  const bloqueo = LockService.getScriptLock();
-  bloqueo.waitLock(30000);
-  try {
-    const valores = leerValoresConfiguracion_();
-    return {valores:valores, publicadoEn:publicarConfiguracionPublica_(valores)};
+// Configuración pública persistida en Propiedades. Importar una sola vez.
+const CONFIG_MIGRATION_MARKER = "CATALOGO_CONFIG_MIGRADA_V1";
+const CONFIG_PUBLISHED_VALUES = "CATALOGO_CONFIG_PUBLIC_SNAPSHOT_V1";
+const CONFIG_PUBLISHED_REVISION = "CATALOGO_CONFIG_PUBLIC_REVISION_V1";
+function migrarConfiguracionPublicaDesdeHoja_(){
+  const props=PropertiesService.getScriptProperties();
+  if(props.getProperty(CONFIG_MIGRATION_MARKER)==="ok")return;
+  const sh=SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID).getSheetByName("configuracion_publica");
+  if(!sh||sh.getLastRow()<6)throw new Error("No hay configuración pública inicial.");
+  const rows=sh.getRange(1,1,6,3).getDisplayValues();
+  if(rows[0].join("|")!=="Clave|Valor|Actualizado")throw new Error("Encabezados de configuración inesperados.");
+  const values={},dates=new Set();
+  for(const row of rows.slice(1)){
+    if(CONFIG_PUBLIC_KEYS.indexOf(row[0])<0||Object.prototype.hasOwnProperty.call(values,row[0]))throw new Error("Clave pública duplicada.");
+    values[row[0]]=String(row[1]);dates.add(String(row[2]));
   }
-  finally { bloqueo.releaseLock(); }
+  if(Object.keys(values).length!==5||dates.size!==1)throw new Error("Configuración pública incompleta.");
+  const rev=[...dates][0];
+  if(!rev||!Number.isFinite(Date.parse(rev))||CONFIG_BOOLEAN_PUBLIC_KEYS.some(k=>!normalizarEstadoConfiguracion_(values[k]))
+      ||!normalizarOrdenNavegacion_(values.ORDEN_NAVEGACION)||!normalizarOrdenProductos_(values.ORDEN_PRODUCTOS))throw new Error("Configuración pública inicial inválida.");
+  const migrated={};
+  CONFIG_PUBLIC_KEYS.forEach(k=>{migrated[CONFIG_PROPERTY_PREFIX+k]=values[k]});
+  migrated[CONFIG_PUBLISHED_VALUES]=JSON.stringify(CONFIG_PUBLIC_KEYS.map(k=>values[k]));
+  migrated[CONFIG_PUBLISHED_REVISION]=rev;
+  migrated[CONFIG_MIGRATION_MARKER]="ok";
+  props.setProperties(migrated,false);
+  if(props.getProperty(CONFIG_PUBLISHED_VALUES)!==migrated[CONFIG_PUBLISHED_VALUES])throw new Error("No se confirmó la importación pública.");
 }
-function publicarConfiguracionPublica_(valores) {
-  const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
-  const nombre = "configuracion_publica";
-  const hoja = libro.getSheetByName(nombre) || libro.insertSheet(nombre);
-  const filas = CONFIG_PUBLIC_KEYS.map(function(clave) { return [clave, String(valores[clave])]; });
-  const existentes = hoja.getRange(1, 1, filas.length + 1, 3).getDisplayValues();
-  const revision = existentes[1] && existentes[1][2];
-  const iguales = existentes[0].join("|") === "Clave|Valor|Actualizado"
-    && /^\d{4}-\d{2}-\d{2}T/.test(revision || "")
-    && filas.every(function(fila, i) {
-      return existentes[i + 1][0] === fila[0] && existentes[i + 1][1] === fila[1]
-        && existentes[i + 1][2] === revision;
-    });
-  if (iguales) return revision;
-  const publicadoEn = new Date().toISOString();
-  const nuevas = [["Clave", "Valor", "Actualizado"]].concat(filas.map(function(fila) {
-    return fila.concat([publicadoEn]);
-  }));
-  const rango = hoja.getRange(1, 1, nuevas.length, 3);
-  rango.setNumberFormat("@").setValues(nuevas);
-  SpreadsheetApp.flush();
-  const leidas = rango.getDisplayValues();
-  if (JSON.stringify(leidas) !== JSON.stringify(nuevas)) {
-    throw new Error("Google no confirmó la publicación de la configuración. Vuelve a cargar Configuración antes de reintentar.");
-  }
-  if (!existentes[0][0]) {
-    rango.setFontFamily("Calibri").setFontSize(11).setVerticalAlignment("middle");
-    hoja.getRange(1, 1, 1, 3).setFontWeight("bold").setBackground("#ead3dd");
-    hoja.setFrozenRows(1); hoja.setFrozenColumns(0);
-    hoja.autoResizeColumns(1, 3);
-  }
-  return publicadoEn;
+function asegurarConfiguracionPublica_(){
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{migrarConfiguracionPublicaDesdeHoja_();const valores=leerValoresConfiguracion_();return {valores:valores,publicadoEn:publicarConfiguracionPublica_(valores)};}
+  finally{lock.releaseLock();}
+}
+function publicarConfiguracionPublica_(valores){
+  const props=PropertiesService.getScriptProperties();
+  const content=JSON.stringify(CONFIG_PUBLIC_KEYS.map(k=>String(valores[k])));
+  const prev=props.getProperty(CONFIG_PUBLISHED_VALUES),rev=props.getProperty(CONFIG_PUBLISHED_REVISION);
+  if(prev===content&&rev&&Number.isFinite(Date.parse(rev)))return rev;
+  const next=new Date(Math.max(Date.now(),(Date.parse(rev)||0)+1)).toISOString();
+  props.setProperties({[CONFIG_PUBLISHED_VALUES]:content,[CONFIG_PUBLISHED_REVISION]:next},false);
+  if(props.getProperty(CONFIG_PUBLISHED_VALUES)!==content||props.getProperty(CONFIG_PUBLISHED_REVISION)!==next)throw new Error("La configuración pública no quedó guardada.");
+  return next;
 }

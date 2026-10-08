@@ -1,112 +1,72 @@
-// Lectura y actualización de reglas de visibilidad del catálogo.
-
-function obtenerVisibilidadWeb() {
-  const contexto = obtenerContextoVisibilidad_(false);
-  if (!contexto) {
-    return { reglas: [], actualizadoEn: new Date().toISOString() };
-  }
-
-  const ultimaFila = contexto.hoja.getLastRow();
-  if (ultimaFila <= 1) {
-    return { reglas: [], actualizadoEn: new Date().toISOString() };
-  }
-
-  const valores = contexto.hoja
-    .getRange(2, 1, ultimaFila - 1, contexto.ultimaColumna)
-    .getDisplayValues();
-
-  const reglas = valores
-    .map(function(fila) {
-      const tipo = normalizarTipoVisibilidad_(fila[contexto.columnas.tipo]);
-      return {
-        tipo: tipo,
-        identificador: normalizarIdentificadorVisibilidadPorTipo_(tipo, fila[contexto.columnas.identificador]),
-        oculto: normalizarEstadoOculto_(fila[contexto.columnas.oculto]),
-        etiqueta: String(fila[contexto.columnas.etiqueta] || "").trim()
-      };
-    })
-    .filter(function(regla) {
-      return regla.tipo && regla.identificador;
-    });
-
-  return { reglas: reglas, actualizadoEn: new Date().toISOString() };
+// Reglas de visibilidad persistentes; la hoja anterior se importa una sola vez.
+const VISIBILIDAD_PROPERTY_KEY = "CATALOGO_VISIBILIDAD_REGLAS_V1";
+function validarReglasVisibilidad_(reglas) {
+  if(!Array.isArray(reglas)||!reglas.length) throw new Error("Reglas de visibilidad no disponibles.");
+  const llaves={};
+  return reglas.map(function(r){
+    if(!r||typeof r!=="object"||typeof r.oculto!=="boolean") throw new Error("Regla de visibilidad inválida.");
+    const tipo=normalizarTipoVisibilidad_(r.tipo);
+    const identificador=normalizarIdentificadorVisibilidadPorTipo_(tipo,r.identificador);
+    if(VISIBILIDAD_TIPOS.indexOf(tipo)<0||!identificador||(tipo==="producto"&&!/^\d{4}$/.test(identificador)))throw new Error("Identificador de visibilidad inválido.");
+    const clave=tipo+"::"+identificador;
+    if(Object.prototype.hasOwnProperty.call(llaves,clave))throw new Error("Reglas de visibilidad duplicadas.");
+    llaves[clave]=true;
+    return {tipo:tipo,identificador:identificador,oculto:r.oculto,etiqueta:String(r.etiqueta||"").slice(0,250)};
+  });
 }
-function actualizarVisibilidadWeb(tipo, identificador, ocultoNuevo, etiqueta) {
-  const tipoSeguro = normalizarTipoVisibilidad_(tipo);
-  const identificadorSeguro = normalizarIdentificadorVisibilidadPorTipo_(tipoSeguro, identificador);
-  const etiquetaSegura = String(etiqueta == null ? "" : etiqueta).trim().slice(0, 250);
-  const ocultoSeguro = Boolean(ocultoNuevo);
-
-  if (VISIBILIDAD_TIPOS.indexOf(tipoSeguro) === -1) {
-    throw new Error("El tipo de regla de visibilidad no es válido.");
-  }
-  if (!identificadorSeguro) {
-    throw new Error("La regla de visibilidad necesita un identificador.");
-  }
-  if (tipoSeguro === "producto" && !/^\d{4}$/.test(identificadorSeguro)) {
-    throw new Error("El identificador de producto debe contener exactamente cuatro dígitos.");
-  }
-
-  const bloqueo = LockService.getScriptLock();
-  bloqueo.waitLock(30000);
-
-  try {
-    const contexto = obtenerContextoVisibilidad_(true);
-    const ultimaFila = contexto.hoja.getLastRow();
-    const coincidencias = [];
-
-    if (ultimaFila > 1) {
-      const valores = contexto.hoja
-        .getRange(2, 1, ultimaFila - 1, contexto.ultimaColumna)
-        .getDisplayValues();
-
-      valores.forEach(function(fila, indice) {
-        const tipoFila = normalizarTipoVisibilidad_(fila[contexto.columnas.tipo]);
-        const idFila = normalizarIdentificadorVisibilidadPorTipo_(tipoFila, fila[contexto.columnas.identificador]);
-        if (tipoFila === tipoSeguro && idFila === identificadorSeguro) {
-          coincidencias.push(indice + 2);
-        }
-      });
-    }
-
-    const filasDestino = coincidencias.length
-      ? coincidencias
-      : [contexto.hoja.getLastRow() + 1];
-    const ahora = new Date();
-
-    filasDestino.forEach(function(filaDestino) {
-      contexto.hoja.getRange(filaDestino, contexto.columnas.tipo + 1).setValue(tipoSeguro);
-      const celdaIdentificador = contexto.hoja.getRange(filaDestino, contexto.columnas.identificador + 1);
-      if (tipoSeguro === "producto") celdaIdentificador.setNumberFormat("@");
-      celdaIdentificador.setValue(identificadorSeguro);
-      contexto.hoja.getRange(filaDestino, contexto.columnas.oculto + 1).setValue(ocultoSeguro ? "X" : "");
-      contexto.hoja.getRange(filaDestino, contexto.columnas.etiqueta + 1).setValue(etiquetaSegura);
-      contexto.hoja.getRange(filaDestino, contexto.columnas.actualizado + 1).setValue(ahora);
-    });
-    SpreadsheetApp.flush();
-
-    filasDestino.forEach(function(filaDestino) {
-      const ocultoGuardado = normalizarEstadoOculto_(
-        contexto.hoja.getRange(filaDestino, contexto.columnas.oculto + 1).getDisplayValue()
-      );
-      if (ocultoGuardado !== ocultoSeguro) {
-        throw new Error("Google Sheets no confirmó la visibilidad esperada.");
-      }
-    });
-
-    return {
-      ok: true,
-      tipo: tipoSeguro,
-      identificador: identificadorSeguro,
-      etiqueta: etiquetaSegura,
-      oculto: ocultoSeguro,
-      filasActualizadas: filasDestino.length,
-      actualizadoEn: ahora.toISOString()
-    };
-  } finally {
-    bloqueo.releaseLock();
-  }
+function guardarReglasVisibilidad_(props,reglas){
+  const normalizadas=validarReglasVisibilidad_(reglas);
+  const data=JSON.stringify({version:1,reglas:normalizadas});
+  if(encodeURIComponent(data).length>8500)throw new Error("Las reglas exceden la capacidad de una propiedad.");
+  props.setProperty(VISIBILIDAD_PROPERTY_KEY,data);
+  if(props.getProperty(VISIBILIDAD_PROPERTY_KEY)!==data)throw new Error("No se confirmó la persistencia de la visibilidad.");
+  return normalizadas;
 }
+function cargarReglasVisibilidad_(props){
+  const data=props.getProperty(VISIBILIDAD_PROPERTY_KEY);
+  if(!data)return null;
+  let parsed;
+  try{parsed=JSON.parse(data);}catch(_){throw new Error("No se pueden interpretar las reglas de visibilidad.");}
+  if(!parsed||parsed.version!==1)throw new Error("Versión de visibilidad desconocida.");
+  return validarReglasVisibilidad_(parsed.reglas);
+}
+function importarVisibilidadDesdeHoja_(props){
+  const ctx=obtenerContextoVisibilidad_(false);
+  if(!ctx||ctx.hoja.getLastRow()<2)throw new Error("No hay reglas de visibilidad iniciales; no se publica el catálogo.");
+  const rows=ctx.hoja.getRange(2,1,ctx.hoja.getLastRow()-1,ctx.ultimaColumna).getDisplayValues();
+  const rules=rows.filter(r=>r.some(x=>String(x||"").trim())).map(function(r){
+    const tipo=normalizarTipoVisibilidad_(r[ctx.columnas.tipo]);
+    const id=normalizarIdentificadorVisibilidadPorTipo_(tipo,r[ctx.columnas.identificador]);
+    const estado=normalizarEncabezado_(r[ctx.columnas.oculto]);
+    if(["","no","false","0","visible","x","si","true","1","oculto"].indexOf(estado)<0)throw new Error("Regla anterior inválida.");
+    return {tipo:tipo,identificador:id,oculto:normalizarEstadoOculto_(estado),etiqueta:String(r[ctx.columnas.etiqueta]||"").trim()};
+  });
+  return guardarReglasVisibilidad_(props,rules);
+}
+function obtenerVisibilidadWeb(){
+  const props=PropertiesService.getScriptProperties();
+  let reglas=cargarReglasVisibilidad_(props);
+  if(!reglas){
+    const lock=LockService.getScriptLock();lock.waitLock(30000);
+    try{reglas=cargarReglasVisibilidad_(props)||importarVisibilidadDesdeHoja_(props);}finally{lock.releaseLock();}
+  }
+  return {ok:true,reglas:reglas,actualizadoEn:new Date().toISOString()};
+}
+function actualizarVisibilidadWeb(tipo,identificador,ocultoNuevo,etiqueta){
+  const t=normalizarTipoVisibilidad_(tipo),id=normalizarIdentificadorVisibilidadPorTipo_(t,identificador);
+  if(VISIBILIDAD_TIPOS.indexOf(t)<0||!id||(t==="producto"&&!/^\d{4}$/.test(id)))throw new Error("Tipo o identificador de visibilidad inválido.");
+  const lock=LockService.getScriptLock();lock.waitLock(30000);
+  try{
+    const props=PropertiesService.getScriptProperties();
+    const reglas=cargarReglasVisibilidad_(props)||importarVisibilidadDesdeHoja_(props);
+    const coinciden=reglas.filter(r=>r.tipo===t&&r.identificador===id);
+    const siguientes=reglas.filter(r=>r.tipo!==t||r.identificador!==id);
+    siguientes.push({tipo:t,identificador:id,oculto:Boolean(ocultoNuevo),etiqueta:String(etiqueta==null?"":etiqueta).trim().slice(0,250)});
+    guardarReglasVisibilidad_(props,siguientes);
+    return {ok:true,tipo:t,identificador:id,etiqueta:String(etiqueta==null?"":etiqueta).trim().slice(0,250),oculto:Boolean(ocultoNuevo),filasActualizadas:coinciden.length||1,actualizadoEn:new Date().toISOString()};
+  }finally{lock.releaseLock();}
+}
+
 function normalizarTipoVisibilidad_(valor) {
   return normalizarEncabezado_(valor).replace(/\s+/g, "");
 }

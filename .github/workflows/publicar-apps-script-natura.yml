@@ -83,6 +83,13 @@ jobs:
           echo "Proyectos que se publicarán automáticamente:"
           cut -f1 "$RUNNER_TEMP/selected.tsv" | sed 's/^/- /'
 
+      - name: Verificar sintaxis y regresiones antes de publicar
+        run: |
+          node --check "natura/apps-script/administrar precios natura/admin-visibilidad.js"
+          node --check "natura/apps-script/administrar precios natura/admin-configuracion.js"
+          node --check "natura/apps-script/administrar precios natura/admin-contextos.js"
+          node --test natura/catalogo-integracion.test.cjs
+
       - name: Validar identidad y publicar
         env:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json

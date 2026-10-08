@@ -26,12 +26,8 @@ function obtenerContextoVisibilidad_(crearSiFalta) {
   const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
   let hoja = libro.getSheetByName(VISIBILIDAD_SHEET_NAME);
 
-  if (!hoja && !crearSiFalta) return null;
-  if (!hoja) {
-    hoja = libro.insertSheet(VISIBILIDAD_SHEET_NAME);
-    hoja.getRange(1, 1, 1, VISIBILIDAD_HEADERS.length).setValues([VISIBILIDAD_HEADERS]);
-    SpreadsheetApp.flush();
-  }
+  // Pestaña heredada: no recrearla bajo ninguna circunstancia.
+  if(!hoja)return null;
 
   const ultimaColumna = Math.max(VISIBILIDAD_HEADERS.length, hoja.getLastColumn());
   const encabezados = hoja.getRange(1, 1, 1, ultimaColumna).getDisplayValues()[0];

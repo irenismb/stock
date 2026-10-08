@@ -66,119 +66,241 @@ function folletoLines(ctx,text,width){
 }
 function folletoTextBlocks(ctx,p,width,hero,compact=false){
   const blocks=[];
-  const add=(text,size,bold=false,gap=8)=>{
+  const add=(kind,text,size,bold=false,gap=8)=>{
     if(!text)return;
     folletoFont(ctx,size,bold);
-    const lines=folletoLines(ctx,text,width);
-    blocks.push({lines,size,bold,lineHeight:size*1.22,gap});
+    blocks.push({kind,lines:folletoLines(ctx,text,width),size,bold,lineHeight:size*1.24,gap});
   };
-  add(p.line,compact?18:22);add(p.name,hero?34:compact?22:26,true,12);
-  add(p.code,compact?18:20);add(p.price,hero?36:compact?26:30,true,12);add(p.description,compact?20:24);
+  add("line",p.line,hero?22:18,true,10);
+  let nameSize=hero?38:compact?22:27;
+  folletoFont(ctx,nameSize,true);
+  while(nameSize>(hero?28:compact?20:24)&&folletoLines(ctx,p.name,width).length>(hero?6:6)){
+    nameSize-=2;folletoFont(ctx,nameSize,true);
+  }
+  add("name",p.name,nameSize,true,14);
+  add("price",p.price,hero?40:compact?28:32,true,14);
+  add("code",p.code,hero?22:18,false,12);
+  add("description",p.description,hero?26:compact?19:22,false,10);
   return blocks;
 }
-
 function layoutFolleto(snapshot,formatKey="instagram",ctx){
-  const format=FOLLETO_FORMATS[formatKey];if(!format)throw new Error("Formato no válido.");
+  const format=FOLLETO_FORMATS[formatKey];
+  if(!format)throw new Error("Formato no válido.");
   if(!snapshot.products.length)throw new Error("No hay productos para incluir con estas opciones.");
-  const {width,height}=format,margin=60,gap=24,header=172,footer=66;
-  const hero=snapshot.products.length===1,columns=hero?1:2;
-  const bodyWidth=width-margin*2,cardWidth=(bodyWidth-gap*(columns-1))/columns;
-  const available=height-margin*2-header-footer;
+  const {width,height}=format,margin=58,gap=22,footer=72;
+  folletoFont(ctx,40,true);
+  const titleLines=folletoLines(ctx,snapshot.title,width-margin*2-160);
+  const header=108+Math.min(titleLines.length,3)*46;
+  const available=height-margin*2-header-footer,bodyWidth=width-margin*2;
+  const hero=snapshot.products.length===1;
+  let columns=hero?1:snapshot.products.length>4?3:2;
+  const compact=snapshot.products.length>4;
+  if(columns===3){
+    const narrowWidth=(bodyWidth-gap*2)/3-36;
+    const tooDense=snapshot.products.some(p=>{
+      const blocks=folletoTextBlocks(ctx,p,narrowWidth,false,true);
+      const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap+(b.kind==="price"?14:0),0);
+      return textHeight+179>(available-gap)/2;
+    });
+    if(tooDense)columns=2;
+  }
+  const cardWidth=(bodyWidth-gap*(columns-1))/columns;
   const pages=[];let page=null,y=0,row=[];
-  const newPage=()=>{page={width,height,margin,header,footer,cards:[],title:snapshot.title};pages.push(page);y=margin+header;};
+  const newPage=()=>{
+    page={width,height,margin,header,footer,title:snapshot.title,titleLines,cards:[]};
+    pages.push(page);y=margin+header;
+  };
   const placeRow=()=>{
     if(!row.length)return;
     const rowHeight=Math.max(...row.map(c=>c.height));
-    if(!page||y+rowHeight>height-margin-footer)newPage();
-    row.forEach((c,i)=>page.cards.push({...c,x:margin+i*(cardWidth+gap),y}));
+    if(!page||y+rowHeight>height-margin-footer+.01)newPage();
+    row.forEach((c,i)=>page.cards.push({...c,height:rowHeight,x:margin+i*(cardWidth+gap),y}));
     y+=rowHeight+gap;row=[];
   };
   for(const p of snapshot.products){
-    const compact=snapshot.products.length>2&&snapshot.products.length<=4;
-    const blocks=folletoTextBlocks(ctx,p,cardWidth-40,hero,compact);
-    let imageHeight=snapshot.settings.images?(hero?450:snapshot.products.length<=4?260:180):0;
-    const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap,0);
-    if(compact&&imageHeight){const rowSpace=(available-gap)/2;imageHeight=Math.max(90,Math.min(imageHeight,rowSpace-textHeight-60));}
-    const base=40+(imageHeight?imageHeight+20:0);
-    if(base+textHeight<=available){row.push({product:p,blocks,imageHeight,width:cardWidth,height:base+textHeight});if(row.length===columns)placeRow();continue;}
-    // Split exceptionally long names/descriptions into measured continuation cards.
-    placeRow();imageHeight=Math.min(imageHeight,150);
-    let current=[],used=40+(imageHeight?imageHeight+20:0),continued=false;
+    const heroSide=hero&&snapshot.settings.images;
+    const textWidth=heroSide?cardWidth*.49-38:cardWidth-36;
+    const blocks=folletoTextBlocks(ctx,p,textWidth,hero,compact);
+    let imageHeight=snapshot.settings.images?(hero?available-48:compact?210:280):0;
+    const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap+(b.kind==="price"?14:0),0);
+    const base=36+(imageHeight&&!heroSide?imageHeight+18:0);
+    let cardHeight=heroSide?Math.max(imageHeight+48,textHeight+60):base+textHeight;
+    if(!hero&&imageHeight){
+      const desiredRows=snapshot.products.length<=columns?1:snapshot.products.length<=columns*2?2:3;
+      const rowSpace=(available-gap*(desiredRows-1))/desiredRows;
+      imageHeight=Math.max(125,Math.min(imageHeight,rowSpace-textHeight-54));
+      cardHeight=36+(imageHeight?imageHeight+18:0)+textHeight;
+    }
+    if(cardHeight<=available){
+      row.push({product:p,blocks,imageHeight,heroSide,width:cardWidth,height:hero?available:cardHeight});
+      if(row.length===columns)placeRow();
+      continue;
+    }
+    // Keep every measured line, continuing on another page when necessary.
+    placeRow();
+    imageHeight=snapshot.settings.images&&!heroSide?120:0;
+    let current=[],used=36+(imageHeight?imageHeight+18:0),continued=false;
     const flush=()=>{
       if(!current.length)return;
-      row=[{product:p,blocks:current,imageHeight:continued?0:imageHeight,width:cardWidth,height:used,continued}];placeRow();
-      current=[];used=40;continued=true;
+      row=[{product:p,blocks:current,imageHeight:continued?0:heroSide?available-48:imageHeight,heroSide:heroSide&&!continued,
+        width:cardWidth,height:heroSide&&!continued?available:used,continued}];
+      placeRow();current=[];used=66;continued=true;
     };
     for(const b of blocks){
       let chunk=[];
       for(const line of b.lines){
-        if(used+b.lineHeight+b.gap>available){
-          if(chunk.length){current.push({...b,lines:chunk});chunk=[];used+=b.gap;}
+        const extra=b.gap+(b.kind==="price"?14:0);
+        if(used+b.lineHeight+extra>available){
+          if(chunk.length){current.push({...b,lines:chunk});chunk=[];used+=extra;}
           flush();
         }
         chunk.push(line);used+=b.lineHeight;
       }
-      if(chunk.length){current.push({...b,lines:chunk});used+=b.gap;}
+      if(chunk.length){current.push({...b,lines:chunk});used+=b.gap+(b.kind==="price"?14:0);}
     }
     flush();
   }
   placeRow();
-  if(hero&&pages.length===1){
-    const c=pages[0].cards[0];const growth=Math.max(0,available-c.height);
-    if(snapshot.settings.images){c.imageHeight+=growth;c.height+=growth;}
-    else c.y+=growth/2;
+  for(const p of pages){
+    const bottom=Math.max(...p.cards.map(c=>c.y+c.height));
+    const free=height-margin-footer-bottom;
+    const rows=[...new Set(p.cards.map(c=>c.y))];
+    const growth=Math.min(96,Math.max(0,free/rows.length));
+    if(growth>0)for(const c of p.cards){
+      c.y+=rows.indexOf(c.y)*growth;c.height+=growth;
+      if(c.imageHeight&&!c.heroSide)c.imageHeight+=growth;
+    }
+  }
+  if(formatKey==="document"&&snapshot.products.length>4){
+    pages.unshift({width,height,margin,header,footer,title:snapshot.title,titleLines,cards:[],cover:true,
+      coverProducts:snapshot.products.slice(0,3)});
   }
   return {formatKey,pages,productCount:snapshot.products.length};
 }
-
 function folletoRoundRect(ctx,x,y,w,h,r=18){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.closePath();
 }
+function folletoBotanical(ctx,x,y,scale=1,flip=false){
+  ctx.save();ctx.translate(x,y);ctx.scale(flip?-scale:scale,scale);
+  ctx.strokeStyle="#c8bca6";ctx.lineWidth=2.5;
+  ctx.beginPath();ctx.moveTo(0,160);ctx.bezierCurveTo(24,98,47,38,94,-20);ctx.stroke();
+  const leaves=[[14,125,-.9,42,"#d2d9bc"],[31,96,.4,52,"#eac9c6"],[47,66,-.7,43,"#d3dabb"],
+    [64,33,.3,45,"#e2b8c5"],[81,5,-.6,35,"#e5cea5"]];
+  for(const [lx,ly,angle,size,color]of leaves){
+    ctx.save();ctx.translate(lx,ly);ctx.rotate(angle);ctx.fillStyle=color;
+    ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(-size*.8,-size*.2,-size*.7,-size*.9,0,-size);
+    ctx.bezierCurveTo(size*.55,-size*.8,size*.4,-size*.25,0,0);ctx.fill();
+    ctx.strokeStyle="#fffaf1";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-size*.8);ctx.stroke();ctx.restore();
+  }
+  ctx.restore();
+}
+function folletoDrawImage(ctx,image,x,y,w,h){
+  if(image){
+    const ratio=Math.min(w/image.naturalWidth,h/image.naturalHeight);
+    const iw=image.naturalWidth*ratio,ih=image.naturalHeight*ratio;
+    ctx.drawImage(image,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
+  }else{
+    ctx.fillStyle="#f5e9e3";folletoRoundRect(ctx,x,y,w,h,14);ctx.fill();
+    folletoFont(ctx,18);ctx.fillStyle="#000";ctx.textAlign="center";
+    ctx.fillText("Imagen no disponible",x+w/2,y+h/2,w-20);ctx.textAlign="left";
+  }
+}
 function renderFolletoCard(ctx,card,image){
   const {x,y,width,height}=card;
-  ctx.fillStyle="#ffffff";folletoRoundRect(ctx,x,y,width,height);ctx.fill();
-  ctx.strokeStyle="#eadbd5";ctx.lineWidth=1;ctx.stroke();
-  let top=y+20;
-  if(card.imageHeight){
-    if(image){
-      const ratio=Math.min((width-40)/image.naturalWidth,card.imageHeight/image.naturalHeight);
-      const w=image.naturalWidth*ratio,h=image.naturalHeight*ratio;
-      ctx.drawImage(image,x+(width-w)/2,top+(card.imageHeight-h)/2,w,h);
-    }else{
-      ctx.fillStyle="#fbf6f2";folletoRoundRect(ctx,x+20,top,width-40,card.imageHeight,12);ctx.fill();
-      folletoFont(ctx,22);ctx.fillStyle="#000";ctx.textAlign="center";
-      ctx.fillText("Imagen no disponible",x+width/2,top+card.imageHeight/2);ctx.textAlign="left";
-    }
-    top+=card.imageHeight+20;
+  ctx.save();ctx.shadowColor="#784f3610";ctx.shadowBlur=14;ctx.shadowOffsetY=5;
+  ctx.fillStyle="#fffdfb";folletoRoundRect(ctx,x,y,width,height,20);ctx.fill();ctx.restore();
+  ctx.strokeStyle="#eadbd1";ctx.lineWidth=1.3;ctx.stroke();
+  let top=y+18,textX=x+18,textWidth=width-36;
+  if(card.heroSide){
+    const imageWidth=width*.46;
+    const tint=ctx.createLinearGradient(x,y,x+imageWidth,y+height);
+    tint.addColorStop(0,"#f8e3e4");tint.addColorStop(1,"#f7efdf");
+    ctx.fillStyle=tint;folletoRoundRect(ctx,x+12,y+12,imageWidth,height-24,16);ctx.fill();
+    folletoBotanical(ctx,x+22,y+height-175,.7);
+    folletoDrawImage(ctx,image,x+24,y+36,imageWidth-24,height-72);
+    textX=x+width*.51;textWidth=width*.49-38;
+    const blockHeight=card.blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap+(b.kind==="price"?14:0),0);
+    top=y+Math.max(30,(height-blockHeight)/2);
+  }else if(card.imageHeight){
+    ctx.fillStyle="#fdf5ee";folletoRoundRect(ctx,x+10,top-8,width-20,card.imageHeight+8,14);ctx.fill();
+    folletoDrawImage(ctx,image,x+18,top,width-36,card.imageHeight);
+    top+=card.imageHeight+18;
   }
-  ctx.fillStyle="#000";
+  if(card.continued){
+    folletoFont(ctx,17,true);ctx.fillStyle="#000";
+    ctx.fillText("Código "+card.product.id+" · continuación",textX,top,textWidth);top+=30;
+  }
   for(const block of card.blocks){
-    folletoFont(ctx,block.size,block.bold);
-    for(const line of block.lines){ctx.fillText(line,x+20,top);top+=block.lineHeight;}
+    folletoFont(ctx,block.size,block.bold);ctx.fillStyle="#000";
+    if(block.kind==="price"){
+      const priceHeight=block.lines.length*block.lineHeight+14;
+      ctx.fillStyle="#f0cdd5";folletoRoundRect(ctx,textX-4,top-4,textWidth+8,priceHeight,priceHeight<90?22:14);ctx.fill();
+      ctx.fillStyle="#000";ctx.textAlign="center";
+      for(const line of block.lines){ctx.fillText(line,textX+textWidth/2,top+3);top+=block.lineHeight;}
+      ctx.textAlign="left";top+=14;
+    }else{
+      for(const line of block.lines){ctx.fillText(line,textX,top);top+=block.lineHeight;}
+    }
     top+=block.gap;
   }
 }
 function renderFolleto(snapshot,plan,pageIndex,assets){
   const page=plan.pages[pageIndex],canvas=document.createElement("canvas");
   canvas.width=page.width;canvas.height=page.height;
-  const ctx=canvas.getContext("2d");if(!ctx)throw new Error("No se pudo preparar el folleto.");
-  ctx.textBaseline="top";ctx.fillStyle="#faf5f0";ctx.fillRect(0,0,page.width,page.height);
-  ctx.fillStyle="#f0dbdf";folletoRoundRect(ctx,page.margin,page.margin,page.width-page.margin*2,130);ctx.fill();
-  const logo=assets.logo;
-  if(logo)ctx.drawImage(logo,page.margin+18,page.margin+18,80,80);
-  const headX=page.margin+(logo?118:20),headWidth=page.width-page.margin-headX-20;
-  ctx.fillStyle="#000";folletoFont(ctx,29,true);ctx.fillText("IRENISMB STOCK NATURA",headX,page.margin+20,headWidth);
-  folletoFont(ctx,20);ctx.fillText("Consultores independientes de Natura y AVON",headX,page.margin+59,headWidth);
-  ctx.fillText("Asesoría y pedidos · +57 304 208 8961",headX,page.margin+91,headWidth);
+  const ctx=canvas.getContext("2d");
+  if(!ctx)throw new Error("No se pudo preparar el folleto.");
+  const background=ctx.createLinearGradient(0,0,page.width,page.height);
+  background.addColorStop(0,"#fff7ee");background.addColorStop(.5,"#f9eddf");background.addColorStop(1,"#fae9e7");
+  ctx.textBaseline="top";ctx.fillStyle=background;ctx.fillRect(0,0,page.width,page.height);
+  folletoBotanical(ctx,12,30,1.05);
+  folletoBotanical(ctx,page.width-10,28,1.05,true);
+  ctx.save();ctx.translate(page.width,page.height);ctx.rotate(Math.PI);
+  folletoBotanical(ctx,5,8,.9);ctx.restore();
+  ctx.strokeStyle="#e5d2bf";ctx.lineWidth=1;ctx.strokeRect(22,22,page.width-44,page.height-44);
+  if(page.cover){
+    if(assets.logo)folletoDrawImage(ctx,assets.logo,(page.width-180)/2,70,180,180);
+    ctx.textAlign="center";ctx.fillStyle="#000";folletoFont(ctx,25,true);
+    ctx.fillText("IRENISMB STOCK NATURA",page.width/2,272);
+    ctx.font='700 78px Georgia, "Times New Roman", serif';ctx.fillText("Catálogo",page.width/2,330);
+    ctx.font='400 40px Georgia, "Times New Roman", serif';
+    let titleY=435;
+    for(const line of page.titleLines.slice(0,3)){ctx.fillText(line,page.width/2,titleY,page.width-160);titleY+=50;}
+    folletoFont(ctx,23);ctx.fillText(snapshot.products.length+" productos · Tu selección",page.width/2,titleY+18);
+    ctx.textAlign="left";
+    if(snapshot.settings.images){
+      const imageY=Math.max(660,titleY+90),imageHeight=Math.min(650,page.height-page.margin-page.footer-imageY-50);
+      const imageWidth=(page.width-page.margin*2-36)/3;
+      for(let i=0;i<page.coverProducts.length;i++){
+        const x=page.margin+i*(imageWidth+18);
+        ctx.fillStyle=["#f5dfdf","#f9efdc","#eceddc"][i];
+        folletoRoundRect(ctx,x,imageY+(i===1?-30:20),imageWidth,imageHeight,26);ctx.fill();
+        folletoDrawImage(ctx,assets.images.get(page.coverProducts[i].id),x+14,imageY+(i===1?-16:34),imageWidth-28,imageHeight-28);
+      }
+      folletoBotanical(ctx,28,imageY+imageHeight-90,1.2);
+      folletoBotanical(ctx,page.width-20,imageY-15,1.2,true);
+    }
+    folletoFont(ctx,22);ctx.fillStyle="#000";ctx.textAlign="center";
+    ctx.fillText("Consultores independientes de Natura y AVON",page.width/2,page.height-240);
+    ctx.fillText("Asesoría y pedidos · +57 304 208 8961",page.width/2,page.height-198);
+    folletoFont(ctx,18);ctx.fillText("Página 1 de "+plan.pages.length,page.width/2,page.height-105);
+    ctx.textAlign="left";return canvas;
+  }
+  const headX=page.margin+144,headWidth=page.width-page.margin-headX;
+  if(assets.logo)folletoDrawImage(ctx,assets.logo,page.margin,page.margin-8,120,120);
+  ctx.fillStyle="#000";folletoFont(ctx,18,true);ctx.fillText("IRENISMB STOCK NATURA",headX,page.margin,headWidth);
+  ctx.font='700 40px Georgia, "Times New Roman", serif';
+  let titleY=page.margin+30;
+  for(const line of page.titleLines.slice(0,3)){ctx.fillText(line,headX,titleY,headWidth);titleY+=46;}
+  folletoFont(ctx,18);ctx.fillText("Consultores independientes de Natura y AVON",headX,titleY+4,headWidth);
   for(const card of page.cards)renderFolletoCard(ctx,card,assets.images.get(card.product.id));
-  const footY=page.height-page.margin-page.footer+22;
-  ctx.strokeStyle="#dec9c6";ctx.beginPath();ctx.moveTo(page.margin,footY-12);ctx.lineTo(page.width-page.margin,footY-12);ctx.stroke();
-  folletoFont(ctx,18);ctx.fillStyle="#000";
-  const title=folletoLines(ctx,snapshot.title,page.width-page.margin*2-170);
-  ctx.fillText(title[0]||"Productos",page.margin,footY);
-  ctx.textAlign="right";ctx.fillText(`${pageIndex+1} / ${plan.pages.length}`,page.width-page.margin,footY);ctx.textAlign="left";
-  return canvas;
+  const footY=page.height-page.margin-page.footer+24;
+  ctx.strokeStyle="#d8c3b1";ctx.beginPath();ctx.moveTo(page.margin,footY-14);ctx.lineTo(page.width-page.margin,footY-14);ctx.stroke();
+  folletoFont(ctx,19);ctx.fillStyle="#000";ctx.fillText("Asesoría y pedidos · +57 304 208 8961",page.margin,footY);
+  ctx.textAlign="right";ctx.fillText("Página "+(pageIndex+1)+" de "+plan.pages.length,page.width-page.margin,footY);
+  ctx.textAlign="left";return canvas;
 }
+
+
 function folletoAssertSession(snapshot,signal){
   if(signal?.aborted)throw new DOMException("Generación cancelada.","AbortError");
   if(snapshot.adminExtras&&window.CATALOG_ADMIN_MODE_ACTIVE!==true)throw new Error("La sesión administrativa terminó. Abre de nuevo Folleto.");
@@ -201,26 +323,53 @@ function folletoLoadImage(url,signal){
 function folletoCanvasBlob(canvas,mime="image/png"){
   return new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error("No se pudo preparar el archivo.")),mime,.94));
 }
-async function prepareFolleto(snapshot,formatKey,progress=()=>{},signal){
-  folletoAssertSession(snapshot,signal);await document.fonts?.ready;
-  const ctx=document.createElement("canvas").getContext("2d");
-  const plan=layoutFolleto(snapshot,formatKey,ctx),assets={logo:await folletoLoadImage(COMPANY_LOGO,signal),images:new Map()};
-  const urls=new Map(snapshot.products.map(p=>[p.id,p.imageUrl]));let missing=0;
-  const pages=[];
-  for(let i=0;i<plan.pages.length;i++){
-    folletoAssertSession(snapshot,signal);progress(`Preparando página ${i+1} de ${plan.pages.length}…`);
-    const ids=[...new Set(plan.pages[i].cards.map(c=>c.product.id))];
-    await Promise.all(ids.filter(id=>!assets.images.has(id)).map(async id=>{
-      const image=await folletoLoadImage(urls.get(id),signal);assets.images.set(id,image);
-      if(snapshot.settings.images&&!image)missing++;
-    }));
-    const canvas=renderFolleto(snapshot,plan,i,assets);
-    const blob=await folletoCanvasBlob(canvas,formatKey==="document"?"image/jpeg":"image/png");
-    pages.push({blob,width:canvas.width,height:canvas.height});canvas.width=canvas.height=1;
-    folletoAssertSession(snapshot,signal);await new Promise(resolve=>setTimeout(resolve,0));
+const FOLLETO_ASSET_CACHE=new Map();
+async function folletoCachedImage(url,signal){
+  if(!url)return null;
+  if(FOLLETO_ASSET_CACHE.has(url)){
+    const image=FOLLETO_ASSET_CACHE.get(url);
+    FOLLETO_ASSET_CACHE.delete(url);FOLLETO_ASSET_CACHE.set(url,image);return image;
   }
-  return {snapshot,plan,pages,missing};
+  const image=await folletoLoadImage(url,signal);
+  if(image){
+    FOLLETO_ASSET_CACHE.set(url,image);
+    while(FOLLETO_ASSET_CACHE.size>60)FOLLETO_ASSET_CACHE.delete(FOLLETO_ASSET_CACHE.keys().next().value);
+  }
+  return image;
 }
+function folletoPreparationKey(snapshot,formatKey){return formatKey+":"+JSON.stringify(snapshot);}
+async function prepareFolletoPage(snapshot,plan,index,signal){
+  folletoAssertSession(snapshot,signal);await document.fonts?.ready;
+  const page=plan.pages[index],images=new Map(),missing=new Set();
+  const products=new Map((page.coverProducts||page.cards.map(c=>c.product)).map(p=>[p.id,p]));
+  const [logo]=await Promise.all([
+    folletoCachedImage(COMPANY_LOGO,signal),
+    ...[...products.values()].map(async p=>{
+      const image=await folletoCachedImage(p.imageUrl,signal);
+      images.set(p.id,image);if(snapshot.settings.images&&!image)missing.add(p.id);
+    })
+  ]);
+  folletoAssertSession(snapshot,signal);
+  const canvas=renderFolleto(snapshot,plan,index,{logo,images});
+  const blob=await folletoCanvasBlob(canvas,plan.formatKey==="document"?"image/jpeg":"image/png");
+  const result={blob,width:canvas.width,height:canvas.height,missing};
+  canvas.width=canvas.height=1;folletoAssertSession(snapshot,signal);return result;
+}
+async function prepareFolleto(snapshot,formatKey,progress=()=>{},signal,reuse=null){
+  folletoAssertSession(snapshot,signal);await document.fonts?.ready;
+  const key=folletoPreparationKey(snapshot,formatKey);
+  const cached=reuse?.key===key?reuse:null;
+  const plan=cached?.plan||layoutFolleto(snapshot,formatKey,document.createElement("canvas").getContext("2d"));
+  const pages=[],missing=new Set();
+  for(let i=0;i<plan.pages.length;i++){
+    folletoAssertSession(snapshot,signal);progress("Preparando página "+(i+1)+" de "+plan.pages.length+"…");
+    const page=cached?.pages.get(i)||await prepareFolletoPage(snapshot,plan,i,signal);
+    pages.push(page);for(const id of page.missing)missing.add(id);
+    await new Promise(resolve=>setTimeout(resolve,0));
+  }
+  return {snapshot,plan,pages,missing:missing.size};
+}
+
 
 async function folletoDocumentBlob(result){
   const encoder=new TextEncoder(),parts=[],offsets=[0];let length=0;
@@ -263,63 +412,180 @@ function syncAdministrativeToolVisibility(){
   const invoice=document.getElementById("cartInvoiceBtn");if(invoice)invoice.hidden=window.CATALOG_ADMIN_MODE_ACTIVE!==true;
 }
 function initFolleto(){
-  const button=document.getElementById("folletoBtn");if(!button||document.getElementById("folletoDialog"))return;
+  const button=document.getElementById("folletoBtn");
+  if(!button||document.getElementById("folletoDialog"))return;
+  const icon=paths=>'<svg viewBox="0 0 24 24" aria-hidden="true" class="ui-icon"><path d="'+paths+'"/></svg>';
+  const booklet=icon("M4 3h13l3 3v15H4zM8 8h8M8 12h3M8 16h8M15 3v4h5");
   const dialog=document.createElement("dialog");dialog.id="folletoDialog";dialog.className="folleto-dialog";
   dialog.setAttribute("aria-labelledby","folletoTitle");
-  dialog.innerHTML=`<div class="folleto-heading"><div><h2 id="folletoTitle">Folleto</h2><p>Tu selección, lista para compartir.</p></div><button type="button" class="btn-ghost" id="folletoClose" aria-label="Cerrar Folleto">✕</button></div>
-    <div class="folleto-body"><form id="folletoOptions"><fieldset><legend>Productos a incluir</legend>
-      <label><input name="scope" type="radio" value="branch" checked> Todos desde este nivel</label>
-      <label><input name="scope" type="radio" value="filtered"> Solo filtrados</label>
-      <label><input name="scope" type="radio" value="selected"> Productos seleccionados</label>
-      <small>Selecciona productos en las tarjetas. Si no seleccionas ninguno, se usan los productos del carrito.</small></fieldset>
-      <fieldset><legend>Contenido</legend><label><input name="prices" type="checkbox" checked> Mostrar precio</label><label><input name="descriptions" type="checkbox" checked> Mostrar descripción</label><label><input name="codes" type="checkbox" checked> Mostrar código</label><label><input name="images" type="checkbox" checked> Mostrar imágenes</label></fieldset>
-      <fieldset id="folletoAdminOptions" hidden><legend>Opciones administrativas</legend><label><input name="includeHidden" type="checkbox"> Incluir ocultos</label><label><input name="includeNotForSale" type="checkbox"> Incluir productos no a la venta</label></fieldset>
-    </form><div class="folleto-preview"><p id="folletoSummary"></p><img id="folletoPreviewImage" alt="Vista previa del folleto" hidden><p class="folleto-preview-hint">El diseño se adapta automáticamente a la cantidad de productos.</p></div></div>
-    <p id="folletoStatus" role="status" aria-live="polite"></p><div class="folleto-exports"><button type="button" class="btn-acc" data-folleto-export="instagram">Instagram <small>1080 × 1350 · PNG</small></button><button type="button" class="btn-acc" data-folleto-export="marketplace">Marketplace <small>1200 × 1200 · PNG</small></button><button type="button" class="btn-ghost" data-folleto-export="document">Documento <small>Multipágina · PDF</small></button></div>`;
+  dialog.innerHTML=`<header class="folleto-heading"><div class="folleto-title-group"><span class="folleto-title-icon">${booklet}</span><div><h2 id="folletoTitle">Generar folleto</h2><p>Crea imágenes o un documento con tus productos, listos para compartir.</p></div></div><button type="button" class="folleto-close" id="folletoClose" aria-label="Cerrar Folleto">×</button></header>
+    <div class="folleto-body">
+      <form id="folletoOptions" class="folleto-options">
+        <fieldset class="folleto-scope"><legend><span>1</span> Productos a incluir</legend>
+          <label class="folleto-choice"><input name="scope" type="radio" value="branch" checked><span><strong>Todos desde este nivel</strong><small>Incluye los productos del nivel actual y sus descendientes.</small></span></label>
+          <label class="folleto-choice"><input name="scope" type="radio" value="filtered"><span><strong>Solo filtrados</strong><small>Incluye los productos que coinciden con los filtros actuales.</small></span></label>
+          <label class="folleto-choice"><input name="scope" type="radio" value="selected"><span><strong>Productos seleccionados <span id="folletoSelectedCount"></span></strong><small>Usa tu selección de tarjetas o, si está vacía, los productos del carrito.</small></span></label>
+        </fieldset>
+        <fieldset class="folleto-content"><legend><span>2</span> Opciones de contenido</legend>
+          <div class="folleto-checkboxes"><label><input name="prices" type="checkbox" checked><span>Mostrar precio</span></label><label><input name="descriptions" type="checkbox" checked><span>Mostrar descripción</span></label><label><input name="codes" type="checkbox" checked><span>Mostrar código</span></label><label><input name="images" type="checkbox" checked><span>Mostrar imágenes</span></label></div>
+        </fieldset>
+        <fieldset id="folletoAdminOptions" hidden><legend>Opciones avanzadas <small>Solo administrador</small></legend>
+          <div class="folleto-checkboxes"><label><input name="includeHidden" type="checkbox"><span>Incluir productos ocultos</span></label><label><input name="includeNotForSale" type="checkbox"><span>Incluir productos no a la venta</span></label></div>
+        </fieldset>
+      </form>
+      <section class="folleto-design" aria-label="Diseño y vista previa">
+        <fieldset class="folleto-formats"><legend><span>3</span> Formato de salida</legend><div class="folleto-format-grid">
+          <label class="folleto-format"><input type="radio" name="format" value="instagram" checked><span class="folleto-format-icon">${icon("M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4M8 12a4 4 0 1 0 8 0 4 4 0 0 0-8 0M17 7h.01")}</span><strong>Instagram</strong><small>1080 × 1350</small><span class="folleto-format-note">Publicaciones en PNG</span></label>
+          <label class="folleto-format"><input type="radio" name="format" value="marketplace"><span class="folleto-format-icon">${icon("M3 9l2-6h14l2 6M3 9a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0M5 12v9h14v-9M9 21v-7h6v7")}</span><strong>Marketplace</strong><small>1200 × 1200</small><span class="folleto-format-note">Imágenes para ventas</span></label>
+          <label class="folleto-format"><input type="radio" name="format" value="document"><span class="folleto-format-icon">${booklet}</span><strong>Documento</strong><small>Varias páginas</small><span class="folleto-format-note">Catálogo en PDF</span></label>
+        </div></fieldset>
+        <div class="folleto-preview-heading"><h3><span>4</span> Vista previa</h3><span id="folletoSummary" class="folleto-page-count" aria-live="polite"></span></div>
+        <div class="folleto-preview" id="folletoPreviewStage" aria-busy="false"><div id="folletoPreviewPlaceholder" class="folleto-placeholder">${booklet}<p>Preparando tu diseño…</p></div><img id="folletoPreviewImage" alt="Vista previa del folleto" hidden></div>
+        <nav class="folleto-preview-nav" aria-label="Páginas de la vista previa" hidden><button id="folletoPrevPage" class="btn-ghost" type="button" aria-label="Página anterior">←</button><span id="folletoPageLabel" aria-live="polite"></span><button id="folletoNextPage" class="btn-ghost" type="button" aria-label="Página siguiente">→</button></nav>
+        <p class="folleto-preview-hint" id="folletoDesignHint">Un producto destacado, varios en una composición o un catálogo de varias páginas.</p>
+      </section>
+      <aside class="folleto-summary" aria-label="Resumen del folleto"><h3>Resumen</h3><dl id="folletoSummaryDetails"></dl><div class="folleto-summary-bottom"><p id="folletoStatus" role="status" aria-live="polite"></p><button type="button" id="folletoGenerate" class="folleto-generate">${icon("m12 3 1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3M20 15v6M17 18h6")}<span>Generar folleto</span></button><p class="folleto-output-hint">PNG: copiar y descargar.<br>Documento: descargar PDF.</p><div class="folleto-quick-actions" aria-label="Descarga directa"><button type="button" data-folleto-export="instagram">Instagram</button><button type="button" data-folleto-export="marketplace">Marketplace</button></div></div></aside>
+    </div>`;
   document.body.appendChild(dialog);
-  const form=dialog.querySelector("form"),status=dialog.querySelector("#folletoStatus"),summary=dialog.querySelector("#folletoSummary"),preview=dialog.querySelector("#folletoPreviewImage"),exports=[...dialog.querySelectorAll("[data-folleto-export]")];
-  let controller=null,previewUrl="",busy=false,lastFocus=null;
-  const options=()=>Object.fromEntries([...new FormData(form)].map(([key,value])=>[key,key==="scope"?value:true]));
+  const form=dialog.querySelector("#folletoOptions"),status=dialog.querySelector("#folletoStatus"),
+    summary=dialog.querySelector("#folletoSummary"),details=dialog.querySelector("#folletoSummaryDetails"),
+    preview=dialog.querySelector("#folletoPreviewImage"),placeholder=dialog.querySelector("#folletoPreviewPlaceholder"),
+    stage=dialog.querySelector("#folletoPreviewStage"),nav=dialog.querySelector(".folleto-preview-nav"),
+    pageLabel=dialog.querySelector("#folletoPageLabel"),generate=dialog.querySelector("#folletoGenerate"),
+    outputs=[generate,...dialog.querySelectorAll("[data-folleto-export]")],
+    fields=[...form.elements,...dialog.querySelectorAll('input[name="format"]')],
+    previous=dialog.querySelector("#folletoPrevPage"),next=dialog.querySelector("#folletoNextPage");
+  let previewController=null,exportController=null,previewUrl="",busy=false,lastFocus=null,version=0,
+    state=null,pageIndex=0,timer=null,valid=false;
+  const format=()=>dialog.querySelector('input[name="format"]:checked').value;
   function readOptions(){
-    const value=options();for(const key of ["prices","descriptions","codes","images","includeHidden","includeNotForSale"])value[key]=form.elements[key].checked;return value;
+    const value={scope:form.elements.scope.value};
+    for(const key of ["prices","descriptions","codes","images","includeHidden","includeNotForSale"])value[key]=form.elements[key].checked;
+    return value;
   }
   function syncAdmin(){
-    const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;dialog.querySelector("#folletoAdminOptions").hidden=!admin;
-    for(const key of ["includeHidden","includeNotForSale"]){form.elements[key].disabled=!admin;if(!admin)form.elements[key].checked=false;}
-    form.elements.prices.disabled=!shouldShowProductPrices();if(form.elements.prices.disabled)form.elements.prices.checked=false;
+    const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;
+    dialog.querySelector("#folletoAdminOptions").hidden=!admin;
+    for(const key of ["includeHidden","includeNotForSale"]){form.elements[key].disabled=busy||!admin;if(!admin)form.elements[key].checked=false;}
+    for(const [key,allowed]of [["prices",shouldShowProductPrices()],["images",shouldShowProductImages()]]){
+      form.elements[key].disabled=busy||!allowed;if(!allowed)form.elements[key].checked=false;
+    }
   }
-  function clearPreview(){if(previewUrl)URL.revokeObjectURL(previewUrl);previewUrl="";preview.hidden=true;preview.removeAttribute("src");}
-  function refresh(){
-    syncAdmin();clearPreview();
-    try{const s=buildFolletoSnapshot(readOptions());summary.textContent=`${s.products.length} ${s.products.length===1?"producto":"productos"} · ${s.title}`;for(const b of exports)b.disabled=!s.products.length||busy;status.textContent=s.products.length?"Elige una salida para generar, copiar y descargar.":"No hay productos que cumplan esta selección.";}
-    catch(e){summary.textContent="";status.textContent=e.message;for(const b of exports)b.disabled=true;}
+  function updateActions(){for(const b of outputs)b.disabled=busy||!valid;}
+  function clearPreview(){
+    if(previewUrl)URL.revokeObjectURL(previewUrl);
+    previewUrl="";preview.hidden=true;preview.removeAttribute("src");
   }
-  button.addEventListener("click",()=>{lastFocus=document.activeElement;refresh();dialog.showModal();});
+  function showPlaceholder(message){
+    clearPreview();placeholder.hidden=false;placeholder.querySelector("p").textContent=message;
+  }
+  function summaryRow(label,value){
+    const dt=document.createElement("dt"),dd=document.createElement("dd");
+    dt.textContent=label;dd.textContent=value;details.append(dt,dd);
+  }
+  function updateSummary(snapshot,plan){
+    details.replaceChildren();
+    const count=snapshot.products.length,pages=plan?.pages.length||0,key=format(),selected=FOLLETO_SELECTION.size||cartItemsArray().length;
+    dialog.querySelector("#folletoSelectedCount").textContent="("+selected+")";
+    summary.textContent=count+" "+(count===1?"producto":"productos")+" · "+pages+" "+(pages===1?"página":"páginas");
+    summaryRow("Productos",count);summaryRow("Formato",FOLLETO_FORMATS[key].label);
+    summaryRow("Tamaño",key==="document"?"A4 · PDF":FOLLETO_FORMATS[key].width+" × "+FOLLETO_FORMATS[key].height);
+    summaryRow("Páginas",pages);
+    for(const [label,key]of [["Precio","prices"],["Descripción","descriptions"],["Código","codes"],["Imágenes","images"]])summaryRow(label,snapshot.settings[key]?"Sí":"No");
+    dialog.querySelector("#folletoDesignHint").textContent=count===1?"Diseño tipo ficha: el producto es el protagonista.":"El diseño distribuye los productos y conserva el texto en las páginas necesarias.";
+  }
+  async function showPage(index,token){
+    if(!state||!dialog.open)return;
+    pageIndex=index;stage.setAttribute("aria-busy","true");
+    nav.hidden=state.plan.pages.length<2;
+    previous.disabled=index===0;next.disabled=index===state.plan.pages.length-1;
+    pageLabel.textContent="Página "+(index+1)+" de "+state.plan.pages.length;
+    showPlaceholder("Preparando página "+(index+1)+"…");
+    previewController?.abort();previewController=new AbortController();
+    const current=state,signal=previewController.signal;
+    try{
+      const page=current.pages.get(index)||await prepareFolletoPage(current.snapshot,current.plan,index,signal);
+      if(signal.aborted||token!==version||state!==current||!dialog.open)return;
+      current.pages.set(index,page);
+      while(current.pages.size>6)current.pages.delete(current.pages.keys().next().value);
+      clearPreview();previewUrl=URL.createObjectURL(page.blob);preview.src=previewUrl;preview.hidden=false;placeholder.hidden=true;
+      preview.alt="Vista previa: "+current.snapshot.title+", página "+(index+1)+" de "+current.plan.pages.length;
+      status.textContent=page.missing.size?"En esta página hay "+page.missing.size+" "+(page.missing.size===1?"imagen no disponible.":"imágenes no disponibles."):"Tu vista previa está lista.";
+    }catch(e){
+      if(signal.aborted||token!==version)return;
+      showPlaceholder(e.message||"No se pudo preparar la vista previa.");status.textContent=e.message;
+    }finally{if(token===version&&!signal.aborted)stage.setAttribute("aria-busy","false");}
+  }
+  async function refresh(immediate=false){
+    if(busy)return;
+    clearTimeout(timer);previewController?.abort();version++;state=null;valid=false;nav.hidden=true;
+    syncAdmin();updateActions();showPlaceholder("Preparando tu diseño…");stage.setAttribute("aria-busy","false");
+    const token=version;
+    try{
+      const snapshot=buildFolletoSnapshot(readOptions()),key=format();
+      if(!snapshot.products.length){updateSummary(snapshot,null);showPlaceholder("No hay productos que cumplan esta selección.");status.textContent="Selecciona otros productos o ajusta las opciones.";return;}
+      await document.fonts?.ready;
+      if(token!==version||!dialog.open)return;
+      const plan=layoutFolleto(snapshot,key,document.createElement("canvas").getContext("2d"));
+      state={key:folletoPreparationKey(snapshot,key),snapshot,plan,pages:new Map()};valid=true;
+      updateSummary(snapshot,plan);updateActions();status.textContent="Preparando la vista previa…";
+      if(immediate)showPage(0,token);else timer=setTimeout(()=>showPage(0,token),160);
+    }catch(e){
+      if(token!==version)return;
+      details.replaceChildren();summary.textContent="";showPlaceholder(e.message);status.textContent=e.message;updateActions();
+    }
+  }
+  button.addEventListener("click",()=>{lastFocus=document.activeElement;dialog.showModal();refresh(true);});
   dialog.querySelector("#folletoClose").addEventListener("click",()=>dialog.close());
-  dialog.addEventListener("close",()=>{controller?.abort();clearPreview();lastFocus?.focus?.({preventScroll:true});});
-  form.addEventListener("change",refresh);form.addEventListener("submit",e=>e.preventDefault());
-  document.addEventListener("change",e=>{const id=e.target.dataset?.folletoSelect;if(id){e.target.checked?FOLLETO_SELECTION.add(id):FOLLETO_SELECTION.delete(id);}});
-  window.addEventListener("irenismb:admin-mode-change",()=>{controller?.abort();if(dialog.open)refresh();});
-  for(const output of exports)output.addEventListener("click",async()=>{
-    if(busy)return;busy=true;controller=new AbortController();const signal=controller.signal;
-    const formatKey=output.dataset.folletoExport;
+  dialog.addEventListener("close",()=>{
+    clearTimeout(timer);version++;previewController?.abort();exportController?.abort();state=null;clearPreview();
+    lastFocus?.focus?.({preventScroll:true});
+  });
+  dialog.addEventListener("change",e=>{if(e.target.matches("input"))refresh();});
+  form.addEventListener("submit",e=>e.preventDefault());
+  document.addEventListener("change",e=>{
+    const id=e.target.dataset?.folletoSelect;
+    if(id){e.target.checked?FOLLETO_SELECTION.add(id):FOLLETO_SELECTION.delete(id);if(dialog.open)refresh();}
+  });
+  previous.addEventListener("click",()=>{if(!busy&&state&&pageIndex>0)showPage(pageIndex-1,version);});
+  next.addEventListener("click",()=>{if(!busy&&state&&pageIndex<state.plan.pages.length-1)showPage(pageIndex+1,version);});
+  window.addEventListener("irenismb:admin-mode-change",()=>{
+    previewController?.abort();exportController?.abort();
+    if(dialog.open&&!busy)refresh(true);
+  });
+  async function generateFolleto(formatKey){
+    if(busy||!valid)return;
+    busy=true;clearTimeout(timer);previewController?.abort();exportController=new AbortController();
+    const signal=exportController.signal,oldState=state;
+    fields.forEach(f=>f.disabled=true);previous.disabled=next.disabled=true;updateActions();
     try{
       const snapshot=buildFolletoSnapshot(readOptions());
-      for(const b of exports)b.disabled=true;for(const field of form.elements)field.disabled=true;
-      const prepared=prepareFolleto(snapshot,formatKey,message=>status.textContent=message,signal);
+      const prepared=prepareFolleto(snapshot,formatKey,message=>{if(dialog.open&&!signal.aborted)status.textContent=message;},signal,oldState);
       let clipboard=Promise.resolve(false);
       if(formatKey!=="document"&&navigator.clipboard?.write&&typeof ClipboardItem!=="undefined"){
-        // Start the clipboard operation within the click gesture; image bytes may resolve later.
         const imageBlob=prepared.then(r=>{folletoAssertSession(r.snapshot,signal);return r.pages[0].blob;});
         try{clipboard=Promise.resolve(navigator.clipboard.write([new ClipboardItem({"image/png":imageBlob})])).then(()=>true,()=>false);}catch(_){clipboard=Promise.resolve(false);}
       }
       const result=await exportFolleto(prepared,formatKey,signal,clipboard);
-      clearPreview();
-      previewUrl=URL.createObjectURL(result.pages[0].blob);preview.src=previewUrl;preview.hidden=false;
-      status.textContent=`${result.snapshot.products.length} ${result.snapshot.products.length===1?"producto":"productos"} · ${result.pages.length} ${result.pages.length===1?"página descargada":"páginas descargadas"}.${formatKey!=="document"?(result.copied?" Primera imagen copiada al portapapeles.":" El navegador no permitió copiar; los PNG se descargaron."):""}${result.missing?` ${result.missing} productos con imagen no disponible.`:""}`;
-    }catch(e){status.textContent=e.name==="AbortError"?"Generación cancelada.":e.message||"No se pudo generar el folleto.";}
-    finally{busy=false;for(const field of form.elements)field.disabled=false;syncAdmin();for(const b of exports)b.disabled=false;}
-  });
+      if(!dialog.open||signal.aborted)return;
+      dialog.querySelector('input[name="format"][value="'+formatKey+'"]').checked=true;
+      state={key:folletoPreparationKey(result.snapshot,formatKey),snapshot:result.snapshot,plan:result.plan,
+        pages:new Map(result.pages.slice(0,6).map((p,i)=>[i,p]))};
+      updateSummary(result.snapshot,result.plan);await showPage(0,version);
+      status.textContent=result.snapshot.products.length+" productos · "+result.pages.length+" "+(result.pages.length===1?"página descargada.":"páginas descargadas.")+
+        (formatKey!=="document"?(result.copied?" Primera imagen copiada al portapapeles.":" Los PNG se descargaron; el navegador no permitió copiar."):"")+
+        (result.missing?" "+result.missing+" productos con imagen no disponible.":"");
+    }catch(e){
+      if(dialog.open)status.textContent=e.name==="AbortError"?"Generación cancelada.":e.message||"No se pudo generar el folleto.";
+    }finally{
+      busy=false;fields.forEach(f=>f.disabled=false);syncAdmin();updateActions();
+      if(state){previous.disabled=pageIndex===0;next.disabled=pageIndex===state.plan.pages.length-1;}
+      if(dialog.open&&(!state||(oldState?.snapshot.adminExtras&&window.CATALOG_ADMIN_MODE_ACTIVE!==true)))refresh(true);
+    }
+  }
+  generate.addEventListener("click",()=>generateFolleto(format()));
+  for(const output of dialog.querySelectorAll("[data-folleto-export]"))output.addEventListener("click",()=>generateFolleto(output.dataset.folletoExport));
+
   document.getElementById("bulkAddBtn")?.addEventListener("click",()=>{
     const products=buildFilteredList().filter(p=>!p.isGiftGalleryImage);let added=0,existing=0,unavailable=0;
     for(const p of products){const id=String(p.id);if(cart[id]?.qty>0){existing++;continue;}if(shouldEnforceStockLimits()&&(!Number.isFinite(p.stock)||p.stock<1)){unavailable++;continue;}cart[id]={id:p.id,name:p.name,price:p.price,hasPrice:p.hasPrice!==false,qty:1,stock:p.stock,imgFilename:p.imgFilename||null};added++;}

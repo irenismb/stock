@@ -1764,7 +1764,7 @@
         if(meta){
           meta.textContent = isSection
             ? (album.subtitle || "")
-            : `${album.count} ${unitLabel}`;
+            : "";
         }
       }
 
@@ -1809,7 +1809,7 @@
         }
       }
       setSearchHighlightedText(label,album.label);
-      if(meta) setSearchHighlightedText(meta,meta.textContent || "");
+      if(meta){meta.hidden=!meta.textContent;setSearchHighlightedText(meta,meta.textContent || "");}
 
       return card;
     }

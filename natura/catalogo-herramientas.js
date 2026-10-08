@@ -64,7 +64,7 @@ function folletoLines(ctx,text,width){
   }
   return result;
 }
-function folletoTextBlocks(ctx,p,width,hero){
+function folletoTextBlocks(ctx,p,width,hero,compact=false){
   const blocks=[];
   const add=(text,size,bold=false,gap=8)=>{
     if(!text)return;
@@ -72,8 +72,8 @@ function folletoTextBlocks(ctx,p,width,hero){
     const lines=folletoLines(ctx,text,width);
     blocks.push({lines,size,bold,lineHeight:size*1.22,gap});
   };
-  add(p.line,22);add(p.name,hero?34:26,true,12);
-  add(p.code,20);add(p.price,hero?36:30,true,12);add(p.description,24);
+  add(p.line,compact?18:22);add(p.name,hero?34:compact?22:26,true,12);
+  add(p.code,compact?18:20);add(p.price,hero?36:compact?26:30,true,12);add(p.description,compact?20:24);
   return blocks;
 }
 
@@ -94,9 +94,11 @@ function layoutFolleto(snapshot,formatKey="instagram",ctx){
     y+=rowHeight+gap;row=[];
   };
   for(const p of snapshot.products){
-    const blocks=folletoTextBlocks(ctx,p,cardWidth-40,hero);
+    const compact=snapshot.products.length>2&&snapshot.products.length<=4;
+    const blocks=folletoTextBlocks(ctx,p,cardWidth-40,hero,compact);
     let imageHeight=snapshot.settings.images?(hero?450:snapshot.products.length<=4?260:180):0;
     const textHeight=blocks.reduce((n,b)=>n+b.lines.length*b.lineHeight+b.gap,0);
+    if(compact&&imageHeight){const rowSpace=(available-gap)/2;imageHeight=Math.max(90,Math.min(imageHeight,rowSpace-textHeight-60));}
     const base=40+(imageHeight?imageHeight+20:0);
     if(base+textHeight<=available){row.push({product:p,blocks,imageHeight,width:cardWidth,height:base+textHeight});if(row.length===columns)placeRow();continue;}
     // Split exceptionally long names/descriptions into measured continuation cards.

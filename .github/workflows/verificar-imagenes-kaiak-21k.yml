@@ -1,0 +1,82 @@
+name: Verificar imagenes Kaiak 21K en indice publico Natura
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/verificar-imagenes-kaiak-21k.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 7
+    steps:
+      - name: Descargar configuracion del catalogo
+        uses: actions/checkout@v4
+      - name: Comprobar servicio de imagenes y catalogo sin escrituras
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json, time, urllib.request
+          from pathlib import Path
+
+          endpoint = "https://script.google.com/macros/s/AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w/exec"
+          codigo = Path("natura/catalogo-app.js").read_text(encoding="utf-8")
+          if endpoint not in codigo:
+              raise SystemExit("ERROR: El catalogo no apunta al indice oficial de imagenes.")
+          print("Configuracion de indice en catalogo-app.js: CORRECTA", flush=True)
+
+          expected = {
+              "0581": ("1IQu3dK27MR78FgOBzD4KMZPO_XaBEVni",
+                       "0581_01_natura_kaiak_21k_masculino_eau_de_toilette_100ml.webp"),
+              "0582": ("1aY5EsayzqCE-Keza6OktXaaxNMDs6Js7",
+                       "0582_01_natura_kaiak_21k_femenino_deo_colonia_100ml.webp"),
+          }
+          def read_url(url, maximum=5_000_000):
+              req = urllib.request.Request(
+                  url,
+                  headers={"User-Agent": "Mozilla/5.0 NaturaIndexVerifier/1.0",
+                           "Accept": "application/json,text/html,*/*"},
+              )
+              with urllib.request.urlopen(req, timeout=38) as response:
+                  if response.status != 200:
+                      raise RuntimeError("Respuesta HTTP " + str(response.status))
+                  value = response.read(maximum + 1)
+                  if len(value) > maximum:
+                      raise RuntimeError("Respuesta de tamaño inesperado.")
+                  return value
+
+          last = ""
+          for attempt in range(1, 5):
+              try:
+                  data = json.loads(read_url(endpoint + "?verificar=0581-0582-" + str(attempt)))
+                  if data.get("ok") is not True:
+                      raise RuntimeError("Indice remoto sin ok=true: " + str(data.get("error", ""))[:200])
+                  source = data.get("source") or {}
+                  if source.get("productsFolderId") != "133WAYlDKSt3r8KIObttDcv86eHPmPQ5b":
+                      raise RuntimeError("El indice remoto consulta una carpeta diferente.")
+                  products = data.get("products") or {}
+                  for code, (file_id, name) in expected.items():
+                      matches = [item for item in products.get(code, [])
+                                 if item.get("id") == file_id and item.get("name") == name]
+                      if len(matches) != 1:
+                          raise RuntimeError("Falta imagen exacta en indice público: " + code)
+                      print(f"INDICE {code}: OK {matches[0]['id']} {matches[0]['name']}", flush=True)
+
+                  home = read_url("https://irenismb.github.io/stock/natura/catalogo.html", 2_500_000)
+                  if b"catalogo-app.js" not in home:
+                      raise RuntimeError("El catalogo publicado no enlaza catalogo-app.js.")
+                  print("CATALOGO PUBLICO: HTTP 200 y script de productos enlazado.", flush=True)
+                  print("EXITO: Ambas fotos aparecen en el indice publico que consulta el catalogo.", flush=True)
+                  break
+              except Exception as exc:
+                  last = str(exc)
+                  print(f"INTENTO {attempt}/4: {last}", flush=True)
+                  if attempt == 4:
+                      raise SystemExit("VERIFICACION NO CONFIRMADA: " + last)
+                  time.sleep(35)
+          PY

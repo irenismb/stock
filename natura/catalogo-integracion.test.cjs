@@ -74,6 +74,56 @@ function assess(env,table){env.sandbox.inputTable=table;return env.run('buildCom
 async function confirmed(env,table=visibility){env.reply(table);await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;}
 function fixture(){return tableFromValues([headers,...samples]);}
 
+// DOM acotado para ejecutar las funciones publicadas del editor sin guardar precios.
+function priceEditorEnvironment(){
+  const boundaries=[
+    ['  function clearAdminDecorations(){','  function ensureAdminSidebar(){'],
+    ['  function syncAdminSectionUI(emit=false){','  function setCatalogAdminSection(section){'],
+    ['  function installPrices(){','  function addDescriptionCopy(card){'],
+    ['  function removePrice(card){','  async function savePrice('],
+    ['  function validPrice(v){','  function sendRequest(data,timeout=45000){']
+  ];
+  const selected=boundaries.map(([start,end])=>{
+    const a=adminSource.indexOf(start),b=adminSource.indexOf(end,a);
+    assert.ok(a>=0&&b>a,'Función real del editor disponible');
+    return adminSource.slice(a,b);
+  }).join('\n')+'\n'+adminSource.split('\n').find(line=>line.includes('function syncUI(){'));
+  const classes={add(){},remove(){},toggle(){}};
+  let focused=null,editor=null,created=0,removed=0;
+  const price={textContent:'Consultar precio',hidden:false,insertAdjacentElement(_,node){editor=node;created++;}};
+  const row={classList:classes};
+  const card={dataset:{id:'0245'},querySelector(selector){return selector==='.price-admin-editor'?editor:selector==='.price'?price:selector==='.row'?row:null;}};
+  const grid={hidden:false,querySelectorAll(selector){return [':scope > .card:not(.album-card)','.card'].includes(selector)?[card]:[];}};
+  function node(tag){return {tag,dataset:{},children:[],value:'',disabled:false,append(...children){this.children.push(...children);},remove(){if(this===editor){if(this.children.includes(focused))focused=null;editor=null;removed++;}}};}
+  const context={Intl,admin:true,adminSection:'catalogo',capabilities:new Set(),grid,window:{dispatchEvent(){}},
+    CustomEvent:class{constructor(type,options){this.type=type;this.detail=options.detail;}},
+    document:{body:{classList:classes},getElementById(){return null;},createElement:node},
+    ensureAdminSidebar:()=>({querySelectorAll:()=>[]}),syncConnectionButton(){},addDescriptionCopy(){},
+    visibilityId:(_,code)=>code,productObj:()=>({hasPrice:false,priceText:''}),console};
+  vm.createContext(context);vm.runInContext(selected,context);
+  return {context,get editor(){return editor;},get focused(){return focused;},focus(input){focused=input;},counts:()=>({created,removed})};
+}
+
+test('Actualizar interfaz conserva campo de precio, foco, importe y botón Guardar',()=>{
+  const env=priceEditorEnvironment();env.context.syncUI();
+  const editor=env.editor,input=editor.children[0],save=editor.children[1];
+  input.value='25000';env.focus(input);input.oninput();assert.equal(save.disabled,false);
+  for(let i=0;i<4;i++)env.context.syncUI();
+  assert.equal(env.editor,editor);assert.equal(env.focused,input);assert.equal(input.value,'25000');
+  assert.equal(save.disabled,false);assert.deepEqual(env.counts(),{created:1,removed:0});
+  input.disabled=save.disabled=true;save.textContent='Guardando…';
+  env.context.syncUI();assert.equal(env.editor,editor);assert.equal(input.disabled,true);
+  assert.equal(save.disabled,true);assert.equal(save.textContent,'Guardando…');
+});
+
+test('Cambiar de sección o retirar administración conserva la limpieza de editores',()=>{
+  const env=priceEditorEnvironment();env.context.syncUI();const first=env.editor;
+  env.context.syncAdminSectionUI(true);assert.notEqual(env.editor,first);
+  assert.deepEqual(env.counts(),{created:2,removed:1});
+  env.context.clearAdminDecorations();assert.equal(env.editor,null);
+  assert.deepEqual(env.counts(),{created:2,removed:2});
+});
+
 test('Carga el código real completo y bloquea publicación antes de confirmar Visibilidad',()=>{
   const env=environment(),result=assess(env,fixture());env.sandbox.products=result.products;
   assert.equal(result.report.compatible,3);assert.equal(env.run('filterVisibleProducts(products).length'),0);
@@ -220,7 +270,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  for(const name of ['catalogo-app.js','precios-admin.js'])assert.ok(htmlSource.includes(name+'?actualizacion=compatibilidad-progresiva-2026-10-08-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=compatibilidad-progresiva-2026-10-08-1'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=editor-precio-movil-2026-10-08-1'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{

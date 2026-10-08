@@ -288,7 +288,10 @@
     const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=!showGrid;
     if(config) config.hidden=adminSection!=="configuracion";
     if(prospects) prospects.hidden=adminSection!=="prospectos";
-    clearAdminDecorations();
+    // Las sincronizaciones del observador conservan el editor y su foco.
+    // Limpiar solo al cambiar de sección evita que el propio editor genere
+    // un ciclo de eliminación y reconstrucción dentro del grid observado.
+    if(emit) clearAdminDecorations();
     if(adminSection==="catalogo") installPrices();
     else if(adminSection==="visibilidad") installVisibility();
     try{window.syncCatalogProspectosAdmin?.(adminSection)}catch(e){console.info(e)}

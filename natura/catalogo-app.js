@@ -3011,7 +3011,8 @@ function uxFlashAdded(card,p){
   const btn=card&&card.querySelector('button[data-act="inc"]');
   if(!btn) return;
   btn.classList.add("just-added");
-  btn.textContent="✓ Agregado";
+  const label=btn.querySelector(".cart-action-label");
+  if(label)label.textContent="✓ Agregado";
   setTimeout(()=>{
     btn.classList.remove("just-added");
     if(card&&card.isConnected) refreshCardUI(card,p);

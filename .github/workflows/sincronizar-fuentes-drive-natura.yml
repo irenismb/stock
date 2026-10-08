@@ -1,0 +1,95 @@
+name: Sincronizar fuentes oficiales del catalogo en Drive
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/sincronizar-fuentes-drive-natura.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publicar-apps-script-natura-automaticamente
+  cancel-in-progress: false
+
+jobs:
+  sincronizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Descargar fuentes publicadas
+        uses: actions/checkout@v7
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Verificar catalogo antes de sincronizar
+        run: |
+          node --test natura/catalogo-integracion.test.cjs
+          node --check "natura/apps-script/administrar precios natura/admin-visibilidad.js"
+          node --check "natura/apps-script/administrar precios natura/admin-configuracion.js"
+          node --check "natura/apps-script/administrar precios natura/admin-contextos.js"
+      - name: Instalar clasp para actualizar autorizacion
+        run: npm install --global @google/clasp@3.4.1
+      - name: Restaurar autorizacion Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          if [ -z "$CLASPRC_JSON" ]; then echo "::error::Falta autorizacion";exit 1;fi
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+      - name: Sincronizar en Drive los archivos exactos de GitHub
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+          CLASP_AUTH_FILE: ${{ runner.temp }}/.clasprc.json
+        run: |
+          set -euo pipefail
+          clasp list-scripts >/dev/null
+          python3 - <<'PY'
+          import hashlib,json,os,pathlib,urllib.request,urllib.error,urllib.parse
+          base=pathlib.Path.cwd()
+          files=[
+            ("natura/apps-script/administrar precios natura/admin-contextos.js","1mlZ7aSdjRgmOm8FODPgV_gEEMHROGPmt","admin-contextos.js"),
+            ("natura/apps-script/administrar precios natura/admin-visibilidad.js","1_0cSVLcFYOypzVdsZAAhR4tBLG3cZWTe","admin-visibilidad.js"),
+            ("natura/apps-script/administrar precios natura/admin-configuracion.js","1SkVQs9wm1VyXUlyWVUsKV2mkxL7D0DrW","admin-configuracion.js"),
+            ("natura/catalogo-app.js","1uQCRWBCmYwdOPuFHgXtjfwbEi2GGFIs1","catalogo-app.js"),
+            ("natura/precios-admin.js","1EvJoYuvONtG2Qy5Z3GztAbTwC1HuO4p7","precios-admin.js"),
+            ("natura/catalogo.html","1LxT1S4GdnyZ7ny1sHjWnbW2fGyOPnhLI","catalogo.html"),
+            ("natura/catalogo-integracion.test.cjs","1kR2Hd-LtePQBYxq-XuCE1Ozz8qEvqECH","catalogo-integracion.test.cjs")
+          ]
+          with open(os.environ['CLASP_AUTH_FILE'],encoding='utf-8') as fh: auth=json.load(fh)
+          credentials=((auth.get('tokens') or {}).get('default') or auth.get('token') or auth)
+          token=credentials.get('access_token','')
+          if not token:raise SystemExit('No hay token de Google')
+          authHeader={'Authorization':'Bearer '+token}
+          def send(url,method='GET',body=None,content_type=None):
+            headers=dict(authHeader)
+            if content_type:headers['Content-Type']=content_type
+            req=urllib.request.Request(url,data=body,method=method,headers=headers)
+            try:
+              with urllib.request.urlopen(req,timeout=60) as res:return json.load(res)
+            except urllib.error.HTTPError as err:
+              raise SystemExit('No se pudo sincronizar archivo en Drive: HTTP '+str(err.code)) from err
+          metadata=[]
+          for rel,file_id,name in files:
+            assert (base/rel).is_file()
+            url='https://www.googleapis.com/drive/v3/files/'+urllib.parse.quote(file_id,safe='')+'?fields=id,name,mimeType,trashed,size,md5Checksum'
+            obj=send(url)
+            if obj.get('id')!=file_id or obj.get('name')!=name or obj.get('trashed'):
+              raise SystemExit('ID o nombre de origen inesperado: '+name)
+            if str(obj.get('mimeType') or '').startswith('application/vnd.google-apps.'):
+              raise SystemExit('No se modifica un documento nativo: '+name)
+            metadata.append((rel,file_id,name,obj))
+          print('Verificados',len(metadata),'IDs y nombres en Drive')
+          for rel,file_id,name,old in metadata:
+            content=(base/rel).read_bytes()
+            checksum=hashlib.md5(content).hexdigest()
+            if old.get('md5Checksum')==checksum:
+              print('YA SINCRONIZADO',name);continue
+            mime='text/html' if name.endswith('.html') else 'text/javascript'
+            url='https://www.googleapis.com/upload/drive/v3/files/'+urllib.parse.quote(file_id,safe='')+'?uploadType=media&fields=id,size,md5Checksum'
+            updated=send(url,method='PATCH',body=content,content_type=mime)
+            if updated.get('id')!=file_id or updated.get('md5Checksum')!=checksum:
+              raise SystemExit('Verificacion de bytes incorrecta: '+name)
+            print('SINCRONIZADO',name,len(content),'bytes')
+          PY

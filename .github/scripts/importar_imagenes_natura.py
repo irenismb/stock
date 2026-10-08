@@ -102,6 +102,98 @@ def google(method, url, token, *, params=None, data=None, headers=None, timeout=
         raise ImportErrorNatura("Google devolvio una respuesta no JSON.") from exc
 
 
+def comprobar_inventario_publico(imagenes):
+    """Consulta la MISMA pestaña Productos que utiliza el catálogo web.
+
+    No crea copias y no confía en afirmaciones de la solicitud JSON.
+    """
+    params = {
+        "sheet": "Productos",
+        "headers": "1",
+        "tq": "select *",
+        "tqx": "out:json",
+        "_": str(__import__("time").time_ns()),
+    }
+    endpoint = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET}/gviz/tq"
+    try:
+        response = requests.get(
+            endpoint,
+            params=params,
+            headers={"User-Agent": "Mozilla/5.0 NaturaCatalogVerifier/1.0"},
+            timeout=45,
+        )
+    except requests.RequestException as exc:
+        raise ImportErrorNatura("No se pudo consultar el inventario publico oficial.") from exc
+    if response.status_code != 200:
+        raise ImportErrorNatura(
+            f"Inventario publico inaccesible HTTP {response.status_code}. No se escribio nada."
+        )
+    if len(response.content) > 10 * 1024 * 1024:
+        raise ImportErrorNatura("Inventario publico demasiado grande.")
+    raw = response.text.strip()
+    match = re.fullmatch(
+        r"(?:/\\*.*?\\*/\\s*)?google\\.visualization\\.Query\\.setResponse\\((\\{.*\\})\\);?",
+        raw, flags=re.DOTALL,
+    )
+    if match is None:
+        raise ImportErrorNatura("La respuesta del inventario publico no es Google Visualization JSON.")
+    try:
+        data = json.loads(match.group(1))
+    except (ValueError, TypeError) as exc:
+        raise ImportErrorNatura("JSON de inventario publico ilegible.") from exc
+    if data.get("status") != "ok":
+        raise ImportErrorNatura("El inventario publico devolvio un error de consulta.")
+    table = data.get("table") or {}
+    columns = table.get("cols") or []
+    rows = table.get("rows") or []
+    if not columns or not rows:
+        raise ImportErrorNatura("Inventario publico no contiene filas.")
+    def indice(label):
+        found = [
+            i for i, col in enumerate(columns)
+            if str(col.get("label") or "").strip().casefold() == label.casefold()
+        ]
+        if len(found) != 1:
+            raise ImportErrorNatura(f"Encabezado publico ausente o duplicado: {label}.")
+        return found[0]
+    c, n, ext = indice("Código"), indice("Nombre"), indice("Código Natura")
+    def celda(row, col):
+        cells = row.get("c") or []
+        cell = cells[col] if len(cells) > col else None
+        if not isinstance(cell, dict):
+            return ""
+        value = cell.get("f")
+        return str(value if value is not None else cell.get("v") or "").strip()
+    catalogo = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        cells = row.get("c") or []
+        code_cell = cells[c] if len(cells) > c else None
+        if not isinstance(code_cell, dict):
+            continue
+        raw_code = code_cell.get("v")
+        if isinstance(raw_code, int) and 0 <= raw_code <= 9999:
+            codigo = f"{raw_code:04d}"
+        elif isinstance(raw_code, float) and raw_code.is_integer() and 0 <= raw_code <= 9999:
+            codigo = f"{int(raw_code):04d}"
+        elif isinstance(raw_code, str) and re.fullmatch(r"\\d{1,4}", raw_code.strip()):
+            codigo = raw_code.strip().zfill(4)
+        else:
+            codigo = ""
+        if codigo:
+            catalogo.setdefault(codigo, []).append(row)
+    for item in imagenes:
+        candidates = catalogo.get(item["codigo"], [])
+        if len(candidates) != 1:
+            raise ImportErrorNatura(f"Codigo {item['codigo']} ausente o duplicado en inventario publico.")
+        row = candidates[0]
+        if item["codigo_comercial"] is not None and celda(row, ext) != item["codigo_comercial"]:
+            raise ImportErrorNatura(f"Codigo comercial diferente en inventario oficial: {item['codigo']}.")
+        if item["nombre_contiene"] and item["nombre_contiene"].casefold() not in celda(row, n).casefold():
+            raise ImportErrorNatura(f"Nombre comercial distinto en inventario oficial: {item['codigo']}.")
+
+
 def comprobar_inventario(token, imagenes):
     """Lee el Sheet oficial desde Drive XLSX, sin necesitar Sheets API habilitada."""
     from openpyxl import load_workbook
@@ -115,6 +207,9 @@ def comprobar_inventario(token, imagenes):
         )
     except requests.RequestException as exc:
         raise ImportErrorNatura("No se pudo exportar el inventario desde Drive.") from exc
+    if res.status_code in (401, 403):
+        print("Drive restringe el acceso de esta aplicacion al Sheet. Verificando hoja original mediante la misma consulta publica del catalogo.", flush=True)
+        return comprobar_inventario_publico(imagenes)
     if res.status_code != 200:
         raise ImportErrorNatura(f"Drive no permite exportar el inventario: HTTP {res.status_code}: {res.text[:180]}")
     if len(res.content) > 10 * 1024 * 1024:

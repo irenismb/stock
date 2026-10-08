@@ -415,7 +415,7 @@
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
-        cleanup();
+        // La respuesta JSONP puede llegar después del timeout; onload libera su callback.
         reject(new Error("Tiempo de espera agotado al confirmar el registro de visita."));
       }, 3500);
 
@@ -427,8 +427,9 @@
         resolve(Boolean(payload && payload.ok === true && payload.status === "registered"));
       };
 
+      script.onload = cleanup;
       script.onerror = () => {
-        if (settled) return;
+        if (settled) { cleanup(); return; }
         settled = true;
         clearTimeout(timer);
         cleanup();
@@ -510,7 +511,7 @@
       const timer = setTimeout(() => {
         if (settled) return;
         settled = true;
-        cleanup();
+        // La respuesta JSONP puede llegar después del timeout; onload libera su callback.
         reject(new Error("Tiempo de espera agotado al consultar navegadores propios."));
       }, 3500);
 
@@ -535,8 +536,9 @@
         resolve(ids);
       };
 
+      script.onload = cleanup;
       script.onerror = () => {
-        if (settled) return;
+        if (settled) { cleanup(); return; }
         settled = true;
         clearTimeout(timer);
         cleanup();

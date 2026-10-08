@@ -124,6 +124,7 @@ function layoutFolleto(snapshot,formatKey="instagram",ctx){
   if(hero&&pages.length===1){
     const c=pages[0].cards[0];const growth=Math.max(0,available-c.height);
     if(snapshot.settings.images){c.imageHeight+=growth;c.height+=growth;}
+    else c.y+=growth/2;
   }
   return {formatKey,pages,productCount:snapshot.products.length};
 }
@@ -313,7 +314,7 @@ function initFolleto(){
       const result=await exportFolleto(prepared,formatKey,signal,clipboard);
       clearPreview();
       previewUrl=URL.createObjectURL(result.pages[0].blob);preview.src=previewUrl;preview.hidden=false;
-      status.textContent=`${result.snapshot.products.length} productos · ${result.pages.length} ${result.pages.length===1?"página":"páginas"} descargadas.${formatKey!=="document"?(result.copied?" Primera imagen copiada al portapapeles.":" El navegador no permitió copiar; los PNG se descargaron."):""}${result.missing?` ${result.missing} productos con imagen no disponible.`:""}`;
+      status.textContent=`${result.snapshot.products.length} ${result.snapshot.products.length===1?"producto":"productos"} · ${result.pages.length} ${result.pages.length===1?"página descargada":"páginas descargadas"}.${formatKey!=="document"?(result.copied?" Primera imagen copiada al portapapeles.":" El navegador no permitió copiar; los PNG se descargaron."):""}${result.missing?` ${result.missing} productos con imagen no disponible.`:""}`;
     }catch(e){status.textContent=e.name==="AbortError"?"Generación cancelada.":e.message||"No se pudo generar el folleto.";}
     finally{busy=false;for(const field of form.elements)field.disabled=false;syncAdmin();for(const b of exports)b.disabled=false;}
   });

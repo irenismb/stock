@@ -61,6 +61,6 @@ jobs:
             echo "::error::No se encuentra el despliegue administrativo esperado."
             exit 1
           fi
-          (cd "$reader" && clasp push --force && clasp deploy --description "Lector publico aislado de solo lectura ${GITHUB_SHA}") | tee "$RUNNER_TEMP/lector-deploy.log"
+          (cd "$reader" && clasp push --force && clasp deploy --deploymentId "AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09" --description "Lector publico aislado de solo lectura ${GITHUB_SHA}") | tee "$RUNNER_TEMP/lector-deploy.log"
           echo "El lector publico se publico como version independiente."
           echo "DEPLOY DEL LECTOR: verificar la URL en el registro de esta accion." >> "$GITHUB_STEP_SUMMARY"

@@ -258,8 +258,8 @@
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        range: "A:P",
-        tq: "select A,B,C,D,E,F,G,H,I,J,K,L,M,N,O,P",
+        range: "A:Z",
+        tq: "select *",
         tqx: `out:json;responseHandler:${callbackName}`,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
         // Cada apertura del catálogo consulta la versión más reciente de Productos.
@@ -306,9 +306,14 @@
             return "";
           };
 
+          // Los atributos de la ficha se resuelven por sus encabezados vigentes.
+          const attributeHeaders = new Map((payload.table.cols || []).map((column,index)=>[
+            String(column.label || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim().toLowerCase(),index
+          ]));
           const rows = payload.table.rows.map(row=>{
             const c = Array.isArray(row && row.c) ? row.c : [];
             const value = index => cellValue(c[index]).trim();
+            const attribute = label => attributeHeaders.has(label) ? value(attributeHeaders.get(label)) : "";
             let code = value(0);
             if(/^\d{1,4}$/.test(code)) code = code.padStart(4, "0");
 
@@ -329,6 +334,14 @@
               line: value(13),
               public: value(14),
               commercialStatus: value(15),
+              brand: attribute("marca"),
+              productType: attribute("tipo de producto"),
+              variant: attribute("variante"),
+              characteristic: attribute("caracteristica"),
+              presentation: attribute("presentacion"),
+              content: attribute("contenido"),
+              unit: attribute("unidad"),
+              units: attribute("cantidad de unidades"),
               fullTxtRecord: [
                 value(6),
                 "",
@@ -767,7 +780,14 @@
         public: publicLabel,
         commercialStatus,
         condition,
-        brand: /\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : ""),
+        brand: String(row.brand || "").trim() || (/\bnatura\b/i.test(name) ? "Natura" : (/\bavon\b/i.test(name) ? "AVON" : "")),
+        productType: String(row.productType || "").trim(),
+        variant: String(row.variant || "").trim(),
+        characteristic: String(row.characteristic || "").trim(),
+        presentation: String(row.presentation || "").trim(),
+        content: String(row.content || "").trim(),
+        unit: String(row.unit || "").trim(),
+        units: String(row.units || "").trim(),
         price: parseOptionalWholeNumber(priceText) ?? 0,
         hasPrice: Boolean(priceText),
         cost: parseOptionalWholeNumber(row.costText),

@@ -30,7 +30,7 @@ function buildFolletoSnapshot(options={}){
   }
   source.sort(compareCatalogProductOrder);
   const settings=Object.freeze({
-    prices:options.prices!==false&&shouldShowProductPrices(),
+    prices:false,
     descriptions:options.descriptions!==false,codes:options.codes!==false,
     images:options.images!==false&&shouldShowProductImages()
   });
@@ -38,10 +38,10 @@ function buildFolletoSnapshot(options={}){
   const products=source.filter(p=>{const id=String(p.id);if(seen.has(id))return false;seen.add(id);return true;}).map(p=>Object.freeze({
     id:String(p.id),name:String(p.name||"").trim(),
     description:settings.descriptions?String(p.description||"").trim():"",
-    price:settings.prices&&p.hasPrice!==false?fmtCOP.format(Number(p.price)||0):"",
     code:settings.codes?`Código ${p.id}`:"",
     line:String(p.line||"").trim(),
     presentation:folletoPresentation(p),
+    attributes:Object.freeze(folletoProductAttributes(p)),
     imageUrl:settings.images?String(p.docsImageUrl||"").trim():"",
     route:navigationOrderedLevels().filter(l=>l!=="product").map(l=>String(navigationValueForProduct(p,l)||"").trim()).filter(Boolean).join(" · ")
   }));
@@ -65,23 +65,37 @@ function folletoLines(ctx,text,width){
   }
   return result;
 }
-// Una sola ficha vertical de 4:5 se dibuja en Instagram, Marketplace y A4.
-const FICHA_SIZE=Object.freeze({width:1080,height:1350});
+// Una sola ficha cuadrada, sin precios ni información corporativa, para todas las salidas.
+const FICHA_SIZE=Object.freeze({width:1080,height:1080});
+const FOLLETO_COMPANY=Object.freeze({
+  name:"IRENISMB STOCK NATURA",subtitle:"Consultores independientes de Natura y AVON",
+  phone:"304 208 8961",location:"Los Almendros, Santa Marta",
+  catalog:"irenismb.github.io/stock/natura/catalogo.html"
+});
+const FOLLETO_WHATSAPP_PATH="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z";
 
 function folletoPresentation(p){
   // Tomar únicamente datos literales disponibles; nunca inventar contenidos o tamaños.
-  const explicit=String(p.presentation||p.presentacion||"" ).trim();
+  const explicit=[p.presentation||p.presentacion,[p.content,p.unit].filter(Boolean).join(" "),p.units?`${p.units} unidades`:""].filter(Boolean).join(" · ").trim();
   if(explicit)return explicit;
-  const text=String(p.description||"");
+  const text=String(p.name||"")+" "+String(p.description||"");
   const units=[...text.matchAll(/\b\d+(?:[.,]\d+)?\s*(?:ml|mL|l|L|g|kg|und\.?|unidades)\b/gi)];
   return [...new Set(units.map(m=>m[0].trim()))].slice(0,3).join(" · ");
+}
+function folletoProductAttributes(p){
+  return [["Marca",p.brand],["Línea",p.line],["Tipo",p.productType],
+    ["Variante",p.variant],["Característica",p.characteristic],
+    ["Categoría",p.category],["Subcategoría",p.subcategory],["Público",p.public],
+    ["Familia olfativa",p.fragranceFamily],["Condición",p.condition]]
+    .filter(([,value])=>String(value||"").trim())
+    .map(([label,value])=>Object.freeze({label,value:String(value).trim()}));
 }
 function buildFichaModel(product){
   return {
     id:String(product.id),name:String(product.name||""),
     line:String(product.line||""),presentation:String(product.presentation||""),
     code:String(product.code||""),description:String(product.description||""),
-    price:String(product.price||""),imageUrl:String(product.imageUrl||"")
+    attributes:Array.isArray(product.attributes)?product.attributes:[],imageUrl:String(product.imageUrl||"")
   };
 }
 function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=false){
@@ -105,38 +119,79 @@ function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=
   return {lines,size:minSize,lineHeight};
 }
 function measureFicha(ctx,ficha){
-  // Todas las medidas se calculan sobre la misma ficha maestra de 1080x1350.
-  const textWidth=972;
-  const name=folletoFitText(ctx,ficha.name,textWidth,166,52,25,true);
-  const line=folletoFitText(ctx,ficha.line,textWidth,50,29,19,true);
-  const presentation=folletoFitText(ctx,ficha.presentation,textWidth,68,30,19);
-  const description=folletoFitText(ctx,ficha.description,textWidth,220,32,18,false,true);
-  const code=folletoFitText(ctx,ficha.code,425,44,30,20,true);
-  const price=folletoFitText(ctx,ficha.price,428,44,33,19,true);
-  return {name,line,presentation,description,code,price};
+  const hasImage=Boolean(ficha.imageUrl),textX=hasImage?562:54,textWidth=1080-textX-54;
+  const details=ficha.attributes.map(a=>`${a.label}: ${a.value}`).join("\n");
+  let lastError;
+  // Ajustar la distribución completa antes de reducir o recortar información.
+  for(let descriptionSize=32;descriptionSize>=18;descriptionSize--){
+    try{
+      const description=folletoFitText(ctx,ficha.description,972,470,descriptionSize,descriptionSize);
+      const descriptionHeight=description.lines.length?description.lines.length*description.lineHeight+54:0;
+      const mainHeight=972-descriptionHeight;
+      const name=folletoFitText(ctx,ficha.name,textWidth,Math.min(260,mainHeight*.4),46,24,true);
+      const presentation=folletoFitText(ctx,ficha.presentation,textWidth,95,29,22);
+      const code=folletoFitText(ctx,ficha.code,textWidth,50,32,24,true);
+      const used=name.lines.length*name.lineHeight+presentation.lines.length*presentation.lineHeight
+        +code.lines.length*code.lineHeight+68;
+      const attributes=folletoFitText(ctx,details,textWidth,Math.max(30,mainHeight-used),29,18);
+      return {name,presentation,description,code,attributes,mainHeight,textX,textWidth};
+    }catch(error){lastError=error;}
+  }
+  throw lastError;
 }
+
 function folletoRoundRect(ctx,x,y,w,h,r=18){
   ctx.beginPath();ctx.roundRect(x,y,w,h,r);ctx.closePath();
 }
 function folletoBotanical(ctx,x,y,scale=1,flip=false){
   ctx.save();ctx.translate(x,y);ctx.scale(flip?-scale:scale,scale);
-  ctx.strokeStyle="#c8bca6";ctx.lineWidth=2.5;
-  ctx.beginPath();ctx.moveTo(0,160);ctx.bezierCurveTo(24,98,47,38,94,-20);ctx.stroke();
-  const leaves=[[14,125,-.9,42,"#d2d9bc"],[31,96,.4,52,"#eac9c6"],[47,66,-.7,43,"#d3dabb"],
-    [64,33,.3,45,"#e2b8c5"],[81,5,-.6,35,"#e5cea5"]];
+  ctx.strokeStyle="#b99555";ctx.lineWidth=2;
+  ctx.beginPath();ctx.moveTo(0,230);ctx.bezierCurveTo(24,155,55,68,104,-26);ctx.stroke();
+  const leaves=[[12,195,-.85,70,"#bdc9aa"],[28,155,.45,85,"#d1d9be"],[46,110,-.65,72,"#aebd9f"],
+    [69,57,.45,68,"#c6d0b4"],[91,8,-.6,55,"#e8c9bc"]];
   for(const [lx,ly,angle,size,color]of leaves){
     ctx.save();ctx.translate(lx,ly);ctx.rotate(angle);ctx.fillStyle=color;
     ctx.beginPath();ctx.moveTo(0,0);ctx.bezierCurveTo(-size*.8,-size*.2,-size*.7,-size*.9,0,-size);
     ctx.bezierCurveTo(size*.55,-size*.8,size*.4,-size*.25,0,0);ctx.fill();
-    ctx.strokeStyle="#fffaf1";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-size*.8);ctx.stroke();ctx.restore();
+    ctx.strokeStyle="#f8f2df";ctx.lineWidth=1.2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(0,-size*.8);ctx.stroke();ctx.restore();
+  }
+  // Flor lineal dorada, discreta y fuera de los bloques de lectura.
+  ctx.save();ctx.translate(30,215);ctx.strokeStyle="#b99555";ctx.lineWidth=1.6;
+  for(let petal=0;petal<5;petal++){
+    ctx.rotate(Math.PI*2/5);ctx.beginPath();ctx.moveTo(0,0);
+    ctx.bezierCurveTo(-24,-18,-22,-55,0,-61);ctx.bezierCurveTo(23,-47,26,-16,0,0);ctx.stroke();
   }
   ctx.restore();
+  ctx.restore();
 }
-function folletoDrawImage(ctx,image,x,y,w,h){
+const FOLLETO_IMAGE_FRAMES=new WeakMap();
+function folletoImageFrame(image){
+  if(FOLLETO_IMAGE_FRAMES.has(image))return FOLLETO_IMAGE_FRAMES.get(image);
+  const width=image.naturalWidth,height=image.naturalHeight;
+  let frame={x:0,y:0,width,height};
+  try{
+    const canvas=document.createElement("canvas");canvas.width=canvas.height=96;
+    const ctx=canvas.getContext("2d");ctx.drawImage(image,0,0,96,96);
+    const pixels=ctx.getImageData(0,0,96,96).data;
+    const blank=(x,y)=>{const i=(y*96+x)*4;return pixels[i+3]<12||(pixels[i]>245&&pixels[i+1]>245&&pixels[i+2]>245);};
+    // Quitar únicamente márgenes blancos o transparentes; conservar el producto y su sombra completos.
+    if([[0,0],[95,0],[0,95],[95,95]].every(([x,y])=>blank(x,y))){
+      let left=96,top=96,right=-1,bottom=-1;
+      for(let y=0;y<96;y++)for(let x=0;x<96;x++)if(!blank(x,y)){left=Math.min(left,x);right=Math.max(right,x);top=Math.min(top,y);bottom=Math.max(bottom,y);}
+      if(right>=left&&bottom>=top){
+        left=Math.max(0,left-4);top=Math.max(0,top-4);right=Math.min(95,right+4);bottom=Math.min(95,bottom+4);
+        frame={x:left/96*width,y:top/96*height,width:(right-left+1)/96*width,height:(bottom-top+1)/96*height};
+      }
+    }
+  }catch(_){}
+  FOLLETO_IMAGE_FRAMES.set(image,frame);return frame;
+}
+function folletoDrawImage(ctx,image,x,y,w,h,trimMargins=false){
   if(image){
-    const ratio=Math.min(w/image.naturalWidth,h/image.naturalHeight);
-    const iw=image.naturalWidth*ratio,ih=image.naturalHeight*ratio;
-    ctx.drawImage(image,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
+    const frame=trimMargins?folletoImageFrame(image):{x:0,y:0,width:image.naturalWidth,height:image.naturalHeight};
+    const ratio=Math.min(w/frame.width,h/frame.height);
+    const iw=frame.width*ratio,ih=frame.height*ratio;
+    ctx.drawImage(image,frame.x,frame.y,frame.width,frame.height,x+(w-iw)/2,y+(h-ih)/2,iw,ih);
   }else{
     ctx.fillStyle="#f5e9e3";folletoRoundRect(ctx,x,y,w,h,14);ctx.fill();
     folletoFont(ctx,21);ctx.fillStyle="#000";ctx.textAlign="center";
@@ -147,61 +202,85 @@ function renderFicha(ctx,card,image){
   const {x,y,width,height,product,measure}=card;
   const sx=width/FICHA_SIZE.width,sy=height/FICHA_SIZE.height;
   ctx.save();ctx.translate(x,y);ctx.scale(sx,sy);
-  const bg=ctx.createLinearGradient(0,0,1080,1350);
-  bg.addColorStop(0,"#fffdfb");bg.addColorStop(1,"#fff8f4");
-  ctx.fillStyle=bg;folletoRoundRect(ctx,0,0,1080,1350,32);ctx.fill();
-  ctx.strokeStyle="#e5d4cf";ctx.lineWidth=2;ctx.stroke();
-
-  // Fotografía principal con encuadre completo; no se deforma ni se recorta.
-  const photo=ctx.createLinearGradient(48,46,1032,624);
-  photo.addColorStop(0,"#f6e4eb");photo.addColorStop(.6,"#fbf1e7");photo.addColorStop(1,"#eee9df");
-  ctx.fillStyle=photo;folletoRoundRect(ctx,46,46,988,576,24);ctx.fill();
-  if(image)folletoDrawImage(ctx,image,72,64,936,536);
-  else if(product.imageUrl)folletoDrawImage(ctx,null,72,64,936,536);
-  else{
-    ctx.fillStyle="#f7e9e3";folletoRoundRect(ctx,286,220,508,202,22);ctx.fill();
-    folletoFont(ctx,26);ctx.fillStyle="#000";ctx.textAlign="center";
-    ctx.fillText("Imagen no incluida",540,305);ctx.textAlign="left";
+  const bg=ctx.createLinearGradient(0,0,1080,1080);
+  bg.addColorStop(0,"#fffaf5");bg.addColorStop(.5,"#fff1ed");bg.addColorStop(1,"#fffaf5");
+  ctx.fillStyle=bg;folletoRoundRect(ctx,0,0,1080,1080,28);ctx.fill();
+  ctx.save();ctx.clip();
+  const wash=ctx.createRadialGradient(280,440,20,280,440,580);
+  wash.addColorStop(0,"#f6d5d7");wash.addColorStop(1,"#fff4ee00");
+  ctx.fillStyle=wash;ctx.fillRect(0,0,1080,1080);
+  folletoBotanical(ctx,9,130,.7);folletoBotanical(ctx,1071,100,.65,true);
+  ctx.save();ctx.translate(1080,1080);ctx.rotate(Math.PI);folletoBotanical(ctx,8,25,.8);ctx.restore();
+  ctx.restore();
+  // La foto conserva su proporción y el producto completo. No se usan logos como suplentes.
+  if(product.imageUrl){
+    ctx.save();ctx.globalCompositeOperation="multiply";
+    folletoDrawImage(ctx,image,32,40,498,measure.mainHeight+28,true);ctx.restore();
   }
-  const drawLines=(measure,x,y)=>{
-    if(!measure.lines.length)return;
-    folletoFont(ctx,measure.size,measure.bold||false);
-    for(const text of measure.lines){ctx.fillText(text,x,y);y+=measure.lineHeight;}
-  };
-  ctx.fillStyle="#000";
-  drawLines({...measure.name,bold:true},54,660);
-  drawLines({...measure.line,bold:true},54,833);
-  drawLines(measure.presentation,54,889);
-  // Código y precio son opciones independientes; no ocupar espacio vacío si no existen.
-  const code=measure.code.lines.length>0,price=measure.price.lines.length>0;
-  if(code){
-    ctx.fillStyle="#f2dbe2";folletoRoundRect(ctx,50,966,price?461:520,72,30);ctx.fill();
-    ctx.fillStyle="#000";drawLines({...measure.code,bold:true},75,984);
+  let textY=54;
+  textY=folletoDrawText(ctx,measure.name,measure.textX,textY,measure.textWidth,true)+16;
+  if(measure.presentation.lines.length)textY=folletoDrawText(ctx,measure.presentation,measure.textX,textY,measure.textWidth)+18;
+  if(measure.code.lines.length){
+    ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(measure.textX,textY);ctx.lineTo(1026,textY);ctx.stroke();
+    textY=folletoDrawText(ctx,measure.code,measure.textX,textY+18,measure.textWidth,true)+14;
   }
-  if(price){
-    const priceX=code?554:50;
-    ctx.fillStyle="#f5eae4";folletoRoundRect(ctx,priceX,966,code?474:620,72,30);ctx.fill();
-    ctx.fillStyle="#000";drawLines({...measure.price,bold:true},priceX+23,984);
-  }
+  folletoDrawText(ctx,measure.attributes,measure.textX,textY,measure.textWidth);
   if(measure.description.lines.length){
-    ctx.strokeStyle="#dac3b2";ctx.lineWidth=2;
-    ctx.beginPath();ctx.moveTo(54,1059);ctx.lineTo(1026,1059);ctx.stroke();
-    ctx.fillStyle="#000";drawLines(measure.description,54,1081);
+    const descriptionY=54+measure.mainHeight+20;
+    ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(54,descriptionY);ctx.lineTo(1026,descriptionY);ctx.stroke();
+    folletoDrawText(ctx,measure.description,54,descriptionY+18,972,false,true);
   }
+  ctx.restore();
+}
+function folletoDrawText(ctx,measure,x,y,width,bold=false,justify=false){
+  folletoFont(ctx,measure.size,bold);ctx.fillStyle="#000";ctx.textAlign="left";
+  measure.lines.forEach((line,index)=>{
+    const words=line.split(" ");
+    if(justify&&index<measure.lines.length-1&&words.length>1){
+      const wordWidth=words.reduce((n,word)=>n+ctx.measureText(word).width,0);
+      const spacing=(width-wordWidth)/(words.length-1);
+      // Evitar espacios excesivos en párrafos cortos.
+      if(spacing<measure.size*.8){let left=x;for(const word of words){ctx.fillText(word,left,y);left+=ctx.measureText(word).width+spacing;}}
+      else ctx.fillText(line,x,y);
+    }else ctx.fillText(line,x,y);
+    y+=measure.lineHeight;
+  });
+  return y;
+}
+function renderFolletoPDFHeader(ctx,width,assets){
+  const x=85,y=85,w=width-170,h=192;
+  ctx.save();ctx.textBaseline="top";ctx.textAlign="left";
+  const bg=ctx.createLinearGradient(x,y,x+w,y+h);bg.addColorStop(0,"#f8e5e3");bg.addColorStop(.5,"#fffaf5");bg.addColorStop(1,"#f8e5e3");
+  ctx.fillStyle=bg;folletoRoundRect(ctx,x,y,w,h,16);ctx.fill();
+  folletoBotanical(ctx,x+5,y+14,.34);folletoBotanical(ctx,x+w-5,y+14,.34,true);
+  ctx.save();ctx.globalCompositeOperation="multiply";folletoDrawImage(ctx,assets.logo,x+14,y+23,132,132);ctx.restore();
+  const companyX=x+164,companyWidth=490,contactX=x+668,contactWidth=w-688;
+  const company=folletoFitText(ctx,FOLLETO_COMPANY.name,companyWidth,72,29,25,true);
+  const nameBottom=folletoDrawText(ctx,company,companyX,y+34,companyWidth,true);
+  const subtitle=folletoFitText(ctx,FOLLETO_COMPANY.subtitle,companyWidth,62,21,18);
+  folletoDrawText(ctx,subtitle,companyX,nameBottom+10,companyWidth);
+  ctx.save();ctx.translate(contactX,y+34);ctx.scale(40/24,40/24);ctx.fillStyle="#18A957";
+  ctx.fill(new Path2D(FOLLETO_WHATSAPP_PATH));ctx.restore();
+  const phone=folletoFitText(ctx,FOLLETO_COMPANY.phone,contactWidth-50,44,30,25,true);
+  folletoDrawText(ctx,phone,contactX+50,y+37,contactWidth-50,true);
+  const location=folletoFitText(ctx,FOLLETO_COMPANY.location,contactWidth,55,21,18);
+  folletoDrawText(ctx,location,contactX,y+89,contactWidth);
+  const url=folletoFitText(ctx,FOLLETO_COMPANY.catalog,w-190,35,20,18);
+  folletoDrawText(ctx,url,companyX,y+153,w-190);
+  ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.stroke();
   ctx.restore();
 }
 function folletoCardPositions(width,height,count,formatKey){
   // Máximo cuatro fichas completas por lienzo o página A4.
   const pdf=formatKey==="document",margin=pdf?85:46,gap=pdf?34:22;
-  const footer=pdf?60:0;
+  const footer=pdf?50:0,top=margin+(pdf?220:0);
   const columns=count===1?1:2,rows=Math.ceil(count/columns);
-  const areaHeight=height-2*margin-footer;
+  const areaHeight=height-margin-top-footer;
   const cardWidth=Math.min((width-2*margin-(columns-1)*gap)/columns,
-    (areaHeight-(rows-1)*gap)/rows*(4/5));
-  const cardHeight=cardWidth*5/4;
-  const gridWidth=columns*cardWidth+(columns-1)*gap;
+    (areaHeight-(rows-1)*gap)/rows);
+  const cardHeight=cardWidth;
   const gridHeight=rows*cardHeight+(rows-1)*gap;
-  const baseX=(width-gridWidth)/2,baseY=margin+(areaHeight-gridHeight)/2;
+  const baseY=top+(pdf?0:(areaHeight-gridHeight)/2);
   return Array.from({length:count},(_,i)=>{
     const row=Math.floor(i/columns),itemsHere=Math.min(columns,count-row*columns);
     const rowWidth=itemsHere*cardWidth+(itemsHere-1)*gap;
@@ -235,6 +314,7 @@ function renderFolleto(snapshot,plan,pageIndex,assets){
   const background=ctx.createLinearGradient(0,0,page.width,page.height);
   background.addColorStop(0,"#fff8f1");background.addColorStop(.6,"#fbefe6");background.addColorStop(1,"#f9eae7");
   ctx.textBaseline="top";ctx.fillStyle=background;ctx.fillRect(0,0,page.width,page.height);
+  if(plan.formatKey==="document")renderFolletoPDFHeader(ctx,page.width,assets);
   for(const card of page.cards)renderFicha(ctx,card,assets.images.get(card.product.id));
   if(plan.formatKey==="document"){
     ctx.fillStyle="#000";folletoFont(ctx,16);
@@ -285,12 +365,16 @@ async function prepareFolletoPage(snapshot,plan,index,signal){
   folletoAssertSession(snapshot,signal);await document.fonts?.ready;
   const page=plan.pages[index],images=new Map(),missing=new Set();
   const products=new Map(page.cards.map(c=>[c.product.id,c.product]));
-  await Promise.all([...products.values()].map(async p=>{
+  const [logo]=await Promise.all([
+    plan.formatKey==="document"?folletoCachedImage("logos/logo_empresa.png",signal):null,
+    ...[...products.values()].map(async p=>{
     const image=await folletoCachedImage(p.imageUrl,signal);
     images.set(p.id,image);if(snapshot.settings.images&&!image)missing.add(p.id);
-  }));
+    })
+  ]);
   folletoAssertSession(snapshot,signal);
-  const canvas=renderFolleto(snapshot,plan,index,{images});
+  if(plan.formatKey==="document"&&!logo)throw new Error("No se pudo cargar el logo del encabezado. Intenta generar el PDF de nuevo.");
+  const canvas=renderFolleto(snapshot,plan,index,{images,logo});
   const blob=await folletoCanvasBlob(canvas,plan.formatKey==="document"?"image/jpeg":"image/png");
   const result={blob,width:canvas.width,height:canvas.height,missing};
   canvas.width=canvas.height=1;folletoAssertSession(snapshot,signal);return result;
@@ -367,7 +451,7 @@ function initFolleto(){
           <label class="folleto-choice"><input name="scope" type="radio" value="selected"><span><strong>Productos seleccionados <span id="folletoSelectedCount"></span></strong><small>Usa tu selección de tarjetas o, si está vacía, los productos del carrito.</small></span></label>
         </fieldset>
         <fieldset class="folleto-content"><legend><span>2</span> Opciones de contenido</legend>
-          <div class="folleto-checkboxes"><label><input name="prices" type="checkbox" checked><span>Mostrar precio</span></label><label><input name="descriptions" type="checkbox" checked><span>Mostrar descripción</span></label><label><input name="codes" type="checkbox" checked><span>Mostrar código</span></label><label><input name="images" type="checkbox" checked><span>Mostrar imágenes</span></label></div>
+          <div class="folleto-checkboxes"><label><input name="descriptions" type="checkbox" checked><span>Mostrar descripción</span></label><label><input name="codes" type="checkbox" checked><span>Mostrar código</span></label><label><input name="images" type="checkbox" checked><span>Mostrar imágenes</span></label></div>
         </fieldset>
         <fieldset id="folletoAdminOptions" hidden><legend>Opciones avanzadas <small>Solo administrador</small></legend>
           <div class="folleto-checkboxes"><label><input name="includeHidden" type="checkbox"><span>Incluir productos ocultos</span></label><label><input name="includeNotForSale" type="checkbox"><span>Incluir productos no a la venta</span></label></div>
@@ -400,14 +484,14 @@ function initFolleto(){
   const format=()=>dialog.querySelector('input[name="format"]:checked').value;
   function readOptions(){
     const value={scope:form.elements.scope.value};
-    for(const key of ["prices","descriptions","codes","images","includeHidden","includeNotForSale"])value[key]=form.elements[key].checked;
+    for(const key of ["descriptions","codes","images","includeHidden","includeNotForSale"])value[key]=form.elements[key].checked;
     return value;
   }
   function syncAdmin(){
     const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;
     dialog.querySelector("#folletoAdminOptions").hidden=!admin;
     for(const key of ["includeHidden","includeNotForSale"]){form.elements[key].disabled=busy||!admin;if(!admin)form.elements[key].checked=false;}
-    for(const [key,allowed]of [["prices",shouldShowProductPrices()],["images",shouldShowProductImages()]]){
+    for(const [key,allowed]of [["images",shouldShowProductImages()]]){
       form.elements[key].disabled=busy||!allowed;if(!allowed)form.elements[key].checked=false;
     }
   }
@@ -431,8 +515,8 @@ function initFolleto(){
     summaryRow("Productos",count);summaryRow("Formato",FOLLETO_FORMATS[key].label);
     summaryRow("Tamaño",key==="document"?"A4 · PDF":FOLLETO_FORMATS[key].width+" × "+FOLLETO_FORMATS[key].height);
     summaryRow("Páginas",pages);
-    for(const [label,key]of [["Precio","prices"],["Descripción","descriptions"],["Código","codes"],["Imágenes","images"]])summaryRow(label,snapshot.settings[key]?"Sí":"No");
-    dialog.querySelector("#folletoDesignHint").textContent=count===1?"Ficha individual 4:5: fotografía y datos del producto, sin encabezado.":"Cada collage o página reúne hasta cuatro fichas de producto completas.";
+    for(const [label,key]of [["Descripción","descriptions"],["Código","codes"],["Imágenes","images"]])summaryRow(label,snapshot.settings[key]?"Sí":"No");
+    dialog.querySelector("#folletoDesignHint").textContent=key==="document"?"Fichas cuadradas sin precio, con encabezado de la empresa en cada página del PDF.":"Fichas cuadradas con información del producto, sin precio ni datos de la empresa. Hasta cuatro por imagen.";
   }
   async function showPage(index,token){
     if(!state||!dialog.open)return;

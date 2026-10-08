@@ -1,0 +1,24 @@
+{
+  "imagenes": [
+    {
+      "codigo": "0581",
+      "numero": 1,
+      "nombre_descriptivo": "natura_kaiak_21k_masculino_eau_de_toilette_100ml",
+      "imagen_url": "https://production.na01.natura.com/dw/image/v2/BFKR_PRD/on/demandware.static/-/Sites-natura-co-storefront-catalog/default/dw9f7dde18/products/NATCOL-228525_1.jpg?q=80&sw=1200",
+      "pagina_fuente": "https://www.natura.com.co/p/eau-de-toilette-kaiak-21k-masculino-100-ml/NATCOL-228525",
+      "codigo_comercial": "NATCOL-228525",
+      "nombre_contiene": "Kaiak",
+      "aprobada": true
+    },
+    {
+      "codigo": "0582",
+      "numero": 1,
+      "nombre_descriptivo": "natura_kaiak_21k_femenino_deo_colonia_100ml",
+      "imagen_url": "https://production.na01.natura.com/dw/image/v2/BFKR_PRD/on/demandware.static/-/Sites-natura-br-storefront-catalog/default/dwcdd2f645/Produtos/NATBRA-236375_1.jpg?q=80&sw=1200",
+      "pagina_fuente": "https://www.natura.com.br/p/desodorante-colonia-kaiak-21k-feminino-100-ml/NATBRA-236375",
+      "codigo_comercial": "NATBRA-236375",
+      "nombre_contiene": "Kaiak",
+      "aprobada": true
+    }
+  ]
+}

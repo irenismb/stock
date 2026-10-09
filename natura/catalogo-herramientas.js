@@ -152,7 +152,7 @@ function catalogFichaName(product){
   const name=String(product.name||"");
   return name.replace(quantity,(value,offset)=>{
     // Preserve multipack expressions unless their entire presentation is repeated.
-    if(/[x×]\s*$/i.test(name.slice(0,offset)))return value;
+    if(/\b\d+\s*[x×]\s*$/i.test(name.slice(0,offset)))return value;
     return contents.has(token(value))?"":value;
   }).replace(/\(\s*\)/g,"").replace(/\s+/g," ").replace(/[\s·,;:+–—-]+$/g,"").trim()||name;
 }

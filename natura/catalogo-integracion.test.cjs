@@ -271,8 +271,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-proporcionales-2026-10-09-3'));
-  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=fichas-proporcionales-2026-10-09-3'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-proporcionales-2026-10-09-4'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=fichas-proporcionales-2026-10-09-4'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{
@@ -356,6 +356,7 @@ test('El título omite solo los contenidos repetidos y conserva el nombre oficia
     ['Perfume 50 mL','50 ml','Perfume'],
     ['Tratamiento 1,5 L','1.5 l','Tratamiento'],
     ['Kit 2 x 50 ml','50 ml','Kit 2 x 50 ml'],
+    ['Natura desodorante unisex 80 g','80 g','Natura desodorante unisex'],
     ['Labial tono 50','50 ml','Labial tono 50']
   ];
   for(const [name,presentation,expected] of cases){

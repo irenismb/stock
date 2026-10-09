@@ -100,6 +100,13 @@ test('Agregar todos y Folleto toman únicamente los resultados de asesoría; lim
   assert.deepEqual(Array.from(env.run('buildFilteredList().map(p=>p.id)')),['9981']);
   env.run('resetDiscoveryFilters()');assert.equal(env.run('buildFilteredList().length'),2);
 });
+test('Abrir una recomendación muestra sus códigos; Inicio vuelve al catálogo completo',()=>{
+  const env=environment();env.sandbox.products=[{id:'9981',name:'A',needs:[],searchKey:'a',price:25,hasPrice:true},{id:'9982',name:'B',needs:[],searchKey:'b',price:50,hasPrice:true}];
+  env.sandbox.location.href='https://irenismb.github.io/stock/natura/catalogo.html?seleccion=9982';
+  env.run('all=products;advisoryState.initialized=true;readAdvisoryFiltersFromUrl()');
+  assert.deepEqual(Array.from(env.run('buildFilteredList().map(p=>p.id)')),['9982']);
+  env.run('resetDiscoveryFilters()');assert.equal(env.run('buildFilteredList().length'),2);
+});
 test('Lector público excluye costos, campos desconocidos, secciones ocultas, medicamentos y productos no vendidos',()=>{
   const source=fs.readFileSync(path.join(__dirname,'apps-script','lector publico natura','Lector.js'),'utf8'),context=vm.createContext({console,Set,Map,Date});vm.runInContext(source,context);
   const labels=['Código','Nombre','Precio','Costo','Sección','Categoría','Subcategoría','Público','Línea','Estado comercial','Necesidades de asesoría','Campo interno futuro'];

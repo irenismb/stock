@@ -2298,7 +2298,7 @@
     function catalogUrlHasExplicitViewState(){
       try{
         const params=new URL(location.href).searchParams;
-        return ["q","sort","tags","section","category","subcategory","public","line","audience","gender","family","cat","brand","album"]
+        return ["q","sort","tags","section","category","subcategory","public","line","audience","gender","family","cat","brand","album","seleccion","necesidad","presupuesto"]
           .some(key=>params.has(key));
       }catch(_){
         return false;
@@ -2609,7 +2609,7 @@
     }
 
     function resetDiscoveryFilters(){
-      advisoryState.facets={};advisoryState.needs.clear();advisoryState.budget=null;advisoryState.includeUnknown=false;
+      advisoryState.facets={};advisoryState.needs.clear();advisoryState.budget=null;advisoryState.includeUnknown=false;advisoryState.sharedCodes=null;
       const budget=document.getElementById("advisorBudget"),unknown=document.getElementById("advisorIncludeUnknown");if(budget)budget.value="";if(unknown)unknown.checked=false;
       if(qInp) qInp.value = "";
       if(catSel) catSel.value = "";
@@ -2642,6 +2642,7 @@
       const searchableSource = terms.length ? filterSearchExcludedProducts(source) : source;
 
       let filtered = searchableSource.filter(p=>{
+        if(!window.CATALOG_ADMIN_MODE_ACTIVE && advisoryState.sharedCodes && !advisoryState.sharedCodes.has(String(p.id)))return false;
         if(!window.CATALOG_ADMIN_MODE_ACTIVE && advisoryExperienceAvailable() && !p.isGiftGalleryImage && !advisoryMatches(p)) return false;
         if(terms.length){
           return terms.every(t => p.searchKey.includes(t));
@@ -2686,7 +2687,7 @@
 
     // Asesoría comparte la selección de Folleto y respeta los niveles activos.
     const ADVISORY_FACETS = Object.freeze({brand:"advisorBrand",line:"advisorLine",productType:"advisorType",variant:"advisorVariant",presentation:"advisorPresentation",public:"advisorPublic"});
-    const advisoryState = {facets:{},needs:new Set(),budget:null,includeUnknown:false,comparison:new Set(),comparisonOpen:false,initialized:false};
+    const advisoryState = {facets:{},needs:new Set(),budget:null,includeUnknown:false,sharedCodes:null,comparison:new Set(),comparisonOpen:false,initialized:false};
 
     function advisoryExperienceAvailable(){return !!document.getElementById("advisorBrowse");}
     function advisoryPrice(product){
@@ -2729,10 +2730,12 @@
       if(advisoryState.needs.size)url.searchParams.set("necesidad",[...advisoryState.needs].join(";"));else url.searchParams.delete("necesidad");
       if(advisoryState.budget!==null)url.searchParams.set("presupuesto",String(advisoryState.budget));else url.searchParams.delete("presupuesto");
       if(advisoryState.includeUnknown)url.searchParams.set("sin_precio","1");else url.searchParams.delete("sin_precio");
+      if(advisoryState.sharedCodes)url.searchParams.set("seleccion",[...advisoryState.sharedCodes].join(","));else url.searchParams.delete("seleccion");
     }
     function readAdvisoryFiltersFromUrl(){
       if(!advisoryState.initialized)return;
       const query=new URL(location.href).searchParams;
+      advisoryState.sharedCodes=query.has("seleccion")?new Set((query.get("seleccion")||"").split(",").filter(id=>/^\d{4}$/.test(id))):null;
       advisoryState.facets={};for(const field of Object.keys(ADVISORY_FACETS))advisoryState.facets[field]=query.get("asesoria_"+field)||"";
       advisoryState.needs=new Set((query.get("necesidad")||"").split(";").filter(Boolean));
       const budget=query.get("presupuesto"),amount=Number(budget);advisoryState.budget=budget!==null&&budget!==""&&Number.isFinite(amount)&&amount>=0?amount:null;
@@ -2866,7 +2869,7 @@
       syncAdvisorySelection();
       if(window.CATALOG_ADMIN_MODE_ACTIVE)return false;
       grid.classList.remove("album-grid-mode");
-      const source=currentProductSourceList(),eligible=source.filter(p=>!p.isGiftGalleryImage);
+      const source=currentProductSourceList().filter(p=>!advisoryState.sharedCodes||advisoryState.sharedCodes.has(String(p.id))),eligible=source.filter(p=>!p.isGiftGalleryImage);
       renderAdvisoryFacets(eligible);
       const albumsHost=document.getElementById("advisorAlbums");albumsHost.replaceChildren();
       const terms=getCombinedWordTerms();
@@ -2896,7 +2899,7 @@
       if(renderProducts){
         grid.replaceChildren();const fragment=document.createDocumentFragment();
         if(!filtered.length)fragment.append(makeEmptyState("No hay productos con estos filtros."));else for(const p of filtered)fragment.append(makeCard(p));grid.append(fragment);
-        document.getElementById("advisorResultsTitle").textContent=selectedCategory?`Opciones de ${selectedCategory.toLocaleLowerCase("es")}`:"Opciones para ti";scheduleJsonLdUpdate(filtered);
+        document.getElementById("advisorResultsTitle").textContent=advisoryState.sharedCodes?"Selección compartida":selectedCategory?`Opciones de ${selectedCategory.toLocaleLowerCase("es")}`:"Opciones para ti";scheduleJsonLdUpdate(filtered);
       }else if(viewMode.mode==="albums"){
         grid.replaceChildren(makeEmptyState(albumsHost.children.length?"Elige una opción para continuar":"No hay opciones con estos filtros."));
         document.getElementById("advisorResultsTitle").textContent="Explora tus opciones";scheduleJsonLdUpdate([]);
@@ -2911,6 +2914,7 @@
     function initAdvisoryExperience(){
       if(!advisoryExperienceAvailable()||advisoryState.initialized)return;advisoryState.initialized=true;
       const query=new URL(location.href).searchParams;
+      advisoryState.sharedCodes=query.has("seleccion")?new Set((query.get("seleccion")||"").split(",").filter(id=>/^\d{4}$/.test(id))):null;
       for(const [field,id] of Object.entries(ADVISORY_FACETS)){
         advisoryState.facets[field]=query.get("asesoria_"+field)||"";
         document.getElementById(id).addEventListener("change",event=>{advisoryState.facets[field]=event.target.value;render();});

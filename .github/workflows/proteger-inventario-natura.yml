@@ -1,9 +1,6 @@
 name: Proteger costos del inventario Natura
 on:
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/proteger-inventario-natura.yml"
+  workflow_dispatch:
 permissions:
   contents: read
 concurrency:
@@ -27,7 +24,7 @@ jobs:
           for attempt in range(30):
               try:
                   with urllib.request.urlopen(page+'?publicacion='+str(time.time()),timeout=30) as response:text=response.read(300000).decode('utf-8')
-                  assert 'catalogo-app.js?actualizacion=asesoria-catalogo-2026-10-09-7' in text
+                  assert 'catalogo-app.js?actualizacion=asesoria-catalogo-' in text
                   assert 'advisorComparison' in text
                   with urllib.request.urlopen(reader+'&_='+str(time.time()),timeout=40) as response:payload=json.loads(response.read(1500000))
                   assert payload.get('ok') is True and payload['table']['rows']

@@ -176,6 +176,7 @@ function renderCatalogFicha(card,p){
   main.append(image,facts);square.append(main,details);
   const extra=document.createElement("div");extra.className="ficha-extra";extra.hidden=true;
   card.prepend(square);square.insertAdjacentElement("afterend",extra);
+  image.querySelector("img").addEventListener("load",()=>drawCatalogFichaImage(card));
   details.addEventListener("toggle",()=>{
     if(details.classList.contains("ficha-description-inline"))return;
     square.classList.toggle("ficha-description-expanded",details.open);
@@ -206,9 +207,12 @@ function fitCatalogFicha(card){
   const expanded=details.open&&!details.classList.contains("ficha-description-inline");
   square.style.setProperty("--ficha-side",width+"px");
   square.classList.remove("ficha-description-expanded");
+  square.classList.remove("ficha-compact");
   details.classList.remove("ficha-description-inline");details.open=false;
   if(attributes.parentNode!==facts)facts.insertBefore(attributes,row);
   extra.hidden=true;
+  // Keep normal attributes in the square at a readable size before using a continuation.
+  if(facts.scrollHeight>main.clientHeight+1)square.classList.add("ficha-compact");
   // Unusually extensive attributes stay complete in a continuation within the same article.
   if(facts.scrollHeight>main.clientHeight+1){extra.append(attributes);extra.hidden=false;}
   if(!details.hidden){
@@ -223,6 +227,21 @@ function fitCatalogFicha(card){
     }
   }
   CATALOG_FICHA_LAYOUT_KEYS.set(card,key);
+  drawCatalogFichaImage(card);
+}
+function drawCatalogFichaImage(card){
+  const box=card.querySelector(".img"),image=box?.querySelector("img");
+  if(!image?.complete||!image.naturalWidth||image.dataset.fallbackTried==="1")return;
+  const rect=box.getBoundingClientRect();if(!rect.width||!rect.height)return;
+  const scale=Math.min(window.devicePixelRatio||1,2),width=Math.round(rect.width*scale),height=Math.round(rect.height*scale);
+  const key=image.currentSrc+"|"+width+"|"+height;
+  if(box.dataset.fichaImageKey===key)return;
+  let canvas=box.querySelector(".ficha-product-image");
+  if(!canvas){canvas=document.createElement("canvas");canvas.className="ficha-product-image";canvas.setAttribute("aria-hidden","true");box.append(canvas);}
+  canvas.width=width;canvas.height=height;
+  // Reuse Folleto's white-margin detection and proportional renderer; the original image keeps zoom and alt text.
+  folletoDrawImage(canvas.getContext("2d"),image,0,0,width,height,true);
+  box.classList.add("ficha-image-ready");box.dataset.fichaImageKey=key;
 }
 function initCatalogFichas(){
   if(catalogFichasInitialized)return;catalogFichasInitialized=true;

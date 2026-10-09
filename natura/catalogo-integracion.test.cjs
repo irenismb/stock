@@ -271,7 +271,7 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-cuadradas-2026-10-09-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-cuadradas-2026-10-09-2'));
   assert.ok(htmlSource.includes('precios-admin.js?actualizacion=lector-publico-control-2026-10-08-1'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });

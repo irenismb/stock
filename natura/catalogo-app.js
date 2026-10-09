@@ -976,6 +976,7 @@
       }
 
       const preferredUrl = String(docsImageUrl || "").trim();
+      if(preferredUrl) img.crossOrigin = "anonymous";
       const allowReal = shouldShowProductImages() && Boolean(preferredUrl);
 
       if(!allowReal){

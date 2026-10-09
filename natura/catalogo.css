@@ -788,6 +788,45 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 
 
 /* Fichas de producto: identidad compartida con Folleto y texto interactivo. */
+.social-contact-intro{display:none}
+.footer-product-benefits{display:flex;justify-content:space-between;flex-wrap:wrap;gap:18px;list-style:none;margin:0;padding:0;grid-column:1/-1}
+.footer-product-benefits li{display:flex;align-items:center;gap:10px;font-size:13px;line-height:1.4}
+.footer-product-benefits .ui-icon{width:40px;height:40px;padding:9px;box-sizing:border-box;border-radius:50%;background:#f4dfe3}
+.footer-product-benefits li:nth-child(2) .ui-icon{background:#e9e9d9}
+@media(min-width:761px){
+  .catalog-layout{grid-template-columns:clamp(170px,16vw,230px) minmax(0,1fr) clamp(220px,18vw,270px)}
+  .catalog-navigation .social-contact-card{position:relative;overflow:hidden;max-width:none;margin:18px 0 0;padding:18px 16px;border:1px solid var(--line);border-radius:14px;background:radial-gradient(ellipse at 100% 100%,#e4e7d8 0,transparent 36%),radial-gradient(ellipse at 90% 95%,#f5dadc 0,transparent 45%),#fffaf7;box-shadow:var(--shadow-sm)}
+  .catalog-navigation .social-contact-card h2{text-align:left;font-size:24px;margin:0 0 12px;padding-bottom:12px;border-bottom:2px solid #efc8cd}
+  .catalog-navigation .social-contact-intro{display:block;font-size:13px;line-height:1.5;margin:0 0 14px}
+  .catalog-navigation .social-icons{grid-template-columns:minmax(0,1fr);grid-template-rows:none;gap:4px;margin:0}
+  .catalog-navigation .social-row>*{grid-column:auto!important}
+  .catalog-navigation .social-icons a,.catalog-navigation .social-icons button{flex-direction:row;justify-content:flex-start;align-items:center;gap:12px;padding:5px 0;min-height:36px}
+  .catalog-navigation .social-icons .social-brand-icon,.catalog-navigation .social-icons .social-share-btn svg,.catalog-navigation .social-icons a[aria-label="Llamar"] svg{width:29px;height:29px;margin:0;flex:none}
+  .catalog-navigation .social-label{font-size:12px;text-align:left}
+  .catalog-contact .footer-visit-card{display:block;min-height:0;border-radius:14px}
+  .catalog-contact .footer-visit-content{padding:19px 16px;position:relative;z-index:1}
+  .catalog-contact .footer-visit-card h2{font-size:25px;margin:0 0 18px;padding-bottom:12px}
+  .catalog-contact .footer-contact-line{gap:10px;align-items:flex-start;margin-bottom:22px}
+  .catalog-contact .footer-contact-line:last-child{margin-bottom:0}
+  .catalog-contact .footer-contact-icon{flex-basis:39px;width:39px;height:39px}
+  .catalog-contact .footer-contact-icon svg{width:23px;height:23px}
+  .catalog-contact .footer-contact-line p{font-size:13px}
+  .catalog-contact .footer-phone{font-size:clamp(18px,1.5vw,25px);white-space:normal}
+  .catalog-contact .footer-botanical{position:absolute;inset:0 0 0 auto;width:45%;opacity:.13;pointer-events:none}
+  .site-footer{margin-top:0;padding:14px 0 22px;border:0;background:transparent}
+  .footer-products-card{grid-template-columns:65px minmax(0,1fr);gap:18px;padding:18px 22px;border-radius:15px}
+  .footer-products-icon{width:62px;height:62px}
+  .footer-products-icon svg{width:39px;height:39px}
+  .footer-products-copy{padding-left:18px}
+  .footer-products-card h2{font-size:25px;margin-bottom:8px;padding-bottom:9px}
+  .footer-products-copy p{font-size:12px;line-height:1.45}
+  .footer-product-benefits{justify-content:flex-start;padding-top:12px;border-top:1px solid var(--line)}
+}
+@media(min-width:1200px){
+  .footer-products-card{grid-template-columns:65px minmax(0,1fr) auto}
+  .footer-product-benefits{grid-column:auto;flex-wrap:nowrap;gap:18px;padding:0 0 0 18px;border-top:0;border-left:1px solid var(--line)}
+  .footer-product-benefits li{font-size:12px}
+}
 #grid:has(>.catalog-ficha-card){grid-template-columns:repeat(auto-fill,minmax(min(100%,350px),1fr));align-items:start;gap:22px}
 .card.catalog-ficha-card{align-self:start;background:var(--ficha-paper,#fffaf5);border-radius:15px;isolation:isolate}
 .catalog-ficha-card .ficha-square{height:var(--ficha-side,auto);aspect-ratio:1;display:flex;flex-direction:column;gap:0;padding:calc(16 * var(--ficha-unit,1px));background:radial-gradient(ellipse at 25% 42%,var(--ficha-wash,#f6d5d7),transparent 65%),linear-gradient(135deg,var(--ficha-paper,#fffaf5),var(--ficha-center,#fff1ed),var(--ficha-paper,#fffaf5))}

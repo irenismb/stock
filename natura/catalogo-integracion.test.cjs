@@ -271,8 +271,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-proporcionales-2026-10-09-4'));
-  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=fichas-proporcionales-2026-10-09-4'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{
@@ -373,5 +373,53 @@ test('Folleto conserva datos oficiales de la ficha y exportación sin precio',as
   assert.equal(snapshot.products.length,1);assert.equal(snapshot.settings.prices,false);
   assert.equal(snapshot.products[0].name,env.sandbox.products[0].name);
   assert.equal(snapshot.products[0].code,'Código 9997');
+});
+test('Precio de Folleto es opcional, conserva los importes reales y distingue precio desconocido',async()=>{
+  const env=environment();await confirmed(env);vm.runInContext(toolsSource,env.context);
+  env.sandbox.products=assess(env,fixture()).products;
+  env.run('allLoadedProducts=products;window.CATALOG_INITIAL_LOAD_READY=true');
+  const original=env.sandbox.products[0].price;
+  const withPrice=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997","9998"],prices:true})');
+  assert.equal(withPrice.settings.prices,true);
+  assert.equal(withPrice.products.find(p=>p.id==='9997').priceText,new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(original));
+  assert.equal(withPrice.products.find(p=>p.id==='9998').priceText,'Consultar precio');
+  const withoutPrice=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997","9998"],prices:false})');
+  assert.equal(withoutPrice.settings.prices,false);assert.ok(withoutPrice.products.every(p=>p.priceText===''));
+  env.sandbox.a=withPrice;env.sandbox.b=withoutPrice;
+  assert.notEqual(env.run('folletoPreparationKey(a,"marketplace")'),env.run('folletoPreparationKey(b,"marketplace")'));
+  assert.equal(env.sandbox.products[0].price,original);
+});
+test('Ficha exportada ajusta datos y precio juntos, conserva descripción completa y los tres formatos',()=>{
+  const rendered=[];
+  const ctx={font:'400 32px Arial',measureText(text){return {width:String(text).length*parseFloat(this.font.match(/([\d.]+)px/)[1])*.52};},
+    save(){},restore(){},translate(){},scale(){},beginPath(){},roundRect(){},closePath(){},fill(){},clip(){},fillRect(){},moveTo(){},lineTo(){},stroke(){},
+    createLinearGradient(){return {addColorStop(){}};},createRadialGradient(){return {addColorStop(){}};},fillText(text){rendered.push(text);}};
+  const p={id:'9997',name:'Producto ficticio con atributos extensos',presentation:'50 ml',code:'Código 9997',priceText:'$ 194.975',description:'Descripción completa. '.repeat(65),attributes:Array.from({length:9},(_,i)=>({label:'Dato '+i,value:'Información ficticia extensa para comprobar ajuste proporcional'}))};
+  const context=vm.createContext({ctx,p});vm.runInContext(toolsSource,context);
+  const measure=vm.runInContext('measureFicha(ctx,buildFichaModel(p))',context);context.measure=measure;
+  assert.ok(measure.scale<1);assert.equal(measure.name.size/46,measure.price.size/44);
+  assert.equal(measure.attributes.size/33,measure.price.size/44);
+  assert.equal(measure.description.lines.join(' '),p.description.trim());
+  vm.runInContext('renderFicha(ctx,{x:0,y:0,width:1080,height:1080,product:buildFichaModel(p),measure},null)',context);
+  assert.ok(rendered.includes(p.priceText));assert.ok(rendered.some(t=>t.includes('Información')));
+  for(const key of ['instagram','marketplace','document']){
+    context.key=key;const plan=vm.runInContext('layoutFolleto({products:[p]},key,ctx)',context);
+    assert.equal(plan.pages.length,1);assert.equal(plan.pages[0].cards[0].width,plan.pages[0].cards[0].height);
+    assert.equal(plan.pages[0].cards[0].product.priceText,p.priceText);
+    const format=vm.runInContext('FOLLETO_FORMATS[key]',context);assert.equal(plan.pages[0].width,format.width);assert.equal(plan.pages[0].height,format.height);
+  }
+});
+test('Información lateral usa los mismos nodos y restaura el orden móvil sin duplicar enlaces',()=>{
+  const container=()=>({children:[],append(node){node.parentNode?.children.splice(node.parentNode.children.indexOf(node),1);this.children.push(node);node.parentNode=this;},prepend(node){node.parentNode?.children.splice(node.parentNode.children.indexOf(node),1);this.children.unshift(node);node.parentNode=this;}});
+  const social={},visit={},products={},socialHome=container(),visitHome=container(),left=container(),right=container();
+  socialHome.append(social);visitHome.append(visit);visitHome.append(products);
+  const media={matches:true,addEventListener(_,fn){this.change=fn;}};
+  const document={querySelector:selector=>({'.social-contact-card':social,'.footer-visit-card':visit,'.catalog-navigation':left,'.catalog-contact':right}[selector])};
+  const context=vm.createContext({document,window:{matchMedia:()=>media}});vm.runInContext(toolsSource,context);vm.runInContext('initCatalogInformationLayout()',context);
+  assert.equal(social.parentNode,left);assert.equal(visit.parentNode,right);assert.equal(socialHome.hidden,true);
+  for(let i=0;i<3;i++){
+    media.matches=false;media.change();assert.equal(social.parentNode,socialHome);assert.equal(visitHome.children[0],visit);assert.equal(visitHome.children[1],products);assert.equal(socialHome.hidden,false);
+    media.matches=true;media.change();assert.equal(left.children.length,1);assert.equal(right.children.length,1);
+  }
 });
 

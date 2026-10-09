@@ -45,13 +45,14 @@ function buildFolletoSnapshot(options={}){
   }
   source.sort(compareCatalogProductOrder);
   const settings=Object.freeze({
-    prices:false,
+    prices:options.prices===true,
     descriptions:options.descriptions!==false,codes:options.codes!==false,
     images:options.images!==false&&shouldShowProductImages()
   });
   const seen=new Set();
   const products=source.filter(p=>{const id=String(p.id);if(seen.has(id))return false;seen.add(id);return true;}).map(p=>Object.freeze({
-    id:String(p.id),name:String(p.name||"").trim(),
+    id:String(p.id),name:settings.prices?catalogFichaName(p):String(p.name||"").trim(),
+    priceText:settings.prices?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"",
     description:settings.descriptions?String(p.description||"").trim():"",
     code:settings.codes?`Código ${p.id}`:"",
     line:String(p.line||"").trim(),
@@ -95,7 +96,7 @@ function folletoLines(ctx,text,width){
   }
   return result;
 }
-// Una sola ficha cuadrada, sin precios ni información corporativa, para todas las salidas.
+// Una sola ficha cuadrada, con precio opcional, para todas las salidas.
 const FICHA_SIZE=Object.freeze({width:1080,height:1080});
 // Shared palette and image blending for exported and interactive fichas.
 const FICHA_THEME=Object.freeze({paper:"#fffaf5",center:"#fff1ed",wash:"#f6d5d7",line:"#bb9151",blend:"multiply"});
@@ -141,7 +142,7 @@ function buildFichaModel(product){
   return {
     id:String(product.id),name:String(product.name||""),
     line:String(product.line||""),presentation:String(product.presentation||""),
-    code:String(product.code||""),description:String(product.description||""),
+    code:String(product.code||""),description:String(product.description||""),priceText:String(product.priceText||""),
     attributes:Array.isArray(product.attributes)?product.attributes:[],imageUrl:String(product.imageUrl||"")
   };
 }
@@ -268,6 +269,7 @@ function drawCatalogFichaImage(card){
 }
 function initCatalogFichas(){
   if(catalogFichasInitialized)return;catalogFichasInitialized=true;
+  initCatalogInformationLayout();
   for(const [key,value] of Object.entries(FICHA_THEME))document.documentElement.style.setProperty("--ficha-"+key,value);
   const grid=document.getElementById("grid");if(!grid)return;
   if(typeof ResizeObserver!=="undefined")new ResizeObserver(queueCatalogFichaLayout).observe(grid);
@@ -280,6 +282,19 @@ function initCatalogFichas(){
   window.addEventListener("irenismb:admin-section-change",queueCatalogFichaLayout);
   document.fonts?.ready.then(()=>{document.querySelectorAll(".catalog-ficha-card").forEach(c=>CATALOG_FICHA_LAYOUT_KEYS.delete(c));queueCatalogFichaLayout();});
   queueCatalogFichaLayout();
+}
+function initCatalogInformationLayout(){
+  const social=document.querySelector(".social-contact-card"),visit=document.querySelector(".footer-visit-card");
+  const left=document.querySelector(".catalog-navigation"),right=document.querySelector(".catalog-contact");
+  if(!social||!visit||!left||!right)return;
+  const socialHome=social.parentNode,visitHome=visit.parentNode;
+  const desktop=window.matchMedia("(min-width:761px)");
+  function arrange(){
+    socialHome.hidden=desktop.matches;
+    if(desktop.matches){left.append(social);right.append(visit);}
+    else{socialHome.append(social);visitHome.prepend(visit);}
+  }
+  desktop.addEventListener("change",arrange);arrange();
 }
 
 function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=false){
@@ -303,6 +318,7 @@ function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=
   return {lines,size:minSize,lineHeight};
 }
 function measureFicha(ctx,ficha){
+  if(ficha.priceText)return measureFichaPriced(ctx,ficha);
   const hasImage=Boolean(ficha.imageUrl),textX=hasImage?562:54,textWidth=1080-textX-54;
   let lastError;
   // Ajustar la distribución completa antes de reducir o recortar información.
@@ -321,6 +337,32 @@ function measureFicha(ctx,ficha){
     }catch(error){lastError=error;}
   }
   throw lastError;
+}
+function measureFichaPriced(ctx,ficha){
+  const textX=ficha.imageUrl?562:54,textWidth=1026-textX;
+  // The exported image cannot expand: preserve the complete description and scale all facts together.
+  for(let descriptionSize=32;descriptionSize>=1;descriptionSize--){
+    let description;
+    try{description=folletoFitText(ctx,ficha.description,972,470,descriptionSize,descriptionSize);}catch(_){continue;}
+    const mainHeight=972-(description.lines.length?description.lines.length*description.lineHeight+54:0);
+    function atScale(scale){
+      const fit=(text,size,bold=false)=>folletoFitText(ctx,text,textWidth,mainHeight,size*scale,size*scale,bold);
+      const name=fit(ficha.name,46,true),presentation=fit(ficha.presentation,36),code=fit(ficha.code,33);
+      const attributes=folletoFitAttributes(ctx,ficha.attributes,textWidth,mainHeight,33*scale,33*scale);
+      const price=fit(ficha.priceText,44,true);
+      const used=[name,presentation,code,attributes,price].reduce((total,m)=>total+m.lines.length*m.lineHeight,0)+88*scale+4;
+      if(used>mainHeight)throw new Error("Ajustando datos de la ficha.");
+      return {name,presentation,code,attributes,price,description,mainHeight,textX,textWidth,scale,priced:true};
+    }
+    try{return atScale(1);}catch(_){}
+    let low=0,high=1,result=null;
+    for(let i=0;i<12;i++){
+      const scale=(low+high)/2;
+      try{result=atScale(scale);low=scale;}catch(_){high=scale;}
+    }
+    if(result)return result;
+  }
+  throw new Error("No se pudo acomodar la descripción completa en la ficha.");
 }
 function folletoAttributeLines(ctx,attributes,width,size){
   const lines=[];
@@ -422,13 +464,19 @@ function renderFicha(ctx,card,image){
     folletoDrawImage(ctx,image,32,40,498,measure.mainHeight+28,true);ctx.restore();
   }
   let textY=54;
-  textY=folletoDrawText(ctx,measure.name,measure.textX,textY,measure.textWidth,true)+16;
-  if(measure.presentation.lines.length)textY=folletoDrawText(ctx,measure.presentation,measure.textX,textY,measure.textWidth)+18;
+  const spacing=measure.scale||1;
+  textY=folletoDrawText(ctx,measure.name,measure.textX,textY,measure.textWidth,true,Boolean(measure.priced))+16*spacing;
+  if(measure.presentation.lines.length)textY=folletoDrawText(ctx,measure.presentation,measure.textX,textY,measure.textWidth)+18*spacing;
   if(measure.code.lines.length){
     ctx.strokeStyle=FICHA_THEME.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(measure.textX,textY);ctx.lineTo(1026,textY);ctx.stroke();
-    textY=folletoDrawText(ctx,measure.code,measure.textX,textY+18,measure.textWidth,true)+14;
+    textY=folletoDrawText(ctx,measure.code,measure.textX,textY+18*spacing,measure.textWidth,!measure.priced)+14*spacing;
   }
   folletoDrawText(ctx,measure.attributes,measure.textX,textY,measure.textWidth);
+  if(measure.price?.lines.length){
+    const priceY=54+measure.mainHeight-measure.price.lines.length*measure.price.lineHeight;
+    ctx.strokeStyle=FICHA_THEME.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(measure.textX,priceY-18*spacing);ctx.lineTo(1026,priceY-18*spacing);ctx.stroke();
+    folletoDrawText(ctx,measure.price,measure.textX,priceY,measure.textWidth,true);
+  }
   if(measure.description.lines.length){
     const descriptionY=54+measure.mainHeight+20;
     ctx.strokeStyle=FICHA_THEME.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(54,descriptionY);ctx.lineTo(1026,descriptionY);ctx.stroke();
@@ -738,7 +786,7 @@ function initFolleto(){
           <label class="folleto-choice"><input name="scope" type="radio" value="selected"><span><strong>Productos seleccionados <span id="folletoSelectedCount"></span></strong><small>Usa tu selección de tarjetas o, si está vacía, los productos del carrito.</small></span></label>
         </fieldset>
         <fieldset class="folleto-content"><legend><span>2</span> Opciones de contenido</legend>
-          <div class="folleto-checkboxes"><label><input name="descriptions" type="checkbox" checked><span>Mostrar descripción</span></label><label><input name="codes" type="checkbox" checked><span>Mostrar código</span></label><label><input name="images" type="checkbox" checked><span>Mostrar imágenes</span></label></div>
+          <div class="folleto-checkboxes"><label><input name="descriptions" type="checkbox" checked><span>Mostrar descripción</span></label><label><input name="codes" type="checkbox" checked><span>Mostrar código</span></label><label><input name="images" type="checkbox" checked><span>Mostrar imágenes</span></label><label><input name="prices" type="checkbox"><span>Mostrar precio</span></label></div>
         </fieldset>
         <fieldset id="folletoAdminOptions" hidden><legend>Opciones avanzadas <small>Solo administrador</small></legend>
           <div class="folleto-checkboxes"><label><input name="includeHidden" type="checkbox"><span>Incluir productos ocultos</span></label><label><input name="includeNotForSale" type="checkbox"><span>Incluir productos no a la venta</span></label></div>
@@ -773,7 +821,7 @@ function initFolleto(){
   const format=()=>dialog.querySelector('input[name="format"]:checked').value;
   function readOptions(){
     const value={scope:form.elements.scope.value};
-    for(const key of ["descriptions","codes","images","includeHidden","includeNotForSale"])value[key]=form.elements[key].checked;
+    for(const key of ["descriptions","codes","images","prices","includeHidden","includeNotForSale"])value[key]=form.elements[key].checked;
     return value;
   }
   function syncAdmin(){
@@ -805,8 +853,9 @@ function initFolleto(){
     summaryRow("Productos",count);summaryRow("Formato",FOLLETO_FORMATS[key].label);
     summaryRow("Tamaño",key==="document"?"A4 · PDF":FOLLETO_FORMATS[key].width+" × "+FOLLETO_FORMATS[key].height);
     summaryRow("Páginas",pages);
-    for(const [label,key]of [["Descripción","descriptions"],["Código","codes"],["Imágenes","images"]])summaryRow(label,snapshot.settings[key]?"Sí":"No");
-    dialog.querySelector("#folletoDesignHint").textContent=key==="document"?"Fichas cuadradas sin precio, con encabezado de la empresa en cada página del PDF.":"Fichas cuadradas con información del producto, sin precio ni datos de la empresa. Hasta cuatro por imagen.";
+    for(const [label,key]of [["Descripción","descriptions"],["Código","codes"],["Imágenes","images"],["Precio","prices"]])summaryRow(label,snapshot.settings[key]?"Sí":"No");
+    const priceHint=snapshot.settings.prices?"con precio":"sin precio";
+    dialog.querySelector("#folletoDesignHint").textContent=key==="document"?"Fichas cuadradas "+priceHint+", con encabezado de la empresa en cada página del PDF.":"Fichas cuadradas "+priceHint+" e información del producto, sin datos de la empresa. Hasta cuatro por imagen.";
   }
   async function showPage(index,token){
     if(!state||!dialog.open)return;

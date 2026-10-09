@@ -140,6 +140,32 @@ test('Reordenar todas las columnas conserva identidad, nombre, valores y atribut
   table.cols.reverse();table.rows.forEach(row=>row.c.reverse());
   assert.deepEqual(clone(assess(env,table).products),clone(expected));
 });
+test('El catálogo usa el esquema sin Familia olfativa y busca el perfil dentro de Descripción',()=>{
+  const env=environment(),table=fixture();
+  const familyIndex=table.cols.findIndex(col=>col.label==='Familia olfativa');
+  const descriptionIndex=table.cols.findIndex(col=>col.label==='Descripción');
+  assert.ok(familyIndex>=0&&descriptionIndex>=0);
+  const description='Fragancia floral fresca con matices frutales para salir de día.';
+  table.rows[0].c[descriptionIndex]={v:description,f:description};
+  table.rows[0].c[familyIndex]={v:'Florales y frutales',f:'Florales y frutales'};
+  table.cols.splice(familyIndex,1);
+  table.rows.forEach(row=>row.c.splice(familyIndex,1));
+  const result=assess(env,table);
+  assert.equal(result.report.compatible,3);
+  const product=result.products[0];
+  assert.equal(product.description,description);
+  assert.ok(product.searchKey.includes('floral'));
+  assert.ok(product.searchKey.includes('frutales'));
+  assert.equal(Object.hasOwn(product,'fragranceFamily'),false);
+  env.sandbox.productWithoutFamily=product;
+  assert.doesNotMatch(env.run('stockMetaText(productWithoutFamily)'),/florales y frutales/i);
+});
+test('Las fichas descargables no requieren el atributo Familia olfativa',()=>{
+  const helperSource=fs.readFileSync(path.join(__dirname,'catalogo-herramientas.js'),'utf8');
+  assert.equal(helperSource.includes('p.fragranceFamily'),false);
+  assert.equal(helperSource.includes('["Familia olfativa"'),false);
+});
+
 test('Conserva decimales reales y separa el texto usado para edición optimista',()=>{
   const env=environment(),product=assess(env,fixture()).products[0];
   assert.equal(product.price,194974.5);assert.equal(product.priceText,'194.975');

@@ -253,12 +253,10 @@
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
 
     function googleSheetQueryUrl(callbackName){
-      const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
+      const base = REMOTE_CONTROL_SOURCE.endpoint;
       const query = new URLSearchParams({
-        sheet: GOOGLE_SHEET_SOURCE.sheetName,
-        headers: "1",
-        tq: "select *",
-        tqx: `out:json;responseHandler:${callbackName}`,
+        modo: "productos",
+        callback: callbackName,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
         // Cada apertura del catálogo consulta la versión más reciente de Productos.
         _: `${Date.now()}_${Math.random().toString(36).slice(2)}`
@@ -307,7 +305,9 @@
         referenceExternal:"Referencia externa", description:"Descripción", codeNatura:"Código Natura",
         line:"Línea", public:"Público", commercialStatus:"Estado comercial", brand:"Marca",
         productType:"Tipo de producto", variant:"Variante", characteristic:"Característica",
-        presentation:"Presentación", content:"Contenido", unit:"Unidad", units:"Cantidad de unidades"
+        presentation:"Presentación", content:"Contenido", unit:"Unidad", units:"Cantidad de unidades",
+        needsText:"Necesidades de asesoría", useInstructions:"Modo de uso", suitableFor:"Adecuado para",
+        model:"Modelo", componentClass:"Clase de componente"
       };
       const rows = [];
       for(const [index, source] of table.rows.entries()){
@@ -327,12 +327,21 @@
           row.stockValue = catalogCellNumber(cell("Stock")).value;
           row.contentValue = catalogCellNumber(cell("Contenido")).value;
           row.unitsValue = catalogCellNumber(cell("Cantidad de unidades")).value;
+          row.components = [];
+          for(let componentIndex=1;componentIndex<=4;componentIndex++){
+            const componentName=catalogCellText(cell(`Nombre del componente ${componentIndex}`));
+            if(!componentName) continue;
+            row.components.push({name:componentName,
+              units:catalogCellText(cell(`Cantidad de unidades del componente ${componentIndex}`)),
+              content:catalogCellText(cell(`Contenido del componente ${componentIndex}`)),
+              unit:catalogCellText(cell(`Unidad del componente ${componentIndex}`))});
+          }
           if(!/^\d{4}$/.test(row.code)) row.technicalIssues.push({reason:"Código ausente o inválido", change:"Informar un Código entero de hasta cuatro dígitos."});
           if(!row.name || /^#(?:REF!|VALUE!|N\/A|ERROR!|NAME\?|DIV\/0!|NUM!)/i.test(row.name)) row.technicalIssues.push({reason:"Nombre vigente vacío o con error", change:"Corregir el dato o la fórmula de Nombre en el catálogo original."});
           if(!row.category) row.technicalIssues.push({reason:"Categoría vacía", change:"Completar Categoría para identificar la ficha y registrar pedidos."});
           if(!row.section) row.technicalIssues.push({reason:"Sección vacía", change:"Completar Sección para aplicar sus reglas de publicación."});
           if(!price.valid) row.technicalIssues.push({reason:"Precio informado no es un número válido no negativo", change:"Corregir Precio como número real en Sheets o conservarlo vacío si se desconoce."});
-          row.fullTxtRecord = [row.name, "", `Precio: ${row.priceText} Costo: ${row.costText} Stock: ${row.stockText} Referencia externa: ${row.referenceExternal}. ${row.description}`].join("\n");
+          row.fullTxtRecord = [row.name, "", `Precio: ${row.priceText} Stock: ${row.stockText}. ${row.description}`].join("\n");
           rows.push(row);
         }catch(_){
           rows.push({code:"", sourceRow:index + 2, technicalIssues:[{reason:"Fila de Productos no legible", change:"Revisar la estructura de esa fila en el catálogo original."}]});
@@ -393,10 +402,10 @@
           window.clearTimeout(timer);
           cleanup();
 
-          if(!payload || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
+          if(!payload || payload.ok !== true || payload.status !== "ok" || !payload.table || !Array.isArray(payload.table.rows)){
             const errors = payload && Array.isArray(payload.errors) ? payload.errors : [];
             const detail = errors.map(e => e && (e.detailed_message || e.message)).filter(Boolean).join(" · ");
-            reject(new Error(detail || "Google Sheets devolvió una respuesta no válida. Verifica que el archivo permita lectura pública."));
+            reject(new Error(detail || "El servicio del catálogo no devolvió una lectura válida."));
             return;
           }
 
@@ -813,6 +822,11 @@
         content: String(row.content || "").trim(),
         unit: String(row.unit || "").trim(),
         units: String(row.units || "").trim(),
+        model: String(row.model || "").trim(),
+        needs: String(row.needsText || "").split(/\s*;\s*/).filter(Boolean),
+        useInstructions: String(row.useInstructions || "").trim(),
+        suitableFor: String(row.suitableFor || "").trim(),
+        components: Array.isArray(row.components) ? row.components : [],
         price: row.priceValue ?? 0,
         priceText,
         hasPrice: row.priceValue !== null && row.priceValue !== undefined,
@@ -831,7 +845,9 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, publicLabel, line, condition, commercialStatus, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, publicLabel, line, condition,
+          row.brand,row.productType,row.variant,row.characteristic,row.presentation,row.needsText,
+          row.suitableFor,row.description,...(row.components||[]).map(c=>c.name)].filter(Boolean).join(" "))
       };
     }
 
@@ -1054,6 +1070,7 @@
     }
 
     let allLoadedProducts = [];
+    let publicCatalogProducts = [];
     let all = [];
     let productById = new Map();
     const ALBUM_COLORS = [
@@ -2511,6 +2528,7 @@
       u.searchParams.delete("audience"); u.searchParams.delete("gender"); u.searchParams.delete("family");
       u.searchParams.delete("album");
       if(tags) u.searchParams.set("tags",tags); else u.searchParams.delete("tags");
+      writeAdvisoryFiltersToUrl(u);
 
       const safeIndex=Number.isInteger(index)&&index>=0?index:0;
       const state=makeCatalogHistoryState(safeIndex,{preserveExitGuard:!push});
@@ -2662,6 +2680,249 @@
       return filtered;
     }
 
+    // Asesoría comparte la selección de Folleto y respeta los niveles activos.
+    const ADVISORY_FACETS = Object.freeze({brand:"advisorBrand",line:"advisorLine",productType:"advisorType",variant:"advisorVariant",presentation:"advisorPresentation",public:"advisorPublic"});
+    const advisoryState = {facets:{},needs:new Set(),budget:null,includeUnknown:false,comparison:new Set(),comparisonOpen:false,initialized:false};
+
+    function advisoryExperienceAvailable(){return !!document.getElementById("advisorBrowse");}
+    function advisoryPrice(product){
+      return shouldShowProductPrices() ? product.hasPrice===false ? "Precio por confirmar" : new Intl.NumberFormat("es-CO",{style:"currency",currency:"COP",maximumFractionDigits:2}).format(product.price) : "";
+    }
+    function advisoryMatches(product,state=advisoryState,exceptFacet="",ignoreNeeds=false){
+      if(!product || product.isGiftGalleryImage) return false;
+      for(const [field,value] of Object.entries(state.facets||{})){
+        if(field!==exceptFacet && value && normalizeText(product[field])!==normalizeText(value)) return false;
+      }
+      if(!ignoreNeeds && state.needs?.size && ![...(state.needs)].every(need=>(product.needs||[]).some(value=>normalizeText(value)===normalizeText(need)))) return false;
+      if(state.budget!==null && state.budget!==undefined){
+        if(product.hasPrice===false) return state.includeUnknown===true;
+        if(!Number.isFinite(product.price) || product.price>state.budget) return false;
+      }
+      return true;
+    }
+    function advisoryComponents(product){
+      return (product.components||[]).map(component=>{
+        const quantity=String(component.quantity??component.units??"").trim(),content=String(component.content??"").trim(),unit=String(component.unit||"").trim();
+        return [component.name,quantity ? `${quantity} ×` : "",[content,unit].filter(Boolean).join(" ")].filter(Boolean).join(" · ");
+      });
+    }
+    function advisoryPresentation(product){return [product.presentation,[product.content,product.unit].filter(Boolean).join(" "),product.units?`${product.units} unidades`:""].filter(Boolean).join(" · ");}
+    function advisorySelectedProducts(){
+      if(window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED!==true) return [];
+      return allLoadedProducts.filter(p=>!p.isGiftGalleryImage && FOLLETO_SELECTION.has(String(p.id)) && window.isCatalogProductPublic?.(p));
+    }
+    function advisorySharedText(products,note=""){
+      const url=new URL(SITE_BASE+"catalogo.html");
+      url.searchParams.set("seleccion",products.map(p=>String(p.id)).join(","));
+      return ["Selección recomendada",String(note||"").trim(),...products.map(p=>[`${p.name} · Código ${p.id}`,advisoryPrice(p),(p.needs||[]).join(" · "),...advisoryComponents(p)].filter(Boolean).join("\n")),`Ver selección: ${url.toString()}`].filter(Boolean).join("\n\n");
+    }
+    function writeAdvisoryFiltersToUrl(url){
+      if(!advisoryState.initialized) return;
+      for(const field of Object.keys(ADVISORY_FACETS)){
+        const key="asesoria_"+field,value=advisoryState.facets[field];
+        if(value)url.searchParams.set(key,value);else url.searchParams.delete(key);
+      }
+      if(advisoryState.needs.size)url.searchParams.set("necesidad",[...advisoryState.needs].join(";"));else url.searchParams.delete("necesidad");
+      if(advisoryState.budget!==null)url.searchParams.set("presupuesto",String(advisoryState.budget));else url.searchParams.delete("presupuesto");
+      if(advisoryState.includeUnknown)url.searchParams.set("sin_precio","1");else url.searchParams.delete("sin_precio");
+    }
+    function advisoryButton(label,className,action){
+      const button=document.createElement("button");button.type="button";button.textContent=label;button.className=className;
+      if(action)button.addEventListener("click",action);return button;
+    }
+    function advisoryStatus(message){const status=document.getElementById("advisorSelectionStatus");if(status)status.textContent=message;}
+    function syncAdvisorySelection(){
+      if(!advisoryExperienceAvailable())return;
+      const products=advisorySelectedProducts(),admin=window.CATALOG_ADMIN_MODE_ACTIVE;
+      document.getElementById("advisorSelectionCount").textContent=`(${products.length})`;
+      const panel=document.getElementById("advisorSelection"),items=document.getElementById("advisorSelectionItems");
+      panel.hidden=!!admin||!products.length;items.replaceChildren();
+      for(const product of products){
+        const item=document.createElement("div");item.className="advisor-selection-item";
+        item.append(makeImgFromFilename(product.imgFilename,product.name,product.docsImageUrl));
+        const name=document.createElement("span");name.textContent=product.name;
+        const remove=advisoryButton("×","advisor-remove",()=>{FOLLETO_SELECTION.delete(String(product.id));advisoryState.comparison.delete(String(product.id));saveAdvisorySelection();render();});
+        remove.setAttribute("aria-label","Quitar "+product.name+" de la selección");item.append(name,remove);items.append(item);
+      }
+      for(const id of [...advisoryState.comparison])if(!products.some(p=>String(p.id)===id))advisoryState.comparison.delete(id);
+      document.querySelectorAll("[data-folleto-select]").forEach(input=>{input.checked=FOLLETO_SELECTION.has(input.dataset.folletoSelect);});
+      renderAdvisoryComparison();
+    }
+    function saveAdvisorySelection(){
+      try{localStorage.setItem("natura_asesoria_seleccion_v1",JSON.stringify([...FOLLETO_SELECTION].filter(id=>/^\d{4}$/.test(id))));}catch(_){}
+      syncAdvisorySelection();
+    }
+    function compareAdvisoryProduct(product){
+      const id=String(product.id);
+      if(advisoryState.comparison.has(id))advisoryState.comparison.delete(id);
+      else{
+        if(advisoryState.comparison.size>=3){advisoryStatus("Puedes comparar hasta tres productos. Quita una opción de la comparación para añadir otra.");document.getElementById("advisorComparison")?.scrollIntoView({behavior:"smooth",block:"center"});return;}
+        FOLLETO_SELECTION.add(id);advisoryState.comparison.add(id);
+      }
+      advisoryState.comparisonOpen=true;saveAdvisorySelection();render();
+      document.getElementById("advisorComparison")?.scrollIntoView({behavior:"smooth",block:"start"});
+    }
+    function renderAdvisoryComparison(){
+      const panel=document.getElementById("advisorComparison");if(!panel)return;
+      const products=advisorySelectedProducts().filter(p=>advisoryState.comparison.has(String(p.id))).slice(0,3);
+      panel.hidden=!!window.CATALOG_ADMIN_MODE_ACTIVE||!advisoryState.comparisonOpen||!products.length;
+      if(panel.hidden)return;
+      const container=document.getElementById("advisorComparisonContent");container.replaceChildren();
+      const table=document.createElement("table");table.className="advisor-comparison-table";
+      const caption=document.createElement("caption");caption.className="visually-hidden";caption.textContent="Comparación de los productos seleccionados";table.append(caption);
+      const head=document.createElement("thead"),headRow=document.createElement("tr"),corner=document.createElement("th");corner.scope="col";corner.textContent="Producto";headRow.append(corner);
+      for(const p of products){
+        const cell=document.createElement("th");cell.scope="col";const label=document.createElement("span");label.textContent=p.name;
+        const remove=advisoryButton("Quitar","advisor-remove-comparison",()=>{advisoryState.comparison.delete(String(p.id));render();});remove.setAttribute("aria-label","Quitar "+p.name+" de la comparación");cell.append(label,remove);headRow.append(cell);
+      }
+      head.append(headRow);table.append(head);
+      const body=document.createElement("tbody"),fields=[
+        ["Necesidades",p=>(p.needs||[]).join("; ")],["Descripción",p=>p.description],
+        ["Componentes del kit",p=>advisoryComponents(p).join("\n")],["Presentación",advisoryPresentation],
+        ["Tipo",p=>p.productType],["Línea",p=>p.line],["Variante",p=>p.variant],
+        ["Adecuado para",p=>p.suitableFor],["Modo de uso confirmado",p=>p.useInstructions],
+        ["Código",p=>p.id]
+      ];
+      if(shouldShowProductPrices())fields.splice(0,0,["Precio",advisoryPrice]);
+      for(const [label,value] of fields){
+        const row=document.createElement("tr"),heading=document.createElement("th");heading.scope="row";heading.textContent=label;row.append(heading);
+        for(const p of products){const cell=document.createElement("td");cell.textContent=value(p)||"Sin información confirmada";row.append(cell);}body.append(row);
+      }
+      table.append(body);container.append(table);
+    }
+    function openAdvisoryDetail(product){
+      let dialog=document.getElementById("advisorDetailDialog");
+      if(!dialog){dialog=document.createElement("dialog");dialog.id="advisorDetailDialog";dialog.className="advisor-detail-dialog";document.body.append(dialog);dialog.addEventListener("click",event=>{if(event.target===dialog){const bounds=dialog.getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)dialog.close();}});}
+      dialog.replaceChildren();dialog.setAttribute("aria-labelledby","advisorDetailTitle");
+      const close=advisoryButton("Cerrar","btn-ghost",()=>dialog.close());close.classList.add("advisor-detail-close");
+      const title=document.createElement("h2");title.id="advisorDetailTitle";title.textContent=product.name;
+      const image=makeImgFromFilename(product.imgFilename,product.name,product.docsImageUrl);image.classList.add("advisor-detail-image");
+      dialog.append(close,title,image);
+      const fields=[["Precio",advisoryPrice(product)],["Necesidades",(product.needs||[]).join("; ")],["Descripción",product.description],["Componentes",advisoryComponents(product).join("\n")],["Presentación",advisoryPresentation(product)],["Marca",product.brand],["Línea",product.line],["Tipo",product.productType],["Variante",product.variant],["Público",product.public],["Adecuado para",product.suitableFor],["Modo de uso confirmado",product.useInstructions],["Código",product.id]];
+      const details=document.createElement("dl");
+      for(const [label,value] of fields){if(!value)continue;const term=document.createElement("dt"),definition=document.createElement("dd");term.textContent=label;definition.textContent=value;details.append(term,definition);}dialog.append(details);
+      dialog.showModal();
+    }
+    function renderAdvisoryProductCard(card,product){
+      card.classList.add("advisor-product-card");
+      const pad=card.querySelector(".pad"),name=card.querySelector(".name"),details=card.querySelector(".product-details"),description=card.querySelector(".description"),row=card.querySelector(".row");
+      setSearchHighlightedText(name,product.name);name.title=product.name;
+      if(details){details.before(description);details.remove();}
+      description.classList.add("advisor-product-description");
+      const badges=document.createElement("div");badges.className="advisor-product-needs";
+      for(const need of (product.needs||[]).slice(0,3)){const tag=document.createElement("span");tag.textContent=need;badges.append(tag);}name.after(badges);
+      const components=advisoryComponents(product);
+      if(components.length){const list=document.createElement("ul");list.className="advisor-components";for(const text of components){const item=document.createElement("li");item.textContent=text;list.append(item);}description.after(list);}
+      const presentation=document.createElement("p");presentation.className="advisor-product-presentation";presentation.textContent=advisoryPresentation(product);presentation.hidden=!presentation.textContent;row.before(presentation);
+      const code=document.createElement("span");code.className="advisor-product-code";code.textContent=`Código ${product.id}`;row.append(code);
+      const price=card.querySelector(".price");price.textContent=advisoryPrice(product);price.hidden=!price.textContent;
+      const controls=document.createElement("div");controls.className="advisor-product-buttons";
+      const compare=advisoryButton(advisoryState.comparison.has(String(product.id))?"Quitar comparación":"Comparar","btn-ghost",()=>compareAdvisoryProduct(product));compare.setAttribute("aria-pressed",String(advisoryState.comparison.has(String(product.id))));
+      controls.append(advisoryButton("Ver detalle","btn-ghost",()=>openAdvisoryDetail(product)),compare);pad.append(controls);
+      const selection=card.querySelector(".product-selection");if(selection){selection.title="Añadir a mi selección";selection.querySelector("input").setAttribute("aria-label","Seleccionar "+product.name+" para asesorar o crear un folleto");}
+    }
+    function renderAdvisoryFacets(source){
+      for(const [field,id] of Object.entries(ADVISORY_FACETS)){
+        const select=document.getElementById(id),current=advisoryState.facets[field]||"";
+        const options=[...new Set(source.filter(p=>advisoryMatches(p,advisoryState,field)).map(p=>String(p[field]||"").trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"));
+        if(current&&!options.includes(current))options.unshift(current);
+        select.replaceChildren();const first=document.createElement("option");first.value="";first.textContent=field==="productType"||field==="public"?"Todos":"Todas";select.append(first);
+        for(const value of options){const option=document.createElement("option");option.value=value;option.textContent=value;select.append(option);}select.value=current;
+      }
+      const needs=document.getElementById("advisorNeeds"),counts=new Map();needs.replaceChildren();
+      for(const p of source.filter(p=>advisoryMatches(p,advisoryState,"",true))){for(const need of new Set(p.needs||[]))counts.set(need,(counts.get(need)||0)+1);}
+      for(const need of advisoryState.needs)if(!counts.has(need))counts.set(need,0);
+      const options=[...counts].sort((a,b)=>Number(advisoryState.needs.has(b[0]))-Number(advisoryState.needs.has(a[0]))||b[1]-a[1]||a[0].localeCompare(b[0],"es"));
+      let extra;
+      if(options.length>8){extra=document.createElement("details");extra.className="advisor-more-needs";const summary=document.createElement("summary");summary.textContent="Más necesidades";extra.append(summary);}
+      options.forEach(([need,count],index)=>{
+        const button=advisoryButton(`${need} (${count})`,"advisor-need",()=>{advisoryState.needs.has(need)?advisoryState.needs.delete(need):advisoryState.needs.add(need);render();});button.setAttribute("aria-pressed",String(advisoryState.needs.has(need)));button.disabled=!count&&!advisoryState.needs.has(need);
+        if(index<8)needs.append(button);else extra.append(button);
+      });
+      if(extra)needs.append(extra);document.getElementById("advisorNeedsEmpty").hidden=options.length>0;
+      const active=document.getElementById("advisorActiveFilters");active.replaceChildren();
+      const labels=[...Object.values(advisoryState.facets).filter(Boolean),...advisoryState.needs,advisoryState.budget===null?"":`Hasta ${new Intl.NumberFormat("es-CO").format(advisoryState.budget)}`].filter(Boolean);
+      active.textContent=labels.length?labels.join(" · "):"";
+      document.getElementById("advisorIncludeUnknown").disabled=advisoryState.budget===null;
+    }
+    function renderAdvisoryExperience(viewMode){
+      if(!advisoryExperienceAvailable())return false;
+      const host=document.getElementById("advisorBrowse");host.hidden=!!window.CATALOG_ADMIN_MODE_ACTIVE;
+      document.getElementById("advisorPageTitle").textContent=window.CATALOG_ADMIN_MODE_ACTIVE?"Catálogo":"Encuentra el producto ideal";
+      syncAdvisorySelection();
+      if(window.CATALOG_ADMIN_MODE_ACTIVE)return false;
+      grid.classList.remove("album-grid-mode");
+      const source=currentProductSourceList(),eligible=source.filter(p=>!p.isGiftGalleryImage);
+      renderAdvisoryFacets(eligible);
+      const albumsHost=document.getElementById("advisorAlbums");albumsHost.replaceChildren();
+      const terms=getCombinedWordTerms();
+      const directRequested=window.isCatalogShowAllProductsDirectEnabled?.()===true || terms.length>0&&window.isCatalogQuickImageSearchEnabled?.()===true;
+      const renderProducts=viewMode.mode==="products" || directRequested&&navigationOrderedLevels().includes("product");
+      const filtered=source.filter(p=>(p.isGiftGalleryImage ? !terms.length&&!advisoryState.needs.size&&!Object.values(advisoryState.facets).some(Boolean)&&advisoryState.budget===null : advisoryMatches(p)&&(!terms.length||terms.every(term=>p.searchKey.includes(term))))).sort(compareCatalogProductOrder);
+      if(viewMode.mode==="albums"){
+        const matching=new Set(filtered.map(p=>String(p.id)));
+        for(const album of buildFilteredAlbums()){
+          const count=(album.products||[]).filter(p=>matching.has(String(p.id))).length;if(!count)continue;
+          const button=advisoryButton("","advisor-album",()=>openAlbum(album.key,{keepFilters:true}));button.setAttribute("aria-label",`${album.label}, ${count} productos`);
+          const icon=document.createElement("span");icon.className="advisor-album-icon";icon.textContent=album.icon||"✦";
+          const label=document.createElement("span");label.textContent=album.label;const total=document.createElement("small");total.textContent=`${count} productos`;button.append(icon,label,total);albumsHost.append(button);
+        }
+      }
+      if(renderProducts){
+        grid.replaceChildren();const fragment=document.createDocumentFragment();
+        if(!filtered.length)fragment.append(makeEmptyState("No hay productos con estos filtros."));else for(const p of filtered)fragment.append(makeCard(p));grid.append(fragment);
+        document.getElementById("advisorResultsTitle").textContent=selectedCategory?`Opciones de ${selectedCategory.toLocaleLowerCase("es")}`:"Opciones para ti";scheduleJsonLdUpdate(filtered);
+      }else if(viewMode.mode==="albums"){
+        grid.replaceChildren(makeEmptyState(albumsHost.children.length?"Elige una opción para continuar":"No hay opciones con estos filtros."));
+        document.getElementById("advisorResultsTitle").textContent="Explora tus opciones";scheduleJsonLdUpdate([]);
+      }else{grid.replaceChildren(makeEmptyState("No hay un nivel posterior configurado para esta vista."));scheduleJsonLdUpdate([]);}
+      grid.classList.toggle("advisor-grid",renderProducts);grid.classList.remove("album-three-column-layout");
+      const count=filtered.filter(p=>!p.isGiftGalleryImage).length;
+      document.getElementById("advisorResultCount").textContent=`${count} ${count===1?"producto":"productos"}`;
+      if(countEl){countEl.textContent=`${count} ${count===1?"producto":"productos"}`;countEl.classList.toggle("search-active",!!terms.length);}
+      return true;
+    }
+    function initAdvisoryExperience(){
+      if(!advisoryExperienceAvailable()||advisoryState.initialized)return;advisoryState.initialized=true;
+      const query=new URL(location.href).searchParams;
+      for(const [field,id] of Object.entries(ADVISORY_FACETS)){
+        advisoryState.facets[field]=query.get("asesoria_"+field)||"";
+        document.getElementById(id).addEventListener("change",event=>{advisoryState.facets[field]=event.target.value;render();});
+      }
+      advisoryState.needs=new Set((query.get("necesidad")||"").split(";").filter(Boolean));
+      const budget=query.get("presupuesto"),amount=Number(budget);advisoryState.budget=budget!==null&&budget!==""&&Number.isFinite(amount)&&amount>=0?amount:null;
+      const budgetInput=document.getElementById("advisorBudget");budgetInput.value=advisoryState.budget===null?"":String(advisoryState.budget);
+      budgetInput.addEventListener("input",event=>{const value=event.target.value,number=Number(value);advisoryState.budget=value!==""&&Number.isFinite(number)&&number>=0?number:null;render();});
+      const unknown=document.getElementById("advisorIncludeUnknown");unknown.checked=advisoryState.includeUnknown=query.get("sin_precio")==="1";unknown.addEventListener("change",()=>{advisoryState.includeUnknown=unknown.checked;render();});
+      let selected=[];try{selected=JSON.parse(localStorage.getItem("natura_asesoria_seleccion_v1")||"[]");}catch(_){}
+      if(query.has("seleccion"))selected=(query.get("seleccion")||"").split(",");
+      if(Array.isArray(selected))for(const id of selected)if(/^\d{4}$/.test(String(id)))FOLLETO_SELECTION.add(String(id));
+      document.addEventListener("change",event=>{if(event.target?.dataset?.folletoSelect){const id=event.target.dataset.folletoSelect;event.target.checked?FOLLETO_SELECTION.add(id):FOLLETO_SELECTION.delete(id);if(!event.target.checked)advisoryState.comparison.delete(id);saveAdvisorySelection();}});
+      document.getElementById("advisorClearBtn").addEventListener("click",()=>{advisoryState.facets={};advisoryState.needs.clear();advisoryState.budget=null;advisoryState.includeUnknown=false;budgetInput.value="";unknown.checked=false;resetDiscoveryFilters();render();});
+      document.getElementById("advisorNavBtn").addEventListener("click",()=>{window.setCatalogShowAllProductsDirectEnabled?.(true);document.getElementById("advisorBrowse").scrollIntoView({behavior:"smooth",block:"start"});});
+      document.getElementById("advisorSelectionNavBtn").addEventListener("click",()=>{if(!advisorySelectedProducts().length){advisoryStatus("Selecciona productos usando el corazón de cada ficha.");const panel=document.getElementById("advisorSelection");panel.hidden=false;}document.getElementById("advisorSelection").scrollIntoView({behavior:"smooth",block:"start"});});
+      document.getElementById("advisorCompareSelectionBtn").addEventListener("click",()=>{const products=advisorySelectedProducts();if(products.length>3){advisoryStatus("Selecciona hasta tres productos para comparar, o usa Comparar en las fichas.");return;}advisoryState.comparison=new Set(products.map(p=>String(p.id)));advisoryState.comparisonOpen=true;renderAdvisoryComparison();document.getElementById("advisorComparison").scrollIntoView({behavior:"smooth",block:"start"});});
+      document.getElementById("advisorCloseComparisonBtn").addEventListener("click",()=>{advisoryState.comparisonOpen=false;renderAdvisoryComparison();});
+      document.getElementById("advisorClearSelectionBtn").addEventListener("click",()=>{FOLLETO_SELECTION.clear();advisoryState.comparison.clear();saveAdvisorySelection();render();});
+      const recommendation=()=>advisorySharedText(advisorySelectedProducts(),document.getElementById("advisorNote").value);
+      document.getElementById("advisorShareBtn").addEventListener("click",()=>{if(!advisorySelectedProducts().length)return;window.open("https://wa.me/?text="+encodeURIComponent(recommendation()),"_blank","noopener,noreferrer");});
+      document.getElementById("advisorCopyBtn").addEventListener("click",async()=>{try{if(!advisorySelectedProducts().length)return;await copyProductText(recommendation());advisoryStatus("Recomendación copiada.");}catch(error){advisoryStatus(error.message);}});
+      document.getElementById("advisorCartBtn").addEventListener("click",()=>{const products=advisorySelectedProducts();for(const p of products){const id=String(p.id);cart[id]={id:p.id,name:p.name,price:p.price,hasPrice:p.hasPrice!==false,qty:(cart[id]?.qty||0)+1,stock:p.stock,imgFilename:p.imgFilename||null};}saveCart();refreshCartCount();render();advisoryStatus(`${products.length} productos añadidos al carrito.`);});
+      window.addEventListener("irenismb:admin-mode-change",()=>{document.getElementById("advisorDetailDialog")?.close();syncAdvisorySelection();});
+    }
+
+    window.acceptCatalogAdminProductTable=function(table){
+      const imageIndex=new Map(Object.entries(lastImageIndex?.products||{}).map(([code,entries])=>[code,orderProductImageEntries(entries)]));
+      const assessment=buildCompatibleGoogleSheetProducts(readGoogleSheetProductRows(table).map(row=>({row,imageIndex})));
+      allLoadedProducts=[...assessment.products,...publicCatalogProducts.filter(p=>p.isGiftGalleryImage)];
+    };
+    window.restoreCatalogPublicProducts=function(){
+      for(const product of allLoadedProducts){product.cost=null;product.costText="";}
+      allLoadedProducts=publicCatalogProducts.slice();
+      rebuildCatalogVisibility();
+      loadProducts({silent:true,refreshImages:false});
+    };
+
     let _renderToken = 0;
     function render(){
       const token = ++_renderToken;
@@ -2692,11 +2953,14 @@
       const viewMode=navigationViewMode();
 
       if(viewMode.mode==="empty"){
+        for(const id of ["advisorBrowse","advisorSelection","advisorComparison"]){const panel=document.getElementById(id);if(panel)panel.hidden=true;}
         if(grid){grid.classList.remove("album-three-column-layout");grid.innerHTML="";grid.appendChild(makeEmptyState("No hay niveles de navegación activos."));}
         if(countEl){countEl.textContent="0 niveles activos";countEl.classList.remove("search-active");}
         scheduleJsonLdUpdate([]);
         return;
       }
+
+      if(renderAdvisoryExperience(viewMode)) return;
 
       if(shouldShowAlbumGrid()){
         const filteredAlbums = buildFilteredAlbums();
@@ -2891,7 +3155,8 @@
         giftProducts = [];
       }
 
-      allLoadedProducts = [...sheetProducts, ...giftProducts];
+      publicCatalogProducts = [...sheetProducts, ...giftProducts];
+      if(!window.CATALOG_ADMIN_MODE_ACTIVE) allLoadedProducts = publicCatalogProducts.slice();
 
       all = filterVisibleProducts(allLoadedProducts);
 
@@ -3251,7 +3516,10 @@ function makeCard(p){
     const label=document.createElement("span");label.textContent="Seleccionar para Folleto";label.className="visually-hidden";
     selection.append(check,label);imgBox.appendChild(selection);
   }
-  if(!p.isGiftGalleryImage) renderCatalogFicha(card,p);
+    if(!p.isGiftGalleryImage){
+      if(!window.CATALOG_ADMIN_MODE_ACTIVE && advisoryExperienceAvailable()) renderAdvisoryProductCard(card,p);
+      else renderCatalogFicha(card,p);
+    }
   refreshCardUI(card,p);
   return card;
 }
@@ -3264,7 +3532,7 @@ window.addEventListener("irenismb:precio-guardado",event=>{
   if(normalizedPrice!=="" && !/^\d+$/.test(normalizedPrice)) return;
 
   let changed=false;
-  for(const product of all){
+      for(const product of new Set([...all,...publicCatalogProducts])){
     if(String(product?.id||"").trim()!==code) continue;
     product.priceText=normalizedPrice;
     product.price=normalizedPrice===""?0:Number(normalizedPrice);
@@ -3469,6 +3737,7 @@ function bindFilters(){
 }
 
 async function init(){
+  initAdvisoryExperience();
   refreshCartCount();
   initCartButton();
   initShipping();
@@ -3498,5 +3767,6 @@ async function init(){
   await restoreCatalogAdminAfterReload(startupAdminState);
   uxRestoreScrollPosition();
 }
+
 
 

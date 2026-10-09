@@ -238,7 +238,7 @@
 
 
 
-  <link rel="stylesheet" href="catalogo.css?actualizacion=folleto-precios-paneles-2026-10-09-5" />
+  <link rel="stylesheet" href="catalogo.css?actualizacion=asesoria-catalogo-2026-10-09-6" />
 
 
 
@@ -446,11 +446,38 @@
       <nav>
         <button class="nav-button" id="catalogHomeBtn" type="button"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="m3 10 9-7 9 7M5 9v12h14V9M9 21v-8h6v8"/></svg><span>Inicio</span></button>
         <button class="nav-button" id="showProductsBtn" type="button" aria-pressed="false" aria-label="Explorar las categorías del nivel actual"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3zM14 14h7v7h-7z"/></svg><span>Categorías</span></button>
+        <button class="nav-button" id="advisorNavBtn" type="button"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11a9 9 0 0 1-9 9H5l-4 3 2-7a9 9 0 1 1 18-5M7 9h10M7 13h7"/></svg><span>Asesoría</span></button>
+        <button class="nav-button" id="advisorSelectionNavBtn" type="button"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8Z"/></svg><span>Mi selección <span id="advisorSelectionCount">(0)</span></span></button>
       </nav>
     </aside>
     <main class="wrap catalog-main" id="catalogMain">
-    <div class="products-heading"><h2>Productos</h2><div class="count-slot" id="countSlot"></div></div>
+    <div class="products-heading"><div><h2 id="advisorPageTitle">Encuentra el producto ideal</h2><p class="advisor-subtitle">Elige lo que buscas y compara tus opciones</p></div><div class="count-slot" id="countSlot"></div></div>
       <nav class="catalog-categories" id="catalogCategories" aria-label="Categorías disponibles" hidden></nav>
+      <section id="advisorBrowse" class="advisor-browse" aria-label="Encuentra opciones para tu cliente" hidden>
+        <nav id="advisorAlbums" class="advisor-albums" aria-label="Explorar el catálogo"></nav>
+        <section class="advisor-needs-panel" aria-labelledby="advisorNeedsTitle">
+          <h3 id="advisorNeedsTitle">¿Qué necesitas?</h3>
+          <div id="advisorNeeds" class="advisor-needs" aria-label="Necesidades de asesoría"></div>
+          <p id="advisorNeedsEmpty" class="advisor-help" hidden>Busca por nombre o utiliza los filtros para encontrar opciones.</p>
+        </section>
+        <div class="advisor-filters">
+          <div class="advisor-filter-grid">
+            <label>Marca<select id="advisorBrand"><option value="">Todas</option></select></label>
+            <label>Línea<select id="advisorLine"><option value="">Todas</option></select></label>
+            <label>Tipo<select id="advisorType"><option value="">Todos</option></select></label>
+            <label>Variante<select id="advisorVariant"><option value="">Todas</option></select></label>
+            <label>Presentación<select id="advisorPresentation"><option value="">Todas</option></select></label>
+            <label>Público<select id="advisorPublic"><option value="">Todos</option></select></label>
+          </div>
+          <div class="advisor-filter-bottom">
+            <label class="advisor-budget">Hasta $<input id="advisorBudget" type="number" min="0" step="any" inputmode="decimal" placeholder="Ej. 100000" aria-label="Presupuesto máximo en pesos colombianos"></label>
+            <label class="advisor-unknown"><input id="advisorIncludeUnknown" type="checkbox">Incluir precios por confirmar</label>
+            <button id="advisorClearBtn" class="btn-ghost" type="button">Limpiar filtros</button>
+            <div id="advisorActiveFilters" class="advisor-active-filters" aria-live="polite"></div>
+          </div>
+        </div>
+        <div class="advisor-results-heading"><h3 id="advisorResultsTitle">Opciones para ti</h3><span id="advisorResultCount" aria-live="polite"></span></div>
+      </section>
       <div class="bar" role="group" aria-label="Filtros y orden de productos">
 
 
@@ -683,6 +710,24 @@
 
 
     <section id="grid" class="grid" aria-label="Productos"></section>
+    <section id="advisorSelection" class="advisor-selection" aria-labelledby="advisorSelectionTitle" hidden>
+      <h3 id="advisorSelectionTitle">Tu selección para asesorar</h3>
+      <div id="advisorSelectionItems" class="advisor-selection-items"></div>
+      <div class="advisor-selection-actions">
+        <button id="advisorCompareSelectionBtn" class="btn-ghost advisor-green" type="button">Comparar selección</button>
+        <button id="advisorShareBtn" class="btn-ghost advisor-green" type="button">Compartir por WhatsApp</button>
+        <button id="advisorCopyBtn" class="btn-ghost" type="button">Copiar recomendación</button>
+        <button id="advisorCartBtn" class="btn-acc" type="button">Agregar al carrito</button>
+        <button id="advisorClearSelectionBtn" class="btn-ghost" type="button">Vaciar selección</button>
+      </div>
+      <label class="advisor-note-label">Tu recomendación<textarea id="advisorNote" rows="2" maxlength="1500" placeholder="Añade una explicación para tu cliente (opcional)"></textarea></label>
+      <p id="advisorSelectionStatus" class="advisor-help" role="status" aria-live="polite"></p>
+    </section>
+    <section id="advisorComparison" class="advisor-comparison" aria-labelledby="advisorComparisonTitle" hidden>
+      <div class="advisor-comparison-heading"><h3 id="advisorComparisonTitle">Compara lo que recibe tu cliente</h3><button id="advisorCloseComparisonBtn" class="btn-ghost" type="button">Cerrar comparación</button></div>
+      <p class="advisor-help">Compara hasta tres productos. Cada componente del kit conserva su contenido y su unidad.</p>
+      <div id="advisorComparisonContent"></div>
+    </section>
     </main>
     <aside class="catalog-contact" aria-label="Contacto y páginas de IRENISMB">
       <section class="service-card"><h2>Atención cercana</h2><ul class="service-list"><li><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M12 3 3 7v5c0 5 9 9 9 9s9-4 9-9V7zM8 12l3 3 5-6"/></svg><span>10 años de experiencia con la marca Natura.</span></li><li><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M21 11a9 9 0 0 1-9 9H5l-4 3 2-7a9 9 0 1 1 18-5M7 9h10M7 13h7"/></svg><span>Asesoría por WhatsApp, atención telefónica y presencial.</span></li><li><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true" ><path d="M2 6h12v12H2zM14 10h4l4 4v4h-8M6 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4M18 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4"/></svg><span>Envíos nacionales e internacionales.</span></li></ul></section>
@@ -1694,12 +1739,12 @@
 
 
   <script src="precios-admin-config.js?actualizacion=catalogo-pro-2026-10-07-3"></script>
-  <script src="catalogo-app.js?actualizacion=folleto-precios-paneles-2026-10-09-5"></script>
+  <script src="catalogo-app.js?actualizacion=asesoria-catalogo-2026-10-09-6"></script>
   <script src="catalogo-carrito-pedido.js?actualizacion=catalogo-pro-2026-10-07-3"></script>
   <script src="catalogo-herramientas.js?actualizacion=folleto-precios-paneles-2026-10-09-5"></script>
   <script src="analytics-visitas.js?actualizacion=catalogo-pro-2026-10-07-3"></script>
-  <script src="catalogo-ui.js?actualizacion=catalogo-pro-2026-10-07-3"></script>
-  <script src="precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5"></script>
+  <script src="catalogo-ui.js?actualizacion=asesoria-catalogo-2026-10-09-6"></script>
+  <script src="precios-admin.js?actualizacion=asesoria-catalogo-2026-10-09-6"></script>
   <script src="prospectos-admin.js?actualizacion=catalogo-pro-2026-10-07-3"></script>
   <script>
     // Se lee el índice de anuncios de Apps Script: nunca usa un file ID fijo ni GitHub como almacén.
@@ -2095,3 +2140,4 @@
 
 </body>
 </html>
+

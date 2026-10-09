@@ -372,14 +372,25 @@
       capabilities=new Set(Array.isArray(m.capacidades)?m.capacidades.map(norm):["precio"]);window.CATALOG_ADMIN_CAPABILITIES=capabilities;
       port.postMessage({tipo:"catalogo-conectado"});connecting=false;setConnectionStatus();
       const shouldStart=openAfterConnect;openAfterConnect=false;
-      if(shouldStart&&!admin)startAdmin();
+      if(shouldStart&&!admin)await startAdmin();
       syncConnectionButton();
       window.dispatchEvent(new CustomEvent("irenismb:admin-bridge-ready",{detail:{capabilities:Array.from(capabilities)}}));
       if(admin&&document.getElementById("catalogAdminConfigStatus")?.classList.contains("err"))loadAdminConfig();
     }catch(_){loseConnection(activePort)}
   }
-  function startAdmin(){admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection);window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:true}}))}
-  function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;syncEffectiveAdminFilters();btn.textContent="Administrar";btn.setAttribute("aria-pressed","false");setConnectionStatus();window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild();syncConnectionButton()}
+  async function startAdmin(){
+    if(admin||connecting)return;
+    connecting=true;syncConnectionButton();setConnectionStatus("Cargando inventario administrativo…");
+    try{
+      if(!capabilities.has("productos"))throw new Error("Actualiza la conexión con Google para abrir el inventario administrativo.");
+      const response=await request({tipo:"obtener-productos"});
+      if(response?.ok!==true||!response.table)throw new Error("No se pudo confirmar el inventario administrativo.");
+      window.acceptCatalogAdminProductTable(response.table);
+      admin=true;storageSet(ADMIN_MODE_STORAGE_KEY,"1");window.CATALOG_ADMIN_MODE_ACTIVE=true;adminSection=String(window.CATALOG_ADMIN_SECTION||"catalogo");syncEffectiveAdminFilters();btn.textContent="Salir de administración";btn.setAttribute("aria-pressed","true");ensureAdminSidebar();syncAdminTools();rebuild();if(capabilities.has("configuracion"))loadAdminConfig();setCatalogAdminSection(adminSection);window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:true}}));setConnectionStatus();
+    }catch(error){setConnectionStatus(error.message||"No se pudo abrir la administración.");}
+    finally{connecting=false;syncConnectionButton();}
+  }
+  function stopAdmin(){admin=false;storageRemove(ADMIN_MODE_STORAGE_KEY);window.CATALOG_ADMIN_MODE_ACTIVE=false;window.restoreCatalogPublicProducts?.();syncEffectiveAdminFilters();btn.textContent="Admin";btn.setAttribute("aria-pressed","false");setConnectionStatus();window.dispatchEvent(new CustomEvent("irenismb:admin-section-change",{detail:{section:"catalogo"}}));window.dispatchEvent(new CustomEvent("irenismb:admin-mode-change",{detail:{active:false}}));syncAdminTools();removeAdminUI();rebuild();syncConnectionButton()}
   function syncAdminTools(){try{if(typeof syncAdministrativeToolVisibility==="function")syncAdministrativeToolVisibility()}catch(e){console.info(e)}}
   function removeAdminUI(){document.getElementById("catalogAdminDocumentsDialog")?.remove();clearAdminDecorations();try{window.destroyCatalogProspectosAdmin?.()}catch(e){console.info(e)}document.getElementById("catalogAdminConfig")?.remove();document.getElementById("catalogAdminProspectos")?.remove();document.getElementById("catalogAdminSidebar")?.remove();document.body.classList.remove("catalog-admin-mode");grid.hidden=false;const topline=document.getElementById("topline");if(topline)topline.hidden=false;const albumHost=document.getElementById("albumNavHost");if(albumHost)albumHost.hidden=false}
 
@@ -761,7 +772,7 @@
   }
   window.CATALOG_ADMIN_REQUEST=request;
   window.CATALOG_ADMIN_CAPABILITIES=capabilities;
-  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="conexion-verificada"||m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado"||m.tipo==="prospectos-obtenidos"||m.tipo==="prospecto-registrado"||m.tipo==="prospecto-actualizado")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
+  function onReply(e){const m=e.data||{},p=requests.get(m.solicitudId);if(!p)return;clearTimeout(p.timer);requests.delete(m.solicitudId);if(m.tipo==="conexion-verificada"||m.tipo==="precio-actualizado"||m.tipo==="visibilidad-actualizada"||m.tipo==="configuracion-obtenida"||m.tipo==="configuracion-actualizada"||m.tipo==="orden-navegacion-actualizado"||m.tipo==="prospectos-obtenidos"||m.tipo==="prospecto-registrado"||m.tipo==="prospecto-actualizado"||m.tipo==="productos-obtenidos")p.resolve(m.resultado||{});else p.reject(new Error(m.error||"No se pudo completar la operación."))}
   function closeBridge(options={}){
     clearTimeout(connectTimer);connectTimer=0;try{port?.close()}catch(_){}port=null;bridgeCheck=null;
     for(const pending of requests.values()){clearTimeout(pending.timer);pending.reject(new Error("Se interrumpió la conexión con Google. Comprueba el documento antes de volver a guardar."))}requests.clear();
@@ -769,5 +780,6 @@
     if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton)syncConnectionButton();
   }
 })();
+
 
 

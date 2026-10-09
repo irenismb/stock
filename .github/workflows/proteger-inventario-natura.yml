@@ -1,0 +1,95 @@
+name: Proteger costos del inventario Natura
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/proteger-inventario-natura.yml"
+permissions:
+  contents: read
+concurrency:
+  group: proteger-inventario-natura
+  cancel-in-progress: false
+jobs:
+  proteger:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Esperar la interfaz publicada y confirmar el lector
+        run: |
+          python3 - <<'PY'
+          import json,time,urllib.request
+          page='https://irenismb.github.io/stock/natura/catalogo.html'
+          reader='https://script.google.com/macros/s/AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09/exec?modo=productos'
+          for attempt in range(30):
+              try:
+                  with urllib.request.urlopen(page+'?publicacion='+str(time.time()),timeout=30) as response:text=response.read(300000).decode('utf-8')
+                  assert 'catalogo-app.js?actualizacion=asesoria-catalogo-2026-10-09-6' in text
+                  assert 'advisorComparison' in text
+                  with urllib.request.urlopen(reader+'&_='+str(time.time()),timeout=40) as response:payload=json.loads(response.read(1500000))
+                  assert payload.get('ok') is True and payload['table']['rows']
+                  headers={x['label'] for x in payload['table']['cols']}
+                  assert 'Costo' not in headers and 'Necesidades de asesoría' in headers
+                  print('Interfaz de asesoría y lector público confirmados')
+                  break
+              except Exception:
+                  if attempt==29:raise
+                  time.sleep(10)
+          PY
+      - name: Preparar autorización existente
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON"
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+          npm install --global @google/clasp@3.4.1
+      - name: Restringir únicamente la lectura anónima del inventario oficial
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+        run: |
+          clasp list-scripts >/dev/null
+          python3 - "$RUNNER_TEMP/.clasprc.json" <<'PY'
+          import json,sys,urllib.request,urllib.parse
+          auth=json.load(open(sys.argv[1],encoding='utf-8'))
+          credentials=(auth.get('tokens') or {}).get('default') or auth.get('token') or auth
+          token=credentials.get('access_token','')
+          assert token,'No se pudo actualizar la autorización existente'
+          sheet='1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs'
+          base='https://www.googleapis.com/drive/v3/files/'+sheet
+          def request(url,method='GET'):
+              req=urllib.request.Request(url,method=method,headers={'Authorization':'Bearer '+token})
+              with urllib.request.urlopen(req,timeout=40) as response:
+                  data=response.read()
+                  return json.loads(data) if data else {}
+          metadata=request(base+'?fields=id,name,mimeType,trashed')
+          assert metadata['id']==sheet and metadata['name']=='2026-08-23_productos'
+          assert metadata['mimeType']=='application/vnd.google-apps.spreadsheet' and not metadata.get('trashed')
+          params=urllib.parse.urlencode({'fields':'permissions(id,type,role,emailAddress,permissionDetails)','pageSize':100})
+          before=request(base+'/permissions?'+params)['permissions']
+          users={p['id']:(p['type'],p['role'],p.get('emailAddress')) for p in before if p['type']!='anyone'}
+          assert any(role=='owner' for _,role,_ in users.values())
+          assert any(email=='irenismendoza@gmail.com' for _,_,email in users.values())
+          anonymous=[p for p in before if p['type']=='anyone']
+          for permission in anonymous:
+              assert permission['role']=='reader','Un permiso público distinto requiere revisión'
+              assert not any(d.get('inherited') for d in permission.get('permissionDetails',[])),'No se modifican permisos heredados de carpetas'
+              request(base+'/permissions/'+urllib.parse.quote(permission['id'],safe=''),method='DELETE')
+          after=request(base+'/permissions?'+params)['permissions']
+          assert not any(p['type']=='anyone' for p in after)
+          assert {p['id']:(p['type'],p['role'],p.get('emailAddress')) for p in after}==users
+          print('Inventario privado; propietario y colaboradores conservan sus permisos')
+          PY
+      - name: Confirmar que el catálogo sigue disponible
+        run: |
+          python3 - <<'PY'
+          import json,time,urllib.request,urllib.error
+          reader='https://script.google.com/macros/s/AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09/exec?modo=productos'
+          with urllib.request.urlopen(reader+'&_='+str(time.time()),timeout=40) as response:payload=json.loads(response.read(1500000))
+          assert payload.get('ok') is True and payload['table']['rows']
+          assert 'Costo' not in {x['label'] for x in payload['table']['cols']}
+          print('Catálogo público disponible sin costos; filas',len(payload['table']['rows']))
+          PY

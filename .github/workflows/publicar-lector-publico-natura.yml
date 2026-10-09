@@ -64,3 +64,28 @@ jobs:
           (cd "$reader" && clasp push --force && clasp deploy --deploymentId "AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09" --description "Lector publico aislado de solo lectura ${GITHUB_SHA}") | tee "$RUNNER_TEMP/lector-deploy.log"
           echo "El lector publico se publico como version independiente."
           echo "DEPLOY DEL LECTOR: verificar la URL en el registro de esta accion." >> "$GITHUB_STEP_SUMMARY"
+      - name: Confirmar productos publicos sin costos
+        run: |
+          python3 - <<'PY'
+          import json,time,urllib.request,urllib.parse
+          base='https://script.google.com/macros/s/AKfycbzotfE1aifLWmjJjyQRTXZo2C9intQnhGZA57n27MCqDDB_BnuhkxhDvDmeuUlK9v09/exec'
+          for attempt in range(12):
+              try:
+                  with urllib.request.urlopen(base+'?modo=productos&_='+str(time.time()),timeout=40) as response:
+                      payload=json.loads(response.read(1500000))
+                  assert payload.get('ok') is True and payload.get('status')=='ok'
+                  table=payload['table'];headers=[x['label'] for x in table['cols']]
+                  assert 'Costo' not in headers and 'Referencia externa' not in headers
+                  assert {'Código','Nombre','Precio','Necesidades de asesoría','Modo de uso','Adecuado para'}<=set(headers)
+                  assert len(table['rows'])>0
+                  for row in table['rows']:
+                      values={header:row['c'][i]['v'] for i,header in enumerate(headers)}
+                      assert str(values['Sección']).lower()!='otros productos'
+                      assert str(values['Categoría']).lower()!='medicamentos'
+                      assert str(values['Estado comercial']).lower()!='no a la venta'
+                  print('OK: productos públicos sin costo ni registros ocultos; filas',len(table['rows']))
+                  break
+              except Exception:
+                  if attempt==11:raise
+                  time.sleep(10)
+          PY

@@ -64,7 +64,7 @@
       puerto.start();
 
       destino.postMessage(
-        {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad","configuracion","prospectos"]},
+        {tipo:"irenismb-precios-puente-listo", canal:canal, capacidades:["precio","visibilidad","configuracion","prospectos","productos"]},
         catalogOrigin,
         [canalMensajes.port2]
       );
@@ -115,6 +115,15 @@
             });
           })
           .actualizarPrecioWeb(mensaje.codigo, mensaje.precioNuevo, mensaje.precioAnterior);
+        return;
+      }
+
+      if(mensaje.tipo === "obtener-productos"){
+        google.script.run.withSuccessHandler(function(resultado){
+          responder({tipo:"productos-obtenidos",solicitudId:mensaje.solicitudId,resultado:resultado});
+        }).withFailureHandler(function(error){
+          responder({tipo:"productos-error",solicitudId:mensaje.solicitudId,error:error && error.message ? error.message : "No se pudo leer el inventario administrativo."});
+        }).obtenerProductosAdministrativosWeb();
         return;
       }
 
@@ -257,3 +266,4 @@
   </script>
 </body>
 </html>
+

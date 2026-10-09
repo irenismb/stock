@@ -1,5 +1,14 @@
 // Resolución de hojas, encabezados y normalización compartida.
 
+// Solo se invoca desde el puente del despliegue administrativo autenticado.
+// El lector público usa su propia lista de campos y no contiene este método.
+function obtenerProductosAdministrativosWeb() {
+  const contexto=obtenerContextoInventario_(),hoja=contexto.hoja;
+  const values=hoja.getRange(1,1,Math.max(1,hoja.getLastRow()),contexto.ultimaColumna).getValues();
+  const headers=values[0],codigo=contexto.columnas.codigo;
+  return {ok:true,table:{cols:headers.map(function(label){return {label:String(label)};}),rows:values.slice(1).filter(function(row){return String(row[codigo]||'').trim();}).map(function(row){return {c:headers.map(function(_,index){let value=row[index];if(index===codigo)value=normalizarCodigo_(value);if(value instanceof Date)value=value.toISOString();return {v:value===''||value==null?null:value,f:value===''||value==null?'':String(value)};})};})}};
+}
+
 function obtenerContextoInventario_() {
   const libro = SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID);
   const hoja = libro.getSheetByName(INVENTARIO_SHEET_NAME);
@@ -74,3 +83,4 @@ function normalizarCodigo_(valor) {
   if (!/^\d{1,4}$/.test(texto)) return texto;
   return texto.padStart(4, "0");
 }
+

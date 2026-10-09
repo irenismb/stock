@@ -302,7 +302,7 @@
       const indices = catalogHeaderIndices(table?.cols, ["Código", "Nombre", "Categoría", "Precio", "Sección", "Estado comercial"]);
       if(!Array.isArray(table?.rows)) throw new Error("Productos no contiene filas legibles.");
       const fields = {
-        section:"Sección", category:"Categoría", subcategory:"Subcategoría", fragranceFamily:"Familia olfativa",
+        section:"Sección", category:"Categoría", subcategory:"Subcategoría",
         condition:"Condición", name:"Nombre", priceText:"Precio", costText:"Costo", stockText:"Stock",
         referenceExternal:"Referencia externa", description:"Descripción", codeNatura:"Código Natura",
         line:"Línea", public:"Público", commercialStatus:"Estado comercial", brand:"Marca",
@@ -774,7 +774,6 @@
       const rawCategory = String(row.category || "").trim();
       const category = rawCategory;
       const subcategory = String(row.subcategory || "").trim();
-      const fragranceFamily = String(row.fragranceFamily || "").trim();
       const line = String(row.line || "").trim();
       const publicLabel = String(row.public || "").trim();
       const commercialStatus = String(row.commercialStatus || "").trim();
@@ -802,7 +801,6 @@
         section,
         category,
         subcategory,
-        fragranceFamily,
         line,
         public: publicLabel,
         commercialStatus,
@@ -833,7 +831,7 @@
         docsImageUrl,
         imageUrls,
         docsDocumentUrl: `https://docs.google.com/spreadsheets/d/${GOOGLE_SHEET_SOURCE.spreadsheetId}/edit#gid=${GOOGLE_SHEET_SOURCE.gid}`,
-        searchKey: normalizeText([code, name, section, category, subcategory, publicLabel, line, fragranceFamily, condition, commercialStatus, row.description, row.referenceExternal].filter(Boolean).join(" "))
+        searchKey: normalizeText([code, name, section, category, subcategory, publicLabel, line, condition, commercialStatus, row.description, row.referenceExternal].filter(Boolean).join(" "))
       };
     }
 
@@ -850,7 +848,6 @@
             section: GIFT_IMAGE_SOURCE.section,
             category: GIFT_IMAGE_SOURCE.category,
             subcategory: "",
-            fragranceFamily: "",
             line: "",
             public: "",
             commercialStatus: "",
@@ -1714,7 +1711,6 @@
       const hasKnownStock = Number.isInteger(p.stock) && p.stock >= 0;
       const stockVal = hasKnownStock ? p.stock : 0;
       const parts = [];
-      if(p.fragranceFamily && !parts.some(existing=>cleanNavKey(existing)===cleanNavKey(p.fragranceFamily))) parts.push(p.fragranceFamily);
       if(p.id && shouldShowProductCodes()) parts.push(`Código ${p.id}`);
       if(INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK){
         parts.push(hasKnownStock ? `Stock: ${stockVal}` : "Stock: Por confirmar");

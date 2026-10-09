@@ -678,6 +678,7 @@
   }
   function addPrice(card){if(card.querySelector(".price-admin-editor"))return;const price=card.querySelector(".price"),row=card.querySelector(".row"),code=visibilityId("producto",card.dataset.id||"");if(!price||!row||!/^\d{4}$/.test(code))return;const p=productObj(code),prev=previousPriceForEditor(p,price.textContent),ed=document.createElement("div"),inp=document.createElement("input"),save=document.createElement("button"),st=document.createElement("span");ed.className="price-admin-editor";ed.dataset.prev=prev;inp.className="price-admin-input";inp.inputMode="numeric";inp.value=editable(prev);save.className="btn-acc price-admin-save";save.textContent="Guardar";save.disabled=true;st.className="price-admin-status";inp.oninput=()=>save.disabled=!validPrice(inp.value)||priceValue(inp.value)===ed.dataset.prev;inp.onkeydown=e=>{if(e.key!=="Enter"||e.isComposing)return;e.preventDefault();if(inp.disabled)return;if(!validPrice(inp.value)){status(st,"Precio inválido","err");return}if(priceValue(inp.value)===ed.dataset.prev)return;savePrice(card,price,ed,inp,save,st)};save.onclick=()=>savePrice(card,price,ed,inp,save,st);ed.append(inp,save,st);price.hidden=true;row.classList.add("price-admin-active");price.insertAdjacentElement("afterend",ed)}
   function addDescriptionCopy(card){
+    if(card.classList.contains("catalog-ficha-card")) return;
     if(card.querySelector(".product-copy-description")) return;
     if(card.querySelector(".catalog-admin-copy-description")) return;
     const description=card.querySelector(".description");
@@ -768,4 +769,5 @@
     if(!options.keepPending)pendingChannel="";if(!options.keepConnecting)connecting=false;if(!options.keepButton)syncConnectionButton();
   }
 })();
+
 

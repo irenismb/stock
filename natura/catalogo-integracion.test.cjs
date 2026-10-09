@@ -271,8 +271,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-cuadradas-2026-10-09-2'));
-  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=lector-publico-control-2026-10-08-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-proporcionales-2026-10-09-3'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=fichas-proporcionales-2026-10-09-3'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{
@@ -296,22 +296,22 @@ test('La configuración y visibilidad públicas consultan únicamente lector App
 
 function fichaLayoutEnvironment({width=350,descriptionHeight=48,factsHeight=150,empty=false}={}){
   const classes=()=>{const values=new Set();return {add:x=>values.add(x),remove:x=>values.delete(x),contains:x=>values.has(x),toggle(x,on){on?values.add(x):values.delete(x)}}};
-  const square={classList:classes(),style:{setProperty(){}},getBoundingClientRect:()=>({width})};
+  const properties=new Map();let layouts=0;
+  const square={classList:classes(),style:{setProperty(k,v){properties.set(k,v);layouts++;}},getBoundingClientRect:()=>({width})};
   const description={textContent:empty?'':'Descripción ficticia completa',style:{}};
   const details={classList:classes(),open:false,hidden:empty,querySelector:()=>description,
     get scrollHeight(){return this.open?descriptionHeight:40;}};
   const row={textContent:'$ 25.000'};
-  const attributes={parentNode:null};let moves=0;
-  const facts={insertBefore(node){node.parentNode=this;moves++;},
-    get scrollHeight(){return attributes.parentNode===this?factsHeight:Math.min(factsHeight,100);}};
+  const attributes={parentNode:null};
+  const facts={clientWidth:150,scrollWidth:150,
+    get scrollHeight(){return Math.ceil(factsHeight*(width/350)*Number(properties.get('--ficha-fit')??1));}};
   attributes.parentNode=facts;
-  const main={get clientHeight(){return width-32-(details.hidden?0:details.scrollHeight+12);}};
-  const extra={hidden:true,append(node){node.parentNode=this;moves++;}};
+  const main={get clientHeight(){return Math.floor(width-width*32/420-(details.hidden?0:details.scrollHeight+width*12/420));}};
   square.querySelector=selector=>({'.product-details':details,'.ficha-facts':facts,'.ficha-main':main}[selector]);
-  const card={querySelector:selector=>({'.ficha-square':square,'.ficha-attributes':attributes,'.ficha-extra':extra,'.row':row}[selector]||null)};
+  const card={querySelector:selector=>({'.ficha-square':square,'.ficha-attributes':attributes,'.row':row}[selector]||null)};
   const context=vm.createContext({card,getComputedStyle:()=>({fontSize:'14px',fontFamily:'Calibri'})});
   vm.runInContext(toolsSource,context);
-  return {run:()=>vm.runInContext('fitCatalogFicha(card)',context),details,square,description,extra,row,attributes,facts,moves:()=>moves,setWidth:n=>{width=n;}};
+  return {run:()=>vm.runInContext('fitCatalogFicha(card)',context),details,square,description,row,attributes,facts,main,properties,layouts:()=>layouts,setWidth:n=>{width=n;}};
 }
 test('Ficha corta muestra descripción completa sin desplegable y conserva tamaño cuadrado',()=>{
   const e=fichaLayoutEnvironment();e.run();
@@ -331,10 +331,38 @@ test('Descripción que cabe en pantalla amplia cambia a desplegable cuando el es
   assert.equal(e.details.classList.contains('ficha-description-inline'),true);
   e.setWidth(320);e.run();assert.equal(e.details.classList.contains('ficha-description-inline'),false);assert.equal(e.details.open,false);
 });
-test('Descripción vacía no muestra control y atributos extensos conservan continuación completa',()=>{
+test('Descripción vacía no muestra control y los atributos extensos permanecen dentro del cuadrado',()=>{
   const e=fichaLayoutEnvironment({empty:true,factsHeight:480});e.run();
-  assert.equal(e.details.hidden,true);assert.equal(e.extra.hidden,false);assert.equal(e.attributes.parentNode===e.facts,false);
-  const moves=e.moves();e.run();assert.equal(e.moves(),moves,'El observador no reconstruye controles ni mueve nodos sin cambios');
+  assert.equal(e.details.hidden,true);assert.equal(e.attributes.parentNode,e.facts);
+  assert.ok(Number(e.properties.get('--ficha-fit'))<1);
+  assert.ok(e.facts.scrollHeight<=e.main.clientHeight);
+  const layouts=e.layouts();e.run();assert.equal(e.layouts(),layouts,'El observador no reconstruye controles sin cambios');
+});
+test('Datos extensos y precio se ajustan juntos sin salir del cuadrado en anchos móviles',()=>{
+  for(const width of [240,280,320,360,390,420,520]){
+    const e=fichaLayoutEnvironment({width,factsHeight:680});e.run();
+    assert.equal(e.attributes.parentNode,e.facts);
+    assert.ok(e.facts.scrollHeight<=e.main.clientHeight,'Ancho '+width);
+    assert.equal(e.properties.get('--ficha-unit'),width/420+'px');
+    assert.equal(e.square.classList.contains('ficha-description-expanded'),false);
+  }
+});
+test('El título omite solo los contenidos repetidos y conserva el nombre oficial y multipacks',()=>{
+  const context=vm.createContext({});vm.runInContext(toolsSource,context);
+  const cases=[
+    ['Avon Senses colonia femenino 120 ml','120 ml','Avon Senses colonia femenino'],
+    ['Crema 50ml','50 ml','Crema'],
+    ['Crema 150 ml','50 ml','Crema 150 ml'],
+    ['Perfume 50 mL','50 ml','Perfume'],
+    ['Tratamiento 1,5 L','1.5 l','Tratamiento'],
+    ['Kit 2 x 50 ml','50 ml','Kit 2 x 50 ml'],
+    ['Labial tono 50','50 ml','Labial tono 50']
+  ];
+  for(const [name,presentation,expected] of cases){
+    context.product={name,presentation};
+    assert.equal(vm.runInContext('catalogFichaName(product)',context),expected);
+    assert.equal(context.product.name,name);
+  }
 });
 test('Folleto conserva datos oficiales de la ficha y exportación sin precio',async()=>{
   const env=environment();await confirmed(env);vm.runInContext(toolsSource,env.context);

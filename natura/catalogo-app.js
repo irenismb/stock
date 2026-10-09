@@ -3224,7 +3224,7 @@ function makeCard(p){
   lineEl.hidden=!lineEl.textContent;
   const productName=String(p.name||"");
   nameEl.title=productName;
-  setSearchHighlightedText(nameEl,catalogProductDisplayName(productName));
+  setSearchHighlightedText(nameEl,catalogProductDisplayName(p.isGiftGalleryImage?productName:catalogFichaName(p)));
   const metaText=stockMetaText(p);
   setSearchHighlightedText(metaEl,metaText);
   const description=String(p?.description||"").trim();
@@ -3238,43 +3238,11 @@ function makeCard(p){
     imgBox.setAttribute("aria-label","Imagen de regalo para toda ocasión");
   }
   if(!p.isGiftGalleryImage){
-    const copyStatus=document.createElement("p");
-    copyStatus.setAttribute("role","status");
-    copyStatus.style.cssText="margin:0;padding:0 12px;font-size:12px;";
-    const copyRow=document.createElement("div");
-    copyRow.className="product-description-actions";
-    descriptionEl.insertAdjacentElement("afterend",copyRow);
-    for(const [field,label] of [["name","Copiar nombre"],["description","Copiar descripción"]]){
-      const copy=document.createElement("button");
-      copy.type="button";
-      copy.className="btn-ghost product-copy-"+field;
-      copy.textContent=label;
-      copy.setAttribute("aria-label",label+" del producto al portapapeles");
-      copy.disabled=!String(p[field]||"").trim();
-      copy.addEventListener("click",async event=>{
-        event.preventDefault();event.stopPropagation();
-        const current=productById.get(String(p.id))||p;
-        const text=String(current[field]||"").trim();
-        if(!text)return;
-        copy.disabled=true;
-        try{
-          await copyProductText(text);
-          copy.textContent="Copiado ✓";
-          copyStatus.textContent=field==="name"?"Nombre copiado.":"Descripción copiada.";
-          setTimeout(()=>{copy.textContent=label;copy.disabled=false},1600);
-        }catch(error){
-          copy.disabled=false;
-          copyStatus.textContent="No se pudo copiar. Inténtalo de nuevo.";
-        }
-      });
-      copyRow.appendChild(copy);
-    }
-    copyRow.insertAdjacentElement("afterend",copyStatus);
     const details=document.createElement("details");
     details.className="product-details";
     const summary=document.createElement("summary");summary.textContent="Descripción";
     descriptionEl.insertAdjacentElement("beforebegin",details);
-    details.append(summary,descriptionEl,copyRow,copyStatus);
+    details.append(summary,descriptionEl);
     const selection=document.createElement("label");selection.className="product-selection";
     const check=document.createElement("input");check.type="checkbox";
     check.checked=FOLLETO_SELECTION.has(String(p.id));check.dataset.folletoSelect=String(p.id);

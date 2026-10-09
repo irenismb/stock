@@ -145,6 +145,17 @@ function buildFichaModel(product){
     attributes:Array.isArray(product.attributes)?product.attributes:[],imageUrl:String(product.imageUrl||"")
   };
 }
+function catalogFichaName(product){
+  const quantity=/\b\d+(?:[.,]\d+)?\s*(?:ml|kg|g|l|und\.?|unidades)\b/gi;
+  const token=value=>value.toLowerCase().replace(/\s/g,"").replace(",",".");
+  const contents=new Set((folletoPresentation(product).match(quantity)||[]).map(token));
+  const name=String(product.name||"");
+  return name.replace(quantity,(value,offset)=>{
+    // Preserve multipack expressions unless their entire presentation is repeated.
+    if(/[x×]\s*$/i.test(name.slice(0,offset)))return value;
+    return contents.has(token(value))?"":value;
+  }).replace(/\(\s*\)/g,"").replace(/\s+/g," ").replace(/[\s·,;:+–—-]+$/g,"").trim()||name;
+}
 // Interactive renderer: same ficha model and visual identity, with native text and controls.
 function renderCatalogFicha(card,p){
   const model=buildFichaModel({...p,code:stockMetaText(p),
@@ -158,7 +169,7 @@ function renderCatalogFicha(card,p){
   const summary=details.querySelector("summary");
   details.hidden=!model.description;
   summary.setAttribute("aria-label","Descripción de "+model.name);
-  // Reuse the existing nodes and handlers: image zoom, cart, copy and price editor keep their identity.
+  // Reuse the existing nodes and handlers for image zoom, cart and price editing.
   facts.append(card.querySelector(".name"));
   const presentation=document.createElement("p");presentation.className="ficha-presentation";
   presentation.textContent=model.presentation;presentation.hidden=!model.presentation;facts.append(presentation);
@@ -170,12 +181,9 @@ function renderCatalogFicha(card,p){
   }
   attributes.hidden=!model.attributes.length;facts.append(attributes,card.querySelector(".row"));
   card.querySelector(".product-line").hidden=true;
-  const copyRow=details.querySelector(".product-description-actions");
-  const status=details.querySelector('[role="status"]');
-  pad.append(copyRow,status);details.append(description);
+  details.append(description);
   main.append(image,facts);square.append(main,details);
-  const extra=document.createElement("div");extra.className="ficha-extra";extra.hidden=true;
-  card.prepend(square);square.insertAdjacentElement("afterend",extra);
+  card.prepend(square);
   image.querySelector("img").addEventListener("load",()=>drawCatalogFichaImage(card));
   details.addEventListener("toggle",()=>{
     if(details.classList.contains("ficha-description-inline"))return;
@@ -199,35 +207,50 @@ function fitCatalogFicha(card){
   if(!width)return;
   const details=square.querySelector(".product-details"),description=details.querySelector(".description");
   const facts=square.querySelector(".ficha-facts"),main=square.querySelector(".ficha-main");
-  const attributes=card.querySelector(".ficha-attributes"),extra=card.querySelector(".ficha-extra");
+  const attributes=card.querySelector(".ficha-attributes");
   const editor=card.querySelector(".price-admin-editor"),row=card.querySelector(".row");
   const key=[Math.round(width*10),Boolean(editor),row.textContent,description.textContent,
     getComputedStyle(description).fontSize,getComputedStyle(facts).fontFamily].join("|");
   if(CATALOG_FICHA_LAYOUT_KEYS.get(card)===key)return;
   const expanded=details.open&&!details.classList.contains("ficha-description-inline");
   square.style.setProperty("--ficha-side",width+"px");
+  square.style.setProperty("--ficha-unit",width/420+"px");
   square.classList.remove("ficha-description-expanded");
-  square.classList.remove("ficha-compact");
   details.classList.remove("ficha-description-inline");details.open=false;
-  if(attributes.parentNode!==facts)facts.insertBefore(attributes,row);
-  extra.hidden=true;
-  // Keep normal attributes in the square at a readable size before using a continuation.
-  if(facts.scrollHeight>main.clientHeight+1)square.classList.add("ficha-compact");
-  // Unusually extensive attributes stay complete in a continuation within the same article.
-  if(facts.scrollHeight>main.clientHeight+1){extra.append(attributes);extra.hidden=false;}
+  // Administration keeps its usable editor and original handlers in the controls footer.
+  if(editor){
+    const pad=card.querySelector(".pad");
+    if(editor.parentNode!==pad)pad.append(editor);
+  }
   if(!details.hidden){
     details.classList.add("ficha-description-inline");details.open=true;
-    const fits=facts.scrollHeight<=main.clientHeight+1&&main.clientHeight>=width*.42
-      &&details.scrollHeight<=width*.45;
+    const fits=main.clientHeight>=width*.52&&details.scrollHeight<=width*.38;
     if(!fits){
       details.classList.remove("ficha-description-inline");details.open=false;
       square.style.setProperty("--ficha-main-height",main.clientHeight+"px");
-      details.open=expanded;
-      square.classList.toggle("ficha-description-expanded",expanded);
     }
+  }
+  // Fit every fact together. Never move attributes below the square or clip their text.
+  fitCatalogFichaFacts(square,facts,main);
+  if(!details.hidden&&!details.classList.contains("ficha-description-inline")){
+    square.style.setProperty("--ficha-main-height",main.clientHeight+"px");
+    details.open=expanded;
+    square.classList.toggle("ficha-description-expanded",expanded);
   }
   CATALOG_FICHA_LAYOUT_KEYS.set(card,key);
   drawCatalogFichaImage(card);
+}
+function fitCatalogFichaFacts(square,facts,main){
+  const fits=()=>facts.scrollHeight<=main.clientHeight&&facts.scrollWidth<=facts.clientWidth;
+  square.style.setProperty("--ficha-fit",1);
+  if(fits())return;
+  let low=0,high=1;
+  // Binary search follows real line wrapping rather than counting characters or fields.
+  for(let i=0;i<12;i++){
+    const scale=(low+high)/2;square.style.setProperty("--ficha-fit",scale);
+    if(fits())low=scale;else high=scale;
+  }
+  square.style.setProperty("--ficha-fit",low*.995);
 }
 function drawCatalogFichaImage(card){
   const box=card.querySelector(".img"),image=box?.querySelector("img");

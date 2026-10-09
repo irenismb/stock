@@ -1,4 +1,4 @@
-﻿// Folleto: una fuente, un snapshot, un layout y un renderer para todas las salidas.
+// Folleto: una fuente, un snapshot, un layout y un renderer para todas las salidas.
 const FOLLETO_SELECTION=new Set();
 const FOLLETO_FORMATS=Object.freeze({
   instagram:{width:1080,height:1350,label:"Instagram",extension:"png"},
@@ -97,6 +97,8 @@ function folletoLines(ctx,text,width){
 }
 // Una sola ficha cuadrada, sin precios ni información corporativa, para todas las salidas.
 const FICHA_SIZE=Object.freeze({width:1080,height:1080});
+// Shared palette and image blending for exported and interactive fichas.
+const FICHA_THEME=Object.freeze({paper:"#fffaf5",center:"#fff1ed",wash:"#f6d5d7",line:"#bb9151",blend:"multiply"});
 const FOLLETO_COMPANY=Object.freeze({
   name:"IRENISMB STOCK NATURA",subtitle:"Consultores independientes de Natura y AVON",
   phone:"304 208 8961",location:"Los Almendros, Santa Marta",
@@ -143,6 +145,101 @@ function buildFichaModel(product){
     attributes:Array.isArray(product.attributes)?product.attributes:[],imageUrl:String(product.imageUrl||"")
   };
 }
+// Interactive renderer: same ficha model and visual identity, with native text and controls.
+function renderCatalogFicha(card,p){
+  const model=buildFichaModel({...p,code:stockMetaText(p),
+    presentation:folletoPresentation(p),attributes:folletoProductAttributes(p),imageUrl:p.docsImageUrl});
+  card.classList.add("catalog-ficha-card");
+  const square=document.createElement("div");square.className="ficha-square";
+  const main=document.createElement("div");main.className="ficha-main";
+  const facts=document.createElement("div");facts.className="ficha-facts";
+  const image=card.querySelector(".img"),pad=card.querySelector(".pad");
+  const details=card.querySelector(".product-details"),description=card.querySelector(".description");
+  const summary=details.querySelector("summary");
+  details.hidden=!model.description;
+  summary.setAttribute("aria-label","Descripción de "+model.name);
+  // Reuse the existing nodes and handlers: image zoom, cart, copy and price editor keep their identity.
+  facts.append(card.querySelector(".name"));
+  const presentation=document.createElement("p");presentation.className="ficha-presentation";
+  presentation.textContent=model.presentation;presentation.hidden=!model.presentation;facts.append(presentation);
+  const meta=card.querySelector(".meta");facts.append(meta);
+  const attributes=document.createElement("dl");attributes.className="ficha-attributes";
+  for(const {label,value} of model.attributes){
+    const item=document.createElement("div"),term=document.createElement("dt"),definition=document.createElement("dd");
+    term.textContent=label+":";definition.textContent=value;item.append(term,definition);attributes.append(item);
+  }
+  attributes.hidden=!model.attributes.length;facts.append(attributes,card.querySelector(".row"));
+  card.querySelector(".product-line").hidden=true;
+  const copyRow=details.querySelector(".product-description-actions");
+  const status=details.querySelector('[role="status"]');
+  pad.append(copyRow,status);details.append(description);
+  main.append(image,facts);square.append(main,details);
+  const extra=document.createElement("div");extra.className="ficha-extra";extra.hidden=true;
+  card.prepend(square);square.insertAdjacentElement("afterend",extra);
+  details.addEventListener("toggle",()=>{
+    if(details.classList.contains("ficha-description-inline"))return;
+    square.classList.toggle("ficha-description-expanded",details.open);
+  });
+  queueCatalogFichaLayout();
+}
+
+const CATALOG_FICHA_LAYOUT_KEYS=new WeakMap();
+let catalogFichaLayoutQueued=false,catalogFichasInitialized=false;
+function queueCatalogFichaLayout(){
+  if(catalogFichaLayoutQueued)return;
+  catalogFichaLayoutQueued=true;
+  requestAnimationFrame(()=>{
+    catalogFichaLayoutQueued=false;
+    for(const card of document.querySelectorAll("#grid .catalog-ficha-card"))fitCatalogFicha(card);
+  });
+}
+function fitCatalogFicha(card){
+  const square=card.querySelector(".ficha-square"),width=square.getBoundingClientRect().width;
+  if(!width)return;
+  const details=square.querySelector(".product-details"),description=details.querySelector(".description");
+  const facts=square.querySelector(".ficha-facts"),main=square.querySelector(".ficha-main");
+  const attributes=card.querySelector(".ficha-attributes"),extra=card.querySelector(".ficha-extra");
+  const editor=card.querySelector(".price-admin-editor"),row=card.querySelector(".row");
+  const key=[Math.round(width*10),Boolean(editor),row.textContent,description.textContent,
+    getComputedStyle(description).fontSize,getComputedStyle(facts).fontFamily].join("|");
+  if(CATALOG_FICHA_LAYOUT_KEYS.get(card)===key)return;
+  const expanded=details.open&&!details.classList.contains("ficha-description-inline");
+  square.style.setProperty("--ficha-side",width+"px");
+  square.classList.remove("ficha-description-expanded");
+  details.classList.remove("ficha-description-inline");details.open=false;
+  if(attributes.parentNode!==facts)facts.insertBefore(attributes,row);
+  extra.hidden=true;
+  // Unusually extensive attributes stay complete in a continuation within the same article.
+  if(facts.scrollHeight>main.clientHeight+1){extra.append(attributes);extra.hidden=false;}
+  if(!details.hidden){
+    details.classList.add("ficha-description-inline");details.open=true;
+    const fits=facts.scrollHeight<=main.clientHeight+1&&main.clientHeight>=width*.42
+      &&details.scrollHeight<=width*.45;
+    if(!fits){
+      details.classList.remove("ficha-description-inline");details.open=false;
+      square.style.setProperty("--ficha-main-height",main.clientHeight+"px");
+      details.open=expanded;
+      square.classList.toggle("ficha-description-expanded",expanded);
+    }
+  }
+  CATALOG_FICHA_LAYOUT_KEYS.set(card,key);
+}
+function initCatalogFichas(){
+  if(catalogFichasInitialized)return;catalogFichasInitialized=true;
+  for(const [key,value] of Object.entries(FICHA_THEME))document.documentElement.style.setProperty("--ficha-"+key,value);
+  const grid=document.getElementById("grid");if(!grid)return;
+  if(typeof ResizeObserver!=="undefined")new ResizeObserver(queueCatalogFichaLayout).observe(grid);
+  new MutationObserver(records=>{
+    if(records.some(r=>r.target===grid||r.target.parentElement?.closest(".row")||
+      [...r.addedNodes,...r.removedNodes].some(n=>n.nodeType===1&&n.matches?.(".price-admin-editor"))))queueCatalogFichaLayout();
+  }).observe(grid,{childList:true,subtree:true,characterData:true});
+  window.addEventListener("resize",queueCatalogFichaLayout);
+  window.addEventListener("irenismb:precio-guardado",queueCatalogFichaLayout);
+  window.addEventListener("irenismb:admin-section-change",queueCatalogFichaLayout);
+  document.fonts?.ready.then(()=>{document.querySelectorAll(".catalog-ficha-card").forEach(c=>CATALOG_FICHA_LAYOUT_KEYS.delete(c));queueCatalogFichaLayout();});
+  queueCatalogFichaLayout();
+}
+
 function folletoFitText(ctx,text,width,height,ideal,minSize,bold=false,truncate=false){
   const content=String(text||"").trim();
   if(!content)return {lines:[],size:ideal,lineHeight:ideal*1.24};
@@ -270,29 +367,29 @@ function renderFicha(ctx,card,image){
   const sx=width/FICHA_SIZE.width,sy=height/FICHA_SIZE.height;
   ctx.save();ctx.translate(x,y);ctx.scale(sx,sy);
   const bg=ctx.createLinearGradient(0,0,1080,1080);
-  bg.addColorStop(0,"#fffaf5");bg.addColorStop(.5,"#fff1ed");bg.addColorStop(1,"#fffaf5");
+  bg.addColorStop(0,FICHA_THEME.paper);bg.addColorStop(.5,FICHA_THEME.center);bg.addColorStop(1,FICHA_THEME.paper);
   ctx.fillStyle=bg;folletoRoundRect(ctx,0,0,1080,1080,28);ctx.fill();
   ctx.save();ctx.clip();
   const wash=ctx.createRadialGradient(280,440,20,280,440,580);
-  wash.addColorStop(0,"#f6d5d7");wash.addColorStop(1,"#fff4ee00");
+  wash.addColorStop(0,FICHA_THEME.wash);wash.addColorStop(1,"#fff4ee00");
   ctx.fillStyle=wash;ctx.fillRect(0,0,1080,1080);
   ctx.restore();
   // La foto conserva su proporción y el producto completo. No se usan logos como suplentes.
   if(product.imageUrl){
-    ctx.save();ctx.globalCompositeOperation="multiply";
+    ctx.save();ctx.globalCompositeOperation=FICHA_THEME.blend;
     folletoDrawImage(ctx,image,32,40,498,measure.mainHeight+28,true);ctx.restore();
   }
   let textY=54;
   textY=folletoDrawText(ctx,measure.name,measure.textX,textY,measure.textWidth,true)+16;
   if(measure.presentation.lines.length)textY=folletoDrawText(ctx,measure.presentation,measure.textX,textY,measure.textWidth)+18;
   if(measure.code.lines.length){
-    ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(measure.textX,textY);ctx.lineTo(1026,textY);ctx.stroke();
+    ctx.strokeStyle=FICHA_THEME.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(measure.textX,textY);ctx.lineTo(1026,textY);ctx.stroke();
     textY=folletoDrawText(ctx,measure.code,measure.textX,textY+18,measure.textWidth,true)+14;
   }
   folletoDrawText(ctx,measure.attributes,measure.textX,textY,measure.textWidth);
   if(measure.description.lines.length){
     const descriptionY=54+measure.mainHeight+20;
-    ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(54,descriptionY);ctx.lineTo(1026,descriptionY);ctx.stroke();
+    ctx.strokeStyle=FICHA_THEME.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(54,descriptionY);ctx.lineTo(1026,descriptionY);ctx.stroke();
     folletoDrawText(ctx,measure.description,54,descriptionY+18,972,false,true);
   }
   ctx.restore();
@@ -327,7 +424,7 @@ function renderFolletoPDFHeader(ctx,width,assets){
   ctx.save();ctx.textBaseline="top";ctx.textAlign="left";
   const bg=ctx.createLinearGradient(x,y,x+w,y+h);bg.addColorStop(0,"#f8e5e3");bg.addColorStop(.5,"#fffaf5");bg.addColorStop(1,"#f8e5e3");
   ctx.fillStyle=bg;folletoRoundRect(ctx,x,y,w,h,16);ctx.fill();
-  ctx.save();ctx.globalCompositeOperation="multiply";folletoDrawImage(ctx,assets.logo,x+14,y+23,132,132);ctx.restore();
+  ctx.save();ctx.globalCompositeOperation=FICHA_THEME.blend;folletoDrawImage(ctx,assets.logo,x+14,y+23,132,132);ctx.restore();
   const companyX=x+164,companyWidth=490,contactX=x+668,contactWidth=w-688;
   const company=folletoFitText(ctx,FOLLETO_COMPANY.name,companyWidth,72,29,25,true);
   const nameBottom=folletoDrawText(ctx,company,companyX,y+34,companyWidth,true);
@@ -341,7 +438,7 @@ function renderFolletoPDFHeader(ctx,width,assets){
   folletoDrawText(ctx,location,contactX,y+89,contactWidth);
   const url=folletoFitText(ctx,FOLLETO_COMPANY.catalog,w-190,35,20,18);
   folletoDrawText(ctx,url,companyX,y+153,w-190);
-  ctx.strokeStyle="#bb9151";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.stroke();
+  ctx.strokeStyle=FICHA_THEME.line;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y+h);ctx.lineTo(x+w,y+h);ctx.stroke();
   ctx.restore();
 }
 function folletoCardPositions(width,height,count,formatKey){

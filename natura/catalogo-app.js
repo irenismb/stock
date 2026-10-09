@@ -3271,7 +3271,7 @@ function makeCard(p){
     copyRow.insertAdjacentElement("afterend",copyStatus);
     const details=document.createElement("details");
     details.className="product-details";
-    const summary=document.createElement("summary");summary.textContent="Ver detalles";
+    const summary=document.createElement("summary");summary.textContent="Descripción";
     descriptionEl.insertAdjacentElement("beforebegin",details);
     details.append(summary,descriptionEl,copyRow,copyStatus);
     const selection=document.createElement("label");selection.className="product-selection";
@@ -3282,6 +3282,7 @@ function makeCard(p){
     const label=document.createElement("span");label.textContent="Seleccionar para Folleto";label.className="visually-hidden";
     selection.append(check,label);imgBox.appendChild(selection);
   }
+  if(!p.isGiftGalleryImage) renderCatalogFicha(card,p);
   refreshCardUI(card,p);
   return card;
 }
@@ -3506,6 +3507,7 @@ async function init(){
   bindGridActions();
   window.addEventListener("popstate",restoreCatalogStateFromHistory);
   initFolleto();
+  initCatalogFichas();
   if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
   syncWordToggleButton();
   updateCountAttention();
@@ -3527,4 +3529,5 @@ async function init(){
   await restoreCatalogAdminAfterReload(startupAdminState);
   uxRestoreScrollPosition();
 }
+
 

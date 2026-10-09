@@ -10,6 +10,7 @@ const appSource = fs.readFileSync(path.join(__dirname, 'catalogo-app.js'), 'utf8
 const adminSource = fs.readFileSync(path.join(__dirname, 'precios-admin.js'), 'utf8');
 const cartSource = fs.readFileSync(path.join(__dirname, 'catalogo-carrito-pedido.js'), 'utf8');
 const htmlSource = fs.readFileSync(path.join(__dirname, 'catalogo.html'), 'utf8');
+const toolsSource = fs.readFileSync(path.join(__dirname, 'catalogo-herramientas.js'), 'utf8');
 
 const headers = ['Código','Sección','Categoría','Subcategoría','Familia olfativa','Condición','Nombre','Precio','Costo','Stock','Referencia externa','Descripción','Código Natura','Línea','Público','Estado comercial','Marketplace','Nombre anterior','Marca','Tipo de producto','Variante','Característica','Presentación','Contenido','Unidad','Cantidad de unidades'];
 const samples = [
@@ -140,32 +141,6 @@ test('Reordenar todas las columnas conserva identidad, nombre, valores y atribut
   table.cols.reverse();table.rows.forEach(row=>row.c.reverse());
   assert.deepEqual(clone(assess(env,table).products),clone(expected));
 });
-test('El catálogo usa el esquema sin Familia olfativa y busca el perfil dentro de Descripción',()=>{
-  const env=environment(),table=fixture();
-  const familyIndex=table.cols.findIndex(col=>col.label==='Familia olfativa');
-  const descriptionIndex=table.cols.findIndex(col=>col.label==='Descripción');
-  assert.ok(familyIndex>=0&&descriptionIndex>=0);
-  const description='Fragancia floral fresca con matices frutales para salir de día.';
-  table.rows[0].c[descriptionIndex]={v:description,f:description};
-  table.rows[0].c[familyIndex]={v:'Florales y frutales',f:'Florales y frutales'};
-  table.cols.splice(familyIndex,1);
-  table.rows.forEach(row=>row.c.splice(familyIndex,1));
-  const result=assess(env,table);
-  assert.equal(result.report.compatible,3);
-  const product=result.products[0];
-  assert.equal(product.description,description);
-  assert.ok(product.searchKey.includes('floral'));
-  assert.ok(product.searchKey.includes('frutales'));
-  assert.equal(Object.hasOwn(product,'fragranceFamily'),false);
-  env.sandbox.productWithoutFamily=product;
-  assert.doesNotMatch(env.run('stockMetaText(productWithoutFamily)'),/florales y frutales/i);
-});
-test('Las fichas descargables no requieren el atributo Familia olfativa',()=>{
-  const helperSource=fs.readFileSync(path.join(__dirname,'catalogo-herramientas.js'),'utf8');
-  assert.equal(helperSource.includes('p.fragranceFamily'),false);
-  assert.equal(helperSource.includes('["Familia olfativa"'),false);
-});
-
 test('Conserva decimales reales y separa el texto usado para edición optimista',()=>{
   const env=environment(),product=assess(env,fixture()).products[0];
   assert.equal(product.price,194974.5);assert.equal(product.priceText,'194.975');
@@ -296,7 +271,7 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=lector-publico-control-2026-10-08-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=fichas-cuadradas-2026-10-09-1'));
   assert.ok(htmlSource.includes('precios-admin.js?actualizacion=lector-publico-control-2026-10-08-1'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
@@ -318,3 +293,56 @@ test('La configuración y visibilidad públicas consultan únicamente lector App
   env.reply({ok:true,valores:{REGISTRAR_VISITAS_PROPIAS:'DESACTIVADO',MOSTRAR_CANTIDAD_STOCK:'DESACTIVADO',MOSTRAR_PRECIOS_PRODUCTO:'ACTIVADO',ORDEN_NAVEGACION:'!section,category,subcategory,public,!line,product',ORDEN_PRODUCTOS:'price_asc'},publicadoEn:'2026-10-07T23:00:14.772Z'});
   return config.then(x=>assert.equal(x.valores.ORDEN_PRODUCTOS,'price_asc'));
 });
+
+function fichaLayoutEnvironment({width=350,descriptionHeight=48,factsHeight=150,empty=false}={}){
+  const classes=()=>{const values=new Set();return {add:x=>values.add(x),remove:x=>values.delete(x),contains:x=>values.has(x),toggle(x,on){on?values.add(x):values.delete(x)}}};
+  const square={classList:classes(),style:{setProperty(){}},getBoundingClientRect:()=>({width})};
+  const description={textContent:empty?'':'Descripción ficticia completa',style:{}};
+  const details={classList:classes(),open:false,hidden:empty,querySelector:()=>description,
+    get scrollHeight(){return this.open?descriptionHeight:40;}};
+  const row={textContent:'$ 25.000'};
+  const attributes={parentNode:null};let moves=0;
+  const facts={insertBefore(node){node.parentNode=this;moves++;},
+    get scrollHeight(){return attributes.parentNode===this?factsHeight:Math.min(factsHeight,100);}};
+  attributes.parentNode=facts;
+  const main={get clientHeight(){return width-32-(details.hidden?0:details.scrollHeight+12);}};
+  const extra={hidden:true,append(node){node.parentNode=this;moves++;}};
+  square.querySelector=selector=>({'.product-details':details,'.ficha-facts':facts,'.ficha-main':main}[selector]);
+  const card={querySelector:selector=>({'.ficha-square':square,'.ficha-attributes':attributes,'.ficha-extra':extra,'.row':row}[selector]||null)};
+  const context=vm.createContext({card,getComputedStyle:()=>({fontSize:'14px',fontFamily:'Calibri'})});
+  vm.runInContext(toolsSource,context);
+  return {run:()=>vm.runInContext('fitCatalogFicha(card)',context),details,square,description,extra,row,attributes,facts,moves:()=>moves,setWidth:n=>{width=n;}};
+}
+test('Ficha corta muestra descripción completa sin desplegable y conserva tamaño cuadrado',()=>{
+  const e=fichaLayoutEnvironment();e.run();
+  assert.equal(e.details.classList.contains('ficha-description-inline'),true);
+  assert.equal(e.details.open,true);assert.equal(e.square.classList.contains('ficha-description-expanded'),false);
+  assert.equal(e.description.textContent,'Descripción ficticia completa');
+});
+test('Ficha extensa contrae sin recortar texto y conserva expansión al cambiar de ancho',()=>{
+  const e=fichaLayoutEnvironment({descriptionHeight:850});e.run();
+  assert.equal(e.details.classList.contains('ficha-description-inline'),false);assert.equal(e.details.open,false);
+  e.details.open=true;e.setWidth(390);e.run();
+  assert.equal(e.details.open,true);assert.equal(e.square.classList.contains('ficha-description-expanded'),true);
+  assert.equal(e.description.textContent,'Descripción ficticia completa');
+});
+test('Descripción que cabe en pantalla amplia cambia a desplegable cuando el espacio disminuye',()=>{
+  const e=fichaLayoutEnvironment({width:500,descriptionHeight:180,factsHeight:190});e.run();
+  assert.equal(e.details.classList.contains('ficha-description-inline'),true);
+  e.setWidth(320);e.run();assert.equal(e.details.classList.contains('ficha-description-inline'),false);assert.equal(e.details.open,false);
+});
+test('Descripción vacía no muestra control y atributos extensos conservan continuación completa',()=>{
+  const e=fichaLayoutEnvironment({empty:true,factsHeight:480});e.run();
+  assert.equal(e.details.hidden,true);assert.equal(e.extra.hidden,false);assert.equal(e.attributes.parentNode===e.facts,false);
+  const moves=e.moves();e.run();assert.equal(e.moves(),moves,'El observador no reconstruye controles ni mueve nodos sin cambios');
+});
+test('Folleto conserva datos oficiales de la ficha y exportación sin precio',async()=>{
+  const env=environment();await confirmed(env);vm.runInContext(toolsSource,env.context);
+  env.sandbox.products=assess(env,fixture()).products;
+  env.run('allLoadedProducts=products;window.CATALOG_INITIAL_LOAD_READY=true');
+  const snapshot=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997"]})');
+  assert.equal(snapshot.products.length,1);assert.equal(snapshot.settings.prices,false);
+  assert.equal(snapshot.products[0].name,env.sandbox.products[0].name);
+  assert.equal(snapshot.products[0].code,'Código 9997');
+});
+

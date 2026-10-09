@@ -33,14 +33,3 @@ Conservar los nombres públicos y técnicos estables salvo necesidad real. Divid
 ## Archivo
 
 Los recursos retirados de producción se conservan fuera de la carpeta activa, en la carpeta de archivo definida para el proyecto.
-
-## Asesoría y lectura de productos
-
-- Productos conserva sus columnas originales y añade al final Necesidades de asesoría, Modo de uso y Adecuado para. Las necesidades usan etiquetas confirmadas separadas por punto y coma; los datos no confirmados quedan vacíos.
-- La página permite filtrar necesidades, marca, línea, tipo, variante, presentación, público y presupuesto. Los precios vacíos continúan como pendientes; cada componente de un kit mantiene su cantidad, contenido y unidad.
-- Mi selección se comparte con Folleto. Comparación admite hasta tres productos; WhatsApp abre una recomendación para revisar y enviar, con enlace a los códigos seleccionados.
-- La navegación conserva ORDEN_NAVEGACION y la ocultación heredada. Omitir Producto no abre fichas; sin niveles activos no se muestran niveles ni productos.
-- La fuente pública de productos es el despliegue aislado de solo lectura, con modo=productos. Publica una lista explícita de campos, excluye Costo y Referencia externa, y filtra productos ocultos, Medicamentos y No a la venta en el servidor.
-- La fuente original del lector es el archivo Drive 1cDgWj3dVi515ZX-qxhWNyv7dXq0JgKuy, reflejado en apps-script/lector publico natura/Lector.js. El despliegue usa el scriptId existente; su versión pública permanece aislada del código administrativo.
-- El puente administrativo autenticado obtiene el inventario completo según los permisos de la cuenta Google. Al salir se retiran los costos de memoria y se recupera la fuente pública. Los costos no se guardan en la selección ni en recomendaciones.
-- Pendiente: restringir el inventario oficial a propietario y colaboradores. La interfaz y el lector público ya funcionan sin Costo, pero la autorización de la aplicación del despliegue no permite retirar el permiso de lectura anónima (appNotAuthorizedToFile). Completar desde una sesión de Google con permiso para administrar la compartición; conservar propietario y colaboradores. El flujo de protección queda disponible solo para ejecución manual.

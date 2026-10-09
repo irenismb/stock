@@ -67,56 +67,13 @@ function environment(){
   vm.runInContext(cartSource,context,{filename:'catalogo-carrito-pedido.js'});
   vm.runInContext(adminSource,context,{filename:'precios-admin.js'});
   return {context,sandbox,document,requests,timers,events,run:source=>vm.runInContext(source,context),
-    reply(table,status='ok'){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node,'Debe existir una solicitud JSONP');const url=new URL(node.src);const cb=url.searchParams.get('callback')||url.searchParams.get('tqx').split('responseHandler:')[1];sandbox[cb](url.searchParams.get('modo')==='productos'?{ok:true,status,table}:url.searchParams.has('modo')?table:{status,table});return cb;},
+    reply(table,status='ok'){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node,'Debe existir una solicitud JSONP');const url=new URL(node.src);const cb=url.searchParams.get('callback')||url.searchParams.get('tqx').split('responseHandler:')[1];sandbox[cb](url.searchParams.has('modo')?table:{status,table});return cb;},
     fail(){const node=[...requests].reverse().find(n=>n.parentNode);assert.ok(node);node.onerror();},
     timeout(ms){const timer=[...timers.values()].find(item=>item.ms===ms);assert.ok(timer);timer.fn();}};
 }
 function assess(env,table){env.sandbox.inputTable=table;return env.run('buildCompatibleGoogleSheetProducts(readGoogleSheetProductRows(inputTable).map(row=>({row,imageIndex:new Map()})))');}
 async function confirmed(env,table=visibility){env.reply(table);await env.sandbox.CATALOG_PUBLIC_VISIBILITY_READY;}
 function fixture(){return tableFromValues([headers,...samples]);}
-
-test('Asesoría busca necesidades y componentes, conserva unidades y filtra presupuestos sin convertir vacíos en cero',()=>{
-  const env=environment(),labels=[...headers,'Necesidades de asesoría','Modo de uso','Adecuado para','Nombre del componente 1','Cantidad de unidades del componente 1','Contenido del componente 1','Unidad del componente 1','Nombre del componente 2','Cantidad de unidades del componente 2','Contenido del componente 2','Unidad del componente 2'];
-  const row=labels.map(label=>({'Código':'9981','Nombre':'Kit ficticio de prueba','Sección':'Belleza y cuidado','Categoría':'Cabello','Precio':100.5,'Estado comercial':'A la venta','Necesidades de asesoría':'Hidratación; Control del frizz','Nombre del componente 1':'Champú de prueba','Cantidad de unidades del componente 1':2,'Contenido del componente 1':300,'Unidad del componente 1':'ml','Nombre del componente 2':'Mascarilla de prueba','Cantidad de unidades del componente 2':1,'Contenido del componente 2':100,'Unidad del componente 2':'g'}[label]??''));
-  const p=assess(env,tableFromValues([labels,row])).products[0];env.sandbox.advisorProduct=p;
-  assert.ok(p.searchKey.includes('control del frizz'));assert.ok(p.searchKey.includes('mascarilla de prueba'));
-  assert.deepEqual(Array.from(env.run('advisoryComponents(advisorProduct)')),['Champú de prueba · 2 × · 300 ml','Mascarilla de prueba · 1 × · 100 g']);
-  assert.equal(env.run('advisoryMatches(advisorProduct,{facets:{},needs:new Set(["Hidratación","Control del frizz"]),budget:101})'),true);
-  assert.equal(env.run('advisoryMatches(advisorProduct,{facets:{},needs:new Set(["Nutrición"]),budget:null})'),false);
-  assert.equal(env.run('advisoryMatches(advisorProduct,{facets:{},needs:new Set(),budget:100})'),false);
-  p.hasPrice=false;p.price=0;
-  assert.equal(env.run('advisoryMatches(advisorProduct,{facets:{},budget:100})'),false);
-  assert.equal(env.run('advisoryMatches(advisorProduct,{facets:{},budget:100,includeUnknown:true})'),true);
-  assert.equal(env.run('advisoryMatches(advisorProduct,{facets:{},budget:null})'),true);
-});
-test('Recomendación compartida usa códigos públicos, unidades del kit y precio pendiente; excluye costo',()=>{
-  const env=environment();env.sandbox.selected=[{id:'9981',name:'Producto ficticio',hasPrice:false,price:0,cost:777777,costText:'COSTO_PRIVADO',needs:['Hidratación'],components:[{name:'Crema',quantity:1,content:80,unit:'g'}]}];
-  const text=env.run('advisorySharedText(selected,"Una opción para ti")');
-  assert.match(text,/Precio por confirmar/);assert.match(text,/80 g/);assert.match(text,/seleccion=9981/);assert.doesNotMatch(text,/777777|COSTO_PRIVADO|Costo/);
-});
-test('Agregar todos y Folleto toman únicamente los resultados de asesoría; limpiar elimina esos filtros',()=>{
-  const env=environment();env.sandbox.products=[{id:'9981',name:'A',needs:['Hidratación'],searchKey:'a',price:25,hasPrice:true},{id:'9982',name:'B',needs:['Nutrición'],searchKey:'b',price:50,hasPrice:true}];
-  env.run('all=products;advisoryState.needs.add("Hidratación");advisoryState.budget=30');
-  assert.deepEqual(Array.from(env.run('buildFilteredList().map(p=>p.id)')),['9981']);
-  env.run('resetDiscoveryFilters()');assert.equal(env.run('buildFilteredList().length'),2);
-});
-test('Abrir una recomendación muestra sus códigos; Inicio vuelve al catálogo completo',()=>{
-  const env=environment();env.sandbox.products=[{id:'9981',name:'A',needs:[],searchKey:'a',price:25,hasPrice:true},{id:'9982',name:'B',needs:[],searchKey:'b',price:50,hasPrice:true}];
-  env.sandbox.location.href='https://irenismb.github.io/stock/natura/catalogo.html?seleccion=9982';
-  env.run('all=products;advisoryState.initialized=true;readAdvisoryFiltersFromUrl()');
-  assert.deepEqual(Array.from(env.run('buildFilteredList().map(p=>p.id)')),['9982']);
-  env.run('resetDiscoveryFilters()');assert.equal(env.run('buildFilteredList().length'),2);
-});
-test('Lector público excluye costos, campos desconocidos, secciones ocultas, medicamentos y productos no vendidos',()=>{
-  const source=fs.readFileSync(path.join(__dirname,'apps-script','lector publico natura','Lector.js'),'utf8'),context=vm.createContext({console,Set,Map,Date});vm.runInContext(source,context);
-  const labels=['Código','Nombre','Precio','Costo','Sección','Categoría','Subcategoría','Público','Línea','Estado comercial','Necesidades de asesoría','Campo interno futuro'];
-  context.labels=labels;context.values=[['0011','Visible',123.45,987654,'Belleza y cuidado','Cabello','','','Lumina','A la venta','Hidratación','SECRETO'],['0012','No vendido',10,20,'Belleza y cuidado','Cabello','','','','No a la venta'],['0013','Oculto heredado',10,20,'Otros productos','Papelería','','','','A la venta'],['0014','Medicamento',10,20,'Belleza y cuidado','Medicamentos','','','','A la venta'],['0015','Línea oculta',10,20,'Belleza y cuidado','Cabello','','','Privada','A la venta']];
-  context.rules=[{tipo:'seccion',identificador:'otros productos',oculto:true},{tipo:'producto',identificador:'0013',oculto:false},{tipo:'linea',identificador:'belleza y cuidado|cabello|||privada',oculto:true}];
-  const table=vm.runInContext('tablaProductosPublicos_(labels,values,rules)',context);
-  assert.equal(table.rows.length,1);assert.equal(table.rows[0].c[0].v,'0011');assert.equal(table.rows[0].c[2].v,123.45);assert.ok(table.cols.some(x=>x.label==='Necesidades de asesoría'));
-  assert.doesNotMatch(JSON.stringify(table),/Costo|987654|SECRETO|Campo interno futuro|No vendido|Medicamento|Línea oculta|Oculto heredado/);
-  assert.throws(()=>vm.runInContext('tablaProductosPublicos_(labels,values,[])',context),/vacía/);
-});
 
 // DOM acotado para ejecutar las funciones publicadas del editor sin guardar precios.
 function priceEditorEnvironment(){
@@ -234,7 +191,7 @@ test('No depende de A:Z y acepta un campo indispensable ubicado después de Z',(
   const env=environment(),table=fixture();table.cols.push({label:'Auxiliar'});table.rows.forEach(row=>row.c.push({v:null}));
   table.cols.push(table.cols.splice(6,1)[0]);table.rows.forEach(row=>row.c.push(row.c.splice(6,1)[0]));
   assert.equal(assess(env,table).products.length,3);const query=new URL(env.run('googleSheetQueryUrl("prueba")'));
-  assert.equal(query.searchParams.has('range'),false);assert.equal(query.hostname,'script.google.com');assert.equal(query.searchParams.get('modo'),'productos');assert.equal(query.searchParams.has('tq'),false);
+  assert.equal(query.searchParams.has('range'),false);assert.equal(query.searchParams.get('tq'),'select *');
 });
 test('Fallo o timeout de Visibilidad en primera carga deja cero productos públicos',async()=>{
   for(const mode of ['error','timeout']){const env=environment();mode==='error'?env.fail():env.timeout(25000);
@@ -314,9 +271,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  const appVersion=htmlSource.match(/catalogo-app\.js\?actualizacion=([^"']+)/)?.[1];
-  const adminVersion=htmlSource.match(/precios-admin\.js\?actualizacion=([^"']+)/)?.[1];
-  assert.ok(appVersion);assert.equal(appVersion,adminVersion);
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{
@@ -466,5 +422,4 @@ test('Información lateral usa los mismos nodos y restaura el orden móvil sin d
     media.matches=true;media.change();assert.equal(left.children.length,1);assert.equal(right.children.length,1);
   }
 });
-
 

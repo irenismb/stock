@@ -102,8 +102,6 @@
   }
 
   function renderDirectProducts(){
-    if(typeof advisoryExperienceAvailable==="function"&&advisoryExperienceAvailable()&&!window.CATALOG_ADMIN_MODE_ACTIVE)return;
-    if(window.CATALOG_PUBLIC_CONFIG_CONFIRMED!==true || typeof navigationOrderedLevels==="function"&&!navigationOrderedLevels().includes("product"))return;
     const active = isActive();
     document.body.classList.toggle("direct-product-search-active", active);
     grid.classList.remove("quick-image-search");
@@ -187,7 +185,6 @@
   function syncCategories(){
     const host=document.getElementById("catalogCategories");
     if(!host) return;
-    if(typeof advisoryExperienceAvailable==="function"&&advisoryExperienceAvailable()&&!window.CATALOG_ADMIN_MODE_ACTIVE){host.hidden=true;host.replaceChildren();return;}
     const items=typeof albums!=="undefined"&&Array.isArray(albums)?albums:[];
     host.hidden=!showAllEnabled||!items.length;
     host.replaceChildren();
@@ -404,4 +401,3 @@ document.getElementById("catalogHomeBtn")?.addEventListener("click",()=>{
   window.setCatalogShowAllProductsDirectEnabled(true);
   refreshNavigationAlbums();refreshFilterOptionsForScope();writeStateToUrl();render();
 });
-

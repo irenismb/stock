@@ -17,7 +17,6 @@ function doGet(evento) {
   try {
     if (modo === 'visibilidad') payload = leerVisibilidadPublica_();
     else if (modo === 'config') payload = leerConfiguracionPublica_();
-    else if (modo === 'productos') payload = leerProductosPublicos_();
     else payload = {ok:false,error:'Modo público inexistente.'};
   } catch (e) {
     payload = {ok:false,error:'El control público no está disponible.'};
@@ -32,40 +31,6 @@ function doGet(evento) {
 }
 function normalizar_(valor) {
   return String(valor == null ? '' : valor).normalize('NFD').replace(/[\u0300-\u036f]/g,'').trim().toLowerCase().replace(/\s+/g,' ');
-}
-// Lista explícita: ningún encabezado nuevo se publica automáticamente.
-const PRODUCTOS_PUBLIC_HEADERS = ['Código','Nombre','Precio','Stock','Sección','Categoría','Subcategoría','Marca','Línea','Tipo de producto','Variante','Característica','Público','Presentación','Contenido','Unidad','Cantidad de unidades','Modelo','Código Natura','Clase de componente','Nombre del componente 1','Cantidad de unidades del componente 1','Contenido del componente 1','Unidad del componente 1','Nombre del componente 2','Cantidad de unidades del componente 2','Contenido del componente 2','Unidad del componente 2','Nombre del componente 3','Cantidad de unidades del componente 3','Contenido del componente 3','Unidad del componente 3','Nombre del componente 4','Cantidad de unidades del componente 4','Contenido del componente 4','Unidad del componente 4','Condición','Estado comercial','Marketplace','Descripción','Necesidades de asesoría','Modo de uso','Adecuado para'];
-function productoOcultoPublico_(producto,ocultas) {
-  const sec=normalizar_(producto['Sección']),cat=normalizar_(producto['Categoría']),sub=normalizar_(producto['Subcategoría']),pub=normalizar_(producto['Público']),line=normalizar_(producto['Línea']);
-  const codigo=String(producto['Código']||'').trim().padStart(4,'0');
-  const regla=(tipo,id)=>Boolean(id)&&ocultas.has(tipo+'::'+id);
-  return regla('producto',codigo)||regla('seccion',sec)||
-    regla('categoria',cat?[sec,cat].join('|'):'')||regla('categoria',sec)||regla('categoria',cat)||
-    regla('subcategoria',sub?[sec,cat,sub].join('|'):'')||regla('subcategoria',sec&&cat?[sec,cat].join('|'):'')||
-    regla('publico',pub?[sec,cat,sub,pub].join('|'):'')||regla('linea',line?[sec,cat,sub,pub,line].join('|'):'')||
-    regla('familia',cat&&sub&&line?[cat,sub,line].join('|'):'');
-}
-function tablaProductosPublicos_(encabezados,datos,reglas) {
-  const indices=new Map();
-  encabezados.forEach((header,index)=>{const key=normalizar_(header);if(indices.has(key))throw new Error('Encabezado duplicado');indices.set(key,index);});
-  ['Código','Nombre','Categoría','Precio','Sección','Estado comercial'].forEach(header=>{if(!indices.has(normalizar_(header)))throw new Error('Encabezado obligatorio ausente');});
-  const columnas=PRODUCTOS_PUBLIC_HEADERS.filter(header=>indices.has(normalizar_(header)));
-  const ocultas=new Set(confirmarReglas_(reglas).filter(regla=>regla.oculto).map(regla=>regla.tipo+'::'+regla.identificador));
-  const rows=[];
-  for(const datosFila of datos){
-    const producto={};columnas.forEach(header=>{producto[header]=datosFila[indices.get(normalizar_(header))];});
-    if(!String(producto['Código']||'').trim()||normalizar_(producto['Estado comercial'])==='no a la venta'||normalizar_(producto['Categoría'])==='medicamentos'||productoOcultoPublico_(producto,ocultas))continue;
-    rows.push({c:columnas.map(header=>{let value=producto[header];if(header==='Código')value=String(value||'').trim().padStart(4,'0');if(value instanceof Date)value=value.toISOString();return {v:value===''||value==null?null:value,f:value===''||value==null?'':String(value)};})});
-  }
-  return {cols:columnas.map(label=>({label:label})),rows:rows};
-}
-function leerProductosPublicos_() {
-  const visibilidad=leerVisibilidadPublica_();
-  const hoja=SpreadsheetApp.openById(INVENTARIO_SPREADSHEET_ID).getSheetByName('Productos');
-  if(!hoja||hoja.getLastRow()<2)throw new Error('Catálogo sin productos');
-  const values=hoja.getRange(1,1,hoja.getLastRow(),hoja.getLastColumn()).getValues();
-  const tabla=tablaProductosPublicos_(values[0],values.slice(1),visibilidad.reglas);
-  return {ok:true,status:'ok',table:tabla,actualizadoEn:new Date().toISOString()};
 }
 function confirmarReglas_(raw) {
   if (!Array.isArray(raw) || !raw.length) throw new Error('Visibilidad vacía');
@@ -154,4 +119,3 @@ function importarConfiguracionPublica_(p) {
   p.setProperties(props,false);
   if(p.getProperty(CONFIG_PUBLISHED_VALUES)!==props[CONFIG_PUBLISHED_VALUES])throw new Error('No persistió configuración');
 }
-

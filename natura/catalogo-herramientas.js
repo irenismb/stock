@@ -131,7 +131,7 @@ function folletoProductAttributes(p){
   return [["Marca",p.brand],["Línea",p.line],["Tipo",p.productType],
     ["Variante",p.variant],["Característica",p.characteristic],
     ["Categoría",p.category],["Subcategoría",p.subcategory],["Público",p.public],
-    ["Familia olfativa",p.fragranceFamily],["Condición",p.condition]]
+    ["Condición",p.condition]]
     .filter(([,value])=>String(value||"").trim())
     .map(([label,value])=>Object.freeze({label,value:String(value).trim()}));
 }

@@ -876,6 +876,7 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 .advisor-album>span:nth-child(2){font-size:14px;font-weight:650;line-height:1.35}
 .advisor-album small{grid-column:2;color:#8a7167;font-size:11px}
 .advisor-album-icon{grid-row:1/3;display:flex;align-items:center;justify-content:center;font-size:28px}
+.advisor-album-icon svg{width:32px;height:37px}
 .advisor-needs-panel{padding:15px 0 16px;border-top:1px solid #e9d6d2}
 .advisor-needs-panel h3{font-family:Georgia,"Times New Roman",serif;font-size:21px;margin:0 0 12px}
 .advisor-needs{display:flex;gap:7px;flex-wrap:wrap;align-items:center}

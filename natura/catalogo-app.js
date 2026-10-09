@@ -2234,6 +2234,7 @@
     }
 
     function readStateFromUrl(){
+      readAdvisoryFiltersFromUrl();
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
@@ -2608,6 +2609,8 @@
     }
 
     function resetDiscoveryFilters(){
+      advisoryState.facets={};advisoryState.needs.clear();advisoryState.budget=null;advisoryState.includeUnknown=false;
+      const budget=document.getElementById("advisorBudget"),unknown=document.getElementById("advisorIncludeUnknown");if(budget)budget.value="";if(unknown)unknown.checked=false;
       if(qInp) qInp.value = "";
       if(catSel) catSel.value = "";
       if(brandSel) brandSel.value = "";
@@ -2639,6 +2642,7 @@
       const searchableSource = terms.length ? filterSearchExcludedProducts(source) : source;
 
       let filtered = searchableSource.filter(p=>{
+        if(!window.CATALOG_ADMIN_MODE_ACTIVE && advisoryExperienceAvailable() && !p.isGiftGalleryImage && !advisoryMatches(p)) return false;
         if(terms.length){
           return terms.every(t => p.searchKey.includes(t));
         }
@@ -2726,6 +2730,15 @@
       if(advisoryState.budget!==null)url.searchParams.set("presupuesto",String(advisoryState.budget));else url.searchParams.delete("presupuesto");
       if(advisoryState.includeUnknown)url.searchParams.set("sin_precio","1");else url.searchParams.delete("sin_precio");
     }
+    function readAdvisoryFiltersFromUrl(){
+      if(!advisoryState.initialized)return;
+      const query=new URL(location.href).searchParams;
+      advisoryState.facets={};for(const field of Object.keys(ADVISORY_FACETS))advisoryState.facets[field]=query.get("asesoria_"+field)||"";
+      advisoryState.needs=new Set((query.get("necesidad")||"").split(";").filter(Boolean));
+      const budget=query.get("presupuesto"),amount=Number(budget);advisoryState.budget=budget!==null&&budget!==""&&Number.isFinite(amount)&&amount>=0?amount:null;
+      advisoryState.includeUnknown=query.get("sin_precio")==="1";
+      const input=document.getElementById("advisorBudget"),unknown=document.getElementById("advisorIncludeUnknown");if(input)input.value=advisoryState.budget===null?"":String(advisoryState.budget);if(unknown)unknown.checked=advisoryState.includeUnknown;
+    }
     function advisoryButton(label,className,action){
       const button=document.createElement("button");button.type="button";button.textContent=label;button.className=className;
       if(action)button.addEventListener("click",action);return button;
@@ -2807,6 +2820,7 @@
       card.classList.add("advisor-product-card");
       const pad=card.querySelector(".pad"),name=card.querySelector(".name"),details=card.querySelector(".product-details"),description=card.querySelector(".description"),row=card.querySelector(".row");
       setSearchHighlightedText(name,product.name);name.title=product.name;
+      const meta=card.querySelector(".meta");meta.textContent=INTERRUPTORES.MOSTRAR_CANTIDAD_STOCK?(Number.isFinite(product.stock)?`Stock: ${product.stock}`:"Stock: Por confirmar"):"";meta.hidden=!meta.textContent;
       if(details){details.before(description);details.remove();}
       description.classList.add("advisor-product-description");
       const badges=document.createElement("div");badges.className="advisor-product-needs";
@@ -2863,9 +2877,20 @@
         const matching=new Set(filtered.map(p=>String(p.id)));
         for(const album of buildFilteredAlbums()){
           const count=(album.products||[]).filter(p=>matching.has(String(p.id))).length;if(!count)continue;
-          const button=advisoryButton("","advisor-album",()=>openAlbum(album.key,{keepFilters:true}));button.setAttribute("aria-label",`${album.label}, ${count} productos`);
-          const icon=document.createElement("span");icon.className="advisor-album-icon";icon.textContent=album.icon||"✦";
-          const label=document.createElement("span");label.textContent=album.label;const total=document.createElement("small");total.textContent=`${count} productos`;button.append(icon,label,total);albumsHost.append(button);
+          const unit=count===1?"producto":"productos";
+          const button=advisoryButton("","advisor-album",()=>openAlbum(album.key,{keepFilters:true}));button.setAttribute("aria-label",`${album.label}, ${count} ${unit}`);
+          const icon=document.createElement("span");icon.className="advisor-album-icon";icon.setAttribute("aria-hidden","true");
+          const shapes={
+            perfumeria:'<path d="M9 3h6v4H9zM8 8h8l3 5v10H5V13z"/><path d="M8 15h8v5H8z"/>',
+            cabello:'<path d="M7 6c0-4 10-4 10 0v17H7zM9 5h6M10 8v12M13 8v12M16 8v12"/>',
+            'cuidado personal':'<path d="M5 8h6v15H4V10zM5 4h6v4H5zM15 12h6v11h-6zM16 8h4v4h-4z"/>',
+            'kits y combos':'<path d="M3 10h18v13H3zM3 10l5-5h8l5 5M12 10v13M6 14h3M15 14h3"/>',
+            maquillaje:'<path d="M4 12h6v11H4zM5 12V5l4-2v9M16 13v10h3V13M15 4h5v5l-2 4h-2l-2-4z"/>',
+            regalos:'<path d="M3 10h18v4H3zM5 14v9h14v-9M12 10v13M12 10C2 10 5 1 9 5l3 5c10 0 7-9 3-5z"/>'
+          };
+          const shape=shapes[normalizeText(album.label)];
+          if(shape)icon.innerHTML='<svg viewBox="0 0 24 26" xmlns="http://www.w3.org/2000/svg" fill="#f1d8df" stroke="#a27d66" stroke-width="1.3" stroke-linejoin="round">'+shape+'</svg>';else icon.textContent=album.icon&&album.icon!=="•"?album.icon:"✦";
+          const label=document.createElement("span");label.textContent=album.label;const total=document.createElement("small");total.textContent=`${count} ${unit}`;button.append(icon,label,total);albumsHost.append(button);
         }
       }
       if(renderProducts){
@@ -2877,6 +2902,7 @@
         document.getElementById("advisorResultsTitle").textContent="Explora tus opciones";scheduleJsonLdUpdate([]);
       }else{grid.replaceChildren(makeEmptyState("No hay un nivel posterior configurado para esta vista."));scheduleJsonLdUpdate([]);}
       grid.classList.toggle("advisor-grid",renderProducts);grid.classList.remove("album-three-column-layout");
+      grid.setAttribute("aria-label",renderProducts?"Productos":"Navegación del catálogo");
       const count=filtered.filter(p=>!p.isGiftGalleryImage).length;
       document.getElementById("advisorResultCount").textContent=`${count} ${count===1?"producto":"productos"}`;
       if(countEl){countEl.textContent=`${count} ${count===1?"producto":"productos"}`;countEl.classList.toggle("search-active",!!terms.length);}

@@ -27,7 +27,7 @@ jobs:
           for attempt in range(30):
               try:
                   with urllib.request.urlopen(page+'?publicacion='+str(time.time()),timeout=30) as response:text=response.read(300000).decode('utf-8')
-                  assert 'catalogo-app.js?actualizacion=asesoria-catalogo-2026-10-09-6' in text
+                  assert 'catalogo-app.js?actualizacion=asesoria-catalogo-2026-10-09-7' in text
                   assert 'advisorComparison' in text
                   with urllib.request.urlopen(reader+'&_='+str(time.time()),timeout=40) as response:payload=json.loads(response.read(1500000))
                   assert payload.get('ok') is True and payload['table']['rows']
@@ -53,7 +53,7 @@ jobs:
         run: |
           clasp list-scripts >/dev/null
           python3 - "$RUNNER_TEMP/.clasprc.json" <<'PY'
-          import json,sys,urllib.request,urllib.parse
+          import json,sys,urllib.request,urllib.parse,urllib.error
           auth=json.load(open(sys.argv[1],encoding='utf-8'))
           credentials=(auth.get('tokens') or {}).get('default') or auth.get('token') or auth
           token=credentials.get('access_token','')
@@ -62,9 +62,14 @@ jobs:
           base='https://www.googleapis.com/drive/v3/files/'+sheet
           def request(url,method='GET'):
               req=urllib.request.Request(url,method=method,headers={'Authorization':'Bearer '+token})
-              with urllib.request.urlopen(req,timeout=40) as response:
-                  data=response.read()
-                  return json.loads(data) if data else {}
+              try:
+                  with urllib.request.urlopen(req,timeout=40) as response:
+                      data=response.read()
+                      return json.loads(data) if data else {}
+              except urllib.error.HTTPError as error:
+                  detail=json.loads(error.read()).get('error',{})
+                  reasons=[item.get('reason','') for item in detail.get('errors',[])]
+                  raise RuntimeError('Google Drive '+method+': '+str(error.code)+'; '+detail.get('message','')+'; '+','.join(reasons)) from None
           metadata=request(base+'?fields=id,name,mimeType,trashed')
           assert metadata['id']==sheet and metadata['name']=='2026-08-23_productos'
           assert metadata['mimeType']=='application/vnd.google-apps.spreadsheet' and not metadata.get('trashed')

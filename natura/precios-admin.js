@@ -123,7 +123,7 @@
     return visible;
   };
 
-  btn.hidden=false; btn.textContent="Administrar"; btn.setAttribute("aria-pressed","false"); btn.setAttribute("aria-label","Administrar catálogo");
+  btn.hidden=false; btn.textContent="Admin"; btn.setAttribute("aria-pressed","false"); btn.setAttribute("aria-label","Administrar catálogo");
   btn.addEventListener("click",toggleAdmin);
   new MutationObserver(()=>requestAnimationFrame(syncUI)).observe(grid,{childList:true,subtree:true});
   window.addEventListener("message",onBridgeReady); window.addEventListener("beforeunload",closeBridge);
@@ -305,7 +305,7 @@
   window.CATALOG_ADMIN_SECTION=adminSection;
   function syncConnectionButton(){
     btn.hidden=false;btn.disabled=connecting;
-    const label=connecting?"Conectando…":admin?(port?"Salir de administración":"Reconectar administración"):"Administrar";
+    const label=connecting?"Conectando…":admin?(port?"Salir de administración":"Reconectar administración"):"Admin";
     btn.textContent=label;btn.title=label;btn.setAttribute("aria-label",connecting?"Conectando con Google":admin?label:"Administrar catálogo");
   }
   function syncUI(){syncConnectionButton();if(!admin)return;syncAdminSectionUI(false)}

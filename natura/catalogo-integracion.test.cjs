@@ -94,6 +94,12 @@ test('Recomendación compartida usa códigos públicos, unidades del kit y preci
   const text=env.run('advisorySharedText(selected,"Una opción para ti")');
   assert.match(text,/Precio por confirmar/);assert.match(text,/80 g/);assert.match(text,/seleccion=9981/);assert.doesNotMatch(text,/777777|COSTO_PRIVADO|Costo/);
 });
+test('Agregar todos y Folleto toman únicamente los resultados de asesoría; limpiar elimina esos filtros',()=>{
+  const env=environment();env.sandbox.products=[{id:'9981',name:'A',needs:['Hidratación'],searchKey:'a',price:25,hasPrice:true},{id:'9982',name:'B',needs:['Nutrición'],searchKey:'b',price:50,hasPrice:true}];
+  env.run('all=products;advisoryState.needs.add("Hidratación");advisoryState.budget=30');
+  assert.deepEqual(Array.from(env.run('buildFilteredList().map(p=>p.id)')),['9981']);
+  env.run('resetDiscoveryFilters()');assert.equal(env.run('buildFilteredList().length'),2);
+});
 test('Lector público excluye costos, campos desconocidos, secciones ocultas, medicamentos y productos no vendidos',()=>{
   const source=fs.readFileSync(path.join(__dirname,'apps-script','lector publico natura','Lector.js'),'utf8'),context=vm.createContext({console,Set,Map,Date});vm.runInContext(source,context);
   const labels=['Código','Nombre','Precio','Costo','Sección','Categoría','Subcategoría','Público','Línea','Estado comercial','Necesidades de asesoría','Campo interno futuro'];

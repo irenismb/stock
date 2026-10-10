@@ -1,5 +1,5 @@
 """Editar directamente fuentes oficiales de Drive; validar antes de escribir."""
-import hashlib,json,os,pathlib,subprocess,urllib.request
+import hashlib,json,os,pathlib,subprocess,urllib.request,urllib.error
 root=pathlib.Path.cwd()
 auth=json.loads(pathlib.Path(os.environ["CLASP_AUTH_FILE"]).read_text())
 credential=(auth.get("tokens") or {}).get("default") or auth.get("token") or auth
@@ -8,7 +8,11 @@ if not token:raise SystemExit("Falta autorización Google")
 def request(url,method="GET",body=None,mime=None,authenticated=True):
     headers={"Authorization":"Bearer "+token} if authenticated else {}
     if mime:headers["Content-Type"]=mime
-    with urllib.request.urlopen(urllib.request.Request(url,data=body,method=method,headers=headers),timeout=60) as response:return response.read()
+    try:
+        with urllib.request.urlopen(urllib.request.Request(url,data=body,method=method,headers=headers),timeout=60) as response:return response.read()
+    except urllib.error.HTTPError as error:
+        detail=json.loads(error.read()).get("error",{})
+        raise SystemExit("Google API HTTP "+str(error.code)+": "+str(detail.get("message",""))+"; "+str([e.get("reason") for e in detail.get("errors",[])]))
 def metadata(file_id):
     return json.loads(request("https://www.googleapis.com/drive/v3/files/"+file_id+"?fields=id,name,mimeType,trashed,md5Checksum"))
 files=json.loads((root/".github/natura/dos-columnas-drive.json").read_text())

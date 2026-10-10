@@ -45,7 +45,7 @@ function buildFolletoSnapshot(options={}){
   }
   source.sort(compareCatalogProductOrder);
   const settings=Object.freeze({
-    prices:options.prices===true,
+    prices:(options.prices===undefined?shouldShowFichaPrices():options.prices===true)&&shouldShowProductPrices(),
     descriptions:options.descriptions!==false,codes:options.codes!==false,
     images:options.images!==false&&shouldShowProductImages()
   });
@@ -82,7 +82,7 @@ function buildFolletoSnapshot(options={}){
 
 function folletoFont(ctx,size,bold=false){ctx.font=`${bold?700:400} ${size}px ${FOLLETO_FONT}`;}
 function folletoLines(ctx,text,width){
-  const result=[];
+  const result=[],paragraphEnds=[];
   for(const paragraph of String(text||"").replace(/\r/g,"").split("\n")){
     let line="";
     for(const word of paragraph.trim().split(/\s+/).filter(Boolean)){
@@ -93,7 +93,9 @@ function folletoLines(ctx,text,width){
       }else line=line?line+" "+word:word;
     }
     if(line)result.push(line);
+    if(paragraph.trim()&&result.length)paragraphEnds.push(result.length-1);
   }
+  Object.defineProperty(result,"paragraphEnds",{value:paragraphEnds});
   return result;
 }
 // Una sola ficha cuadrada, con precio opcional, para todas las salidas.
@@ -189,7 +191,7 @@ function renderCatalogFicha(card,p){
       if(field.key==="nombre"){name.hidden=false;facts.append(name);continue;}
       if(field.key==="precio"){facts.append(priceRow);continue;}
       if(field.key==="presentacion"){presentation.textContent=field.value;presentation.hidden=false;facts.append(presentation);continue;}
-      const list=document.createElement("dl");list.className="ficha-attributes ficha-ordered-attribute";
+      const list=document.createElement("dl");list.className="ficha-attributes ficha-ordered-attribute"+(field.key==="codigo"?" ficha-code":"");
       const item=document.createElement("div"),term=document.createElement("dt"),value=document.createElement("dd");
       term.textContent=field.label+":";value.textContent=field.value;item.append(term,value);list.append(item);facts.append(list);
     }
@@ -511,7 +513,7 @@ function folletoDrawText(ctx,measure,x,y,width,bold=false,justify=false){
   }
   measure.lines.forEach((line,index)=>{
     const words=line.split(" ");
-    if(justify&&index<measure.lines.length-1&&words.length>1){
+    if(justify&&index<measure.lines.length-1&&!measure.lines.paragraphEnds?.includes(index)&&words.length>1){
       const wordWidth=words.reduce((n,word)=>n+ctx.measureText(word).width,0);
       const spacing=(width-wordWidth)/(words.length-1);
       // Evitar espacios excesivos en párrafos cortos.
@@ -829,6 +831,7 @@ function initFolleto(){
     outputs=[generate,...dialog.querySelectorAll("[data-folleto-export]")],
     fields=[...form.elements,...dialog.querySelectorAll('input[name="format"]')],
     previous=dialog.querySelector("#folletoPrevPage"),next=dialog.querySelector("#folletoNextPage");
+  form.elements.prices.checked=shouldShowFichaPrices();
   let previewController=null,exportController=null,previewUrl="",busy=false,lastFocus=null,version=0,
     state=null,pageIndex=0,timer=null,valid=false;
   const format=()=>dialog.querySelector('input[name="format"]:checked').value;
@@ -841,7 +844,7 @@ function initFolleto(){
     const admin=window.CATALOG_ADMIN_MODE_ACTIVE===true;
     dialog.querySelector("#folletoAdminOptions").hidden=!admin;
     for(const key of ["includeHidden","includeNotForSale"]){form.elements[key].disabled=busy||!admin;if(!admin)form.elements[key].checked=false;}
-    for(const [key,allowed]of [["images",shouldShowProductImages()]]){
+    for(const [key,allowed]of [["images",shouldShowProductImages()],["prices",shouldShowProductPrices()]]){
       form.elements[key].disabled=busy||!allowed;if(!allowed)form.elements[key].checked=false;
     }
   }
@@ -917,13 +920,13 @@ function initFolleto(){
       details.replaceChildren();summary.textContent="";showPlaceholder(e.message);status.textContent=e.message;updateActions();
     }
   }
-  button.addEventListener("click",()=>{lastFocus=document.activeElement;dialog.showModal();refresh(true);});
+  button.addEventListener("click",()=>{lastFocus=document.activeElement;form.elements.prices.checked=shouldShowFichaPrices();dialog.showModal();refresh(true);});
   dialog.querySelector("#folletoClose").addEventListener("click",()=>dialog.close());
   dialog.addEventListener("close",()=>{
     clearTimeout(timer);version++;previewController?.abort();exportController?.abort();state=null;clearPreview();
     lastFocus?.focus?.({preventScroll:true});
   });
-  dialog.addEventListener("change",e=>{if(e.target.matches("input"))refresh();});
+  dialog.addEventListener("change",e=>{if(e.target.matches("input")){if(e.target.name==="prices")setCatalogFichaPriceVisibility(e.target.checked);refresh();}});
   form.addEventListener("submit",e=>e.preventDefault());
   document.addEventListener("change",e=>{
     const id=e.target.dataset?.folletoSelect;

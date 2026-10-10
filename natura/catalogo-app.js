@@ -95,6 +95,23 @@
     function shouldShowProductPrices(){
       return !!(window.INTERRUPTORES && window.INTERRUPTORES.MOSTRAR_PRECIOS_PRODUCTO !== false);
     }
+    const CATALOG_FICHA_PRICE_STORAGE_KEY="natura-ficha-mostrar-precio";
+    let catalogFichaShowPrices=false;
+    try{catalogFichaShowPrices=localStorage.getItem(CATALOG_FICHA_PRICE_STORAGE_KEY)==="true";}catch(_){}
+    function shouldShowFichaPrices(){
+      return catalogFichaShowPrices&&shouldShowProductPrices();
+    }
+    function setCatalogFichaPriceVisibility(value){
+      catalogFichaShowPrices=value===true;
+      try{localStorage.setItem(CATALOG_FICHA_PRICE_STORAGE_KEY,String(catalogFichaShowPrices));}catch(_){}
+      const form=document.querySelector("#folletoOptions");
+      if(form)form.elements.prices.checked=shouldShowFichaPrices();
+      for(const card of document.querySelectorAll(".catalog-ficha-card")){
+        const p=allLoadedProducts.find(p=>String(p.id)===card.dataset.id);
+        if(p)refreshCardUI(card,p);
+      }
+      if(typeof queueCatalogFichaLayout==="function")queueCatalogFichaLayout();
+    }
     function shouldShowProductCodes(){
       return true;
     }
@@ -113,7 +130,7 @@
     }
     const LOGOS_DIR = "logos";
 
-    const fmtCOP = new Intl.NumberFormat("es-CO", { style:"currency", currency:"COP", maximumFractionDigits:0 });
+    const fmtCOP = new Intl.NumberFormat("es-CO", { maximumFractionDigits:0 });
 
     const SITE_BASE = `https://${GITHUB_CATALOG_SOURCE.owner}.github.io/${GITHUB_CATALOG_SOURCE.repo}/${GITHUB_CATALOG_SOURCE.catalogDir}/`;
 
@@ -3393,11 +3410,20 @@ function refreshCardUI(card,p){
   const actions=card.querySelector(".actions");
   const meta=card.querySelector(".meta");
   if(meta) meta.hidden=p.fichaSelectionExplicit||!String(meta.textContent||"").trim();
-  if(row) row.hidden=p.fichaSelectionExplicit&&!p.fichaFields?.some(field=>field.key==="precio");
+  const price=card.querySelector(".price");
+  const showPrice=shouldShowFichaPrices()&&(!p.fichaSelectionExplicit||p.fichaFields?.some(field=>field.key==="precio"));
+  const editing=Boolean(card.querySelector(".price-admin-editor"));
+  if(price){
+    const text=showPrice?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"";
+    if(price.textContent!==text)price.textContent=text;
+    price.hidden=!showPrice||editing;
+  }
+  if(row)row.classList.toggle("ficha-price-suppressed",!showPrice);
   if(actions) actions.hidden=false;
   const enforce=shouldEnforceStockLimits();
   const id=String(p.id);
   const q=cart[id]?.qty||0;
+  if(row)row.hidden=!showPrice&&!editing&&q<=0;
   const qtyPill=card.querySelector('[data-role="qty"]');
   const decBtn=card.querySelector('button[data-act="dec"]');
   const incBtn=card.querySelector('button[data-act="inc"]');
@@ -3466,7 +3492,7 @@ function makeCard(p){
   const description=String(p?.description||"").trim();
   setSearchHighlightedText(descriptionEl,description);
   descriptionEl.hidden=!description;
-  priceEl.textContent=shouldShowProductPrices()?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"";
+  priceEl.textContent=shouldShowFichaPrices()?(p.hasPrice===false?"Consultar precio":fmtCOP.format(p.price)):"";
   if(p?.isGiftGalleryImage){
     card.classList.add("gift-gallery-card");
     const pad=card.querySelector(".pad");

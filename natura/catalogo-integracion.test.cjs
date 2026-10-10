@@ -438,8 +438,8 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-orden-ficha-2026-10-10-3'));
-  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-precios-unificados-2026-10-10-4'));
+  assert.ok(htmlSource.includes('precios-admin.js?actualizacion=fichas-precios-unificados-2026-10-10-4'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
 test('Rango oficial opcional: todos los registros conservan nombre, código y valores reales',{skip:!process.env.CATALOG_PRODUCTS_FIXTURE},async()=>{
@@ -562,7 +562,7 @@ test('Precio de Folleto es opcional, conserva los importes reales y distingue pr
   const original=env.sandbox.products[0].price;
   const withPrice=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997","9998"],prices:true})');
   assert.equal(withPrice.settings.prices,true);
-  assert.equal(withPrice.products.find(p=>p.id==='9997').priceText,new Intl.NumberFormat('es-CO',{style:'currency',currency:'COP',maximumFractionDigits:0}).format(original));
+  assert.equal(withPrice.products.find(p=>p.id==='9997').priceText,new Intl.NumberFormat('es-CO',{maximumFractionDigits:0}).format(original));
   assert.equal(withPrice.products.find(p=>p.id==='9998').priceText,'Consultar precio');
   const withoutPrice=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997","9998"],prices:false})');
   assert.equal(withoutPrice.settings.prices,false);assert.ok(withoutPrice.products.every(p=>p.priceText===''));
@@ -727,4 +727,54 @@ test('La consulta descubre Orden de la ficha por encabezado con columnas reorden
   assert.equal(new URL(env.requests.at(-1).src).searchParams.get('tq'),'select B,A');
   env.reply(tableFromValues([headers,['Tipo:\nPresentación:',compactDescription+'\nTipo de producto: Esencia capilar\nCantidad de contenido: 60\nUnidad de medida del contenido: ml']]));
   const row=(await promise)[0];assert.deepEqual(Array.from(row.fichaFields,f=>f.key),['tipo','presentacion']);
+});
+
+test('Mostrar precio comparte preferencia entre Folleto y ficha, sin símbolo de moneda',async()=>{
+  const env=environment();await confirmed(env);vm.runInContext(toolsSource,env.context);
+  env.sandbox.products=assess(env,fixture()).products;env.run('allLoadedProducts=products;window.CATALOG_INITIAL_LOAD_READY=true');
+  const price=env.sandbox.products[0].price;
+  assert.equal(env.run('shouldShowFichaPrices()'),false);
+  env.run('setCatalogFichaPriceVisibility(true)');
+  assert.equal(env.run('shouldShowFichaPrices()'),true);
+  assert.equal(env.sandbox.localStorage.getItem('natura-ficha-mostrar-precio'),'true');
+  const snapshot=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997"]})');
+  assert.equal(snapshot.settings.prices,true);assert.ok(!snapshot.products[0].priceText.includes('$'));
+  assert.equal(snapshot.products[0].priceText,new Intl.NumberFormat('es-CO',{maximumFractionDigits:0}).format(price));
+  assert.equal(env.sandbox.products[0].price,price);
+  env.run('setCatalogFichaPriceVisibility(false)');
+  assert.equal(env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997"]}).products[0].priceText'),'');
+  env.run('setCatalogFichaPriceVisibility(true);window.INTERRUPTORES.MOSTRAR_PRECIOS_PRODUCTO=false');
+  assert.equal(env.run('shouldShowFichaPrices()'),false);
+  assert.equal(env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["9997"],prices:true}).settings.prices'),false);
+});
+test('Ficha oculta precio y separador, conserva carrito y editor al cambiar Mostrar precio',()=>{
+  const env=environment(),classes=new Set(),price={textContent:'',hidden:false};
+  const row={hidden:false,classList:{toggle(key,value){value?classes.add(key):classes.delete(key);}}};
+  const actions={hidden:false,classList:{toggle(){}}},qty={classList:{toggle(){}}};
+  let editing=null;
+  const card={dataset:{id:'9997'},querySelector(selector){return ({'.row':row,'.price':price,'.actions':actions,'[data-role="qty"]':qty,'.price-admin-editor':editing})[selector]||null;}};
+  env.sandbox.card=card;env.sandbox.product={id:'9997',price:20000,hasPrice:true,fichaSelectionExplicit:true,fichaFields:[{key:'precio'}]};
+  env.document.querySelectorAll=selector=>selector==='.catalog-ficha-card'?[card]:[];
+  env.run('allLoadedProducts=[product];refreshCardUI(card,product)');
+  assert.equal(row.hidden,true);assert.equal(price.hidden,true);assert.equal(classes.has('ficha-price-suppressed'),true);
+  env.run('setCatalogFichaPriceVisibility(true)');
+  assert.equal(row.hidden,false);assert.equal(price.hidden,false);assert.equal(price.textContent,'20.000');assert.equal(actions.hidden,false);
+  env.run('cart["9997"]={qty:2};setCatalogFichaPriceVisibility(false)');
+  assert.equal(row.hidden,false);assert.equal(qty.textContent,'2 en carrito');assert.equal(classes.has('ficha-price-suppressed'),true);
+  editing={input:{value:'25000',disabled:true},save:{disabled:true}};
+  env.run('delete cart["9997"];refreshCardUI(card,product)');
+  assert.equal(row.hidden,false);assert.equal(price.hidden,true);assert.equal(editing.input.value,'25000');assert.equal(editing.save.disabled,true);
+  editing=null;env.run('refreshCardUI(card,product)');assert.equal(row.hidden,true);
+});
+test('El Folleto justifica líneas completas sin estirar los finales de párrafo ni agregar espacios verticales',()=>{
+  const drawn=[],ctx={measureText:text=>({width:text.length*2}),fillText(text,x,y){drawn.push({text,x,y});}};
+  const context=vm.createContext({ctx});vm.runInContext(toolsSource,context);
+  context.text='uno dos tres cuatro cinco seis\nsiete ocho nueve diez once doce trece catorce quince dieciséis diecisiete dieciocho';
+  context.measure=vm.runInContext('({lines:folletoLines(ctx,text,80),size:10,lineHeight:12})',context);
+  vm.runInContext('folletoDrawText(ctx,measure,0,0,80,false,true)',context);
+  for(const end of context.measure.lines.paragraphEnds){
+    const line=drawn.filter(d=>d.y===end*12);assert.equal(line.length,1);assert.equal(line[0].text,context.measure.lines[end]);
+  }
+  assert.equal(new Set(drawn.map(d=>d.y)).size,context.measure.lines.length);
+  assert.equal(drawn.map(d=>d.text).join(' ').replace(/\s+/g,' '),context.text.replace(/\s+/g,' '));
 });

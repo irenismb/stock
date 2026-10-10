@@ -5,7 +5,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
   const browser=await chromium.launch({headless:true});
   const page=await browser.newPage({viewport:{width:1280,height:900}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=orden-ficha-2026-10-10',{waitUntil:'domcontentloaded'});
+  await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=fichas-precios-unificados-2026-10-10',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.CATALOG_INITIAL_LOAD_READY===true,null,{timeout:90000});
   const info=await page.evaluate(()=>({
     ready:window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,
@@ -27,6 +27,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
   });
   await page.waitForTimeout(600);
   await page.locator('#grid .catalog-ficha-card').screenshot({path:path.join(directory,'ficha-predeterminada-escritorio.png')});
+  await page.evaluate(()=>setCatalogFichaPriceVisibility(true));
   for(const width of [1280,390]){
     await page.setViewportSize({width,height:900});
     await page.evaluate(()=>{
@@ -87,13 +88,74 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
       },code);
       assert.deepEqual(layout.ordered,layout.expected);assert.equal(layout.ordered.includes('Condición'),false);
       assert.ok(Math.abs(layout.height-layout.width)<3);assert.ok(layout.descriptionWidth>layout.width*.90);
-      assert.equal(layout.factsOverflow,false);assert.equal(layout.textAlign,'left');assert.equal(layout.hyphens,'none');assert.ok(layout.lineRatio<=1.42);
+      assert.equal(layout.factsOverflow,false);assert.equal(layout.textAlign,'justify');assert.equal(layout.hyphens,'none');assert.ok(layout.lineRatio<=1.42);
       assert.ok(!layout.descriptionText.includes('\n\n'));assert.ok(layout.descriptionText.length>10);
       await page.locator('#grid .catalog-ficha-card').screenshot({path:path.join(directory,'ficha-estandar-'+code+'-'+width+'.png')});
       console.log('FICHA ESTANDAR VERIFICADA',JSON.stringify(layout));
     }
   }
   console.log('ORDEN ESTANDAR VERIFICADO',JSON.stringify(standards));
+
+  const originals=await page.evaluate(()=>allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)).map(p=>[p.id,p.price]));
+  await page.evaluate(()=>{
+    const p=allLoadedProducts.find(p=>p.id==='0401');
+    document.getElementById('grid').replaceChildren(makeCard(p));queueCatalogFichaLayout();
+    FOLLETO_SELECTION.clear();FOLLETO_SELECTION.add('0401');
+    document.querySelector('#folletoOptions input[name="scope"][value="selected"]').checked=true;
+  });
+  for(const visible of [false,true]){
+    await page.locator('#folletoBtn').click();
+    const checkbox=page.locator('#folletoOptions input[name="prices"]');
+    if(visible)await checkbox.check();else await checkbox.uncheck();
+    await page.locator('#folletoClose').click();
+    for(const width of [1280,390]){
+      await page.setViewportSize({width,height:900});await page.waitForTimeout(500);
+      const details=await page.evaluate(()=>{
+        const card=document.querySelector('#grid .catalog-ficha-card'),row=card.querySelector('.row'),price=card.querySelector('.price'),code=card.querySelector('.ficha-code'),description=card.querySelector('.description');
+        const p=allLoadedProducts.find(p=>p.id==='0401');
+        const snapshot=buildFolletoSnapshot({scope:'selected',selectedIds:['0401']});
+        return {show:shouldShowFichaPrices(),rowVisible:getComputedStyle(row).display!=='none',border:getComputedStyle(row).borderTopWidth,
+          priceVisible:getComputedStyle(price).display!=='none',price:price.textContent,codeBorder:getComputedStyle(code).borderTopWidth,
+          descriptionAlign:getComputedStyle(description).textAlign,lineRatio:parseFloat(getComputedStyle(description).lineHeight)/parseFloat(getComputedStyle(description).fontSize),
+          snapshotPrice:snapshot.products[0].priceText,snapshotShow:snapshot.settings.prices,expectedPrice:fmtCOP.format(p.price)};
+      });
+      assert.equal(details.show,visible);assert.equal(details.rowVisible,visible);assert.equal(details.priceVisible,visible);assert.equal(details.snapshotShow,visible);
+      assert.equal(details.codeBorder,'1px');assert.equal(details.descriptionAlign,'justify');assert.ok(details.lineRatio<=1.42);
+      assert.ok(!details.price.includes('console.log('WEB PUBLICA VERIFICADA',JSON.stringify(info));
+  fs.writeFileSync(path.join(directory,'verificacion.json'),JSON.stringify(info,null,2));
+  await browser.close();
+})().catch(error=>{console.error(error);process.exit(1)});
+));assert.ok(!details.snapshotPrice.includes('console.log('WEB PUBLICA VERIFICADA',JSON.stringify(info));
+  fs.writeFileSync(path.join(directory,'verificacion.json'),JSON.stringify(info,null,2));
+  await browser.close();
+})().catch(error=>{console.error(error);process.exit(1)});
+));
+      if(visible){assert.equal(details.price,details.expectedPrice);assert.equal(details.snapshotPrice,details.expectedPrice);assert.equal(details.border,'1px');}
+      else{assert.equal(details.price,'');assert.equal(details.snapshotPrice,'');assert.equal(details.border,'0px');}
+      await page.locator('#grid .catalog-ficha-card').screenshot({path:path.join(directory,'ficha-0401-'+(visible?'con':'sin')+'-precio-'+width+'.png')});
+      console.log('PRECIO COMPARTIDO VERIFICADO',JSON.stringify({width,visible,details}));
+    }
+  }
+  for(const visible of [false,true]){
+    await page.evaluate(visible=>setCatalogFichaPriceVisibility(visible),visible);
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForFunction(()=>window.CATALOG_INITIAL_LOAD_READY===true,null,{timeout:90000});
+    assert.equal(await page.evaluate(()=>shouldShowFichaPrices()),visible);
+    assert.equal(await page.locator('#folletoOptions input[name="prices"]').isChecked(),visible);
+  }
+  assert.deepEqual(await page.evaluate(()=>allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)).map(p=>[p.id,p.price])),originals);
+  await page.evaluate(()=>{
+    const p=allLoadedProducts.find(p=>p.id==='0401');
+    FOLLETO_SELECTION.clear();FOLLETO_SELECTION.add('0401');setCatalogFichaPriceVisibility(false);
+    const snapshot=buildFolletoSnapshot({scope:'selected',selectedIds:['0401']});
+    const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1080;
+    const ctx=canvas.getContext('2d'),product=snapshot.products[0];
+    renderFicha(ctx,{x:0,y:0,width:1080,height:1080,product:{...product,imageUrl:''},measure:measureFicha(ctx,{...product,imageUrl:''})},null);
+    window.__fichaFolletoPreview=canvas.toDataURL('image/png');
+  });
+  const canvasUrl=await page.evaluate(()=>window.__fichaFolletoPreview);
+  fs.writeFileSync(path.join(directory,'folleto-texto-justificado-sin-precio.png'),Buffer.from(canvasUrl.split(',')[1],'base64'));
+  console.log('PERSISTENCIA Y PRECIOS REALES CONSERVADOS');
   assert.deepEqual(errors,[]);console.log('WEB PUBLICA VERIFICADA',JSON.stringify(info));
   fs.writeFileSync(path.join(directory,'verificacion.json'),JSON.stringify(info,null,2));
   await browser.close();

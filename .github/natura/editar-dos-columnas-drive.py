@@ -20,8 +20,8 @@ prepared=[]
 for item in files:
     obj=metadata(item["id"])
     if obj.get("name")!=item["name"] or obj.get("trashed") or str(obj.get("mimeType","")).startswith("application/vnd.google-apps."):raise SystemExit("Origen inesperado: "+item["name"])
-    original=request("https://www.googleapis.com/drive/v3/files/"+item["id"]+"?alt=media").decode("utf-8")
-    if (root/item["path"]).read_text()!=original:raise SystemExit("Drive y publicación difieren; no se sobrescribe: "+item["name"])
+    original=(root/item["path"]).read_text()
+    if obj.get("md5Checksum")!=hashlib.md5(original.encode()).hexdigest():raise SystemExit("Drive y publicación difieren: "+item["name"])
     proposed=original
     for old,new in item["replacements"]:
         if proposed.count(old)!=1:raise SystemExit("Cambio no inequívoco: "+item["name"])
@@ -41,10 +41,4 @@ fixture=pathlib.Path(os.environ["RUNNER_TEMP"])/"natura-productos.json";fixture.
 subprocess.run(["node","--test","natura/catalogo-integracion.test.cjs"],env=dict(os.environ,CATALOG_PRODUCTS_FIXTURE=str(fixture)),check=True)
 for item in prepared:
     if metadata(item["id"]).get("md5Checksum")!=item["original_md5"]:raise SystemExit("Drive cambió durante la validación: "+item["name"])
-print("Pruebas aprobadas con",len(values)-1,"filas oficiales; actualizando los mismos IDs de Drive.")
-for item in prepared:
-    data=item["bytes"];checksum=hashlib.md5(data).hexdigest()
-    mime="text/html" if item["name"].endswith(".html") else "text/javascript"
-    response=json.loads(request("https://www.googleapis.com/upload/drive/v3/files/"+item["id"]+"?uploadType=media&fields=id,md5Checksum","PATCH",data,mime))
-    if response.get("id")!=item["id"] or response.get("md5Checksum")!=checksum:raise SystemExit("Drive no confirmó los bytes: "+item["name"])
-    print("DRIVE VERIFICADO",item["name"],checksum)
+print("PRUEBAS APROBADAS:",len(values)-1,"filas oficiales. Escritura reservada al conector de Drive autorizado.")

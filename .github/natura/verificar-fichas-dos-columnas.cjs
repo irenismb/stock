@@ -121,15 +121,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
       });
       assert.equal(details.show,visible);assert.equal(details.rowVisible,visible);assert.equal(details.priceVisible,visible);assert.equal(details.snapshotShow,visible);
       assert.equal(details.codeBorder,'1px');assert.equal(details.descriptionAlign,'justify');assert.ok(details.lineRatio<=1.42);
-      assert.ok(!details.price.includes('console.log('WEB PUBLICA VERIFICADA',JSON.stringify(info));
-  fs.writeFileSync(path.join(directory,'verificacion.json'),JSON.stringify(info,null,2));
-  await browser.close();
-})().catch(error=>{console.error(error);process.exit(1)});
-));assert.ok(!details.snapshotPrice.includes('console.log('WEB PUBLICA VERIFICADA',JSON.stringify(info));
-  fs.writeFileSync(path.join(directory,'verificacion.json'),JSON.stringify(info,null,2));
-  await browser.close();
-})().catch(error=>{console.error(error);process.exit(1)});
-));
+      assert.ok(!details.price.includes(String.fromCharCode(36)));assert.ok(!details.snapshotPrice.includes(String.fromCharCode(36)));
       if(visible){assert.equal(details.price,details.expectedPrice);assert.equal(details.snapshotPrice,details.expectedPrice);assert.equal(details.border,'1px');}
       else{assert.equal(details.price,'');assert.equal(details.snapshotPrice,'');assert.equal(details.border,'0px');}
       await page.locator('#grid .catalog-ficha-card').screenshot({path:path.join(directory,'ficha-0401-'+(visible?'con':'sin')+'-precio-'+width+'.png')});

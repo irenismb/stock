@@ -438,7 +438,7 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-2026-10-10-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-orden-ficha-2026-10-10-3'));
   assert.ok(htmlSource.includes('precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
@@ -456,7 +456,7 @@ test('Rango oficial opcional: todos los registros conservan nombre, código y va
       assert.equal(product.price,price.value??0);assert.equal(product.hasPrice,price.value!==null);
       assert.equal(product.category,fields.get('categoria').value);assert.equal(product.section,fields.get('seccion').value);
     });
-    const compact=values.map(row=>[row[index('Descripción integral del producto')],row[index('Campos y orden de la ficha')]||'']);
+    const compact=values.map(row=>[row[index('Descripción integral del producto')],row[index('Orden de la ficha')>=0?index('Orden de la ficha'):index('Campos y orden de la ficha')]||'']);
     const migrated=assess(env,tableFromValues(compact));
     assert.equal(migrated.report.pending,0);
     assert.deepEqual(JSON.parse(JSON.stringify(migrated.products)),JSON.parse(JSON.stringify(result.products)));
@@ -611,7 +611,7 @@ test('Dos columnas recuperan identidad, precio, navegación y filtros desde tít
   const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'']]));
   assert.equal(r.report.pending,0);assert.equal(r.products[0].id,'0042');assert.equal(r.products[0].price,25000);
   assert.equal(r.products[0].line,'Lumina');assert.equal(r.products[0].public,'Femeninos');
-  assert.equal(r.products[0].fichaSelectionExplicit,false);assert.equal(r.products[0].description,'Texto completo de prueba.\n\nSuaviza el cabello.');
+  assert.equal(r.products[0].fichaSelectionExplicit,false);assert.equal(r.products[0].description,'Texto completo de prueba.\nSuaviza el cabello.');
 });
 test('Títulos cortos con acentos, dos puntos y orden arbitrario seleccionan valores exactos',()=>{
   const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'precio:\nMarca:\nCódigo:\nNombre:\nLÍNEA:\nPrecio de venta:\nNo existe:\nCosto:']]));
@@ -647,11 +647,11 @@ test('La consulta compacta selecciona exclusivamente las dos columnas por sus en
   const url=new URL(env.requests.at(-1).src);assert.equal(url.searchParams.get('tq'),'select B,C');
   env.reply(tableFromValues([compactHeaders,[compactDescription,'Precio:']]));assert.equal((await promise)[0].code,'0042');
 });
-function compactPriceBackend(text=compactDescription,{duplicate=false,formula=false,concurrent=false}={}){
+function compactPriceBackend(text=compactDescription,{duplicate=false,formula=false,concurrent=false,headers=compactHeaders}={}){
   let content=text,writes=0,reads=0,released=0;
   const cell={getFormula:()=>formula?'=FORMULA()':'',getValue(){reads++;return concurrent&&reads===1?content+'\nCambio ajeno: sí':content;},setValue(value){writes++;content=value;}};
   const sheet={getLastRow:()=>duplicate?3:2,getLastColumn:()=>2,getRange(row,col,count){
-    if(row===1)return {getDisplayValues:()=>[compactHeaders]};
+    if(row===1)return {getDisplayValues:()=>[headers]};
     if(count!==undefined)return {getDisplayValues:()=>duplicate?[[content],[content]]:[[content]]};
     return cell;
   }};
@@ -695,4 +695,36 @@ test('Ficha conserva orden explícito de atributos alrededor de nombre y precio 
   const square=card.children[0],main=square.children[0],facts=main.children[1];
   assert.equal(square.children[1],nodes['.product-details']);
   assert.deepEqual(facts.children.filter(n=>!n.hidden).map(n=>n===nodes['.name']?'Nombre':n===nodes['.row']?'Precio':n.children[0]?.children[0]?.textContent),['Marca:','Precio','Nombre','Código:']);
+});
+
+test('Orden de la ficha reconoce el nuevo encabezado y rechaza selecciones ambiguas',()=>{
+  const env=environment(),headers=['Descripción integral del producto','Orden de la ficha'];
+  assert.equal(assess(env,tableFromValues([headers,[compactDescription,'Marca:\nNombre:']])).report.pending,0);
+  assert.throws(()=>assess(env,tableFromValues([['Descripción integral del producto','Orden de la ficha','Campos y orden de la ficha'],[compactDescription,'Nombre:','Marca:']])),/ambiguo/);
+  assert.throws(()=>assess(env,tableFromValues([['Descripción integral del producto'],[compactDescription]])),/Orden de la ficha/);
+});
+test('La presentación seleccionada conserva contenido y componentes sin exigir un título vacío',()=>{
+  const env=environment(),headers=['Descripción integral del producto','Orden de la ficha'];
+  const description=compactDescription+'\nTipo de producto: Esencia capilar\nCantidad de contenido: 60\nUnidad de medida del contenido: ml\nCondición del producto: Nuevo';
+  const order='Nombre:\nPresentación:\nCódigo:\nMarca:\nLínea:\nTipo:\nVariante:\nCaracterística:\nCategoría:\nSubcategoría:\nPúblico:\nPrecio:';
+  const product=assess(env,tableFromValues([headers,[description,order]])).products[0];
+  assert.equal(product.fichaFields.find(f=>f.key==='presentacion').value,'60 ml');
+  assert.equal(product.fichaFields.find(f=>f.key==='tipo').value,'Esencia capilar');
+  assert.equal(product.condition,'Nuevo');assert.equal(product.fichaFields.some(f=>f.key==='condicion'),false);
+  const kit=description.replace('\nCantidad de contenido: 60','')+'\nNombre del componente 1: Champú\nCantidad de contenido del componente 1: 300\nUnidad de medida del contenido del componente 1: ml';
+  assert.match(assess(env,tableFromValues([headers,[kit,order]])).products[0].fichaFields.find(f=>f.key==='presentacion').value,/Champú 300 ml/);
+});
+test('El administrador conserva la edición segura con Orden de la ficha y rechaza encabezados dobles',()=>{
+  const env=compactPriceBackend(compactDescription,{headers:['Descripción integral del producto','Orden de la ficha']});
+  assert.equal(env.run('actualizarPrecioWeb("0042","30000","25000").precioGuardado'),'30000');
+  const conflict=compactPriceBackend(compactDescription,{headers:['Descripción integral del producto','Orden de la ficha','Campos y orden de la ficha']});
+  assert.throws(()=>conflict.run('actualizarPrecioWeb("0042","30000","25000")'),/ambiguo/);assert.equal(conflict.writes(),0);
+});
+test('La consulta descubre Orden de la ficha por encabezado con columnas reordenadas',async()=>{
+  const env=environment();await confirmed(env);const promise=env.run('loadGoogleSheetRows()');
+  const headers=['Orden de la ficha','Descripción integral del producto'];
+  env.reply(tableFromValues([headers]));await Promise.resolve();
+  assert.equal(new URL(env.requests.at(-1).src).searchParams.get('tq'),'select B,A');
+  env.reply(tableFromValues([headers,['Tipo:\nPresentación:',compactDescription+'\nTipo de producto: Esencia capilar\nCantidad de contenido: 60\nUnidad de medida del contenido: ml']]));
+  const row=(await promise)[0];assert.deepEqual(Array.from(row.fichaFields,f=>f.key),['tipo','presentacion']);
 });

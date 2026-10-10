@@ -131,7 +131,7 @@ function folletoPresentation(p){
   return [...new Set(units.map(m=>m[0].trim()))].slice(0,3).join(" · ");
 }
 function folletoProductAttributes(p){
-  if(p.fichaSelectionExplicit)return (p.fichaFields||[]).filter(f=>!["nombre","precio","codigo"].includes(f.key)).map(({label,value})=>Object.freeze({label,value:String(value)}));
+  if(p.fichaSelectionExplicit)return (p.fichaFields||[]).filter(f=>!["nombre","precio","codigo","presentacion"].includes(f.key)).map(({label,value})=>Object.freeze({label,value:String(value)}));
   return [["Marca",p.brand],["Línea",p.line],["Tipo",p.productType],
     ["Variante",p.variant],["Característica",p.characteristic],
     ["Categoría",p.category],["Subcategoría",p.subcategory],["Público",p.public],
@@ -188,7 +188,8 @@ function renderCatalogFicha(card,p){
     for(const field of p.fichaFields||[]){
       if(field.key==="nombre"){name.hidden=false;facts.append(name);continue;}
       if(field.key==="precio"){facts.append(priceRow);continue;}
-      const list=document.createElement("dl");list.className="ficha-attributes";
+      if(field.key==="presentacion"){presentation.textContent=field.value;presentation.hidden=false;facts.append(presentation);continue;}
+      const list=document.createElement("dl");list.className="ficha-attributes ficha-ordered-attribute";
       const item=document.createElement("div"),term=document.createElement("dt"),value=document.createElement("dd");
       term.textContent=field.label+":";value.textContent=field.value;item.append(term,value);list.append(item);facts.append(list);
     }

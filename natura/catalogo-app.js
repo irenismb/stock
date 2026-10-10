@@ -285,6 +285,14 @@
       return indices;
     }
 
+    function catalogFichaOrderIndex(indices){
+      const titles=["Orden de la ficha","Campos y orden de la ficha"];
+      const matches=titles.filter(title=>indices.has(catalogHeaderKey(title)));
+      if(matches.length!==1||indices.get(catalogHeaderKey(matches[0]))<0)
+        throw new Error("Encabezado indispensable ausente o ambiguo: Orden de la ficha.");
+      return indices.get(catalogHeaderKey(matches[0]));
+    }
+
     function catalogCellText(cell){
       return String(cell?.f ?? cell?.v ?? "").trim();
     }
@@ -299,7 +307,7 @@
     }
 
 // Contrato compacto: datos etiquetados y títulos de ficha, sin columnas posicionales.
-const CATALOG_COMPACT_ALIASES = {"Código":["Código interno del producto"],"Nombre":["Nombre comercial del producto"],"Nombre completo":["Nombre completo para publicar"],"Sección":["Sección del catálogo"],"Categoría":["Categoría del producto"],"Subcategoría":["Subcategoría del producto"],"Línea":["Línea comercial"],"Característica":["Característica distintiva"],"Público":["Público destinatario"],"Presentación":["Tipo de presentación"],"Condición":["Condición del producto"],"Estado comercial":["Estado comercial del producto"],"Precio":["Precio de venta"],"Código Natura":["Código de catálogo Natura"],"Referencia externa":["Enlace de referencia del producto"],"Descripción":["Descripción sensorial y uso recomendado"],"Beneficios":["Beneficios y funciones del producto"],"Variante":["Variante del producto"],"Contenido":["Cantidad de contenido"],"Unidad":["Unidad de medida del contenido"],"Costo":["Costo de adquisición"]};
+const CATALOG_COMPACT_ALIASES = {"Código":["Código interno del producto"],"Nombre":["Nombre comercial del producto"],"Nombre completo":["Nombre completo para publicar"],"Sección":["Sección del catálogo"],"Categoría":["Categoría del producto"],"Subcategoría":["Subcategoría del producto"],"Línea":["Línea comercial"],"Característica":["Característica distintiva"],"Público":["Público destinatario"],"Tipo":["Tipo de producto"],"Presentación":["Tipo de presentación"],"Condición":["Condición del producto"],"Estado comercial":["Estado comercial del producto"],"Precio":["Precio de venta"],"Código Natura":["Código de catálogo Natura"],"Referencia externa":["Enlace de referencia del producto"],"Descripción":["Descripción sensorial y uso recomendado"],"Beneficios":["Beneficios y funciones del producto"],"Variante":["Variante del producto"],"Contenido":["Cantidad de contenido"],"Unidad":["Unidad de medida del contenido"],"Costo":["Costo de adquisición"]};
 function catalogFieldKey(label){
   const key=catalogHeaderKey(String(label||"").replace(/:\s*$/,""));
   for(const [canonical,aliases] of Object.entries(CATALOG_COMPACT_ALIASES)){
@@ -345,13 +353,13 @@ function catalogOrderedFields(record,selection){
 }
 function readCompactGoogleSheetProductRows(table,indices){
   const descriptionIndex=indices.get(catalogHeaderKey("Descripción integral del producto"));
-  const selectionIndex=indices.get(catalogHeaderKey("Campos y orden de la ficha"));
+  const selectionIndex=catalogFichaOrderIndex(indices);
   const codeIndex=indices.get(catalogHeaderKey("Código interno del producto"));
   const mapping={
     code:"Código",name:"Nombre",section:"Sección",category:"Categoría",subcategory:"Subcategoría",
     condition:"Condición",priceText:"Precio",stockText:"Stock",referenceExternal:"Referencia externa",
     codeNatura:"Código Natura",line:"Línea",public:"Público",commercialStatus:"Estado comercial",
-    brand:"Marca",productType:"Tipo de producto",variant:"Variante",characteristic:"Característica",
+    brand:"Marca",productType:"Tipo",variant:"Variante",characteristic:"Característica",
     presentation:"Presentación",content:"Contenido",unit:"Unidad",units:"Cantidad de unidades",
     olfactoryFamily:"Familia olfativa",aromaticProfile:"Perfil aromático",texture:"Textura y acabado",
     duration:"Duración del efecto",connectivity:"Conectividad",compatibility:"Compatibilidad",
@@ -364,7 +372,7 @@ function readCompactGoogleSheetProductRows(table,indices){
     const record=catalogDescriptionRecord(text),get=label=>record.byKey.get(catalogFieldKey(label))?.value||"";
     const selection=catalogCellText(source.c[selectionIndex]);
     const row={sourceRow:index+2,technicalIssues:[],compact:true,
-      fichaFields:catalogOrderedFields(record,selection),fichaSelectionExplicit:Boolean(selection.trim())};
+      fichaFields:[],fichaSelectionExplicit:Boolean(selection.trim())};
     for(const [field,label] of Object.entries(mapping))row[field]=get(label);
     row.code=/^\d{1,4}$/.test(row.code)?row.code.padStart(4,"0"):"";
     if(!row.name)row.name=get("Nombre completo");
@@ -389,7 +397,12 @@ function readCompactGoogleSheetProductRows(table,indices){
       return amount?[get("Nombre del componente "+n),amount,unit].filter(Boolean).join(" "):"";
     }).filter(Boolean);
     if(components.length)row.presentation=[row.presentation,...components].filter(Boolean).join(" · ");
-    row.description=["Descripción","Beneficios","Especificaciones técnicas"].map(get).filter(Boolean).join("\n\n");
+    // La presentación reúne datos confirmados aunque su título no exista en A.
+    const presentation=[row.presentation,[row.content,row.unit].filter(Boolean).join(" "),row.units?row.units+" unidades":""].filter(Boolean).join(" · ");
+    const fichaRecord={...record,byKey:new Map(record.byKey)};
+    if(presentation)fichaRecord.byKey.set("presentacion",{key:"presentacion",label:"Presentación",value:presentation});
+    row.fichaFields=catalogOrderedFields(fichaRecord,selection);
+    row.description=["Descripción","Beneficios","Especificaciones técnicas"].map(get).filter(Boolean).join("\n");
     row.fullTxtRecord=record.fields.filter(f=>!catalogPrivateField(f.key)).map(f=>f.label+": "+f.value).join("\n");
     return [row];
   });
@@ -398,7 +411,8 @@ function readCompactGoogleSheetProductRows(table,indices){
     function readGoogleSheetProductRows(table){
       const compactIndices=catalogHeaderIndices(table?.cols,[]);
       if(compactIndices.has(catalogHeaderKey("Descripción integral del producto"))){
-        catalogHeaderIndices(table?.cols,["Descripción integral del producto","Campos y orden de la ficha"]);
+        catalogHeaderIndices(table?.cols,["Descripción integral del producto"]);
+        catalogFichaOrderIndex(compactIndices);
         return readCompactGoogleSheetProductRows(table,compactIndices);
       }
       const indices = catalogHeaderIndices(table?.cols, ["Código", "Nombre", "Categoría", "Precio", "Sección", "Estado comercial"]);
@@ -532,8 +546,8 @@ function readCompactGoogleSheetProductRows(table,indices){
       const schema = await queryGoogleSheetTable();
       const compact=Array.isArray(schema.cols)&&schema.cols.some(c=>catalogHeaderKey(c.label)===catalogHeaderKey("Descripción integral del producto"));
       if(compact){
-        const indices=catalogHeaderIndices(schema.cols,["Descripción integral del producto","Campos y orden de la ficha"]);
-        const ids=["Descripción integral del producto","Campos y orden de la ficha"].map(label=>schema.cols[indices.get(catalogHeaderKey(label))].id);
+        const indices=catalogHeaderIndices(schema.cols,["Descripción integral del producto"]);
+        const ids=[indices.get(catalogHeaderKey("Descripción integral del producto")),catalogFichaOrderIndex(indices)].map(index=>schema.cols[index].id);
         if(ids.some(id=>!/^\w+$/.test(id||"")))throw new Error("Identificadores de columnas no válidos.");
         return readGoogleSheetProductRows(await queryGoogleSheetTable(ids));
       }

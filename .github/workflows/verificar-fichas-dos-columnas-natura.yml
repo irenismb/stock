@@ -1,0 +1,44 @@
+name: Verificar fichas Natura de dos columnas en navegador
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/natura/verificar-fichas-dos-columnas.cjs"
+      - ".github/workflows/verificar-fichas-dos-columnas-natura.yml"
+permissions:
+  contents: read
+jobs:
+  navegador:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Verificar pruebas y datos oficiales de dos columnas
+        run: |
+          python3 - <<'PY'
+          import json,os,pathlib,urllib.request
+          url="https://docs.google.com/spreadsheets/d/1x7mC7iq-vbOcvSL58cL-slC55gP4aoCKCig-WpggCNs/gviz/tq?gid=893686273&headers=1&tqx=out:json"
+          raw=urllib.request.urlopen(url,timeout=60).read().decode()
+          table=json.loads(raw[raw.index("{"):raw.rindex("}")+1])["table"]
+          values=[[c["label"] for c in table["cols"]]]+[[c.get("f",c.get("v","")) if c else "" for c in r["c"]] for r in table["rows"]]
+          assert values[0]==["Descripción integral del producto","Campos y orden de la ficha"]
+          pathlib.Path(os.environ["RUNNER_TEMP"],"natura-productos.json").write_text(json.dumps(values))
+          PY
+          CATALOG_PRODUCTS_FIXTURE="$RUNNER_TEMP/natura-productos.json" node --test natura/catalogo-integracion.test.cjs
+      - name: Preparar navegador en nube
+        run: |
+          npm install --prefix "$RUNNER_TEMP/natura-browser" playwright
+          "$RUNNER_TEMP/natura-browser/node_modules/.bin/playwright" install --with-deps chromium
+      - name: Comprobar web publicada, orden y ajuste móvil
+        env:
+          NATURA_BROWSER_RUNTIME: ${{ runner.temp }}/natura-browser
+        run: node .github/natura/verificar-fichas-dos-columnas.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: fichas-natura-dos-columnas
+          path: ${{ runner.temp }}/natura-browser-evidence
+          retention-days: 3

@@ -867,8 +867,8 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 @media(max-width:760px){#grid:has(>.catalog-ficha-card){grid-template-columns:minmax(0,1fr);gap:18px}}
 
 /* Atributos agrupados dentro del panel Filtrar existente. */
-.word-chips{display:flex;flex-direction:column;gap:12px;max-height:55vh;overflow-y:auto;overscroll-behavior:contain;padding:3px}
-.word-filter-group{min-width:0}
+.word-chips{display:flex;flex-direction:column;flex-wrap:nowrap;gap:12px;max-height:55vh;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;padding:3px}
+.word-filter-group{flex:0 0 auto;min-width:0;width:100%}
 .word-filter-heading{font-size:12px;font-weight:700;margin:0 0 5px;color:var(--muted,#5e5552)}
 .word-filter-options{display:flex;flex-wrap:wrap;gap:6px}
 .word-filter-options .term-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;cursor:pointer}

@@ -24,7 +24,8 @@ jobs:
           raw=urllib.request.urlopen(url,timeout=60).read().decode()
           table=json.loads(raw[raw.index("{"):raw.rindex("}")+1])["table"]
           values=[[c["label"] for c in table["cols"]]]+[[c.get("f",c.get("v","")) if c else "" for c in r["c"]] for r in table["rows"]]
-          assert values[0]==["Descripción integral del producto","Campos y orden de la ficha"]
+          assert values[0]==["Descripción integral del producto","Orden de la ficha"]
+          assert all(row[1] for row in values[1:])
           pathlib.Path(os.environ["RUNNER_TEMP"],"natura-productos.json").write_text(json.dumps(values))
           PY
           CATALOG_PRODUCTS_FIXTURE="$RUNNER_TEMP/natura-productos.json" node --test natura/catalogo-integracion.test.cjs

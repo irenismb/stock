@@ -11,6 +11,7 @@ const adminSource = fs.readFileSync(path.join(__dirname, 'precios-admin.js'), 'u
 const cartSource = fs.readFileSync(path.join(__dirname, 'catalogo-carrito-pedido.js'), 'utf8');
 const htmlSource = fs.readFileSync(path.join(__dirname, 'catalogo.html'), 'utf8');
 const toolsSource = fs.readFileSync(path.join(__dirname, 'catalogo-herramientas.js'), 'utf8');
+const uiSource = fs.readFileSync(path.join(__dirname, 'catalogo-ui.js'), 'utf8');
 
 const headers = ['Código','Sección','Categoría','Subcategoría','Familia olfativa','Condición','Nombre','Precio','Costo','Stock','Referencia externa','Descripción','Código Natura','Línea','Público','Estado comercial','Marketplace','Nombre anterior','Marca','Tipo de producto','Variante','Característica','Presentación','Contenido','Unidad','Cantidad de unidades'];
 const samples = [
@@ -170,6 +171,20 @@ test('Los controles activos quedan fuera del panel ocultable y los grupos son ac
   assert.ok(facetButtons(env).every(b=>b.attributes['aria-pressed']!==undefined&&b.attributes['aria-label']));
 });
 
+test('La vista directa conserva la explicación y retirada de filtros sin resultados',async()=>{
+  const env=await facetEnvironment();
+  const renderer=uiSource.slice(uiSource.indexOf('  function renderDirectProducts(){'),uiSource.indexOf('  let directRenderQueued'));
+  env.run('window.CATALOG_INITIAL_LOAD_READY=true; const searchInput=qInp; const count=countEl; function isActive(){return true;} function hasSearch(){return !!qInp.value;} function directProducts(){return buildFilteredList();}');
+  env.run(renderer);
+  env.run('toggleFacetFilter("brand","Avon");setSelectedNavigationValue("public","Masculinos");setWordSuggestionsVisible(false);renderDirectProducts()');
+  const fragment=env.document.getElementById('grid').children[0],empty=fragment.children[0];
+  assert.match(empty.children[0].textContent,/filtros activos/);
+  assert.match(empty.children[1].textContent,/selecciones siguen activas/);
+  assert.equal(empty.children[2].children[0].dataset.clearSearch,'all');
+  assert.equal(env.run('selectedFacetFilters.length'),1);
+  assert.equal(env.document.getElementById('count').textContent,'0 productos');
+});
+
 function environment(){
   const elements=new Map(),timers=new Map(),requests=[],events=new Map(),storage=new Map();
   let timerId=0,context;
@@ -192,6 +207,7 @@ function environment(){
     insertAdjacentElement(_,node){return this.appendChild(node);}
   }
   const document={head:new Node('head'),body:new Node('body'),documentElement:new Node('html'),visibilityState:'visible',
+    createDocumentFragment(){return new Node('fragment');},
     getElementById(id){if(!elements.has(id))elements.set(id,new Node());return elements.get(id);},
     createElement(tag){const node=new Node(tag);if(tag==='template')node.content={firstElementChild:new Node()};return node;},
     querySelector(){return null;},querySelectorAll(){return [];},addEventListener(){}};

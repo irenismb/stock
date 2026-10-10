@@ -120,15 +120,20 @@
     const fragment = document.createDocumentFragment();
 
     if(!products.length){
-      const empty = document.createElement("div");
-      empty.className = "empty-state";
-      const title = document.createElement("strong");
-      title.className = "empty-state-title";
-      title.textContent = hasSearch()
-        ? "No se encontraron productos con ese nombre."
-        : "No hay productos disponibles.";
-      empty.appendChild(title);
-      fragment.appendChild(empty);
+      const hasFilters = typeof hasActiveDiscoveryFilters === "function" && hasActiveDiscoveryFilters();
+      if(hasFilters && typeof makeEmptyState === "function"){
+        fragment.appendChild(makeEmptyState("No hay productos que coincidan con la búsqueda y los filtros activos."));
+      }else{
+        const empty = document.createElement("div");
+        empty.className = "empty-state";
+        const title = document.createElement("strong");
+        title.className = "empty-state-title";
+        title.textContent = hasSearch()
+          ? "No se encontraron productos con ese nombre."
+          : "No hay productos disponibles.";
+        empty.appendChild(title);
+        fragment.appendChild(empty);
+      }
     }else{
       for(const product of products){
         try{
@@ -200,7 +205,7 @@
       button.type="button";button.textContent=album.label;
       button.addEventListener("click",()=>{
         if(album.products?.length&&album.products.every(p=>p.isGiftGalleryImage))setShowAllEnabled(false);
-        openAlbum(album.key,{keepFilters:typeof getCombinedWordTerms==="function"&&getCombinedWordTerms().length>0});
+        openAlbum(album.key,{keepFilters:typeof hasActiveDiscoveryFilters==="function"?hasActiveDiscoveryFilters():typeof getCombinedWordTerms==="function"&&getCombinedWordTerms().length>0});
       });
       host.appendChild(button);
     }

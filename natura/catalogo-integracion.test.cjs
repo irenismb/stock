@@ -438,7 +438,7 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=filtros-agrupados-2026-10-09-1'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-2026-10-10-1'));
   assert.ok(htmlSource.includes('precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
@@ -446,7 +446,21 @@ test('Rango oficial opcional: todos los registros conservan nombre, código y va
   const values=JSON.parse(fs.readFileSync(process.env.CATALOG_PRODUCTS_FIXTURE,'utf8')),env=environment();await confirmed(env);
   const result=assess(env,tableFromValues(values));assert.equal(result.report.pending,0);assert.equal(result.products.length,values.length-1);
   const index=label=>values[0].indexOf(label);
-  result.products.forEach((product,i)=>{const row=values[i+1];assert.equal(product.id,String(row[index('Código')]).padStart(4,'0'));assert.equal(product.name,row[index('Nombre')]);assert.equal(product.price,row[index('Precio')]||0);assert.equal(product.hasPrice,typeof row[index('Precio')]==='number');});
+  if(index('Descripción integral del producto')>=0){
+    env.sandbox.compactValues=values;
+    const expected=env.run('compactValues.slice(1).map(row=>catalogDescriptionRecord(row[compactValues[0].indexOf("Descripción integral del producto")]))');
+    result.products.forEach((product,i)=>{
+      const fields=expected[i].byKey,price=env.run('catalogCompactNumber('+JSON.stringify(fields.get('precio')?.value||'')+')');
+      assert.equal(product.id,fields.get('codigo').value.padStart(4,'0'));
+      assert.equal(product.name,fields.get('nombre').value);
+      assert.equal(product.price,price.value??0);assert.equal(product.hasPrice,price.value!==null);
+      assert.equal(product.category,fields.get('categoria').value);assert.equal(product.section,fields.get('seccion').value);
+    });
+    const compact=values.map(row=>[row[index('Descripción integral del producto')],row[index('Campos y orden de la ficha')]||'']);
+    const migrated=assess(env,tableFromValues(compact));
+    assert.equal(migrated.report.pending,0);
+    assert.deepEqual(JSON.parse(JSON.stringify(migrated.products)),JSON.parse(JSON.stringify(result.products)));
+  }else result.products.forEach((product,i)=>{const row=values[i+1];assert.equal(product.id,String(row[index('Código')]).padStart(4,'0'));assert.equal(product.name,row[index('Nombre')]);assert.equal(product.price,row[index('Precio')]||0);assert.equal(product.hasPrice,typeof row[index('Precio')]==='number');});
   assert.equal(new Set(result.products.map(p=>p.id)).size,result.products.length);
 });
 
@@ -590,3 +604,94 @@ test('Información lateral usa los mismos nodos y restaura el orden móvil sin d
   }
 });
 
+
+const compactHeaders=['Descripción integral del producto','Campos y orden de la ficha'];
+const compactDescription='Código interno del producto: 0042\nNombre comercial del producto: Kit de prueba: champú y crema\nSección del catálogo: Belleza y cuidado\nCategoría del producto: Cabello\nMarca: Natura\nLínea comercial: Lumina\nPúblico destinatario: Femeninos\nEstado comercial del producto: A la venta\nPrecio de venta: 25.000\nBeneficios y funciones del producto: Suaviza el cabello.\nDescripción sensorial y uso recomendado: Texto completo de prueba.\nEnlace de referencia del producto: https://example.com/item:42\nCosto de adquisición: 15000\nNúmero de serie: PRIVADO-123';
+test('Dos columnas recuperan identidad, precio, navegación y filtros desde títulos',()=>{
+  const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'']]));
+  assert.equal(r.report.pending,0);assert.equal(r.products[0].id,'0042');assert.equal(r.products[0].price,25000);
+  assert.equal(r.products[0].line,'Lumina');assert.equal(r.products[0].public,'Femeninos');
+  assert.equal(r.products[0].fichaSelectionExplicit,false);assert.equal(r.products[0].description,'Texto completo de prueba.\n\nSuaviza el cabello.');
+});
+test('Títulos cortos con acentos, dos puntos y orden arbitrario seleccionan valores exactos',()=>{
+  const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'precio:\nMarca:\nCódigo:\nNombre:\nLÍNEA:\nPrecio de venta:\nNo existe:\nCosto:']]));
+  assert.deepEqual(Array.from(r.products[0].fichaFields,f=>f.key),['precio','marca','codigo','nombre','linea']);
+  assert.equal(r.products[0].fichaFields[3].value,'Kit de prueba: champú y crema');
+});
+test('Referencias con dos puntos y valores multilínea se conservan sin inventar campos',()=>{
+  const env=environment();env.sandbox.raw=compactDescription+'\nMateriales: Tela\nAlgodón suave';
+  const record=env.run('catalogDescriptionRecord(raw)');
+  assert.equal(record.byKey.get('referencia externa').value,'https://example.com/item:42');
+  assert.equal(record.byKey.get('materiales').value,'Tela\nAlgodón suave');
+});
+test('Datos privados se excluyen de ficha, búsqueda y texto copiable',()=>{
+  const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'Costo:\nNúmero de serie:\nMarca:']]));
+  assert.deepEqual(Array.from(r.products[0].fichaFields,f=>f.key),['marca']);
+  assert.equal(r.products[0].cost,null);assert.equal(r.products[0].costText,'');
+  assert.ok(!JSON.stringify(r.products[0]).includes('PRIVADO-123'));
+  assert.ok(!JSON.stringify(r.products[0]).includes('15000'));
+});
+test('Títulos duplicados y códigos duplicados no eligen una fila arbitraria',()=>{
+  const env=environment();
+  assert.equal(assess(env,tableFromValues([compactHeaders,[compactDescription+'\nPrecio: 30000','']])).report.pending,1);
+  assert.equal(assess(env,tableFromValues([compactHeaders,[compactDescription,''],[compactDescription,'']])).report.pending,2);
+});
+test('Precio vacío conserva consultar precio y un dato inválido deja la fila pendiente',()=>{
+  const env=environment(),make=price=>assess(env,tableFromValues([compactHeaders,[compactDescription.replace('25.000',price),'']]));
+  assert.equal(make('').products[0].hasPrice,false);assert.equal(make('').products[0].price,0);
+  assert.equal(make('-100').report.pending,1);assert.equal(make('no disponible').report.pending,1);
+});
+test('La consulta compacta selecciona exclusivamente las dos columnas por sus encabezados',async()=>{
+  const env=environment();await confirmed(env);const promise=env.run('loadGoogleSheetRows()');
+  env.reply(tableFromValues([['Código interno del producto',...compactHeaders]]));await Promise.resolve();
+  const url=new URL(env.requests.at(-1).src);assert.equal(url.searchParams.get('tq'),'select B,C');
+  env.reply(tableFromValues([compactHeaders,[compactDescription,'Precio:']]));assert.equal((await promise)[0].code,'0042');
+});
+function compactPriceBackend(text=compactDescription,{duplicate=false,formula=false,concurrent=false}={}){
+  let content=text,writes=0,reads=0,released=0;
+  const cell={getFormula:()=>formula?'=FORMULA()':'',getValue(){reads++;return concurrent&&reads===1?content+'\nCambio ajeno: sí':content;},setValue(value){writes++;content=value;}};
+  const sheet={getLastRow:()=>duplicate?3:2,getLastColumn:()=>2,getRange(row,col,count){
+    if(row===1)return {getDisplayValues:()=>[compactHeaders]};
+    if(count!==undefined)return {getDisplayValues:()=>duplicate?[[content],[content]]:[[content]]};
+    return cell;
+  }};
+  const context=vm.createContext({SpreadsheetApp:{openById:()=>({getSheetByName:()=>sheet}),flush(){}},
+    LockService:{getScriptLock:()=>({waitLock(){},releaseLock(){released++;}})},
+    INVENTARIO_SPREADSHEET_ID:'prueba',INVENTARIO_SHEET_NAME:'Productos',INVENTARIO_HEADER_ROW:1});
+  for(const name of ['admin-contextos.js','admin-precios.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'apps-script','administrar precios natura',name),'utf8'),context);
+  return {run:source=>vm.runInContext(source,context),content:()=>content,writes:()=>writes,released:()=>released};
+}
+test('Administrador compacto actualiza únicamente el valor de precio y conserva todas las otras líneas',()=>{
+  const env=compactPriceBackend();assert.equal(env.run('obtenerProductosPrecios().productos[0].codigo'),'0042');
+  assert.equal(env.run('actualizarPrecioWeb("0042","30.000","25000").precioGuardado'),'30000');
+  assert.equal(env.content(),compactDescription.replace('Precio de venta: 25.000','Precio de venta: 30000'));assert.equal(env.writes(),1);assert.equal(env.released(),1);
+});
+test('Administrador compacto agrega y vacía precio sin borrar identidad o atributos',()=>{
+  const original=compactDescription.replace('\nPrecio de venta: 25.000',''),env=compactPriceBackend(original);
+  env.run('actualizarPrecioWeb("0042","12000","")');assert.equal(env.content(),original+'\nPrecio de venta: 12000');
+  env.run('actualizarPrecioWeb("0042","","12000")');assert.equal(env.content(),original+'\nPrecio de venta: ');
+});
+test('Administrador rechaza conflictos, fórmulas, códigos o precios ambiguos sin escribir',()=>{
+  for(const options of [{duplicate:true},{formula:true},{concurrent:true}]){
+    const env=compactPriceBackend(compactDescription,options);assert.throws(()=>env.run('actualizarPrecioWeb("0042","30000","25000")'));assert.equal(env.writes(),0);assert.equal(env.released(),1);
+  }
+  for(const text of [compactDescription+'\nPrecio: 1',compactDescription+'\nCódigo: 0042']){
+    const env=compactPriceBackend(text);assert.throws(()=>env.run('actualizarPrecioWeb("0042","30000","25000")'));assert.equal(env.writes(),0);
+  }
+  const env=compactPriceBackend();assert.throws(()=>env.run('actualizarPrecioWeb("0042","30000","20000")'));assert.equal(env.writes(),0);
+});
+test('Ficha conserva orden explícito de atributos alrededor de nombre y precio y descripción al pie',()=>{
+  const nodes={},node=tag=>({tag,children:[],hidden:false,classList:{add(){},toggle(){}},setAttribute(){},addEventListener(){},append(...items){for(const item of items){item.parent?.children.splice(item.parent.children.indexOf(item),1);this.children.push(item);item.parent=this;}},prepend(item){this.children.unshift(item);}});
+  for(const selector of ['.name','.img','.pad','.product-details','.description','.meta','.row','.product-line'])nodes[selector]=node(selector);
+  nodes['.img'].querySelector=()=>node('img');nodes['.product-details'].querySelector=()=>node('summary');
+  const card=node('card');card.querySelector=selector=>nodes[selector];
+  const context=vm.createContext({document:{createElement:node},stockMetaText:()=>'',folletoPresentation:()=>'',folletoProductAttributes:()=>[],
+    buildFichaModel:p=>p,drawCatalogFichaImage(){},queueCatalogFichaLayout(){}});
+  const start=toolsSource.indexOf('function renderCatalogFicha('),end=toolsSource.indexOf('const CATALOG_FICHA_LAYOUT_KEYS',start);
+  vm.runInContext(toolsSource.slice(start,end),context);
+  context.card=card;context.product={name:'Kit',description:'Texto completo',fichaSelectionExplicit:true,fichaFields:[{key:'marca',label:'Marca',value:'Natura'},{key:'precio',label:'Precio',value:'25000'},{key:'nombre',label:'Nombre',value:'Kit'},{key:'codigo',label:'Código',value:'0042'}]};
+  vm.runInContext('renderCatalogFicha(card,product)',context);
+  const square=card.children[0],main=square.children[0],facts=main.children[1];
+  assert.equal(square.children[1],nodes['.product-details']);
+  assert.deepEqual(facts.children.filter(n=>!n.hidden).map(n=>n===nodes['.name']?'Nombre':n===nodes['.row']?'Precio':n.children[0]?.children[0]?.textContent),['Marca:','Precio','Nombre','Código:']);
+});

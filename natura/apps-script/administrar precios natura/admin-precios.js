@@ -1,5 +1,36 @@
 // Lectura y actualización segura de precios del inventario oficial.
 
+function actualizarPrecioCompacto_(contexto,codigo,precioNuevo,precioAnterior){
+  const hoja=contexto.hoja,count=hoja.getLastRow()-INVENTARIO_HEADER_ROW;
+  if(count<=0)throw new Error("Productos no contiene registros.");
+  const values=hoja.getRange(INVENTARIO_HEADER_ROW+1,contexto.columnas.descripcion+1,count,1).getDisplayValues();
+  const matches=[];
+  values.forEach((row,index)=>{
+    const record=catalogDescriptionRecord(row[0]);
+    const identity=record.byKey.get("codigo");
+    if(identity&&normalizarCodigo_(identity.value)===codigo)matches.push({row:INVENTARIO_HEADER_ROW+1+index,record:record,text:String(row[0])});
+  });
+  if(matches.length!==1)throw new Error(matches.length?"Código duplicado. No se modificó ninguna fila.":"No se encontró el producto.");
+  const match=matches[0];
+  if(match.record.duplicates.has("codigo")||match.record.duplicates.has("precio"))throw new Error("Código o precio ambiguo en la descripción. No se modificó ninguna fila.");
+  const actual=match.record.byKey.get("precio")?.value||"",number=catalogCompactNumber(actual);
+  if(!number.valid)throw new Error("El precio actual no es válido. Corrige la descripción antes de guardar.");
+  if((number.value===null?"":String(number.value))!==precioAnterior)throw new Error("El precio cambió desde que se abrió el administrador. Recarga la lista antes de guardar.");
+  const cell=hoja.getRange(match.row,contexto.columnas.descripcion+1);
+  if(cell.getFormula())throw new Error("La descripción es una fórmula. No se sobrescribió.");
+  if(String(cell.getValue())!==match.text)throw new Error("La descripción cambió. Recarga antes de guardar.");
+  let replaced=false;
+  let next=match.text.replace(/^([^:\r\n]+):([ \t]*)([^\r\n]*)/gm,(line,label,space)=>{
+    if(catalogFieldKey(label)!=="precio")return line;
+    replaced=true;return label+":"+space+precioNuevo;
+  });
+  if(!replaced&&precioNuevo!=="")next+=(/\r?\n$/.test(next)?"":next.includes("\r\n")?"\r\n":"\n")+"Precio de venta: "+precioNuevo;
+  if(next!==match.text){cell.setValue(next);SpreadsheetApp.flush();}
+  if(String(cell.getValue())!==next)throw new Error("Google Sheets no confirmó la descripción esperada.");
+  return {ok:true,codigo:codigo,precioAnterior:actual,precioGuardado:precioNuevo,actualizadoEn:new Date().toISOString()};
+}
+
+
 function obtenerProductosPrecios() {
   const contexto = obtenerContextoInventario_();
   const ultimaFila = contexto.hoja.getLastRow();
@@ -19,6 +50,12 @@ function obtenerProductosPrecios() {
 
   const productos = valores
     .map(function(fila) {
+      if(contexto.compacto){
+        const record=catalogDescriptionRecord(fila[contexto.columnas.descripcion]);
+        const get=label=>record.byKey.get(catalogFieldKey(label))?.value||"";
+        if(["codigo","nombre","precio"].some(key=>record.duplicates.has(key)))return {codigo:"",nombre:"",precio:""};
+        return {codigo:normalizarCodigo_(get("Código")),nombre:get("Nombre")||get("Nombre completo"),precio:get("Precio")};
+      }
       return {
         codigo: normalizarCodigo_(fila[contexto.columnas.codigo]),
         nombre: String(fila[contexto.columnas.nombre] || "").trim(),
@@ -47,6 +84,7 @@ function actualizarPrecioWeb(codigo, precioNuevo, precioAnterior) {
 
   try {
     const contexto = obtenerContextoInventario_();
+    if(contexto.compacto)return actualizarPrecioCompacto_(contexto,codigoSeguro,precioNormalizado,precioAnteriorNormalizado);
     const ultimaFila = contexto.hoja.getLastRow();
     if (ultimaFila <= INVENTARIO_HEADER_ROW) {
       throw new Error("La pestaña Productos no contiene registros.");

@@ -131,6 +131,7 @@ function folletoPresentation(p){
   return [...new Set(units.map(m=>m[0].trim()))].slice(0,3).join(" · ");
 }
 function folletoProductAttributes(p){
+  if(p.fichaSelectionExplicit)return (p.fichaFields||[]).filter(f=>!["nombre","precio","codigo"].includes(f.key)).map(({label,value})=>Object.freeze({label,value:String(value)}));
   return [["Marca",p.brand],["Línea",p.line],["Tipo",p.productType],
     ["Variante",p.variant],["Característica",p.characteristic],
     ["Categoría",p.category],["Subcategoría",p.subcategory],["Público",p.public],
@@ -181,6 +182,17 @@ function renderCatalogFicha(card,p){
     term.textContent=label+":";definition.textContent=value;item.append(term,definition);attributes.append(item);
   }
   attributes.hidden=!model.attributes.length;facts.append(attributes,card.querySelector(".row"));
+  if(p.fichaSelectionExplicit){
+    const name=card.querySelector(".name");
+    name.hidden=true;presentation.hidden=true;meta.hidden=true;attributes.hidden=true;
+    for(const field of p.fichaFields||[]){
+      if(field.key==="nombre"){name.hidden=false;facts.append(name);continue;}
+      if(field.key==="precio"){facts.append(card.querySelector(".row"));continue;}
+      const list=document.createElement("dl");list.className="ficha-attributes";
+      const item=document.createElement("div"),term=document.createElement("dt"),value=document.createElement("dd");
+      term.textContent=field.label+":";value.textContent=field.value;item.append(term,value);list.append(item);facts.append(list);
+    }
+  }
   card.querySelector(".product-line").hidden=true;
   details.append(description);
   main.append(image,facts);square.append(main,details);

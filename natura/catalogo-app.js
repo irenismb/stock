@@ -298,7 +298,109 @@
       return {value:valid ? cell.v : null, valid, present:true};
     }
 
+// Contrato compacto: datos etiquetados y títulos de ficha, sin columnas posicionales.
+const CATALOG_COMPACT_ALIASES = {"Código":["Código interno del producto"],"Nombre":["Nombre comercial del producto"],"Nombre completo":["Nombre completo para publicar"],"Sección":["Sección del catálogo"],"Categoría":["Categoría del producto"],"Subcategoría":["Subcategoría del producto"],"Línea":["Línea comercial"],"Característica":["Característica distintiva"],"Público":["Público destinatario"],"Presentación":["Tipo de presentación"],"Condición":["Condición del producto"],"Estado comercial":["Estado comercial del producto"],"Precio":["Precio de venta"],"Código Natura":["Código de catálogo Natura"],"Referencia externa":["Enlace de referencia del producto"],"Descripción":["Descripción sensorial y uso recomendado"],"Beneficios":["Beneficios y funciones del producto"],"Variante":["Variante del producto"],"Contenido":["Cantidad de contenido"],"Unidad":["Unidad de medida del contenido"],"Costo":["Costo de adquisición"]};
+function catalogFieldKey(label){
+  const key=catalogHeaderKey(String(label||"").replace(/:\s*$/,""));
+  for(const [canonical,aliases] of Object.entries(CATALOG_COMPACT_ALIASES)){
+    if([canonical,...aliases].some(alias=>catalogHeaderKey(alias)===key))return catalogHeaderKey(canonical);
+  }
+  return key;
+}
+function catalogPrivateField(label){
+  return /^(?:costo|coste|numero de serie|serial|mac|direccion mac|p\/n|numero de parte|ubicacion interna|proveedor|margen|rentabilidad|precio de compra)(?:\b|$)/.test(catalogFieldKey(label));
+}
+function catalogDescriptionRecord(text){
+  const fields=[],byKey=new Map(),duplicates=new Set();let current=null;
+  for(const line of String(text||"").split(/\r?\n/)){
+    const match=/^([^:\n]+):[ \t]*(.*)$/.exec(line);
+    if(match){
+      const key=catalogFieldKey(match[1]);
+      current={key,label:match[1].trim(),value:match[2].trim()};
+      fields.push(current);
+      if(byKey.has(key))duplicates.add(key);else byKey.set(key,current);
+    }else if(current&&line.trim())current.value+="\n"+line.trim();
+  }
+  return {fields,byKey,duplicates};
+}
+function catalogCompactNumber(text){
+  let value=String(text||"").trim();
+  if(!value)return {value:null,valid:true};
+  value=value.replace(/^(?:COP\s*|\$\s*)/i,"").replace(/\s/g,"");
+  if(/^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(value))value=value.replace(/\./g,"").replace(",",".");
+  else if(/^\d+(?:,\d+)?$/.test(value))value=value.replace(",",".");
+  if(!/^\d+(?:\.\d+)?$/.test(value))return {value:null,valid:false};
+  const number=Number(value);return {value:Number.isFinite(number)?number:null,valid:Number.isFinite(number)&&number>=0};
+}
+function catalogOrderedFields(record,selection){
+  const seen=new Set(),fields=[];
+  for(const title of String(selection||"").split(/[\n;|,]+/)){
+    const label=title.trim().replace(/:\s*$/,""),key=catalogFieldKey(label);
+    if(!label||seen.has(key))continue;seen.add(key);
+    const field=record.byKey.get(key);
+    if(field&&!record.duplicates.has(key)&&!catalogPrivateField(key)&&field.value)
+      fields.push({key,label,value:field.value});
+  }
+  return fields;
+}
+function readCompactGoogleSheetProductRows(table,indices){
+  const descriptionIndex=indices.get(catalogHeaderKey("Descripción integral del producto"));
+  const selectionIndex=indices.get(catalogHeaderKey("Campos y orden de la ficha"));
+  const codeIndex=indices.get(catalogHeaderKey("Código interno del producto"));
+  const mapping={
+    code:"Código",name:"Nombre",section:"Sección",category:"Categoría",subcategory:"Subcategoría",
+    condition:"Condición",priceText:"Precio",stockText:"Stock",referenceExternal:"Referencia externa",
+    codeNatura:"Código Natura",line:"Línea",public:"Público",commercialStatus:"Estado comercial",
+    brand:"Marca",productType:"Tipo de producto",variant:"Variante",characteristic:"Característica",
+    presentation:"Presentación",content:"Contenido",unit:"Unidad",units:"Cantidad de unidades",
+    olfactoryFamily:"Familia olfativa",aromaticProfile:"Perfil aromático",texture:"Textura y acabado",
+    duration:"Duración del efecto",connectivity:"Conectividad",compatibility:"Compatibilidad",
+    recommendedAge:"Edad recomendada",players:"Número de jugadores",materials:"Materiales"
+  };
+  if(!Array.isArray(table?.rows))throw new Error("Productos no contiene filas legibles.");
+  return table.rows.flatMap((source,index)=>{
+    const text=catalogCellText(source?.c?.[descriptionIndex]);
+    if(!text)return [];
+    const record=catalogDescriptionRecord(text),get=label=>record.byKey.get(catalogFieldKey(label))?.value||"";
+    const selection=catalogCellText(source.c[selectionIndex]);
+    const row={sourceRow:index+2,technicalIssues:[],compact:true,
+      fichaFields:catalogOrderedFields(record,selection),fichaSelectionExplicit:Boolean(selection.trim())};
+    for(const [field,label] of Object.entries(mapping))row[field]=get(label);
+    row.code=/^\d{1,4}$/.test(row.code)?row.code.padStart(4,"0"):"";
+    if(!row.name)row.name=get("Nombre completo");
+    if(!/^\d{4}$/.test(row.code))row.technicalIssues.push({reason:"Código interno ausente o inválido",change:"Completar Código interno del producto: con hasta cuatro dígitos."});
+    if(Number.isInteger(codeIndex)&&codeIndex>=0){
+      const separate=catalogCellText(source.c[codeIndex]).padStart(4,"0");
+      if(separate&&separate!==row.code)row.technicalIssues.push({reason:"Código independiente distinto al de la descripción",change:"Resolver la identidad antes de publicar."});
+    }
+    for(const [field,label] of [["name","Nombre"],["category","Categoría"],["section","Sección"]])
+      if(!row[field])row.technicalIssues.push({reason:label+" ausente",change:"Completar su título y valor dentro de la descripción."});
+    for(const key of record.duplicates)if(!catalogPrivateField(key))
+      row.technicalIssues.push({reason:"Título duplicado: "+key,change:"Conservar un único valor inequívoco para este título."});
+    const price=catalogCompactNumber(row.priceText);
+    row.priceValue=price.value;
+    if(!price.valid)row.technicalIssues.push({reason:"Precio de venta inválido",change:"Corregir el precio o dejar su valor vacío."});
+    for(const [field,label] of [["stockValue","Stock"],["contentValue","Contenido"],["unitsValue","Cantidad de unidades"]])
+      row[field]=catalogCompactNumber(get(label)).value;
+    row.costValue=null;row.costText="";
+    row.componentNames=Array.from({length:4},(_,i)=>get("Nombre del componente "+(i+1))).filter(Boolean);
+    const components=Array.from({length:4},(_,i)=>{
+      const n=i+1,amount=get("Cantidad de contenido del componente "+n),unit=get("Unidad de medida del contenido del componente "+n);
+      return amount?[get("Nombre del componente "+n),amount,unit].filter(Boolean).join(" "):"";
+    }).filter(Boolean);
+    if(components.length)row.presentation=[row.presentation,...components].filter(Boolean).join(" · ");
+    row.description=["Descripción","Beneficios","Especificaciones técnicas"].map(get).filter(Boolean).join("\n\n");
+    row.fullTxtRecord=record.fields.filter(f=>!catalogPrivateField(f.key)).map(f=>f.label+": "+f.value).join("\n");
+    return [row];
+  });
+}
+
     function readGoogleSheetProductRows(table){
+      const compactIndices=catalogHeaderIndices(table?.cols,[]);
+      if(compactIndices.has(catalogHeaderKey("Descripción integral del producto"))){
+        catalogHeaderIndices(table?.cols,["Descripción integral del producto","Campos y orden de la ficha"]);
+        return readCompactGoogleSheetProductRows(table,compactIndices);
+      }
       const indices = catalogHeaderIndices(table?.cols, ["Código", "Nombre", "Categoría", "Precio", "Sección", "Estado comercial"]);
       if(!Array.isArray(table?.rows)) throw new Error("Productos no contiene filas legibles.");
       const fields = {
@@ -428,6 +530,13 @@
     async function loadGoogleSheetRows(){
       // Descubrir encabezados sin filas; después leer únicamente datos públicos necesarios.
       const schema = await queryGoogleSheetTable();
+      const compact=Array.isArray(schema.cols)&&schema.cols.some(c=>catalogHeaderKey(c.label)===catalogHeaderKey("Descripción integral del producto"));
+      if(compact){
+        const indices=catalogHeaderIndices(schema.cols,["Descripción integral del producto","Campos y orden de la ficha"]);
+        const ids=["Descripción integral del producto","Campos y orden de la ficha"].map(label=>schema.cols[indices.get(catalogHeaderKey(label))].id);
+        if(ids.some(id=>!/^\w+$/.test(id||"")))throw new Error("Identificadores de columnas no válidos.");
+        return readGoogleSheetProductRows(await queryGoogleSheetTable(ids));
+      }
       const indices = catalogHeaderIndices(schema.cols,["Código","Nombre","Categoría","Precio","Sección","Estado comercial"]);
       const allowed = new Set([
         "Código","Nombre","Precio","Stock","Sección","Categoría","Subcategoría","Marca","Línea",
@@ -833,6 +942,8 @@
         unit: String(row.unit || "").trim(),
         units: String(row.units || "").trim(),
         facetAttributes: buildProductFacetAttributes(row),
+        fichaFields: row.fichaFields,
+        fichaSelectionExplicit: row.fichaSelectionExplicit === true,
         price: row.priceValue ?? 0,
         priceText,
         hasPrice: row.priceValue !== null && row.priceValue !== undefined,
@@ -3267,8 +3378,8 @@ function refreshCardUI(card,p){
   const row=card.querySelector(".row");
   const actions=card.querySelector(".actions");
   const meta=card.querySelector(".meta");
-  if(meta) meta.hidden=!String(meta.textContent||"").trim();
-  if(row) row.hidden=false;
+  if(meta) meta.hidden=p.fichaSelectionExplicit||!String(meta.textContent||"").trim();
+  if(row) row.hidden=p.fichaSelectionExplicit&&!p.fichaFields?.some(field=>field.key==="precio");
   if(actions) actions.hidden=false;
   const enforce=shouldEnforceStockLimits();
   const id=String(p.id);

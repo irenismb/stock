@@ -58,8 +58,8 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
 
   const standards=await page.evaluate(()=>({
     selected:allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)).every(p=>p.fichaSelectionExplicit),
-    beautyConditions:allLoadedProducts.filter(p=>p.section==='Belleza y cuidado'&&p.fichaFields.some(f=>f.key==='condicion')).length,
-    otherConditions:allLoadedProducts.filter(p=>p.section==='Otros productos'&&p.condition&&!p.fichaFields.some(f=>f.key==='condicion')).length,
+    beautyConditions:allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)&&p.section==='Belleza y cuidado'&&p.fichaFields.some(f=>f.key==='condicion')).length,
+    otherConditions:allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)&&p.section==='Otros productos'&&p.condition&&!p.fichaFields.some(f=>f.key==='condicion')).length,
     otherName:allLoadedProducts.find(p=>p.id==='0011')?.name,
     presentation:allLoadedProducts.find(p=>p.id==='0401')?.fichaFields.find(f=>f.key==='presentacion')?.value
   }));

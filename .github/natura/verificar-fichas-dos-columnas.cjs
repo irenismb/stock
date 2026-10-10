@@ -6,7 +6,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
   const page=await browser.newPage({viewport:{width:1280,height:900}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=dos-columnas-2026-10-10',{waitUntil:'domcontentloaded'});
-  await page.waitForFunction(()=>window.CATALOG_INITIAL_LOAD_READY===true,{timeout:90000});
+  await page.waitForFunction(()=>window.CATALOG_INITIAL_LOAD_READY===true,null,{timeout:90000});
   const info=await page.evaluate(()=>({
     ready:window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,
     count:allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)).length,

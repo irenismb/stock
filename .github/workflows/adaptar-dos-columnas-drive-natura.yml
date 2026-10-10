@@ -1,0 +1,38 @@
+name: Adaptar originales Natura en Drive a dos columnas
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/natura/dos-columnas-drive.json"
+      - ".github/natura/editar-dos-columnas-drive.py"
+      - ".github/workflows/adaptar-dos-columnas-drive-natura.yml"
+permissions:
+  contents: read
+concurrency:
+  group: publicar-apps-script-natura-automaticamente
+  cancel-in-progress: false
+jobs:
+  editar-drive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+      - name: Preparar autorización existente
+        run: npm install --global @google/clasp@3.4.1
+      - name: Restaurar autorización Google
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          test -n "$CLASPRC_JSON"
+          printf '%s' "$CLASPRC_JSON" > "$RUNNER_TEMP/.clasprc.json"
+          chmod 600 "$RUNNER_TEMP/.clasprc.json"
+      - name: Leer, adaptar, probar y verificar originales en Drive
+        env:
+          clasp_config_auth: ${{ runner.temp }}/.clasprc.json
+          CLASP_AUTH_FILE: ${{ runner.temp }}/.clasprc.json
+        run: |
+          clasp list-scripts >/dev/null
+          python3 .github/natura/editar-dos-columnas-drive.py

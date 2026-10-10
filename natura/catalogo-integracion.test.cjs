@@ -19,19 +19,164 @@ const samples = [
   [9999,'Otros productos','Medicamentos','','','','Registro ficticio oculto',10]
 ];
 const visibility = {ok:true,reglas:[{tipo:'seccion',identificador:'otros productos',oculto:true,etiqueta:'Otros productos'}]};
+function columnId(index){let result="";for(let n=index+1;n>0;n=Math.floor((n-1)/26))result=String.fromCharCode(65+(n-1)%26)+result;return result;}
 function tableFromValues(values){
   const [labels,...rows]=values;
-  return {cols:labels.map(label=>({label})),rows:rows.map(row=>({c:labels.map((label,i)=>{
+  return {cols:labels.map((label,i)=>({label,id:columnId(i)})),rows:rows.map(row=>({c:labels.map((label,i)=>{
     const v=row[i]??null;
     return {v:v===''?null:v,f:v===null||v===''?'':label==='Código'?String(v).padStart(4,'0'):['Precio','Costo','Stock'].includes(label)&&typeof v==='number'?new Intl.NumberFormat('es-ES',{maximumFractionDigits:0}).format(v):String(v)};
   })}))};
 }
 function clone(value){return JSON.parse(JSON.stringify(value));}
 
+const facetHeaders=['Código','Nombre','Precio','Sección','Categoría','Subcategoría','Marca','Línea','Tipo de producto','Variante','Característica','Público','Presentación','Contenido','Unidad','Familia olfativa','Estado comercial','Nombre del componente 1','Nombre del componente 2','Conectividad','Compatibilidad','Edad recomendada','Número de jugadores','Materiales','Perfil aromático','Textura y acabado','Duración del efecto'];
+function facetFixture(){
+  const product=(code,extra={})=>({'Código':code,'Nombre':'Título comercial independiente','Precio':code,'Sección':'Belleza y cuidado','Categoría':'Perfumería','Subcategoría':'Perfumes','Marca':'Natura','Línea':'Kaiak','Tipo de producto':'Perfume','Público':'Masculinos','Contenido':100,'Unidad':'ml','Familia olfativa':'Floral; Frutal; Floral',...extra});
+  const products=[product(9901,{'Variante':'Flor de Cereza y Aguacate','Nombre del componente 1':'Champú','Nombre del componente 2':'Champú'}),
+    product(9902,{'Marca':'Avon','Línea':'Far Away','Público':'Femeninos','Familia olfativa':'Floral'}),
+    product(9903,{'Contenido':50,'Familia olfativa':'Amaderada'}),
+    product(9904,{'Estado comercial':'No a la venta'}),
+    product(9905,{'Sección':'Otros productos','Categoría':'Tecnología y hogar','Marca':'Samsung','Conectividad':'Bluetooth; USB; Bluetooth','Compatibilidad':'PlayStation 4','Familia olfativa':''}),
+    product(9906,{'Contenido':75,'Familia olfativa':'Frutal','Público':'Femeninos'})];
+  return tableFromValues([facetHeaders,...products.map(p=>facetHeaders.map(h=>p[h]??''))]);
+}
+async function facetEnvironment(){
+  const env=environment();await confirmed(env);env.sandbox.products=assess(env,facetFixture()).products;
+  env.run('allLoadedProducts=products;all=filterVisibleProducts(products);refreshNavigationAlbums()');
+  return env;
+}
+function facetGroups(env){return clone(env.run('buildSuggestionEntries()'));}
+function facetCount(env,group,value){return facetGroups(env).find(g=>g.id===group)?.options.find(o=>o.label===value)?.count;}
+function facetIds(env){return clone(env.run('buildFilteredList().map(p=>p.id)')).sort();}
+function facetButtons(env){return env.sandbox.document.getElementById('wordChips').children.flatMap(group=>group.children[1]?.children||[]);}
+
+test('Filtrar agrupa campos estructurados en la raíz antes del nivel Producto',async()=>{
+  const env=await facetEnvironment(),groups=facetGroups(env);
+  assert.equal(env.run('navigationViewMode().mode'),'albums');
+  for(const group of ['brand','line','public','content','olfactoryFamily','components'])assert.ok(groups.some(g=>g.id===group));
+  assert.equal(facetCount(env,'brand','Natura'),3);assert.equal(facetCount(env,'brand','Avon'),1);
+  assert.ok(groups.every(g=>g.options.length&&g.options.every(o=>o.count>0)));
+  assert.ok(!groups.some(g=>['section','category','productType'].includes(g.id)));
+});
+test('Nombre no genera opciones ni impide filtrar atributos ausentes de él',async()=>{
+  const env=await facetEnvironment(),names=facetGroups(env).flatMap(g=>g.options.map(o=>o.label));
+  assert.ok(!names.some(n=>/Título|comercial|independiente/.test(n)));
+  env.run('toggleFacetFilter("brand","Avon")');assert.deepEqual(facetIds(env),['9902']);
+  assert.equal(env.run('all.find(p=>p.id==="9901").name'),env.run('all.find(p=>p.id==="9902").name'));
+});
+test('Familias separadas por punto y coma y componentes repetidos cuentan cada Código una vez',async()=>{
+  const env=await facetEnvironment();assert.equal(facetCount(env,'olfactoryFamily','Floral'),2);
+  assert.equal(facetCount(env,'olfactoryFamily','Frutal'),2);assert.equal(facetCount(env,'components','Champú'),1);
+  env.run('all.push(all[0])');assert.equal(facetCount(env,'components','Champú'),1);
+});
+test('Contenido y Unidad forman valores completos y las variantes conservan sus palabras',async()=>{
+  const env=await facetEnvironment();assert.equal(facetCount(env,'content','100 ml'),2);
+  const options=facetGroups(env).flatMap(g=>g.options.map(o=>o.label));
+  assert.ok(options.includes('Flor de Cereza y Aguacate'));assert.ok(!options.includes('100'));assert.ok(!options.includes('ml'));
+  env.sandbox.row={contentValue:1.14,unit:'g'};
+  assert.equal(env.run('buildProductFacetAttributes(row).content[0].label'),'1,14 g');
+});
+test('Alternativas dentro de un grupo usan OR y grupos diferentes usan AND',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Natura");toggleFacetFilter("olfactoryFamily","Floral");toggleFacetFilter("content","100 ml")');
+  assert.deepEqual(facetIds(env),['9901']);env.run('toggleFacetFilter("brand","Avon")');assert.deepEqual(facetIds(env),['9901','9902']);
+  env.run('toggleFacetFilter("olfactoryFamily","Amaderada")');assert.deepEqual(facetIds(env),['9901','9902']);
+  env.run('removeFacetFilter("content","100 ml")');assert.deepEqual(facetIds(env),['9901','9902','9903']);
+});
+test('Recuentos por opción respetan otros grupos y ofrecen alternativas OR sin depender del orden',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Natura");toggleFacetFilter("olfactoryFamily","Floral");toggleFacetFilter("content","100 ml")');
+  assert.equal(facetCount(env,'brand','Natura'),1);assert.equal(facetCount(env,'brand','Avon'),1);
+  assert.equal(facetCount(env,'olfactoryFamily','Frutal'),1);assert.equal(facetCount(env,'content','100 ml'),1);
+  const before=facetGroups(env);env.run('selectedFacetFilters.reverse()');assert.deepEqual(facetGroups(env),before);
+});
+test('Ruta recorrida se omite y el orden configurable no determina los grupos',async()=>{
+  const env=await facetEnvironment();env.run('setSelectedNavigationValue("section","Belleza y cuidado");setSelectedNavigationValue("category","Perfumería");setSelectedNavigationValue("subcategory","Perfumes");setSelectedNavigationValue("public","Masculinos");setSelectedNavigationValue("line","Kaiak")');
+  assert.equal(env.run('navigationViewMode().mode'),'products');
+  assert.ok(facetGroups(env).every(g=>!['section','category','subcategory','public','line'].includes(g.id)));
+  env.run('window.applyCatalogNavigationOrder("line,public,category,section,subcategory,product",{rebuild:false})');
+  assert.ok(facetGroups(env).every(g=>!['section','category','subcategory','public','line'].includes(g.id)));
+  assert.ok(facetGroups(env).some(g=>g.id==='olfactoryFamily'));
+});
+test('Niveles omitidos continúan ofreciendo filtros comerciales cuando distinguen productos',async()=>{
+  const env=await facetEnvironment();env.run('window.applyCatalogNavigationOrder("!section,category,subcategory,!public,!line,product",{rebuild:false});validateNavigationStateAgainstProducts()');
+  for(const id of ['line','public'])assert.ok(facetGroups(env).some(g=>g.id===id));
+  env.run('window.applyCatalogNavigationOrder("product,section,category,subcategory,public,line",{rebuild:false})');
+  assert.equal(env.run('navigationViewMode().mode'),'products');assert.equal(facetCount(env,'brand','Avon'),1);
+});
+test('Visibilidad y Estado comercial excluyen productos y cantidades del panel público',async()=>{
+  const env=await facetEnvironment();assert.equal(env.run('all.length'),4);
+  assert.ok(!facetGroups(env).flatMap(g=>g.options).some(o=>o.label==='Samsung'));
+  env.run('toggleFacetFilter("olfactoryFamily","Floral")');assert.deepEqual(facetIds(env),['9901','9902']);
+});
+test('Abrir, seleccionar, cerrar y reabrir conserva resultados, selección e indicadores',async()=>{
+  const env=await facetEnvironment();env.run('setWordSuggestionsVisible(true);renderWordSuggestions();toggleFacetFilter("brand","Natura");toggleFacetFilter("olfactoryFamily","Floral");toggleFacetFilter("content","100 ml");renderWordSuggestions()');
+  const filters=clone(env.run('selectedFacetFilters')),before=facetIds(env);assert.equal(filters.length,3);
+  env.run('setWordSuggestionsVisible(false);renderWordSuggestions()');
+  assert.equal(env.sandbox.document.getElementById('wordPanel').hidden,true);assert.deepEqual(facetIds(env),before);
+  assert.equal(env.sandbox.document.getElementById('filterSummary').hidden,false);assert.equal(env.sandbox.document.getElementById('clearTermsBtn').hidden,false);
+  env.run('setWordSuggestionsVisible(true);renderWordSuggestions()');assert.deepEqual(clone(env.run('selectedFacetFilters')),filters);
+  assert.equal(facetButtons(env).filter(b=>b.attributes['aria-pressed']==='true').length,3);
+  env.run('toggleFacetFilter("brand","Avon")');assert.deepEqual(facetIds(env),['9901','9902']);
+});
+test('Retirada individual conserva las demás selecciones y Limpiar todo las elimina',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Natura");toggleFacetFilter("olfactoryFamily","Floral");toggleFacetFilter("content","100 ml")');
+  env.run('uxClearOneFilter(uxActiveFilterEntries().find(e=>e.label.startsWith("Contenido:")).key)');
+  assert.equal(env.run('selectedFacetFilters.length'),2);env.run('uxClearAllFilters()');assert.equal(env.run('selectedFacetFilters.length'),0);assert.equal(facetIds(env).length,4);
+});
+test('Recalcular, cambiar niveles y volver con Atrás no borra filtros aunque queden sin resultados',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Avon");setWordSuggestionsVisible(true);setSelectedNavigationValue("public","Masculinos");resetDiscoveryFilters();renderWordSuggestions()');
+  assert.equal(facetIds(env).length,0);assert.equal(facetCount(env,'brand','Avon'),0);assert.equal(env.run('selectedFacetFilters.length'),1);
+  for(let i=0;i<4;i++){env.run('setWordSuggestionsVisible(false);renderWordSuggestions();setWordSuggestionsVisible(true);renderWordSuggestions();buildSuggestionEntries()');assert.equal(env.run('selectedFacetFilters.length'),1);}
+  env.sandbox.scrollTo=()=>{};env.run('restoreCatalogStateFromHistory({state:null})');assert.equal(env.run('selectedFacetFilters.length'),1);assert.deepEqual(facetIds(env),['9902']);
+  env.run('removeFacetFilter("brand","avon")');assert.equal(env.run('selectedFacetFilters.length'),0);
+});
+test('URL y estado persistente restauran selecciones aunque el panel esté cerrado',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Natura");setWordSuggestionsVisible(false);captureCatalogReloadViewState()');
+  const snapshot=JSON.parse(env.sandbox.localStorage.getItem('irenismb_catalog_last_view_v1'));assert.equal(snapshot.facets.length,1);assert.equal(snapshot.wordPanelVisible,false);
+  env.sandbox.snapshot=snapshot;env.run('selectedFacetFilters=[];applyCatalogReloadViewState(snapshot)');assert.equal(env.run('selectedFacetFilters.length'),1);
+  env.sandbox.location.href+='?facets='+encodeURIComponent(JSON.stringify(snapshot.facets));env.run('selectedFacetFilters=[];readStateFromUrl()');assert.equal(env.run('selectedFacetFilters.length'),1);
+});
+test('Buscador y ordenación siguen operando junto con filtros estructurados',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Natura");qInp.value="independiente";sortSel.value="price_desc"');
+  assert.deepEqual(clone(env.run('buildFilteredList().map(p=>p.id)')),['9906','9903','9901']);
+  env.run('qInp.value="no existe"');assert.equal(facetIds(env).length,0);assert.equal(env.run('selectedFacetFilters.length'),1);
+});
+test('Filtros operan sobre tarjetas de navegación sin abrir un nivel Producto implícito',async()=>{
+  const env=await facetEnvironment();env.run('toggleFacetFilter("brand","Avon");refreshNavigationAlbums()');
+  const albums=clone(env.run('buildFilteredAlbums()'));assert.equal(albums.reduce((sum,a)=>sum+a.count,0),1);
+  env.run('window.applyCatalogNavigationOrder("section,category,subcategory,public,line,!product",{rebuild:false});refreshNavigationAlbums()');
+  assert.equal(env.run('navigationViewMode().mode'),'albums');assert.equal(env.run('selectedFacetFilters.length'),1);
+});
+test('Conectividad y compatibilidad se obtienen del campo y conservan expresiones identificativas',()=>{
+  const env=environment();env.sandbox.row={connectivity:'Wi-Fi 2,4 GHz; IEEE 802.11b/g/n; Wi-Fi 2,4 GHz',compatibility:'PlayStation 4',variant:'Flor de Cereza y Aguacate',materials:'Cubierta superior de aluminio; base de PC-ABS'};
+  const data=clone(env.run('buildProductFacetAttributes(row)'));
+  assert.deepEqual(data.connectivity.map(o=>o.label),['Wi-Fi 2,4 GHz','IEEE 802.11b/g/n']);assert.equal(data.compatibility[0].label,'PlayStation 4');
+  assert.equal(data.variant[0].label,'Flor de Cereza y Aguacate');assert.equal(data.materials.length,2);
+});
+test('La consulta pública resuelve IDs por encabezados y excluye costos e identificadores privados',async()=>{
+  const env=environment();await confirmed(env);const table=facetFixture();
+  for(const label of ['Costo','Número de serie','Dirección MAC','Identificadores técnicos de la unidad','Especificaciones técnicas'])table.cols.push({label,id:columnId(table.cols.length)});
+  table.cols.reverse();const pending=env.run('loadGoogleSheetRows()');env.reply({...table,rows:[]});await new Promise(resolve=>setImmediate(resolve));
+  const query=new URL(env.requests.at(-1).src).searchParams.get('tq'),ids=query.slice(7).split(',');
+  for(const col of table.cols.filter(c=>/Costo|serie|MAC|Identificadores|Especificaciones/.test(c.label)))assert.ok(!ids.includes(col.id));
+  for(const label of ['Nombre','Familia olfativa','Nombre del componente 1'])assert.ok(ids.includes(table.cols.find(c=>c.label===label).id));
+  env.reply(facetFixture());assert.equal((await pending).length,6);
+});
+test('Los controles activos quedan fuera del panel ocultable y los grupos son accesibles',async()=>{
+  const env=await facetEnvironment();env.run('setWordSuggestionsVisible(true);renderWordSuggestions()');
+  assert.ok(htmlSource.indexOf('id="filterSummary"')>htmlSource.indexOf('id="wordChips"'));
+  for(const group of env.sandbox.document.getElementById('wordChips').children){assert.equal(group.attributes.role,'group');assert.ok(group.attributes['aria-labelledby']);}
+  const button=facetButtons(env).find(b=>b.dataset.facetGroup==='brand');button.focus();env.run('renderWordSuggestions()');
+  assert.equal(env.sandbox.document.activeElement.dataset.facetValue,button.dataset.facetValue);
+  assert.ok(facetButtons(env).every(b=>b.attributes['aria-pressed']!==undefined&&b.attributes['aria-label']));
+});
+
 function environment(){
   const elements=new Map(),timers=new Map(),requests=[],events=new Map(),storage=new Map();
   let timerId=0,context;
   class Node {
+    set innerHTML(value){this.children=[];this._html=value;}
+    get innerHTML(){return this._html||'';}
+    focus(){document.activeElement=this;}
     constructor(tag='div'){this.tagName=tag.toUpperCase();this.children=[];this.dataset={};this.style={setProperty(){}};this.value='';this.textContent='';this.attributes={};this.hidden=false;this.listeners=new Map();this.classList={add(){},remove(){},toggle(){},contains(){return false}};}
     appendChild(node){this.children.push(node);node.parentNode=this;if(node.tagName==='SCRIPT')requests.push(node);return node;}
     append(...nodes){nodes.forEach(node=>this.appendChild(node));}
@@ -41,6 +186,7 @@ function environment(){
     setAttribute(name,value){this.attributes[name]=value;}
     getAttribute(name){return this.attributes[name]??null;}
     addEventListener(name,fn){this.listeners.set(name,fn);}
+    getBoundingClientRect(){return {top:0,width:350,height:350};}
     querySelector(){return null;}
     querySelectorAll(){return [];}
     insertAdjacentElement(_,node){return this.appendChild(node);}
@@ -191,7 +337,7 @@ test('No depende de A:Z y acepta un campo indispensable ubicado después de Z',(
   const env=environment(),table=fixture();table.cols.push({label:'Auxiliar'});table.rows.forEach(row=>row.c.push({v:null}));
   table.cols.push(table.cols.splice(6,1)[0]);table.rows.forEach(row=>row.c.push(row.c.splice(6,1)[0]));
   assert.equal(assess(env,table).products.length,3);const query=new URL(env.run('googleSheetQueryUrl("prueba")'));
-  assert.equal(query.searchParams.has('range'),false);assert.equal(query.searchParams.get('tq'),'select *');
+  assert.equal(query.searchParams.has('range'),false);assert.equal(query.searchParams.get('tq'),'select * limit 0');
 });
 test('Fallo o timeout de Visibilidad en primera carga deja cero productos públicos',async()=>{
   for(const mode of ['error','timeout']){const env=environment();mode==='error'?env.fail():env.timeout(25000);
@@ -226,8 +372,13 @@ test('No a la venta conserva exclusión comercial aunque sea compatible técnica
   const env=environment();await confirmed(env);const table=fixture();table.rows[0].c[15]={v:'No a la venta'};
   const result=assess(env,table);assert.equal(result.report.compatible,3);assert.equal(env.sandbox.isCatalogProductPublic(result.products[0]),false);
 });
+async function replyProductTable(env,table){
+  env.reply({...table,rows:[]});
+  await new Promise(resolve=>setImmediate(resolve));
+  env.reply(table);
+}
 test('JSONP usa el adaptador real y rechaza schema ambiguo sin dejar promesa pendiente',async()=>{
-  const env=environment();await confirmed(env);let pending=env.run('loadGoogleSheetRows()');env.reply(fixture());
+  const env=environment();await confirmed(env);let pending=env.run('loadGoogleSheetRows()');await replyProductTable(env,fixture());
   assert.equal((await pending).length,3);pending=env.run('loadGoogleSheetRows()');const table=fixture();table.cols[6].label='';env.reply(table);
   await assert.rejects(pending,/Nombre/);
 });
@@ -249,7 +400,7 @@ test('Navegación sin Producto o sin niveles no crea fichas implícitas',()=>{
 test('loadProducts integra el informe y conserva los compatibles aunque una fila falle',async()=>{
   const env=environment();await confirmed(env);const table=fixture();table.rows[0].c[6]={v:''};
   const pending=env.run('loadProducts({silent:true,refreshImages:false})');
-  await new Promise(resolve=>setImmediate(resolve));env.reply(table);assert.equal(await pending,true);
+  await new Promise(resolve=>setImmediate(resolve));await replyProductTable(env,table);assert.equal(await pending,true);
   assert.equal(env.sandbox.CATALOG_COMPATIBILITY_REPORT.pending,1);
   assert.equal(env.sandbox.CATALOG_COMPATIBILITY_REPORT.compatible,2);
   assert.equal(env.run('allLoadedProducts.length'),2);assert.equal(env.run('all.length'),1);
@@ -257,7 +408,7 @@ test('loadProducts integra el informe y conserva los compatibles aunque una fila
 test('Un lote con todos los productos pendientes se refleja sin conservar fichas anteriores',async()=>{
   const env=environment();await confirmed(env);const table=fixture();table.rows.forEach(row=>row.c[6]={v:''});
   const pending=env.run('loadProducts({silent:true,refreshImages:false})');
-  await new Promise(resolve=>setImmediate(resolve));env.reply(table);assert.equal(await pending,true);
+  await new Promise(resolve=>setImmediate(resolve));await replyProductTable(env,table);assert.equal(await pending,true);
   assert.equal(env.run('all.length'),0);assert.equal(env.sandbox.CATALOG_COMPATIBILITY_REPORT.pending,3);
 });
 test('Costo o Stock no interpretable permanecen desconocidos sin excluir la ficha',()=>{
@@ -271,7 +422,7 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=filtros-agrupados-2026-10-09-1'));
   assert.ok(htmlSource.includes('precios-admin.js?actualizacion=folleto-precios-paneles-2026-10-09-5'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });

@@ -252,12 +252,12 @@
     const GOOGLE_SHEET_QUERY_TIMEOUT_MS = 25000;
     const PRODUCT_IMAGE_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp", "gif", "avif"]);
 
-    function googleSheetQueryUrl(callbackName){
+    function googleSheetQueryUrl(callbackName, columnIds=null){
       const base = `https://docs.google.com/spreadsheets/d/${encodeURIComponent(GOOGLE_SHEET_SOURCE.spreadsheetId)}/gviz/tq`;
       const query = new URLSearchParams({
         sheet: GOOGLE_SHEET_SOURCE.sheetName,
         headers: "1",
-        tq: "select *",
+        tq: columnIds ? `select ${columnIds.join(",")}` : "select * limit 0",
         tqx: `out:json;responseHandler:${callbackName}`,
         // Evita que el navegador, un proxy o Google reutilicen una respuesta anterior.
         // Cada apertura del catálogo consulta la versión más reciente de Productos.
@@ -307,7 +307,10 @@
         referenceExternal:"Referencia externa", description:"Descripción", codeNatura:"Código Natura",
         line:"Línea", public:"Público", commercialStatus:"Estado comercial", brand:"Marca",
         productType:"Tipo de producto", variant:"Variante", characteristic:"Característica",
-        presentation:"Presentación", content:"Contenido", unit:"Unidad", units:"Cantidad de unidades"
+        presentation:"Presentación", content:"Contenido", unit:"Unidad", units:"Cantidad de unidades",
+        olfactoryFamily:"Familia olfativa", aromaticProfile:"Perfil aromático", texture:"Textura y acabado",
+        duration:"Duración del efecto", connectivity:"Conectividad", compatibility:"Compatibilidad",
+        recommendedAge:"Edad recomendada", players:"Número de jugadores", materials:"Materiales"
       };
       const rows = [];
       for(const [index, source] of table.rows.entries()){
@@ -317,6 +320,7 @@
           const cell = label => source.c[indices.get(catalogHeaderKey(label))];
           const row = {sourceRow:index + 2, technicalIssues:[]};
           for(const [field, label] of Object.entries(fields)) row[field] = catalogCellText(cell(label));
+          row.componentNames = Array.from({length:4},(_,i)=>catalogCellText(cell(`Nombre del componente ${i+1}`))).filter(Boolean);
           const code = cell("Código")?.v;
           row.code = typeof code === "number" && Number.isSafeInteger(code) && code >= 0 && code <= 9999
             ? String(code).padStart(4, "0")
@@ -369,7 +373,7 @@
       return {products, report:{total:records.length, compatible:products.length, pending:records.length - products.length, records}};
     }
 
-    function loadGoogleSheetRows(){
+    function queryGoogleSheetTable(columnIds=null){
       return new Promise((resolve, reject)=>{
         const callbackName = "__googleSheetCatalog_" + Date.now() + "_" + Math.random().toString(36).slice(2);
         const script = document.createElement("script");
@@ -401,7 +405,7 @@
           }
 
           try{
-            resolve(readGoogleSheetProductRows(payload.table));
+            resolve(payload.table);
           }catch(error){
             reject(error);
           }
@@ -415,10 +419,25 @@
           reject(new Error("No se pudo conectar con Google Sheets."));
         };
 
-        script.src = googleSheetQueryUrl(callbackName);
+        script.src = googleSheetQueryUrl(callbackName,columnIds);
         script.async = true;
         document.head.appendChild(script);
       });
+    }
+
+    async function loadGoogleSheetRows(){
+      // Descubrir encabezados sin filas; después leer únicamente datos públicos necesarios.
+      const schema = await queryGoogleSheetTable();
+      const indices = catalogHeaderIndices(schema.cols,["Código","Nombre","Categoría","Precio","Sección","Estado comercial"]);
+      const allowed = new Set([
+        "Código","Nombre","Precio","Stock","Sección","Categoría","Subcategoría","Marca","Línea",
+        "Tipo de producto","Variante","Característica","Público","Presentación","Contenido","Unidad",
+        "Cantidad de unidades","Condición","Estado comercial","Descripción","Referencia externa","Código Natura",
+        ...CATALOG_FACET_GROUPS.flatMap(group=>group.columns)
+      ].map(catalogHeaderKey));
+      const columnIds = [...indices].filter(([key,index])=>allowed.has(key)&&index>=0).map(([,index])=>schema.cols[index].id);
+      if(!columnIds.length || columnIds.some(id=>!/^\w+$/.test(id||""))) throw new Error("Identificadores de columnas no válidos.");
+      return readGoogleSheetProductRows(await queryGoogleSheetTable(columnIds));
     }
 
 
@@ -813,6 +832,7 @@
         content: String(row.content || "").trim(),
         unit: String(row.unit || "").trim(),
         units: String(row.units || "").trim(),
+        facetAttributes: buildProductFacetAttributes(row),
         price: row.priceValue ?? 0,
         priceText,
         hasPrice: row.priceValue !== null && row.priceValue !== undefined,
@@ -1757,7 +1777,7 @@
       const meta = card.querySelector(".album-meta");
       const unitLabel = album.count === 1 ? "producto" : "productos";
       const isSection = album.navType === "section";
-      const searchActive = getCombinedWordTerms().length > 0;
+      const searchActive = hasActiveDiscoveryFilters();
       const matchCount = Number(album.count) || 0;
       const matchingProducts = searchActive && Array.isArray(album.matchingProducts)
         ? album.matchingProducts
@@ -1904,11 +1924,6 @@
     let wordSuggestionsVisible = shouldShowSuggestionsInitially();
     function setWordSuggestionsVisible(nextValue){
       wordSuggestionsVisible = !!nextValue;
-
-      if(!wordSuggestionsVisible){
-        selectedSuggestionTerms = [];
-      }
-
       syncWordToggleButton();
     }
 
@@ -1926,7 +1941,7 @@
     placeResponsiveHeaderMeta();
     function updateCountAttention(){
       if(!countEl || !qInp) return;
-      const hasQuery = getCombinedWordTerms().length > 0;
+      const hasQuery = hasActiveDiscoveryFilters();
       countEl.classList.toggle("search-active", hasQuery);
     }
 
@@ -1942,6 +1957,116 @@
     const SUGGESTION_MIN_LEN = 3;
     // Sin límite de cantidad: las sugerencias no se recortan por número.
     let selectedSuggestionTerms = [];
+    // La búsqueda histórica y los atributos conservan estados independientes.
+    let selectedFacetFilters = [];
+    const CATALOG_FACET_GROUPS = Object.freeze([
+      {id:"section",label:"Sección",field:"section",columns:["Sección"],level:"section"},
+      {id:"category",label:"Categoría",field:"category",columns:["Categoría"],level:"category"},
+      {id:"subcategory",label:"Subcategoría",field:"subcategory",columns:["Subcategoría"],level:"subcategory"},
+      {id:"brand",label:"Marca",field:"brand",columns:["Marca"]},
+      {id:"productType",label:"Tipo de producto",field:"productType",columns:["Tipo de producto"]},
+      {id:"line",label:"Línea",field:"line",columns:["Línea"],level:"line"},
+      {id:"public",label:"Público",field:"public",columns:["Público"],level:"public"},
+      {id:"variant",label:"Variante",field:"variant",columns:["Variante"]},
+      {id:"characteristic",label:"Característica",field:"characteristic",columns:["Característica"],multiple:true},
+      {id:"presentation",label:"Presentación",field:"presentation",columns:["Presentación"]},
+      {id:"content",label:"Contenido",columns:["Contenido","Unidad"]},
+      {id:"olfactoryFamily",label:"Familia olfativa",field:"olfactoryFamily",columns:["Familia olfativa"],multiple:true},
+      {id:"aromaticProfile",label:"Perfil aromático",field:"aromaticProfile",columns:["Perfil aromático"],concise:true},
+      {id:"texture",label:"Textura y acabado",field:"texture",columns:["Textura y acabado"],multiple:true},
+      {id:"duration",label:"Duración del efecto",field:"duration",columns:["Duración del efecto"]},
+      {id:"connectivity",label:"Conectividad",field:"connectivity",columns:["Conectividad"],multiple:true,concise:true},
+      {id:"compatibility",label:"Compatibilidad",field:"compatibility",columns:["Compatibilidad"],multiple:true,concise:true},
+      {id:"recommendedAge",label:"Edad recomendada",field:"recommendedAge",columns:["Edad recomendada"]},
+      {id:"players",label:"Número de jugadores",field:"players",columns:["Número de jugadores"]},
+      {id:"materials",label:"Materiales",field:"materials",columns:["Materiales"],multiple:true,concise:true},
+      {id:"components",label:"Componentes del kit",columns:Array.from({length:4},(_,i)=>`Nombre del componente ${i+1}`)}
+    ]);
+    const CATALOG_FACET_BY_ID = new Map(CATALOG_FACET_GROUPS.map(group=>[group.id,group]));
+
+    function facetValueKey(value){
+      return String(value??"").normalize("NFC").trim().replace(/\s+/g," ").toLocaleLowerCase("es");
+    }
+
+    function buildProductFacetAttributes(row){
+      const attributes={};
+      for(const group of CATALOG_FACET_GROUPS){
+        let values;
+        if(group.id==="content"){
+          const amount=row.contentValue;
+          const unit=String(row.unit||"").trim();
+          values=Number.isFinite(amount)&&amount>0&&unit
+            ? [new Intl.NumberFormat("es-CO",{maximumFractionDigits:12}).format(amount)+" "+unit] : [];
+        }else if(group.id==="components") values=row.componentNames||[];
+        else values=String(row[group.field]||"").split(group.multiple?/[;\r\n]+/:/\r?\n/);
+        const unique=new Map();
+        for(const raw of values){
+          const label=String(raw||"").trim().replace(/\s+/g," ");
+          if(!label||label.length>96||/^(?:no aplica|n\/a|por confirmar|desconocido|sin datos|[-—])$/i.test(label)) continue;
+          // Las frases extensas permanecen en la ficha, sin extraer palabras sueltas.
+          if(group.concise && (label.length>64 || label.split(/\s+/).length>9)) continue;
+          const value=facetValueKey(label);
+          if(!unique.has(value)) unique.set(value,{value,label});
+        }
+        if(unique.size) attributes[group.id]=[...unique.values()];
+      }
+      return attributes;
+    }
+
+    function normalizeFacetFilters(filters){
+      const unique=new Map();
+      for(const filter of (Array.isArray(filters)?filters:[])){
+        const group=String(filter?.group||""),label=String(filter?.label||"").trim();
+        if(!CATALOG_FACET_BY_ID.has(group)||!label||label.length>96) continue;
+        const value=facetValueKey(label);
+        unique.set(JSON.stringify([group,value]),{group,value,label});
+      }
+      return [...unique.values()];
+    }
+
+    function parseFacetFilters(raw){
+      try{return normalizeFacetFilters(JSON.parse(raw||"[]"));}catch(_){return [];}
+    }
+
+    function hasActiveDiscoveryFilters(){
+      return getCombinedWordTerms().length>0 || selectedFacetFilters.length>0;
+    }
+
+    function facetSelectionGroups(filters=selectedFacetFilters,omitGroup=""){
+      const groups=new Map();
+      for(const filter of filters){
+        if(filter.group===omitGroup) continue;
+        if(!groups.has(filter.group)) groups.set(filter.group,new Set());
+        groups.get(filter.group).add(filter.value);
+      }
+      return groups;
+    }
+
+    function productMatchesFacetGroups(product,groups){
+      for(const [group,values] of groups){
+        if(!(product.facetAttributes?.[group]||[]).some(option=>values.has(option.value))) return false;
+      }
+      return true;
+    }
+
+    function filterDiscoveryProducts(products,omitGroup=""){
+      const terms=getCombinedWordTerms(),groups=facetSelectionGroups(selectedFacetFilters,omitGroup);
+      return filterSearchExcludedProducts(products).filter(product=>
+        terms.every(term=>String(product.searchKey||"").includes(term)) && productMatchesFacetGroups(product,groups));
+    }
+
+    function toggleFacetFilter(group,label){
+      const filter=normalizeFacetFilters([{group,label}])[0];
+      if(!filter) return;
+      const exists=selectedFacetFilters.some(item=>item.group===filter.group&&item.value===filter.value);
+      if(exists) removeFacetFilter(filter.group,filter.value);
+      else{selectedFacetFilters=[...selectedFacetFilters,filter];render();}
+    }
+
+    function removeFacetFilter(group,value){
+      selectedFacetFilters=selectedFacetFilters.filter(item=>item.group!==group||item.value!==value);
+      render();
+    }
 
     function parseSearchTerms(text){
       return normalizeText(text)
@@ -2093,59 +2218,45 @@
     }
 
     function getSuggestionMatchedProducts(){
-      const scopeProducts = getSuggestionScopeProducts();
-      const activeTerms = getCombinedWordTerms();
-      if(!activeTerms.length) return scopeProducts;
-
-      const eligibleProducts = filterSearchExcludedProducts(scopeProducts);
-      return eligibleProducts.filter(p => activeTerms.every(term => p.searchKey.includes(term)));
+      return filterDiscoveryProducts(getSuggestionScopeProducts());
     }
 
     function buildSuggestionEntries(){
-      const scopeProducts = getSuggestionScopeProducts();
-      const matchedProducts = getSuggestionMatchedProducts();
-      const typedTerms = parseSearchTerms(qInp ? qInp.value : "");
-      const selectedSet = new Set(uniqueTerms(selectedSuggestionTerms || []));
-      const hasActiveTerms = typedTerms.length > 0 || selectedSet.size > 0;
-      const sourceProducts = hasActiveTerms ? matchedProducts : scopeProducts;
-      const blockedTerms = getSuggestionBlockedTerms(sourceProducts);
-      const totalVisibleProducts = sourceProducts.length;
-
-      for(const term of typedTerms){
-        blockedTerms.add(term);
+      // El Código identifica cada producto, incluidos kits con componentes repetidos.
+      const scope=[...new Map(getSuggestionScopeProducts().map(p=>[String(p.id),p])).values()];
+      const determined=new Set(selectedNavigationTrail().map(item=>item.level));
+      const groups=[];
+      for(const group of CATALOG_FACET_GROUPS){
+        const active=selectedFacetFilters.filter(item=>item.group===group.id);
+        if(group.level&&determined.has(group.level)&&!active.length) continue;
+        const possible=filterDiscoveryProducts(scope,group.id);
+        const counts=new Map();
+        for(const product of possible){
+          const seen=new Set();
+          for(const option of product.facetAttributes?.[group.id]||[]){
+            if(seen.has(option.value)) continue;
+            seen.add(option.value);
+            const entry=counts.get(option.value)||{...option,count:0};
+            entry.count++;counts.set(option.value,entry);
+          }
+        }
+        // Un atributo uniforme no ofrece una distinción real. Una selección siempre se conserva.
+        const useful=[...counts.values()].some(option=>option.count>0&&option.count<possible.length);
+        if(!useful&&!active.length) continue;
+        // En vistas amplias, reservar atributos demasiado dispersos para un contexto más preciso.
+        if(counts.size>24&&!active.length) continue;
+        // Perfiles descriptivos y datos técnicos sin valores reutilizables sobrecargan el panel.
+        if(group.concise&&counts.size>12&&![...counts.values()].some(option=>option.count>1)&&!active.length) continue;
+        for(const filter of active){
+          if(!counts.has(filter.value)) counts.set(filter.value,{value:filter.value,label:filter.label,count:0});
+        }
+        const selected=new Set(active.map(item=>item.value));
+        const options=[...counts.values()].map(option=>({...option,selected:selected.has(option.value)}))
+          .filter(option=>option.count>0||option.selected)
+          .sort((a,b)=>Number(b.selected)-Number(a.selected)||b.count-a.count||a.label.localeCompare(b.label,"es"));
+        if(options.length) groups.push({id:group.id,label:group.label,options});
       }
-      for(const term of selectedSet){
-        blockedTerms.add(term);
-      }
-
-      selectedSuggestionTerms = uniqueTerms((selectedSuggestionTerms || []).filter(term => {
-        return !getSuggestionBlockedTerms(sourceProducts).has(term);
-      }));
-
-      const counts = new Map();
-      for(const p of sourceProducts){
-        const rawText = `${p.name || ""}`;
-        addSuggestionCountsFromText(counts, rawText, blockedTerms);
-      }
-
-	return Array.from(counts.entries())
-	  .map(([term, count]) => ({
-		term,
-		count,
-		remaining: count,
-		reduction: Math.max(0, totalVisibleProducts - count)
-	  }))
-	  .sort((a,b)=> {
-		const aSelected = selectedSet.has(a.term) ? 1 : 0;
-		const bSelected = selectedSet.has(b.term) ? 1 : 0;
-
-		if(aSelected !== bSelected) return bSelected - aSelected;
-
-		// Primero las de más coincidencias
-		if(b.count !== a.count) return b.count - a.count;
-
-		return a.term.localeCompare(b.term, "es", { sensitivity:"base" });
-	});		
+      return groups;
     }
 
     function toggleSuggestionTerm(term){
@@ -2216,7 +2327,7 @@
       selectedSection=section; selectedCategory=category; selectedSubcategory=subcategory; selectedPublic=publicValue; selectedLine=line;
     }
 
-    function readStateFromUrl(){
+    function readStateFromUrl({preserveFacets=false}={}){
       const u = new URL(location.href);
       const q = (u.searchParams.get("q") || "").trim();
       const sort = (u.searchParams.get("sort") || "").trim();
@@ -2228,7 +2339,8 @@
       const tags = (u.searchParams.get("tags") || "").trim();
 
       if(qInp) qInp.value = q || "";
-      selectedSuggestionTerms = wordSuggestionsVisible ? uniqueTerms(tags ? tags.split(",") : []) : [];
+      selectedSuggestionTerms = uniqueTerms(tags ? tags.split(",") : []);
+      if(!preserveFacets) selectedFacetFilters=parseFacetFilters(u.searchParams.get("facets"));
       setNavigationFromRawState({section,category,subcategory,public:publicValue,line});
       validateNavigationStateAgainstProducts();
       if(PRODUCT_ORDER_MODES.includes(sort) && sortSel){sortSel.value=sort;productOrderChosen=true;}
@@ -2260,6 +2372,8 @@
           q:qInp ? String(qInp.value || "") : "",
           sort:sortSel ? String(sortSel.value || "") : "",
           tags:uniqueTerms(selectedSuggestionTerms || []),
+          facets:normalizeFacetFilters(selectedFacetFilters),
+          wordPanelVisible:wordSuggestionsVisible,
           section:String(selectedSection || ""),
           category:String(selectedCategory || ""),
           subcategory:String(selectedSubcategory || ""),
@@ -2280,7 +2394,7 @@
     function catalogUrlHasExplicitViewState(){
       try{
         const params=new URL(location.href).searchParams;
-        return ["q","sort","tags","section","category","subcategory","public","line","audience","gender","family","cat","brand","album"]
+        return ["q","sort","tags","facets","section","category","subcategory","public","line","audience","gender","family","cat","brand","album"]
           .some(key=>params.has(key));
       }catch(_){
         return false;
@@ -2318,6 +2432,8 @@
       if(qInp) qInp.value=String(snapshot.q || "");
       if(sortSel) sortSel.value=PRODUCT_ORDER_MODES.includes(snapshot.sort) ? snapshot.sort : catalogDefaultProductOrder;
       selectedSuggestionTerms=uniqueTerms(Array.isArray(snapshot.tags)?snapshot.tags:[]);
+      selectedFacetFilters=normalizeFacetFilters(snapshot.facets);
+      if(typeof snapshot.wordPanelVisible==="boolean") wordSuggestionsVisible=snapshot.wordPanelVisible;
       setNavigationFromRawState({
         section:String(snapshot.section || snapshot.audience || ""),
         category:String(snapshot.category || ""),
@@ -2334,6 +2450,7 @@
       if(q)u.searchParams.set("q",q);else u.searchParams.delete("q");
       if(sort)u.searchParams.set("sort",sort);else u.searchParams.delete("sort");
       if(tags)u.searchParams.set("tags",tags);else u.searchParams.delete("tags");
+      if(selectedFacetFilters.length)u.searchParams.set("facets",JSON.stringify(selectedFacetFilters));else u.searchParams.delete("facets");
       if(selectedSection)u.searchParams.set("section",selectedSection);else u.searchParams.delete("section");
       if(selectedCategory)u.searchParams.set("category",selectedCategory);else u.searchParams.delete("category");
       if(selectedSubcategory)u.searchParams.set("subcategory",selectedSubcategory);else u.searchParams.delete("subcategory");
@@ -2461,7 +2578,7 @@
     function catalogUrlForRestoredNavigation(section="", category="", subcategory="", publicValue="", line="", {preserveDiscovery=false,baseHref=location.href}={}){
       const u = new URL(baseHref, location.href);
       if(!preserveDiscovery){
-        for(const key of ["q","cat","brand","sort","tags","album"]) u.searchParams.delete(key);
+        for(const key of ["q","cat","brand","sort","tags","facets","album"]) u.searchParams.delete(key);
       }else u.searchParams.delete("album");
       if(section) u.searchParams.set("section", section); else u.searchParams.delete("section");
       if(category) u.searchParams.set("category", category); else u.searchParams.delete("category");
@@ -2511,6 +2628,7 @@
       u.searchParams.delete("audience"); u.searchParams.delete("gender"); u.searchParams.delete("family");
       u.searchParams.delete("album");
       if(tags) u.searchParams.set("tags",tags); else u.searchParams.delete("tags");
+      if(selectedFacetFilters.length) u.searchParams.set("facets",JSON.stringify(selectedFacetFilters)); else u.searchParams.delete("facets");
 
       const safeIndex=Number.isInteger(index)&&index>=0?index:0;
       const state=makeCatalogHistoryState(safeIndex,{preserveExitGuard:!push});
@@ -2577,7 +2695,7 @@
       const goingBack = nextIndex < lastCatalogHistoryIndex;
       const restore = goingBack ? uxScrollStack().pop() : null;
       lastCatalogHistoryIndex = nextIndex;
-      readStateFromUrl();
+      readStateFromUrl({preserveFacets:true});
       validateNavigationStateAgainstProducts();
       refreshNavigationAlbums();
       refreshFilterOptionsForScope();
@@ -2615,17 +2733,7 @@
     }
 
     function buildFilteredList(){
-      const source = currentProductSourceList();
-      const sortMode = sortSel ? sortSel.value : "";
-      const terms = getCombinedWordTerms();
-      const searchableSource = terms.length ? filterSearchExcludedProducts(source) : source;
-
-      let filtered = searchableSource.filter(p=>{
-        if(terms.length){
-          return terms.every(t => p.searchKey.includes(t));
-        }
-        return true;
-      });
+      let filtered = filterDiscoveryProducts(currentProductSourceList());
 
       filtered.sort(compareCatalogProductOrder);
 
@@ -2635,14 +2743,14 @@
     function buildFilteredAlbums(){
       const terms=getCombinedWordTerms();
       let filtered=albums.map(album=>{
-        if(!terms.length) return album;
+        if(!hasActiveDiscoveryFilters()) return album;
         const searchableProducts=filterSearchExcludedProducts(album.products||[]);
-        const matchingProducts=searchableProducts.filter(p=>terms.every(t=>p.searchKey.includes(t)));
+        const matchingProducts=filterDiscoveryProducts(searchableProducts);
         return {...album,count:matchingProducts.length,matchingProducts};
       });
       const mode=sortSel ? sortSel.value : "";
       const representatives=new Map(filtered.map(album=>[
-        album.key,orderedAlbumPreviewProducts(album,terms.length ? (album.matchingProducts || []) : null)[0] || null
+        album.key,orderedAlbumPreviewProducts(album,hasActiveDiscoveryFilters() ? (album.matchingProducts || []) : null)[0] || null
       ]));
       filtered.sort((a,b)=>{
         const byName=String(a.label||"").localeCompare(String(b.label||""),"es",{sensitivity:"base"});
@@ -2688,7 +2796,7 @@
       updateCountAttention();
       scheduleWriteStateToUrl();
 
-      const qHas = getCombinedWordTerms().length > 0;
+      const qHas = hasActiveDiscoveryFilters();
       const viewMode=navigationViewMode();
 
       if(viewMode.mode==="empty"){
@@ -2765,7 +2873,7 @@
 
       const frag = document.createDocumentFragment();
       if(!filtered.length){
-        frag.appendChild(makeEmptyState("No se encontraron productos con ese nombre."));
+        frag.appendChild(makeEmptyState("No hay productos que coincidan con la búsqueda y los filtros activos."));
       }else{
         for(const p of filtered){
           frag.appendChild(makeCard(p));
@@ -2955,12 +3063,14 @@ function uxActiveFilterEntries(){
   const query=qInp?String(qInp.value||"").trim():"";
   if(query) entries.push({key:"query",label:`Búsqueda: ${query}`});
   for(const term of uniqueTerms(selectedSuggestionTerms||[])) entries.push({key:`term:${term}`,label:term});
+  for(const filter of selectedFacetFilters) entries.push({key:`facet:${JSON.stringify([filter.group,filter.value])}`,label:`${CATALOG_FACET_BY_ID.get(filter.group).label}: ${filter.label}`});
   return entries;
 }
 
 function uxRenderFilterSummary(){
   const host=document.getElementById("filterSummary");
   if(!host) return;
+  const focusedKey=document.activeElement?.dataset?.clearFilter;
   const entries=uxActiveFilterEntries();
   host.hidden=entries.length===0;
   host.innerHTML="";
@@ -2975,8 +3085,11 @@ function uxRenderFilterSummary(){
     btn.className="filter-summary-chip";
     btn.dataset.clearFilter=entry.key;
     btn.setAttribute("aria-label",`Quitar ${entry.label}`);
-    btn.innerHTML=`<span>${entry.label}</span><span aria-hidden="true">×</span>`;
+    const text=document.createElement("span");text.textContent=entry.label;
+    const remove=document.createElement("span");remove.textContent="×";remove.setAttribute("aria-hidden","true");
+    btn.append(text,remove);
     host.appendChild(btn);
+    if(focusedKey===entry.key) btn.focus?.({preventScroll:true});
   }
 }
 
@@ -3004,12 +3117,16 @@ function uxClearOneFilter(key){
     const term=String(key).slice(5);
     selectedSuggestionTerms=selectedSuggestionTerms.filter(item=>normalizeText(item)!==normalizeText(term));
   }
+  else if(String(key||"").startsWith("facet:")){
+    try{const [group,value]=JSON.parse(String(key).slice(6));removeFacetFilter(group,value);return;}catch(_){}
+  }
   render();
 }
 
 function uxClearAllFilters(){
   if(qInp) qInp.value="";
   selectedSuggestionTerms=[];
+  selectedFacetFilters=[];
   render();
 }
 
@@ -3076,58 +3193,52 @@ function syncWordToggleButton(){
 function renderWordSuggestions(){
   if(!wordPanel||!wordChips||!activeTerms||!activeTermsWrap||!clearTermsBtn) return;
   syncWordToggleButton();
-  if(!wordSuggestionsVisible){
-    wordPanel.hidden=true;
-    clearTermsBtn.hidden=true;
-    activeTermsWrap.hidden=true;
-    wordChips.innerHTML="";
-    activeTerms.innerHTML="";
-    const summary=document.getElementById("filterSummary");
-    if(summary) summary.hidden=true;
-    return;
-  }
-  wordPanel.hidden=false;
-  const showAlbumGrid=shouldShowAlbumGrid();
-  const entries=buildSuggestionEntries();
-  const activeTermsList=uniqueTerms(selectedSuggestionTerms||[]);
-  const rawQuery=qInp?String(qInp.value||""):"";
-  const typedTerms=parseSearchTerms(rawQuery);
+  uxRenderFilterSummary();
   clearTermsBtn.hidden=uxActiveFilterEntries().length===0;
-  activeTermsWrap.hidden=!activeTermsList.length;
+  wordPanel.hidden=!wordSuggestionsVisible;
+  if(!wordSuggestionsVisible) return;
+
+  const focused=document.activeElement;
+  const focusGroup=focused?.dataset?.facetGroup,focusValue=focused?.dataset?.facetValue;
+  const groups=buildSuggestionEntries();
+  const legacy=uniqueTerms(selectedSuggestionTerms||[]);
+  activeTermsWrap.hidden=!legacy.length;
   wordChips.innerHTML="";
   activeTerms.innerHTML="";
-  uxRenderFilterSummary();
-
-  if(activeTermsList.length){
-    for(const term of activeTermsList){
-      const btn=document.createElement("button");
-      btn.type="button";
-      btn.className="term-chip is-active";
-      btn.dataset.term=term;
-      btn.dataset.role="remove-active-term";
-      btn.setAttribute("aria-label",`Quitar palabra ${term}`);
-      btn.innerHTML=`<span>${term}</span><span class="term-chip-remove" aria-hidden="true">×</span>`;
-      activeTerms.appendChild(btn);
-    }
+  for(const term of legacy){
+    const btn=document.createElement("button");btn.type="button";btn.className="term-chip is-active";
+    btn.dataset.term=term;btn.dataset.role="remove-active-term";
+    btn.setAttribute("aria-label",`Quitar palabra ${term}`);btn.textContent=term+" ×";
+    activeTerms.appendChild(btn);
   }
 
-  if(!entries.length){
-    const empty=document.createElement("div");
-    empty.className="word-empty";
-    empty.textContent="No hay palabras adicionales para esta vista.";
+  if(!groups.length){
+    const empty=document.createElement("div");empty.className="word-empty";
+    empty.textContent="No hay atributos adicionales que permitan distinguir los productos de esta vista.";
     wordChips.appendChild(empty);
-  }else{
-    for(const entry of entries){
-      const btn=document.createElement("button");
-      btn.type="button";
-      btn.className="term-chip"+(activeTermsList.includes(entry.term)?" is-active":"");
-      btn.dataset.term=entry.term;
-      btn.dataset.role="toggle-term";
-      btn.setAttribute("aria-pressed",activeTermsList.includes(entry.term)?"true":"false");
-      btn.innerHTML=`<span>${entry.term}</span><span class="term-chip-count">${entry.count}</span>`;
-      wordChips.appendChild(btn);
-    }
   }
+  let restoreFocus=null;
+  for(const group of groups){
+    const section=document.createElement("div");section.className="word-filter-group";
+    section.setAttribute("role","group");section.setAttribute("aria-labelledby",`facet-heading-${group.id}`);
+    const heading=document.createElement("div");heading.className="word-filter-heading";
+    heading.id=`facet-heading-${group.id}`;heading.textContent=group.label;
+    const options=document.createElement("div");options.className="word-filter-options";
+    for(const option of group.options){
+      const btn=document.createElement("button");btn.type="button";
+      btn.className="term-chip"+(option.selected?" is-active":"");
+      btn.dataset.facetGroup=group.id;btn.dataset.facetValue=option.value;btn.dataset.facetLabel=option.label;
+      btn.dataset.role="toggle-term";btn.setAttribute("aria-pressed",String(option.selected));
+      btn.setAttribute("aria-label",`${group.label}: ${option.label}, ${option.count} productos${option.selected?", seleccionado; pulsar para quitar":""}`);
+      btn.title=`${option.count} productos con ${option.label}, según la búsqueda y los filtros de los demás grupos`;
+      const label=document.createElement("span");label.textContent=option.label;
+      const count=document.createElement("span");count.className="term-chip-count";count.textContent=String(option.count);
+      btn.append(label,count);options.appendChild(btn);
+      if(focusGroup===group.id&&focusValue===option.value) restoreFocus=btn;
+    }
+    section.append(heading,options);wordChips.appendChild(section);
+  }
+  if(restoreFocus) restoreFocus.focus?.({preventScroll:true});
 }
 
 function syncFilterVisibility(){
@@ -3282,10 +3393,10 @@ function makeEmptyState(message){
   title.className="empty-state-title";
   title.textContent=message;
   div.appendChild(title);
-  if(getCombinedWordTerms().length){
+  if(hasActiveDiscoveryFilters()){
     const help=document.createElement("p");
     help.className="empty-state-text";
-    help.textContent="Prueba con menos palabras o limpia los filtros para volver a explorar el catálogo.";
+    help.textContent="Las selecciones siguen activas. Puedes quitar una opción o usar Limpiar todo para volver a explorar el catálogo.";
     const actions=document.createElement("div");
     actions.className="empty-state-actions";
     const clear=document.createElement("button");
@@ -3397,7 +3508,7 @@ function bindGridActions(){
     const albumBtn=e.target.closest("[data-album-open]");
     if(albumBtn){
       const key=albumBtn.getAttribute("data-album-open")||"";
-      if(key) openAlbum(key,{keepFilters:getCombinedWordTerms().length>0});
+      if(key) openAlbum(key,{keepFilters:hasActiveDiscoveryFilters()});
       return;
     }
     const btn=e.target.closest("button[data-act]");
@@ -3437,11 +3548,17 @@ function bindFilters(){
   qInp.addEventListener("input",render);
   wordChips?.addEventListener("click",e=>{
     const btn=e.target.closest("[data-role='toggle-term']");
-    if(btn) toggleSuggestionTerm(btn.dataset.term||"");
+    if(btn){
+      if(btn.dataset.facetGroup) toggleFacetFilter(btn.dataset.facetGroup,btn.dataset.facetLabel);
+      else toggleSuggestionTerm(btn.dataset.term||"");
+    }
   });
   activeTerms?.addEventListener("click",e=>{
     const btn=e.target.closest("[data-role='remove-active-term']");
-    if(btn) removeSuggestionTerm(btn.dataset.term||"");
+    if(btn){
+      if(btn.dataset.facetGroup) removeFacetFilter(btn.dataset.facetGroup,btn.dataset.facetValue);
+      else removeSuggestionTerm(btn.dataset.term||"");
+    }
   });
   document.getElementById("filterSummary")?.addEventListener("click",e=>{
     const btn=e.target.closest("[data-clear-filter]");
@@ -3477,7 +3594,7 @@ async function init(){
   window.addEventListener("popstate",restoreCatalogStateFromHistory);
   initFolleto();
   initCatalogFichas();
-  if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:getCombinedWordTerms().length>0}));
+  if(albumBackBtn) albumBackBtn.addEventListener("click",()=>closeAlbum({keepFilters:hasActiveDiscoveryFilters()}));
   syncWordToggleButton();
   updateCountAttention();
   loadClientFromLS();

@@ -865,3 +865,17 @@ body.cart-open,body.form-open,body.img-open{overflow:hidden}
 .catalog-ficha-card .catalog-admin-vis{position:static;align-self:flex-end;margin:0 12px 12px}
 .catalog-ficha-card .price-admin-editor{flex-basis:100%}
 @media(max-width:760px){#grid:has(>.catalog-ficha-card){grid-template-columns:minmax(0,1fr);gap:18px}}
+
+/* Atributos agrupados dentro del panel Filtrar existente. */
+.word-chips{display:flex;flex-direction:column;gap:12px;max-height:55vh;overflow-y:auto;overscroll-behavior:contain;padding:3px}
+.word-filter-group{min-width:0}
+.word-filter-heading{font-size:12px;font-weight:700;margin:0 0 5px;color:var(--muted,#5e5552)}
+.word-filter-options{display:flex;flex-wrap:wrap;gap:6px}
+.word-filter-options .term-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left;cursor:pointer}
+.word-filter-options .term-chip:focus-visible,.filter-summary-chip:focus-visible{outline:2px solid #74394f;outline-offset:2px}
+.word-filter-status{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+.word-filter-status .filter-summary{flex:1 1 240px;min-width:0}
+.word-filter-status .filter-summary-chip{max-width:100%;white-space:normal;overflow-wrap:anywhere;text-align:left}
+.word-filter-status .word-clear{flex:0 0 auto}
+.word-filter-status:has(.filter-summary[hidden]){margin-bottom:0}
+@media(max-width:480px){.word-panel{padding:12px}.word-filter-options{gap:5px}.word-filter-options .term-chip{font-size:12px;padding:7px 9px}}

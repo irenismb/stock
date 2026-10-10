@@ -5,7 +5,15 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
   const browser=await chromium.launch({headless:true});
   const page=await browser.newPage({viewport:{width:1280,height:900}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=fichas-beneficios-ajuste-2026-10-10',{waitUntil:'domcontentloaded'});
+  // Pages and the browser workflow start together; wait for the version being checked.
+  const expectedVersion='descripcion-dos-columnas-beneficios-ajuste-2026-10-10-5';
+  for(let attempt=0;attempt<12;attempt++){
+    await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=fichas-beneficios-ajuste-2026-10-10&t='+Date.now(),{waitUntil:'domcontentloaded'});
+    const version=await page.locator('script[src*="catalogo-app.js"]').getAttribute('src');
+    if(version.includes(expectedVersion))break;
+    if(attempt===11)throw new Error('La publicación todavía no sirve la versión '+expectedVersion);
+    await page.waitForTimeout(10000);
+  }
   await page.waitForFunction(()=>window.CATALOG_INITIAL_LOAD_READY===true,null,{timeout:90000});
   const info=await page.evaluate(()=>({
     ready:window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,
@@ -17,7 +25,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
     privateLeak:allLoadedProducts.some(p=>String(p.fullTxtRecord||'').includes('Costo de adquisición:'))
   }));
   assert.equal(info.ready,true);assert.equal(info.count,363);assert.equal(info.code,'0383');assert.equal(info.price,110000);
-  assert.ok(info.version.includes('descripcion-dos-columnas'));assert.equal(info.privateLeak,false);
+  assert.ok(info.version.includes(expectedVersion));assert.equal(info.privateLeak,false);
   await page.waitForTimeout(1000);
   const directory=path.join(process.env.RUNNER_TEMP,'natura-browser-evidence');fs.mkdirSync(directory,{recursive:true});
   await page.evaluate(()=>{

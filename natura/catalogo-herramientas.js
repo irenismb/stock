@@ -172,7 +172,8 @@ function renderCatalogFicha(card,p){
   details.hidden=!model.description;
   summary.setAttribute("aria-label","Descripción de "+model.name);
   // Reuse the existing nodes and handlers for image zoom, cart and price editing.
-  facts.append(card.querySelector(".name"));
+  const name=card.querySelector(".name"),priceRow=card.querySelector(".row");
+  facts.append(name);
   const presentation=document.createElement("p");presentation.className="ficha-presentation";
   presentation.textContent=model.presentation;presentation.hidden=!model.presentation;facts.append(presentation);
   const meta=card.querySelector(".meta");facts.append(meta);
@@ -181,13 +182,12 @@ function renderCatalogFicha(card,p){
     const item=document.createElement("div"),term=document.createElement("dt"),definition=document.createElement("dd");
     term.textContent=label+":";definition.textContent=value;item.append(term,definition);attributes.append(item);
   }
-  attributes.hidden=!model.attributes.length;facts.append(attributes,card.querySelector(".row"));
+  attributes.hidden=!model.attributes.length;facts.append(attributes,priceRow);
   if(p.fichaSelectionExplicit){
-    const name=card.querySelector(".name");
     name.hidden=true;presentation.hidden=true;meta.hidden=true;attributes.hidden=true;
     for(const field of p.fichaFields||[]){
       if(field.key==="nombre"){name.hidden=false;facts.append(name);continue;}
-      if(field.key==="precio"){facts.append(card.querySelector(".row"));continue;}
+      if(field.key==="precio"){facts.append(priceRow);continue;}
       const list=document.createElement("dl");list.className="ficha-attributes";
       const item=document.createElement("div"),term=document.createElement("dt"),value=document.createElement("dd");
       term.textContent=field.label+":";value.textContent=field.value;item.append(term,value);list.append(item);facts.append(list);

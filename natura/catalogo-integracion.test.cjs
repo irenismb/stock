@@ -684,7 +684,8 @@ test('Ficha conserva orden explícito de atributos alrededor de nombre y precio 
   const nodes={},node=tag=>({tag,children:[],hidden:false,classList:{add(){},toggle(){}},setAttribute(){},addEventListener(){},append(...items){for(const item of items){item.parent?.children.splice(item.parent.children.indexOf(item),1);this.children.push(item);item.parent=this;}},prepend(item){this.children.unshift(item);}});
   for(const selector of ['.name','.img','.pad','.product-details','.description','.meta','.row','.product-line'])nodes[selector]=node(selector);
   nodes['.img'].querySelector=()=>node('img');nodes['.product-details'].querySelector=()=>node('summary');
-  const card=node('card');card.querySelector=selector=>nodes[selector];
+  const card=node('card');card.append(...Object.values(nodes));
+  card.querySelector=selector=>{const find=parent=>parent===nodes[selector]?parent:parent.children.map(find).find(Boolean);return find(card)||null;};
   const context=vm.createContext({document:{createElement:node},stockMetaText:()=>'',folletoPresentation:()=>'',folletoProductAttributes:()=>[],
     buildFichaModel:p=>p,drawCatalogFichaImage(){},queueCatalogFichaLayout(){}});
   const start=toolsSource.indexOf('function renderCatalogFicha('),end=toolsSource.indexOf('const CATALOG_FICHA_LAYOUT_KEYS',start);

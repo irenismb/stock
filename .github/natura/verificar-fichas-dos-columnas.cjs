@@ -132,7 +132,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
       }
       return result;
     });
-    assert.equal(result.overflow,false);if(width>=550)assert.ok(result.fit>.90,JSON.stringify(result));
+    assert.equal(result.overflow,false);if(width>=550)assert.ok(parseFloat(result.font)>=20,JSON.stringify(result));
     if(result.fit<.96)assert.equal(result.largerOverflows,true,'La ficha debe aprovechar el espacio disponible');
     assert.equal(result.footer,result.benefit+'\n'+result.occasion);assert.equal(result.exportFooter,result.footer);
     await page.locator('#grid .catalog-ficha-card').screenshot({path:path.join(directory,'kit-0407-'+width+'-'+(visible?'con':'sin')+'-precio.png')});

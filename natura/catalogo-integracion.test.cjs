@@ -438,7 +438,7 @@ test('Nombre con error de fórmula queda pendiente y no se reconstruye desde atr
 test('La entrada conserva canonical, SEO y versiones coherentes de los dos scripts',()=>{
   assert.match(htmlSource,/<link rel="canonical" href="https:\/\/irenismb\.github\.io\/stock\/natura\/catalogo\.html"/);
   assert.match(htmlSource,/id="ld-products"/);
-  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-precios-unificados-2026-10-10-4'));
+  assert.ok(htmlSource.includes('catalogo-app.js?actualizacion=descripcion-dos-columnas-beneficios-ajuste-2026-10-10-5'));
   assert.ok(htmlSource.includes('precios-admin.js?actualizacion=fichas-precios-unificados-2026-10-10-4'));
   for(const id of ['grid','q','priceAdminBtn','btn-cart'])assert.ok(htmlSource.includes('id="'+id+'"'));
 });
@@ -523,7 +523,7 @@ test('Datos extensos y precio se ajustan juntos sin salir del cuadrado en anchos
   for(const width of [240,280,320,360,390,420,520]){
     const e=fichaLayoutEnvironment({width,factsHeight:680});e.run();
     assert.equal(e.attributes.parentNode,e.facts);
-    assert.ok(e.facts.scrollHeight<=e.main.clientHeight,'Ancho '+width);
+    assert.ok(e.facts.scrollHeight<=e.main.clientHeight+1,'Ancho '+width);
     assert.equal(e.properties.get('--ficha-unit'),width/420+'px');
     assert.equal(e.square.classList.contains('ficha-description-expanded'),false);
   }
@@ -611,7 +611,7 @@ test('Dos columnas recuperan identidad, precio, navegación y filtros desde tít
   const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'']]));
   assert.equal(r.report.pending,0);assert.equal(r.products[0].id,'0042');assert.equal(r.products[0].price,25000);
   assert.equal(r.products[0].line,'Lumina');assert.equal(r.products[0].public,'Femeninos');
-  assert.equal(r.products[0].fichaSelectionExplicit,false);assert.equal(r.products[0].description,'Texto completo de prueba.\nSuaviza el cabello.');
+  assert.equal(r.products[0].fichaSelectionExplicit,false);assert.equal(r.products[0].description,'Suaviza el cabello.\nTexto completo de prueba.');
 });
 test('Títulos cortos con acentos, dos puntos y orden arbitrario seleccionan valores exactos',()=>{
   const env=environment(),r=assess(env,tableFromValues([compactHeaders,[compactDescription,'precio:\nMarca:\nCódigo:\nNombre:\nLÍNEA:\nPrecio de venta:\nNo existe:\nCosto:']]));
@@ -777,4 +777,27 @@ test('El Folleto justifica líneas completas sin estirar los finales de párrafo
   }
   assert.equal(new Set(drawn.map(d=>d.y)).size,context.measure.lines.length);
   assert.equal(drawn.map(d=>d.text).join(' ').replace(/\s+/g,' '),context.text.replace(/\s+/g,' '));
+});
+
+
+test('El redondeo de un píxel en la fila de precio no reduce innecesariamente los datos',()=>{
+  const e=fichaLayoutEnvironment({width:560});
+  Object.defineProperty(e.facts,'scrollHeight',{get(){
+    const scale=Number(e.properties.get('--ficha-fit')??1);
+    return Math.max(e.main.clientHeight+1,Math.ceil(e.main.clientHeight/.95*scale));
+  }});
+  e.run();
+  assert.ok(Number(e.properties.get('--ficha-fit'))>.94);
+  assert.ok(e.facts.scrollHeight<=e.main.clientHeight+1);
+});
+test('El pie presenta beneficios, ocasión ideal y especificaciones en ese orden en web y Folleto',async()=>{
+  const env=environment();await confirmed(env);vm.runInContext(toolsSource,env.context);
+  const raw=compactDescription+'\nEspecificaciones técnicas: Datos técnicos completos.';
+  const product=assess(env,tableFromValues([compactHeaders,[raw,'Nombre:\nCódigo:']])).products[0];
+  assert.equal(product.description,'Suaviza el cabello.\nTexto completo de prueba.\nDatos técnicos completos.');
+  env.sandbox.products=[product];env.run('allLoadedProducts=products;window.CATALOG_INITIAL_LOAD_READY=true');
+  const snapshot=env.run('buildFolletoSnapshot({scope:"selected",selectedIds:["0042"]})');
+  assert.equal(snapshot.products[0].description,product.description);
+  const onlyBenefits=assess(env,tableFromValues([compactHeaders,[compactDescription.replace('\nDescripción sensorial y uso recomendado: Texto completo de prueba.',''),'']])).products[0];
+  assert.equal(onlyBenefits.description,'Suaviza el cabello.');
 });

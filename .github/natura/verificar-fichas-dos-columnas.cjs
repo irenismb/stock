@@ -5,7 +5,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
   const browser=await chromium.launch({headless:true});
   const page=await browser.newPage({viewport:{width:1280,height:900}});
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
-  await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=fichas-precios-unificados-2026-10-10',{waitUntil:'domcontentloaded'});
+  await page.goto('https://irenismb.github.io/stock/natura/catalogo.html?verificar=fichas-beneficios-ajuste-2026-10-10',{waitUntil:'domcontentloaded'});
   await page.waitForFunction(()=>window.CATALOG_INITIAL_LOAD_READY===true,null,{timeout:90000});
   const info=await page.evaluate(()=>({
     ready:window.CATALOG_PUBLIC_VISIBILITY_CONFIRMED,
@@ -96,6 +96,41 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
   }
   console.log('ORDEN ESTANDAR VERIFICADO',JSON.stringify(standards));
 
+
+  for(const visible of [true,false])for(const width of [332,555,558,560,600]){
+    await page.setViewportSize({width:1280,height:950});
+    await page.evaluate(({visible,width})=>{
+      setCatalogFichaPriceVisibility(visible);
+      const grid=document.getElementById('grid');grid.style.gridTemplateColumns=width+'px';grid.hidden=false;
+      grid.replaceChildren(makeCard(allLoadedProducts.find(p=>p.id==='0407')));queueCatalogFichaLayout();
+    },{visible,width});
+    await page.waitForFunction(()=>{const image=document.querySelector('#grid .img img');return image?.complete&&image.naturalWidth>0;},null,{timeout:45000});
+    await page.waitForTimeout(500);
+    const result=await page.evaluate(()=>{
+      const p=allLoadedProducts.find(p=>p.id==='0407'),card=document.querySelector('#grid .catalog-ficha-card');
+      const square=card.querySelector('.ficha-square'),facts=card.querySelector('.ficha-facts'),main=card.querySelector('.ficha-main');
+      const fit=Number(square.style.getPropertyValue('--ficha-fit')||1);
+      const actual=card.querySelector('.description').textContent;
+      const benefit=p.fullTxtRecord.match(/Beneficios y funciones del producto: ([^\n]+)/)[1];
+      const occasion=p.fullTxtRecord.match(/Descripción sensorial y uso recomendado: ([^\n]+)/)[1];
+      const snapshot=buildFolletoSnapshot({scope:'selected',selectedIds:['0407']});
+      const result={fit,font:getComputedStyle(card.querySelector('.name')).fontSize,
+        overflow:facts.scrollHeight>main.clientHeight+1||facts.scrollWidth>facts.clientWidth+1,
+        footer:actual,benefit,occasion,exportFooter:snapshot.products[0].description};
+      if(fit<.96){
+        square.style.setProperty('--ficha-fit',fit+.03);
+        result.largerOverflows=facts.scrollHeight>main.clientHeight+1||facts.scrollWidth>facts.clientWidth+1;
+        square.style.setProperty('--ficha-fit',fit);
+      }
+      return result;
+    });
+    assert.equal(result.overflow,false);if(width>=550)assert.ok(result.fit>.90,JSON.stringify(result));
+    if(result.fit<.96)assert.equal(result.largerOverflows,true,'La ficha debe aprovechar el espacio disponible');
+    assert.equal(result.footer,result.benefit+'\n'+result.occasion);assert.equal(result.exportFooter,result.footer);
+    await page.locator('#grid .catalog-ficha-card').screenshot({path:path.join(directory,'kit-0407-'+width+'-'+(visible?'con':'sin')+'-precio.png')});
+    console.log('KIT 0407 Y PIE VERIFICADOS',JSON.stringify({width,visible,result}));
+  }
+  await page.evaluate(()=>document.getElementById('grid').style.removeProperty('grid-template-columns'));
   const originals=await page.evaluate(()=>allLoadedProducts.filter(p=>/^\d{4}$/.test(p.id)).map(p=>[p.id,p.price]));
   await page.evaluate(()=>{
     const p=allLoadedProducts.find(p=>p.id==='0401');
@@ -141,7 +176,7 @@ const {chromium}=require(path.join(process.env.NATURA_BROWSER_RUNTIME,'node_modu
     FOLLETO_SELECTION.clear();FOLLETO_SELECTION.add('0401');setCatalogFichaPriceVisibility(false);
     const snapshot=buildFolletoSnapshot({scope:'selected',selectedIds:['0401']});
     const canvas=document.createElement('canvas');canvas.width=1080;canvas.height=1080;
-    const ctx=canvas.getContext('2d'),product=snapshot.products[0];
+    const ctx=canvas.getContext('2d'),product=snapshot.products[0];ctx.textBaseline='top';
     renderFicha(ctx,{x:0,y:0,width:1080,height:1080,product:{...product,imageUrl:''},measure:measureFicha(ctx,{...product,imageUrl:''})},null);
     window.__fichaFolletoPreview=canvas.toDataURL('image/png');
   });

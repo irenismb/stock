@@ -419,7 +419,7 @@ function readCompactGoogleSheetProductRows(table,indices){
     const fichaRecord={...record,byKey:new Map(record.byKey)};
     if(presentation)fichaRecord.byKey.set("presentacion",{key:"presentacion",label:"Presentación",value:presentation});
     row.fichaFields=catalogOrderedFields(fichaRecord,selection);
-    row.description=["Descripción","Beneficios","Especificaciones técnicas"].map(get).filter(Boolean).join("\n");
+    row.description=["Beneficios","Descripción","Especificaciones técnicas"].map(get).filter(Boolean).join("\n");
     row.fullTxtRecord=record.fields.filter(f=>!catalogPrivateField(f.key)).map(f=>f.label+": "+f.value).join("\n");
     return [row];
   });

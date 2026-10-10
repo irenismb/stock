@@ -257,7 +257,9 @@ function fitCatalogFicha(card){
   drawCatalogFichaImage(card);
 }
 function fitCatalogFichaFacts(square,facts,main){
-  const fits=()=>facts.scrollHeight<=main.clientHeight&&facts.scrollWidth<=facts.clientWidth;
+  // scrollHeight/clientHeight round independently when the price rests on an auto margin.
+  // Ignore their one-pixel rounding difference; otherwise fitting is not monotonic.
+  const fits=()=>facts.scrollHeight<=main.clientHeight+1&&facts.scrollWidth<=facts.clientWidth+1;
   square.style.setProperty("--ficha-fit",1);
   if(fits())return;
   let low=0,high=1;

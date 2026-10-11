@@ -43,6 +43,9 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
+      - name: Instalar filtro de historial por carpeta
+        run: python -m pip install --disable-pip-version-check git-filter-repo==2.47.0
+
       - name: Validar y ejecutar la migracion manual
         shell: bash
         env:
@@ -80,7 +83,10 @@ jobs:
           echo "Origen: gruemp/stock (rama main). Las carpetas del origen NO se eliminan." >> "$GITHUB_STEP_SUMMARY"
           echo "natura/ y natura_pruebas/ quedan totalmente excluidas." >> "$GITHUB_STEP_SUMMARY"
 
-          # Se calcula primero la historia de LOS SIETE proyectos. No se cambia stock.
+          # Filtrar en repositorios temporales: subtree puede conservar ancestros ajenos.
+          # El origen no se modifica y se validan TODOS los objetos antes de escribir destinos.
+          base_temporal="$(mktemp -d "$RUNNER_TEMP/migracion-stock.XXXXXX")"
+          trap 'rm -rf "$base_temporal"' EXIT
           archivo="$RUNNER_TEMP/mapa-proyectos.txt"
           : > "$archivo"
           while IFS='|' read -r origen destino; do
@@ -90,14 +96,18 @@ jobs:
               exit 1
             }
             echo "Preparando historia para: $origen -> $destino"
-            commit="$(git subtree split --prefix="$origen" HEAD)"
+            repo_temporal="$base_temporal/$destino.git"
+            git clone --quiet --bare --no-local --single-branch --no-tags --branch main . "$repo_temporal"
+            git -C "$repo_temporal" filter-repo --force --subdirectory-filter "$origen"
+            git -C "$repo_temporal" fsck --strict
+            commit="$(git -C "$repo_temporal" rev-parse main)"
             arbol_origen="$(git rev-parse "HEAD:$origen")"
-            arbol_destino="$(git rev-parse "$commit^{tree}")"
+            arbol_destino="$(git -C "$repo_temporal" rev-parse "$commit^{tree}")"
             if [[ "$arbol_origen" != "$arbol_destino" ]]; then
               echo "::error::El contenido del historial extraido no coincide para $origen."
               exit 1
             fi
-            printf '%s|%s|%s\n' "$origen" "$destino" "$commit" >> "$archivo"
+            printf '%s|%s|%s|%s\n' "$origen" "$destino" "$commit" "$repo_temporal" >> "$archivo"
             echo "- $origen -> $OWNER/$destino: historia preparada y arbol verificado" >> "$GITHUB_STEP_SUMMARY"
           done <<'PROYECTOS'
           arcadia|arcadia
@@ -120,7 +130,7 @@ jobs:
 
           # Crear los repositorios faltantes y enviar solo su historia.
           # Un destino con commits ajenos nunca se sobrescribe.
-          while IFS='|' read -r origen destino commit; do
+          while IFS='|' read -r origen destino commit repo_temporal; do
             url="https://github.com/$OWNER/$destino.git"
             echo "Procesando $OWNER/$destino"
             if gh api "repos/$OWNER/$destino" --jq '.full_name' >/dev/null 2>&1; then
@@ -134,7 +144,7 @@ jobs:
             fi
 
             # GitHub CLI suministra la credencial al helper sin incluirla en la URL.
-            ramas="$(git -c credential.helper='!gh auth git-credential' ls-remote --heads "$url")"
+            ramas="$(git -C "$repo_temporal" -c credential.helper='!gh auth git-credential' ls-remote --heads "$url")"
             if [[ -n "$ramas" ]]; then
               sha_remota="$(printf '%s\n' "$ramas" | awk '$2=="refs/heads/main" {print $1}')"
               numero_ramas="$(printf '%s\n' "$ramas" | wc -l | tr -d ' ')"
@@ -147,9 +157,9 @@ jobs:
               exit 1
             fi
 
-            git -c credential.helper='!gh auth git-credential' push "$url" "$commit:refs/heads/main"
+            git -C "$repo_temporal" -c credential.helper='!gh auth git-credential' push "$url" "$commit:refs/heads/main"
 
-            recibido="$(git -c credential.helper='!gh auth git-credential' ls-remote "$url" refs/heads/main | cut -f1)"
+            recibido="$(git -C "$repo_temporal" -c credential.helper='!gh auth git-credential' ls-remote "$url" refs/heads/main | cut -f1)"
             if [[ "$recibido" != "$commit" ]]; then
               echo "::error::No se confirmo el mismo commit en $destino."
               exit 1

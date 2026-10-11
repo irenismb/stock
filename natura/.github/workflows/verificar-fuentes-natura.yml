@@ -56,6 +56,12 @@ jobs:
               with clasp.open(encoding="utf-8") as handle:
                   config = json.load(handle)
               assert config.get("scriptId"), f"Falta scriptId en {clasp}"
+              if manifest.parent.name == "lector publico natura":
+                  admin_file = Path("apps-script/administrar precios natura/.clasp.json")
+                  with admin_file.open(encoding="utf-8") as handle:
+                      admin = json.load(handle)
+                  if config["scriptId"] == admin.get("scriptId"):
+                      print("::warning::Lector y administrador comparten scriptId; la publicación del lector está bloqueada hasta conciliar identidades")
               print(f"Verificado: {manifest.parent}")
           PY
 

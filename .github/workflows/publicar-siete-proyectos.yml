@@ -1,0 +1,88 @@
+name: Publicar siete proyectos independientes
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/publicar-siete-proyectos.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: publicar-siete-proyectos
+  cancel-in-progress: false
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Configurar Pages y comprobar siete publicaciones
+        env:
+          GH_TOKEN: ${{ secrets.MIGRACION_REPOS_TOKEN }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request, urllib.error, urllib.parse
+          token = os.environ["GH_TOKEN"]
+          expected = [["arcadia","1b91b16d7cb488be2e2f77da6e269a824f687457","ventas.html"],["calculadora-gps","8b5655049a5a8b3334810ca7dabd955b7a3331fb","inicio.html"],["compara-precios","a61e17a7dfb195adfed72fb7f93e3f63f9eacf9d","comparar precios de alimentos en tiendas diferentes.html"],["cxp-arcadia","434932c73d0f187316723d6882dfd41e8eb6a662","cxp.html"],["mundial","0cdad122cf35f34f466c5c35bc73bc3e35820175","mundial_2026.html"],["notas","00cb8fe2168e3b610d8c2dbc79c5cbaa44191e7d","notas.html"],["reparacion","42079f9dd106674c204746576ad2cbfaa8cc54f1","reparacion_de_computadores_santa_marta.html"]]
+          api_root = "https://api.github.com/"
+          def api(path, method="GET", data=None):
+              req = urllib.request.Request(api_root + path, data=None if data is None else json.dumps(data).encode(), method=method,
+                  headers={"Authorization":"Bearer " + token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  body = response.read()
+                  return json.loads(body) if body else {}
+          def page(repo):
+              return api("repos/gruemp/" + repo + "/pages")
+          if os.environ["GITHUB_REPOSITORY"] != "gruemp/stock" or os.environ["GITHUB_REF"] != "refs/heads/main":
+              raise SystemExit("Origen no autorizado")
+          if api("user")["login"] != "gruemp":
+              raise SystemExit("Cuenta no autorizada")
+          # Validar todos los destinos antes de cambiar configuraciones.
+          for repo, sha, entry in expected:
+              metadata = api("repos/gruemp/" + repo)
+              if metadata["private"] or api("repos/gruemp/" + repo + "/branches/main")["commit"]["sha"] != sha:
+                  raise SystemExit("Destino diferente del verificado: " + repo)
+          results, errors = {}, []
+          for repo, sha, entry in expected:
+              try:
+                  try:
+                      config = page(repo)
+                  except urllib.error.HTTPError as error:
+                      if error.code != 404: raise
+                      config = api("repos/gruemp/" + repo + "/pages", "POST", {"build_type":"legacy","source":{"branch":"main","path":"/"}})
+                  source = config.get("source", {})
+                  if source != {"branch":"main","path":"/"} or config.get("cname") or config.get("build_type","legacy") != "legacy":
+                      raise RuntimeError("Configuracion existente incompatible; no se sobrescribe")
+                  url = config["html_url"].rstrip("/") + "/" + urllib.parse.quote(entry)
+                  results[repo] = {"sha":sha,"url":url,"status":"pendiente"}
+                  print(repo + ": Pages configurado; " + url, flush=True)
+                  api("repos/gruemp/" + repo + "/pages/builds", "POST")
+              except Exception as error:
+                  code = str(error.code) if isinstance(error, urllib.error.HTTPError) else type(error).__name__
+                  errors.append(repo + ": configuracion bloqueada (" + code + ")")
+                  print(errors[-1], flush=True)
+          # Comprobar estado de build y HTTP sin enviar autorizacion a los sitios publicos.
+          for attempt in range(60):
+              pending = [repo for repo in results if results[repo]["status"] != "built"]
+              if not pending: break
+              for repo in pending:
+                  try:
+                      config = page(repo)
+                      if config.get("status") == "built":
+                          with urllib.request.urlopen(results[repo]["url"], timeout=20) as response:
+                              if response.status == 200:
+                                  results[repo]["status"] = "built"
+                                  print(repo + ": built y HTTP 200", flush=True)
+                  except Exception:
+                      pass
+              if any(item["status"] != "built" for item in results.values()): time.sleep(10)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Publicacion independiente de siete proyectos\n")
+              for repo, item in results.items():
+                  summary.write("- " + repo + ": " + item["status"] + "; " + item["url"] + "; commit " + item["sha"] + "\n")
+              for error in errors: summary.write("- " + error + "\n")
+              summary.write("Carpetas, historiales y configuracion de stock conservados; Drive no modificado.\n")
+          if errors or len(results) != 7 or any(item["status"] != "built" for item in results.values()):
+              raise SystemExit("Publicacion incompleta; consultar resumen")
+          
+          PY

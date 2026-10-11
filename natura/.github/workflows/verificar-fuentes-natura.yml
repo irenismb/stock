@@ -1,0 +1,63 @@
+name: Verificar fuentes de Natura (solo lectura)
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Descargar el repositorio
+        uses: actions/checkout@v7
+
+      - name: Preparar Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Verificar sintaxis del catalogo y Apps Script
+        shell: bash
+        run: |
+          set -euo pipefail
+          for archivo in \
+            catalogo-app.js \
+            catalogo-carrito-pedido.js \
+            catalogo-herramientas.js \
+            catalogo-ui.js \
+            precios-admin.js \
+            precios-admin-config.js \
+            prospectos-admin.js \
+            analytics-visitas.js; do
+            node --check "$archivo"
+          done
+          find apps-script -type f -name '*.js' -print0 | xargs -0 -r -n 1 node --check
+
+      - name: Verificar archivos JSON de Apps Script
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          project_files = sorted(Path("apps-script").rglob("appsscript.json"))
+          assert project_files, "No se encontraron manifiestos Apps Script"
+          for manifest in project_files:
+              with manifest.open(encoding="utf-8") as handle:
+                  json.load(handle)
+              clasp = manifest.parent / ".clasp.json"
+              assert clasp.is_file(), f"Falta .clasp.json en {manifest.parent}"
+              with clasp.open(encoding="utf-8") as handle:
+                  config = json.load(handle)
+              assert config.get("scriptId"), f"Falta scriptId en {clasp}"
+              print(f"Verificado: {manifest.parent}")
+          PY
+
+      - name: Ejecutar pruebas del catalogo
+        run: node --test catalogo-integracion.test.cjs

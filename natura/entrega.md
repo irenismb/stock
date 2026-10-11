@@ -18,6 +18,15 @@ Cuenta actual que se conservará: `irenismb`. Más adelante se valorará renombr
 - El nuevo `verificar-fuentes-natura.yml` solo ejecuta pruebas y validaciones locales; no usa secretos ni escribe en Drive, Apps Script o el inventario.
 - Los publicadores anteriores de `stock/.github/workflows/` siguen siendo la ruta operativa hasta comprobar la sustitución.
 
+## Dependencias técnicas comprobadas en GitHub
+
+- **GitHub Pages y enlaces públicos:** `catalogo.html`, `sitemap.xml`, `robots.txt`, `catalogo-carrito-pedido.js`, `catalogo-herramientas.js` y las pruebas contienen o verifican referencias a la ruta actual `https://irenismb.github.io/stock/natura/catalogo.html`. No modificar estas referencias antes de publicar y comprobar un destino nuevo.
+- **Workflows:** los flujos operativos del monorrepositorio se alojan en `stock/.github/workflows/`. Los de `stock/natura/.github/workflows/` están preparados para la raíz del futuro repositorio, pero actualmente no ejecutan GitHub Actions.
+- **Apps Script:** hay cuatro proyectos autorizados en `apps-script/google-projects.json`, más el directorio auxiliar del lector público. El lector y el administrador comparten `scriptId`. La versión futura del publicador del lector abortará sin escribir en Google si detecta esa coincidencia; se requiere resolverla antes de activarlo.
+- **Credenciales:** los secretos como `CLASPRC_JSON`, las variables de GitHub Actions, los permisos de Google y los deployments no se trasladan automáticamente al crear el repositorio. Comprobarlos sin registrar sus valores en archivos.
+- **Verificación:** el archivo `.github/workflows/verificar-fuentes-natura.yml` valida sintaxis, manifiestos y pruebas de integración sin enviar datos ni publicar. Como está anidado, no se ejecuta desde `stock`; falta probarlo desde un repositorio autónomo.
+- **Restricción de la conexión:** el conector de GitHub disponible permite editar archivos y ramas, pero no crear repositorios. Para continuar con el repositorio independiente, hará falta crearlo en la cuenta personal existente por una vía autorizada. No iniciar el traslado ni retirar `stock` hasta disponer del destino.
+
 ## Secuencia pendiente para independizar Natura
 
 1. Confirmar cuál es la versión vigente de los archivos que difieran entre GitHub y Drive; no sobrescribir ninguno por defecto.

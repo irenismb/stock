@@ -25,10 +25,8 @@ const REQUIRED_HEADERS = [
 ];
 
 const INVENTORY_REQUIRED_HEADERS = [
-  "Código",
-  "Categoría",
-  "Nombre",
-  "Precio"
+  "Descripción integral del producto",
+  "Orden de la ficha"
 ];
 
 // ===================== ENDPOINTS Y ORQUESTACIÓN =====================

@@ -46,10 +46,10 @@ jobs:
       - name: Validar y ejecutar la migracion manual
         shell: bash
         env:
-          GH_TOKEN: \${{ secrets.MIGRACION_REPOS_TOKEN }}
-          MODO: \${{ inputs.modo }}
-          VISIBILIDAD: \${{ inputs.visibilidad }}
-          CONFIRMACION: \${{ inputs.confirmacion }}
+          GH_TOKEN: ${{ secrets.MIGRACION_REPOS_TOKEN }}
+          MODO: ${{ inputs.modo }}
+          VISIBILIDAD: ${{ inputs.visibilidad }}
+          CONFIRMACION: ${{ inputs.confirmacion }}
         run: |
           set -euo pipefail
           export GIT_TERMINAL_PROMPT=0

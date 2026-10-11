@@ -1,6 +1,6 @@
 # Apps Script de Natura
 
-Esta carpeta de Google Drive es la fuente de trabajo del código Apps Script de Natura. GitHub conserva el historial y realiza la publicación automática hacia los proyectos reales de Google Apps Script.
+Esta carpeta reúne en GitHub las fuentes de los proyectos Apps Script de Natura. Durante la preparación del repositorio independiente, los cambios de código se trabajan exclusivamente en GitHub. Los proyectos de Google Apps Script siguen siendo destinos de ejecución y despliegue; no se modifica Google Drive ni se activa ninguna publicación nueva por preparar el repositorio.
 
 ## Proyectos oficiales
 
@@ -9,15 +9,15 @@ Esta carpeta de Google Drive es la fuente de trabajo del código Apps Script de 
 - `lectura de carpetas en natura`
 - `coordenadas de visitantes natura`
 
-## Fuente maestra y sincronización
+## Origen de trabajo y continuidad (2026-10-11)
 
-- **Google Drive `stock/natura/apps-script` es la fuente de trabajo del código Apps Script del proyecto.**
-- El flujo normal y obligatorio es **Google Drive → GitHub → Google Apps Script**.
-- Primero se modifica en Google Drive. Después se sincronizan a GitHub exactamente los mismos archivos. Finalmente GitHub Actions publica automáticamente en el mismo proyecto y deployment oficial de Apps Script.
-- El proyecto real de Google Apps Script es un destino de ejecución y despliegue, no la fuente normal de edición.
-- No se usa `clasp pull` para sobrescribir GitHub o Google Drive desde Apps Script dentro del flujo normal.
-- La publicación automática valida el `scriptId`, el nombre del proyecto y el deployment oficial antes de ejecutar `clasp push --force`.
-- La automatización no puede crear ni renombrar proyectos, cambiar `scriptId`, crear deployments sustitutos ni cambiar endpoints. Si una validación falla, la publicación afectada se detiene.
+- Se trabaja temporalmente el código en GitHub, en `irenismb/stock/natura/apps-script/`. El cambio definitivo de fuente principal no está aprobado ni desplegado.
+- No ejecutar sincronización GitHub → Google Drive ni Drive → GitHub durante esta preparación. La dirección final, la conciliación de versiones y los permisos deberán decidirse y validarse expresamente.
+- Las publicaciones vigentes de Apps Script proceden de los workflows operativos situados en `stock/.github/workflows/`; los flujos preparados bajo `natura/.github/workflows/` no se ejecutan desde el repositorio `stock`.
+- Antes de publicar desde el repositorio individual, verificar `scriptId`, implementación, secreto, permisos y relación con cada proyecto remoto. No activar dos publicadores ni usar `clasp push --force` con identidades no conciliadas.
+- `lector publico natura/.clasp.json` y `administrar precios natura/.clasp.json` señalan actualmente el mismo `scriptId`. No publicar el lector mediante sobrescritura temporal del código administrativo: el workflow futuro incorpora una protección que bloquea esta operación hasta resolverla.
+- `google-projects.json` documenta el flujo anterior Drive → GitHub. Se conserva por ahora sin cambiar su estructura técnica y no debe tomarse como autorización de sincronización.
+- Las operaciones con datos comerciales, inventario, precios, pedidos y servicios publicados requieren autorización independiente.
 
 ## Pedidos Natura
 

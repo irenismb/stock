@@ -27,6 +27,26 @@ jobs:
           node-version: "24"
       - name: Instalar clasp
         run: npm install --global @google/clasp@3.4.1
+      - name: Bloquear una publicación que sobrescriba el proyecto administrativo
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          base = Path("apps-script")
+          def script_id(name):
+              with (base / name / ".clasp.json").open(encoding="utf-8") as fh:
+                  return json.load(fh).get("scriptId")
+          lector_id = script_id("lector publico natura")
+          admin_id = script_id("administrar precios natura")
+          if not lector_id or not admin_id:
+              print("::error::Faltan los identificadores de Apps Script")
+              raise SystemExit(1)
+          if lector_id == admin_id:
+              print("::error::Publicación bloqueada: lector y administrador apuntan al mismo proyecto Apps Script; requiere separar o validar un método seguro sin sobrescritura temporal")
+              raise SystemExit(1)
+          print("Los proyectos son distintos; continúa la verificación existente")
+          PY
       - name: Restaurar autorizacion
         env:
           CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}

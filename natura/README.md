@@ -1,6 +1,6 @@
 # Natura — mapa de archivos
 
-Google Drive es la fuente de trabajo. Los cambios autorizados se verifican en Drive, se sincronizan con GitHub y se publican en la misma tarea, conforme a las reglas del proyecto.
+Estado de preparación (2026-10-11): durante esta etapa, el trabajo sobre el código de Natura se realiza exclusivamente en GitHub, en `irenismb/stock/natura`. Google Drive no se modifica. El cambio definitivo de fuente principal y la futura sincronización GitHub → Drive permanecen pendientes de decisión y validación; no se presupone que todos los archivos ya estén conciliados.
 
 ## Sitio público
 
@@ -23,8 +23,16 @@ Google Drive es la fuente de trabajo. Los cambios autorizados se verifican en Dr
 
 ## Apps Script
 
-- `apps-script/`: espejo de trabajo del código Apps Script. Flujo autorizado: Drive → GitHub; actualizar Apps Script y su implementación cuando la funcionalidad del cambio lo requiera.
+- `apps-script/`: fuentes de los proyectos de Apps Script conservadas en GitHub para preparar el repositorio independiente. Los proyectos y despliegues de Google siguen siendo sistemas externos; ninguna actualización del código autoriza por sí sola publicar, sobrescribir el Apps Script remoto ni cambiar sus datos.
 - `lectura de carpetas en natura`: proyecto Apps Script real visible en Drive; es destino de ejecución, no fuente normal de edición.
+
+## Preparación de repositorio independiente
+
+- La carpeta `natura/` contiene la estructura propuesta para la raíz del futuro repositorio individual: `.github/`, `apps-script/`, catálogo, recursos y documentación.
+- Mientras siga dentro de `stock`, GitHub Actions solo interpreta los workflows de `stock/.github/workflows/`. Los archivos de `natura/.github/workflows/` son una preparación, no un segundo publicador activo.
+- Los cuatro workflows preparados que interactúan con servicios externos requieren `vars.NATURA_PUBLICACION_HABILITADA == 'true'`. No habilitarlos ni configurar publicaciones duplicadas antes de confirmar permisos, secretos, identidades de Apps Script y despliegues antiguos.
+- `.github/workflows/verificar-fuentes-natura.yml` es una comprobación de solo lectura para ejecutar pruebas y verificar sintaxis cuando la carpeta se convierta en repositorio independiente.
+- La conciliación de versiones con Drive, la transferencia de permisos y secretos, el historial Git y la futura dirección de sincronización se gestionarán por etapas, sin sustituir fuentes vigentes a ciegas.
 
 ## Regla de mantenimiento
 

@@ -1,0 +1,165 @@
+name: Independizar proyectos de stock
+
+on:
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: "Revisar solamente o crear y migrar los siete repositorios"
+        type: choice
+        required: true
+        default: revisar
+        options:
+          - revisar
+          - migrar
+      visibilidad:
+        description: "Visibilidad de los repositorios nuevos (no cambia los existentes)"
+        type: choice
+        required: true
+        default: public
+        options:
+          - public
+          - private
+      confirmacion:
+        description: "Para migrar escribe exactamente CREAR_Y_MIGRAR_7"
+        type: string
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: independizar-proyectos-stock
+  cancel-in-progress: false
+
+jobs:
+  independizar:
+    name: Preparar y, si se autoriza, migrar siete proyectos
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    steps:
+      - name: Obtener historia completa de stock sin credenciales persistentes
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Validar y ejecutar la migracion manual
+        shell: bash
+        env:
+          GH_TOKEN: \${{ secrets.MIGRACION_REPOS_TOKEN }}
+          MODO: \${{ inputs.modo }}
+          VISIBILIDAD: \${{ inputs.visibilidad }}
+          CONFIRMACION: \${{ inputs.confirmacion }}
+        run: |
+          set -euo pipefail
+          export GIT_TERMINAL_PROMPT=0
+          OWNER=gruemp
+
+          if [[ "$GITHUB_REPOSITORY" != "$OWNER/stock" || "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "::error::Este workflow solo se ejecuta desde gruemp/stock en main."
+            exit 1
+          fi
+
+          if [[ "$MODO" == migrar ]]; then
+            if [[ "$CONFIRMACION" != CREAR_Y_MIGRAR_7 ]]; then
+              echo "::error::Falta la confirmacion literal CREAR_Y_MIGRAR_7."
+              exit 1
+            fi
+            if [[ -z "$GH_TOKEN" ]]; then
+              echo "::error::Configura el secreto MIGRACION_REPOS_TOKEN en gruemp/stock."
+              exit 1
+            fi
+            cuenta="$(gh api user --jq '.login')"
+            if [[ "$cuenta" != "$OWNER" ]]; then
+              echo "::error::El token debe pertenecer a la cuenta gruemp."
+              exit 1
+            fi
+          fi
+
+          echo "## Independizacion de proyectos" >> "$GITHUB_STEP_SUMMARY"
+          echo "Origen: gruemp/stock (rama main). Las carpetas del origen NO se eliminan." >> "$GITHUB_STEP_SUMMARY"
+          echo "natura/ y natura_pruebas/ quedan totalmente excluidas." >> "$GITHUB_STEP_SUMMARY"
+
+          # Se calcula primero la historia de LOS SIETE proyectos. No se cambia stock.
+          archivo="$RUNNER_TEMP/mapa-proyectos.txt"
+          : > "$archivo"
+          while IFS='|' read -r origen destino; do
+            test -n "$origen" || continue
+            git cat-file -e "HEAD:$origen" || {
+              echo "::error::No existe el directorio: $origen"
+              exit 1
+            }
+            echo "Preparando historia para: $origen -> $destino"
+            commit="$(git subtree split --prefix="$origen" HEAD)"
+            arbol_origen="$(git rev-parse "HEAD:$origen")"
+            arbol_destino="$(git rev-parse "$commit^{tree}")"
+            if [[ "$arbol_origen" != "$arbol_destino" ]]; then
+              echo "::error::El contenido del historial extraido no coincide para $origen."
+              exit 1
+            fi
+            printf '%s|%s|%s\n' "$origen" "$destino" "$commit" >> "$archivo"
+            echo "- $origen -> $OWNER/$destino: historia preparada y arbol verificado" >> "$GITHUB_STEP_SUMMARY"
+          done <<'PROYECTOS'
+          arcadia|arcadia
+          calculadora gps|calculadora-gps
+          compara_precios|compara-precios
+          cxp arcadia|cxp-arcadia
+          mundial|mundial
+          notas|notas
+          reparacion|reparacion
+          PROYECTOS
+
+          if [[ "$MODO" == revisar ]]; then
+            echo "Solo revision: no se creo ni modifico ningun repositorio."
+            echo "Modo REVISION: no se realizaron escrituras." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          privado=false
+          if [[ "$VISIBILIDAD" == private ]]; then privado=true; fi
+
+          # Crear los repositorios faltantes y enviar solo su historia.
+          # Un destino con commits ajenos nunca se sobrescribe.
+          while IFS='|' read -r origen destino commit; do
+            url="https://github.com/$OWNER/$destino.git"
+            echo "Procesando $OWNER/$destino"
+            if gh api "repos/$OWNER/$destino" --jq '.full_name' >/dev/null 2>&1; then
+              echo "Destino existente: $destino"
+            else
+              gh api -X POST user/repos -f name="$destino" \
+                -F private="$privado" -F auto_init=false \
+                -f description="Proyecto independiente procedente de gruemp/stock/$origen" \
+                --silent
+              echo "Repositorio creado: $destino"
+            fi
+
+            # GitHub CLI suministra la credencial al helper sin incluirla en la URL.
+            ramas="$(git -c credential.helper='!gh auth git-credential' ls-remote --heads "$url")"
+            if [[ -n "$ramas" ]]; then
+              sha_remota="$(printf '%s\n' "$ramas" | awk '$2=="refs/heads/main" {print $1}')"
+              numero_ramas="$(printf '%s\n' "$ramas" | wc -l | tr -d ' ')"
+              if [[ "$sha_remota" == "$commit" && "$numero_ramas" == 1 ]]; then
+                echo "Ya esta migrado identicamente: $destino"
+                echo "- $destino: ya migrado; no modificado" >> "$GITHUB_STEP_SUMMARY"
+                continue
+              fi
+              echo "::error::El destino $destino tiene historia propia. No se sobrescribe."
+              exit 1
+            fi
+
+            git -c credential.helper='!gh auth git-credential' push "$url" "$commit:refs/heads/main"
+
+            recibido="$(git -c credential.helper='!gh auth git-credential' ls-remote "$url" refs/heads/main | cut -f1)"
+            if [[ "$recibido" != "$commit" ]]; then
+              echo "::error::No se confirmo el mismo commit en $destino."
+              exit 1
+            fi
+
+            rama_default="$(gh api "repos/$OWNER/$destino" --jq '.default_branch')"
+            if [[ "$rama_default" != main ]]; then
+              gh api -X PATCH "repos/$OWNER/$destino" -f default_branch=main --silent
+            fi
+            echo "- $destino: creado/importado; commit y arbol coinciden" >> "$GITHUB_STEP_SUMMARY"
+          done < "$archivo"
+
+          echo "Migracion concluida. Ninguna carpeta original fue eliminada." >> "$GITHUB_STEP_SUMMARY"

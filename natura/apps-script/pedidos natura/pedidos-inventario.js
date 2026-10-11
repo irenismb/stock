@@ -25,57 +25,82 @@ function normalizeRequestedItems_(items) {
 
   return Object.keys(grouped).map(function(code) { return grouped[code]; });
 }
+// El inventario vigente guarda todos los atributos en una sola celda de texto.
+// Resolver por encabezados y etiquetas; nunca interpretar el orden de la ficha como datos.
+function compactInventoryRecord_(value, rowNumber) {
+  const record = { __duplicates: [] };
+  const aliases = {
+    "codigo interno del producto": "codigo",
+    "nombre comercial del producto": "nombre",
+    "categoria del producto": "categoria",
+    "marca": "marca",
+    "precio de venta": "precio",
+    "estado comercial del producto": "estado"
+  };
+  String(value == null ? "" : value).split(/\r?\n/).forEach(function(line) {
+    const colon = line.indexOf(":");
+    if (colon < 0) return;
+    const label = normalizeHeader_(line.slice(0, colon));
+    const field = aliases[label];
+    if (!field) return;
+    if (Object.prototype.hasOwnProperty.call(record, field)) {
+      record.__duplicates.push(label);
+      return;
+    }
+    record[field] = line.slice(colon + 1).trim();
+  });
+  return record;
+}
+
 function resolveInventoryItems_(requestedItems) {
   const context = resolveInventoryContext_();
   const sheet = context.sheet;
   const columns = context.columnByHeader;
   const lastRow = sheet.getLastRow();
+  if (lastRow <= context.headerRow) throw new Error("El inventario oficial no contiene productos.");
 
-  if (lastRow <= context.headerRow) {
-    throw new Error("El inventario oficial no contiene productos.");
-  }
+  const descriptionColumn = columns["Descripción integral del producto"];
+  if (!descriptionColumn) throw new Error("Falta la descripción integral en el inventario.");
+  const descriptions = sheet.getRange(context.headerRow + 1, descriptionColumn,
+    lastRow - context.headerRow, 1).getDisplayValues();
+  const wanted = new Set(requestedItems.map(function(item) { return item.codigo; }));
+  const found = new Map();
 
-  const maxCol = Math.max.apply(null, Object.keys(columns).map(function(header) { return columns[header]; }));
-  const numRows = lastRow - context.headerRow;
-  const range = sheet.getRange(context.headerRow + 1, 1, numRows, maxCol);
-  const rawValues = range.getValues();
-  const displayValues = range.getDisplayValues();
-  const requestedCodes = {};
-  requestedItems.forEach(function(item) { requestedCodes[item.codigo] = true; });
-  const matchesByCode = {};
-
-  displayValues.forEach(function(row, rowIndex) {
-    const code = safe_(row[columns["Código"] - 1]);
-    if (!requestedCodes[code]) return;
-    if (!matchesByCode[code]) matchesByCode[code] = [];
-    matchesByCode[code].push(rowIndex);
+  descriptions.forEach(function(row, index) {
+    // Los códigos duplicados son ambiguos aun cuando otro campo tenga errores.
+    const parsed = compactInventoryRecord_(row[0], context.headerRow + index + 1);
+    const code = safe_(parsed.codigo);
+    if (!wanted.has(code)) return;
+    if (parsed.__duplicates.length) {
+      throw new Error("Atributos duplicados en Productos fila " + (context.headerRow + index + 1) + ": " + parsed.__duplicates.join(", ") + ".");
+    }
+    if (!found.has(code)) found.set(code, []);
+    found.get(code).push(parsed);
   });
 
   return requestedItems.map(function(requested) {
-    const matches = matchesByCode[requested.codigo] || [];
+    const matches = found.get(requested.codigo) || [];
     if (matches.length !== 1) {
-      throw new Error(
-        "El código " + requested.codigo + " debe identificar un único producto vigente. Coincidencias: " + matches.length + "."
-      );
+      throw new Error("El código " + requested.codigo +
+        " debe identificar un único producto vigente. Coincidencias: " + matches.length + ".");
     }
-
-    const rowIndex = matches[0];
-    const display = displayValues[rowIndex];
-    const raw = rawValues[rowIndex];
-    const nombre = safe_(display[columns["Nombre"] - 1]);
-    const categoria = safe_(display[columns["Categoría"] - 1]);
-    const precio = optionalNonNegativeNumber_(raw[columns["Precio"] - 1], "Precio", requested.codigo);
-
-    if (!nombre) throw new Error("El producto " + requested.codigo + " no tiene Nombre válido en el inventario.");
-    if (!categoria) throw new Error("El producto " + requested.codigo + " no tiene Categoría válida en el inventario.");
-
+    const product = matches[0];
+    const name = safe_(product.nombre);
+    const category = safe_(product.categoria);
+    const status = normalizeHeader_(product.estado || "");
+    if (!name) throw new Error("El producto " + requested.codigo + " no tiene Nombre válido.");
+    if (!category) throw new Error("El producto " + requested.codigo + " no tiene Categoría válida.");
+    if (status === "no a la venta") {
+      throw new Error("El producto " + requested.codigo + " no está a la venta.");
+    }
+    const price = optionalNonNegativeNumber_(product.precio || "", "Precio", requested.codigo);
     return {
       codigo: requested.codigo,
       cantidadSolicitada: requested.cantidadSolicitada,
-      marca: requested.marca,
-      nombreProducto: nombre,
-      categoria: categoria,
-      valorUnitario: precio
+      marca: safeClientCell_(product.marca || "", 80),
+      nombreProducto: name,
+      categoria: category,
+      valorUnitario: price
     };
   });
 }

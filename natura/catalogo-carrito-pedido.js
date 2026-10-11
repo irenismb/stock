@@ -1286,11 +1286,13 @@
           const status = await fetchOrderStatusJsonp(requestId, 3000);
           if(status && status.status === "registered" && status.ok === true) return status;
           if(status && status.status === "error"){
-            throw new Error(status.message || "El servidor rechazó el pedido.");
+            const rejection = new Error(status.message || "El servidor rechazó el pedido.");
+            rejection.confirmedServerRejection = true;
+            throw rejection;
           }
         }catch(err){
           lastError = err;
-          if(err && /rechazó el pedido|inválid|no hay productos|código|precio|categoría/i.test(String(err.message || err))){
+          if(err && (err.confirmedServerRejection || /rechazó el pedido|inválid|no hay productos|código|precio|categoría/i.test(String(err.message || err)))){
             throw err;
           }
         }
@@ -1324,7 +1326,7 @@
         clearPendingOrderRequest(pending.key, pending.id);
         return Object.assign({ skipped:false }, confirmation);
       }catch(err){
-        if(err && /rechazó el pedido|inválid|no hay productos|código|precio|categoría/i.test(String(err.message || err))){
+        if(err && (err.confirmedServerRejection || /rechazó el pedido|inválid|no hay productos|código|precio|categoría/i.test(String(err.message || err)))){
           clearPendingOrderRequest(pending.key, pending.id);
         }
         throw err;
@@ -1467,13 +1469,25 @@
 
           registrarConversionCatalogo("Inició pedido por WhatsApp", String(cartTotalQty()));
           try{
-            await registerOrderInSheet("Pedido");
+            const receipt = await registerOrderInSheet("Pedido");
+            if(!receipt || receipt.ok !== true || receipt.status !== "registered"){
+              throw new Error("El pedido no quedó confirmado en el sistema.");
+            }
             registrarConversionCatalogo("Pedido registrado", String(cartTotalQty()));
           }catch(err){
-            console.error("No se pudo registrar el pedido en Google Sheets:", err);
+            console.error("No se pudo confirmar el registro del pedido:", err);
+            const confirmedFailure = err && err.confirmedServerRejection === true;
+            const message = confirmedFailure
+              ? "El pedido NO quedó registrado automáticamente."
+              : "No se pudo confirmar el registro automático. Es posible que se haya recibido.";
+            const continueInWhatsApp = window.confirm(
+              message + "\n\n¿Deseas continuar por WhatsApp para que la tienda revise el pedido? " +
+              "No se confirmará un registro automático y se evitarán envíos duplicados."
+            );
+            if(!continueInWhatsApp) return;
           }
 
-          // El mensaje SIEMPRE se envía al número de la tienda
+          // Continuar a WhatsApp después de registro confirmado o aceptación informada.
           registrarConversionCatalogo("Abrió WhatsApp", "Compra desde carrito");
           openWhatsAppTo(getWhatsAppTo(), buildBuyerMessage());
         }finally{

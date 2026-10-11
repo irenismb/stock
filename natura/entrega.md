@@ -4,11 +4,11 @@ Natura debe tener todos sus archivos de código, imágenes, automatizaciones, Ap
 
 Los workflows de GitHub Actions solo se ejecutan si están situados en `.github/workflows/` en la raíz del repositorio. Por ello los workflows actualmente operativos de `stock/.github/workflows/` deben permanecer allí hasta crear el repositorio independiente `natura`.
 
-Google Drive será la fuente de los archivos de trabajo; la sincronización normal debe ser de Drive hacia GitHub. No ejecutar simultáneamente dos publicadores de Apps Script.
+Decisión temporal 2026-10-11: trabajar el código únicamente en GitHub; no escribir ni sincronizar con Google Drive en esta fase. La elección definitiva de GitHub como fuente principal requiere validación. Nunca habilitar simultáneamente dos publicadores de Apps Script.
 
 La copia del repositorio no transfiere secretos, permisos, datos externos, cuentas de Google, despliegues ni dominios. Documentar y reconectar de forma segura estas dependencias antes de entregar el proyecto.
 
-Cuenta futura prevista: `grupo` (pendiente de registro y confirmación).
+Cuenta actual que se conservará: `irenismb`. Más adelante se valorará renombrar esta misma cuenta a `grupo`, si está disponible, sin abrir una cuenta nueva.
 
 ## Estado de preparación al 2026-10-11
 

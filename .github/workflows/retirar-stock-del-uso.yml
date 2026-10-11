@@ -1,0 +1,97 @@
+name: Conservar stock y retirar su uso operativo
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/retirar-stock-del-uso.yml'
+permissions:
+  contents: read
+concurrency:
+  group: retirar-stock-del-uso
+  cancel-in-progress: false
+jobs:
+  retirar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Verificar destinos y retirar publicadores antiguos sin eliminar originales
+        env:
+          GH_TOKEN: ${{ secrets.MIGRACION_REPOS_TOKEN }}
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error, urllib.parse
+          token = os.environ["GH_TOKEN"]
+          projects = [["arcadia","1b91b16d7cb488be2e2f77da6e269a824f687457","ventas.html"],["calculadora-gps","8b5655049a5a8b3334810ca7dabd955b7a3331fb","inicio.html"],["compara-precios","a61e17a7dfb195adfed72fb7f93e3f63f9eacf9d","comparar precios de alimentos en tiendas diferentes.html"],["cxp-arcadia","434932c73d0f187316723d6882dfd41e8eb6a662","cxp.html"],["mundial","0cdad122cf35f34f466c5c35bc73bc3e35820175","mundial_2026.html"],["notas","00cb8fe2168e3b610d8c2dbc79c5cbaa44191e7d","notas.html"],["reparacion","0c7e0c131cbc782d5aabed123ef79ad41dd60a87","reparacion_de_computadores_santa_marta.html"]]
+          def api(path, method="GET", data=None):
+              req = urllib.request.Request("https://api.github.com/" + path,
+                  data=None if data is None else json.dumps(data).encode(), method=method,
+                  headers={"Authorization":"Bearer " + token,"Accept":"application/vnd.github+json","X-GitHub-Api-Version":"2022-11-28"})
+              with urllib.request.urlopen(req, timeout=30) as response:
+                  body = response.read()
+                  return json.loads(body) if body else {}
+          if os.environ["GITHUB_REPOSITORY"] != "gruemp/stock" or os.environ["GITHUB_REF"] != "refs/heads/main":
+              raise SystemExit("Origen no autorizado")
+          if api("user")["login"] != "gruemp": raise SystemExit("Cuenta no autorizada")
+          stock = "repos/gruemp/stock"
+          before = api(stock + "/git/trees/main?recursive=1")
+          # Comprobar destinos y publicaciones antes de retirar el publicador compartido.
+          for repo, sha, entry in projects:
+              base = "repos/gruemp/" + repo
+              if api(base + "/branches/main")["commit"]["sha"] != sha:
+                  raise SystemExit("Version destino no conciliada: " + repo)
+              config = api(base + "/pages")
+              if config.get("status") != "built" or config.get("source") != {"branch":"main","path":"/"}:
+                  raise SystemExit("Publicacion independiente incompleta: " + repo)
+              url = config["html_url"].rstrip("/") + "/" + urllib.parse.quote(entry)
+              with urllib.request.urlopen(url, timeout=30) as response:
+                  if response.status != 200: raise SystemExit("HTTP incorrecto: " + repo)
+              if repo == "reparacion":
+                  with urllib.request.urlopen(config["html_url"].rstrip("/") + "/principal.html", timeout=30) as response:
+                      if response.status != 200: raise SystemExit("Contenido de Reparacion no disponible")
+              print(repo + ": publicacion independiente comprobada", flush=True)
+          # Inventariar todos los workflows conservando los YAML y su historia.
+          workflows = []
+          for number in range(1, 11):
+              batch = api(stock + "/actions/workflows?per_page=100&page=" + str(number))["workflows"]
+              workflows.extend(batch)
+              if len(batch) < 100: break
+          own = next(w for w in workflows if w["path"] == ".github/workflows/retirar-stock-del-uso.yml")
+          for workflow in workflows:
+              if workflow["id"] != own["id"] and workflow["path"].startswith(".github/workflows/") and workflow["state"] == "active":
+                  api(stock + "/actions/workflows/" + str(workflow["id"]) + "/disable", "PUT")
+                  print("Workflow desactivado: " + workflow["path"], flush=True)
+          # Detener ejecuciones antiguas en curso; la ejecucion actual completa el retiro.
+          for status in ("queued", "in_progress", "waiting", "pending"):
+              runs = api(stock + "/actions/runs?status=" + status + "&per_page=100")["workflow_runs"]
+              for run in runs:
+                  if str(run["id"]) != os.environ["GITHUB_RUN_ID"]:
+                      try:
+                          api(stock + "/actions/runs/" + str(run["id"]) + "/cancel", "POST")
+                          print("Ejecucion anterior cancelada: " + str(run["id"]), flush=True)
+                      except urllib.error.HTTPError as error:
+                          if error.code != 409: raise
+          # Retirar exclusivamente Pages. Nunca se llama DELETE al repositorio ni a archivos.
+          try:
+              api(stock + "/pages", "DELETE")
+          except urllib.error.HTTPError as error:
+              if error.code != 404: raise
+          if api(stock).get("has_pages"): raise SystemExit("Pages de stock sigue activo")
+          after = api(stock + "/git/trees/main?recursive=1")
+          if before["sha"] != after["sha"] or before["tree"] != after["tree"]:
+              raise SystemExit("El arbol de stock cambio durante el retiro")
+          # Quitar la credencial almacenada solo tras comprobar el retiro. No se lee su valor.
+          api(stock + "/actions/secrets/MIGRACION_REPOS_TOKEN", "DELETE")
+          print("Secreto temporal retirado de stock; revocacion en cuenta pendiente del titular", flush=True)
+          api(stock + "/actions/workflows/" + str(own["id"]) + "/disable", "PUT")
+          remaining = [w["path"] for w in api(stock + "/actions/workflows?per_page=100")["workflows"]
+              if w["path"].startswith(".github/workflows/") and w["state"] == "active"]
+          if remaining: raise SystemExit("Quedan workflows activos")
+          print("STOCK CONSERVADO: Pages desactivado, workflows inactivos, archivos e historial intactos", flush=True)
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("## Stock conservado y fuera de uso operativo\n")
+              summary.write("Siete destinos y sus paginas comprobados. Pages antiguo retirado; workflows desactivados, incluido este.\n")
+              summary.write("Archivos e historial de stock conservados; arbol intacto durante el retiro. No se elimino ningun repositorio ni archivo.\n")
+              summary.write("MIGRACION_REPOS_TOKEN retirado de los secretos de stock sin leer su valor. Revocar el token personal en GitHub requiere intervencion del titular.\n")
+          
+          PY

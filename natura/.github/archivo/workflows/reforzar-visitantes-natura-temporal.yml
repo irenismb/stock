@@ -1,0 +1,14 @@
+name: Despliegue temporal visitantes Natura (inactivo)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inactivo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Estado
+        run: echo "Este despliegue temporal está inactivo. Usar el flujo oficial para futuros cambios de Apps Script Natura."

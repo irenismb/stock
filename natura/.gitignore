@@ -1,0 +1,8 @@
+*.gsheet
+*.gscript
+*.gdoc
+*.gslides
+*.gform
+*.gdraw
+*.gmap
+_gsdata_/

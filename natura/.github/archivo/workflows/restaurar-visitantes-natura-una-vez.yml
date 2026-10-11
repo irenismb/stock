@@ -1,0 +1,14 @@
+name: Publicador temporal de visitantes Natura (inactivo)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inactivo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Estado
+        run: echo "Este publicador temporal está inactivo. Usar el workflow manual oficial de restauración de Apps Script Natura."

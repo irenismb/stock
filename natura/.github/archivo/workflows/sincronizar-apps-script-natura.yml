@@ -1,0 +1,17 @@
+name: Flujo inverso Apps Script a GitHub (inactivo)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inactivo:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Estado
+        run: |
+          echo "INACTIVO: la fuente de trabajo es Google Drive."
+          echo "Flujo autorizado: Google Drive -> GitHub -> Google Apps Script."
+          echo "No se hace clasp pull ni se sobrescribe GitHub desde Apps Script."

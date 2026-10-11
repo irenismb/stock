@@ -1,0 +1,42 @@
+name: Restaurar recursos fijos del catálogo
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/migrate-product-images.yml
+
+permissions:
+  contents: write
+
+jobs:
+  restore-fixed-assets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Restaurar logos e iconos históricos
+        shell: bash
+        run: |
+          git checkout e3dc78200fdfe123050952f4a282c6a8a9acc2e2 -- natura/logos natura/iconos
+          test "$(find natura/logos -maxdepth 1 -type f | wc -l)" -eq 11
+          test "$(find natura/iconos -maxdepth 1 -type f | wc -l)" -eq 20
+          test -f natura/logos/logo_empresa.webp
+          test -f natura/logos/whatsapp.webp
+          test -f "natura/iconos/2026-09-06_icono subcategoria maquillaje brocha labial rosa.webp"
+          test -f "natura/iconos/2026-09-06_icono categoria para ella perfume floral.webp"
+          test -f "natura/iconos/2026-09-06_icono categoria para el perfume azul.webp"
+          if git diff --cached --name-only | grep -q '^natura/productos/'; then
+            echo "Error: no se deben restaurar imágenes de productos en GitHub"
+            exit 1
+          fi
+
+      - name: Guardar restauración
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Restaurar logos e iconos fijos del catálogo"
+          git push origin main

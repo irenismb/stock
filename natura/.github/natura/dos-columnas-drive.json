@@ -1,0 +1,47 @@
+[
+  {
+    "id": "15p3Y7CyaRBRS7RWxYXYe9l5dvySiftJ2",
+    "name": "catalogo-herramientas.js",
+    "path": "natura/catalogo-herramientas.js",
+    "replacements": [
+      [
+        "  facts.append(card.querySelector(\".name\"));",
+        "  const name=card.querySelector(\".name\"),priceRow=card.querySelector(\".row\");\n  facts.append(name);"
+      ],
+      [
+        "  attributes.hidden=!model.attributes.length;facts.append(attributes,card.querySelector(\".row\"));",
+        "  attributes.hidden=!model.attributes.length;facts.append(attributes,priceRow);"
+      ],
+      [
+        "    const name=card.querySelector(\".name\");\n    name.hidden=true;",
+        "    name.hidden=true;"
+      ],
+      [
+        "if(field.key===\"precio\"){facts.append(card.querySelector(\".row\"));continue;}",
+        "if(field.key===\"precio\"){facts.append(priceRow);continue;}"
+      ]
+    ]
+  },
+  {
+    "id": "1kR2Hd-LtePQBYxq-XuCE1Ozz8qEvqECH",
+    "name": "catalogo-integracion.test.cjs",
+    "path": "natura/catalogo-integracion.test.cjs",
+    "replacements": [
+      [
+        "  const card=node('card');card.querySelector=selector=>nodes[selector];",
+        "  const card=node('card');card.append(...Object.values(nodes));\n  card.querySelector=selector=>{const find=parent=>parent===nodes[selector]?parent:parent.children.map(find).find(Boolean);return find(card)||null;};"
+      ]
+    ]
+  },
+  {
+    "id": "1LxT1S4GdnyZ7ny1sHjWnbW2fGyOPnhLI",
+    "name": "catalogo.html",
+    "path": "natura/catalogo.html",
+    "replacements": [
+      [
+        "catalogo-herramientas.js?actualizacion=descripcion-dos-columnas-2026-10-10-1",
+        "catalogo-herramientas.js?actualizacion=descripcion-dos-columnas-2026-10-10-2"
+      ]
+    ]
+  }
+]

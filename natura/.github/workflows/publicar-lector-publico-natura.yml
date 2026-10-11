@@ -3,7 +3,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "natura/apps-script/lector publico natura/**"
+      - "apps-script/lector publico natura/**"
       - ".github/workflows/publicar-lector-publico-natura.yml"
 
 permissions:
@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   lector:
+    if: ${{ vars.NATURA_PUBLICACION_HABILITADA == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -35,10 +36,10 @@ jobs:
           chmod 600 "$RUNNER_TEMP/.clasprc.json"
       - name: Comprobar codigo y proyecto
         run: |
-          node --check "natura/apps-script/lector publico natura/Lector.js"
+          node --check "apps-script/lector publico natura/Lector.js"
           python3 - <<'PY'
           import json
-          project = 'natura/apps-script/lector publico natura/'
+          project = 'apps-script/lector publico natura/'
           conf=json.load(open(project+'.clasp.json'))
           assert conf['scriptId']=='1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4'
           manifest=json.load(open(project+'appsscript.json'))
@@ -49,8 +50,8 @@ jobs:
           clasp_config_auth: ${{ runner.temp }}/.clasprc.json
         run: |
           set -euo pipefail
-          admin="$GITHUB_WORKSPACE/natura/apps-script/administrar precios natura"
-          reader="$GITHUB_WORKSPACE/natura/apps-script/lector publico natura"
+          admin="$GITHUB_WORKSPACE/apps-script/administrar precios natura"
+          reader="$GITHUB_WORKSPACE/apps-script/lector publico natura"
           restore_admin() {
             echo "Restaurando codigo fuente de Apps Script administrativo"
             (cd "$admin" && clasp push --force)

@@ -1,0 +1,39 @@
+name: Transferir credencial Natura cifrada
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cifrar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Cifrar credencial existente sin imprimirla
+        env:
+          CLASPRC_JSON: ${{ secrets.CLASPRC_JSON }}
+        run: |
+          node <<'NODE'
+          const crypto = require('node:crypto');
+          const fs = require('node:fs');
+          const value = process.env.CLASPRC_JSON;
+          if (!value) throw new Error('Falta la credencial existente CLASPRC_JSON');
+          const parsed = JSON.parse(value);
+          if (!parsed || typeof parsed !== 'object') throw new Error('Formato de credencial no válido');
+          const key = crypto.randomBytes(32);
+          const iv = crypto.randomBytes(12);
+          const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+          const ciphertext = Buffer.concat([cipher.update(value, 'utf8'), cipher.final()]);
+          const publicKey = "-----BEGIN PUBLIC KEY-----\nMIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEA1xPYVfvtnYMbG/mYt9FV\nInmhertDYqmbwKFOUEOD2NnPQ8u2jKXJV7W0kMQWZWQYWXISyF0w3F5Cb4KAOvo4\nVw0N2lz4EYnXclrJms1BLb8Sp0KjsUvDYj0TOiY1jQQweA6lUHUPtnXuyaqTKplt\nP1yDbICb3KMOgT2DP0adjwZIs/P3OUuDBAs0Mkyv2JbUe7Ms+yIX3SZrcmx1Q/D9\noysP6Bb34yvIE9HUd5IZLdD5U7fWHyxW7DhA5ywKMiJr+qL+aQZ+DEBaPRZdozBk\n3nKzTYy+G6JeU9LFyAM1fVCi2/dtJ+dQ4qx1b9EaXM1UAwXVtblnRdE1MDe5TNfa\nQlhdsHz/E2hvKpxyr0Rip8BUcSSe566xzeacc5O7v6AQm6XKgdImyYxZQMG461ad\n2BgwbsHV6EMaQg0+5vIXWS9R4dDD467Kc/+P42RfnLtGWsN4CTxJdfxFwaEqKqpb\nthCmcO+1VNUJ1z9QHXHsCntrplapV9ylOrqAMXEd4MMJAgMBAAE=\n-----END PUBLIC KEY-----";
+          const wrapped = crypto.publicEncrypt({key: publicKey, padding: crypto.constants.RSA_PKCS1_OAEP_PADDING, oaepHash: 'sha256'}, key);
+          const payload = {version:1,wrappedKey:wrapped.toString('base64'),iv:iv.toString('base64'),tag:cipher.getAuthTag().toString('base64'),ciphertext:ciphertext.toString('base64')};
+          fs.writeFileSync('credencial-cifrada.json', JSON.stringify(payload), {mode:0o600});
+          key.fill(0);
+          console.log('Archivo cifrado creado; no se mostraron credenciales.');
+          NODE
+      - name: Guardar únicamente archivo cifrado
+        uses: actions/upload-artifact@v4
+        with:
+          name: natura-credencial-cifrada
+          path: credencial-cifrada.json
+          retention-days: 1
+          if-no-files-found: error

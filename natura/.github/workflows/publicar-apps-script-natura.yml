@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - "natura/apps-script/administrar precios natura/**"
-      - "natura/apps-script/pedidos natura/**"
-      - "natura/apps-script/lectura de carpetas en natura/**"
-      - "natura/apps-script/coordenadas de visitantes natura/**"
+      - "apps-script/administrar precios natura/**"
+      - "apps-script/pedidos natura/**"
+      - "apps-script/lectura de carpetas en natura/**"
+      - "apps-script/coordenadas de visitantes natura/**"
       - ".github/triggers/publicar-apps-script-natura-auto.txt"
 
 permissions:
@@ -20,6 +20,7 @@ concurrency:
 
 jobs:
   publicar:
+    if: ${{ vars.NATURA_PUBLICACION_HABILITADA == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
@@ -56,10 +57,10 @@ jobs:
           AFTER_SHA: ${{ github.sha }}
         run: |
           cat > "$RUNNER_TEMP/projects.tsv" <<'EOF'
-          administrar precios natura	natura/apps-script/administrar precios natura	1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4	AKfycbwAUk8ysr-3k_T5iRxFpbp8KxmvPpYeGRNbL156lp9CsVjNFjQQgg5v7ySaxO7dcP_X
-          pedidos natura	natura/apps-script/pedidos natura	12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt	AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP
-          lectura de carpetas en natura	natura/apps-script/lectura de carpetas en natura	1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf	AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w
-          coordenadas de visitantes natura	natura/apps-script/coordenadas de visitantes natura	1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN	AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO
+          administrar precios natura	apps-script/administrar precios natura	1-wBaemhULEFETfQHJDocPTOjbXnVds27DZfiIU9sMnCYf01qSycs1jc4	AKfycbwAUk8ysr-3k_T5iRxFpbp8KxmvPpYeGRNbL156lp9CsVjNFjQQgg5v7ySaxO7dcP_X
+          pedidos natura	apps-script/pedidos natura	12M9b5tq5xV0tqMxoJgJgjPKaOE8Q9PQj5TfyzhFEBtNcJHOijKkByEwt	AKfycby85yLxa9PK8-cbwTk-FVlS3zKE0HqFs3rQf6D7pZPNzylaxDGPagOhfG0rZy_A0cxP
+          lectura de carpetas en natura	apps-script/lectura de carpetas en natura	1wN8Cyp7JmJOtIY0etPKyo_3r5y48MYpMrT5PFQeVmoyztPwYO53sWfLf	AKfycbzuHYa9Uf_5v5-FhDXQFu6WRuW49DgxJLUHrm_tq1Vdk539VZjeQeGrlWWqgJj4SzMg2w
+          coordenadas de visitantes natura	apps-script/coordenadas de visitantes natura	1T2y1xSKlZueX-SYDU9HxFi6K4ShLbiHRUGY21caNtSv9Gz-6h1aLd5ZN	AKfycbygXijUyDrpyeA8qmheyZpYw9HVWuN_JZPIeYNbqRKKNYhqFFUguEMZmof4yLTtGbVO
           EOF
 
           : > "$RUNNER_TEMP/selected.tsv"
@@ -85,10 +86,10 @@ jobs:
 
       - name: Verificar sintaxis y regresiones antes de publicar
         run: |
-          node --check "natura/apps-script/administrar precios natura/admin-visibilidad.js"
-          node --check "natura/apps-script/administrar precios natura/admin-configuracion.js"
-          node --check "natura/apps-script/administrar precios natura/admin-contextos.js"
-          node --test natura/catalogo-integracion.test.cjs
+          node --check "apps-script/administrar precios natura/admin-visibilidad.js"
+          node --check "apps-script/administrar precios natura/admin-configuracion.js"
+          node --check "apps-script/administrar precios natura/admin-contextos.js"
+          node --test catalogo-integracion.test.cjs
 
       - name: Validar identidad y publicar
         env:

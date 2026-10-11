@@ -14,6 +14,7 @@ permissions:
 
 jobs:
   auditar:
+    if: ${{ vars.NATURA_PUBLICACION_HABILITADA == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
